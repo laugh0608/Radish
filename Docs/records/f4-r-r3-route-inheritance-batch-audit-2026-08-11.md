@@ -1,7 +1,7 @@
 # F4-R R3 路由继承实施分批审计
 
 > 日期：2026-08-11
-> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；前三批已关闭，下一顺位为 R3-C04 设计前审计
+> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；前三个 Public 批、R3-C04 风险拆批审计与 C04-A 已关闭，下一顺位为 C04-B Users
 > 范围：正式 Client / Console Web 路由、R3 继承成立性、局部差异、关键状态、Mobile 转换与验证边界
 
 ## 1. 结论
@@ -10,7 +10,7 @@
 
 正式代码反查同时发现原继承表存在两个覆盖缺口：Console Dashboard 与后续新增的 Channel Discoverability 没有登记继承来源；Console Settings / Profile、公开 Docs 详情与 Legal 虽已登记，但没有被前述 R2 实现批实际关闭。上述页面已纳入新的后续批次，不以历史表述冒充完成。
 
-`R3-P04 Public Forum 浏览族`、`R3-P05 Public Docs 与 Legal` 与 `R3-P06 Public Shop 浏览与 Leaderboard` 均已按继承结论完成正式实现和 Gateway 成组验收。下一顺位固定为 `R3-C04 Console 普通资源`：先按七类资源的读写风险、页面所有权和 Mobile 转换拆批，再形成实施方案，不复制七套状态机。
+`R3-P04 Public Forum 浏览族`、`R3-P05 Public Docs 与 Legal` 与 `R3-P06 Public Shop 浏览与 Leaderboard` 均已按继承结论完成正式实现和 Gateway 成组验收。`R3-C04 Console 普通资源` 随后完成七类资源读写风险、页面所有权和 Mobile 转换审计，并拆为 Taxonomy、Users、Applications、Products、Stickers、Coins 六批；首批 Categories / Tags 已完成代码和静态门禁，下一顺位为 `R3-C04-B Users`。
 
 ## 2. 正式路由事实
 
@@ -35,16 +35,16 @@
 
 - 四个公开浏览模块已经共享 `PublicShellHeader`、语义 token、公开导航、`WebStateSlot`、URL 状态和 head / structured data 基础，R1-P01 的壳层与连续内容语法可直接继承。
 - Forum、Docs、Shop 与 Leaderboard 仍保留各自字段、筛选、分页、辅助 rail 和关键状态；R3 只统一密度、顺序和响应式语法，不把不同业务压成同一个万能卡片。
-- `PublicForumApp.module.css` 当前 `1646` 行，并同时服务浏览、详情和 Compose；首批若继续直接追加样式会越过仓库硬上限并扩大对已关闭详情面的回归风险。实现前应按真实所有权拆出 browse 样式边界，不能做全文件机械格式化或新建空泛包装层。
-- `PublicDocsApp.tsx` 当前 `1554` 行，进入 Docs 批时必须按列表 / 搜索 / 详情真实职责继续拆分；Shop 与 Leaderboard 目前仍在建议上限附近，只在实际复用或职责隔离成立时拆分。
-- Leaderboard 仍有三处奖牌渐变硬编码色；应在对应 R3 批转为明确的榜单语义 token，不在 Forum 首批跨模块顺手修改。
+- 审计时 `PublicForumApp.module.css` 为 `1646` 行，并同时服务浏览、详情和 Compose；P04 已按真实所有权隔离 browse 样式，原文件降至 `1185` 行，未做全文件机械格式化或新增空泛包装层。
+- 审计时 `PublicDocsApp.tsx` 为 `1554` 行；P05 已按列表 / 搜索 / 详情真实职责拆为 `279` 行编排器与独立 owner。Shop 与 Leaderboard 只按实际职责收敛，没有为控制行数机械拆分。
+- 审计时 Leaderboard 有三处奖牌渐变硬编码色；P06 已转为明确的榜单语义 surface，没有在 Forum 批跨模块顺手修改。
 
 ### 3.2 Console
 
-- 多数资源页已经使用 `ConsolePageHeader`、`ConsoleMetricCard`、统一权限和 Ant Table，但 Mobile 仍主要依赖表格滚动或有限 CSS；R1-C01 已确认的连续资源面、紧凑筛选、按需详情和 Mobile 卡片 / 单任务转换尚未成组接入。
+- 多数资源页已经使用 `ConsolePageHeader`、`ConsoleMetricCard`、统一权限和 Ant Table；C04-A 已增加无业务状态的 `ConsoleResourceList`，先由 Categories / Tags 接入 PC 连续表格—Mobile 卡片，后续资源仍需逐批接入按需详情和 Mobile 单任务转换。
 - Documents `1425` 行且包含资源表、治理动作与多组历史；Experience 由多子区块承接复杂治理，二者应进入 `R1-C01 + R1-C02` 批，不与普通 CRUD 页面混改。
 - Dashboard 已具备主区—辅助区和 Mobile 单列，但原继承表漏记；它应继承 `R1-F01 + R2-W02` 的主任务优先、紧凑摘要和辅助信息规则，同时保留 Console 壳层。
-- Applications、Products、Users、Categories、Tags、Stickers、Coins 的表格 / 表单 / Modal 复杂度差异明显；后续 Console 批应先做共同列表壳层与 Mobile 任务转换，再按风险拆分高写入页面，不能一次改完全部资源。
+- Applications、Products、Users、Categories、Tags、Stickers、Coins 的表格 / 表单 / Modal 复杂度差异明显；C04 审计已把它们拆为六批，Categories / Tags 先建立共同列表壳层，其余资源按风险逐批接入，不能一次改完全部资源。
 
 ## 4. R3 分批顺位
 
@@ -95,4 +95,4 @@
 
 ## 7. 下一步
 
-`R3-P04`、`R3-P05` 与 `R3-P06` 均已完成正式代码、静态回归与 Gateway PC / Mobile 成组验收，分别见 [Public Forum 浏览族实现记录](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)、[Public Docs 与 Legal 实现记录](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)和 [Public Shop 浏览与 Leaderboard 实现记录](/records/f4-r-r3-p06-public-shop-leaderboard-implementation-2026-08-11)。下一步进入 `R3-C04 Console 普通资源` 设计前代码事实与风险拆批审计；先核对七类资源页面与 Mobile 边界，再提交实施方案。
+`R3-P04`、`R3-P05` 与 `R3-P06` 均已完成正式代码、静态回归与 Gateway PC / Mobile 成组验收，分别见 [Public Forum 浏览族实现记录](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)、[Public Docs 与 Legal 实现记录](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)和 [Public Shop 浏览与 Leaderboard 实现记录](/records/f4-r-r3-p06-public-shop-leaderboard-implementation-2026-08-11)。[R3-C04 普通资源风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)与 [C04-A Categories / Tags 实现](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)也已关闭；下一步进入 `R3-C04-B Users`，先纠正伪筛选、聚合局部失败与本地分页，再继承共享响应式资源表面。

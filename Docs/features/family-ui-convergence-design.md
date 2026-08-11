@@ -1,8 +1,8 @@
 # F4-R 家族 UI 统一接入与产品视觉重构
 
-> 日期：2026-07-30；2026-08-08 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-11 更新（Asia/Shanghai）
 >
-> 状态：A / B、v26.7.3 破坏性基线补充批、C-0 与 C-1A 已完成；C-1B 的六个 R1 与 `R2-C03` 已关闭，当前进入 `R2-P03` 窄前端能力门禁
+> 状态：A / B、v26.7.3 破坏性基线补充批、C-0、C-1A、六个 R1、四个 R2 与 `R3-P04 / P05 / P06` 已关闭；R3-C04 普通资源已完成风险拆批审计和 `C04-A Categories / Tags`
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
@@ -167,7 +167,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 - 使用 Workbench Profile。
 - 保留表格、设置、详情、治理工作台各自结构。
-- 优先复用 `ConsolePage` 语义组件和现有表格布局。
+- 优先复用 `ConsolePage` 语义组件；普通资源列表继承无业务状态的 `ConsoleResourceList` PC 连续表格—Mobile 卡片壳层，查询、权限、详情和 Modal 状态继续归资源 owner。
 - 先统一状态、控件、浮层和壳层，不逐页复制新皮肤。
 
 ### 8.4 Flutter
@@ -206,7 +206,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
-同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。六个 R1 与四个 R2 的代表类型已经形成闭环，R3 正式路由分批审计已完成，下一步确认首批 `R3-P04 Public Forum 浏览族`。
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。六个 R1 与四个 R2 的代表类型已经形成闭环；R3 的 `P04 Forum / P05 Docs 与 Legal / P06 Shop 与 Leaderboard` 已按继承规则实现并通过 Gateway，普通 Console 资源完成风险拆批审计和 `C04-A Categories / Tags` 静态门禁，下一步为 `R3-C04-B Users`。
 
 ### 9.2 设计源
 
@@ -250,7 +250,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 - C-0 已完成：完整审计参考索引与 27 张参考图，建立页面族吸收 / 排除映射；v26.7.3 仅迁址且图片 blob 不变，映射继续有效，设计时仍须按新版“观察、拆解、提炼、转译”边界复核相关参考。
 - C-1A 已完成当前代码与页面类型审计，确认 `7` 个 R1、`4` 个 R2 及 R3 继承表。
-- C-1B 已建立单一版本化活动设计源与共享组件 / 主题基座；六个 R1 与四个 R2 的 readiness、必要能力修复、PC / mobile 代表设计、页面实现及运行态复核均已关闭。全局共享主题色继续单独成组治理；后续进入 C / D 的 R3 路由继承实施，不为派生页复制画板。
+- C-1B 已建立单一版本化活动设计源与共享组件 / 主题基座；六个 R1 与四个 R2 的 readiness、必要能力修复、PC / mobile 代表设计、页面实现及运行态复核均已关闭。全局共享主题色继续单独成组治理；C / D 已完成三个 Public R3 批并进入 Console 普通资源分批，不为派生页复制画板。
 - 更新共享基座和命中的 R1 / R2 代表画板，不为 R3 派生页面创建重复画板。
 - 收敛按钮、输入、状态 chip、表格、卡片、Modal、空态、Header 和移动底栏。
 - 先实现共享组件和 R1 代表页，完成真实截图复核后再进入派生页面。
@@ -262,7 +262,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 - Public 页面族。
 - Private / Author 页面族。
 - Console 页面族。
-- R3 页面按代表画板继承说明成组实现；[当前正式路由分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)建议依次推进 Public Forum 浏览、Docs / Legal、Shop / Leaderboard、Console 普通资源、Console 仪表 / 治理派生与自服务 / 边界页，首批为 `R3-P04`。若暴露新结构或响应式模型，再升级为 R1 / R2。
+- R3 页面按代表画板继承说明成组实现；[当前正式路由分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定 Public Forum 浏览、Docs / Legal、Shop / Leaderboard、Console 普通资源、Console 仪表 / 治理派生与自服务 / 边界页顺序。前三批已关闭，Console 普通资源继续按 [C04 风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)逐批推进；若暴露新结构或响应式模型，再升级为 R1 / R2。
 - Web 基线稳定后建立 Flutter 语义映射和高价值代表页。
 - WebOS 只做兼容回归；Tauri 不进入矩阵。
 

@@ -161,16 +161,18 @@
 64. 按确认设计完成 R2-A02 正式前端实现：Docs / Forum 共享相邻 / 当前双快照差异，Mine 主轴与 Mobile 顺序收敛，正式 Composer 以同一实例承载 PC / Mobile 半屏和全屏；Client 全量 `536 / 536`、类型、Lint、构建与变更卫生通过。
 65. 获授权后使用种子管理员完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` 成组验收；修正选中文档行 Mobile 断点和 Composer 图标按钮可访问名称，复验无横向溢出，干净标签页 `0 warning / 0 error`，R2-A02 关闭。
 
-## 今天事项（2026-08-11）
+## 明天事项（2026-08-12）
 
-1. `R3-P04`、`R3-P05` 与 `R3-P06` 均已完成正式实现、静态回归和 Gateway PC / Mobile 成组验收。
-2. P06 关闭 Shop 重复入口 / 误导 rail、CTA 语义、Leaderboard 重复类型导航、奖牌颜色硬编码和英文类型元数据泄漏；商品购买状态机与 API 边界保持不变。
-3. R3-C04 七类普通资源的代码事实与风险拆批审计已确认；R3-C04-A Categories / Tags 已完成代码与静态门禁。
-4. 下一顺位进入 R3-C04-B Users 列表与聚合详情；继续保持 Taxonomy、Users、Applications、Products、Stickers、Coins 的既定批次顺序。
-5. 三处既有 `DateTime.Now` baseline 与全仓卫生债务继续独立维护；不扩入 WebOS 新功能、Tauri 或 Flutter 机械追平。
+1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)、[R3-C04-A 实现记录](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)和[今日提交—代码—文档反查](/records/f4-day-end-doc-review-2026-08-11)。
+2. 先核对 Users 列表与 `/users/:userId` 的真实 API、URL、权限和页面所有权；`status / role` 必须接入权威服务端筛选或从表面移除，不保留客户端伪筛选，也不预设新增用户写能力。
+3. 把用户主资料、角色 / 权限和统计等聚合来源拆成独立 `loading / ready / unavailable / stale`；纠正更新时间被标成最后登录的语义，列表与详情均使用权威分页或完整读取，不再对当前十条结果做本地分页。
+4. 列表继续继承无业务状态的 `ConsoleResourceList`：PC 使用连续表格，Mobile 使用资源卡片；详情在 Mobile 收敛为保留来源返回的单任务页，资源 owner 继续持有查询、权限和聚合状态。
+5. 开发中执行 Users route / query / aggregation 定向测试、Console 全量测试、strict type-check、Lint、production build、`git diff --check` 与 changed hygiene；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
+6. Users 批不扩入 Applications、Products、Stickers、Coins，不修改 Pencil、数据库、migration 或权限键；三处既有 `DateTime.Now` baseline 与全仓历史卫生债务继续独立维护。
 
 ## 当前执行入口
 
+- [2026-08-11 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-11)
 - [R3-C04-A Categories / Tags 与共享响应式资源表面实现](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)
 - [R3-C04 Console 普通资源设计前代码事实与风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)
 - [R3-P06 Public Shop 浏览与 Leaderboard 正式实现及 Gateway 验收](/records/f4-r-r3-p06-public-shop-leaderboard-implementation-2026-08-11)
