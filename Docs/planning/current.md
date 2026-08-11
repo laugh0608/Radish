@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3 路由继承实施分批审计`
-- **产品下一顺位**：`R2-A02 已形成设计—实现—Gateway 闭环；先按既有继承表核对 R3 正式路由并确定首个成组实现批次`
+- **工程第一顺位**：`F4-R R3-P04 Public Forum 浏览族实现方案确认`
+- **产品下一顺位**：`R3 正式路由分批审计已完成；先确认 Forum 浏览族样式所有权、响应式矩阵和停止线，再进入代码`
 - **复核日期**：`2026-08-11`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-11` 已完成 [R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)：现有 R3 继承方向总体成立，已关闭 R1 / R2 页面不重复迁移；补齐 Console Dashboard 与 Channel Discoverability 的继承来源，并确认 Settings / Profile、公开 Docs 详情与 Legal 尚未由前述 R2 实现关闭。后续拆为六个批次，首批固定为 `R3-P04 Public Forum 浏览族`；Forum browse 样式需先与已关闭的详情 / Compose 所有权隔离，保持 URL、SEO、局部权威状态与 Mobile 主任务优先，不新增 API、权限、业务字段或 Pencil 画板。
 - `2026-08-11` 已完成并关闭 [R2-A02 Author 列表、修订与 Forum Compose 正式实现及 Gateway 验收](/records/f4-r-r2-a02-author-list-revisions-forum-compose-implementation-2026-08-11)：Docs / Forum 共用双快照差异，默认 `vN-1 → vN`、可切选中版本到当前版本，PC 并排、Mobile unified；Docs Mine 收敛为权威筛选—连续列表—从属上下文；正式 `/forum/compose` 只挂载一个 Composer，PC `54dvh`、Mobile `72dvh` 并可原位全屏。Gateway 以种子管理员覆盖 PC `1440 × 900`、Mobile `390 × 844`、双语 / 代表主题、无横向溢出和干净标签 `0 warning / 0 error`；运行态修正 Mobile 选中文档行断点与 Composer 图标按钮可访问名称。Client `536 / 536`、type-check、Lint 与 production build 通过；既有三处 `DateTime.Now` baseline 和全仓卫生债务继续留在独立维护线。
 - `2026-08-10` 已按人工反馈完成并确认 [R2-A02 Author 列表、修订与 Forum 发布差异第二轮局部代表设计](/records/f4-r-r2-a02-author-list-revisions-forum-compose-representative-design-2026-08-10)：Mine 保持权威筛选—连续列表—从属上下文；Revisions 改为 PC `vN-1 → vN` 并排差异与 Mobile unified diff，并以同一模式覆盖帖子 / 文档；Forum Compose 改为 PC / Mobile 半屏停靠与全屏写作双形态，展开 / 收起必须保留同一草稿、上传与提交状态。唯一活动设计源现有四张 PC、四张 Mobile 和一张必要状态板；九板均结束 placeholder，原生根边界审计 `outOfRoot = 0`，逐板截图无裁切、塌陷或横向溢出，设计已通过 Pen 原生保存落盘。未启动服务 / 浏览器或修改正式页面代码；下一开发日直接进入双快照差异与 Composer 承载状态门禁。
 - `2026-08-10` 已完成 [R2-A02 Author 列表、修订与 Forum 发布差异能力门禁](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)：`AuthorGetList` 落地数据库权威范围 / 草稿阶段筛选、稳定分页、结构化无效参数与列表请求代际；Revision history / detail 独立 unavailable / stale 和请求代际；正式 Forum Compose 使用页面内共享核心，WebOS 保留薄 Bottom Sheet 外壳；版本化本地草稿按账号隔离并与 Workbench 共源；发布器系统文案完成双语且失败只反馈一次。后端全量 `1224 passed / 39 skipped`，HTTP `37 / 37`、Client `533 / 533`、type-check、Lint 与 production build 通过；未启动服务 / 浏览器，未修改 Pencil、数据库、migration、权限或业务范围。下一步进入 R2 局部代表设计。
@@ -157,14 +158,15 @@
 
 ## 今天事项（2026-08-11）
 
-1. R2-A02 正式代码、静态验证、Gateway PC / Mobile 成组验收、运行态同边界修正和记录更新已经完成，专题关闭。
-2. 下一开发任务先做 R3 路由继承实施分批审计，不直接逐页改样式：核对正式路由、继承来源、局部差异、关键状态与 Mobile 转换。
-3. 根据审计结果确定首个成组实现批次和精准验证矩阵；R3 不新增重复 Pencil 画板。
-4. 若继承关系不成立或出现新壳层 / 响应式模型，停止扩张并重新裁决为 R1 / R2，先补设计边界再进入代码。
-5. 并行维护线继续保留三处既有 `DateTime.Now` baseline 与全仓卫生债务；不与 R3 页面批次混改，不推进 WebOS 新功能、Tauri 或 Flutter 机械追平。
+1. R2-A02 已提交并关闭；R3 正式路由、继承缺口与六个实施批次的代码事实审计已经完成。
+2. 当前只确认首批 `R3-P04 Public Forum 浏览族` 的文件级方案，不直接把全部 R3 路由机械改成一个大批次。
+3. 首批覆盖列表、分类、搜索、标签与 Question / Poll / Lottery；先隔离 browse 样式所有权，再按 PC 连续主轴和 Mobile 主任务优先落地。
+4. 保持 URL、来源返回、SEO、局部权威状态和业务字段；不新增 API、权限、Pencil 画板或万能 Public 抽象。继承不成立时停止并重新裁决 R1 / R2。
+5. 三处既有 `DateTime.Now` baseline 与全仓卫生债务继续独立维护；不推进 WebOS 新功能、Tauri 或 Flutter 机械追平。
 
 ## 当前执行入口
 
+- [R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)
 - [R2-A02 Author 列表、修订与 Forum Compose 正式实现及 Gateway 验收](/records/f4-r-r2-a02-author-list-revisions-forum-compose-implementation-2026-08-11)
 - [2026-08-10 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-10)
 - [开发路线图](/development-plan)

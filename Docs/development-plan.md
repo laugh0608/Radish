@@ -133,7 +133,7 @@ Radish V1 固定为：
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
-17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A / B、family-ui `v26.7.3` 基线补充、C-0、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)、`R1-F01`、六个 R1 与四个 R2 均已形成设计—实现—Gateway 运行态闭环。下一步进入 R3 路由继承实施分批审计：先按既有继承表核对正式路由、局部差异、关键状态和 Mobile 转换，再确定首个成组实现批次；继承不成立时重新裁决 R1 / R2，不复制 R3 Pencil 画板。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A / B、family-ui `v26.7.3` 基线补充、C-0、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)、`R1-F01`、六个 R1 与四个 R2 均已形成设计—实现—Gateway 运行态闭环。[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)已补齐正式路由、继承缺口、六个后续批次与停止线；下一步确认并实施首批 `R3-P04 Public Forum 浏览族`，继承不成立时重新裁决 R1 / R2，不复制 R3 Pencil 画板。
 18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层

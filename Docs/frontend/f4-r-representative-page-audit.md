@@ -115,11 +115,14 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 | Notifications、Me、Circle、Pet、Private Shop、Workbench | `R1-F01` + `R2-W02` | 业务卡片、指标、状态摘要和已有表单 |
 | Docs Mine / Revisions、Forum Compose | `R1-A01` + `R2-A02` | 列表操作、修订信息和 Forum 字段 |
 | Applications、Products、Users、Categories、Tags、Stickers、Coins | `R1-C01` | 字段、筛选、批量动作、详情内容和权限 |
-| Documents、Experience、Appeals | `R1-C01` + `R1-C02` | 资源表格、治理详情、事件或复核动作 |
+| Documents、Experience、Appeals、Channel Discoverability | `R1-C01` + `R1-C02` | 资源表格、治理详情、显隐事件或复核动作 |
 | Roles / Permissions、System Config、Settings、Profile | `R1-C01` + `R2-C03` | 表单分区、权限单元和危险确认 |
+| Console Dashboard | `R1-F01` + `R2-W02` + Console 壳层 | 主任务、紧凑指标、最近资源和辅助摘要 |
 | 登录、OIDC 回流、Not Found 等边界页 | `R1-F01` | 认证文案、错误原因和返回动作 |
 
 每个 R3 实现批次仍需写明代表来源、局部差异、关键状态与 mobile 转换。发现继承不成立时停止扩张并升级分级。
+
+`2026-08-11` 的[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)已按当前正式 Client / Console 路由补齐 Dashboard 与 Channel Discoverability，并确认 Settings / Profile、公开 Docs 详情与 Legal 尚未被前述 R2 批实际关闭。首批建议为 `R3-P04 Public Forum 浏览族`，只在实现边界确认后进入代码。
 
 ## 7. 本批不纳入代表设计
 
@@ -143,7 +146,7 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 10. `R2-P03` readiness、两批能力门禁、七轮结构反馈、商品评价补充设计、正式商品详情 / 公开主页和 Gateway PC / mobile 运行态验收均已完成，专题关闭。
 11. `R2-W02` readiness、五组前端能力门禁、三张局部代表板、六个正式入口实现与 Gateway PC / mobile 成组验收均已完成，专题关闭。
 12. `R2-A02` readiness、五组能力门禁、九张确认代表板、正式实现与 Gateway PC / Mobile 运行态验收均已完成，专题关闭。
-13. 六个 R1 与四个 R2 均已形成设计—实现—运行态闭环；下一步按 R3 继承表先做正式路由分批审计，再成组实现和真实截图复核。
+13. 六个 R1 与四个 R2 均已形成设计—实现—运行态闭环；R3 正式路由分批审计已完成，下一步确认并实施首批 `R3-P04`，完成真实 PC / Mobile 截图复核后再进入后续批次。
 14. R3 继承不成立或发现新结构 / 响应式模型时，必须停止扩张并按自动升级条件重新裁决 R1 / R2。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。
