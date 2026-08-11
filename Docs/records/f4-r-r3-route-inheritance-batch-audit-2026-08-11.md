@@ -1,7 +1,7 @@
 # F4-R R3 路由继承实施分批审计
 
 > 日期：2026-08-11
-> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；首批已关闭，进入第二批实施方案
+> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；前两批已关闭，下一顺位为 R3-P06 实施方案
 > 范围：正式 Client / Console Web 路由、R3 继承成立性、局部差异、关键状态、Mobile 转换与验证边界
 
 ## 1. 结论
@@ -10,7 +10,7 @@
 
 正式代码反查同时发现原继承表存在两个覆盖缺口：Console Dashboard 与后续新增的 Channel Discoverability 没有登记继承来源；Console Settings / Profile、公开 Docs 详情与 Legal 虽已登记，但没有被前述 R2 实现批实际关闭。上述页面已纳入新的后续批次，不以历史表述冒充完成。
 
-首个成组实现批次建议固定为 `R3-P04 Public Forum 浏览族`：覆盖 Forum 列表、分类、搜索、标签与问答 / 投票 / 抽奖类型流，继承 `R1-P01 + R2-P03`，不修改业务 API、权限、URL、SEO 契约、帖子详情或 Compose 状态机。该批只在方案确认后进入代码。
+`R3-P04 Public Forum 浏览族` 与 `R3-P05 Public Docs 与 Legal` 均已按继承结论完成正式实现和 Gateway 成组验收。下一顺位固定为 `R3-P06 Public Shop 浏览与 Leaderboard`：继承 `R1-P01 + R2-P03`，商品详情只做共享回归，先确认 CTA / 登录回流、榜单只读边界、颜色 token 与 Mobile 验收矩阵后再进入代码。
 
 ## 2. 正式路由事实
 
@@ -95,4 +95,4 @@
 
 ## 7. 下一步
 
-`R3-P04` 已按上述边界完成正式代码、静态回归与 Gateway PC / Mobile 成组验收，见 [Public Forum 浏览族实现记录](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)。下一步进入 `R3-P05 Public Docs 与 Legal` 实施方案：先反查并拆分超限 `PublicDocsApp.tsx` 的职责所有权，固定受保护资源、正文锚点、保留 slug、来源返回和公开 head 契约；方案确认前不修改正式运行时行为。
+`R3-P04` 与 `R3-P05` 均已完成正式代码、静态回归与 Gateway PC / Mobile 成组验收，分别见 [Public Forum 浏览族实现记录](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)和 [Public Docs 与 Legal 实现记录](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)。下一步先形成并确认 `R3-P06 Public Shop 浏览与 Leaderboard` 实施方案；继续保持商品详情只回归、Shop CTA / 登录回流和榜单只读边界，不新增 API、权限、业务字段或 Pencil 画板。

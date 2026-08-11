@@ -417,23 +417,27 @@ test('公开规则页应使用应用内滚动容器而不是依赖 body 滚动',
 });
 
 test('公开文档浏览和详情返回应提供公开链接并保留壳层导航拦截', () => {
-  const source = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const appSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const listSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsList.tsx'), 'utf8');
+  const searchSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsSearch.tsx'), 'utf8');
+  const detailSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsDetail.tsx'), 'utf8');
+  const supportSource = readFileSync(resolve(clientRoot, 'src/public/docs/publicDocsViewSupport.ts'), 'utf8');
   const stylesSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.module.css'), 'utf8');
 
-  assert.match(source, /buildDocsAuthorPath/);
-  assert.match(source, /canUseDocsAuthorTools/);
-  assert.match(source, /const authorHref = buildDocsAuthorPath\(\{ kind: 'mine' \}\);/);
-  assert.match(source, /href=\{authorHref\}/);
-  assert.match(source, /href=\{editHref\}/);
-  assert.match(source, /function handlePublicDocsLinkClick/);
-  assert.match(source, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicDocsPath\(fallbackBrowseRoute\);/);
-  assert.match(source, /href=\{searchHref\}/);
-  assert.match(source, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: row\.slug \}\);/);
-  assert.match(source, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: document\.voSlug \}\);/);
-  assert.match(source, /href=\{browseDirectoryHref\}/);
-  assert.match(source, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page - 1 \}\)\}/);
-  assert.match(source, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
-  assert.match(source, /href=\{backHref\}/);
+  assert.match(`${appSource}\n${listSource}\n${detailSource}`, /canUseDocsAuthorTools/);
+  assert.match(listSource, /const authorHref = buildDocsAuthorPath\(\{ kind: 'mine' \}\);/);
+  assert.match(listSource, /authorHref=\{authorHref\}/);
+  assert.match(detailSource, /href=\{editHref\}/);
+  assert.match(supportSource, /export function handlePublicDocsLinkClick/);
+  assert.match(appSource, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicDocsPath\(fallbackBrowseRoute\);/);
+  assert.match(listSource, /href=\{searchHref\}/);
+  assert.match(listSource, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: row\.slug \}\);/);
+  assert.match(listSource, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: document\.voSlug \}\);/);
+  assert.match(searchSource, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: document\.voSlug \}\);/);
+  assert.match(searchSource, /href=\{browseDirectoryHref\}/);
+  assert.match(searchSource, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page - 1 \}\)\}/);
+  assert.match(searchSource, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
+  assert.match(detailSource, /href=\{backHref\}/);
   assert.match(stylesSource, /\.directoryItem[\s\S]*text-decoration: none;/);
   assert.match(stylesSource, /\.docCard[\s\S]*text-decoration: none;/);
 });
@@ -600,7 +604,7 @@ test('公开壳层的 head DOM 写入应只由 lifecycle owner 调用 helper', (
 test('公开详情页应只提交 head 快照，不再直接写 DOM', () => {
   const detailSources = [
     'src/public/forum/usePublicForumPostHead.ts',
-    'src/public/docs/PublicDocsApp.tsx',
+    'src/public/docs/PublicDocsDetail.tsx',
     'src/public/profile/PublicProfileApp.tsx',
     'src/public/shop/PublicShopApp.tsx',
   ].map((path) => readFileSync(resolve(clientRoot, path), 'utf8'));
@@ -613,14 +617,15 @@ test('公开详情页应只提交 head 快照，不再直接写 DOM', () => {
 });
 
 test('Docs 与 Forum 详情应以 keyed remount 和实体身份校验形成 head 双保险', () => {
-  const docsSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const docsAppSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const docsDetailSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsDetail.tsx'), 'utf8');
   const forumAppSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
   const forumDetailSource = readFileSync(resolve(clientRoot, 'src/public/forum/usePublicForumPostHead.ts'), 'utf8');
 
-  assert.equal(docsSource.includes("key={`docs-${route.slug}-${route.anchor ?? 'root'}`}"), true);
-  assert.match(docsSource, /isCurrentDocsHeadSource\(route, documentDetail\)/);
-  assert.match(docsSource, /buildLocalizedPublicRouteHead\(\{ app: 'docs', route: canonicalRoute \}, t\)/);
-  assert.match(docsSource, /buildPublicDocsHeadSnapshot\(documentDetail, route\.anchor, \{/);
+  assert.equal(docsAppSource.includes("key={`docs-${route.slug}-${route.anchor ?? 'root'}`}"), true);
+  assert.match(docsDetailSource, /isCurrentDocsHeadSource\(route, documentDetail\)/);
+  assert.match(docsDetailSource, /buildLocalizedPublicRouteHead\(\{ app: 'docs', route: canonicalRoute \}, t\)/);
+  assert.match(docsDetailSource, /buildPublicDocsHeadSnapshot\(documentDetail, route\.anchor, \{/);
   assert.equal(
     forumAppSource.includes(
       "key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.answerPublicId ?? 'none'}-${route.intent ?? 'read'}`}"
@@ -667,7 +672,7 @@ test('公开用户承诺页应进入公共壳层并归属工作台入口', () =>
   const workbenchSource = readFileSync(resolve(clientRoot, 'src/workbench/WorkbenchApp.tsx'), 'utf8');
 
   assert.match(entryRouteSource, /isPublicLegalPathname\(pathname\)/);
-  assert.match(publicEntrySource, /parsePublicLegalRoute\(window\.location\.pathname\)/);
+  assert.match(publicEntrySource, /parsePublicLegalRoute\(window\.location\.pathname, window\.location\.hash\)/);
   assert.match(publicEntrySource, /<PublicCommitmentsApp/);
   assert.doesNotMatch(publicShellSource, /href: '\/legal'/);
   assert.match(webShellSource, /pathname === '\/legal'[\s\S]*return 'more';/);

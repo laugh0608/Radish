@@ -164,7 +164,7 @@ function parsePublicRoute(): PublicContentRouteDescriptor {
     };
   }
 
-  const legalRoute = parsePublicLegalRoute(window.location.pathname);
+  const legalRoute = parsePublicLegalRoute(window.location.pathname, window.location.hash);
   if (legalRoute) {
     return {
       app: 'legal',
@@ -630,7 +630,7 @@ export const PublicEntry = () => {
       onNavigateToShopProduct={(productId) => navigateToShopRoute({ kind: 'detail', productId })}
     />
   ) : route.app === 'legal' ? (
-    <PublicCommitmentsApp />
+    <PublicCommitmentsApp route={route.route} />
   ) : route.app === 'shop' ? (
     <PublicShopApp
       route={route.route}

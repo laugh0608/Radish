@@ -14,7 +14,7 @@ const optionsSource = readClientSource('docs/docsProtectedAttachments.ts');
 const authorSource = readClientSource('docs/DocsAuthorApp.tsx');
 const editorSource = readClientSource('docs/DocsAuthorEditorPage.tsx');
 const editorContextSource = readClientSource('docs/DocsAuthorEditorContext.tsx');
-const publicDocsSource = readClientSource('public/docs/PublicDocsApp.tsx');
+const publicDocsSource = readClientSource('public/docs/PublicDocsDetail.tsx');
 
 test('Docs 宿主通过统一 HTTP Blob 契约注入认证附件能力', () => {
   assert.match(optionsSource, /loadAttachmentAssetBlob/);

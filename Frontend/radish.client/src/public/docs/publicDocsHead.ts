@@ -31,6 +31,7 @@ export function buildPublicDocsHeadSnapshot(
       description: document.voSummary?.trim() || routeHead.description,
       canonicalPath,
       type: 'article',
+      indexable: true,
     },
     structuredData: buildDocsArticleStructuredData({
       document,

@@ -17,6 +17,7 @@ import {
   resolvePublicProfileUserId,
 } from '../src/public/forum/publicForumUtils.ts';
 import { buildPublicDocsHeadSnapshot } from '../src/public/docs/publicDocsHead.ts';
+import { buildPublicLegalPath, parsePublicLegalRoute } from '../src/public/legalRouteState.ts';
 import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.ts';
 import {
   resolveActivePublicHeadSnapshot,
@@ -75,6 +76,22 @@ test('buildPublicCanonicalUrl 应使用默认公开域名并移除锚点', () =>
     buildPublicCanonicalUrl('/docs/Guide#intro'),
     `${publicDefaultOrigin}/docs/Guide`
   );
+});
+
+test('Legal 路由应保留受控章节锚点并拒绝非法 fragment', () => {
+  const route = parsePublicLegalRoute('/legal', '#privacy');
+
+  assert.deepEqual(route, { kind: 'index', anchor: 'privacy' });
+  assert.equal(buildPublicLegalPath(route!), '/legal#privacy');
+  assert.deepEqual(parsePublicLegalRoute('/legal/', '#virtual-assets'), {
+    kind: 'index',
+    anchor: 'virtual-assets',
+  });
+  assert.deepEqual(parsePublicLegalRoute('/legal', '#%E0%A4%A'), {
+    kind: 'index',
+    anchor: undefined,
+  });
+  assert.equal(parsePublicLegalRoute('/docs', '#privacy'), null);
 });
 
 test('resolvePublicProfileUserId 应优先使用 User PublicId 并兼容 LongId', () => {
@@ -275,6 +292,8 @@ test('Docs 详情快照应复用中英文路由基线并保留默认中文契约
   const defaultSnapshot = buildPublicDocsHeadSnapshot(document, undefined);
 
   assert.equal(enSnapshot.head.title, '运行时文档原题 · Docs');
+  assert.equal(enRouteHead.indexable, false);
+  assert.equal(enSnapshot.head.indexable, true);
   assert.equal(
     enSnapshot.head.description,
     'Document detail reading focuses on the body, metadata, internal links, and stable return to the original public source. Editing and publishing stay in the author workspace.',

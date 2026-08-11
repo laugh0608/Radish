@@ -55,15 +55,6 @@
   gap: 10px;
 }
 
-.kicker {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--theme-brand-primary);
-}
-
 .pageTitle,
 .articleTitle {
   margin: 0;
@@ -192,76 +183,6 @@
   font-weight: 600;
 }
 
-.statusCard {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  padding: 24px;
-  border-radius: 24px;
-  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
-  background: color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%);
-}
-
-.statusCardCompact {
-  padding: 18px;
-  border-radius: 20px;
-}
-
-.statusCard[data-tone='error'],
-.statusCard[data-tone='notFound'] {
-  background: color-mix(in srgb, var(--theme-state-danger) 7%, var(--theme-surface-highlight) 93%);
-  border-color: color-mix(in srgb, var(--theme-state-danger) 18%, transparent);
-}
-
-.statusCard[data-tone='loading'] {
-  background: color-mix(in srgb, var(--theme-brand-soft) 42%, var(--theme-surface-highlight) 58%);
-  border-color: color-mix(in srgb, var(--theme-brand-primary) 16%, transparent);
-}
-
-.statusCard[data-tone='empty'] {
-  background: color-mix(in srgb, var(--theme-bg-muted) 82%, var(--theme-bg-surface) 18%);
-}
-
-.statusIcon {
-  width: 42px;
-  height: 42px;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 16px;
-  background: color-mix(in srgb, var(--theme-bg-surface) 56%, var(--theme-surface-highlight) 44%);
-  color: var(--theme-brand-primary);
-}
-
-.statusBody {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-width: 0;
-}
-
-.statusTitle {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1.35;
-}
-
-.statusDescription {
-  margin: 0;
-  color: var(--theme-text-secondary);
-  line-height: 1.75;
-  font-size: 14px;
-}
-
-.statusActions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  padding-top: 4px;
-}
-
 .primaryButton,
 .secondaryButton,
 .inlineTextButton,
@@ -340,12 +261,6 @@
   padding: 0;
 }
 
-.listLayout {
-  display: grid;
-  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
-  gap: 16px;
-}
-
 .docsIndexGrid,
 .docsSearchGrid,
 .docsArticleGrid {
@@ -356,7 +271,7 @@
 }
 
 .docsIndexGrid {
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px) minmax(260px, 300px);
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 320px);
 }
 
 .docsSearchGrid {
@@ -364,9 +279,10 @@
 }
 
 .docsArticleGrid {
-  grid-template-columns: minmax(0, 920px) minmax(320px, 1fr);
+  grid-template-columns: minmax(0, 920px) minmax(280px, 320px);
 }
 
+.indexMainColumn,
 .searchMainColumn,
 .articleMainColumn,
 .sideRail {
@@ -640,7 +556,6 @@
 }
 
 .docCardMeta,
-.articleMetaRail,
 .articleMetaValues {
   display: flex;
   flex-wrap: wrap;
@@ -802,10 +717,6 @@
 }
 
 @media (max-width: 840px) {
-  .listLayout {
-    grid-template-columns: 1fr;
-  }
-
   .articleMetaGrid {
     grid-template-columns: 1fr;
   }
@@ -825,6 +736,7 @@
   .docsIndexGrid,
   .docsSearchGrid,
   .docsArticleGrid,
+  .indexMainColumn,
   .searchMainColumn,
   .articleMainColumn,
   .sideRail {
@@ -866,24 +778,10 @@
 
   .pageIntro,
   .articleSummary,
-  .statusDescription,
   .docCardSummary {
     font-size: 13px;
   }
 
-  .statusCard {
-    padding: 14px;
-    gap: 12px;
-    border-radius: 20px;
-  }
-
-  .statusIcon {
-    width: 36px;
-    height: 36px;
-    border-radius: 13px;
-  }
-
-  .statusTitle,
   .panelTitle,
   .docCardTitle {
     font-size: 16px;

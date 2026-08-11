@@ -1,7 +1,8 @@
-import { useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PublicShellHeader } from '../components/PublicShellHeader';
 import { PrivacySafetyBoundaryPanel } from '../../privacy/PrivacySafetyBoundaryPanel';
+import type { PublicLegalRoute } from '../legalRouteState';
 import {
   publicCommitmentSections,
   publicCommitmentSummaries,
@@ -10,9 +11,26 @@ import {
 } from './publicCommitmentsData';
 import styles from './PublicCommitmentsApp.module.css';
 
-export function PublicCommitmentsApp() {
+interface PublicCommitmentsAppProps {
+  route: PublicLegalRoute;
+}
+
+export function PublicCommitmentsApp({ route }: PublicCommitmentsAppProps) {
   const { t } = useTranslation();
   const pageRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!route.anchor) {
+      return;
+    }
+
+    const target = globalThis.document.getElementById(route.anchor);
+    if (!target || !pageRef.current?.contains(target)) {
+      return;
+    }
+
+    target.scrollIntoView({ block: 'start' });
+  }, [route.anchor]);
 
   return (
     <div className={styles.page} ref={pageRef}>
@@ -33,17 +51,6 @@ export function PublicCommitmentsApp() {
             <p>{publicCommitmentsHero.description}</p>
           </div>
           <p className={styles.originalLanguageNote}>{t('legal.originalLanguageNote')}</p>
-          <div
-            className={styles.anchorRail}
-            aria-label={t('legal.sectionsLabel')}
-            lang={publicCommitmentsSourceLanguage}
-          >
-            {publicCommitmentSections.map((section) => (
-              <a key={section.id} href={`#${section.id}`}>
-                {section.title}
-              </a>
-            ))}
-          </div>
         </section>
 
         <section
@@ -61,6 +68,18 @@ export function PublicCommitmentsApp() {
         </section>
 
         <PrivacySafetyBoundaryPanel />
+
+        <nav
+          className={styles.anchorRail}
+          aria-label={t('legal.sectionsLabel')}
+          lang={publicCommitmentsSourceLanguage}
+        >
+          {publicCommitmentSections.map((section) => (
+            <a key={section.id} href={`#${section.id}`}>
+              {section.title}
+            </a>
+          ))}
+        </nav>
 
         <div className={styles.sectionList} lang={publicCommitmentsSourceLanguage}>
           {publicCommitmentSections.map((section) => (

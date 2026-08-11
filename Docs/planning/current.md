@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-P05 Public Docs 与 Legal 实施方案`
-- **产品下一顺位**：`先审计并拆分超限 PublicDocsApp.tsx 的职责所有权，冻结受保护资源、正文锚点、保留 slug、来源返回与公开 head 契约；方案确认后再实施`
+- **工程第一顺位**：`F4-R R3-P06 Public Shop 浏览与 Leaderboard 实施方案`
+- **产品下一顺位**：`先确认 Shop 首页 / products 与五类榜单的继承差异、CTA / 登录回流、只读边界、颜色 token 和 Mobile 验收矩阵，再进入正式实现；商品详情只做共享回归`
 - **复核日期**：`2026-08-11`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-11` 已完成并关闭 [R3-P05 Public Docs 与 Legal 正式实现及 Gateway 验收](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)：`PublicDocsApp.tsx` 从 `1554` 行拆为 `279` 行编排器和列表 / 搜索 / 详情真实所有者；列表、搜索、详情与 Legal 形成单一主阅读轴。Gateway 覆盖匿名与种子 Admin、PC `1920 × 1080`、Mobile `390 × 844`、双语 / 双主题、搜索历史、保留 slug / fragment 和身份读取；Admin 比匿名多读取一篇 Authenticated 草稿，作者回流通过。运行态修正 Legal fragment 往返 / 首次定位，以及非 Public Docs SEO 基线；Public canonical / JSON-LD 与非 Public `noindex` 边界通过，Client `545 / 545`，页面无横向溢出，稳定页签 `0 warning / 0 error`，服务与端口已清理。Baseline Quick 仍只被本批外既有三处 `DateTime.Now` 漂移拦截，下一步进入 `R3-P06` 实施方案。
 - `2026-08-11` 已完成并关闭 [R3-P04 Public Forum 浏览族正式实现与 Gateway 验收](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)：列表、分类、搜索、标签与 Question / Poll / Lottery 统一为 PC 连续结果主轴—从属阅读侧栏，Mobile 固定结果先于辅助信息并以横向筛选带避免页面溢出；browse 专属样式从详情 / Compose 所有权中隔离，原超限样式由 `1646` 行降至 `1185` 行。URL、来源返回、SEO、局部权威状态、类型字段 / 排序与 Compose 登录回流保持不变；运行态补正标签重复公开徽标、内部编码 slug 和不存在标签的重复标题。Client `539 / 539`、type-check、Lint、production build 与静态继承契约通过；Gateway 覆盖 PC `1440 × 900`、Mobile `390 × 844`、七类入口、双语 / 双主题、历史前进后退、自定义日期与不存在标签，无横向溢出，新开稳定标签页 `0 warning / 0 error`，服务已停止。下一步进入 `R3-P05 Public Docs 与 Legal` 实施方案。
 - `2026-08-11` 已完成 [R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)：现有 R3 继承方向总体成立，已关闭 R1 / R2 页面不重复迁移；补齐 Console Dashboard 与 Channel Discoverability 的继承来源，并确认 Settings / Profile、公开 Docs 详情与 Legal 尚未由前述 R2 实现关闭。后续拆为六个批次，首批固定为 `R3-P04 Public Forum 浏览族`；Forum browse 样式需先与已关闭的详情 / Compose 所有权隔离，保持 URL、SEO、局部权威状态与 Mobile 主任务优先，不新增 API、权限、业务字段或 Pencil 画板。
 - `2026-08-11` 已完成并关闭 [R2-A02 Author 列表、修订与 Forum Compose 正式实现及 Gateway 验收](/records/f4-r-r2-a02-author-list-revisions-forum-compose-implementation-2026-08-11)：Docs / Forum 共用双快照差异，默认 `vN-1 → vN`、可切选中版本到当前版本，PC 并排、Mobile unified；Docs Mine 收敛为权威筛选—连续列表—从属上下文；正式 `/forum/compose` 只挂载一个 Composer，PC `54dvh`、Mobile `72dvh` 并可原位全屏。Gateway 以种子管理员覆盖 PC `1440 × 900`、Mobile `390 × 844`、双语 / 代表主题、无横向溢出和干净标签 `0 warning / 0 error`；运行态修正 Mobile 选中文档行断点与 Composer 图标按钮可访问名称。Client `536 / 536`、type-check、Lint 与 production build 通过；既有三处 `DateTime.Now` baseline 和全仓卫生债务继续留在独立维护线。
@@ -159,15 +160,15 @@
 
 ## 今天事项（2026-08-11）
 
-1. R2-A02 已提交并关闭；R3 正式路由、继承缺口与六个实施批次的代码事实审计已经完成。
-2. 首批 `R3-P04 Public Forum 浏览族` 的代码与静态回归已完成：browse 样式所有权已隔离，四类浏览组件已统一 PC 连续主轴和 Mobile 主任务优先。
-3. 当前只等待服务启动授权；授权后按 Gateway PC `1440 × 900`、Mobile `390 × 844` 覆盖 Forum 七类浏览入口、双语 / 主题、URL 历史、无横向溢出与干净标签页。
-4. 继续保持 URL、来源返回、SEO、局部权威状态和业务字段；不新增 API、权限、Pencil 画板或万能 Public 抽象。
-5. 三处既有 `DateTime.Now` baseline 与全仓卫生债务继续独立维护；不推进 R3-P05、WebOS 新功能、Tauri 或 Flutter 机械追平。
+1. `R3-P04 Public Forum 浏览族` 与 `R3-P05 Public Docs 与 Legal` 均已完成正式实现、静态回归和 Gateway PC / Mobile 成组验收。
+2. P05 运行态关闭 Legal fragment 往返 / 首次定位和非 Public Docs SEO 基线三项缺口；匿名 / Admin 身份读取、作者回流、双语 / 主题和无横向溢出通过。
+3. 下一顺位进入 `R3-P06 Public Shop 浏览与 Leaderboard` 实施方案，先冻结 Shop CTA / 登录回流、榜单只读边界、奖牌颜色 token、Mobile 主任务顺序与验证矩阵。
+4. P06 不修改商品详情状态机，不新增 API、权限、业务字段、Pencil 画板或万能 Public 抽象；商品详情只共享回归。
+5. 三处既有 `DateTime.Now` baseline 与全仓卫生债务继续独立维护；不扩入 WebOS 新功能、Tauri 或 Flutter 机械追平。
 
 ## 当前执行入口
 
-- [R3-P04 Public Forum 浏览族正式实现与静态回归](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)
+- [R3-P05 Public Docs 与 Legal 正式实现及 Gateway 验收](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)
 - [R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)
 - [R2-A02 Author 列表、修订与 Forum Compose 正式实现及 Gateway 验收](/records/f4-r-r2-a02-author-list-revisions-forum-compose-implementation-2026-08-11)
 - [2026-08-10 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-10)

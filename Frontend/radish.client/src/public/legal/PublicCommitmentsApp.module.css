@@ -67,7 +67,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  margin-top: 6px;
+  min-width: 0;
 }
 
 .anchorRail a {
@@ -199,9 +199,17 @@
     font-size: 34px;
   }
 
+  .anchorRail {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+  }
+
   .anchorRail a {
-    width: 100%;
+    flex: 0 0 auto;
     justify-content: center;
+    white-space: nowrap;
   }
 
   .section {

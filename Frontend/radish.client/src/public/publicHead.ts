@@ -188,6 +188,7 @@ function buildDocsHead(route: PublicContentRouteDescriptor & { app: 'docs' }): P
         description: '阅读 Radish 公开文档，了解项目能力、使用方式与协作信息。',
         canonicalPath,
         type: 'article',
+        indexable: false,
       };
     }
 
@@ -196,6 +197,7 @@ function buildDocsHead(route: PublicContentRouteDescriptor & { app: 'docs' }): P
       description: `阅读 Radish 公开文档 ${route.route.slug}，了解项目能力、使用方式与协作信息。`,
       canonicalPath,
       type: 'article',
+      indexable: false,
     };
   }
 
