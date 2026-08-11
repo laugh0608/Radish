@@ -1,7 +1,7 @@
 # F4-R R3 路由继承实施分批审计
 
 > 日期：2026-08-11
-> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；前两批已关闭，下一顺位为 R3-P06 实施方案
+> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；前三批已关闭，下一顺位为 R3-C04 设计前审计
 > 范围：正式 Client / Console Web 路由、R3 继承成立性、局部差异、关键状态、Mobile 转换与验证边界
 
 ## 1. 结论
@@ -10,7 +10,7 @@
 
 正式代码反查同时发现原继承表存在两个覆盖缺口：Console Dashboard 与后续新增的 Channel Discoverability 没有登记继承来源；Console Settings / Profile、公开 Docs 详情与 Legal 虽已登记，但没有被前述 R2 实现批实际关闭。上述页面已纳入新的后续批次，不以历史表述冒充完成。
 
-`R3-P04 Public Forum 浏览族` 与 `R3-P05 Public Docs 与 Legal` 均已按继承结论完成正式实现和 Gateway 成组验收。下一顺位固定为 `R3-P06 Public Shop 浏览与 Leaderboard`：继承 `R1-P01 + R2-P03`，商品详情只做共享回归，先确认 CTA / 登录回流、榜单只读边界、颜色 token 与 Mobile 验收矩阵后再进入代码。
+`R3-P04 Public Forum 浏览族`、`R3-P05 Public Docs 与 Legal` 与 `R3-P06 Public Shop 浏览与 Leaderboard` 均已按继承结论完成正式实现和 Gateway 成组验收。下一顺位固定为 `R3-C04 Console 普通资源`：先按七类资源的读写风险、页面所有权和 Mobile 转换拆批，再形成实施方案，不复制七套状态机。
 
 ## 2. 正式路由事实
 
@@ -95,4 +95,4 @@
 
 ## 7. 下一步
 
-`R3-P04` 与 `R3-P05` 均已完成正式代码、静态回归与 Gateway PC / Mobile 成组验收，分别见 [Public Forum 浏览族实现记录](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)和 [Public Docs 与 Legal 实现记录](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)。下一步先形成并确认 `R3-P06 Public Shop 浏览与 Leaderboard` 实施方案；继续保持商品详情只回归、Shop CTA / 登录回流和榜单只读边界，不新增 API、权限、业务字段或 Pencil 画板。
+`R3-P04`、`R3-P05` 与 `R3-P06` 均已完成正式代码、静态回归与 Gateway PC / Mobile 成组验收，分别见 [Public Forum 浏览族实现记录](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)、[Public Docs 与 Legal 实现记录](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)和 [Public Shop 浏览与 Leaderboard 实现记录](/records/f4-r-r3-p06-public-shop-leaderboard-implementation-2026-08-11)。下一步进入 `R3-C04 Console 普通资源` 设计前代码事实与风险拆批审计；先核对七类资源页面与 Mobile 边界，再提交实施方案。

@@ -31,6 +31,21 @@ const publicDetailGuideItems = [
   },
 ] as const;
 
+const publicBrowseGuideItems = [
+  {
+    labelKey: 'shop.public.guideBrowseLabel',
+    valueKey: 'shop.public.guideBrowseValue',
+  },
+  {
+    labelKey: 'shop.public.guideNextLabel',
+    valueKey: 'shop.public.guideNextValue',
+  },
+  {
+    labelKey: 'shop.public.guideBoundaryLabel',
+    valueKey: 'shop.public.guideBoundaryValue',
+  },
+] as const;
+
 interface PublicShopHomeViewProps {
   categories: ProductCategory[];
   featuredProducts: ProductListItem[];
@@ -339,40 +354,14 @@ function CategoryPills({
 }
 
 function PublicShopBrowseRail({
-  categoriesCount,
-  productCount,
   loggedIn
 }: {
-  categoriesCount: number;
-  productCount: number;
   loggedIn: boolean;
 }) {
   const { t } = useTranslation();
 
   return (
     <aside className={styles.shopRail} aria-label={t('shop.public.railLabel')}>
-      <section className={styles.railPanel}>
-        <div className={styles.railPanelHeader}>
-          <span className={styles.railIcon}>
-            <Icon icon="mdi:shopping-outline" size={18} />
-          </span>
-          <div>
-            <h2 className={styles.railTitle}>{t('shop.public.railBrowseTitle')}</h2>
-            <p className={styles.railText}>{t('shop.public.railBrowseDescription')}</p>
-          </div>
-        </div>
-        <div className={styles.railStatGrid}>
-          <span className={styles.railStat}>
-            <strong>{categoriesCount}</strong>
-            <span>{t('shop.public.railCategoryStat')}</span>
-          </span>
-          <span className={styles.railStat}>
-            <strong>{productCount}</strong>
-            <span>{t('shop.public.railProductStat')}</span>
-          </span>
-        </div>
-      </section>
-
       <section className={styles.railPanel}>
         <div className={styles.railPanelHeader}>
           <span className={styles.railIcon}>
@@ -387,17 +376,12 @@ function PublicShopBrowseRail({
         </div>
       </section>
 
-      <section className={styles.railPanel}>
-        <div className={styles.railPanelHeader}>
-          <span className={styles.railIcon}>
-            <Icon icon="mdi:shield-account-outline" size={18} />
-          </span>
-          <div>
-            <h2 className={styles.railTitle}>{t('shop.public.railPrivateTitle')}</h2>
-            <p className={styles.railText}>{t('shop.public.railPrivateDescription')}</p>
-          </div>
-        </div>
-      </section>
+      <PublicReadingGuide
+        label={t('shop.public.guideKicker')}
+        title={t('shop.public.guideTitle')}
+        description={t('shop.public.guideDescription')}
+        items={toGuideItems(t, publicBrowseGuideItems)}
+      />
     </aside>
   );
 }
@@ -512,8 +496,6 @@ export function PublicShopHomeView({
       </div>
 
       <PublicShopBrowseRail
-        categoriesCount={categories.length}
-        productCount={featuredProducts.length}
         loggedIn={loggedIn}
       />
     </div>
@@ -660,8 +642,6 @@ export function PublicShopProductsView({
       </div>
 
       <PublicShopBrowseRail
-        categoriesCount={categories.length}
-        productCount={products.length}
         loggedIn={loggedIn}
       />
     </div>

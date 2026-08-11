@@ -975,15 +975,6 @@ export const PublicShopApp = ({
               <h1 className={styles.pageTitle}>{pageTitle}</h1>
               <p className={styles.pageIntro}>{t('shop.public.pageIntro')}</p>
             </div>
-            <div className={styles.sectionActions}>
-              <a
-                className={styles.ghostButton}
-                href={buildPublicShopPath(createDefaultPublicShopProductsRoute())}
-                onClick={(event) => handlePublicShopLinkClick(event, () => onNavigate(createDefaultPublicShopProductsRoute()))}
-              >
-                {t('shop.public.browseProducts')}
-              </a>
-            </div>
           </div>
 
           <div className={styles.contentWrap}>

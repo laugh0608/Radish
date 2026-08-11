@@ -47,6 +47,9 @@
   --theme-state-danger: var(--rd-state-danger);
   --theme-state-info: var(--rd-state-info);
   --theme-state-warning: var(--rd-state-warning);
+  --theme-rank-first-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-state-warning) 38%, var(--theme-bg-surface) 62%), color-mix(in srgb, var(--theme-accent-earth) 38%, var(--theme-brand-soft) 62%));
+  --theme-rank-second-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-muted) 70%, var(--theme-bg-surface) 30%), color-mix(in srgb, var(--theme-surface-highlight) 62%, var(--theme-bg-surface) 38%));
+  --theme-rank-third-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-accent-earth) 32%, var(--theme-bg-surface) 68%), color-mix(in srgb, var(--theme-state-warning) 24%, var(--theme-brand-soft) 76%));
   --theme-shadow-soft: var(--rd-shadow-soft);
   --theme-shadow-strong: 0 28px 60px rgba(91, 66, 44, 0.18);
   --theme-pattern-line: var(--rd-pattern-line);
@@ -163,6 +166,9 @@
   --rd-state-info-soft: rgba(77, 106, 128, 0.12);
   --rd-state-warning: #aa761f;
   --rd-state-warning-soft: rgba(170, 118, 31, 0.14);
+  --theme-rank-first-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-state-warning) 34%, var(--theme-bg-surface) 66%), color-mix(in srgb, var(--theme-accent-earth) 30%, var(--theme-bg-surface) 70%));
+  --theme-rank-second-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-muted) 78%, var(--theme-bg-surface) 22%), color-mix(in srgb, var(--theme-surface-highlight) 58%, var(--theme-bg-surface) 42%));
+  --theme-rank-third-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-accent-earth) 26%, var(--theme-bg-surface) 74%), color-mix(in srgb, var(--theme-state-warning) 20%, var(--theme-bg-muted) 80%));
   --rd-shadow-soft: 0 16px 40px rgba(51, 72, 84, 0.12);
   --theme-shadow-strong: 0 28px 60px rgba(51, 72, 84, 0.16);
   --rd-pattern-line: rgba(84, 108, 122, 0.12);
@@ -233,6 +239,9 @@
   --rd-state-info-soft: rgba(139, 185, 202, 0.16);
   --rd-state-warning: #d5a95f;
   --rd-state-warning-soft: rgba(213, 169, 95, 0.18);
+  --theme-rank-first-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-state-warning) 32%, var(--theme-bg-muted) 68%), color-mix(in srgb, var(--theme-accent-earth) 36%, var(--theme-bg-surface) 64%));
+  --theme-rank-second-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-accent-ink) 20%, var(--theme-bg-muted) 80%), color-mix(in srgb, var(--theme-surface-highlight) 52%, var(--theme-bg-surface) 48%));
+  --theme-rank-third-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-accent-earth) 34%, var(--theme-bg-muted) 66%), color-mix(in srgb, var(--theme-state-warning) 22%, var(--theme-bg-surface) 78%));
   --rd-shadow-soft: 0 16px 40px rgba(0, 0, 0, 0.28);
   --theme-shadow-strong: 0 28px 64px rgba(0, 0, 0, 0.4);
   --rd-pattern-line: rgba(139, 185, 202, 0.13);
@@ -298,6 +307,9 @@
   --rd-state-info-soft: rgba(89, 111, 136, 0.12);
   --rd-state-warning: #ad7628;
   --rd-state-warning-soft: rgba(173, 118, 40, 0.14);
+  --theme-rank-first-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-state-warning) 30%, var(--theme-bg-surface) 70%), color-mix(in srgb, var(--theme-accent-earth) 26%, var(--theme-brand-soft) 74%));
+  --theme-rank-second-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%), color-mix(in srgb, var(--theme-surface-highlight) 60%, var(--theme-bg-surface) 40%));
+  --theme-rank-third-surface: linear-gradient(135deg, color-mix(in srgb, var(--theme-accent-earth) 28%, var(--theme-bg-surface) 72%), color-mix(in srgb, var(--theme-brand-primary) 14%, var(--theme-bg-muted) 86%));
   --rd-shadow-soft: 0 16px 40px rgba(128, 67, 88, 0.12);
   --theme-shadow-strong: 0 28px 60px rgba(128, 67, 88, 0.18);
   --rd-pattern-line: rgba(184, 79, 114, 0.13);
