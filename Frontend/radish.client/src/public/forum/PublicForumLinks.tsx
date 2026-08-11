@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { buildPublicForumPath, type PublicForumRoute } from '../forumRouteState';
 import { handlePublicForumLinkClick } from './publicForumLinkHandlers';
-import styles from './PublicForumApp.module.css';
+import { publicForumBrowseStyles as styles } from './publicForumBrowseStyles';
 
 interface PublicForumRouteLinkProps {
   className: string;

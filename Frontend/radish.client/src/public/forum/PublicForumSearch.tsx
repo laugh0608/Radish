@@ -31,7 +31,7 @@ import {
 } from './publicForumUtils';
 import { resolvePublicForumReadSectionState } from './publicForumViewState';
 import { PublicStatusCard } from './PublicStatusCard';
-import styles from './PublicForumApp.module.css';
+import { publicForumBrowseStyles as styles } from './publicForumBrowseStyles';
 
 interface PublicForumSearchProps {
   routeState: PublicForumSearchRoute;
@@ -315,10 +315,10 @@ export const PublicForumSearch = ({
   });
 
   return (
-    <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
-      <div className={styles.sectionHeader}>
+    <div className={styles.forumGrid} data-public-forum-browse="search">
+      <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
+        <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
             <PublicForumRouteLink
               className={styles.backButton}
@@ -455,9 +455,9 @@ export const PublicForumSearch = ({
             </div>
           )}
         </div>
-      </div>
+        </div>
 
-      <div className={styles.postList}>
+        <div className={styles.postList}>
         {listState === 'loading' ? (
           <PublicStatusCard
             tone="loading"
@@ -511,25 +511,28 @@ export const PublicForumSearch = ({
             );
           })
         )}
-      </div>
+        </div>
 
-      {totalPages > 1 && (
-        <PublicForumPagination
-          currentPage={currentPage}
-          totalPages={totalPages}
-          visiblePages={visiblePages}
-          buildRoute={(page) => buildSearchRoute(page)}
-          onPageChange={setCurrentPage}
+        {totalPages > 1 && (
+          <PublicForumPagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            visiblePages={visiblePages}
+            buildRoute={(page) => buildSearchRoute(page)}
+            onPageChange={setCurrentPage}
+          />
+        )}
+      </section>
+
+      <aside className={styles.forumSideRail} aria-label={readingGuide.title}>
+        <PublicReadingGuide
+          className={styles.sideReadingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
         />
-      )}
-
-      <PublicReadingGuide
-        className={styles.readingGuide}
-        label={readingGuide.label}
-        title={readingGuide.title}
-        description={readingGuide.description}
-        items={readingGuide.items}
-      />
-    </section>
+      </aside>
+    </div>
   );
 };

@@ -39,18 +39,18 @@ test('公开标签页应独立加载相关主题并保留帖子列表失败边�
   assert.match(source, /indexable: false/);
 });
 
-test('相关主题样式应支持移动换行、键盘焦点和主题语义 token', () => {
-  const styleSource = readClientSource('src/public/forum/PublicForumApp.module.css');
+test('相关主题样式应支持移动横向筛选、键盘焦点和主题语义 token', () => {
+  const styleSource = readClientSource('src/public/forum/PublicForumBrowse.module.css');
   const relatedStyleStart = styleSource.indexOf('.relatedTagSection');
-  const relatedStyleEnd = styleSource.indexOf('.composeWorkspace', relatedStyleStart);
+  const relatedStyleEnd = styleSource.indexOf('.postList', relatedStyleStart);
   const relatedStyleSource = styleSource.slice(relatedStyleStart, relatedStyleEnd);
 
   assert.ok(relatedStyleStart >= 0);
   assert.match(relatedStyleSource, /flex-wrap: wrap/);
-  assert.match(relatedStyleSource, /\.relatedTagLink:focus-visible/);
+  assert.match(styleSource, /\.relatedTagLink:focus-visible/);
   assert.match(relatedStyleSource, /var\(--theme-/);
   assert.doesNotMatch(relatedStyleSource, /#[0-9a-fA-F]{3,8}\b/);
-  assert.match(styleSource, /@media \(max-width: 720px\)[\s\S]*\.relatedTagSection/);
+  assert.match(styleSource, /@media \(max-width: 720px\)[\s\S]*\.relatedTagList \{[\s\S]*flex-wrap: nowrap;[\s\S]*overflow-x: auto;/);
 });
 
 test('相关主题的中英文状态文案应保持成对资源', () => {

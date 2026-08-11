@@ -35,7 +35,7 @@ import {
 import {
   resolvePublicForumReadSectionState,
 } from './publicForumViewState';
-import styles from './PublicForumApp.module.css';
+import { publicForumBrowseStyles as styles } from './publicForumBrowseStyles';
 
 interface PublicForumTypeFeedProps {
   routeState: PublicForumTypeRoute;
@@ -293,10 +293,10 @@ export const PublicForumTypeFeed = ({
   });
 
   return (
-    <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
-      <div className={styles.sectionHeader}>
+    <div className={styles.forumGrid} data-public-forum-browse={routeState.kind}>
+      <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
+        <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
             <PublicForumRouteLink
               className={styles.backButton}
@@ -350,7 +350,7 @@ export const PublicForumTypeFeed = ({
           </div>
         </div>
 
-      </div>
+        </div>
 
       <div className={styles.postList}>
         {listState === 'loading' ? (
@@ -412,13 +412,17 @@ export const PublicForumTypeFeed = ({
         />
       )}
 
-      <PublicReadingGuide
-        className={styles.readingGuide}
-        label={readingGuide.label}
-        title={readingGuide.title}
-        description={readingGuide.description}
-        items={readingGuide.items}
-      />
-    </section>
+      </section>
+
+      <aside className={styles.forumSideRail} aria-label={readingGuide.title}>
+        <PublicReadingGuide
+          className={styles.sideReadingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
+      </aside>
+    </div>
   );
 };

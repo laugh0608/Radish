@@ -40,7 +40,7 @@ import {
   resolvePublicForumTagLoadState,
 } from './publicForumViewState';
 import { PublicStatusCard } from './PublicStatusCard';
-import styles from './PublicForumApp.module.css';
+import { publicForumBrowseStyles as styles } from './publicForumBrowseStyles';
 
 interface PublicForumTagProps {
   routeState: PublicForumTagRoute;
@@ -321,12 +321,9 @@ export const PublicForumTag = ({
     tagError,
     tagNotFound
   });
-  const pageTitle = selectedTag?.voName
-    || (tagState.kind === 'notFound' ? t('forum.public.tagUnavailableTitle') : t('forum.public.tagTitle'));
+  const pageTitle = selectedTag?.voName || t('forum.public.tagTitle');
   const pageIntro = selectedTag?.voDescription?.trim()
-    || (tagState.kind === 'notFound'
-      ? t('forum.public.tagUnavailableDescription')
-      : t('forum.public.tagDescriptionFallback'));
+    || t('forum.public.tagDescriptionFallback');
   const publicHeadSnapshot = useMemo(() => {
     if (
       !selectedTag
@@ -385,10 +382,10 @@ export const PublicForumTag = ({
   });
 
   return (
-    <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
-      <div className={styles.sectionHeader}>
+    <div className={styles.forumGrid} data-public-forum-browse="tag">
+      <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
+        <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>
-          <p className={styles.kicker}>{t('forum.public.guide.label')}</p>
           <div className={styles.searchTopbar}>
             <PublicForumRouteLink
               className={styles.backButton}
@@ -405,12 +402,8 @@ export const PublicForumTag = ({
           {selectedTag && (
             <div className={styles.categorySpotlight}>
               <div className={styles.categoryMetaRail}>
-                <span className={styles.readOnlyBadge}>{t('forum.public.readOnlyBadge')}</span>
                 {tagPostCount && (
                   <span className={styles.detailMetaChip}>{tagPostCount}</span>
-                )}
-                {selectedTag.voSlug && (
-                  <span className={styles.detailMetaChip}>#{selectedTag.voSlug}</span>
                 )}
                 {selectedTag.voIsFixed && (
                   <span className={styles.detailMetaChip}>{t('forum.public.tagFixedBadge')}</span>
@@ -460,7 +453,7 @@ export const PublicForumTag = ({
           </div>
         </div>
 
-      </div>
+        </div>
 
       {tagState.kind === 'error' && selectedTag && (
         <div className={styles.inlineNotice} data-tone="warning">
@@ -618,13 +611,17 @@ export const PublicForumTag = ({
         />
       )}
 
-      <PublicReadingGuide
-        className={styles.readingGuide}
-        label={readingGuide.label}
-        title={readingGuide.title}
-        description={readingGuide.description}
-        items={readingGuide.items}
-      />
-    </section>
+      </section>
+
+      <aside className={styles.forumSideRail} aria-label={readingGuide.title}>
+        <PublicReadingGuide
+          className={styles.sideReadingGuide}
+          label={readingGuide.label}
+          title={readingGuide.title}
+          description={readingGuide.description}
+          items={readingGuide.items}
+        />
+      </aside>
+    </div>
   );
 };
