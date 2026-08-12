@@ -172,24 +172,20 @@ public class AccountControllerTest
         const string password = "test123456";
         var hashedPassword = PasswordHasher.HashPassword(password);
 
-        var userVo = new UserVo
-        {
-            Uuid = 1,
-            VoDisplayName = "Tester",
-            VoDisplayHandle = "Tester#1000",
-            VoUserEmail = email,
-            VoLoginPassword = hashedPassword,
-            VoTenantId = 0,
-            VoIsDeleted = false,
-            VoIsEnable = true
-        };
+        var credential = new UserCredentialSnapshot(
+            1,
+            "Tester",
+            "Tester#1000",
+            email,
+            hashedPassword,
+            0);
 
         userServiceMock
-            .Setup(s => s.GetEnabledUserByEmailAsync(email))
-            .ReturnsAsync(userVo);
+            .Setup(s => s.GetEnabledUserCredentialByEmailAsync(email))
+            .ReturnsAsync(credential);
 
         userServiceMock
-            .Setup(s => s.GetUserRoleNamesAsync(userVo.Uuid))
+            .Setup(s => s.GetUserRoleNamesAsync(credential.UserId))
             .ReturnsAsync(new List<string> { "Admin" });
 
         var errorsLocalizer = CreateErrorsLocalizer();
@@ -217,7 +213,7 @@ public class AccountControllerTest
         applicationManager.Setup(m => m.FindByClientIdAsync(It.IsAny<string>(), default)).ReturnsAsync((object?)null);
         var coinService = new Mock<ICoinService>();
         coinService
-            .Setup(service => service.GrantRegistrationRewardAsync(userVo.Uuid))
+            .Setup(service => service.GrantRegistrationRewardAsync(credential.UserId))
             .ReturnsAsync("TXN_REGISTER_1");
 
         var controller = new AccountController(
@@ -260,7 +256,7 @@ public class AccountControllerTest
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.NameIdentifier);
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Name);
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Role);
-        coinService.Verify(service => service.GrantRegistrationRewardAsync(userVo.Uuid), Times.Once);
+        coinService.Verify(service => service.GrantRegistrationRewardAsync(credential.UserId), Times.Once);
     }
 
     private static ISystemSettingProvider CreateSystemSettingProvider(

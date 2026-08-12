@@ -206,7 +206,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
-同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。六个 R1 与四个 R2 的代表类型已经形成闭环；R3 的 `P04 Forum / P05 Docs 与 Legal / P06 Shop 与 Leaderboard` 已按继承规则实现并通过 Gateway，普通 Console 资源完成风险拆批审计和 `C04-A Categories / Tags` 静态门禁，下一步为 `R3-C04-B Users`。
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。六个 R1 与四个 R2 的代表类型已经形成闭环；R3 的 `P04 Forum / P05 Docs 与 Legal / P06 Shop 与 Leaderboard` 已按继承规则实现并通过 Gateway，普通 Console 资源完成风险拆批审计、`C04-A Categories / Tags` 与 `C04-B Users` 静态门禁，下一步为 `R3-C04-C Applications`。
 
 ### 9.2 设计源
 

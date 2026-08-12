@@ -2,7 +2,7 @@
 
 > 日期：2026-08-11（Asia/Shanghai）
 >
-> 状态：七类普通资源的代码事实、风险、页面所有权、共享壳层、Mobile 转换和实施拆批已确认；R3-C04-A 已完成代码与静态门禁
+> 状态：七类普通资源的代码事实、风险、页面所有权、共享壳层、Mobile 转换和实施拆批已确认；R3-C04-A / B 已完成代码与静态门禁
 >
 > 范围：Applications、Products、Users、Categories、Tags、Stickers、Coins；本记录不修改 Pencil，不把七类资源压成一套 CRUD 状态机
 
@@ -24,7 +24,8 @@ R3-C04 继续继承 `R1-C01` 的高密度资源表面、紧凑筛选、按需详
 ## 实施进度
 
 - `R3-C04-A` 已按本审计落地，详见 [Categories / Tags 与共享响应式资源表面实现记录](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)。
-- 当前顺位进入 `R3-C04-B Users`；其余四批仍严格保持本记录的既定顺序和停止线。
+- `R3-C04-B` 已按本审计落地，详见 [Users 权威列表与聚合详情实现记录](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)。
+- 当前顺位进入 `R3-C04-C Applications`；其余三批仍严格保持本记录的既定顺序和停止线。
 
 ## 代码事实与风险
 

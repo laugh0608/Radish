@@ -126,7 +126,7 @@ public class AccountController : Controller
 
         // 1. 查询用户（单用户精确查询，避免列表物化）
         var userQueryStopwatch = Stopwatch.StartNew();
-        var user = await _userService.GetEnabledUserByEmailAsync(normalizedEmail);
+        var user = await _userService.GetEnabledUserCredentialByEmailAsync(normalizedEmail);
         Log.Information(
             "[Account/Login] 用户查询完成，邮箱: {Email}, 结果数: {UserCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
             logEmail,
@@ -146,7 +146,7 @@ public class AccountController : Controller
 
         // 2. 使用 Argon2id 验证密码
         var passwordVerifyStopwatch = Stopwatch.StartNew();
-        var isPasswordValid = PasswordHasher.VerifyPassword(password, user.VoLoginPassword);
+        var isPasswordValid = PasswordHasher.VerifyPassword(password, user.PasswordHash);
         Log.Information(
             "[Account/Login] 密码校验完成，邮箱: {Email}, 结果: {IsValid}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
             logEmail,
@@ -160,14 +160,14 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, normalizedEmail));
         }
 
-        await _coinService.GrantRegistrationRewardAsync(user.Uuid);
+        await _coinService.GrantRegistrationRewardAsync(user.UserId);
 
         // 3. 密码验证成功，生成会话
-        var userId = user.Uuid.ToString();
-        var tenantId = user.VoTenantId.ToString();
+        var userId = user.UserId.ToString();
+        var tenantId = user.TenantId.ToString();
 
         var roleQueryStopwatch = Stopwatch.StartNew();
-        var roleNames = await _userService.GetUserRoleNamesAsync(user.Uuid);
+        var roleNames = await _userService.GetUserRoleNamesAsync(user.UserId);
         Log.Information(
             "[Account/Login] 角色查询完成，邮箱: {Email}, 角色数: {RoleCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
             logEmail,
@@ -175,12 +175,8 @@ public class AccountController : Controller
             roleQueryStopwatch.ElapsedMilliseconds,
             totalStopwatch.ElapsedMilliseconds);
 
-        var displayName = string.IsNullOrWhiteSpace(user.VoDisplayName)
-            ? Radish.Model.User.NormalizeDisplayName(user.VoUserName, user.Uuid)
-            : user.VoDisplayName.Trim();
-        var displayHandle = string.IsNullOrWhiteSpace(user.VoDisplayHandle)
-            ? displayName
-            : user.VoDisplayHandle.Trim();
+        var displayName = user.DisplayName;
+        var displayHandle = user.DisplayHandle;
 
         var claims = new List<Claim>
         {
@@ -194,10 +190,10 @@ public class AccountController : Controller
         };
 
         // Email claim (如果存在)
-        if (!string.IsNullOrWhiteSpace(user.VoUserEmail))
+        if (!string.IsNullOrWhiteSpace(user.Email))
         {
-            claims.Add(new Claim(ClaimTypes.Email, user.VoUserEmail));
-            claims.Add(new Claim(OpenIddictConstants.Claims.Email, user.VoUserEmail));
+            claims.Add(new Claim(ClaimTypes.Email, user.Email));
+            claims.Add(new Claim(OpenIddictConstants.Claims.Email, user.Email));
         }
 
         // 角色 claims

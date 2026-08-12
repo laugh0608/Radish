@@ -21,23 +21,18 @@ public class UserService : BaseService<User, UserVo>, IUserService
     private const int PublicIndexAllocationMaxAttempts = 5;
     private readonly IBaseRepository<User> _userBaseRepository;
     private readonly IUserRepository _userRepository;
-    private readonly IBaseRepository<Role> _roleRepository;
-    private readonly IBaseRepository<UserRole> _userRoleRepository;
     private readonly IBaseRepository<UserDisplayNameChangeRecord> _displayNameChangeRecordRepository;
     private readonly IConsoleAuthorizationService _consoleAuthorizationService;
     private readonly ISystemSettingProvider _systemSettingProvider;
 
     public UserService(IMapper mapper,
-        IBaseRepository<User> baseRepository, IUserRepository userRepository, IBaseRepository<Role> roleRepository,
-        IBaseRepository<UserRole> userRoleRepository,
+        IBaseRepository<User> baseRepository, IUserRepository userRepository,
         IBaseRepository<UserDisplayNameChangeRecord> displayNameChangeRecordRepository,
         IConsoleAuthorizationService consoleAuthorizationService,
         ISystemSettingProvider systemSettingProvider) : base(mapper, baseRepository)
     {
         _userBaseRepository = baseRepository;
         _userRepository = userRepository;
-        _roleRepository = roleRepository;
-        _userRoleRepository = userRoleRepository;
         _displayNameChangeRecordRepository = displayNameChangeRecordRepository;
         _consoleAuthorizationService = consoleAuthorizationService;
         _systemSettingProvider = systemSettingProvider;
@@ -86,8 +81,8 @@ public class UserService : BaseService<User, UserVo>, IUserService
     /// 根据邮箱获取可登录用户
     /// </summary>
     /// <param name="email">电子邮箱</param>
-    /// <returns>用户视图模型</returns>
-    public async Task<UserVo?> GetEnabledUserByEmailAsync(string email)
+    /// <returns>内部凭据快照</returns>
+    public async Task<UserCredentialSnapshot?> GetEnabledUserCredentialByEmailAsync(string email)
     {
         if (string.IsNullOrWhiteSpace(email))
         {
@@ -96,11 +91,93 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
         var rawEmail = email.Trim();
         var normalizedEmail = rawEmail.ToLowerInvariant();
-        return await QueryFirstAsync(u =>
+        var user = await _userBaseRepository.QueryFirstAsync(u =>
             (u.UserEmail == rawEmail ||
              u.UserEmail == normalizedEmail) &&
             u.IsDeleted == false &&
             u.IsEnable);
+        return user == null
+            ? null
+            : new UserCredentialSnapshot(
+                user.Id,
+                User.NormalizeDisplayName(user.UserName, user.Id),
+                User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id) ??
+                User.NormalizeDisplayName(user.UserName, user.Id),
+                user.UserEmail,
+                user.LoginPassword,
+                user.TenantId);
+    }
+
+    public async Task<(List<UserVo> Data, int Total)> GetConsoleUserPageAsync(ConsoleUserListQueryDto query)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        var pageIndex = query.PageIndex < 1 ? 1 : query.PageIndex;
+        var pageSize = query.PageSize <= 0 ? 20 : Math.Min(query.PageSize, 100);
+        var keyword = query.Keyword?.Trim() ?? string.Empty;
+        var roleName = query.RoleName?.Trim() ?? string.Empty;
+        var result = await _userRepository.QueryConsolePageAsync(new ConsoleUserPageQuery(
+            pageIndex,
+            pageSize,
+            keyword,
+            query.IsEnabled,
+            roleName));
+        var users = Mapper.Map<List<UserVo>>(result.Items);
+        await FillRoleNamesAsync(users);
+        return (users, result.Total);
+    }
+
+    public async Task<UserVo?> GetConsoleUserDetailAsync(long userId)
+    {
+        if (userId <= 0)
+        {
+            return null;
+        }
+
+        var user = await _userBaseRepository.QueryFirstAsync(candidate =>
+            candidate.Id == userId && !candidate.IsDeleted);
+        if (user == null)
+        {
+            return null;
+        }
+
+        var userVo = Mapper.Map<UserVo>(user);
+        await FillRoleNamesAsync([userVo]);
+        return userVo;
+    }
+
+    public async Task<ConsoleUserAuthorizationVo?> GetConsoleUserAuthorizationAsync(long userId)
+    {
+        var user = await _userBaseRepository.QueryFirstAsync(candidate =>
+            candidate.Id == userId && !candidate.IsDeleted);
+        if (user == null)
+        {
+            return null;
+        }
+
+        var roleNames = await GetUserRoleNamesAsync(userId);
+        return new ConsoleUserAuthorizationVo
+        {
+            VoUserId = userId,
+            VoRoleNames = roleNames,
+            VoPermissionKeys = await GetPermissionKeysByRolesAsync(roleNames)
+        };
+    }
+
+    private async Task FillRoleNamesAsync(List<UserVo> users)
+    {
+        if (users.Count == 0)
+        {
+            return;
+        }
+
+        var roleMap = await _userRepository.GetRoleNamesByUserIdsAsync(
+            users.Select(user => user.Uuid).ToList());
+        foreach (var user in users)
+        {
+            user.VoRoleNames = roleMap.TryGetValue(user.Uuid, out var roleNames)
+                ? roleNames.ToList()
+                : [];
+        }
     }
 
     public async Task<UserVo?> GetPublicUserByIdentifierAsync(string identifier)
@@ -513,28 +590,8 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
     public async Task<List<string>> GetUserRoleNamesAsync(long userId)
     {
-        var userRoles = await _userRoleRepository.QueryAsync(ur => ur.UserId == userId && ur.IsDeleted == false);
-        if (userRoles.Count <= 0)
-        {
-            return new List<string>();
-        }
-
-        var roleIds = userRoles
-            .Select(ur => ur.RoleId)
-            .Distinct()
-            .ToList();
-
-        var roles = await _roleRepository.QueryAsync(role =>
-            roleIds.Contains(role.Id) &&
-            role.IsDeleted == false &&
-            role.IsEnabled);
-
-        return roles
-            .Select(role => role.RoleName)
-            .Where(roleName => !string.IsNullOrWhiteSpace(roleName))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .OrderBy(roleName => roleName, StringComparer.OrdinalIgnoreCase)
-            .ToList();
+        var roleMap = await _userRepository.GetRoleNamesByUserIdsAsync([userId]);
+        return roleMap.TryGetValue(userId, out var roleNames) ? roleNames.ToList() : [];
     }
 
     /// <summary>
@@ -588,13 +645,13 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
         ValidateNewLoginPassword(newPassword, confirmPassword);
 
-        var user = await QueryFirstAsync(u => u.Id == userId && !u.IsDeleted && u.IsEnable);
+        var user = await _userBaseRepository.QueryFirstAsync(u => u.Id == userId && !u.IsDeleted && u.IsEnable);
         if (user == null)
         {
             throw new InvalidOperationException("用户不存在或已禁用");
         }
 
-        if (!PasswordHasher.VerifyPassword(currentPassword, user.VoLoginPassword))
+        if (!PasswordHasher.VerifyPassword(currentPassword, user.LoginPassword))
         {
             throw new InvalidOperationException("当前密码不正确");
         }

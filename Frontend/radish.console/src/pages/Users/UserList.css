@@ -14,6 +14,11 @@
   width: 140px;
 }
 
+.user-list-filter-controls > .ant-input-affix-wrapper,
+.user-list-filter-controls > .ant-select {
+  min-width: 0;
+}
+
 /* 用户头像和信息 */
 .user-list-identity,
 .user-info {
@@ -61,4 +66,18 @@
 .user-actions .ant-btn-link {
   padding: 0 4px;
   height: auto;
+}
+
+.user-list-mobile-card .user-list-identity {
+  min-width: 0;
+}
+
+.user-list-mobile-card .console-resource-mobile-card__fact strong {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 768px) {
+  .user-list-filter-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }

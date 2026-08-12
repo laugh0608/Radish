@@ -18,8 +18,17 @@ public interface IUserService : IBaseService<User, UserVo>
     /// 根据邮箱获取可登录用户
     /// </summary>
     /// <param name="email">电子邮箱</param>
-    /// <returns>单个用户视图模型，不存在则返回 null</returns>
-    Task<UserVo?> GetEnabledUserByEmailAsync(string email);
+    /// <returns>仅供认证链路使用的凭据快照，不存在则返回 null</returns>
+    Task<UserCredentialSnapshot?> GetEnabledUserCredentialByEmailAsync(string email);
+
+    /// <summary>获取 Console 用户权威分页并批量回填角色。</summary>
+    Task<(List<UserVo> Data, int Total)> GetConsoleUserPageAsync(ConsoleUserListQueryDto query);
+
+    /// <summary>获取 Console 用户主资料并回填角色。</summary>
+    Task<UserVo?> GetConsoleUserDetailAsync(long userId);
+
+    /// <summary>获取 Console 用户角色与派生权限快照。</summary>
+    Task<ConsoleUserAuthorizationVo?> GetConsoleUserAuthorizationAsync(long userId);
 
     /// <summary>
     /// 根据公开主页标识获取可公开访问的用户。

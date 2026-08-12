@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -28,7 +28,7 @@ import { log } from '@/utils/logger';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
 import { formatConsoleInteger, formatConsoleSignedInteger } from '@/utils/localeFormatters';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
-import { userManagementApi } from '@/api/userManagement';
+import { userManagementApi, type ConsoleUserAuthorization } from '@/api/userManagement';
 import { getBalanceByUserId, getTransactionsByUserId, type CoinTransactionVo, type UserBalanceVo } from '@/api/coinAdminApi';
 import { getUserExperience, type UserExperienceVo } from '@/api/experienceAdminApi';
 import {
@@ -61,8 +61,19 @@ interface UserDetailData {
   email: string;
   isEnabled: boolean;
   createTime: string;
-  lastLoginTime?: string;
+  updateTime?: string;
+  roleNames: string[];
 }
+
+type ResourceReadState = 'loading' | 'ready' | 'unavailable' | 'stale';
+
+interface PageQuery {
+  pageIndex: number;
+  pageSize: number;
+  total: number;
+}
+
+const DEFAULT_PAGE_QUERY: PageQuery = { pageIndex: 1, pageSize: 10, total: 0 };
 
 export const UserDetail = () => {
   const { t, i18n } = useTranslation();
@@ -74,6 +85,7 @@ export const UserDetail = () => {
   const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
   useDocumentTitle(t('console.route.user-detail'));
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
+  const canViewRoles = usePermission(CONSOLE_PERMISSIONS.rolesView);
   const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
   const canViewBenefits = usePermission(CONSOLE_PERMISSIONS.benefitsView);
@@ -82,21 +94,39 @@ export const UserDetail = () => {
   const canViewModeration = usePermission(CONSOLE_PERMISSIONS.moderationView);
   const canReviewModeration = usePermission(CONSOLE_PERMISSIONS.moderationReview);
 
-  const [loading, setLoading] = useState(false);
-  const [coinLoading, setCoinLoading] = useState(false);
-  const [orderLoading, setOrderLoading] = useState(false);
-  const [operationLoading, setOperationLoading] = useState(false);
-  const [benefitLoading, setBenefitLoading] = useState(false);
   const [revokeLoading, setRevokeLoading] = useState(false);
   const [user, setUser] = useState<UserDetailData | null>(null);
+  const [authorization, setAuthorization] = useState<ConsoleUserAuthorization | null>(null);
   const [balance, setBalance] = useState<UserBalanceVo | null>(null);
   const [experience, setExperience] = useState<UserExperienceVo | null>(null);
   const [coinTransactions, setCoinTransactions] = useState<CoinTransactionVo[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [entitlementOperations, setEntitlementOperations] = useState<ShopEntitlementOperation[]>([]);
   const [benefits, setBenefits] = useState<UserBenefit[]>([]);
+  const [profileReadState, setProfileReadState] = useState<ResourceReadState>('loading');
+  const [authorizationReadState, setAuthorizationReadState] = useState<ResourceReadState>('loading');
+  const [balanceReadState, setBalanceReadState] = useState<ResourceReadState>('loading');
+  const [experienceReadState, setExperienceReadState] = useState<ResourceReadState>('loading');
+  const [coinReadState, setCoinReadState] = useState<ResourceReadState>('loading');
+  const [orderReadState, setOrderReadState] = useState<ResourceReadState>('loading');
+  const [operationReadState, setOperationReadState] = useState<ResourceReadState>('loading');
+  const [benefitReadState, setBenefitReadState] = useState<ResourceReadState>('loading');
+  const [coinPage, setCoinPage] = useState<PageQuery>(DEFAULT_PAGE_QUERY);
+  const [orderPage, setOrderPage] = useState<PageQuery>(DEFAULT_PAGE_QUERY);
+  const [operationPage, setOperationPage] = useState<PageQuery>(DEFAULT_PAGE_QUERY);
   const [revokeTarget, setRevokeTarget] = useState<UserBenefit | null>(null);
   const [revokeReason, setRevokeReason] = useState('');
+  const requestSequences = useRef({
+    profile: 0,
+    authorization: 0,
+    balance: 0,
+    experience: 0,
+    coins: 0,
+    orders: 0,
+    operations: 0,
+    benefits: 0,
+  });
+  const snapshotKeys = useRef<Partial<Record<keyof typeof requestSequences.current, string>>>({});
 
   const mapUserDetail = useCallback((item: UserListItem): UserDetailData => {
     const displayName = resolveVisibleUserDisplayName(
@@ -111,7 +141,8 @@ export const UserDetail = () => {
       email: item.voUserEmail || '-',
       isEnabled: item.voIsEnable,
       createTime: item.voCreateTime,
-      lastLoginTime: item.voUpdateTime,
+      updateTime: item.voUpdateTime,
+      roleNames: item.voRoleNames,
     };
   }, [t]);
 
@@ -181,120 +212,214 @@ export const UserDetail = () => {
     }));
   };
 
-  // 加载用户详情
   const loadUserDetail = useCallback(async () => {
     if (!userId) return;
 
+    const requestId = requestSequences.current.profile + 1;
+    const hasCurrentSnapshot = snapshotKeys.current.profile === userId;
+    requestSequences.current.profile = requestId;
+    setProfileReadState('loading');
+    if (!hasCurrentSnapshot) setUser(null);
+
     try {
-      setLoading(true);
       const response = await userManagementApi.getUserById(userId);
+      if (requestSequences.current.profile !== requestId) return;
       if (!response.ok || !response.data) {
         throw new Error(response.message || t('users.detail.loadFailed'));
       }
 
       setUser(mapUserDetail(response.data));
+      snapshotKeys.current.profile = userId;
+      setProfileReadState('ready');
     } catch (error) {
+      if (requestSequences.current.profile !== requestId) return;
       log.error('UserDetail', '加载用户详情失败:', error);
-      message.error(error instanceof Error ? error.message : t('users.detail.loadFailed'));
-    } finally {
-      setLoading(false);
+      setProfileReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
     }
   }, [mapUserDetail, t, userId]);
+
+  const loadAuthorization = useCallback(async () => {
+    if (!userId || !canViewRoles) return;
+
+    const requestId = requestSequences.current.authorization + 1;
+    const hasCurrentSnapshot = snapshotKeys.current.authorization === userId;
+    requestSequences.current.authorization = requestId;
+    setAuthorizationReadState('loading');
+    if (!hasCurrentSnapshot) setAuthorization(null);
+
+    try {
+      const response = await userManagementApi.getUserAuthorization(userId);
+      if (requestSequences.current.authorization !== requestId) return;
+      if (!response.ok || !response.data) throw new Error(response.message || t('users.detail.authorization.loadFailed'));
+      setAuthorization(response.data);
+      snapshotKeys.current.authorization = userId;
+      setAuthorizationReadState('ready');
+    } catch (error) {
+      if (requestSequences.current.authorization !== requestId) return;
+      log.error('UserDetail', '加载用户授权快照失败:', error);
+      setAuthorizationReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
+    }
+  }, [canViewRoles, t, userId]);
 
   const loadBalance = useCallback(async () => {
     if (!userId || !canViewCoins) return;
 
+    const requestId = requestSequences.current.balance + 1;
+    const hasCurrentSnapshot = snapshotKeys.current.balance === userId;
+    requestSequences.current.balance = requestId;
+    setBalanceReadState('loading');
+    if (!hasCurrentSnapshot) setBalance(null);
+
     try {
       const result = await getBalanceByUserId(userId);
+      if (requestSequences.current.balance !== requestId) return;
       setBalance(result);
+      snapshotKeys.current.balance = userId;
+      setBalanceReadState('ready');
     } catch (error) {
+      if (requestSequences.current.balance !== requestId) return;
       log.error('UserDetail', '加载萝卜币余额失败:', error);
-      setBalance(null);
+      setBalanceReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
     }
   }, [userId, canViewCoins]);
 
   const loadExperience = useCallback(async () => {
     if (!userId || !canViewExperience) return;
 
+    const requestId = requestSequences.current.experience + 1;
+    const hasCurrentSnapshot = snapshotKeys.current.experience === userId;
+    requestSequences.current.experience = requestId;
+    setExperienceReadState('loading');
+    if (!hasCurrentSnapshot) setExperience(null);
+
     try {
       const result = await getUserExperience(userId);
+      if (requestSequences.current.experience !== requestId) return;
       setExperience(result);
+      snapshotKeys.current.experience = userId;
+      setExperienceReadState('ready');
     } catch (error) {
+      if (requestSequences.current.experience !== requestId) return;
       log.error('UserDetail', '加载经验信息失败:', error);
-      setExperience(null);
+      setExperienceReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
     }
   }, [userId, canViewExperience]);
 
-  // 加载萝卜币流水
   const loadCoinTransactions = useCallback(async () => {
     if (!userId || !canViewCoins) return;
 
+    const snapshotKey = `${userId}:${coinPage.pageIndex}:${coinPage.pageSize}`;
+    const requestId = requestSequences.current.coins + 1;
+    const hasCurrentSnapshot = snapshotKeys.current.coins === snapshotKey;
+    requestSequences.current.coins = requestId;
+    setCoinReadState('loading');
+    if (!hasCurrentSnapshot) setCoinTransactions([]);
+
     try {
-      setCoinLoading(true);
       const result = await getTransactionsByUserId({
         userId,
-        pageIndex: 1,
-        pageSize: 10,
+        pageIndex: coinPage.pageIndex,
+        pageSize: coinPage.pageSize,
       });
+      if (requestSequences.current.coins !== requestId) return;
+      if (result.data.length === 0 && result.dataCount > 0 && coinPage.pageIndex > result.pageCount) {
+        setCoinPage((current) => ({ ...current, pageIndex: Math.max(1, result.pageCount), total: result.dataCount }));
+        return;
+      }
       setCoinTransactions(result.data);
+      setCoinPage((current) => ({ ...current, total: result.dataCount }));
+      snapshotKeys.current.coins = snapshotKey;
+      setCoinReadState('ready');
     } catch (error) {
+      if (requestSequences.current.coins !== requestId) return;
       log.error('UserDetail', '加载萝卜币流水失败:', error);
-      setCoinTransactions([]);
-    } finally {
-      setCoinLoading(false);
+      setCoinReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
     }
-  }, [userId, canViewCoins]);
+  }, [canViewCoins, coinPage.pageIndex, coinPage.pageSize, userId]);
 
-  // 加载购买记录
   const loadOrders = useCallback(async () => {
     if (!userId || !canViewOrders) return;
 
+    const snapshotKey = `${userId}:${orderPage.pageIndex}:${orderPage.pageSize}`;
+    const requestId = requestSequences.current.orders + 1;
+    const hasCurrentSnapshot = snapshotKeys.current.orders === snapshotKey;
+    requestSequences.current.orders = requestId;
+    setOrderReadState('loading');
+    if (!hasCurrentSnapshot) setOrders([]);
+
     try {
-      setOrderLoading(true);
       const result = await adminGetOrders({
         userId,
-        pageIndex: 1,
-        pageSize: 10,
+        pageIndex: orderPage.pageIndex,
+        pageSize: orderPage.pageSize,
       });
+      if (requestSequences.current.orders !== requestId) return;
+      if (result.data.length === 0 && result.dataCount > 0 && orderPage.pageIndex > result.pageCount) {
+        setOrderPage((current) => ({ ...current, pageIndex: Math.max(1, result.pageCount), total: result.dataCount }));
+        return;
+      }
       setOrders(result.data);
+      setOrderPage((current) => ({ ...current, total: result.dataCount }));
+      snapshotKeys.current.orders = snapshotKey;
+      setOrderReadState('ready');
     } catch (error) {
+      if (requestSequences.current.orders !== requestId) return;
       log.error('UserDetail', '加载购买记录失败:', error);
-      setOrders([]);
-    } finally {
-      setOrderLoading(false);
+      setOrderReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
     }
-  }, [userId, canViewOrders]);
+  }, [canViewOrders, orderPage.pageIndex, orderPage.pageSize, userId]);
 
   const loadEntitlementOperations = useCallback(async () => {
     if (!userId || !canViewBenefits) return;
 
+    const snapshotKey = `${userId}:${operationPage.pageIndex}:${operationPage.pageSize}`;
+    const requestId = requestSequences.current.operations + 1;
+    const hasCurrentSnapshot = snapshotKeys.current.operations === snapshotKey;
+    requestSequences.current.operations = requestId;
+    setOperationReadState('loading');
+    if (!hasCurrentSnapshot) setEntitlementOperations([]);
+
     try {
-      setOperationLoading(true);
       const result = await adminGetEntitlementOperations({
         userId,
-        pageIndex: 1,
-        pageSize: 10,
+        pageIndex: operationPage.pageIndex,
+        pageSize: operationPage.pageSize,
       });
+      if (requestSequences.current.operations !== requestId) return;
+      if (result.data.length === 0 && result.dataCount > 0 && operationPage.pageIndex > result.pageCount) {
+        setOperationPage((current) => ({ ...current, pageIndex: Math.max(1, result.pageCount), total: result.dataCount }));
+        return;
+      }
       setEntitlementOperations(result.data);
+      setOperationPage((current) => ({ ...current, total: result.dataCount }));
+      snapshotKeys.current.operations = snapshotKey;
+      setOperationReadState('ready');
     } catch (error) {
+      if (requestSequences.current.operations !== requestId) return;
       log.error('UserDetail', '加载商城权益流水失败:', error);
-      setEntitlementOperations([]);
-    } finally {
-      setOperationLoading(false);
+      setOperationReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
     }
-  }, [userId, canViewBenefits]);
+  }, [canViewBenefits, operationPage.pageIndex, operationPage.pageSize, userId]);
 
   const loadBenefits = useCallback(async () => {
     if (!userId || !canViewBenefits) return;
 
+    const requestId = requestSequences.current.benefits + 1;
+    const hasCurrentSnapshot = snapshotKeys.current.benefits === userId;
+    requestSequences.current.benefits = requestId;
+    setBenefitReadState('loading');
+    if (!hasCurrentSnapshot) setBenefits([]);
+
     try {
-      setBenefitLoading(true);
-      setBenefits(await adminGetUserBenefits(userId));
+      const result = await adminGetUserBenefits(userId);
+      if (requestSequences.current.benefits !== requestId) return;
+      setBenefits(result);
+      snapshotKeys.current.benefits = userId;
+      setBenefitReadState('ready');
     } catch (error) {
+      if (requestSequences.current.benefits !== requestId) return;
       log.error('UserDetail', '加载持续权益失败:', error);
-      setBenefits([]);
-    } finally {
-      setBenefitLoading(false);
+      setBenefitReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
     }
   }, [userId, canViewBenefits]);
 
@@ -325,8 +450,9 @@ export const UserDetail = () => {
   useEffect(() => {
     if (userId && canViewUsers) {
       void loadUserDetail();
+      if (canViewRoles) void loadAuthorization();
     }
-  }, [userId, canViewUsers, loadUserDetail]);
+  }, [canViewRoles, canViewUsers, loadAuthorization, loadUserDetail, userId]);
 
   useEffect(() => {
     if (userId && canViewUsers) {
@@ -587,6 +713,19 @@ export const UserDetail = () => {
     },
   ];
 
+  const renderReadNotice = (state: ResourceReadState, retry: () => void) => {
+    if (state !== 'stale' && state !== 'unavailable') return null;
+
+    return (
+      <div className={`user-detail-read-notice user-detail-read-notice--${state}`} role="alert">
+        <span>{t(state === 'stale' ? 'users.detail.read.stale' : 'users.detail.read.unavailable')}</span>
+        <Button size="small" onClick={retry}>{t('users.detail.read.retry')}</Button>
+      </div>
+    );
+  };
+
+  const authoritativeRoles = authorization?.voRoleNames ?? user?.roleNames ?? [];
+
   if (!canViewUsers) {
     return (
       <div className="admin-feature-page user-detail-page">
@@ -607,7 +746,7 @@ export const UserDetail = () => {
     );
   }
 
-  if (loading || !user) {
+  if (!user) {
     return (
       <div className="admin-feature-page user-detail-page">
         <section className="admin-feature-card">
@@ -616,8 +755,16 @@ export const UserDetail = () => {
               <h2>
                 <UserOutlined /> {t('users.detail.title')}
               </h2>
-              <p className="admin-feature-subtle">{t('users.detail.loadingDescription')}</p>
+              <p className="admin-feature-subtle">
+                {t(profileReadState === 'unavailable' ? 'users.detail.unavailableDescription' : 'users.detail.loadingDescription')}
+              </p>
             </div>
+            {profileReadState === 'unavailable' ? (
+              <Space wrap>
+                <Button icon={<LeftOutlined />} onClick={handleBack}>{t('users.detail.back')}</Button>
+                <Button onClick={() => void loadUserDetail()}>{t('users.detail.read.retry')}</Button>
+              </Space>
+            ) : null}
           </div>
         </section>
       </div>
@@ -648,25 +795,37 @@ export const UserDetail = () => {
       <section className="admin-feature-metrics" aria-label={t('users.detail.metricsLabel')}>
         <div className="admin-feature-metric">
           <span><TrophyOutlined /> {t('users.detail.metric.level')}</span>
-          <strong>{experience ? `${experience.voCurrentLevel} ${experience.voCurrentLevelName}` : '--'}</strong>
+          <strong>{experienceReadState === 'ready' || experienceReadState === 'stale' ? `${experience?.voCurrentLevel ?? '--'} ${experience?.voCurrentLevelName ?? ''}` : t(`users.detail.read.${experienceReadState}`)}</strong>
         </div>
         <div className="admin-feature-metric">
           <span><UserOutlined /> {t('users.detail.metric.currentExperience')}</span>
-          <strong>{experience ? `${experience.voCurrentExp} / ${experience.voExpToNextLevel}` : '--'}</strong>
+          <strong>{experienceReadState === 'ready' || experienceReadState === 'stale' ? (experience ? `${experience.voCurrentExp} / ${experience.voExpToNextLevel}` : '--') : t(`users.detail.read.${experienceReadState}`)}</strong>
         </div>
         <div className="admin-feature-metric">
           <span><TrophyOutlined /> {t('users.detail.metric.totalExperience')}</span>
-          <strong>{experience ? formatLocalizedNumber(experience.voTotalExp, language) : '--'}</strong>
+          <strong>{experienceReadState === 'ready' || experienceReadState === 'stale' ? (experience ? formatLocalizedNumber(experience.voTotalExp, language) : '--') : t(`users.detail.read.${experienceReadState}`)}</strong>
         </div>
         <div className="admin-feature-metric">
           <span><WalletOutlined /> {t('users.detail.metric.balance')}</span>
-          <strong>{balance ? formatConsoleInteger(balance.voBalance, language) : '--'}</strong>
+          <strong>{balanceReadState === 'ready' || balanceReadState === 'stale' ? (balance ? formatConsoleInteger(balance.voBalance, language) : '--') : t(`users.detail.read.${balanceReadState}`)}</strong>
         </div>
       </section>
+
+      <section className="user-detail-source-status" aria-label={t('users.detail.sources.label')}>
+        <span>{t('users.detail.sources.profile')} <Tag color={profileReadState === 'ready' ? 'success' : profileReadState === 'stale' ? 'warning' : 'default'}>{t(`users.detail.read.${profileReadState}`)}</Tag></span>
+        {canViewRoles ? <span>{t('users.detail.sources.authorization')} <Tag color={authorizationReadState === 'ready' ? 'success' : authorizationReadState === 'stale' ? 'warning' : 'default'}>{t(`users.detail.read.${authorizationReadState}`)}</Tag></span> : null}
+        {canViewCoins ? <span>{t('users.detail.sources.assets')} <Tag color={balanceReadState === 'ready' ? 'success' : balanceReadState === 'stale' ? 'warning' : 'default'}>{t(`users.detail.read.${balanceReadState}`)}</Tag></span> : null}
+        {canViewExperience ? <span>{t('users.detail.sources.experience')} <Tag color={experienceReadState === 'ready' ? 'success' : experienceReadState === 'stale' ? 'warning' : 'default'}>{t(`users.detail.read.${experienceReadState}`)}</Tag></span> : null}
+      </section>
+      <div className="user-detail-metric-notices">
+        {canViewCoins ? renderReadNotice(balanceReadState, () => void loadBalance()) : null}
+        {canViewExperience ? renderReadNotice(experienceReadState, () => void loadExperience()) : null}
+      </div>
 
       <div className="admin-table-layout">
         <main className="admin-table-main">
           <section className="admin-table-panel">
+            {renderReadNotice(profileReadState, () => void loadUserDetail())}
             <div className="user-detail-section-title">
               <div>
                 <h3>{t('users.detail.basic.title')}</h3>
@@ -684,8 +843,22 @@ export const UserDetail = () => {
                 </Tag>
               </Descriptions.Item>
               <Descriptions.Item label={t('users.detail.basic.registeredAt')}>{formatDisplayTime(user.createTime)}</Descriptions.Item>
-              <Descriptions.Item label={t('users.detail.basic.lastLogin')}>{formatDisplayTime(user.lastLoginTime)}</Descriptions.Item>
+              <Descriptions.Item label={t('users.detail.basic.updatedAt')}>{formatDisplayTime(user.updateTime)}</Descriptions.Item>
+              <Descriptions.Item label={t('users.detail.basic.roles')}>
+                <Space size="small" wrap>
+                  {authoritativeRoles.length > 0
+                    ? authoritativeRoles.map((roleName) => <Tag key={roleName}>{roleName}</Tag>)
+                    : t('users.list.noRoles')}
+                </Space>
+              </Descriptions.Item>
             </Descriptions>
+            {canViewRoles ? renderReadNotice(authorizationReadState, () => void loadAuthorization()) : null}
+            {canViewRoles && authorization ? (
+              <div className="user-detail-permission-summary">
+                <span>{t('users.detail.authorization.permissionCount', { count: authorization.voPermissionKeys.length })}</span>
+                <div>{authorization.voPermissionKeys.map((permissionKey) => <code key={permissionKey}>{permissionKey}</code>)}</div>
+              </div>
+            ) : null}
           </section>
 
           <section className="admin-table-panel">
@@ -703,12 +876,19 @@ export const UserDetail = () => {
                   children: (
                     canViewCoins ? (
                       <div className="admin-table-scroll-region">
+                        {renderReadNotice(coinReadState, () => void loadCoinTransactions())}
                         <Table
                           columns={coinColumns}
                           dataSource={coinTransactions}
                           rowKey="voId"
-                          loading={coinLoading}
-                          pagination={{ pageSize: 10 }}
+                          loading={coinReadState === 'loading'}
+                          pagination={{
+                            current: coinPage.pageIndex,
+                            pageSize: coinPage.pageSize,
+                            total: coinPage.total,
+                            showSizeChanger: true,
+                            onChange: (pageIndex, pageSize) => setCoinPage({ pageIndex, pageSize, total: coinPage.total }),
+                          }}
                           scroll={{ x: 760 }}
                         />
                       </div>
@@ -723,12 +903,19 @@ export const UserDetail = () => {
                   children: (
                     canViewOrders ? (
                       <div className="admin-table-scroll-region">
+                        {renderReadNotice(orderReadState, () => void loadOrders())}
                         <Table
                           columns={orderColumns}
                           dataSource={orders}
                           rowKey="voId"
-                          loading={orderLoading}
-                          pagination={{ pageSize: 10 }}
+                          loading={orderReadState === 'loading'}
+                          pagination={{
+                            current: orderPage.pageIndex,
+                            pageSize: orderPage.pageSize,
+                            total: orderPage.total,
+                            showSizeChanger: true,
+                            onChange: (pageIndex, pageSize) => setOrderPage({ pageIndex, pageSize, total: orderPage.total }),
+                          }}
                           scroll={{ x: 900 }}
                         />
                       </div>
@@ -743,12 +930,13 @@ export const UserDetail = () => {
                   children: (
                     canViewBenefits ? (
                       <div className="admin-table-scroll-region">
+                        {renderReadNotice(benefitReadState, () => void loadBenefits())}
                         <Table
                           columns={benefitColumns}
                           dataSource={benefits}
                           rowKey="voId"
-                          loading={benefitLoading}
-                          pagination={{ pageSize: 10 }}
+                          loading={benefitReadState === 'loading'}
+                          pagination={{ pageSize: 10, showSizeChanger: true }}
                           scroll={{ x: 1050 }}
                         />
                       </div>
@@ -763,12 +951,19 @@ export const UserDetail = () => {
                   children: (
                     canViewBenefits ? (
                       <div className="admin-table-scroll-region">
+                        {renderReadNotice(operationReadState, () => void loadEntitlementOperations())}
                         <Table
                           columns={operationColumns}
                           dataSource={entitlementOperations}
                           rowKey="voId"
-                          loading={operationLoading}
-                          pagination={{ pageSize: 10 }}
+                          loading={operationReadState === 'loading'}
+                          pagination={{
+                            current: operationPage.pageIndex,
+                            pageSize: operationPage.pageSize,
+                            total: operationPage.total,
+                            showSizeChanger: true,
+                            onChange: (pageIndex, pageSize) => setOperationPage({ pageIndex, pageSize, total: operationPage.total }),
+                          }}
                           scroll={{ x: 1050 }}
                         />
                       </div>

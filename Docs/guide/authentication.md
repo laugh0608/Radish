@@ -1072,7 +1072,7 @@ curl https://localhost:7100/connect/userinfo \
   - 用户在 `/Account/Login` 完成业务用户校验与 Cookie 会话建立后，才会继续进入后续 OIDC 授权流程。
   - 如果这里发生等待，用户体感会是“点登录后停顿几十秒才继续”，而不是 Token 端点本身慢。
 - 当前已落地的治理点：
-  - `IUserService.GetEnabledUserByEmailAsync(...)` 已收口为邮箱单用户精确查询，替代旧的登录名入口，避免登录凭证语义继续漂移。
+  - `IUserService.GetEnabledUserCredentialByEmailAsync(...)` 已收口为邮箱单用户精确查询，并返回认证专用 `UserCredentialSnapshot`；密码哈希不再经过通用 `UserVo` 或任何用户查询响应。
   - `User` 登录查询以规范化邮箱为准；旧 SQLite 库若缺少身份字段、公开索引或相关索引，仍可通过 `DbMigrate apply/init/seed` 自动补齐当前结构。
   - 登录页提交后会立即禁用按钮并显示“登录中...”，避免重复点击把并发请求放大成新的等待。
   - `AccountController` 已补登录分段耗时日志，`SqlSugarSetup` / `SqlSugarAop` 已补慢连接、慢查询、慢命令与数据库异常观测，用于区分“用户查询慢”“密码校验慢”“角色查询慢”“SQLite 连接检查慢”。

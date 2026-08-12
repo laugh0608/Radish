@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-C04-B Users 列表与聚合详情`
-- **产品下一顺位**：`先纠正 status / role 伪筛选与详情局部失败语义，再拆分权威聚合读取、真实分页和 Mobile 单任务详情；不新增用户写能力`
-- **复核日期**：`2026-08-11`
+- **工程第一顺位**：`F4-R R3-C04-C Applications`
+- **产品下一顺位**：`先把应用列表收敛为服务端分页 / 搜索，再关闭 Secret 一次性展示、轮换确认、dirty / busy 与 Mobile 单任务表单边界`
+- **复核日期**：`2026-08-12`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-12` 已完成 [R3-C04-B Users 权威列表与聚合详情代码及静态门禁](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)：关键词、启用状态、角色进入服务端权威查询和稳定分页，角色按页批量回填；通用 `UserVo` 删除密码哈希，登录改用禁止序列化的专用凭据快照。列表查询可由 URL 回访并继承 `ConsoleResourceList`；详情把主资料、授权、余额、经验、流水、订单、权益拆为独立 `loading / ready / unavailable / stale`，三类历史记录使用服务端总数分页，Mobile 固定主任务先于辅助摘要。后端 `1228 passed / 39 skipped`、Console `90 / 90`、strict type-check、Lint、production build、权限扫描通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-C Applications`。
 - `2026-08-11` 已完成 [R3-C04-A Categories / Tags 与共享响应式资源表面代码及静态门禁](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)：LongId 全部收敛为字符串，筛选草稿与已应用查询分离，请求代际和查询快照键关闭分页回跳 / 过期响应；`unavailable / stale` 冻结写入，handler 与 Form 双重权限、dirty / busy 停止线完整。两类资源共用无业务状态的 PC 连续表格—Mobile 卡片壳层，Category 父级选项改为逐页完整读取。Console `87 / 87`、strict type-check、Lint、production build、权限与 LongId 扫描通过；按当轮约束未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-B Users`。
 - `2026-08-11` 已完成并确认 [R3-C04 Console 普通资源设计前代码事实与风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)：七类资源按 Taxonomy、Users、Applications、Products、Stickers、Coins 拆为六批；共享层只承载 PC 连续列表与 Mobile 资源任务结构，不建立万能 CRUD 状态机。首批固定为 R3-C04-A Categories / Tags，先关闭 LongId 字符串、分页真相、handler 权限与 Form dirty / busy，再接入共享响应式资源表面；不修改 Pencil、公开 Forum 语义、数据库、migration 或权限键。
 - `2026-08-11` 已完成并关闭 [R3-P06 Public Shop 浏览与 Leaderboard 正式实现及 Gateway 验收](/records/f4-r-r3-p06-public-shop-leaderboard-implementation-2026-08-11)：Shop 首页 / products 固定商品主轴先于辅助 rail，删除重复浏览入口和误导统计，匿名 / 登录 CTA 准确表达先详情后购买；Leaderboard 保留主区唯一五类切换、有效用户排名和公开 Profile / 商品详情边界，奖牌改用四主题语义 surface，英文类型元数据统一由语言包覆盖。Gateway 覆盖匿名、种子 Admin、PC `1920 × 1080`、Mobile `390 × 844`、中英文与 `default / guofeng`；购买意图登录回流准确并在确认前取消，热门商品种子数据为权威空态，页面无横向溢出且浏览器 `0 warning / 0 error`。Client `550 / 550`，服务与端口已清理；下一步进入 `R3-C04` 设计前审计。
@@ -161,17 +162,18 @@
 64. 按确认设计完成 R2-A02 正式前端实现：Docs / Forum 共享相邻 / 当前双快照差异，Mine 主轴与 Mobile 顺序收敛，正式 Composer 以同一实例承载 PC / Mobile 半屏和全屏；Client 全量 `536 / 536`、类型、Lint、构建与变更卫生通过。
 65. 获授权后使用种子管理员完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` 成组验收；修正选中文档行 Mobile 断点和 Composer 图标按钮可访问名称，复验无横向溢出，干净标签页 `0 warning / 0 error`，R2-A02 关闭。
 
-## 明天事项（2026-08-12）
+## 明天事项（2026-08-13）
 
-1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)、[R3-C04-A 实现记录](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)和[今日提交—代码—文档反查](/records/f4-day-end-doc-review-2026-08-11)。
-2. 先核对 Users 列表与 `/users/:userId` 的真实 API、URL、权限和页面所有权；`status / role` 必须接入权威服务端筛选或从表面移除，不保留客户端伪筛选，也不预设新增用户写能力。
-3. 把用户主资料、角色 / 权限和统计等聚合来源拆成独立 `loading / ready / unavailable / stale`；纠正更新时间被标成最后登录的语义，列表与详情均使用权威分页或完整读取，不再对当前十条结果做本地分页。
-4. 列表继续继承无业务状态的 `ConsoleResourceList`：PC 使用连续表格，Mobile 使用资源卡片；详情在 Mobile 收敛为保留来源返回的单任务页，资源 owner 继续持有查询、权限和聚合状态。
-5. 开发中执行 Users route / query / aggregation 定向测试、Console 全量测试、strict type-check、Lint、production build、`git diff --check` 与 changed hygiene；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
-6. Users 批不扩入 Applications、Products、Stickers、Coins，不修改 Pencil、数据库、migration 或权限键；三处既有 `DateTime.Now` baseline 与全仓历史卫生债务继续独立维护。
+1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)和 [R3-C04-B 实现记录](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)。
+2. 进入 `R3-C04-C Applications` 前先反查列表、创建 / 编辑、删除与 Secret 轮换的 API、URL、权限和页面所有权；固定服务端分页 / 搜索契约，不再读取前 `100` 条后本地分页。
+3. Secret 只允许在创建或轮换成功后一次性展示，轮换必须显式确认；Modal 提交期间禁止关闭，dirty 关闭与离页必须有停止线，写 handler 和 Form 同时复核动作级权限。
+4. PC 保持连续表格—按需 Modal，Mobile 收敛为应用卡片—单任务表单 / Secret 结果；资源 owner 继续持有查询、权限、表单和 API 状态，不建立万能 CRUD 状态机。
+5. 开发中执行 Applications query / Secret / dirty / busy 定向测试、Console 全量测试、strict type-check、Lint、production build、`git diff --check` 与 changed hygiene；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
+6. Applications 批不扩入 Products、Stickers、Coins，不新增第三方审核或 Scope 模型，不修改 Pencil、数据库、migration 或权限键；三处既有 `DateTime.Now` baseline 与全仓历史卫生债务继续独立维护。
 
 ## 当前执行入口
 
+- [R3-C04-B Users 权威列表与聚合详情实现](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)
 - [2026-08-11 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-11)
 - [R3-C04-A Categories / Tags 与共享响应式资源表面实现](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)
 - [R3-C04 Console 普通资源设计前代码事实与风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)

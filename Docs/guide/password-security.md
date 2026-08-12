@@ -143,6 +143,8 @@ $argon2id$v=19$m=19456,t=2,p=1$saltBase64$hashBase64
 **User 表字段**：
 - `LoginPassword`：存储 Argon2id 哈希字符串（约 100 字符）
 - 确保字段长度至少 `VARCHAR(200)` 以容纳完整哈希
+- `LoginPassword` 只属于持久化与认证内部边界；通用 `UserVo` 不暴露密码哈希，也不允许通过反向映射写回密码字段
+- 登录查询返回专用 `UserCredentialSnapshot`，其中 `PasswordHash` 使用 `[JsonIgnore]`，该类型不得作为 Controller 响应模型
 
 **种子数据示例**：
 ```csharp
@@ -165,14 +167,14 @@ public async Task<IActionResult> Login(string email, string password)
     var normalizedEmail = email.Trim().ToLowerInvariant();
 
     // 1. 按登录邮箱查询用户（不再需要对密码进行哈希）
-    var user = await _userService.GetEnabledUserByEmailAsync(normalizedEmail);
+    var user = await _userService.GetEnabledUserCredentialByEmailAsync(normalizedEmail);
     if (user is null)
     {
         return Unauthorized("邮箱或密码错误");
     }
 
     // 2. 验证密码（使用 Argon2.Verify）
-    if (!PasswordHasher.VerifyPassword(password, user.VoLoginPassword))
+    if (!PasswordHasher.VerifyPassword(password, user.PasswordHash))
     {
         return Unauthorized("邮箱或密码错误");
     }
@@ -184,6 +186,7 @@ public async Task<IActionResult> Login(string email, string password)
 **关键变化**：
 - ❌ 旧方式：`WHERE LoginPassword = MD5(password)` - 在数据库层比对
 - ✅ 新方式：先查询用户，再在应用层使用 `Argon2.Verify` 验证
+- ✅ 安全投影：只有认证专用凭据快照读取哈希；用户列表、用户详情和其他 `UserVo` 接口永不返回密码哈希
 
 **为什么不在数据库层比对？**
 - Argon2 哈希每次生成的盐值不同，无法直接用 `WHERE` 比对

@@ -157,7 +157,7 @@ public class UserIdentitySemanticsServiceTest
     }
 
     [Fact]
-    public async Task GetEnabledUserByEmailAsync_ShouldMatchNormalizedEmailOnly()
+    public async Task GetEnabledUserCredentialByEmailAsync_ShouldMatchNormalizedEmailOnly()
     {
         var harness = CreateHarness();
         var capturedWheres = new List<Expression<Func<User, bool>>?>();
@@ -176,7 +176,7 @@ public class UserIdentitySemanticsServiceTest
             .Callback<Expression<Func<User, bool>>?>(where => capturedWheres.Add(where))
             .ReturnsAsync(user);
 
-        var emailResult = await harness.Service.GetEnabledUserByEmailAsync("ALICE@EXAMPLE.TEST");
+        var emailResult = await harness.Service.GetEnabledUserCredentialByEmailAsync("ALICE@EXAMPLE.TEST");
 
         Assert.NotNull(emailResult);
         Assert.Single(capturedWheres);
@@ -592,7 +592,6 @@ public class UserIdentitySemanticsServiceTest
                 VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
                 VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
                 VoUserEmail = user.UserEmail,
-                VoLoginPassword = user.LoginPassword,
                 VoTenantId = user.TenantId,
                 VoIsEnable = user.IsEnable,
                 VoIsDeleted = user.IsDeleted
@@ -623,8 +622,6 @@ public class UserIdentitySemanticsServiceTest
 
         var baseRepository = new Mock<IBaseRepository<User>>();
         var userRepository = new Mock<IUserRepository>();
-        var roleRepository = new Mock<IBaseRepository<Role>>();
-        var userRoleRepository = new Mock<IBaseRepository<UserRole>>();
         var displayNameChangeRecordRepository = new Mock<IBaseRepository<UserDisplayNameChangeRecord>>();
         var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
         var systemSettingProvider = new Mock<ISystemSettingProvider>();
@@ -633,8 +630,6 @@ public class UserIdentitySemanticsServiceTest
             mapper.Object,
             baseRepository.Object,
             userRepository.Object,
-            roleRepository.Object,
-            userRoleRepository.Object,
             displayNameChangeRecordRepository.Object,
             consoleAuthorizationService.Object,
             systemSettingProvider.Object);

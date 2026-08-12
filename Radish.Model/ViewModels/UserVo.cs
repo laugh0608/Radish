@@ -9,7 +9,6 @@ public class UserVo
     public string? VoDisplayHandle { get; set; }
     public string VoUserName { get; set; } = string.Empty;
     public string VoUserEmail { get; set; } = string.Empty;
-    public string VoLoginPassword { get; set; } = string.Empty;
     public int VoUserSex { get; set; } = 0;
     public int VoUserAge { get; set; } = 18;
     public DateTime? VoUserBirth { get; set; }

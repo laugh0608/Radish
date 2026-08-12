@@ -80,9 +80,7 @@ public class UserController : ControllerBase
     /// <summary>
     /// 获取全部用户列表
     /// </summary>
-    /// <param name="pageIndex">页码（从1开始）</param>
-    /// <param name="pageSize">每页数量</param>
-    /// <param name="keyword">搜索关键词</param>
+    /// <param name="query">分页、关键词、启用状态与角色筛选。</param>
     /// <returns>包含用户列表的响应对象</returns>
     /// <remarks>
     /// 查询用户信息，支持分页和搜索，不包含已删除的用户。
@@ -99,40 +97,25 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
-    public async Task<MessageModel> GetUserList(int pageIndex = 1, int pageSize = 20, string? keyword = null)
+    public async Task<MessageModel> GetUserList([FromQuery] ConsoleUserListQueryDto query)
     {
-        // 分页查询用户
-        (List<UserVo> data, int totalCount) result;
-
-        if (!string.IsNullOrWhiteSpace(keyword))
-        {
-            // 有搜索关键词时
-            result = await _userService.QueryPageAsync(
-                u => !u.IsDeleted &&
-                     (u.UserName.Contains(keyword) ||
-                      (u.PublicId != null && u.PublicId.Contains(keyword)) ||
-                      (u.UserEmail != null && u.UserEmail.Contains(keyword))),
-                pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
-        }
-        else
-        {
-            // 无搜索关键词时
-            result = await _userService.QueryPageAsync(
-                u => !u.IsDeleted,
-                pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
-        }
-
-        var userVos = result.data;
-        var totalCount = result.totalCount;
+        var safePageIndex = query.PageIndex < 1 ? 1 : query.PageIndex;
+        var safePageSize = query.PageSize <= 0 ? 20 : Math.Min(query.PageSize, 100);
+        query.PageIndex = safePageIndex;
+        query.PageSize = safePageSize;
+        query.Keyword = query.Keyword?.Trim();
+        query.RoleName = query.RoleName?.Trim();
+        var result = await _userService.GetConsoleUserPageAsync(query);
+        var userVos = result.Data;
 
         await FillUserAvatarUrlsAsync(userVos);
 
         var responseResult = new VoPagedResult<UserVo>
         {
             VoItems = userVos,
-            VoTotal = totalCount,
-            VoPageIndex = pageIndex,
-            VoPageSize = pageSize
+            VoTotal = result.Total,
+            VoPageIndex = safePageIndex,
+            VoPageSize = safePageSize
         };
 
         return new MessageModel
@@ -206,7 +189,7 @@ public class UserController : ControllerBase
     {
         var localizer = HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Errors>>();
 
-        var userInfo = await _userService.QueryFirstAsync(d => d.Id == id && d.IsDeleted == false);
+        var userInfo = await _userService.GetConsoleUserDetailAsync(id);
 
         if (userInfo == null)
         {
@@ -229,6 +212,30 @@ public class UserController : ControllerBase
             userInfo,
             "User.GetByIdSuccess",
             "info.user.get_by_id_success");
+    }
+
+    /// <summary>获取指定用户的角色与派生权限快照。</summary>
+    [HttpGet("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.RolesView)]
+    [ProducesResponseType(typeof(MessageModel<ConsoleUserAuthorizationVo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel<ConsoleUserAuthorizationVo>> GetUserAuthorization(long id)
+    {
+        var authorization = await _userService.GetConsoleUserAuthorizationAsync(id);
+        if (authorization == null)
+        {
+            return new MessageModel<ConsoleUserAuthorizationVo>
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在",
+                Code = "User.NotFound",
+                MessageKey = "error.user.not_found"
+            };
+        }
+
+        return MessageModel<ConsoleUserAuthorizationVo>.Success("获取成功", authorization);
     }
 
     /// <summary>

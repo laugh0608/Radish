@@ -47,6 +47,12 @@ function toBoolean(value: unknown): boolean {
   return typeof value === 'boolean' ? value : false;
 }
 
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : [];
+}
+
 function toParsedResponse<T>(response: ParsedApiResponse<unknown>, data?: T): ParsedApiResponse<T> {
   return {
     ok: response.ok,
@@ -73,16 +79,8 @@ function mapUserListItem(raw: ApiRecord): UserListItem {
     voUpdateTime: toOptionalString(raw.voUpdateTime ?? raw.VoUpdateTime),
     voIsDeleted: toBoolean(raw.voIsDeleted ?? raw.VoIsDeleted),
     voTenantId: toIdString(raw.voTenantId ?? raw.VoTenantId),
+    voRoleNames: toStringArray(raw.voRoleNames ?? raw.VoRoleNames),
   };
-}
-
-/**
- * 用户状态枚举
- */
-export enum UserStatus {
-  Normal = 0,
-  Disabled = 1,
-  Locked = 2,
 }
 
 /**
@@ -92,8 +90,8 @@ export interface UserListParams {
   pageIndex?: number;
   pageSize?: number;
   keyword?: string;
-  status?: UserStatus;
-  role?: string;
+  isEnabled?: boolean;
+  roleName?: string;
 }
 
 /**
@@ -116,6 +114,12 @@ export interface UserStats {
   onlineUsers: number;
 }
 
+export interface ConsoleUserAuthorization {
+  voUserId: string;
+  voRoleNames: string[];
+  voPermissionKeys: string[];
+}
+
 /**
  * 用户管理 API
  */
@@ -135,11 +139,11 @@ export const userManagementApi = {
     if (params.keyword) {
       searchParams.set('keyword', params.keyword);
     }
-    if (params.status !== undefined) {
-      searchParams.set('status', params.status.toString());
+    if (params.isEnabled !== undefined) {
+      searchParams.set('isEnabled', params.isEnabled.toString());
     }
-    if (params.role) {
-      searchParams.set('role', params.role);
+    if (params.roleName) {
+      searchParams.set('roleName', params.roleName);
     }
 
     const queryString = searchParams.toString();
@@ -189,6 +193,23 @@ export const userManagementApi = {
     return toParsedResponse(response);
   },
 
+  async getUserAuthorization(id: string): Promise<ParsedApiResponse<ConsoleUserAuthorization>> {
+    const response = await apiGet<ApiRecord>(
+      `/api/v1/User/GetUserAuthorization/${encodeURIComponent(String(id))}`,
+      { withAuth: true },
+    );
+    if (!response.ok || !isApiRecord(response.data)) {
+      return toParsedResponse(response);
+    }
+
+    const raw = response.data;
+    return toParsedResponse(response, {
+      voUserId: toIdString(raw.voUserId ?? raw.VoUserId),
+      voRoleNames: toStringArray(raw.voRoleNames ?? raw.VoRoleNames),
+      voPermissionKeys: toStringArray(raw.voPermissionKeys ?? raw.VoPermissionKeys),
+    });
+  },
+
   /**
    * 获取用户统计信息
    */
@@ -199,35 +220,3 @@ export const userManagementApi = {
     return apiGet<UserStats>(url, { withAuth: true });
   },
 };
-
-/**
- * 获取用户状态显示文本
- */
-export function getUserStatusDisplay(status: UserStatus): string {
-  switch (status) {
-    case UserStatus.Normal:
-      return '正常';
-    case UserStatus.Disabled:
-      return '禁用';
-    case UserStatus.Locked:
-      return '锁定';
-    default:
-      return '未知';
-  }
-}
-
-/**
- * 获取用户状态颜色
- */
-export function getUserStatusColor(status: UserStatus): string {
-  switch (status) {
-    case UserStatus.Normal:
-      return 'success';
-    case UserStatus.Disabled:
-      return 'default';
-    case UserStatus.Locked:
-      return 'error';
-    default:
-      return 'default';
-  }
-}
