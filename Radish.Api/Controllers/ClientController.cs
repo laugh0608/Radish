@@ -3,11 +3,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using OpenIddict.Abstractions;
 using Radish.Api.Filters;
+using Radish.Api.Services;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.Model;
 using Radish.Model.ViewModels.Client;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text.Json;
 
@@ -23,16 +25,29 @@ namespace Radish.Api.Controllers;
 [Authorize(Policy = AuthorizationPolicies.Client)]
 public class ClientController : ControllerBase
 {
+    private const int MaxPageSize = 100;
+    private const int MaxKeywordLength = 100;
+    private static readonly HashSet<string> SupportedGrantTypes = new(StringComparer.Ordinal)
+    {
+        "authorization_code",
+        "client_credentials",
+        "refresh_token",
+        "password"
+    };
+
     private readonly IOpenIddictApplicationManager _applicationManager;
+    private readonly IClientApplicationQueryService _queryService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
     private readonly ILogger<ClientController> _logger;
 
     public ClientController(
         IOpenIddictApplicationManager applicationManager,
+        IClientApplicationQueryService queryService,
         ICurrentUserAccessor currentUserAccessor,
         ILogger<ClientController> logger)
     {
         _applicationManager = applicationManager;
+        _queryService = queryService;
         _currentUserAccessor = currentUserAccessor;
         _logger = logger;
     }
@@ -45,56 +60,43 @@ public class ClientController : ControllerBase
     public async Task<MessageModel<PageModel<ClientVo>>> GetClients(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 20,
-        [FromQuery] string? keyword = null)
+        [FromQuery] string? keyword = null,
+        CancellationToken cancellationToken = default)
     {
+        if (page < 1 || pageSize < 1 || pageSize > MaxPageSize)
+        {
+            return MessageModel<PageModel<ClientVo>>.Failed($"分页参数无效：page 必须大于 0，pageSize 必须在 1-{MaxPageSize} 之间");
+        }
+
+        var normalizedKeyword = keyword?.Trim();
+        if (normalizedKeyword?.Length > MaxKeywordLength)
+        {
+            return MessageModel<PageModel<ClientVo>>.Failed($"搜索关键词长度不能超过 {MaxKeywordLength}");
+        }
+
         try
         {
-            var allClients = new List<object>();
-            await foreach (var app in _applicationManager.ListAsync())
-            {
-                // 过滤已删除的客户端
-                if (!await IsDeletedAsync(app))
-                {
-                    allClients.Add(app);
-                }
-            }
-
-            // 关键词筛选
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                var filteredClients = new List<object>();
-                foreach (var app in allClients)
-                {
-                    var clientId = await _applicationManager.GetClientIdAsync(app);
-                    var displayName = await _applicationManager.GetDisplayNameAsync(app);
-
-                    if ((clientId != null && clientId.Contains(keyword, StringComparison.OrdinalIgnoreCase)) ||
-                        (displayName != null && displayName.Contains(keyword, StringComparison.OrdinalIgnoreCase)))
-                    {
-                        filteredClients.Add(app);
-                    }
-                }
-                allClients = filteredClients;
-            }
-
-            // 分页
-            var total = allClients.Count;
-            var items = allClients.Skip((page - 1) * pageSize).Take(pageSize).ToList();
-
-            // 转换为 VO
+            var queryPage = await _queryService.QueryAsync(
+                page,
+                pageSize,
+                normalizedKeyword,
+                cancellationToken);
             var clientVos = new List<ClientVo>();
-            foreach (var app in items)
+            foreach (var applicationId in queryPage.ApplicationIds)
             {
-                var vo = await MapToClientVo(app);
-                clientVos.Add(vo);
+                var app = await _applicationManager.FindByIdAsync(applicationId, cancellationToken);
+                if (app != null && !await IsDeletedAsync(app, cancellationToken))
+                {
+                    clientVos.Add(await MapToClientVo(app, cancellationToken));
+                }
             }
 
             var pageModel = new PageModel<ClientVo>
             {
                 Page = page,
                 PageSize = pageSize,
-                DataCount = total,
-                PageCount = (int)Math.Ceiling(total / (double)pageSize),
+                DataCount = queryPage.Total,
+                PageCount = (int)Math.Ceiling(queryPage.Total / (double)pageSize),
                 Data = clientVos
             };
 
@@ -141,80 +143,57 @@ public class ClientController : ControllerBase
     {
         try
         {
-            // 检查 ClientId 是否已存在（排除已删除的）
-            var existing = await _applicationManager.FindByClientIdAsync(dto.ClientId);
-            if (existing != null && !await IsDeletedAsync(existing))
+            var clientType = ResolveClientType(dto.ClientType, dto.RequireClientSecret);
+            var grantTypes = NormalizeGrantTypes(dto.GrantTypes);
+            var scopes = NormalizeValues(dto.Scopes);
+            var redirectUris = NormalizeValues(dto.RedirectUris);
+            var postLogoutRedirectUris = NormalizeValues(dto.PostLogoutRedirectUris);
+            var validationError = ValidateClientConfiguration(
+                clientType,
+                grantTypes,
+                scopes,
+                redirectUris,
+                postLogoutRedirectUris,
+                dto.ConsentType);
+            if (validationError != null)
             {
-                return MessageModel<ClientSecretVo>.Failed($"客户端 ID '{dto.ClientId}' 已存在");
+                return MessageModel<ClientSecretVo>.Failed(validationError);
             }
 
-            // 创建描述符
+            // OpenIddict 对 ClientId 有唯一索引；软删除记录也不能直接复用。
+            var existing = await _applicationManager.FindByClientIdAsync(dto.ClientId);
+            if (existing != null)
+            {
+                var suffix = await IsDeletedAsync(existing) ? "（已软删除，当前不支持复用）" : string.Empty;
+                return MessageModel<ClientSecretVo>.Failed($"客户端 ID '{dto.ClientId}' 已存在{suffix}");
+            }
+
             var descriptor = new OpenIddictApplicationDescriptor
             {
                 ClientId = dto.ClientId,
                 DisplayName = dto.DisplayName,
-                ConsentType = dto.ConsentType ?? OpenIddictConstants.ConsentTypes.Explicit
+                ClientType = clientType,
+                ConsentType = NormalizeConsentType(dto.ConsentType)
             };
 
-            // 生成 ClientSecret（如果需要）
             string? clientSecret = null;
-            if (dto.RequireClientSecret)
+            if (clientType == OpenIddictConstants.ClientTypes.Confidential)
             {
                 clientSecret = GenerateClientSecret();
                 descriptor.ClientSecret = clientSecret;
             }
 
-            // 添加回调地址
-            if (dto.RedirectUris != null)
+            foreach (var uri in redirectUris)
             {
-                foreach (var uri in dto.RedirectUris)
-                {
-                    descriptor.RedirectUris.Add(new Uri(uri));
-                }
+                descriptor.RedirectUris.Add(new Uri(uri));
             }
 
-            if (dto.PostLogoutRedirectUris != null)
+            foreach (var uri in postLogoutRedirectUris)
             {
-                foreach (var uri in dto.PostLogoutRedirectUris)
-                {
-                    descriptor.PostLogoutRedirectUris.Add(new Uri(uri));
-                }
+                descriptor.PostLogoutRedirectUris.Add(new Uri(uri));
             }
 
-            // 添加权限
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
-            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
-
-            // 添加授权类型
-            foreach (var grantType in dto.GrantTypes)
-            {
-                var permission = grantType.ToLower() switch
-                {
-                    "authorization_code" => OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
-                    "client_credentials" => OpenIddictConstants.Permissions.GrantTypes.ClientCredentials,
-                    "refresh_token" => OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
-                    "password" => OpenIddictConstants.Permissions.GrantTypes.Password,
-                    _ => null
-                };
-                if (permission != null)
-                {
-                    descriptor.Permissions.Add(permission);
-                }
-            }
-
-            // 添加 Scopes
-            foreach (var scope in dto.Scopes)
-            {
-                descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + scope);
-            }
-
-            // 响应类型
-            if (dto.GrantTypes.Contains("authorization_code"))
-            {
-                descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
-            }
-
-            // PKCE
+            ApplyManagedPermissions(descriptor, grantTypes, scopes);
             if (dto.RequirePkce)
             {
                 descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
@@ -239,7 +218,7 @@ public class ClientController : ControllerBase
             return MessageModel<ClientSecretVo>.Success("创建成功", new ClientSecretVo
             {
                 ClientId = dto.ClientId,
-                ClientSecret = clientSecret ?? "(无需密钥)",
+                ClientSecret = clientSecret,
                 Message = clientSecret != null ? "请妥善保管此密钥，关闭后将无法再次查看" : "公开客户端无需密钥"
             });
         }
@@ -291,13 +270,20 @@ public class ClientController : ControllerBase
 
             if (dto.ConsentType != null)
             {
-                descriptor.ConsentType = dto.ConsentType;
+                descriptor.ConsentType = NormalizeConsentType(dto.ConsentType);
             }
 
             if (dto.RedirectUris != null)
             {
+                var redirectUris = NormalizeValues(dto.RedirectUris);
+                var uriValidationError = ValidateAbsoluteUris(redirectUris, "回调 URI");
+                if (uriValidationError != null)
+                {
+                    return MessageModel<string>.Failed(uriValidationError);
+                }
+
                 descriptor.RedirectUris.Clear();
-                foreach (var uri in dto.RedirectUris)
+                foreach (var uri in redirectUris)
                 {
                     descriptor.RedirectUris.Add(new Uri(uri));
                 }
@@ -305,46 +291,17 @@ public class ClientController : ControllerBase
 
             if (dto.PostLogoutRedirectUris != null)
             {
+                var postLogoutRedirectUris = NormalizeValues(dto.PostLogoutRedirectUris);
+                var uriValidationError = ValidateAbsoluteUris(postLogoutRedirectUris, "登出回调 URI");
+                if (uriValidationError != null)
+                {
+                    return MessageModel<string>.Failed(uriValidationError);
+                }
+
                 descriptor.PostLogoutRedirectUris.Clear();
-                foreach (var uri in dto.PostLogoutRedirectUris)
+                foreach (var uri in postLogoutRedirectUris)
                 {
                     descriptor.PostLogoutRedirectUris.Add(new Uri(uri));
-                }
-            }
-
-            if (dto.GrantTypes != null)
-            {
-                // 清除旧的授权类型权限
-                descriptor.Permissions.RemoveWhere(p =>
-                    p == OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode ||
-                    p == OpenIddictConstants.Permissions.GrantTypes.ClientCredentials ||
-                    p == OpenIddictConstants.Permissions.GrantTypes.RefreshToken ||
-                    p == OpenIddictConstants.Permissions.GrantTypes.Password);
-
-                foreach (var grantType in dto.GrantTypes)
-                {
-                    var permission = grantType.ToLower() switch
-                    {
-                        "authorization_code" => OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
-                        "client_credentials" => OpenIddictConstants.Permissions.GrantTypes.ClientCredentials,
-                        "refresh_token" => OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
-                        "password" => OpenIddictConstants.Permissions.GrantTypes.Password,
-                        _ => null
-                    };
-                    if (permission != null)
-                    {
-                        descriptor.Permissions.Add(permission);
-                    }
-                }
-            }
-
-            if (dto.Scopes != null)
-            {
-                // 清除旧的 scope 权限
-                descriptor.Permissions.RemoveWhere(p => p.StartsWith(OpenIddictConstants.Permissions.Prefixes.Scope));
-                foreach (var scope in dto.Scopes)
-                {
-                    descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + scope);
                 }
             }
 
@@ -359,6 +316,27 @@ public class ClientController : ControllerBase
                     descriptor.Requirements.Remove(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
                 }
             }
+
+            var grantTypes = dto.GrantTypes != null
+                ? NormalizeGrantTypes(dto.GrantTypes)
+                : GetGrantTypes(descriptor.Permissions);
+            var scopes = dto.Scopes != null
+                ? NormalizeValues(dto.Scopes)
+                : GetScopes(descriptor.Permissions);
+            var clientType = descriptor.ClientType ?? OpenIddictConstants.ClientTypes.Public;
+            var validationError = ValidateClientConfiguration(
+                clientType,
+                grantTypes,
+                scopes,
+                descriptor.RedirectUris.Select(uri => uri.ToString()).ToList(),
+                descriptor.PostLogoutRedirectUris.Select(uri => uri.ToString()).ToList(),
+                descriptor.ConsentType);
+            if (validationError != null)
+            {
+                return MessageModel<string>.Failed(validationError);
+            }
+
+            ApplyManagedPermissions(descriptor, grantTypes, scopes);
 
             // 设置更新信息
             SetUpdatedInfo(descriptor);
@@ -408,7 +386,7 @@ public class ClientController : ControllerBase
     /// <summary>
     /// 重置客户端密钥
     /// </summary>
-    [HttpPost("{id}/reset-secret")]
+    [HttpPost("{id}")]
     [RequireConsolePermission(ConsolePermissions.ApplicationsResetSecret)]
     public async Task<MessageModel<ClientSecretVo>> ResetClientSecret(string id)
     {
@@ -423,9 +401,19 @@ public class ClientController : ControllerBase
             var descriptor = new OpenIddictApplicationDescriptor();
             await _applicationManager.PopulateAsync(descriptor, app);
 
+            var clientType = await _applicationManager.GetClientTypeAsync(app);
+            if (!string.Equals(
+                    clientType,
+                    OpenIddictConstants.ClientTypes.Confidential,
+                    StringComparison.Ordinal))
+            {
+                return MessageModel<ClientSecretVo>.Failed("公开客户端不使用 Client Secret，不能执行密钥轮换");
+            }
+
             // 生成新密钥
             var newSecret = GenerateClientSecret();
             descriptor.ClientSecret = newSecret;
+            SetUpdatedInfo(descriptor);
 
             // 更新客户端
             await _applicationManager.UpdateAsync(app, descriptor);
@@ -459,44 +447,240 @@ public class ClientController : ControllerBase
 
     #region 私有方法
 
+    private static string ResolveClientType(string? clientType, bool requireClientSecret)
+    {
+        if (!string.IsNullOrWhiteSpace(clientType))
+        {
+            return clientType.Trim().ToLowerInvariant();
+        }
+
+        return requireClientSecret
+            ? OpenIddictConstants.ClientTypes.Confidential
+            : OpenIddictConstants.ClientTypes.Public;
+    }
+
+    private static string NormalizeConsentType(string? consentType)
+    {
+        return string.IsNullOrWhiteSpace(consentType)
+            ? OpenIddictConstants.ConsentTypes.Explicit
+            : consentType.Trim().ToLowerInvariant();
+    }
+
+    private static List<string> NormalizeValues(IEnumerable<string>? values)
+    {
+        return values?
+            .Select(value => value.Trim())
+            .Where(value => !string.IsNullOrWhiteSpace(value))
+            .Distinct(StringComparer.Ordinal)
+            .ToList() ?? new List<string>();
+    }
+
+    private static List<string> NormalizeGrantTypes(IEnumerable<string>? values)
+    {
+        return NormalizeValues(values)
+            .Select(value => value.ToLowerInvariant())
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+    }
+
+    private static string? ValidateClientConfiguration(
+        string clientType,
+        IReadOnlyCollection<string> grantTypes,
+        IReadOnlyCollection<string> scopes,
+        IReadOnlyCollection<string> redirectUris,
+        IReadOnlyCollection<string> postLogoutRedirectUris,
+        string? consentType)
+    {
+        if (clientType != OpenIddictConstants.ClientTypes.Public &&
+            clientType != OpenIddictConstants.ClientTypes.Confidential)
+        {
+            return "客户端类型只允许 public 或 confidential";
+        }
+
+        if (grantTypes.Count == 0)
+        {
+            return "至少需要一个授权类型";
+        }
+
+        var unsupportedGrantType = grantTypes.FirstOrDefault(grantType => !SupportedGrantTypes.Contains(grantType));
+        if (unsupportedGrantType != null)
+        {
+            return $"不支持的授权类型：{unsupportedGrantType}";
+        }
+
+        if (scopes.Count == 0)
+        {
+            return "至少需要一个授权范围";
+        }
+
+        if (grantTypes.Contains("authorization_code") && redirectUris.Count == 0)
+        {
+            return "authorization_code 授权类型至少需要一个回调 URI";
+        }
+
+        if (clientType == OpenIddictConstants.ClientTypes.Public && grantTypes.Contains("client_credentials"))
+        {
+            return "公开客户端不能使用 client_credentials 授权类型";
+        }
+
+        var normalizedConsentType = NormalizeConsentType(consentType);
+        var supportedConsentTypes = new[]
+        {
+            OpenIddictConstants.ConsentTypes.Explicit,
+            OpenIddictConstants.ConsentTypes.Implicit,
+            OpenIddictConstants.ConsentTypes.External,
+            OpenIddictConstants.ConsentTypes.Systematic
+        };
+        if (!supportedConsentTypes.Contains(normalizedConsentType, StringComparer.Ordinal))
+        {
+            return "不支持的同意类型";
+        }
+
+        var redirectUriError = ValidateAbsoluteUris(redirectUris, "回调 URI");
+        if (redirectUriError != null)
+        {
+            return redirectUriError;
+        }
+
+        var postLogoutRedirectUriError = ValidateAbsoluteUris(postLogoutRedirectUris, "登出回调 URI");
+        if (postLogoutRedirectUriError != null)
+        {
+            return postLogoutRedirectUriError;
+        }
+
+        return null;
+    }
+
+    private static string? ValidateAbsoluteUris(IEnumerable<string> values, string fieldName)
+    {
+        foreach (var value in values)
+        {
+            if (!Uri.TryCreate(value, UriKind.Absolute, out var uri) || !string.IsNullOrEmpty(uri.Fragment))
+            {
+                return $"{fieldName} 必须是无 fragment 的绝对 URI：{value}";
+            }
+        }
+
+        return null;
+    }
+
+    private static void ApplyManagedPermissions(
+        OpenIddictApplicationDescriptor descriptor,
+        IReadOnlyCollection<string> grantTypes,
+        IReadOnlyCollection<string> scopes)
+    {
+        descriptor.Permissions.RemoveWhere(permission =>
+            permission == OpenIddictConstants.Permissions.Endpoints.Authorization ||
+            permission == OpenIddictConstants.Permissions.Endpoints.Token ||
+            permission == OpenIddictConstants.Permissions.Endpoints.EndSession ||
+            permission == OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode ||
+            permission == OpenIddictConstants.Permissions.GrantTypes.ClientCredentials ||
+            permission == OpenIddictConstants.Permissions.GrantTypes.RefreshToken ||
+            permission == OpenIddictConstants.Permissions.GrantTypes.Password ||
+            permission == OpenIddictConstants.Permissions.ResponseTypes.Code ||
+            permission.StartsWith(OpenIddictConstants.Permissions.Prefixes.Scope, StringComparison.Ordinal));
+
+        if (grantTypes.Contains("authorization_code"))
+        {
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.ResponseTypes.Code);
+        }
+
+        if (grantTypes.Count > 0)
+        {
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
+        }
+
+        if (descriptor.PostLogoutRedirectUris.Count > 0)
+        {
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
+        }
+
+        foreach (var grantType in grantTypes)
+        {
+            var permission = grantType switch
+            {
+                "authorization_code" => OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode,
+                "client_credentials" => OpenIddictConstants.Permissions.GrantTypes.ClientCredentials,
+                "refresh_token" => OpenIddictConstants.Permissions.GrantTypes.RefreshToken,
+                "password" => OpenIddictConstants.Permissions.GrantTypes.Password,
+                _ => null
+            };
+            if (permission != null)
+            {
+                descriptor.Permissions.Add(permission);
+            }
+        }
+
+        foreach (var scope in scopes)
+        {
+            descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + scope);
+        }
+    }
+
+    private static List<string> GetGrantTypes(IEnumerable<string> permissions)
+    {
+        var grantTypes = new List<string>();
+        var permissionSet = permissions.ToHashSet(StringComparer.Ordinal);
+        if (permissionSet.Contains(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode))
+            grantTypes.Add("authorization_code");
+        if (permissionSet.Contains(OpenIddictConstants.Permissions.GrantTypes.ClientCredentials))
+            grantTypes.Add("client_credentials");
+        if (permissionSet.Contains(OpenIddictConstants.Permissions.GrantTypes.RefreshToken))
+            grantTypes.Add("refresh_token");
+        if (permissionSet.Contains(OpenIddictConstants.Permissions.GrantTypes.Password))
+            grantTypes.Add("password");
+        return grantTypes;
+    }
+
+    private static List<string> GetScopes(IEnumerable<string> permissions)
+    {
+        return permissions
+            .Where(permission => permission.StartsWith(
+                OpenIddictConstants.Permissions.Prefixes.Scope,
+                StringComparison.Ordinal))
+            .Select(permission => permission[OpenIddictConstants.Permissions.Prefixes.Scope.Length..])
+            .ToList();
+    }
+
+    private static DateTime? ParseUtcDateTime(string? value)
+    {
+        return DateTime.TryParse(
+            value,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.RoundtripKind,
+            out var parsed)
+            ? parsed
+            : null;
+    }
+
     /// <summary>
     /// 将 OpenIddict Application 映射为 ClientVo
     /// </summary>
-    private async Task<ClientVo> MapToClientVo(object app)
+    private async Task<ClientVo> MapToClientVo(
+        object app,
+        CancellationToken cancellationToken = default)
     {
-        var id = await _applicationManager.GetIdAsync(app);
-        var clientId = await _applicationManager.GetClientIdAsync(app);
-        var displayName = await _applicationManager.GetDisplayNameAsync(app);
-        _ = await _applicationManager.GetClientTypeAsync(app);
-        var consentType = await _applicationManager.GetConsentTypeAsync(app);
-        var properties = await _applicationManager.GetPropertiesAsync(app);
+        var id = await _applicationManager.GetIdAsync(app, cancellationToken);
+        var clientId = await _applicationManager.GetClientIdAsync(app, cancellationToken);
+        var displayName = await _applicationManager.GetDisplayNameAsync(app, cancellationToken);
+        var clientType = await _applicationManager.GetClientTypeAsync(app, cancellationToken);
+        var consentType = await _applicationManager.GetConsentTypeAsync(app, cancellationToken);
+        var properties = await _applicationManager.GetPropertiesAsync(app, cancellationToken);
 
         // 获取权限
-        var permissions = await _applicationManager.GetPermissionsAsync(app);
+        var permissions = await _applicationManager.GetPermissionsAsync(app, cancellationToken);
 
         // 解析授权类型
-        var grantTypes = new List<string>();
-        if (permissions.Contains(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode))
-            grantTypes.Add("authorization_code");
-        if (permissions.Contains(OpenIddictConstants.Permissions.GrantTypes.ClientCredentials))
-            grantTypes.Add("client_credentials");
-        if (permissions.Contains(OpenIddictConstants.Permissions.GrantTypes.RefreshToken))
-            grantTypes.Add("refresh_token");
-        if (permissions.Contains(OpenIddictConstants.Permissions.GrantTypes.Password))
-            grantTypes.Add("password");
-
-        // 解析 Scopes
-        var scopes = permissions
-            .Where(p => p.StartsWith(OpenIddictConstants.Permissions.Prefixes.Scope))
-            .Select(p => p.Substring(OpenIddictConstants.Permissions.Prefixes.Scope.Length))
-            .ToList();
+        var grantTypes = GetGrantTypes(permissions);
+        var scopes = GetScopes(permissions);
 
         // 获取回调地址
-        var redirectUris = await _applicationManager.GetRedirectUrisAsync(app);
-        var postLogoutRedirectUris = await _applicationManager.GetPostLogoutRedirectUrisAsync(app);
+        var redirectUris = await _applicationManager.GetRedirectUrisAsync(app, cancellationToken);
+        var postLogoutRedirectUris = await _applicationManager.GetPostLogoutRedirectUrisAsync(app, cancellationToken);
 
         // 获取要求
-        var requirements = await _applicationManager.GetRequirementsAsync(app);
+        var requirements = await _applicationManager.GetRequirementsAsync(app, cancellationToken);
         var requirePkce = requirements.Contains(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
 
         var description = GetPropertyValue(properties, "description");
@@ -505,6 +689,7 @@ public class ClientController : ControllerBase
         var status = GetPropertyValue(properties, "status") ?? "Active";
         var appType = GetPropertyValue(properties, "appType")
                       ?? GetDefaultAppType(clientId);
+        var createdAt = ParseUtcDateTime(GetPropertyValue(properties, "CreatedAt"));
 
         return new ClientVo
         {
@@ -516,12 +701,14 @@ public class ClientController : ControllerBase
             DeveloperEmail = developerEmail,
             Type = appType,
             Status = status,
-            GrantTypes = string.Join(", ", grantTypes),
-            RedirectUris = string.Join(", ", redirectUris.Select(u => u.ToString())),
-            PostLogoutRedirectUris = string.Join(", ", postLogoutRedirectUris.Select(u => u.ToString())),
-            Scopes = string.Join(", ", scopes),
+            ClientType = clientType ?? OpenIddictConstants.ClientTypes.Public,
+            GrantTypes = grantTypes,
+            RedirectUris = redirectUris.ToList(),
+            PostLogoutRedirectUris = postLogoutRedirectUris.ToList(),
+            Scopes = scopes,
             ConsentType = consentType,
-            RequirePkce = requirePkce
+            RequirePkce = requirePkce,
+            CreatedAt = createdAt
         };
     }
 
@@ -539,9 +726,11 @@ public class ClientController : ControllerBase
     /// <summary>
     /// 检查客户端是否已被软删除
     /// </summary>
-    private async Task<bool> IsDeletedAsync(object app)
+    private async Task<bool> IsDeletedAsync(
+        object app,
+        CancellationToken cancellationToken = default)
     {
-        var properties = await _applicationManager.GetPropertiesAsync(app);
+        var properties = await _applicationManager.GetPropertiesAsync(app, cancellationToken);
         if (properties.TryGetValue("IsDeleted", out var value))
         {
             return value.GetString() == "true";

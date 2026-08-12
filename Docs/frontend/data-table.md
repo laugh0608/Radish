@@ -146,151 +146,15 @@ interface PagedResponse<T> {
 
 ### Console 应用示例
 
-```typescript
-// src/pages/Applications/Applications.tsx
-import { useState, useEffect } from 'react';
-import {
-  DataTable,
-  AntButton,
-  Space,
-  Tag,
-  Popconfirm,
-  message,
-} from '@radish/ui';
-import type { TableColumnsType } from '@radish/ui';
-import {
-  EditOutlined,
-  DeleteOutlined,
-  PlusOutlined,
-  ReloadOutlined,
-} from '@radish/ui';
-import { clientApi } from '../../api/clients';
-import type { OidcClient } from '../../types/oidc';
+Applications 已从“大页请求 + 前端假分页”迁移为数据库权威分页。该页面不再作为 `DataTable` 的静态复制示例，因为它还包含 URL 查询真相源、请求代次、ready / stale / unavailable 写冻结、PC Table 与 mobile 卡片双形态以及一次性 Secret 工作流。
 
-export const Applications = () => {
-  const [clients, setClients] = useState<OidcClient[]>([]);
-  const [loading, setLoading] = useState(false);
+实现时遵循以下边界：
 
-  useEffect(() => {
-    void loadClients();
-  }, []);
-
-  const loadClients = async () => {
-    setLoading(true);
-    try {
-      const result = await clientApi.getClients({ page: 1, pageSize: 100 });
-      if (result.ok && result.data) {
-        setClients(result.data.data);
-      } else {
-        message.error(result.message || '加载失败');
-      }
-    } catch (error) {
-      message.error('加载失败');
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleDelete = async (id: string) => {
-    const result = await clientApi.deleteClient(id);
-    if (result.ok) {
-      message.success('删除成功');
-      await loadClients();
-    }
-  };
-
-  const columns: TableColumnsType<OidcClient> = [
-    {
-      title: '客户端 ID',
-      dataIndex: 'clientId',
-      key: 'clientId',
-      width: 200,
-    },
-    {
-      title: '显示名称',
-      dataIndex: 'displayName',
-      key: 'displayName',
-    },
-    {
-      title: '类型',
-      dataIndex: 'type',
-      key: 'type',
-      render: (type: string) => (
-        <Tag color={type === 'public' ? 'green' : 'blue'}>
-          {type === 'public' ? '公开' : '机密'}
-        </Tag>
-      ),
-    },
-    {
-      title: '授权类型',
-      dataIndex: 'grantTypes',
-      key: 'grantTypes',
-    },
-    {
-      title: '操作',
-      key: 'action',
-      fixed: 'right',
-      width: 180,
-      render: (_, record) => (
-        <Space size="small">
-          <AntButton
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => handleEdit(record)}
-          >
-            编辑
-          </AntButton>
-          <Popconfirm
-            title="确定要删除这个客户端吗？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <AntButton
-              type="link"
-              danger
-              icon={<DeleteOutlined />}
-            >
-              删除
-            </AntButton>
-          </Popconfirm>
-        </Space>
-      ),
-    },
-  ];
-
-  return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <Space>
-          <AntButton
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={handleCreate}
-          >
-            新建客户端
-          </AntButton>
-          <AntButton
-            icon={<ReloadOutlined />}
-            onClick={() => void loadClients()}
-          >
-            刷新
-          </AntButton>
-        </Space>
-      </div>
-
-      <DataTable
-        columns={columns}
-        dataSource={clients}
-        loading={loading}
-        rowKey="id"
-        scroll={{ x: 1200 }}
-      />
-    </div>
-  );
-};
-```
+1. `page`、`pageSize` 与 `keyword` 从 URL query 恢复，翻页和搜索直接更新 URL。
+2. 服务端返回 `PageModel<OidcClient>`；不得请求 `pageSize=100` 后交给组件做本地分页。
+3. 只有当前 URL 快照成功加载后才允许编辑、删除或重置密钥。
+4. PC 可以直接使用 Ant Design Table 的受控 `pagination`；mobile 应按任务层级重排为卡片，不缩放桌面表格。
+5. 具体代码以 `Frontend/radish.console/src/pages/Applications/Applications.tsx` 和[开放平台设计](/features/open-platform)为准。
 
 ### 分页表格示例
 

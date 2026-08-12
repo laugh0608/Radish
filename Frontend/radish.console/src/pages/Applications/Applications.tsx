@@ -1,223 +1,376 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { log } from '@/utils/logger';
 import {
-  Table,
+  AntInput as Input,
+  AntModal as Modal,
+  BottomSheet,
   Button,
-  Space,
-  Tag,
   Popconfirm,
+  Space,
+  Table,
+  Tag,
+  formatLocalizedDateTime,
   message,
-  AntModal,
-  Form,
-  AntInput,
   type TableColumnsType,
 } from '@radish/ui';
 import {
-  EditOutlined,
+  AppstoreOutlined,
   DeleteOutlined,
+  EditOutlined,
+  KeyOutlined,
   PlusOutlined,
   ReloadOutlined,
-  AppstoreOutlined,
-  KeyOutlined,
+  SearchOutlined,
 } from '@radish/ui';
-import { clientApi } from '../../api/clients';
-import type { OidcClient, CreateClientRequest } from '../../types/oidc';
+import { clientApi } from '@/api/clients';
+import {
+  ConsoleMetricCard,
+  ConsoleMetricGrid,
+  ConsolePageHeader,
+  ConsoleResourceList,
+  ConsoleStatusChip,
+  ConsoleToolbar,
+} from '@/components/ConsolePage';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { usePermission } from '@/hooks/usePermission';
+import type { ClientSecretResult, OidcClient } from '@/types/oidc';
+import { formatConsoleNumber } from '@/utils/localeFormatters';
+import { log } from '@/utils/logger';
+import { ApplicationForm } from './ApplicationForm';
+import {
+  ApplicationSecretResult,
+  type ApplicationSecretDisclosure,
+} from './ApplicationSecretResult';
+import {
+  DEFAULT_APPLICATION_LIST_QUERY,
+  parseApplicationListQuery,
+  serializeApplicationListQuery,
+  type ApplicationListQuery,
+} from './applicationListUrlState';
 import '../adminFeature.css';
 import './Applications.css';
 
+type ResourceReadState = 'loading' | 'ready' | 'unavailable' | 'stale';
+
 export const Applications = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const language = i18n.resolvedLanguage ?? i18n.language;
   useDocumentTitle(t('applications.documentTitle'));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const query = useMemo(() => parseApplicationListQuery(searchParams), [searchParams]);
+  const [keywordDraft, setKeywordDraft] = useState(query.keyword);
   const [clients, setClients] = useState<OidcClient[]>([]);
+  const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState<'create' | 'edit'>('create');
-  const [currentClient, setCurrentClient] = useState<OidcClient | null>(null);
-  const [form] = Form.useForm();
+  const [readState, setReadState] = useState<ResourceReadState>('loading');
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
+  const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
+  const [formApplication, setFormApplication] = useState<OidcClient>();
+  const [busyAction, setBusyAction] = useState<string>();
+  const [secretDisclosure, setSecretDisclosure] = useState<ApplicationSecretDisclosure>();
+  const requestSequence = useRef(0);
+  const snapshotQueryKey = useRef<string | undefined>(undefined);
   const canViewApplications = usePermission(CONSOLE_PERMISSIONS.applicationsView);
   const canCreateApplication = usePermission(CONSOLE_PERMISSIONS.applicationsCreate);
   const canEditApplication = usePermission(CONSOLE_PERMISSIONS.applicationsEdit);
   const canDeleteApplication = usePermission(CONSOLE_PERMISSIONS.applicationsDelete);
   const canResetApplicationSecret = usePermission(CONSOLE_PERMISSIONS.applicationsResetSecret);
-  const enabledClients = clients.filter((client) => client.status !== 'Disabled').length;
-  const thirdPartyClients = clients.filter((client) => client.type === 'ThirdParty').length;
-
-  const loadClients = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await clientApi.getClients({ page: 1, pageSize: 100 });
-      if (result.ok && result.data) {
-        setClients(result.data.data);
-      } else {
-        message.error(result.message || t('applications.feedback.loadFailed'));
-      }
-    } catch (error) {
-      message.error(t('applications.feedback.loadFailed'));
-      log.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+  const actionsAreAuthoritative = readState === 'ready';
+  const pageCount = Math.max(1, Math.ceil(total / query.pageSize));
+  const activeClientCount = clients.filter((client) => client.status !== 'Disabled').length;
+  const confidentialClientCount = clients.filter((client) => client.clientType === 'confidential').length;
 
   useEffect(() => {
-    if (!canViewApplications) {
+    setKeywordDraft(query.keyword);
+  }, [query.keyword]);
+
+  const updateQuery = useCallback((nextQuery: ApplicationListQuery) => {
+    setSearchParams(serializeApplicationListQuery(nextQuery), { replace: true });
+  }, [setSearchParams]);
+
+  const loadClients = useCallback(async () => {
+    const requestId = requestSequence.current + 1;
+    const queryKey = serializeApplicationListQuery(query).toString();
+    const hasCurrentSnapshot = snapshotQueryKey.current === queryKey;
+    requestSequence.current = requestId;
+
+    try {
+      setLoading(true);
+      setReadState('loading');
+      if (!hasCurrentSnapshot) {
+        setClients([]);
+        setTotal(0);
+      }
+
+      const result = await clientApi.getClients({
+        page: query.page,
+        pageSize: query.pageSize,
+        keyword: query.keyword || undefined,
+      });
+      if (requestSequence.current !== requestId) return;
+      if (!result.ok || !result.data) {
+        throw new Error(result.message || t('applications.feedback.loadFailed'));
+      }
+
+      const responsePageCount = Math.max(1, result.data.pageCount);
+      if (result.data.data.length === 0 && result.data.dataCount > 0 && query.page > responsePageCount) {
+        updateQuery({ ...query, page: responsePageCount });
+        return;
+      }
+
+      setClients(result.data.data);
+      setTotal(result.data.dataCount);
+      snapshotQueryKey.current = queryKey;
+      setReadState('ready');
+    } catch (error) {
+      if (requestSequence.current !== requestId) return;
+      log.error('Applications', '加载应用列表失败', error);
+      setReadState(hasCurrentSnapshot ? 'stale' : 'unavailable');
+      message.error(error instanceof Error ? error.message : t('applications.feedback.loadFailed'));
+    } finally {
+      if (requestSequence.current === requestId) setLoading(false);
+    }
+  }, [query, t, updateQuery]);
+
+  useEffect(() => {
+    if (canViewApplications) void loadClients();
+  }, [canViewApplications, loadClients]);
+
+  const handleApplyFilters = () => {
+    updateQuery({ ...query, page: 1, keyword: keywordDraft.trim().slice(0, 100) });
+    setFilterSheetOpen(false);
+  };
+
+  const handleResetFilters = () => {
+    setKeywordDraft('');
+    updateQuery({ ...DEFAULT_APPLICATION_LIST_QUERY, pageSize: query.pageSize });
+    setFilterSheetOpen(false);
+  };
+
+  const handlePageChange = (page: number, pageSize = query.pageSize) => {
+    updateQuery({ ...query, page, pageSize });
+  };
+
+  const handleCreate = () => {
+    if (!canCreateApplication || !actionsAreAuthoritative) {
+      message.error(t(!canCreateApplication
+        ? 'applications.feedback.permissionDenied'
+        : 'applications.feedback.authorityUnavailable'));
       return;
     }
 
-    void loadClients();
-  }, [canViewApplications, loadClients]);
-
-  const handleCreate = () => {
-    setModalMode('create');
-    setCurrentClient(null);
-    form.resetFields();
-    setIsModalOpen(true);
+    setFormMode('create');
+    setFormApplication(undefined);
+    setFormOpen(true);
   };
 
-  const handleEdit = (record: OidcClient) => {
-    setModalMode('edit');
-    setCurrentClient(record);
-    form.setFieldsValue({
-      clientId: record.clientId,
-      displayName: record.displayName,
-      description: record.description,
-      developerName: record.developerName,
-      developerEmail: record.developerEmail,
-      redirectUris: record.redirectUris?.join('\n'),
-      postLogoutRedirectUris: record.postLogoutRedirectUris?.join('\n'),
+  const handleEdit = async (application: OidcClient) => {
+    if (!canEditApplication || !actionsAreAuthoritative) {
+      message.error(t(!canEditApplication
+        ? 'applications.feedback.permissionDenied'
+        : 'applications.feedback.authorityUnavailable'));
+      return;
+    }
+
+    const actionKey = `edit:${application.id}`;
+    try {
+      setBusyAction(actionKey);
+      const result = await clientApi.getClient(application.id);
+      if (!result.ok || !result.data) {
+        throw new Error(result.message || t('applications.feedback.detailUnavailable'));
+      }
+      setFormMode('edit');
+      setFormApplication(result.data);
+      setFormOpen(true);
+    } catch (error) {
+      log.error('Applications', '加载应用详情失败', error);
+      message.error(error instanceof Error ? error.message : t('applications.feedback.detailUnavailable'));
+    } finally {
+      setBusyAction(undefined);
+    }
+  };
+
+  const handleDelete = async (application: OidcClient) => {
+    if (!canDeleteApplication || !actionsAreAuthoritative) {
+      message.error(t(!canDeleteApplication
+        ? 'applications.feedback.permissionDenied'
+        : 'applications.feedback.authorityUnavailable'));
+      return;
+    }
+
+    const actionKey = `delete:${application.id}`;
+    try {
+      setBusyAction(actionKey);
+      const result = await clientApi.deleteClient(application.id);
+      if (!result.ok) {
+        throw new Error(result.message || t('applications.feedback.deleteFailed'));
+      }
+      message.success(t('applications.feedback.deleted'));
+      await loadClients();
+    } catch (error) {
+      log.error('Applications', '删除应用失败', error);
+      message.error(error instanceof Error ? error.message : t('applications.feedback.deleteFailed'));
+    } finally {
+      setBusyAction(undefined);
+    }
+  };
+
+  const rotateSecret = async (application: OidcClient) => {
+    if (!canResetApplicationSecret || !actionsAreAuthoritative) {
+      message.error(t(!canResetApplicationSecret
+        ? 'applications.feedback.permissionDenied'
+        : 'applications.feedback.authorityUnavailable'));
+      return;
+    }
+    if (application.clientType !== 'confidential') {
+      message.error(t('applications.feedback.publicSecretUnsupported'));
+      return;
+    }
+
+    const actionKey = `secret:${application.id}`;
+    try {
+      setBusyAction(actionKey);
+      const result = await clientApi.resetClientSecret(application.id);
+      if (!result.ok || !result.data?.clientSecret) {
+        throw new Error(result.message || t('applications.feedback.resetFailed'));
+      }
+      setSecretDisclosure({ operation: 'rotate', result: result.data });
+      message.success(t('applications.feedback.resetSucceeded'));
+    } catch (error) {
+      log.error('Applications', '轮换客户端密钥失败', error);
+      message.error(error instanceof Error ? error.message : t('applications.feedback.resetFailed'));
+    } finally {
+      setBusyAction(undefined);
+    }
+  };
+
+  const handleResetSecret = (application: OidcClient) => {
+    if (!canResetApplicationSecret || !actionsAreAuthoritative) {
+      message.error(t(!canResetApplicationSecret
+        ? 'applications.feedback.permissionDenied'
+        : 'applications.feedback.authorityUnavailable'));
+      return;
+    }
+    if (application.clientType !== 'confidential') {
+      message.error(t('applications.feedback.publicSecretUnsupported'));
+      return;
+    }
+
+    Modal.confirm({
+      title: t('applications.secret.rotateConfirmTitle'),
+      content: t('applications.secret.rotateConfirmDescription', { clientId: application.clientId }),
+      okText: t('applications.secret.rotateConfirm'),
+      cancelText: t('applications.form.cancel'),
+      okButtonProps: { danger: true },
+      onOk: () => rotateSecret(application),
     });
-    setIsModalOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    try {
-      const result = await clientApi.deleteClient(id);
-      if (result.ok) {
-        message.success(t('applications.feedback.deleted'));
-        await loadClients();
-      } else {
-        message.error(result.message || t('applications.feedback.deleteFailed'));
-      }
-    } catch (error) {
-      message.error(t('applications.feedback.deleteFailed'));
-      log.error(error);
+  const handleFormSuccess = (secretResult?: ClientSecretResult) => {
+    setFormOpen(false);
+    setFormApplication(undefined);
+    if (secretResult?.clientSecret) {
+      setSecretDisclosure({ operation: 'create', result: secretResult });
     }
+    void loadClients();
   };
 
-  const handleResetSecret = async (id: string) => {
-    try {
-      const result = await clientApi.resetClientSecret(id);
-      if (result.ok && result.data) {
-        AntModal.info({
-          title: t('applications.secret.resetTitle'),
-          content: (
-            <div>
-              <p>{t('applications.secret.newSecret')}</p>
-              <p className="applications-secret-box">
-                {result.data.clientSecret}
-              </p>
-            </div>
-          ),
-          width: 600,
-        });
-      } else {
-        message.error(result.message || t('applications.feedback.resetFailed'));
-      }
-    } catch (error) {
-      message.error(t('applications.feedback.resetFailed'));
-      log.error(error);
-    }
-  };
+  const renderClientIdentity = (application: OidcClient) => (
+    <div className="applications-client-identity">
+      <strong>{application.displayName || application.clientId}</strong>
+      <span>{application.clientId}</span>
+    </div>
+  );
 
-  const handleModalOk = async () => {
-    try {
-      const values = await form.validateFields();
-
-      if (modalMode === 'create') {
-        const data: CreateClientRequest = {
-          clientId: values.clientId,
-          displayName: values.displayName,
-          description: values.description,
-          developerName: values.developerName,
-          developerEmail: values.developerEmail,
-          redirectUris: values.redirectUris?.split('\n').filter((s: string) => s.trim()) || [],
-          postLogoutRedirectUris: values.postLogoutRedirectUris?.split('\n').filter((s: string) => s.trim()) || [],
-        };
-        const result = await clientApi.createClient(data);
-        if (result.ok && result.data) {
-          message.success(t('applications.feedback.created'));
-          AntModal.info({
-            title: t('applications.secret.createdTitle'),
-            content: (
-              <div>
-                <p>{t('applications.secret.clientId', { clientId: result.data.clientId })}</p>
-                <p>{t('applications.secret.clientSecret')}</p>
-                <p className="applications-secret-box">
-                  {result.data.clientSecret}
-                </p>
-              </div>
-            ),
-            width: 600,
-          });
-          setIsModalOpen(false);
-          await loadClients();
-        } else {
-          message.error(result.message || t('applications.feedback.createFailed'));
-        }
-      } else if (modalMode === 'edit' && currentClient) {
-        const data = {
-          displayName: values.displayName,
-          description: values.description,
-          developerName: values.developerName,
-          developerEmail: values.developerEmail,
-          redirectUris: values.redirectUris?.split('\n').filter((s: string) => s.trim()) || [],
-          postLogoutRedirectUris: values.postLogoutRedirectUris?.split('\n').filter((s: string) => s.trim()) || [],
-        };
-        const result = await clientApi.updateClient(currentClient.id, data);
-        if (result.ok) {
-          message.success(t('applications.feedback.updated'));
-          setIsModalOpen(false);
-          await loadClients();
-        } else {
-          message.error(result.message || t('applications.feedback.updateFailed'));
-        }
-      }
-    } catch (error) {
-      log.error('表单验证失败:', error);
-    }
+  const renderActions = (application: OidcClient) => {
+    const editing = busyAction === `edit:${application.id}`;
+    const rotating = busyAction === `secret:${application.id}`;
+    const deleting = busyAction === `delete:${application.id}`;
+    const anyBusy = busyAction !== undefined;
+    return (
+      <Space size="small" wrap>
+        {canEditApplication ? (
+          <Button
+            variant="ghost"
+            size="small"
+            icon={<EditOutlined />}
+            disabled={!actionsAreAuthoritative || anyBusy}
+            onClick={() => void handleEdit(application)}
+          >
+            {t(editing ? 'applications.action.loadingDetail' : 'applications.action.edit')}
+          </Button>
+        ) : null}
+        {canResetApplicationSecret ? (
+          <Button
+            variant="ghost"
+            size="small"
+            icon={<KeyOutlined />}
+            disabled={!actionsAreAuthoritative || anyBusy || application.clientType !== 'confidential'}
+            title={application.clientType === 'public' ? t('applications.feedback.publicSecretUnsupported') : undefined}
+            onClick={() => handleResetSecret(application)}
+          >
+            {t(rotating ? 'applications.action.rotatingSecret' : 'applications.action.resetSecret')}
+          </Button>
+        ) : null}
+        {canDeleteApplication ? (
+          <Popconfirm
+            title={t('applications.delete.confirm')}
+            description={t('applications.delete.description', { clientId: application.clientId })}
+            onConfirm={() => handleDelete(application)}
+            okText={t('applications.delete.ok')}
+            cancelText={t('applications.delete.cancel')}
+            disabled={!actionsAreAuthoritative || anyBusy}
+          >
+            <Button
+              variant="danger"
+              size="small"
+              icon={<DeleteOutlined />}
+              disabled={!actionsAreAuthoritative || anyBusy}
+            >
+              {t(deleting ? 'applications.action.deleting' : 'applications.action.delete')}
+            </Button>
+          </Popconfirm>
+        ) : null}
+      </Space>
+    );
   };
 
   const columns: TableColumnsType<OidcClient> = [
     {
-      title: t('applications.form.clientId'),
-      dataIndex: 'clientId',
-      key: 'clientId',
-      width: 200,
+      title: t('applications.column.application'),
+      key: 'application',
+      width: 260,
+      render: (_, application) => renderClientIdentity(application),
     },
     {
-      title: t('applications.column.displayName'),
-      dataIndex: 'displayName',
-      key: 'displayName',
-      width: 150,
+      title: t('applications.column.clientType'),
+      dataIndex: 'clientType',
+      key: 'clientType',
+      width: 130,
+      render: (value: OidcClient['clientType']) => (
+        <Tag color={value === 'confidential' ? 'blue' : 'default'}>
+          {t(`applications.clientType.${value}`)}
+        </Tag>
+      ),
     },
     {
-      title: t('applications.column.description'),
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
+      title: t('applications.column.grantTypes'),
+      dataIndex: 'grantTypes',
+      key: 'grantTypes',
+      width: 240,
+      render: (values: string[]) => values.join(', ') || '-',
     },
     {
       title: t('applications.column.type'),
       dataIndex: 'type',
       key: 'type',
-      width: 100,
-      render: (type: string) => (
-        <Tag color={type === 'Internal' ? 'blue' : 'green'}>
-          {type === 'Internal' ? t('applications.type.internal') : t('applications.type.thirdParty')}
+      width: 110,
+      render: (value: OidcClient['type']) => (
+        <Tag color={value === 'Internal' ? 'blue' : 'green'}>
+          {t(value === 'Internal' ? 'applications.type.internal' : 'applications.type.thirdParty')}
         </Tag>
       ),
     },
@@ -225,213 +378,298 @@ export const Applications = () => {
       title: t('applications.column.status'),
       dataIndex: 'status',
       key: 'status',
-      width: 80,
-      render: (status: string) => (
-        <Tag color={status !== 'Disabled' ? 'success' : 'default'}>
-          {status !== 'Disabled' ? t('applications.status.enabled') : t('applications.status.disabled')}
+      width: 100,
+      render: (value: OidcClient['status']) => (
+        <Tag color={value !== 'Disabled' ? 'success' : 'default'}>
+          {t(value !== 'Disabled' ? 'applications.status.enabled' : 'applications.status.disabled')}
         </Tag>
       ),
     },
     {
+      title: t('applications.column.createdAt'),
+      dataIndex: 'createdAt',
+      key: 'createdAt',
+      width: 180,
+      render: (value?: string) => value ? formatLocalizedDateTime(value, language) : '-',
+    },
+    {
       title: t('applications.column.actions'),
-      key: 'action',
-      width: 220,
-      render: (_, record) => (
-        <Space size="small" wrap>
-          {canEditApplication ? (
-            <Button
-              variant="ghost"
-              size="small"
-              icon={<EditOutlined />}
-              onClick={() => handleEdit(record)}
-            >
-              {t('applications.action.edit')}
-            </Button>
-          ) : null}
-          {canResetApplicationSecret ? (
-            <Button
-              variant="ghost"
-              size="small"
-              icon={<KeyOutlined />}
-              onClick={() => void handleResetSecret(record.id)}
-            >
-              {t('applications.action.resetSecret')}
-            </Button>
-          ) : null}
-          {canDeleteApplication ? (
-            <Popconfirm
-              title={t('applications.delete.confirm')}
-              onConfirm={() => void handleDelete(record.id)}
-              okText={t('applications.delete.ok')}
-              cancelText={t('applications.delete.cancel')}
-            >
-              <Button
-                variant="danger"
-                size="small"
-                icon={<DeleteOutlined />}
-              >
-                {t('applications.action.delete')}
-              </Button>
-            </Popconfirm>
-          ) : null}
-        </Space>
-      ),
+      key: 'actions',
+      width: 300,
+      fixed: 'right',
+      render: (_, application) => renderActions(application),
     },
   ];
+
+  const filterControls = (
+    <div className="console-resource-filter-controls applications-filter-controls">
+      <Input
+        allowClear
+        maxLength={100}
+        prefix={<SearchOutlined />}
+        placeholder={t('applications.filter.keyword')}
+        value={keywordDraft}
+        onChange={(event) => setKeywordDraft(event.target.value)}
+        onPressEnter={handleApplyFilters}
+      />
+      <div className="console-resource-filter-controls__actions">
+        <Button onClick={handleResetFilters}>{t('applications.filter.reset')}</Button>
+        <Button variant="primary" onClick={handleApplyFilters}>{t('applications.filter.search')}</Button>
+      </div>
+    </div>
+  );
+
+  const readNotice = readState === 'stale' || readState === 'unavailable' ? (
+    <div className={`console-resource-list-notice console-resource-list-notice--${readState}`} role="alert">
+      <div>
+        <strong>{t(readState === 'stale'
+          ? 'applications.list.staleTitle'
+          : 'applications.list.unavailableTitle')}</strong>
+        <span>{t(readState === 'stale'
+          ? 'applications.list.staleDescription'
+          : 'applications.list.unavailableDescription')}</span>
+      </div>
+      <Button size="small" onClick={() => void loadClients()}>{t('applications.action.retry')}</Button>
+    </div>
+  ) : null;
+
   return (
     <div className="admin-feature-page applications-page">
-      <section className="admin-feature-card">
-        <div className="admin-feature-header">
-          <div>
-            <h2>
-              <AppstoreOutlined /> {t('applications.title')}
-            </h2>
-            <p className="admin-feature-subtle">{t('applications.description')}</p>
-          </div>
-          <div className="applications-header-actions">
-            <Button icon={<ReloadOutlined />} onClick={() => void loadClients()}>
+      <ConsolePageHeader
+        eyebrow={t('applications.eyebrow')}
+        title={t('applications.title')}
+        description={t('applications.description')}
+        icon={<AppstoreOutlined />}
+        status={(
+          <ConsoleStatusChip tone={canViewApplications ? 'success' : 'danger'}>
+            {t(canViewApplications ? 'applications.status.viewable' : 'applications.status.noPermission')}
+          </ConsoleStatusChip>
+        )}
+        actions={(
+          <>
+            <Button icon={<ReloadOutlined />} disabled={!canViewApplications} onClick={() => void loadClients()}>
               {t('applications.action.refresh')}
             </Button>
             {canCreateApplication ? (
-              <Button variant="primary" icon={<PlusOutlined />} onClick={handleCreate}>
+              <Button
+                variant="primary"
+                icon={<PlusOutlined />}
+                disabled={!actionsAreAuthoritative}
+                onClick={handleCreate}
+              >
                 {t('applications.action.create')}
               </Button>
             ) : null}
-          </div>
-        </div>
-      </section>
+          </>
+        )}
+      />
 
-      <section className="admin-feature-metrics" aria-label={t('applications.metrics.label')}>
-        <div className="admin-feature-metric">
-          {t('applications.metrics.loaded')}
-          <strong>{clients.length}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          {t('applications.metrics.enabled')}
-          <strong>{enabledClients}</strong>
-        </div>
-        <div className="admin-feature-metric">
-          {t('applications.metrics.thirdParty')}
-          <strong>{thirdPartyClients}</strong>
-        </div>
-      </section>
+      <ConsoleMetricGrid label={t('applications.metrics.label')}>
+        <ConsoleMetricCard
+          label={t('applications.metrics.results')}
+          value={formatConsoleNumber(total, language)}
+          description={t('applications.metrics.resultsDescription')}
+          tone="info"
+        />
+        <ConsoleMetricCard
+          label={t('applications.metrics.page')}
+          value={formatConsoleNumber(clients.length, language)}
+          description={t('applications.metrics.pageDescription')}
+        />
+        <ConsoleMetricCard
+          label={t('applications.metrics.enabled')}
+          value={formatConsoleNumber(activeClientCount, language)}
+          description={t('applications.metrics.currentPageDescription')}
+          tone="success"
+        />
+        <ConsoleMetricCard
+          label={t('applications.metrics.confidential')}
+          value={formatConsoleNumber(confidentialClientCount, language)}
+          description={t('applications.metrics.currentPageDescription')}
+          tone="warning"
+        />
+      </ConsoleMetricGrid>
 
-      <div className="admin-table-layout">
-        <main className="admin-table-main">
-          <section className="admin-table-toolbar" aria-label={t('applications.list.label')}>
-            <div className="admin-table-toolbar__title">
-              <span>{t('applications.list.title')}</span>
-              <Tag>{loading ? t('applications.list.loading') : t('applications.list.recent')}</Tag>
+      <ConsoleResourceList
+        toolbar={(
+          <ConsoleToolbar
+            title={t('applications.list.title')}
+            description={t('applications.list.description')}
+            meta={(
+              <ConsoleStatusChip tone={query.keyword ? 'info' : 'neutral'}>
+                {t(query.keyword ? 'applications.filter.active' : 'applications.filter.none')}
+              </ConsoleStatusChip>
+            )}
+          >
+            {filterControls}
+          </ConsoleToolbar>
+        )}
+        mobileToolbar={(
+          <div className="console-resource-mobile-summary">
+            <div className="console-resource-mobile-summary__copy">
+              <strong>{t('applications.list.total', { count: total })}</strong>
+              <span>{t(query.keyword ? 'applications.filter.active' : 'applications.filter.none')}</span>
             </div>
-            <p className="admin-feature-subtle">{t('applications.list.description')}</p>
-          </section>
-
+            <div className="console-resource-mobile-summary__actions">
+              <Button size="small" icon={<SearchOutlined />} onClick={() => setFilterSheetOpen(true)}>
+                {t('applications.filter.mobile')}
+              </Button>
+              <Button size="small" icon={<ReloadOutlined />} onClick={() => void loadClients()}>
+                {t('applications.action.retry')}
+              </Button>
+            </div>
+          </div>
+        )}
+        desktopList={(
           <section className="admin-table-panel">
+            {readNotice}
             <Table<OidcClient>
               columns={columns}
               dataSource={clients}
               rowKey="id"
               loading={loading}
-              scroll={{ x: 980 }}
+              scroll={{ x: 1420 }}
               pagination={{
+                current: query.page,
+                pageSize: query.pageSize,
+                total,
                 showSizeChanger: true,
                 showQuickJumper: true,
-                showTotal: (total) => t('applications.list.total', { count: total }),
+                showTotal: (count) => t('applications.list.total', { count }),
+                onChange: handlePageChange,
               }}
             />
           </section>
-        </main>
+        )}
+        mobileList={(
+          <>
+            {readNotice}
+            {loading && clients.length === 0 ? (
+              <div className="console-resource-mobile-loading">{t('applications.list.mobileLoading')}</div>
+            ) : null}
+            {readState === 'ready' && clients.length === 0 ? (
+              <div className="console-resource-mobile-empty">
+                <strong>{t('applications.list.emptyTitle')}</strong>
+                <span>{t('applications.list.emptyDescription')}</span>
+              </div>
+            ) : null}
+            {clients.map((application) => (
+              <article className="console-resource-mobile-card applications-mobile-card" key={application.id}>
+                <div className="console-resource-mobile-card__header">
+                  {renderClientIdentity(application)}
+                  <Tag color={application.clientType === 'confidential' ? 'blue' : 'default'}>
+                    {t(`applications.clientType.${application.clientType}`)}
+                  </Tag>
+                </div>
+                <div className="console-resource-mobile-card__facts">
+                  <div className="console-resource-mobile-card__fact">
+                    <span>{t('applications.column.grantTypes')}</span>
+                    <strong>{application.grantTypes.join(', ') || '-'}</strong>
+                  </div>
+                  <div className="console-resource-mobile-card__fact">
+                    <span>{t('applications.column.scopes')}</span>
+                    <strong>{application.scopes.join(', ') || '-'}</strong>
+                  </div>
+                  <div className="console-resource-mobile-card__fact">
+                    <span>{t('applications.column.status')}</span>
+                    <strong>{t(application.status !== 'Disabled'
+                      ? 'applications.status.enabled'
+                      : 'applications.status.disabled')}</strong>
+                  </div>
+                </div>
+                {application.description ? (
+                  <p className="console-resource-mobile-card__description">{application.description}</p>
+                ) : null}
+                <div className="console-resource-mobile-card__footer">
+                  <Tag color={application.type === 'Internal' ? 'blue' : 'green'}>
+                    {t(application.type === 'Internal'
+                      ? 'applications.type.internal'
+                      : 'applications.type.thirdParty')}
+                  </Tag>
+                  {renderActions(application)}
+                </div>
+              </article>
+            ))}
+            {clients.length > 0 ? (
+              <div className="console-resource-mobile-pagination">
+                <Button
+                  size="small"
+                  disabled={query.page <= 1 || loading}
+                  onClick={() => handlePageChange(query.page - 1)}
+                >
+                  {t('applications.list.previous')}
+                </Button>
+                <span>{t('applications.list.page', { current: query.page, total: pageCount })}</span>
+                <Button
+                  size="small"
+                  disabled={query.page >= pageCount || loading}
+                  onClick={() => handlePageChange(query.page + 1)}
+                >
+                  {t('applications.list.next')}
+                </Button>
+              </div>
+            ) : null}
+          </>
+        )}
+        context={(
+          <>
+            <h3>{t('applications.summary.title')}</h3>
+            <p className="admin-feature-subtle">{t('applications.summary.description')}</p>
+            <div className="admin-table-summary">
+              <div className="admin-table-summary__item">
+                <span className="admin-table-summary__label">{t('applications.summary.scopeLabel')}</span>
+                <span className="admin-table-summary__value">
+                  {t('applications.summary.scopeValue', { page: query.page, pageSize: query.pageSize })}
+                </span>
+              </div>
+              <div className="admin-table-summary__item">
+                <span className="admin-table-summary__label">{t('applications.summary.writeAuthority')}</span>
+                <span className="admin-table-summary__value">
+                  {t(actionsAreAuthoritative
+                    ? 'applications.summary.authorityReady'
+                    : 'applications.summary.authorityFrozen')}
+                </span>
+              </div>
+              <div className="admin-table-summary__item">
+                <span className="admin-table-summary__label">{t('applications.summary.secretPermission')}</span>
+                <span className="admin-table-summary__value">
+                  {t(canResetApplicationSecret
+                    ? 'applications.summary.secretAllowed'
+                    : 'applications.summary.secretDenied')}
+                </span>
+              </div>
+            </div>
+          </>
+        )}
+      />
 
-        <aside className="admin-table-aside">
-          <h3>{t('applications.summary.title')}</h3>
-          <p className="admin-feature-subtle">{t('applications.summary.description')}</p>
-          <div className="admin-table-summary">
-            <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">{t('applications.summary.scopeLabel')}</span>
-              <span className="admin-table-summary__value">{t('applications.summary.scopeValue')}</span>
-            </div>
-            <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">{t('applications.summary.createPermission')}</span>
-              <span className="admin-table-summary__value">
-                {canCreateApplication ? t('applications.summary.createAllowed') : t('applications.summary.createDenied')}
-              </span>
-            </div>
-            <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">{t('applications.summary.secretPermission')}</span>
-              <span className="admin-table-summary__value">
-                {canResetApplicationSecret ? t('applications.summary.secretAllowed') : t('applications.summary.secretDenied')}
-              </span>
-            </div>
-            <div className="admin-table-summary__item">
-              <span className="admin-table-summary__label">{t('applications.summary.deletePermission')}</span>
-              <span className="admin-table-summary__value">
-                {canDeleteApplication ? t('applications.summary.deleteAllowed') : t('applications.summary.deleteDenied')}
-              </span>
-            </div>
-          </div>
-        </aside>
-      </div>
-
-      <AntModal
-        title={modalMode === 'create' ? t('applications.modal.createTitle') : t('applications.modal.editTitle')}
-        open={isModalOpen}
-        onOk={() => void handleModalOk()}
-        onCancel={() => setIsModalOpen(false)}
-        width={600}
-        forceRender
+      <BottomSheet
+        isOpen={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        closeLabel={t('applications.filter.close')}
+        title={t('applications.filter.title')}
+        height="auto"
+        className="console-resource-filter-sheet"
       >
-        <Form
-          form={form}
-          layout="vertical"
-          autoComplete="off"
-        >
-          <Form.Item
-            label={t('applications.form.clientId')}
-            name="clientId"
-            rules={[{ required: true, message: t('applications.form.clientIdRequired') }]}
-          >
-            <AntInput placeholder={t('applications.form.clientIdPlaceholder')} disabled={modalMode === 'edit'} />
-          </Form.Item>
+        {filterControls}
+      </BottomSheet>
 
-          <Form.Item
-            label={t('applications.form.displayName')}
-            name="displayName"
-            rules={[{ required: true, message: t('applications.form.displayNameRequired') }]}
-          >
-            <AntInput placeholder={t('applications.form.displayNamePlaceholder')} />
-          </Form.Item>
+      <ApplicationForm
+        visible={formOpen}
+        mode={formMode}
+        application={formApplication}
+        canSubmit={formMode === 'create' ? canCreateApplication : canEditApplication}
+        onCancel={() => {
+          setFormOpen(false);
+          setFormApplication(undefined);
+        }}
+        onSuccess={handleFormSuccess}
+      />
 
-          <Form.Item label={t('applications.form.description')} name="description">
-            <AntInput.TextArea rows={3} placeholder={t('applications.form.descriptionPlaceholder')} />
-          </Form.Item>
-
-          <Form.Item label={t('applications.form.developerName')} name="developerName">
-            <AntInput placeholder={t('applications.form.developerNamePlaceholder')} />
-          </Form.Item>
-
-          <Form.Item label={t('applications.form.developerEmail')} name="developerEmail">
-            <AntInput type="email" placeholder="developer@example.com" />
-          </Form.Item>
-
-          <Form.Item
-            label={t('applications.form.redirectUris')}
-            name="redirectUris"
-            rules={[{ required: true, message: t('applications.form.redirectUrisRequired') }]}
-          >
-            <AntInput.TextArea
-              rows={3}
-              placeholder={t('applications.form.redirectUrisPlaceholder')}
-            />
-          </Form.Item>
-
-          <Form.Item label={t('applications.form.postLogoutRedirectUris')} name="postLogoutRedirectUris">
-            <AntInput.TextArea
-              rows={2}
-              placeholder={t('applications.form.postLogoutRedirectUrisPlaceholder')}
-            />
-          </Form.Item>
-        </Form>
-      </AntModal>
+      <ApplicationSecretResult
+        disclosure={secretDisclosure}
+        onClose={() => setSecretDisclosure(undefined)}
+      />
     </div>
   );
 };

@@ -12,6 +12,7 @@ import type {
   OidcClient,
   CreateClientRequest,
   UpdateClientRequest,
+  ClientSecretResult,
 } from '../types/oidc';
 
 /**
@@ -42,7 +43,7 @@ export const clientApi = {
    */
   async getClient(id: string): Promise<ParsedApiResponse<OidcClient>> {
     return apiGet<OidcClient>(
-      `/api/v1/Client/GetClient/${id}`,
+      `/api/v1/Client/GetClient/${encodeURIComponent(id)}`,
       { withAuth: true }
     );
   },
@@ -52,8 +53,8 @@ export const clientApi = {
    */
   async createClient(
     data: CreateClientRequest
-  ): Promise<ParsedApiResponse<{ clientId: string; clientSecret: string }>> {
-    return apiPost<{ clientId: string; clientSecret: string }>(
+  ): Promise<ParsedApiResponse<ClientSecretResult>> {
+    return apiPost<ClientSecretResult>(
       '/api/v1/Client/CreateClient',
       data,
       { withAuth: true }
@@ -68,7 +69,7 @@ export const clientApi = {
     data: Omit<UpdateClientRequest, 'id'>
   ): Promise<ParsedApiResponse<string>> {
     return apiPut<string>(
-      `/api/v1/Client/UpdateClient/${id}`,
+      `/api/v1/Client/UpdateClient/${encodeURIComponent(id)}`,
       data,
       { withAuth: true }
     );
@@ -79,7 +80,7 @@ export const clientApi = {
    */
   async deleteClient(id: string): Promise<ParsedApiResponse<string>> {
     return apiDelete<string>(
-      `/api/v1/Client/DeleteClient/${id}`,
+      `/api/v1/Client/DeleteClient/${encodeURIComponent(id)}`,
       { withAuth: true }
     );
   },
@@ -89,9 +90,9 @@ export const clientApi = {
    */
   async resetClientSecret(
     id: string
-  ): Promise<ParsedApiResponse<{ clientId: string; clientSecret: string }>> {
-    return apiPost<{ clientId: string; clientSecret: string }>(
-      `/api/v1/Client/ResetClientSecret/${id}`,
+  ): Promise<ParsedApiResponse<ClientSecretResult>> {
+    return apiPost<ClientSecretResult>(
+      `/api/v1/Client/ResetClientSecret/${encodeURIComponent(id)}`,
       undefined,
       { withAuth: true }
     );

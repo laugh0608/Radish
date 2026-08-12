@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-C04-C Applications`
-- **产品下一顺位**：`先把应用列表收敛为服务端分页 / 搜索，再关闭 Secret 一次性展示、轮换确认、dirty / busy 与 Mobile 单任务表单边界`
+- **工程第一顺位**：`F4-R R3-C04-D Products`
+- **产品下一顺位**：`先关闭 Create / Update 直接改写 IsOnSale 的权限绕行，再保持现有 CAS、能力矩阵、附件生命周期、订单回跳与 Mobile 单任务边界`
 - **复核日期**：`2026-08-12`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-12` 已完成 [R3-C04-C Applications 权威目录与一次性 Secret 代码及静态门禁](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)：OpenIddict EF 存储负责软删除过滤、搜索、稳定排序和真实分页；`ClientVo` 统一数组与 `public / confidential` 契约，公开客户端不再返回伪 Secret 且不能执行轮换。Console 查询可由 URL 回访，写入在非权威快照冻结；PC 连续表格—Modal 与 Mobile 应用卡—单任务表单 / Secret 结果共用同一快照，表单具备 handler / Form 双重权限、dirty / busy，轮换显式确认且明文结果主动确认后清除。后端 `1234 passed / 39 skipped`、Console `94 / 94`、strict type-check、Lint、production build、权限 / LongId / changed hygiene 通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-D Products`。
 - `2026-08-12` 已完成 [R3-C04-B Users 权威列表与聚合详情代码及静态门禁](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)：关键词、启用状态、角色进入服务端权威查询和稳定分页，角色按页批量回填；通用 `UserVo` 删除密码哈希，登录改用禁止序列化的专用凭据快照。列表查询可由 URL 回访并继承 `ConsoleResourceList`；详情把主资料、授权、余额、经验、流水、订单、权益拆为独立 `loading / ready / unavailable / stale`，三类历史记录使用服务端总数分页，Mobile 固定主任务先于辅助摘要。后端 `1228 passed / 39 skipped`、Console `90 / 90`、strict type-check、Lint、production build、权限扫描通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-C Applications`。
 - `2026-08-11` 已完成 [R3-C04-A Categories / Tags 与共享响应式资源表面代码及静态门禁](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)：LongId 全部收敛为字符串，筛选草稿与已应用查询分离，请求代际和查询快照键关闭分页回跳 / 过期响应；`unavailable / stale` 冻结写入，handler 与 Form 双重权限、dirty / busy 停止线完整。两类资源共用无业务状态的 PC 连续表格—Mobile 卡片壳层，Category 父级选项改为逐页完整读取。Console `87 / 87`、strict type-check、Lint、production build、权限与 LongId 扫描通过；按当轮约束未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-B Users`。
 - `2026-08-11` 已完成并确认 [R3-C04 Console 普通资源设计前代码事实与风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)：七类资源按 Taxonomy、Users、Applications、Products、Stickers、Coins 拆为六批；共享层只承载 PC 连续列表与 Mobile 资源任务结构，不建立万能 CRUD 状态机。首批固定为 R3-C04-A Categories / Tags，先关闭 LongId 字符串、分页真相、handler 权限与 Form dirty / busy，再接入共享响应式资源表面；不修改 Pencil、公开 Forum 语义、数据库、migration 或权限键。
@@ -164,15 +165,16 @@
 
 ## 明天事项（2026-08-13）
 
-1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)和 [R3-C04-B 实现记录](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)。
-2. 进入 `R3-C04-C Applications` 前先反查列表、创建 / 编辑、删除与 Secret 轮换的 API、URL、权限和页面所有权；固定服务端分页 / 搜索契约，不再读取前 `100` 条后本地分页。
-3. Secret 只允许在创建或轮换成功后一次性展示，轮换必须显式确认；Modal 提交期间禁止关闭，dirty 关闭与离页必须有停止线，写 handler 和 Form 同时复核动作级权限。
-4. PC 保持连续表格—按需 Modal，Mobile 收敛为应用卡片—单任务表单 / Secret 结果；资源 owner 继续持有查询、权限、表单和 API 状态，不建立万能 CRUD 状态机。
-5. 开发中执行 Applications query / Secret / dirty / busy 定向测试、Console 全量测试、strict type-check、Lint、production build、`git diff --check` 与 changed hygiene；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
-6. Applications 批不扩入 Products、Stickers、Coins，不新增第三方审核或 Scope 模型，不修改 Pencil、数据库、migration 或权限键；三处既有 `DateTime.Now` baseline 与全仓历史卫生债务继续独立维护。
+1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)和 [R3-C04-C 实现记录](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)。
+2. 进入 `R3-C04-D Products` 前先反查列表、URL 可回访详情、Create / Update、独立上下架、附件与订单回跳的 API、权限和页面 owner；确认 `IsOnSale` 当前所有写入口。
+3. 先关闭 Create / Update DTO 或 handler 对 `IsOnSale` 的权限绕行，正式上下架继续只由 `console.products.toggle-sale` 裁决；保留既有版本 CAS、能力矩阵与结构化冲突草稿。
+4. 复核附件上传 / 未保存附件、提交 busy、dirty 关闭、详情 `unavailable / stale` 与写 handler / Form 双重权限；PC 保持连续表格—URL 详情 Modal，Mobile 收敛为商品卡—单任务详情 / 表单。
+5. 开发中执行 Products 上架权限、CAS、附件、URL 与响应式定向测试，以及 Console 全量测试、strict type-check、Lint、production build、`git diff --check` 与 changed hygiene；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
+6. Products 批不扩入订单履约状态机、Stickers 或 Coins，不新增商品业务字段，不修改 Pencil、数据库、migration 或权限键；三处既有 `DateTime.Now` baseline 与全仓历史卫生债务继续独立维护。
 
 ## 当前执行入口
 
+- [R3-C04-C Applications 权威目录与一次性 Secret 实现](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)
 - [R3-C04-B Users 权威列表与聚合详情实现](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)
 - [2026-08-11 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-11)
 - [R3-C04-A Categories / Tags 与共享响应式资源表面实现](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)

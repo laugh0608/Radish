@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using OpenIddict.Abstractions;
 using Radish.Api.Controllers;
+using Radish.Api.Services;
 using Radish.Common.HttpContextTool;
 using Radish.Model;
 using Radish.Model.ViewModels.Client;
@@ -21,12 +22,29 @@ namespace Radish.Api.Tests.Controllers;
 [TestSubject(typeof(ClientController))]
 public class ClientControllerTest
 {
-    private static ClientController CreateController(Mock<IOpenIddictApplicationManager> managerMock)
+    private static ClientController CreateController(
+        Mock<IOpenIddictApplicationManager> managerMock,
+        Mock<IClientApplicationQueryService>? queryServiceMock = null)
     {
+        if (queryServiceMock == null)
+        {
+            queryServiceMock = new Mock<IClientApplicationQueryService>();
+            queryServiceMock
+                .Setup(service => service.QueryAsync(
+                    It.IsAny<int>(),
+                    It.IsAny<int>(),
+                    It.IsAny<string?>(),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new ClientApplicationQueryPage(0, Array.Empty<string>()));
+        }
         var currentUserAccessorMock = new Mock<ICurrentUserAccessor>();
         currentUserAccessorMock.SetupGet(x => x.Current).Returns(new CurrentUser { UserId = 20002 });
         var logger = NullLogger<ClientController>.Instance;
-        var controller = new ClientController(managerMock.Object, currentUserAccessorMock.Object, logger);
+        var controller = new ClientController(
+            managerMock.Object,
+            queryServiceMock.Object,
+            currentUserAccessorMock.Object,
+            logger);
 
         return controller;
     }
@@ -64,16 +82,79 @@ public class ClientControllerTest
         };
 
         var managerMock = CreateManagerMock(clients);
-        var controller = CreateController(managerMock);
+        var queryServiceMock = new Mock<IClientApplicationQueryService>();
+        queryServiceMock
+            .Setup(service => service.QueryAsync(1, 10, null, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new ClientApplicationQueryPage(1, new[] { "1" }));
+        var controller = CreateController(managerMock, queryServiceMock);
 
         // Act
-        var result = await controller.GetClients(page: 1, pageSize: 10, keyword: null);
+        var result = await controller.GetClients(
+            page: 1,
+            pageSize: 10,
+            keyword: null,
+            cancellationToken: TestContext.Current.CancellationToken);
 
         // Assert
         Assert.True(result.IsSuccess);
         Assert.NotNull(result.ResponseData);
         Assert.Single(result.ResponseData.Data); // 已删除的客户端被过滤掉
         Assert.Equal("client-1", result.ResponseData.Data[0].ClientId);
+        Assert.Equal(1, result.ResponseData.DataCount);
+    }
+
+    [Fact]
+    public async Task GetClients_Should_Reject_Invalid_PageSize_Before_Querying_Database()
+    {
+        var managerMock = CreateManagerMock(new List<FakeClient>());
+        var queryServiceMock = new Mock<IClientApplicationQueryService>();
+        var controller = CreateController(managerMock, queryServiceMock);
+
+        var result = await controller.GetClients(
+            page: 1,
+            pageSize: 101,
+            keyword: null,
+            cancellationToken: TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsSuccess);
+        queryServiceMock.Verify(
+            service => service.QueryAsync(
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string?>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task GetClient_Should_Return_Array_Contract_And_ClientType()
+    {
+        var client = new FakeClient
+        {
+            Id = "1",
+            ClientId = "array-contract",
+            DisplayName = "Array Contract",
+            ClientType = OpenIddictConstants.ClientTypes.Confidential,
+            Properties =
+            {
+                ["CreatedAt"] = JsonSerializer.SerializeToElement("2026-08-12T02:30:00.0000000Z")
+            }
+        };
+        client.Permissions.Add(OpenIddictConstants.Permissions.GrantTypes.AuthorizationCode);
+        client.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + "openid");
+        client.RedirectUris.Add(new Uri("https://example.com/callback"));
+        var managerMock = CreateManagerMock(new List<FakeClient> { client });
+        var controller = CreateController(managerMock);
+
+        var result = await controller.GetClient("1");
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.ResponseData);
+        Assert.Equal(OpenIddictConstants.ClientTypes.Confidential, result.ResponseData.ClientType);
+        Assert.Equal(new[] { "authorization_code" }, result.ResponseData.GrantTypes);
+        Assert.Equal(new[] { "openid" }, result.ResponseData.Scopes);
+        Assert.Equal(new[] { "https://example.com/callback" }, result.ResponseData.RedirectUris);
+        Assert.Equal(DateTimeKind.Utc, result.ResponseData.CreatedAt?.Kind);
     }
 
     [Fact]
@@ -98,7 +179,8 @@ public class ClientControllerTest
             ClientId = "existing-client",
             DisplayName = "Duplicate",
             GrantTypes = new List<string> { "authorization_code" },
-            Scopes = new List<string> { "openid", "radish-api" }
+            Scopes = new List<string> { "openid", "radish-api" },
+            RedirectUris = new List<string> { "https://example.com/callback" }
         };
 
         // Act
@@ -138,6 +220,36 @@ public class ClientControllerTest
 
         // 验证管理器中确实创建了客户端
         Assert.Contains(clients, c => c.ClientId == "new-client");
+        Assert.Equal(
+            OpenIddictConstants.ClientTypes.Confidential,
+            clients.Single(c => c.ClientId == "new-client").ClientType);
+    }
+
+    [Fact]
+    public async Task CreateClient_Should_Return_No_Secret_For_Public_Client()
+    {
+        var clients = new List<FakeClient>();
+        var managerMock = CreateManagerMock(clients);
+        var controller = CreateController(managerMock);
+        var dto = new CreateClientDto
+        {
+            ClientId = "public-client",
+            DisplayName = "Public Client",
+            ClientType = OpenIddictConstants.ClientTypes.Public,
+            RequirePkce = true,
+            GrantTypes = new List<string> { "authorization_code" },
+            Scopes = new List<string> { "openid", "radish-api" },
+            RedirectUris = new List<string> { "https://example.com/callback" }
+        };
+
+        var result = await controller.CreateClient(dto);
+
+        Assert.True(result.IsSuccess);
+        Assert.NotNull(result.ResponseData);
+        Assert.Null(result.ResponseData.ClientSecret);
+        Assert.Equal(
+            OpenIddictConstants.ClientTypes.Public,
+            clients.Single(c => c.ClientId == "public-client").ClientType);
     }
 
     [Fact]
@@ -179,6 +291,7 @@ public class ClientControllerTest
                 Id = "1",
                 ClientId = "reset-secret-client",
                 DisplayName = "Reset Secret Client",
+                ClientType = OpenIddictConstants.ClientTypes.Confidential,
                 ClientSecret = "old-secret"
             }
         };
@@ -199,6 +312,46 @@ public class ClientControllerTest
         Assert.Equal(result.ResponseData.ClientSecret, client.ClientSecret);
     }
 
+    [Fact]
+    public async Task ResetClientSecret_Should_Reject_Public_Client()
+    {
+        var clients = new List<FakeClient>
+        {
+            new()
+            {
+                Id = "1",
+                ClientId = "public-client",
+                ClientType = OpenIddictConstants.ClientTypes.Public
+            }
+        };
+        var managerMock = CreateManagerMock(clients);
+        var controller = CreateController(managerMock);
+
+        var result = await controller.ResetClientSecret("1");
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("公开客户端", result.MessageInfo);
+        managerMock.Verify(
+            manager => manager.UpdateAsync(
+                It.IsAny<object>(),
+                It.IsAny<OpenIddictApplicationDescriptor>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public void ResetClientSecret_Should_Keep_Existing_Action_Route_Contract()
+    {
+        var method = typeof(ClientController).GetMethod(nameof(ClientController.ResetClientSecret));
+        Assert.NotNull(method);
+
+        var route = Assert.Single(method
+            .GetCustomAttributes(typeof(HttpPostAttribute), inherit: true)
+            .Cast<HttpPostAttribute>());
+
+        Assert.Equal("{id}", route.Template);
+    }
+
     #region Helpers
 
     private sealed class FakeClient
@@ -206,6 +359,7 @@ public class ClientControllerTest
         public string? Id { get; set; }
         public string? ClientId { get; set; }
         public string? DisplayName { get; set; }
+        public string ClientType { get; set; } = OpenIddictConstants.ClientTypes.Public;
         public string? ClientSecret { get; set; }
         public HashSet<string> Permissions { get; } = new();
         public HashSet<Uri> RedirectUris { get; } = new();
@@ -251,7 +405,8 @@ public class ClientControllerTest
             .Returns((object app, CancellationToken _) => new ValueTask<string?>(((FakeClient)app).DisplayName));
 
         mock.Setup(m => m.GetClientTypeAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
-            .Returns(new ValueTask<string?>((string?)null));
+            .Returns((object app, CancellationToken _) =>
+                new ValueTask<string?>(((FakeClient)app).ClientType));
 
         mock.Setup(m => m.GetConsentTypeAsync(It.IsAny<object>(), It.IsAny<CancellationToken>()))
             .Returns(new ValueTask<string?>((string?)null));
@@ -303,6 +458,7 @@ public class ClientControllerTest
                 var client = (FakeClient)app;
                 descriptor.ClientId = client.ClientId;
                 descriptor.DisplayName = client.DisplayName;
+                descriptor.ClientType = client.ClientType;
                 descriptor.ClientSecret = client.ClientSecret;
 
                 descriptor.Permissions.Clear();
@@ -333,6 +489,7 @@ public class ClientControllerTest
                     Id = id,
                     ClientId = descriptor.ClientId,
                     DisplayName = descriptor.DisplayName,
+                    ClientType = descriptor.ClientType ?? OpenIddictConstants.ClientTypes.Public,
                     ClientSecret = descriptor.ClientSecret
                 };
 
@@ -353,6 +510,7 @@ public class ClientControllerTest
                 var client = (FakeClient)app;
                 client.ClientId = descriptor.ClientId;
                 client.DisplayName = descriptor.DisplayName;
+                client.ClientType = descriptor.ClientType ?? OpenIddictConstants.ClientTypes.Public;
                 client.ClientSecret = descriptor.ClientSecret;
 
                 client.Permissions.Clear();

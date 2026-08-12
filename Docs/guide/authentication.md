@@ -267,16 +267,18 @@ await applicationManager.CreateAsync(descriptor);
 
 #### 管理 API
 
-客户端管理 API 位于 **Radish.Api** 项目（`/api/v1/Client/*`），需要 `System` 或 `Admin` 角色权限。
+客户端管理 API 位于 **Radish.Api** 项目（`/api/v1/Client/*`），先要求 `AuthorizationPolicies.Client`，再按 Console 动作级权限裁决。列表查询直接在 OpenIddict EF Core 存储中完成软删除过滤、Client ID / 显示名称搜索、稳定排序和分页；`pageSize` 范围为 `1-100`。
 
 | 方法 | 端点 | 说明 | 权限 |
 |------|------|------|------|
-| GET | `/api/v1/Client/GetClients` | 获取客户端列表（分页、搜索） | System/Admin |
-| GET | `/api/v1/Client/GetClient/{id}` | 获取客户端详情 | System/Admin |
-| POST | `/api/v1/Client/CreateClient` | 创建客户端 | System/Admin |
-| PUT | `/api/v1/Client/UpdateClient/{id}` | 更新客户端 | System/Admin |
-| DELETE | `/api/v1/Client/DeleteClient/{id}` | 删除客户端（软删除） | System/Admin |
-| POST | `/api/v1/Client/ResetClientSecret/{id}` | 重置 Secret | System/Admin |
+| GET | `/api/v1/Client/GetClients` | 获取客户端列表（分页、搜索） | `console.applications.view` |
+| GET | `/api/v1/Client/GetClient/{id}` | 获取客户端详情 | `console.applications.view` 或 `console.applications.edit` |
+| POST | `/api/v1/Client/CreateClient` | 创建客户端 | `console.applications.create` |
+| PUT | `/api/v1/Client/UpdateClient/{id}` | 更新客户端 | `console.applications.edit` |
+| DELETE | `/api/v1/Client/DeleteClient/{id}` | 删除客户端（软删除） | `console.applications.delete` |
+| POST | `/api/v1/Client/ResetClientSecret/{id}` | 轮换 Secret | `console.applications.reset-secret` |
+
+列表与详情中的 `grantTypes / scopes / redirectUris / postLogoutRedirectUris` 均为数组，并显式返回 `clientType`（`public / confidential`）、`consentType` 和 `requirePkce`。软删除记录仍占用 OpenIddict Client ID 唯一索引，当前不能直接复用。
 
 #### 创建客户端示例
 
@@ -288,8 +290,8 @@ Authorization: Bearer {admin_token}
 {
   "clientId": "third-party-app",
   "displayName": "第三方游戏社区",
-  "consentType": "Explicit",
-  "requireClientSecret": true,
+  "clientType": "confidential",
+  "consentType": "explicit",
   "requirePkce": true,
   "redirectUris": [
     "https://game-community.example.com/callback"
@@ -324,9 +326,10 @@ Authorization: Bearer {admin_token}
 ```
 
 > **重要提示**：
-> - ClientSecret 仅在创建时返回一次，无法再次查看
-> - 如果丢失密钥，需要使用 `/api/v1/Client/ResetClientSecret/{id}` 重置
-> - 公开客户端（`requireClientSecret: false`）不需要密钥
+> - 机密客户端的 Client Secret 仅在创建或轮换成功后返回一次，无法再次查看
+> - 如果丢失密钥，需要使用 `/api/v1/Client/ResetClientSecret/{id}` 轮换；旧密钥会立即失效
+> - 公开客户端（`clientType: "public"`）返回 `clientSecret: null`，且不能执行 Secret 轮换
+> - `requireClientSecret` 仅保留为旧请求兼容字段；新请求应显式使用 `clientType`
 
 ## 5. 资源服务器配置
 

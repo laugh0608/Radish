@@ -46,24 +46,29 @@ public class ClientVo
     public string? Status { get; set; }
 
     /// <summary>
-    /// 授权类型（逗号分隔）
+    /// OpenIddict 客户端类型（public/confidential）
     /// </summary>
-    public string? GrantTypes { get; set; }
+    public string ClientType { get; set; } = "public";
 
     /// <summary>
-    /// 回调地址（逗号分隔）
+    /// 授权类型
     /// </summary>
-    public string? RedirectUris { get; set; }
+    public List<string> GrantTypes { get; set; } = new();
 
     /// <summary>
-    /// 登出回调地址（逗号分隔）
+    /// 回调地址
     /// </summary>
-    public string? PostLogoutRedirectUris { get; set; }
+    public List<string> RedirectUris { get; set; } = new();
 
     /// <summary>
-    /// 授权范围（逗号分隔）
+    /// 登出回调地址
     /// </summary>
-    public string? Scopes { get; set; }
+    public List<string> PostLogoutRedirectUris { get; set; } = new();
+
+    /// <summary>
+    /// 授权范围
+    /// </summary>
+    public List<string> Scopes { get; set; } = new();
 
     /// <summary>
     /// 同意类型（Explicit/Implicit/External/Systematic）
