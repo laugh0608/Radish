@@ -19,6 +19,7 @@ public class CoinProfile : Profile
         // UserBalance -> UserBalanceVo (使用前缀识别 + 手动配置格式化字段)
         RecognizeDestinationPrefixes("Vo");
         CreateMap<UserBalance, UserBalanceVo>()
+            .ForMember(dest => dest.VoUserName, opt => opt.Ignore())
             .ForMember(dest => dest.VoBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.Balance)))
             .ForMember(dest => dest.VoFrozenBalanceDisplay, opt => opt.MapFrom(src => FormatToRadish(src.FrozenBalance)));
 

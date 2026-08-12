@@ -5,6 +5,7 @@ public static class OperationIdempotencyOperationTypes
 {
     public const string ShopPurchase = "ShopPurchase";
     public const string CoinTransfer = "CoinTransfer";
+    public const string CoinAdminAdjustment = "CoinAdminAdjustment";
     public const string ShopInventoryUse = "ShopInventoryUse";
     public const string ContentReward = "ContentReward";
 }

@@ -2,7 +2,7 @@
 
 > 日期：2026-08-11（Asia/Shanghai）
 >
-> 状态：七类普通资源的代码事实、风险、页面所有权、共享壳层、Mobile 转换和实施拆批已确认；R3-C04-A / B / C / D / E 已完成代码与静态门禁
+> 状态：七类普通资源的代码事实、风险、页面所有权、共享壳层、Mobile 转换和实施拆批已确认；R3-C04-A 至 F 已完成代码与静态门禁
 >
 > 范围：Applications、Products、Users、Categories、Tags、Stickers、Coins；本记录不修改 Pencil，不把七类资源压成一套 CRUD 状态机
 
@@ -28,7 +28,7 @@ R3-C04 继续继承 `R1-C01` 的高密度资源表面、紧凑筛选、按需详
 - `R3-C04-C` 已按本审计落地，详见 [Applications 权威目录与一次性 Secret 实现记录](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)。
 - `R3-C04-D` 已按本审计落地，详见 [Products 权威列表与独立上下架实现记录](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)。
 - `R3-C04-E` 已按本审计落地，详见 [Stickers 权威媒体资源治理实现记录](/records/f4-r-r3-c04-e-console-stickers-implementation-2026-08-12)。
-- 当前顺位进入最后一批 `R3-C04-F Coins`，继续严格保持本记录的资产写入停止线。
+- `R3-C04-F` 已按本审计落地，详见 [Coins 权威调账与流水治理实现记录](/records/f4-r-r3-c04-f-console-coins-implementation-2026-08-12)。R3-C04 六批普通资源代码与静态门禁至此全部关闭。
 
 ## 代码事实与风险
 

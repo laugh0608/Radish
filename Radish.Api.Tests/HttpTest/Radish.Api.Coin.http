@@ -143,8 +143,10 @@ Content-Type: application/json
 
 {
   "userId": 123456789,
+  "expectedVersion": 0,
   "deltaAmount": 10000,
-  "reason": "活动奖励：参与2026新年活动"
+  "reason": "活动奖励：参与2026新年活动",
+  "idempotencyKey": "coin-admin-adjust:http-grant-001"
 }
 
 ### 预期响应：
@@ -164,8 +166,10 @@ Content-Type: application/json
 
 {
   "userId": 123456789,
+  "expectedVersion": 1,
   "deltaAmount": -5000,
-  "reason": "违规处罚：发布违规内容"
+  "reason": "违规处罚：发布违规内容",
+  "idempotencyKey": "coin-admin-adjust:http-deduct-001"
 }
 
 ### 预期：
@@ -179,8 +183,10 @@ Content-Type: application/json
 
 {
   "userId": 123456789,
+  "expectedVersion": 0,
   "deltaAmount": 0,
-  "reason": "测试零金额"
+  "reason": "测试零金额",
+  "idempotencyKey": "coin-admin-adjust:http-zero-001"
 }
 
 ### 预期：400 Bad Request，错误信息：调整金额不能为 0
@@ -192,8 +198,10 @@ Content-Type: application/json
 
 {
   "userId": 123456789,
+  "expectedVersion": 0,
   "deltaAmount": 1000,
-  "reason": ""
+  "reason": "",
+  "idempotencyKey": "coin-admin-adjust:http-empty-reason-001"
 }
 
 ### 预期：400 Bad Request，错误信息：调整原因不能为空
@@ -209,8 +217,10 @@ Content-Type: application/json
 
 {
   "userId": 123456789,
+  "expectedVersion": 0,
   "deltaAmount": 1000,
-  "reason": "普通用户尝试调账"
+  "reason": "普通用户尝试调账",
+  "idempotencyKey": "coin-admin-adjust:http-forbidden-001"
 }
 
 ### 预期：403 Forbidden
@@ -239,8 +249,10 @@ Content-Type: application/json
 
 {
   "userId": 123456789,
+  "expectedVersion": 0,
   "deltaAmount": 10000,
-  "reason": "通过 Gateway 测试调账"
+  "reason": "通过 Gateway 测试调账",
+  "idempotencyKey": "coin-admin-adjust:gateway-grant-001"
 }
 
 ########################################################

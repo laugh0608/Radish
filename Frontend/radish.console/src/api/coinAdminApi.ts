@@ -2,6 +2,7 @@ import { apiGet, apiPost, createApiResponseError, type PagedResponse } from '@ra
 
 export interface UserBalanceVo {
   voUserId: string;
+  voUserName: string;
   voBalance: string;
   voBalanceDisplay: string;
   voFrozenBalance: string;
@@ -10,6 +11,7 @@ export interface UserBalanceVo {
   voTotalSpent: string;
   voTotalTransferredIn: string;
   voTotalTransferredOut: string;
+  voVersion: number;
   voCreateTime: string;
   voModifyTime?: string | null;
 }
@@ -41,6 +43,12 @@ export interface AdminAdjustBalanceRequest {
   userId: string;
   deltaAmount: string;
   reason: string;
+  expectedVersion: number;
+  idempotencyKey: string;
+}
+
+export interface AdminAdjustBalanceResult {
+  voTransactionNo: string;
 }
 
 export async function getBalanceByUserId(userId: string): Promise<UserBalanceVo> {
@@ -98,9 +106,17 @@ export async function getTransactionsByUserId(params: {
   return response.data;
 }
 
-export async function adminAdjustBalance(request: AdminAdjustBalanceRequest): Promise<void> {
-  const response = await apiPost('/api/v1/Coin/AdminAdjustBalance', request, { withAuth: true });
-  if (!response.ok) {
+export async function adminAdjustBalance(
+  request: AdminAdjustBalanceRequest
+): Promise<AdminAdjustBalanceResult> {
+  const response = await apiPost<AdminAdjustBalanceResult>(
+    '/api/v1/Coin/AdminAdjustBalance',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data?.voTransactionNo) {
     throw createApiResponseError(response, 'coins.feedback.adjustFailed');
   }
+
+  return response.data;
 }

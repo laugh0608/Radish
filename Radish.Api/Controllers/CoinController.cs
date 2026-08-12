@@ -258,7 +258,7 @@ public class CoinController : ControllerBase
         [FromQuery] string? businessType = null,
         [FromQuery] long? businessId = null)
     {
-        if (userId <= 0)
+        if (userId <= 0 || pageIndex <= 0 || pageSize <= 0 || pageSize > 100)
         {
             return BuildError(
                 HttpStatusCodeEnum.BadRequest,
@@ -267,22 +267,41 @@ public class CoinController : ControllerBase
                 "error.common.validation_failed");
         }
 
-        var transactions = await _coinService.GetTransactionsAsync(
-            userId,
-            pageIndex,
-            pageSize,
-            transactionType,
-            status,
-            businessType,
-            businessId);
-
-        return new MessageModel
+        try
         {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "获取交易记录成功",
-            ResponseData = transactions
-        };
+            var transactions = await _coinService.GetTransactionsAsync(
+                userId,
+                pageIndex,
+                pageSize,
+                transactionType,
+                status,
+                businessType,
+                businessId);
+
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "获取交易记录成功",
+                ResponseData = transactions
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                "Coin.TransactionQueryRejected",
+                "error.coin.transaction_query_rejected");
+        }
+        catch (ArgumentException ex)
+        {
+            return BuildError(
+                HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
+        }
     }
 
     #endregion
@@ -455,8 +474,10 @@ public class CoinController : ControllerBase
     /// ```json
     /// {
     ///   "userId": 12345,
+    ///   "expectedVersion": 3,
     ///   "deltaAmount": 100,
-    ///   "reason": "活动奖励"
+    ///   "reason": "活动奖励",
+    ///   "idempotencyKey": "coin-admin-adjust:..."
     /// }
     /// ```
     ///
@@ -474,6 +495,7 @@ public class CoinController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status400BadRequest)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
     public async Task<MessageModel> AdminAdjustBalance([FromBody] AdminAdjustBalanceDto request)
     {
         try
@@ -486,7 +508,9 @@ public class CoinController : ControllerBase
                 request.DeltaAmount,
                 request.Reason,
                 operatorId,
-                operatorName
+                operatorName,
+                request.ExpectedVersion,
+                request.IdempotencyKey
             );
 
             return new MessageModel
@@ -496,6 +520,14 @@ public class CoinController : ControllerBase
                 MessageInfo = "余额调整成功",
                 ResponseData = new TransactionResultVo { VoTransactionNo = transactionNo }
             };
+        }
+        catch (BusinessException ex)
+        {
+            return BuildError(
+                (HttpStatusCodeEnum)ex.StatusCode,
+                ex.Message,
+                ex.ErrorCode ?? "Coin.AdminAdjustRejected",
+                ex.MessageKey ?? "error.coin.admin_adjust_rejected");
         }
         catch (InvalidOperationException ex)
         {

@@ -36,7 +36,14 @@ public class CoinControllerTest
     {
         var service = new Mock<ICoinService>(MockBehavior.Strict);
         service
-            .Setup(item => item.AdminAdjustBalanceAsync(20002, -100, "review", 10001, "Tester"))
+            .Setup(item => item.AdminAdjustBalanceAsync(
+                20002,
+                -100,
+                "review",
+                10001,
+                "Tester",
+                7,
+                "coin-admin-adjust:test"))
             .ThrowsAsync(new InvalidOperationException("余额不足"));
 
         var controller = CreateController(service.Object);
@@ -44,13 +51,51 @@ public class CoinControllerTest
         {
             UserId = 20002,
             DeltaAmount = -100,
-            Reason = "review"
+            Reason = "review",
+            ExpectedVersion = 7,
+            IdempotencyKey = "coin-admin-adjust:test"
         });
 
         Assert.False(result.IsSuccess);
         Assert.Equal(400, result.StatusCode);
         Assert.Equal("Coin.AdminAdjustRejected", result.Code);
         Assert.Equal("error.coin.admin_adjust_rejected", result.MessageKey);
+        service.VerifyAll();
+    }
+
+    [Fact]
+    public async Task AdminAdjustBalance_ShouldPreserveVersionConflictContract()
+    {
+        var service = new Mock<ICoinService>(MockBehavior.Strict);
+        service
+            .Setup(item => item.AdminAdjustBalanceAsync(
+                20002,
+                100,
+                "campaign",
+                10001,
+                "Tester",
+                4,
+                "coin-admin-adjust:conflict"))
+            .ThrowsAsync(new BusinessException(
+                "余额版本已变化",
+                409,
+                CoinErrorCodes.AdminAdjustVersionConflict,
+                "error.coin.admin_adjust_version_conflict"));
+
+        var controller = CreateController(service.Object);
+        var result = await controller.AdminAdjustBalance(new AdminAdjustBalanceDto
+        {
+            UserId = 20002,
+            DeltaAmount = 100,
+            Reason = "campaign",
+            ExpectedVersion = 4,
+            IdempotencyKey = "coin-admin-adjust:conflict"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal(CoinErrorCodes.AdminAdjustVersionConflict, result.Code);
+        Assert.Equal("error.coin.admin_adjust_version_conflict", result.MessageKey);
         service.VerifyAll();
     }
 

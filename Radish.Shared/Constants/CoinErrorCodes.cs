@@ -15,4 +15,9 @@ public static class CoinErrorCodes
     public const string TransferIdempotencyConflict = "Coin.TransferIdempotencyConflict";
     public const string TransferIdempotencyInvalid = "Coin.TransferIdempotencyInvalid";
     public const string TransferReplayUnavailable = "Coin.TransferReplayUnavailable";
+    public const string AdminAdjustVersionConflict = "Coin.AdminAdjustVersionConflict";
+    public const string AdminAdjustProcessing = "Coin.AdminAdjustProcessing";
+    public const string AdminAdjustIdempotencyConflict = "Coin.AdminAdjustIdempotencyConflict";
+    public const string AdminAdjustIdempotencyInvalid = "Coin.AdminAdjustIdempotencyInvalid";
+    public const string AdminAdjustReplayUnavailable = "Coin.AdminAdjustReplayUnavailable";
 }

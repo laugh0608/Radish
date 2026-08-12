@@ -6,6 +6,7 @@ using Moq;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Repository.UnitOfWorks;
 using Radish.Service;
 using Radish.Shared.Constants;
 using Xunit;
@@ -55,6 +56,53 @@ public class OperationIdempotencyServiceTest
             record.Status == OperationIdempotencyStatuses.Processing &&
             record.CreateTime == FixedNow &&
             record.ExpiresAt == FixedNow.AddHours(24))), Times.Once);
+    }
+
+    [Fact]
+    public async Task BeginAsync_ShouldRecoverConcurrentUniqueConflictThroughSavepoint()
+    {
+        var existing = new OperationIdempotencyRecord
+        {
+            Id = 9006,
+            TenantId = 0,
+            UserId = 9527,
+            OperationType = OperationIdempotencyOperationTypes.CoinAdminAdjustment,
+            IdempotencyKey = "coin-admin-adjust:concurrent",
+            RequestHash = "hash-a",
+            RequestSummary = "{}",
+            Status = OperationIdempotencyStatuses.Processing,
+            ExpiresAt = FixedNow.AddHours(1)
+        };
+        var repository = new Mock<IBaseRepository<OperationIdempotencyRecord>>(MockBehavior.Strict);
+        var queryCount = 0;
+        repository
+            .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<OperationIdempotencyRecord, bool>>?>()))
+            .Returns(() => Task.FromResult(queryCount++ == 0
+                ? (OperationIdempotencyRecord?)null
+                : existing));
+        repository
+            .Setup(r => r.AddAsync(It.IsAny<OperationIdempotencyRecord>()))
+            .ThrowsAsync(new InvalidOperationException("23505 duplicate key value violates unique constraint"));
+        var unitOfWork = CreateUnitOfWorkMock();
+        var service = CreateService(repository, unitOfWork);
+
+        var result = await service.BeginAsync(new OperationIdempotencyBeginRequest
+        {
+            TenantId = 0,
+            UserId = 9527,
+            OperationType = OperationIdempotencyOperationTypes.CoinAdminAdjustment,
+            IdempotencyKey = "coin-admin-adjust:concurrent",
+            RequestHash = "hash-a",
+            RequestSummary = "{}",
+            AllowExpiredProcessingReset = false
+        });
+
+        Assert.Equal(OperationIdempotencyBeginStatus.Processing, result.Status);
+        Assert.Equal(existing.Id, result.RecordId);
+        Assert.Equal(2, queryCount);
+        unitOfWork.Verify(
+            uow => uow.ExecuteInSavepointAsync(It.IsAny<Func<Task<long>>>()),
+            Times.Once);
     }
 
     [Fact]
@@ -233,9 +281,23 @@ public class OperationIdempotencyServiceTest
     }
 
     private static OperationIdempotencyService CreateService(
-        Mock<IBaseRepository<OperationIdempotencyRecord>> repository)
+        Mock<IBaseRepository<OperationIdempotencyRecord>> repository,
+        Mock<IUnitOfWorkManage>? unitOfWork = null)
     {
-        return new OperationIdempotencyService(repository.Object, new FixedTimeProvider(FixedNow));
+        unitOfWork ??= CreateUnitOfWorkMock();
+        return new OperationIdempotencyService(
+            repository.Object,
+            unitOfWork.Object,
+            new FixedTimeProvider(FixedNow));
+    }
+
+    private static Mock<IUnitOfWorkManage> CreateUnitOfWorkMock()
+    {
+        var unitOfWork = new Mock<IUnitOfWorkManage>(MockBehavior.Strict);
+        unitOfWork
+            .Setup(uow => uow.ExecuteInSavepointAsync(It.IsAny<Func<Task<long>>>()))
+            .Returns((Func<Task<long>> operation) => operation());
+        return unitOfWork;
     }
 
     private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider

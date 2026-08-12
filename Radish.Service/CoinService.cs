@@ -19,7 +19,7 @@ using SqlSugar;
 namespace Radish.Service;
 
 /// <summary>萝卜币服务实现</summary>
-public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
+public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 {
     private readonly IUserBalanceRepository _userBalanceRepository;
     private readonly IBaseRepository<User> _userRepository;
@@ -70,7 +70,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
     {
         try
         {
-            await EnsureUserExistsAsync(userId);
+            var user = await EnsureUserExistsAsync(userId);
 
             var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
 
@@ -81,7 +81,10 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 userBalance = await InitializeUserBalanceAsync(userId);
             }
 
-            return Mapper.Map<UserBalanceVo>(userBalance);
+            var balanceVo = Mapper.Map<UserBalanceVo>(userBalance);
+            balanceVo.VoUserName = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+                ?? User.NormalizeDisplayName(user.UserName, user.Id);
+            return balanceVo;
         }
         catch (Exception ex)
         {
@@ -157,6 +160,7 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 TotalTransferredIn = 0,
                 TotalTransferredOut = 0,
                 Version = 0,
+                TenantId = GetCurrentTenantId(),
                 CreateTime = DateTime.Now,
                 CreateBy = "System",
                 CreateId = 0
@@ -601,160 +605,6 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
 
     #endregion
 
-    #region 交易记录查询
-
-    /// <summary>
-    /// 获取用户交易记录（分页）
-    /// </summary>
-    public async Task<PageModel<CoinTransactionVo>> GetTransactionsAsync(
-        long userId,
-        int pageIndex,
-        int pageSize,
-        string? transactionType = null,
-        string? status = null,
-        string? businessType = null,
-        long? businessId = null)
-    {
-        try
-        {
-            // 1. 构建查询条件
-            var whereExpression = Expressionable.Create<CoinTransaction>()
-                .And(t => t.FromUserId == userId || t.ToUserId == userId);
-
-            if (!string.IsNullOrWhiteSpace(transactionType))
-            {
-                whereExpression.And(t => t.TransactionType == transactionType);
-            }
-
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                whereExpression.And(t => t.Status == status);
-            }
-
-            if (!string.IsNullOrWhiteSpace(businessType))
-            {
-                whereExpression.And(t => t.BusinessType == businessType);
-            }
-
-            if (businessId.HasValue)
-            {
-                whereExpression.And(t => t.BusinessId == businessId.Value);
-            }
-
-            // 2. 查询分页数据
-            var (transactions, totalCount) = await _coinTransactionRepository.QueryPageAsync(
-                whereExpression.ToExpression(),
-                pageIndex,
-                pageSize,
-                t => t.CreateTime,
-                OrderByType.Desc
-            );
-
-            // 3. 映射为 ViewModel
-            var transactionVos = Mapper.Map<List<CoinTransactionVo>>(transactions);
-
-            // 4. 补充公开身份显示名
-            await FillCoinTransactionUserNamesAsync(transactionVos);
-
-            return new PageModel<CoinTransactionVo>
-            {
-                Page = pageIndex,
-                PageSize = pageSize,
-                DataCount = totalCount,
-                PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
-                Data = transactionVos
-            };
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 交易记录失败", userId);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// 根据交易流水号获取交易详情
-    /// </summary>
-    public async Task<CoinTransactionVo?> GetTransactionByNoAsync(string transactionNo)
-    {
-        try
-        {
-            var transaction = await _coinTransactionRepository.QueryFirstAsync(
-                t => t.TransactionNo == transactionNo
-            );
-
-            if (transaction == null)
-            {
-                return null;
-            }
-
-            var transactionVo = Mapper.Map<CoinTransactionVo>(transaction);
-
-            // 补充公开身份显示名
-            await FillCoinTransactionUserNamesAsync(new[] { transactionVo });
-
-            return transactionVo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "根据交易流水号 {TransactionNo} 获取交易详情失败", transactionNo);
-            throw;
-        }
-    }
-
-    private async Task FillCoinTransactionUserNamesAsync(IReadOnlyCollection<CoinTransactionVo> transactionVos)
-    {
-        if (transactionVos.Count == 0)
-        {
-            return;
-        }
-
-        var userIds = transactionVos
-            .SelectMany(vo => new[] { vo.VoFromUserId, vo.VoToUserId })
-            .Where(userId => userId.HasValue && userId.Value > 0)
-            .Select(userId => userId!.Value)
-            .Distinct()
-            .ToList();
-
-        if (userIds.Count == 0)
-        {
-            foreach (var vo in transactionVos)
-            {
-                vo.VoFromUserName = "系统";
-                vo.VoToUserName = "系统";
-            }
-
-            return;
-        }
-
-        var users = await _userRepository.QueryAsync(user => userIds.Contains(user.Id) && !user.IsDeleted)
-            ?? new List<User>();
-        var userDisplayNameMap = users.ToDictionary(
-            user => user.Id,
-            user => User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
-                ?? User.NormalizeDisplayName(user.UserName, user.Id));
-
-        foreach (var vo in transactionVos)
-        {
-            vo.VoFromUserName = ResolveCoinTransactionUserName(vo.VoFromUserId, userDisplayNameMap);
-            vo.VoToUserName = ResolveCoinTransactionUserName(vo.VoToUserId, userDisplayNameMap);
-        }
-    }
-
-    private static string ResolveCoinTransactionUserName(long? userId, IReadOnlyDictionary<long, string> userDisplayNameMap)
-    {
-        if (!userId.HasValue)
-        {
-            return "系统";
-        }
-
-        return userDisplayNameMap.TryGetValue(userId.Value, out var userName)
-            ? userName
-            : $"用户{userId.Value}";
-    }
-
-    #endregion
-
     #region 转账功能
 
     /// <summary>
@@ -1166,158 +1016,6 @@ public class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoinService
                 _ => "OUT_OTHER"
             };
         }
-    }
-
-    #endregion
-
-    #region 管理员操作
-
-    /// <summary>
-    /// 管理员调整用户余额
-    /// </summary>
-    public async Task<string> AdminAdjustBalanceAsync(
-        long userId,
-        long deltaAmount,
-        string reason,
-        long operatorId,
-        string operatorName)
-    {
-        try
-        {
-            // 1. 参数校验
-            if (deltaAmount == 0)
-            {
-                throw new ArgumentException("调整金额不能为 0", nameof(deltaAmount));
-            }
-
-            if (string.IsNullOrWhiteSpace(reason))
-            {
-                throw new ArgumentException("调整原因不能为空", nameof(reason));
-            }
-
-            await EnsureUserExistsAsync(userId);
-
-            Log.Information("管理员调整余额：用户={UserId}, 金额={DeltaAmount}, 操作员={OperatorName}, 原因={Reason}",
-                userId, deltaAmount, operatorName, reason);
-
-            // 2. 使用乐观锁重试策略执行调整操作（最多重试 3 次，指数退避）
-            var transactionNo = await ExecuteWithRetryAsync(async () =>
-                await AdminAdjustBalanceInternalAsync(userId, deltaAmount, reason, operatorId, operatorName)
-            );
-
-            Log.Information("管理员调整余额成功：用户={UserId}, 金额={DeltaAmount}, 流水号={TransactionNo}",
-                userId, deltaAmount, transactionNo);
-
-            return transactionNo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "管理员调整余额失败：用户={UserId}, 金额={DeltaAmount}",
-                userId, deltaAmount);
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// 管理员调整余额的内部实现（包含事务和乐观锁）
-    /// </summary>
-    [UseTran(Propagation = Propagation.Required)]
-    private async Task<string> AdminAdjustBalanceInternalAsync(
-        long userId,
-        long deltaAmount,
-        string reason,
-        long operatorId,
-        string operatorName)
-    {
-        // 1. 确保用户余额记录存在
-        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
-        if (userBalance == null)
-        {
-            userBalance = await InitializeUserBalanceAsync(userId);
-        }
-
-        // 2. 检查余额是否充足（如果是扣款）
-        if (deltaAmount < 0 && userBalance.Balance < Math.Abs(deltaAmount))
-        {
-            throw new InvalidOperationException($"余额不足：当前余额={userBalance.Balance}, 扣除金额={Math.Abs(deltaAmount)}");
-        }
-
-        // 3. 生成交易流水号
-        var transactionNo = $"TXN_{SnowFlakeSingle.Instance.NextId()}";
-
-        // 4. 创建交易记录
-        var transaction = new CoinTransaction
-        {
-            Id = SnowFlakeSingle.Instance.NextId(),
-            TransactionNo = transactionNo,
-            FromUserId = deltaAmount < 0 ? userId : null,
-            ToUserId = deltaAmount > 0 ? userId : null,
-            Amount = Math.Abs(deltaAmount),
-            Fee = 0,
-            TransactionType = "ADMIN_ADJUST",
-            Status = "PENDING",
-            BusinessType = "Admin",
-            BusinessId = operatorId,
-            Remark = reason,
-            CreateTime = DateTime.Now,
-            CreateBy = operatorName,
-            CreateId = operatorId
-        };
-
-        await _coinTransactionRepository.AddAsync(transaction);
-
-        // 5. 记录变动前余额
-        var balanceBefore = userBalance.Balance;
-
-        // 6. 更新用户余额（使用乐观锁）
-        var updatedRows = await _userBalanceRepository.UpdateColumnsAsync(
-            u => new UserBalance
-            {
-                Balance = u.Balance + deltaAmount,
-                TotalEarned = deltaAmount > 0 ? u.TotalEarned + deltaAmount : u.TotalEarned,
-                TotalSpent = deltaAmount < 0 ? u.TotalSpent + Math.Abs(deltaAmount) : u.TotalSpent,
-                Version = u.Version + 1,
-                ModifyTime = DateTime.Now,
-                ModifyBy = operatorName,
-                ModifyId = operatorId
-            },
-            u => u.UserId == userId && u.Version == userBalance.Version
-        );
-
-        if (updatedRows == 0)
-        {
-            throw new ConcurrencyException("乐观锁冲突：余额已被其他操作修改");
-        }
-
-        // 7. 创建余额变动日志
-        var changeType = deltaAmount > 0 ? "ADMIN_ADJUST" : "ADMIN_ADJUST";
-        var balanceChangeLog = new BalanceChangeLog
-        {
-            Id = SnowFlakeSingle.Instance.NextId(),
-            UserId = userId,
-            TransactionId = transaction.Id,
-            ChangeAmount = deltaAmount,
-            BalanceBefore = balanceBefore,
-            BalanceAfter = balanceBefore + deltaAmount,
-            ChangeType = changeType,
-            CreateTime = DateTime.Now,
-            CreateBy = operatorName,
-            CreateId = operatorId
-        };
-
-        await _balanceChangeLogRepository.AddAsync(balanceChangeLog);
-
-        // 8. 更新交易状态为 SUCCESS
-        await _coinTransactionRepository.UpdateColumnsAsync(
-            t => new CoinTransaction
-            {
-                Status = "SUCCESS",
-                ModifyTime = DateTime.Now
-            },
-            t => t.Id == transaction.Id
-        );
-
-        return transactionNo;
     }
 
     #endregion

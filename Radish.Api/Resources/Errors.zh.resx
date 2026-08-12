@@ -549,8 +549,26 @@
   <data name="error.coin.balance_query_rejected" xml:space="preserve">
     <value>无法读取用户余额，请核对账号后重试。</value>
   </data>
+  <data name="error.coin.transaction_query_rejected" xml:space="preserve">
+    <value>无法读取用户资产流水，请核对账号与筛选条件。</value>
+  </data>
   <data name="error.coin.admin_adjust_rejected" xml:space="preserve">
     <value>余额调整无法完成，请核对余额和提交内容。</value>
+  </data>
+  <data name="error.coin.admin_adjust_version_conflict" xml:space="preserve">
+    <value>余额已发生变化，请刷新目标账户后重新确认调账。</value>
+  </data>
+  <data name="error.coin.admin_adjust_processing" xml:space="preserve">
+    <value>相同调账请求仍在处理中，请先刷新余额与流水确认结果。</value>
+  </data>
+  <data name="error.coin.admin_adjust_idempotency_conflict" xml:space="preserve">
+    <value>同一请求标识已用于其他调账内容。</value>
+  </data>
+  <data name="error.coin.admin_adjust_idempotency_invalid" xml:space="preserve">
+    <value>调账请求标识格式无效。</value>
+  </data>
+  <data name="error.coin.admin_adjust_replay_unavailable" xml:space="preserve">
+    <value>暂时无法读取此前的调账结果，请刷新目标余额与流水。</value>
   </data>
   <data name="error.experience.admin_adjust_rejected" xml:space="preserve">
     <value>经验调整无法完成，请核对账号和提交内容。</value>

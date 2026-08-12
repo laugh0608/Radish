@@ -172,13 +172,17 @@ public interface ICoinService : IBaseService<UserBalance, UserBalanceVo>
     /// <param name="reason">调整原因</param>
     /// <param name="operatorId">操作员 ID</param>
     /// <param name="operatorName">操作员名称</param>
+    /// <param name="expectedVersion">查询余额时取得的乐观锁版本号</param>
+    /// <param name="idempotencyKey">本次调账的幂等键</param>
     /// <returns>交易流水号</returns>
     Task<string> AdminAdjustBalanceAsync(
         long userId,
         long deltaAmount,
         string reason,
         long operatorId,
-        string operatorName);
+        string operatorName,
+        int expectedVersion,
+        string idempotencyKey);
 
     #endregion
 }
