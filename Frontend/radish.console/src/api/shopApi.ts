@@ -206,7 +206,7 @@ export async function adminGetOrders(params: {
   userId?: string;
   productId?: string;
   orderNo?: string;
-}): Promise<PagedResponse<Order>> {
+}, t?: TFunction): Promise<PagedResponse<Order>> {
   const searchParams = new URLSearchParams();
 
   if (params.status !== undefined) searchParams.append('status', params.status.toString());
@@ -222,7 +222,10 @@ export async function adminGetOrders(params: {
   );
 
   if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '获取订单列表失败');
+    throw createApiResponseError(
+      response,
+      translateFallback(t, 'orders.list.loadFailed', '获取订单列表失败'),
+    );
   }
 
   return response.data;

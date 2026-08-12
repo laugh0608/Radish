@@ -3,7 +3,12 @@
  * 使用后端 Vo 字段名
  */
 
-import { apiGet } from '@radish/http';
+import type { TFunction } from 'i18next';
+import { apiGet, createApiResponseError } from '@radish/http';
+
+function translateFallback(t: TFunction | undefined, key: string, fallback: string): string {
+  return t ? t(key) : fallback;
+}
 
 /**
  * 仪表盘统计数据类型（使用 Vo 前缀）
@@ -45,11 +50,14 @@ export interface UserLevelDistributionVo {
 /**
  * 获取仪表盘统计数据
  */
-export async function getDashboardStats(): Promise<DashboardStatsVo> {
+export async function getDashboardStats(t?: TFunction): Promise<DashboardStatsVo> {
   const response = await apiGet<DashboardStatsVo>('/api/v1/Statistics/GetDashboardStats', { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取统计数据失败');
+    throw createApiResponseError(
+      response,
+      translateFallback(t, 'dashboard.loadStatsFailed', '获取统计数据失败'),
+    );
   }
 
   return response.data;
@@ -62,7 +70,7 @@ export async function getOrderTrend(days: number = 30): Promise<OrderTrendItemVo
   const response = await apiGet<OrderTrendItemVo[]>(`/api/v1/Statistics/GetOrderTrend?days=${days}`, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取订单趋势失败');
+    throw createApiResponseError(response, '获取订单趋势失败');
   }
 
   return response.data;
@@ -75,7 +83,7 @@ export async function getProductSalesRanking(limit: number = 10): Promise<Produc
   const response = await apiGet<ProductSalesRankingVo[]>(`/api/v1/Statistics/GetProductSalesRanking?limit=${limit}`, { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取商品销售排行失败');
+    throw createApiResponseError(response, '获取商品销售排行失败');
   }
 
   return response.data;
@@ -88,7 +96,7 @@ export async function getUserLevelDistribution(): Promise<UserLevelDistributionV
   const response = await apiGet<UserLevelDistributionVo[]>('/api/v1/Statistics/GetUserLevelDistribution', { withAuth: true });
 
   if (!response.ok || !response.data) {
-    throw new Error(response.message || '获取用户等级分布失败');
+    throw createApiResponseError(response, '获取用户等级分布失败');
   }
 
   return response.data;
