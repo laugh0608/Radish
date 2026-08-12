@@ -49,7 +49,7 @@ export interface CreateStickerRequest {
   name: string;
   isAnimated: boolean;
   allowInline: boolean;
-  attachmentId?: string | null;
+  attachmentId: string;
   isEnabled: boolean;
   sort: number;
 }
@@ -58,7 +58,7 @@ export interface UpdateStickerRequest {
   name: string;
   isAnimated: boolean;
   allowInline: boolean;
-  attachmentId?: string | null;
+  attachmentId: string;
   isEnabled: boolean;
   sort: number;
 }
@@ -81,6 +81,7 @@ export interface StickerSortItemRequest {
 }
 
 export interface BatchUpdateStickerSortRequest {
+  groupId: string;
   items: StickerSortItemRequest[];
 }
 
@@ -159,6 +160,18 @@ export async function updateStickerGroup(id: string, request: StickerGroupUpsert
 
   if (!response.ok) {
     throw createApiResponseError(response, '更新表情包分组失败');
+  }
+}
+
+export async function updateStickerGroupStatus(id: string, isEnabled: boolean): Promise<void> {
+  const response = await apiPut<boolean>(
+    `/api/v1/Sticker/UpdateGroupStatus/${id}`,
+    { isEnabled },
+    { withAuth: true },
+  );
+
+  if (!response.ok) {
+    throw createApiResponseError(response, '更新表情包分组状态失败');
   }
 }
 

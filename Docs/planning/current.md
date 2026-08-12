@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-C04-E Stickers`
-- **产品下一顺位**：`先关闭 toggle-only 越权写入与级联删除事务边界，再治理排序草稿、批量上传未保存附件和 Mobile 单任务边界`
+- **工程第一顺位**：`F4-R R3-C04-F Coins`
+- **产品下一顺位**：`把调账绑定到已读取的权威目标，补齐显式确认、幂等重放 / 冲突与资产流水原子性，再收敛 PC / Mobile 单任务边界`
 - **复核日期**：`2026-08-12`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-12` 已完成 [R3-C04-E Stickers 权威媒体资源治理代码及静态门禁](/records/f4-r-r3-c04-e-console-stickers-implementation-2026-08-12)：分组完整编辑与独立启停拆为不同 endpoint / 权限，贴纸读写和排序补齐当前租户分组归属，级联删除与排序整批写入具备事务回滚；排序请求绑定分组权威快照，失败保留草稿。Console 分组 / 贴纸查询可由 URL 回访，请求代际与 `stale / unavailable` 冻结陈旧快照写入；PC 连续表格与 Mobile 媒体卡 / 筛选 Bottom Sheet 共用同一快照，单图和批量上传明确未保存附件的 24 小时孤儿清理生命周期。后端 `1246 passed / 39 skipped`、Console `103 / 103`、构建、类型、Lint、权限 / LongId / 文档 / changed hygiene 通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-F Coins`。
 - `2026-08-12` 已完成 [R3-C04-D Products 权威列表与独立上下架代码及静态门禁](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)：Create / Update DTO 删除 `IsOnSale`，创建固定未上架、普通编辑保持状态，正式上下架只由既有独立权限与版本 CAS 裁决；管理列表补入口分页限制与稳定排序。Console 全列表查询可由 URL 回访并保留详情 / 订单回跳上下文，请求代际与 `stale / unavailable` 冻结陈旧快照写入；PC 连续表格与 Mobile 商品卡 / 筛选 Bottom Sheet 共用同一快照，Form 具备权限、元数据、dirty / busy 和附件上传停止线。后端 `1237 passed / 39 skipped`、Console `99 / 99`、构建、类型、Lint、权限 / LongId / changed hygiene 通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-E Stickers`。
 - `2026-08-12` 已完成 [R3-C04-C Applications 权威目录与一次性 Secret 代码及静态门禁](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)：OpenIddict EF 存储负责软删除过滤、搜索、稳定排序和真实分页；`ClientVo` 统一数组与 `public / confidential` 契约，公开客户端不再返回伪 Secret 且不能执行轮换。Console 查询可由 URL 回访，写入在非权威快照冻结；PC 连续表格—Modal 与 Mobile 应用卡—单任务表单 / Secret 结果共用同一快照，表单具备 handler / Form 双重权限、dirty / busy，轮换显式确认且明文结果主动确认后清除。后端 `1234 passed / 39 skipped`、Console `94 / 94`、strict type-check、Lint、production build、权限 / LongId / changed hygiene 通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-D Products`。
 - `2026-08-12` 已完成 [R3-C04-B Users 权威列表与聚合详情代码及静态门禁](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)：关键词、启用状态、角色进入服务端权威查询和稳定分页，角色按页批量回填；通用 `UserVo` 删除密码哈希，登录改用禁止序列化的专用凭据快照。列表查询可由 URL 回访并继承 `ConsoleResourceList`；详情把主资料、授权、余额、经验、流水、订单、权益拆为独立 `loading / ready / unavailable / stale`，三类历史记录使用服务端总数分页，Mobile 固定主任务先于辅助摘要。后端 `1228 passed / 39 skipped`、Console `90 / 90`、strict type-check、Lint、production build、权限扫描通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-C Applications`。
@@ -166,15 +167,16 @@
 
 ## 明天事项（2026-08-13）
 
-1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)和 [R3-C04-D 实现记录](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)。
-2. 进入 `R3-C04-E Stickers` 前反查分组 / 贴纸列表、创建 / 编辑、启停、排序、单图 / 批量上传、级联删除的 API、权限、事务与附件 owner。
-3. 先拆开 toggle-only 与完整编辑 payload，保证启停权限不能改写名称、描述、封面或排序；分组级联删除必须与贴纸和附件引用变更共同提交或完整回滚。
-4. 排序草稿与已应用快照分离；未保存上传附件必须有明确确认 / 清理生命周期。PC 保持连续表格，Mobile 收敛为媒体卡—单任务表单 / 批量任务。
-5. 开发中执行 Stickers 权限、事务、排序、附件与响应式定向测试，以及后端 / Console 分层静态门禁；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
-6. Stickers 批不新增拖拽网格、Reaction 运营、通用媒体库或新权限键，不修改 Pencil；Coins 继续保持最后顺位。
+1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)和 [R3-C04-E 实现记录](/records/f4-r-r3-c04-e-console-stickers-implementation-2026-08-12)。
+2. 进入 `R3-C04-F Coins` 前反查余额查询、调账、流水、权限、事务、当前目标解析与既有幂等契约，先确认资产真相源和失败语义。
+3. 调账必须绑定已经权威读取的用户与余额快照；目标变化或查询失效时清空待提交操作，禁止文本目标与当前展示用户脱离。
+4. 写入前提供明确目标、方向、金额与原因确认；同一幂等键的重放返回原结果，异载荷冲突结构化失败，余额与流水必须共同提交或完整回滚。PC 保持连续查询 / 流水，Mobile 收敛为目标确认后的单任务调账。
+5. 开发中执行 Coins 权限、目标绑定、幂等、事务、流水与响应式定向测试，以及后端 / Console 分层静态门禁；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
+6. Coins 批不新增转账、退款、提现、批量调账、万能资产编辑器或新权限键，不修改 Pencil。
 
 ## 当前执行入口
 
+- [R3-C04-E Stickers 权威媒体资源治理实现](/records/f4-r-r3-c04-e-console-stickers-implementation-2026-08-12)
 - [R3-C04-D Products 权威列表与独立上下架实现](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)
 - [R3-C04-C Applications 权威目录与一次性 Secret 实现](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)
 - [R3-C04-B Users 权威列表与聚合详情实现](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)

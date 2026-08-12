@@ -61,6 +61,13 @@
   gap: 8px;
 }
 
+.admin-form-mobile-actions {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 @media (max-width: 768px) {
   .taxonomy-form-modal {
     width: calc(100vw - 24px) !important;

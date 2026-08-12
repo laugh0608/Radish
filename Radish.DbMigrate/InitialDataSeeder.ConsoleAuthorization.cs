@@ -183,7 +183,7 @@ internal static partial class InitialDataSeeder
         new(61072, "/api/v1/Sticker/UpdateSticker/.+", "Action"),
         new(61073, "/api/v1/Sticker/DeleteGroup/.+", "Action"),
         new(61073, "/api/v1/Sticker/DeleteSticker/.+", "Action"),
-        new(61074, "/api/v1/Sticker/UpdateGroup/.+", "Action"),
+        new(61074, "/api/v1/Sticker/UpdateGroupStatus/.+", "Action"),
         new(61075, "/api/v1/Sticker/BatchUpdateSort", "Action"),
         new(61076, "/api/v1/Sticker/BatchAddStickers", "Action"),
         new(61076, "/api/v1/Sticker/NormalizeCode", "Action"),

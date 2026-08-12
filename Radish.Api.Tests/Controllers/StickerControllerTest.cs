@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Moq;
 using Radish.Api.Controllers;
 using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
@@ -16,6 +19,20 @@ namespace Radish.Api.Tests.Controllers;
 [TestSubject(typeof(StickerController))]
 public class StickerControllerTest
 {
+    [Fact]
+    public void StickerGroupWriteEndpoints_Should_Keep_Edit_And_Toggle_Permissions_Separate()
+    {
+        var updateMethod = typeof(StickerController).GetMethod(nameof(StickerController.UpdateGroup));
+        var toggleMethod = typeof(StickerController).GetMethod(nameof(StickerController.UpdateGroupStatus));
+
+        Assert.Equal(
+            new[] { ConsolePermissions.StickersEdit },
+            GetRequiredPermissions(updateMethod));
+        Assert.Equal(
+            new[] { ConsolePermissions.StickersToggle },
+            GetRequiredPermissions(toggleMethod));
+    }
+
     [Fact]
     public void StickerController_Should_Opt_Into_True_Http_Error_Contract()
     {
@@ -178,12 +195,13 @@ public class StickerControllerTest
         // Arrange
         var serviceMock = CreateStickerServiceMock();
         serviceMock
-            .Setup(s => s.BatchUpdateSortAsync(It.IsAny<List<StickerSortItemDto>>(), 10001, "Admin"))
+            .Setup(s => s.BatchUpdateSortAsync(It.IsAny<BatchUpdateStickerSortDto>(), 10001, "Admin"))
             .ReturnsAsync(3);
 
         var controller = CreateController(serviceMock.Object);
         var request = new BatchUpdateStickerSortDto
         {
+            GroupId = 1,
             Items = new List<StickerSortItemDto>
             {
                 new() { Id = 1, Sort = 1 },
@@ -200,6 +218,25 @@ public class StickerControllerTest
         Assert.Equal(200, result.StatusCode);
         var payload = Assert.IsType<StickerBatchUpdateSortResultVo>(result.ResponseData);
         Assert.Equal(3, payload.VoUpdatedCount);
+    }
+
+    [Fact]
+    public async Task UpdateGroupStatus_Should_Use_Dedicated_Service_Command()
+    {
+        var serviceMock = CreateStickerServiceMock();
+        serviceMock
+            .Setup(service => service.UpdateGroupStatusAsync(12, false, 10001, "Admin"))
+            .ReturnsAsync(true);
+        var controller = CreateController(serviceMock.Object);
+
+        var result = await controller.UpdateGroupStatus(12, new UpdateStickerGroupStatusDto
+        {
+            IsEnabled = false
+        });
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        serviceMock.VerifyAll();
     }
 
     [Fact]
@@ -288,6 +325,17 @@ public class StickerControllerTest
     private static Mock<IStickerService> CreateStickerServiceMock()
     {
         return new Mock<IStickerService>(MockBehavior.Strict);
+    }
+
+    private static string[] GetRequiredPermissions(MethodInfo? method)
+    {
+        Assert.NotNull(method);
+        var attribute = Assert.Single(method!.GetCustomAttributes<RequireConsolePermissionAttribute>());
+        var permissionsField = typeof(RequireConsolePermissionAttribute).GetField(
+            "_permissions",
+            BindingFlags.Instance | BindingFlags.NonPublic);
+        Assert.NotNull(permissionsField);
+        return Assert.IsType<string[]>(permissionsField!.GetValue(attribute)).OrderBy(item => item).ToArray();
     }
 
     private static BatchAddStickersDto CreateBatchAddRequest()

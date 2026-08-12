@@ -26,6 +26,9 @@ public interface IStickerService : IBaseService<StickerGroup, StickerGroupVo>
     /// <summary>更新分组</summary>
     Task<bool> UpdateGroupAsync(long id, UpdateStickerGroupDto updateDto, long operatorId, string operatorName);
 
+    /// <summary>更新分组启用状态</summary>
+    Task<bool> UpdateGroupStatusAsync(long id, bool isEnabled, long operatorId, string operatorName);
+
     /// <summary>软删除分组（同时软删除组内表情）</summary>
     Task<bool> DeleteGroupAsync(long id, long operatorId, string operatorName);
 
@@ -57,5 +60,5 @@ public interface IStickerService : IBaseService<StickerGroup, StickerGroupVo>
     Task<StickerBatchAddResultVo> BatchAddStickersAsync(BatchAddStickersDto request, long operatorId, string operatorName);
 
     /// <summary>批量更新表情排序</summary>
-    Task<int> BatchUpdateSortAsync(List<StickerSortItemDto> items, long operatorId, string operatorName);
+    Task<int> BatchUpdateSortAsync(BatchUpdateStickerSortDto request, long operatorId, string operatorName);
 }

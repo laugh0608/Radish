@@ -728,6 +728,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50083L,
+                ApiModuleName = "Update sticker group status",
+                LinkUrl = "/api/v1/Sticker/UpdateGroupStatus/.+",
+                ControllerName = "Sticker",
+                ActionName = "UpdateGroupStatus",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50073L,
                 ApiModuleName = "Delete sticker group",
                 LinkUrl = "/api/v1/Sticker/DeleteGroup/.+",

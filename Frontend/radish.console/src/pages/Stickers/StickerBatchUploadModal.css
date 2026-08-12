@@ -33,3 +33,87 @@
 .sticker-batch-error-text {
   color: var(--console-danger);
 }
+
+.sticker-batch-mobile-list {
+  display: none;
+}
+
+.sticker-batch-mobile-footer,
+.sticker-batch-mobile-footer .ant-space {
+  width: 100%;
+}
+
+.sticker-batch-mobile-footer .ant-space {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+@media (max-width: 767px) {
+  .sticker-batch-upload-modal .ant-steps-item-title {
+    font-size: 11px;
+  }
+
+  .sticker-batch-table-region {
+    display: none;
+  }
+
+  .sticker-batch-mobile-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sticker-batch-mobile-card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px;
+    border: 1px solid var(--console-border-subtle);
+    border-radius: 12px;
+    background: var(--console-bg-surface);
+  }
+
+  .sticker-batch-mobile-card--conflict {
+    border-color: var(--console-warning-border);
+    background: var(--console-warning-bg);
+  }
+
+  .sticker-batch-mobile-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .sticker-batch-mobile-card__header strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .sticker-batch-mobile-card__fields {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .sticker-batch-mobile-card__fields label {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: var(--console-text-muted);
+    font-size: 12px;
+  }
+
+  .sticker-batch-mobile-card__switch {
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .sticker-batch-mobile-card__issue {
+    margin: 0;
+    color: var(--console-danger);
+    font-size: 12px;
+  }
+}
