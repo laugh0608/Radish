@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-C04-D Products`
-- **产品下一顺位**：`先关闭 Create / Update 直接改写 IsOnSale 的权限绕行，再保持现有 CAS、能力矩阵、附件生命周期、订单回跳与 Mobile 单任务边界`
+- **工程第一顺位**：`F4-R R3-C04-E Stickers`
+- **产品下一顺位**：`先关闭 toggle-only 越权写入与级联删除事务边界，再治理排序草稿、批量上传未保存附件和 Mobile 单任务边界`
 - **复核日期**：`2026-08-12`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-12` 已完成 [R3-C04-D Products 权威列表与独立上下架代码及静态门禁](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)：Create / Update DTO 删除 `IsOnSale`，创建固定未上架、普通编辑保持状态，正式上下架只由既有独立权限与版本 CAS 裁决；管理列表补入口分页限制与稳定排序。Console 全列表查询可由 URL 回访并保留详情 / 订单回跳上下文，请求代际与 `stale / unavailable` 冻结陈旧快照写入；PC 连续表格与 Mobile 商品卡 / 筛选 Bottom Sheet 共用同一快照，Form 具备权限、元数据、dirty / busy 和附件上传停止线。后端 `1237 passed / 39 skipped`、Console `99 / 99`、构建、类型、Lint、权限 / LongId / changed hygiene 通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-E Stickers`。
 - `2026-08-12` 已完成 [R3-C04-C Applications 权威目录与一次性 Secret 代码及静态门禁](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)：OpenIddict EF 存储负责软删除过滤、搜索、稳定排序和真实分页；`ClientVo` 统一数组与 `public / confidential` 契约，公开客户端不再返回伪 Secret 且不能执行轮换。Console 查询可由 URL 回访，写入在非权威快照冻结；PC 连续表格—Modal 与 Mobile 应用卡—单任务表单 / Secret 结果共用同一快照，表单具备 handler / Form 双重权限、dirty / busy，轮换显式确认且明文结果主动确认后清除。后端 `1234 passed / 39 skipped`、Console `94 / 94`、strict type-check、Lint、production build、权限 / LongId / changed hygiene 通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-D Products`。
 - `2026-08-12` 已完成 [R3-C04-B Users 权威列表与聚合详情代码及静态门禁](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)：关键词、启用状态、角色进入服务端权威查询和稳定分页，角色按页批量回填；通用 `UserVo` 删除密码哈希，登录改用禁止序列化的专用凭据快照。列表查询可由 URL 回访并继承 `ConsoleResourceList`；详情把主资料、授权、余额、经验、流水、订单、权益拆为独立 `loading / ready / unavailable / stale`，三类历史记录使用服务端总数分页，Mobile 固定主任务先于辅助摘要。后端 `1228 passed / 39 skipped`、Console `90 / 90`、strict type-check、Lint、production build、权限扫描通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-C Applications`。
 - `2026-08-11` 已完成 [R3-C04-A Categories / Tags 与共享响应式资源表面代码及静态门禁](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)：LongId 全部收敛为字符串，筛选草稿与已应用查询分离，请求代际和查询快照键关闭分页回跳 / 过期响应；`unavailable / stale` 冻结写入，handler 与 Form 双重权限、dirty / busy 停止线完整。两类资源共用无业务状态的 PC 连续表格—Mobile 卡片壳层，Category 父级选项改为逐页完整读取。Console `87 / 87`、strict type-check、Lint、production build、权限与 LongId 扫描通过；按当轮约束未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-B Users`。
@@ -165,15 +166,16 @@
 
 ## 明天事项（2026-08-13）
 
-1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)和 [R3-C04-C 实现记录](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)。
-2. 进入 `R3-C04-D Products` 前先反查列表、URL 可回访详情、Create / Update、独立上下架、附件与订单回跳的 API、权限和页面 owner；确认 `IsOnSale` 当前所有写入口。
-3. 先关闭 Create / Update DTO 或 handler 对 `IsOnSale` 的权限绕行，正式上下架继续只由 `console.products.toggle-sale` 裁决；保留既有版本 CAS、能力矩阵与结构化冲突草稿。
-4. 复核附件上传 / 未保存附件、提交 busy、dirty 关闭、详情 `unavailable / stale` 与写 handler / Form 双重权限；PC 保持连续表格—URL 详情 Modal，Mobile 收敛为商品卡—单任务详情 / 表单。
-5. 开发中执行 Products 上架权限、CAS、附件、URL 与响应式定向测试，以及 Console 全量测试、strict type-check、Lint、production build、`git diff --check` 与 changed hygiene；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
-6. Products 批不扩入订单履约状态机、Stickers 或 Coins，不新增商品业务字段，不修改 Pencil、数据库、migration 或权限键；三处既有 `DateTime.Now` baseline 与全仓历史卫生债务继续独立维护。
+1. 新会话先读取本页、[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)和 [R3-C04-D 实现记录](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)。
+2. 进入 `R3-C04-E Stickers` 前反查分组 / 贴纸列表、创建 / 编辑、启停、排序、单图 / 批量上传、级联删除的 API、权限、事务与附件 owner。
+3. 先拆开 toggle-only 与完整编辑 payload，保证启停权限不能改写名称、描述、封面或排序；分组级联删除必须与贴纸和附件引用变更共同提交或完整回滚。
+4. 排序草稿与已应用快照分离；未保存上传附件必须有明确确认 / 清理生命周期。PC 保持连续表格，Mobile 收敛为媒体卡—单任务表单 / 批量任务。
+5. 开发中执行 Stickers 权限、事务、排序、附件与响应式定向测试，以及后端 / Console 分层静态门禁；成组代码完成且获得当前任务授权后，才启动 Gateway 做 PC / Mobile 运行态验收。
+6. Stickers 批不新增拖拽网格、Reaction 运营、通用媒体库或新权限键，不修改 Pencil；Coins 继续保持最后顺位。
 
 ## 当前执行入口
 
+- [R3-C04-D Products 权威列表与独立上下架实现](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)
 - [R3-C04-C Applications 权威目录与一次性 Secret 实现](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)
 - [R3-C04-B Users 权威列表与聚合详情实现](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)
 - [2026-08-11 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-11)

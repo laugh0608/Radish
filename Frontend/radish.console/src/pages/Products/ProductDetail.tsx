@@ -57,15 +57,18 @@ export const ProductDetail = ({
   const [product, setProduct] = useState<Product | undefined>(fallbackProduct);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [hasAuthoritativeProduct, setHasAuthoritativeProduct] = useState(false);
 
   useEffect(() => {
     if (!visible) {
       setProduct(fallbackProduct);
       setLoadError(null);
+      setHasAuthoritativeProduct(false);
       return;
     }
 
     setProduct(fallbackProduct);
+    setHasAuthoritativeProduct(false);
   }, [fallbackProduct, visible]);
 
   useEffect(() => {
@@ -85,6 +88,7 @@ export const ProductDetail = ({
         }
 
         setProduct(result);
+        setHasAuthoritativeProduct(true);
       } catch (error) {
         if (cancelled) {
           return;
@@ -92,6 +96,7 @@ export const ProductDetail = ({
 
         const errorMessage = error instanceof Error ? error.message : t('products.detail.loadFailed');
         setLoadError(errorMessage);
+        setHasAuthoritativeProduct(false);
         setProduct((current) => current ?? fallbackProduct);
         message.error(errorMessage);
       } finally {
@@ -145,7 +150,7 @@ export const ProductDetail = ({
               {t('products.action.orders')}
             </Button>
           ) : null}
-          {currentProduct && onEdit ? (
+          {currentProduct && onEdit && hasAuthoritativeProduct ? (
             <Button variant="primary" onClick={() => onEdit(currentProduct)}>
               {t('products.action.edit')}
             </Button>
@@ -160,6 +165,12 @@ export const ProductDetail = ({
         </div>
       ) : (
         <>
+          {loadError ? (
+            <div className="product-detail-warning" role="alert">
+              <strong>{t('products.detail.staleTitle')}</strong>
+              <span>{t('products.detail.staleDescription')}</span>
+            </div>
+          ) : null}
           <div className="product-detail-media">
             <div className="product-detail-media-block">
               <div className="product-detail-media-label">{t('products.detail.icon')}</div>

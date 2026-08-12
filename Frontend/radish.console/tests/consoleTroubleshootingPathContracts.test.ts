@@ -44,7 +44,10 @@ test('Console 商品与订单详情 footer 动作应继承列表权限态', () =
   const productListSource = readConsoleSource('src/pages/Products/ProductList.tsx');
   const orderListSource = readConsoleSource('src/pages/Orders/OrderList.tsx');
 
-  assert.match(productListSource, /onEdit=\{canEditProduct \? handleEditProduct : undefined\}/);
+  assert.match(
+    productListSource,
+    /onEdit=\{canEditProduct && actionsAreAuthoritative && metadataIsAuthoritative \? handleEditProduct : undefined\}/,
+  );
   assert.match(orderListSource, /onRetry=\{canRetryOrder \? handleRetry : undefined\}/);
   assert.doesNotMatch(productListSource, /<ProductDetail[\s\S]*onEdit=\{handleEditProduct\}/);
   assert.doesNotMatch(orderListSource, /<OrderDetail[\s\S]*onRetry=\{handleRetry\}/);

@@ -10,7 +10,6 @@ import {
   AntSelect as Select,
   Radio,
   DatePicker,
-  Switch,
   Button,
   Space,
   PlusOutlined,
@@ -46,6 +45,7 @@ import '../adminForm.css';
 interface ProductFormProps {
   visible: boolean;
   product?: Product;
+  canSubmit: boolean;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -180,12 +180,13 @@ function normalizeBenefitValue(value: unknown): string | undefined {
   return normalized ? normalized : undefined;
 }
 
-export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFormProps) => {
+export const ProductForm = ({ visible, product, canSubmit, onClose, onSuccess }: ProductFormProps) => {
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage ?? i18n.language;
   const [form] = Form.useForm<ProductFormValues>();
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [capabilities, setCapabilities] = useState<ShopProductCapability[]>([]);
+  const [metadataReady, setMetadataReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [iconUploading, setIconUploading] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
@@ -272,6 +273,15 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
     setPreview: (value: string | undefined) => void,
     fieldName: 'iconAttachmentId' | 'coverAttachmentId'
   ): UploadProps['customRequest'] => async (options) => {
+    if (!canSubmit || !metadataReady) {
+      const error = new Error(t(!canSubmit
+        ? 'products.feedback.permissionDenied'
+        : 'products.feedback.metadataUnavailable'));
+      options.onError?.(error);
+      message.error(error.message);
+      return;
+    }
+
     const file = options.file;
     if (!(file instanceof File)) {
       options.onError?.(new Error(t('products.form.upload.invalidFile')));
@@ -364,7 +374,6 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         }),
         durationDays: product.voDurationDays,
         sortOrder: product.voSortOrder,
-        isOnSale: product.voIsOnSale,
         expiresAt: product.voExpiresAt ? dayjs(product.voExpiresAt) : undefined,
       });
       setIconPreviewUrl(getAvatarUrl(product.voIcon));
@@ -380,7 +389,6 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
         stock: 0,
         limitPerUser: 0,
         sortOrder: 0,
-        isOnSale: false,
       });
       setIconPreviewUrl(undefined);
       setCoverPreviewUrl(undefined);
@@ -394,14 +402,18 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
   }, [visible, product, form]);
 
   useEffect(() => {
-    if (!visible || !unsupportedSaleSelection) {
+    if (!visible || !isDirty) {
       return;
     }
 
-    if (form.getFieldValue('isOnSale')) {
-      form.setFieldValue('isOnSale', false);
-    }
-  }, [form, unsupportedSaleSelection, visible]);
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty, visible]);
 
   useEffect(() => {
     if (!visible) {
@@ -441,20 +453,33 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
 
   const loadFormMetadata = async () => {
     try {
+      setMetadataReady(false);
       const [categoryData, capabilityData] = await Promise.all([
         getCategories(t),
         getProductCapabilities(t),
       ]);
       setCategories(categoryData);
       setCapabilities(capabilityData);
+      setMetadataReady(true);
     } catch (error) {
       log.error('ProductForm', '加载商品表单元数据失败:', error);
       setCapabilities([]);
+      setMetadataReady(false);
       message.error(error instanceof Error ? error.message : t('products.form.metadataLoadFailed'));
     }
   };
 
   const handleSubmit = async () => {
+    if (!canSubmit) {
+      message.error(t('products.feedback.permissionDenied'));
+      return;
+    }
+
+    if (!metadataReady) {
+      message.error(t('products.feedback.metadataUnavailable'));
+      return;
+    }
+
     if (iconUploading || coverUploading) {
       message.warning(t('products.form.uploadInProgress'));
       return;
@@ -540,7 +565,11 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
       footer={
         <div className="admin-form-modal-actions">
           <Button onClick={handleRequestClose}>{t('products.form.cancel')}</Button>
-          <Button variant="primary" onClick={handleSubmit} disabled={loading || iconUploading || coverUploading}>
+          <Button
+            variant="primary"
+            onClick={handleSubmit}
+            disabled={!canSubmit || !metadataReady || loading || iconUploading || coverUploading}
+          >
             {loading || iconUploading || coverUploading
               ? t('products.form.saving')
               : t('products.form.save')}
@@ -703,16 +732,16 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                 accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={createUploadHandler('ProductIcon', setIconUploading, setIconPreviewUrl, 'iconAttachmentId')}
-                disabled={iconUploading || loading}
+                disabled={!canSubmit || !metadataReady || iconUploading || loading}
               >
-                <Button icon={<PlusOutlined />} disabled={iconUploading || loading}>
+                <Button icon={<PlusOutlined />} disabled={!canSubmit || !metadataReady || iconUploading || loading}>
                   {iconUploading
                     ? t('products.form.field.uploading')
                     : t('products.form.field.uploadIcon')}
                 </Button>
               </Upload>
               <Button
-                disabled={!iconAttachmentId || iconUploading || loading}
+                disabled={!canSubmit || !iconAttachmentId || iconUploading || loading}
                 onClick={() => {
                   form.setFieldValue('iconAttachmentId', undefined);
                   setIsDirty(true);
@@ -759,16 +788,16 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
                 accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={createUploadHandler('ProductCover', setCoverUploading, setCoverPreviewUrl, 'coverAttachmentId')}
-                disabled={coverUploading || loading}
+                disabled={!canSubmit || !metadataReady || coverUploading || loading}
               >
-                <Button icon={<PlusOutlined />} disabled={coverUploading || loading}>
+                <Button icon={<PlusOutlined />} disabled={!canSubmit || !metadataReady || coverUploading || loading}>
                   {coverUploading
                     ? t('products.form.field.uploading')
                     : t('products.form.field.uploadCover')}
                 </Button>
               </Upload>
               <Button
-                disabled={!coverAttachmentId || coverUploading || loading}
+                disabled={!canSubmit || !coverAttachmentId || coverUploading || loading}
                 onClick={() => {
                   form.setFieldValue('coverAttachmentId', undefined);
                   setIsDirty(true);
@@ -888,19 +917,13 @@ export const ProductForm = ({ visible, product, onClose, onSuccess }: ProductFor
           <InputNumber placeholder={t('products.form.field.sortOrder')} className="admin-form-control-full" />
         </Form.Item>
 
-        <Form.Item
-          label={t('products.form.field.onSale')}
-          name="isOnSale"
-          valuePropName="checked"
-        >
-          <Switch disabled={unsupportedSaleSelection} />
-        </Form.Item>
-
-        {unsupportedSaleSelection && (
-          <div className="admin-form-help-text">
-            {t('products.form.field.unavailableHelp')}
-          </div>
-        )}
+        <div className="admin-feature-inline-context">
+          <strong>{t('products.form.saleGovernance.title')}</strong>
+          <span>{t(product
+            ? 'products.form.saleGovernance.editDescription'
+            : 'products.form.saleGovernance.createDescription')}</span>
+          {unsupportedSaleSelection ? <span>{t('products.form.field.unavailableHelp')}</span> : null}
+        </div>
       </Form>
     </Modal>
   );

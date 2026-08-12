@@ -25,6 +25,8 @@ namespace Radish.Api.Controllers;
 [ApiErrorContract]
 public class ShopController : ControllerBase
 {
+    private const int MaxAdminProductPageSize = 100;
+    private const int MaxAdminProductKeywordLength = 100;
     private readonly IProductService _productService;
     private readonly IOrderService _orderService;
     private readonly IUserBenefitService _userBenefitService;
@@ -593,8 +595,21 @@ public class ShopController : ControllerBase
         int pageIndex = 1,
         int pageSize = 20)
     {
+        if (pageIndex < 1 || pageSize < 1 || pageSize > MaxAdminProductPageSize)
+        {
+            return MessageModel<PageModel<ProductVo>>.Failed(
+                $"分页参数无效：pageIndex 必须大于 0，pageSize 必须在 1-{MaxAdminProductPageSize} 之间");
+        }
+
+        var normalizedKeyword = keyword?.Trim();
+        if (normalizedKeyword?.Length > MaxAdminProductKeywordLength)
+        {
+            return MessageModel<PageModel<ProductVo>>.Failed(
+                $"搜索关键词长度不能超过 {MaxAdminProductKeywordLength}");
+        }
+
         var result = await _productService.GetProductListForAdminAsync(
-            categoryId, productType, isOnSale, keyword, pageIndex, pageSize);
+            categoryId, productType, isOnSale, normalizedKeyword, pageIndex, pageSize);
         return MessageModel<PageModel<ProductVo>>.Success("查询成功", result);
     }
 
