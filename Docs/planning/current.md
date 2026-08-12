@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-C05 Console 仪表与治理派生设计前审计`
-- **产品下一顺位**：`反查 Dashboard、Documents、Experience 与 Channel Discoverability 的主任务、证据 / 事件、写权限和 Mobile 边界，再按风险拆分正式子批`
+- **工程第一顺位**：`F4-R R3-C05-A Dashboard 权威调度面`
+- **产品下一顺位**：`先关闭统计 / 最近订单独立权威状态、伪队列 / 伪命令和 Mobile 最近订单承载，再进入 Channel 公开资格治理`
 - **复核日期**：`2026-08-12`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-12` 已完成 [R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)：Dashboard、Channel Discoverability、Documents 与 Experience 的既有继承均成立，不需要新建或修改 Pencil；四页按风险拆为 Dashboard、Channel、Documents、Experience 四批，不建立万能治理状态机。审计识别 Dashboard 首次失败伪零值与静态“队列”、Channel 历史截断、Documents 普通治理动作缺少独立状态版本 / append-only 事件，以及 Experience 证据目标与写入目标可分离、调账缺少调用方 CAS / 幂等、等级配置重算非整批事务等根因。下一顺位进入 `R3-C05-A Dashboard 权威调度面`；本批未修改运行时代码、数据库、权限或 Pencil，未启动服务 / 浏览器。
 - `2026-08-12` 已完成 [R3-C04-F Coins 权威调账与流水治理代码及静态门禁](/records/f4-r-r3-c04-f-console-coins-implementation-2026-08-12)：调账只绑定权威用户、余额与版本，显式确认目标 / 方向 / 金额 / 原因；独立 `CoinAdminAdjustment` 幂等域支持同载荷重放，异载荷、Processing、回放缺失和余额版本变化返回结构化冲突，首次记录创建用 savepoint 收敛 PostgreSQL 同键竞争，Main 余额 CAS、交易流水与幂等成功结果共同提交。Console 查询与筛选可由 URL 回访，独立请求代际与 `stale / unavailable` 冻结非权威写入；PC 连续流水表格和 Mobile 流水卡 / 筛选 Bottom Sheet 共用同一快照。后端 `1253 passed / 39 skipped`、Console `106 / 106`、构建、类型、Lint、权限 / LongId 门禁通过；未启动服务、浏览器或修改 Pencil。R3-C04 六批代码和静态门禁全部关闭，下一顺位进入 `R3-C05` 设计前审计。
 - `2026-08-12` 已完成 [R3-C04-E Stickers 权威媒体资源治理代码及静态门禁](/records/f4-r-r3-c04-e-console-stickers-implementation-2026-08-12)：分组完整编辑与独立启停拆为不同 endpoint / 权限，贴纸读写和排序补齐当前租户分组归属，级联删除与排序整批写入具备事务回滚；排序请求绑定分组权威快照，失败保留草稿。Console 分组 / 贴纸查询可由 URL 回访，请求代际与 `stale / unavailable` 冻结陈旧快照写入；PC 连续表格与 Mobile 媒体卡 / 筛选 Bottom Sheet 共用同一快照，单图和批量上传明确未保存附件的 24 小时孤儿清理生命周期。后端 `1246 passed / 39 skipped`、Console `103 / 103`、构建、类型、Lint、权限 / LongId / 文档 / changed hygiene 通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-F Coins`。
 - `2026-08-12` 已完成 [R3-C04-D Products 权威列表与独立上下架代码及静态门禁](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)：Create / Update DTO 删除 `IsOnSale`，创建固定未上架、普通编辑保持状态，正式上下架只由既有独立权限与版本 CAS 裁决；管理列表补入口分页限制与稳定排序。Console 全列表查询可由 URL 回访并保留详情 / 订单回跳上下文，请求代际与 `stale / unavailable` 冻结陈旧快照写入；PC 连续表格与 Mobile 商品卡 / 筛选 Bottom Sheet 共用同一快照，Form 具备权限、元数据、dirty / busy 和附件上传停止线。后端 `1237 passed / 39 skipped`、Console `99 / 99`、构建、类型、Lint、权限 / LongId / changed hygiene 通过；未启动服务、浏览器或修改 Pencil，下一批进入 `R3-C04-E Stickers`。
@@ -168,14 +169,15 @@
 
 ## 明天事项（2026-08-13）
 
-1. 新会话先读取本页、[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)和 [R3-C04-F Coins 实现记录](/records/f4-r-r3-c04-f-console-coins-implementation-2026-08-12)。
-2. 对 `R3-C05` 的 Dashboard、Documents、Experience 与 Channel Discoverability 做设计前代码事实审计，逐页确认真实 API、权限、URL、状态、事件 / 证据和 PC / Mobile 页面所有权。
-3. Dashboard 先按 `R1-F01 + R2-W02` 判断主任务、紧凑摘要和辅助信息；Documents、Experience 与 Channel Discoverability 按 `R1-C01 + R1-C02` 判断列表、详情、证据、历史事件与写权限，不预设它们可以共用同一治理状态机。
-4. 审计输出明确子批顺位、每批能力门禁、允许修改项、停止线和静态 / 运行态验证矩阵；专题说明缺失或实现口径漂移时先补设计边界，再进入代码。
-5. 本阶段不启动服务或浏览器，不修改 Pencil；若后续确需 Pencil，先向用户申请其占用权。
+1. 新会话先读取本页和 [R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)。
+2. 实施 `R3-C05-A Dashboard`：统计与最近订单使用独立请求代际和 `loading / ready / unavailable / stale`，首次失败不显示伪零值，刷新失败保留旧快照。
+3. 把静态“优先处理队列”纠正为准确的高频任务路径，删除页头 / 命令组重复入口和不能打开创建任务的伪“新建商品”命令；不新增跨模块聚合队列、趋势或 BI API。
+4. PC 保留最近订单紧凑表格，Mobile 使用同快照订单摘要卡；补定向状态 / 路由 / 响应式合同并执行 Console 全量测试、type-check、Lint、production build 与卫生门禁。
+5. 开发中不启动服务或浏览器，不修改 Pencil；四批代码与静态门禁成组完成后再申请 Gateway 运行态授权。
 
 ## 当前执行入口
 
+- [R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)
 - [R3-C04-F Coins 权威调账与流水治理实现](/records/f4-r-r3-c04-f-console-coins-implementation-2026-08-12)
 - [R3-C04-E Stickers 权威媒体资源治理实现](/records/f4-r-r3-c04-e-console-stickers-implementation-2026-08-12)
 - [R3-C04-D Products 权威列表与独立上下架实现](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)
@@ -262,14 +264,14 @@
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护，不与 F4-R 候选审计并行扩张。
 - WebOS 只处理阻断级兼容；Flutter 按 Web 优先顺位承接明确高价值移动原生路径，不机械追平 Web。
-- `Radish.Repository/SystemConfigStorageCoordinator.cs` 仍有 `3` 处既有 `DateTime.Now` 与时间语义 baseline 预算不一致；该独立治理项不混入 R2-A02，但在 `PR -> master` 前必须关闭或重新形成经过审计的基线结论。
+- `Radish.Repository/SystemConfigStorageCoordinator.cs` 仍有 `3` 处既有 `DateTime.Now` 与时间语义 baseline 预算不一致；该独立治理项不混入 R3-C05，但在 `PR -> master` 前必须关闭或重新形成经过审计的基线结论。
 - 主动生产使用数据采集继续冻结到计划内功能完成、没有明确维护任务且用户确认的最终收尾阶段。
 
 ## 当前不做
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；R2-P03 已冻结的商品评价 / 公开等级边界不扩入媒体、回复、评价有用、独立评价中心或公开经验详情，正式实现只接入已确认代表设计，也不提前实施 R3 派生页面视觉改造。
+- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；R2-P03 已冻结的商品评价 / 公开等级边界不扩入媒体、回复、评价有用、独立评价中心或公开经验详情；R3-C05 派生页只按已审计子批推进，不跨批修改其他页面。
 - 不恢复 Tauri，不扩展 WebOS 新功能，不把 Flutter 做成 Web 的机械复制，也不重启主动生产证据采集。
 - 不继续修改历史 `.pen` 留档，不为路由、主题、文案或等价状态复制完整画板；任何后续 `.pen` 修改仍需当前任务的明确授权。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。

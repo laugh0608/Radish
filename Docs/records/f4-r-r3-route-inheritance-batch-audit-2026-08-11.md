@@ -1,7 +1,7 @@
 # F4-R R3 路由继承实施分批审计
 
 > 日期：2026-08-11
-> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；前三个 Public 批、R3-C04 风险拆批审计与 C04-A 已关闭，下一顺位为 C04-B Users
+> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；前三个 Public 批与 R3-C04 六批已关闭，R3-C05 风险拆批审计已完成，下一顺位为 C05-A Dashboard
 > 范围：正式 Client / Console Web 路由、R3 继承成立性、局部差异、关键状态、Mobile 转换与验证边界
 
 ## 1. 结论
@@ -10,7 +10,7 @@
 
 正式代码反查同时发现原继承表存在两个覆盖缺口：Console Dashboard 与后续新增的 Channel Discoverability 没有登记继承来源；Console Settings / Profile、公开 Docs 详情与 Legal 虽已登记，但没有被前述 R2 实现批实际关闭。上述页面已纳入新的后续批次，不以历史表述冒充完成。
 
-`R3-P04 Public Forum 浏览族`、`R3-P05 Public Docs 与 Legal` 与 `R3-P06 Public Shop 浏览与 Leaderboard` 均已按继承结论完成正式实现和 Gateway 成组验收。`R3-C04 Console 普通资源` 随后完成七类资源读写风险、页面所有权和 Mobile 转换审计，并拆为 Taxonomy、Users、Applications、Products、Stickers、Coins 六批；首批 Categories / Tags 已完成代码和静态门禁，下一顺位为 `R3-C04-B Users`。
+`R3-P04 Public Forum 浏览族`、`R3-P05 Public Docs 与 Legal` 与 `R3-P06 Public Shop 浏览与 Leaderboard` 均已按继承结论完成正式实现和 Gateway 成组验收。`R3-C04 Console 普通资源` 随后按 Taxonomy、Users、Applications、Products、Stickers、Coins 六批关闭代码和静态门禁。[R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)确认四页继承仍成立，并按 Dashboard、Channel Discoverability、Documents、Experience 风险递增顺序拆批；下一顺位为 `R3-C05-A Dashboard`。
 
 ## 2. 正式路由事实
 
@@ -95,4 +95,4 @@
 
 ## 7. 下一步
 
-`R3-P04`、`R3-P05` 与 `R3-P06` 均已完成正式代码、静态回归与 Gateway PC / Mobile 成组验收，分别见 [Public Forum 浏览族实现记录](/records/f4-r-r3-p04-public-forum-browse-implementation-2026-08-11)、[Public Docs 与 Legal 实现记录](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)和 [Public Shop 浏览与 Leaderboard 实现记录](/records/f4-r-r3-p06-public-shop-leaderboard-implementation-2026-08-11)。[R3-C04 普通资源风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)与 [C04-A Categories / Tags 实现](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)也已关闭；下一步进入 `R3-C04-B Users`，先纠正伪筛选、聚合局部失败与本地分页，再继承共享响应式资源表面。
+`R3-P04`、`R3-P05` 与 `R3-P06` 均已完成正式代码、静态回归与 Gateway PC / Mobile 成组验收，`R3-C04` 六批代码和静态门禁也已关闭。下一步按 [R3-C05 设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)进入 `R3-C05-A Dashboard`，先关闭统计 / 最近订单独立权威状态、静态伪队列 / 伪命令和 Mobile 最近订单承载，再进入带写入的 Channel 公开资格治理。
