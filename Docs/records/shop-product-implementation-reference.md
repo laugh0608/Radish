@@ -1,0 +1,735 @@
+# 商品管理历史实现参考
+
+> 状态：从旧版商品管理指南归档的代码示例与种子说明，不作为当前接口、字段或实现真相源。
+>
+> 当前说明请查看[商品管理](/guide/shop-product)和[商城后端边界](/guide/shop-backend)；实际字段与行为以 `Radish.Model/Product.cs`、`ProductCategory.cs`、`Radish.Service/ProductService.cs` 和 `Radish.DbMigrate/InitialDataSeeder.Shop.cs` 为准。
+
+## 3.1 商品数据模型
+
+### 3.1.1 商品实体（Product）
+
+> **2026-03 对齐说明**：商品图片字段已经从“直接存 URL”收口为“存附件 Id，URL 运行时派生”。下方模型请以当前代码口径理解：`IconAttachmentId` / `CoverAttachmentId` 为真值，`voIcon` / `voCoverImage` 为展示字段。
+>
+> **2026-06-20 对齐说明**：商品管理写入已接入 `Product.Version` 乐观并发语义。Console 商品详情 / 编辑表单读取 `VoVersion`，更新、上架和下架请求提交 `ExpectedVersion`；版本不匹配时服务端拒绝覆盖并提示刷新后重试。
+>
+> **2026-07-14 对齐说明**：商品可用性由服务端 `ShopProductAvailabilityPolicy` 和 `GetProductCapabilities` 统一约束公开查询、购买、上架、Console 配置与权益启用。Badge、Title、Theme 已具备真实消费能力；Badge 必须配置公开有效附件，Title 文本长度为 `1-40`，Theme 资源只接受 `theme-dark-night / theme-sakura`。AvatarFrame、Signature、NameColor、LikeEffect 以及置顶卡、高亮卡、双倍经验卡、抽奖券仍不可售或不可用。能力开放不会自动上架历史商品。
+
+```csharp
+/// <summary>
+/// 商品实体
+/// </summary>
+[SugarTable("ShopProduct")]
+public class Product : RootEntityTKey<long>, ITenantEntity
+{
+    #region 基础信息
+
+    /// <summary>
+    /// 商品名称
+    /// </summary>
+    [SugarColumn(Length = 100)]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 商品描述（支持 Markdown）
+    /// </summary>
+    [SugarColumn(Length = 2000, IsNullable = true)]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// 商品图标附件 Id
+    /// </summary>
+    [SugarColumn(IsNullable = true)]
+    public long? IconAttachmentId { get; set; }
+
+    /// <summary>
+    /// 商品封面附件 Id
+    /// </summary>
+    [SugarColumn(IsNullable = true)]
+    public long? CoverAttachmentId { get; set; }
+
+    /// <summary>
+    /// 商品分类 ID
+    /// </summary>
+    [SugarColumn(Length = 50)]
+    public string CategoryId { get; set; } = "other";
+
+    #endregion
+
+    #region 商品类型
+
+    /// <summary>
+    /// 商品类型（权益/消耗品/实物）
+    /// </summary>
+    public ProductType ProductType { get; set; }
+
+    /// <summary>
+    /// 权益类型（仅权益类商品）
+    /// </summary>
+    public BenefitType? BenefitType { get; set; }
+
+    /// <summary>
+    /// 消耗品类型（仅消耗品商品）
+    /// </summary>
+    public ConsumableType? ConsumableType { get; set; }
+
+    /// <summary>
+    /// 权益/消耗品参数（JSON 格式）
+    /// 例如：{"hours": 24} 或 {"exp": 100}
+    /// </summary>
+    [SugarColumn(ColumnDataType = "text", IsNullable = true)]
+    public string? EffectParams { get; set; }
+
+    #endregion
+
+    #region 价格信息
+
+    /// <summary>
+    /// 原价（萝卜币）
+    /// </summary>
+    public int OriginalPrice { get; set; }
+
+    /// <summary>
+    /// 现价（萝卜币）
+    /// </summary>
+    public int Price { get; set; }
+
+    /// <summary>
+    /// 是否显示原价（用于促销展示）
+    /// </summary>
+    public bool ShowOriginalPrice { get; set; }
+
+    #endregion
+
+    #region 有效期
+
+    /// <summary>
+    /// 有效期类型
+    /// </summary>
+    public DurationType DurationType { get; set; }
+
+    /// <summary>
+    /// 有效期天数（DurationType = Days 时有效）
+    /// </summary>
+    public int? DurationDays { get; set; }
+
+    /// <summary>
+    /// 固定到期时间（DurationType = FixedDate 时有效）
+    /// </summary>
+    public DateTime? ExpiresAt { get; set; }
+
+    #endregion
+
+    #region 库存信息
+
+    /// <summary>
+    /// 库存类型
+    /// </summary>
+    public StockType StockType { get; set; }
+
+    /// <summary>
+    /// 库存数量（StockType = Limited 时有效）
+    /// </summary>
+    public int? Stock { get; set; }
+
+    /// <summary>
+    /// 已售数量
+    /// </summary>
+    public int SoldCount { get; set; }
+
+    /// <summary>
+    /// 库存版本号（乐观锁）
+    /// </summary>
+    public int StockVersion { get; set; }
+
+    #endregion
+
+    #region 限购规则
+
+    /// <summary>
+    /// 每人限购数量（0 = 不限）
+    /// </summary>
+    public int PerUserLimit { get; set; }
+
+    /// <summary>
+    /// 每人每日限购数量（0 = 不限）
+    /// </summary>
+    public int PerUserDailyLimit { get; set; }
+
+    /// <summary>
+    /// 总量限制（0 = 不限）
+    /// </summary>
+    public int TotalLimit { get; set; }
+
+    /// <summary>
+    /// 最低等级要求（0 = 不限）
+    /// </summary>
+    public int MinLevelRequired { get; set; }
+
+    #endregion
+
+    #region 状态与排序
+
+    /// <summary>
+    /// 是否上架
+    /// </summary>
+    public bool IsOnSale { get; set; }
+
+    /// <summary>
+    /// 是否推荐（首页展示）
+    /// </summary>
+    public bool IsRecommended { get; set; }
+
+    /// <summary>
+    /// 是否热销（热销标签）
+    /// </summary>
+    public bool IsHot { get; set; }
+
+    /// <summary>
+    /// 是否新品（新品标签）
+    /// </summary>
+    public bool IsNew { get; set; }
+
+    /// <summary>
+    /// 排序权重（越大越靠前）
+    /// </summary>
+    public int SortOrder { get; set; }
+
+    /// <summary>
+    /// 上架时间
+    /// </summary>
+    public DateTime? OnSaleTime { get; set; }
+
+    /// <summary>
+    /// 下架时间（定时下架）
+    /// </summary>
+    public DateTime? OffSaleTime { get; set; }
+
+    #endregion
+
+    #region 审计字段
+
+    /// <summary>
+    /// 租户 ID
+    /// </summary>
+    public long TenantId { get; set; }
+
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    public DateTime CreateTime { get; set; }
+
+    /// <summary>
+    /// 创建人 ID
+    /// </summary>
+    public long? CreateBy { get; set; }
+
+    /// <summary>
+    /// 更新时间
+    /// </summary>
+    public DateTime? UpdateTime { get; set; }
+
+    /// <summary>
+    /// 更新人 ID
+    /// </summary>
+    public long? UpdateBy { get; set; }
+
+    /// <summary>
+    /// 是否删除（软删除）
+    /// </summary>
+    public bool IsDeleted { get; set; }
+
+    #endregion
+}
+```
+
+### 3.1.2 商品分类实体（ProductCategory）
+
+> **2026-03 对齐说明**：分类图标同样已经改为附件 Id 模型，`IconAttachmentId` 为持久化真值，`voIcon` 为运行时展示字段。
+
+```csharp
+/// <summary>
+/// 商品分类实体
+/// </summary>
+[SugarTable("ShopProductCategory")]
+public class ProductCategory : RootEntityTKey<string>
+{
+    /// <summary>
+    /// 分类名称
+    /// </summary>
+    [SugarColumn(Length = 50)]
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 分类图标附件 Id
+    /// </summary>
+    [SugarColumn(IsNullable = true)]
+    public long? IconAttachmentId { get; set; }
+
+    /// <summary>
+    /// 分类描述
+    /// </summary>
+    [SugarColumn(Length = 200, IsNullable = true)]
+    public string? Description { get; set; }
+
+    /// <summary>
+    /// 排序权重
+    /// </summary>
+    public int SortOrder { get; set; }
+
+    /// <summary>
+    /// 是否启用
+    /// </summary>
+    public bool IsEnabled { get; set; } = true;
+
+    /// <summary>
+    /// 创建时间
+    /// </summary>
+    public DateTime CreateTime { get; set; }
+
+    /// <summary>
+    /// 更新时间
+    /// </summary>
+    public DateTime? UpdateTime { get; set; }
+}
+```
+
+---
+
+## 3.2 商品管理功能
+
+### 3.2.1 商品 CRUD
+
+**创建商品**：
+```csharp
+public async Task<long> CreateProductAsync(CreateProductDto dto, long operatorId, string operatorName)
+{
+    // 1. 验证商品类型、权益 / 消耗品配置与附件
+    // 2. 映射当前租户和操作人字段
+    // 3. 固定 IsOnSale=false 并清空上下架时间
+    // 4. 保存商品并记录结构化日志
+}
+```
+
+**更新商品**：
+```csharp
+public async Task<bool> UpdateProductAsync(UpdateProductDto dto, long operatorId, string operatorName)
+{
+    // 1. 验证商品存在
+    // 2. 校验 dto.ExpectedVersion 是否等于当前 Product.Version
+    // 3. 校验当前上架商品的类型能力和新配置
+    // 4. 只映射普通编辑字段，不改变 IsOnSale / OnSaleTime / OffSaleTime
+    // 5. 按租户、版本和未删除条件更新并递增 Version
+    // 6. 记录结构化日志
+}
+```
+
+创建与普通更新 DTO 均不接受 `IsOnSale`：新商品固定以未上架状态创建并清空上下架时间，普通编辑必须保持当前上下架状态。正式状态切换只允许通过下一节的独立 `PutOnSale / TakeOffSale` 接口、`console.products.toggle-sale` 权限和 `ExpectedVersion` CAS 完成，不能把上下架重新塞回通用保存。
+
+**删除商品**：
+```csharp
+public async Task<bool> DeleteProductAsync(long productId, long operatorId, string operatorName)
+{
+    // 1. 验证商品存在
+    // 2. 存在任何关联订单时拒绝删除，要求下架以保留订单快照
+    // 3. 软删除并同步收口上下架 / 治理来源字段
+    // 4. 保存操作人和时间并记录结构化日志
+}
+```
+
+### 3.2.2 商品上下架
+
+```csharp
+public async Task<bool> PutOnSaleAsync(long productId, int expectedVersion)
+{
+    var product = await _productRepository.QueryFirstAsync(p => p.Id == productId);
+    if (product == null) return false;
+
+    if (product.Version != expectedVersion)
+        throw new InvalidOperationException("商品信息已被其他管理员修改，请刷新后重试");
+
+    // 条件更新：WHERE Id = productId AND Version = expectedVersion
+    // 成功后 Version + 1，并记录上架时间 / 修改信息
+
+    return true;
+}
+```
+
+`TakeOffSaleAsync` 使用同样的 `expectedVersion` 规则。前端在保存成功后应重新加载商品详情或列表，拿到新的 `VoVersion` 后再允许下一次编辑 / 上下架。
+
+### 3.2.3 商品查询
+
+**商品列表查询**：
+```csharp
+public async Task<PageModel<ProductListVo>> GetProductListAsync(ProductQueryVo query)
+{
+    Expression<Func<Product, bool>> where = p => !p.IsDeleted;
+
+    // 分类筛选
+    if (!string.IsNullOrEmpty(query.CategoryId))
+        where = where.And(p => p.CategoryId == query.CategoryId);
+
+    // 商品类型筛选
+    if (query.ProductType.HasValue)
+        where = where.And(p => p.ProductType == query.ProductType.Value);
+
+    // 上架状态筛选
+    if (query.IsOnSale.HasValue)
+        where = where.And(p => p.IsOnSale == query.IsOnSale.Value);
+
+    // 关键词搜索
+    if (!string.IsNullOrEmpty(query.Keyword))
+        where = where.And(p => p.Name.Contains(query.Keyword) ||
+                               p.Subtitle.Contains(query.Keyword));
+
+    // 分页查询
+    var (data, total) = await _productRepository.QueryPageAsync(
+        whereExpression: where,
+        pageIndex: query.PageIndex,
+        pageSize: query.PageSize,
+        orderByExpression: p => p.SortOrder,
+        orderByType: OrderByType.Desc
+    );
+
+    return new PageModel<ProductListVo>
+    {
+        Items = _mapper.Map<List<ProductListVo>>(data),
+        Total = total,
+        PageIndex = query.PageIndex,
+        PageSize = query.PageSize
+    };
+}
+```
+
+---
+
+## 3.3 库存管理
+
+### 3.3.1 库存扣减（乐观锁）
+
+```csharp
+public async Task<bool> DeductStockAsync(long productId, int quantity)
+{
+    const int maxRetries = 5;
+
+    for (int i = 0; i < maxRetries; i++)
+    {
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId);
+
+        if (product == null)
+            throw new BusinessException("商品不存在");
+
+        // 无限库存，直接返回成功
+        if (product.StockType == StockType.Unlimited)
+        {
+            product.SoldCount += quantity;
+            await _productRepository.UpdateAsync(product);
+            return true;
+        }
+
+        // 检查库存
+        if (product.Stock < quantity)
+            throw new BusinessException("库存不足");
+
+        // 乐观锁更新
+        var oldVersion = product.StockVersion;
+        product.Stock -= quantity;
+        product.SoldCount += quantity;
+        product.StockVersion++;
+
+        var affected = await _productRepository.Context.Updateable(product)
+            .Where(p => p.Id == productId && p.StockVersion == oldVersion)
+            .ExecuteCommandAsync();
+
+        if (affected > 0)
+        {
+            Log.Information("商品 {ProductId} 库存扣减成功，剩余 {Stock}", productId, product.Stock);
+            return true;
+        }
+
+        // 乐观锁冲突，重试
+        Log.Warning("商品 {ProductId} 库存扣减冲突，重试 {Retry}/{MaxRetries}",
+            productId, i + 1, maxRetries);
+
+        await Task.Delay(50 * (i + 1)); // 指数退避
+    }
+
+    throw new BusinessException("库存扣减失败，请稍后重试");
+}
+```
+
+### 3.3.2 库存回滚
+
+```csharp
+public async Task<bool> RollbackStockAsync(long productId, int quantity)
+{
+    var product = await _productRepository.QueryFirstAsync(p => p.Id == productId);
+
+    if (product == null || product.StockType == StockType.Unlimited)
+        return true;
+
+    product.Stock += quantity;
+    product.SoldCount -= quantity;
+    product.StockVersion++;
+
+    await _productRepository.UpdateAsync(product);
+
+    Log.Information("商品 {ProductId} 库存回滚 {Quantity}，当前 {Stock}",
+        productId, quantity, product.Stock);
+
+    return true;
+}
+```
+
+### 3.3.3 库存预警
+
+```csharp
+public async Task CheckStockWarningAsync()
+{
+    // 查询低库存商品（库存 < 10 且为限量商品）
+    var lowStockProducts = await _productRepository.QueryAsync(
+        p => p.StockType == StockType.Limited &&
+             p.Stock < 10 &&
+             p.IsOnSale &&
+             !p.IsDeleted
+    );
+
+    foreach (var product in lowStockProducts)
+    {
+        // 发送库存预警通知给管理员
+        await _notificationService.SendSystemNotificationAsync(
+            userId: 0, // 系统管理员
+            title: "库存预警",
+            content: $"商品「{product.Name}」库存不足，当前库存：{product.Stock}",
+            relatedType: "Product",
+            relatedId: product.Id.ToString()
+        );
+    }
+}
+```
+
+---
+
+## 3.4 限购检查
+
+### 3.4.1 限购检查服务
+
+```csharp
+public class PurchaseLimitChecker
+{
+    public async Task<PurchaseCheckResult> CheckAsync(
+        Product product,
+        long userId,
+        int quantity)
+    {
+        var result = new PurchaseCheckResult { CanPurchase = true };
+
+        // 1. 检查商品是否上架
+        if (!product.IsOnSale)
+        {
+            result.CanPurchase = false;
+            result.Message = "商品已下架";
+            return result;
+        }
+
+        // 2. 检查用户等级
+        if (product.MinLevelRequired > 0)
+        {
+            var userLevel = await _experienceService.GetUserLevelAsync(userId);
+            if (userLevel < product.MinLevelRequired)
+            {
+                result.CanPurchase = false;
+                result.Message = $"需要达到 Lv.{product.MinLevelRequired} 才能购买";
+                return result;
+            }
+        }
+
+        // 3. 检查库存
+        if (product.StockType == StockType.Limited && product.Stock < quantity)
+        {
+            result.CanPurchase = false;
+            result.Message = "库存不足";
+            return result;
+        }
+
+        // 4. 检查总量限制
+        if (product.TotalLimit > 0 && product.SoldCount + quantity > product.TotalLimit)
+        {
+            result.CanPurchase = false;
+            result.Message = "已达到销售上限";
+            return result;
+        }
+
+        // 5. 检查每人限购
+        if (product.PerUserLimit > 0)
+        {
+            var userPurchased = await GetUserPurchasedCountAsync(product.Id, userId);
+            if (userPurchased + quantity > product.PerUserLimit)
+            {
+                result.CanPurchase = false;
+                result.Message = $"每人限购 {product.PerUserLimit} 件";
+                return result;
+            }
+        }
+
+        // 6. 检查每日限购
+        if (product.PerUserDailyLimit > 0)
+        {
+            var todayPurchased = await GetUserTodayPurchasedCountAsync(product.Id, userId);
+            if (todayPurchased + quantity > product.PerUserDailyLimit)
+            {
+                result.CanPurchase = false;
+                result.Message = $"每日限购 {product.PerUserDailyLimit} 件";
+                return result;
+            }
+        }
+
+        return result;
+    }
+}
+```
+
+### 3.4.2 购买数量统计
+
+```csharp
+private async Task<int> GetUserPurchasedCountAsync(long productId, long userId)
+{
+    return (int)await _orderRepository.QueryCountAsync(
+        o => o.ProductId == productId &&
+             o.UserId == userId &&
+             o.Status != OrderStatus.Cancelled &&
+             o.Status != OrderStatus.Refunded
+    );
+}
+
+private async Task<int> GetUserTodayPurchasedCountAsync(long productId, long userId)
+{
+    var today = DateTime.Today;
+    var tomorrow = today.AddDays(1);
+
+    return (int)await _orderRepository.QueryCountAsync(
+        o => o.ProductId == productId &&
+             o.UserId == userId &&
+             o.CreateTime >= today &&
+             o.CreateTime < tomorrow &&
+             o.Status != OrderStatus.Cancelled &&
+             o.Status != OrderStatus.Refunded
+    );
+}
+```
+
+---
+
+## 3.5 商品种子数据
+
+### 3.5.1 初始商品配置
+
+当前种子真相源是 `Radish.DbMigrate/InitialDataSeeder.Shop.cs`。下方代码仅保留为早期字段组合示意，不作为可复制的当前 seed：
+
+- 固定 seed ID 用于幂等初始化，不在 seed 中动态生成 Snowflake ID；
+- seed 的 `IsOnSale=true` 仍不能绕过服务端能力和配置校验；
+- Badge 缺少公开图标附件时不能进入公开销售；
+- Theme 当前只登记暗夜与樱花资源，默认保持下架，是否销售由运营显式决定；
+- `DbMigrate apply` 不得借能力开放强制恢复历史商品上架状态。
+
+```csharp
+public async Task SeedProductsAsync()
+{
+    var products = new List<Product>
+    {
+        // 徽章装饰
+        new Product
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            Name = "元老徽章",
+            Subtitle = "社区元老专属标识",
+            CategoryId = "badge",
+            ProductType = ProductType.Benefit,
+            BenefitType = BenefitType.Badge,
+            EffectParams = "{\"badgeId\": \"veteran\", \"badgeName\": \"元老\"}",
+            Price = 1000,
+            DurationType = DurationType.Permanent,
+            StockType = StockType.Limited,
+            Stock = 100,
+            TotalLimit = 100,
+            IsOnSale = true,
+            IsNew = true,
+            SortOrder = 80
+        },
+
+        // 功能卡片
+        new Product
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            Name = "改名卡",
+            Subtitle = "修改昵称一次",
+            CategoryId = "card",
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.RenameCard,
+            Price = 100,
+            DurationType = DurationType.Days,
+            DurationDays = 30, // 30 天内使用
+            StockType = StockType.Unlimited,
+            PerUserLimit = 5,
+            IsOnSale = true,
+            SortOrder = 70
+        },
+        new Product
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            Name = "帖子置顶卡（24小时）",
+            Subtitle = "让你的帖子置顶 24 小时",
+            CategoryId = "card",
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.PostPinCard,
+            EffectParams = "{\"hours\": 24}",
+            Price = 200,
+            StockType = StockType.Unlimited,
+            PerUserDailyLimit = 3,
+            IsOnSale = true,
+            SortOrder = 69
+        },
+
+        // 加成道具
+        new Product
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            Name = "经验卡（100点）",
+            Subtitle = "立即获得 100 点经验值",
+            CategoryId = "boost",
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.ExpCard,
+            EffectParams = "{\"exp\": 100}",
+            Price = 50,
+            StockType = StockType.Unlimited,
+            PerUserDailyLimit = 10,
+            IsOnSale = true,
+            SortOrder = 60
+        },
+        new Product
+        {
+            Id = SnowFlakeSingle.Instance.NextId(),
+            Name = "双倍经验卡（1小时）",
+            Subtitle = "1 小时内经验值获取翻倍",
+            CategoryId = "boost",
+            ProductType = ProductType.Consumable,
+            ConsumableType = ConsumableType.DoubleExpCard,
+            EffectParams = "{\"hours\": 1, \"multiplier\": 2}",
+            Price = 100,
+            StockType = StockType.Unlimited,
+            PerUserDailyLimit = 3,
+            IsOnSale = true,
+            SortOrder = 59
+        }
+    };
+
+    foreach (var product in products)
+    {
+        product.CreateTime = DateTime.Now;
+        await _productRepository.AddAsync(product);
+    }
+}
+```
+
+---
+
+> 当前商品管理说明：[商品管理](/guide/shop-product)

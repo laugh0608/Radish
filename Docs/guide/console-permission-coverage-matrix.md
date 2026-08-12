@@ -38,7 +38,7 @@
 
 | 模块/页面 | 路由 | 路由访问权限 | 页面内操作权限 | 真实后端资源 | 种子状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| Dashboard | `/` | `console.dashboard.view` | `console.orders.view`、`console.products.create`、`console.users.view`、`console.applications.view` | `Statistics/GetDashboardStats`、`Shop/AdminGetOrders` | ✅ | 最近订单按订单查看权限单独控制，并支持带 `orderNo` 深链进入订单治理面 |
+| Dashboard | `/` | `console.dashboard.view` | `console.moderation.view`、`console.experience.view`、`console.orders.view`、`console.docs.view`、`console.users.view`、`console.roles.view` | `Statistics/GetDashboardStats`、`Shop/AdminGetOrders` | ✅ | 高频任务路径按具体查看权限裁剪；最近订单按订单权限单独读取，并使用字符串 `orderId` 深链进入订单治理面 |
 | Applications | `/applications` | `console.applications.view` | `console.applications.create/edit/delete/reset-secret` | `Client/GetClients`、`GetClient/.+`、`CreateClient`、`UpdateClient/.+`、`DeleteClient/.+`、`ResetClientSecret/.+` | ✅ | 列表与弹窗链路均已闭环 |
 | Products | `/products` | `console.products.view` | `console.products.create/edit/delete/toggle-sale` | `Shop/GetCategories`、`AdminGetProducts`、`AdminGetProduct/.+`、`CreateProduct`、`UpdateProduct`、`DeleteProduct/.+`、`PutOnSale/.+`、`TakeOffSale/.+` | ✅ | 已接商品详情弹窗、商品到订单回跳和订单回看入口；详情编辑 footer 仅在 `console.products.edit` 下传入写入回调 |
 | Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`AdminGetOrder/.+`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情已改为独立真实接口加载，并支持订单到用户 / 商品治理回跳；失败重试 footer 仅在 `console.orders.retry` 下传入写入回调 |

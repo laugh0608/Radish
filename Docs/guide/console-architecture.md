@@ -59,7 +59,7 @@ Console 当前页面结构按“页面类型”选择布局基座，而不是所
 
 | 页面类型 | 推荐结构 | 当前典型页面 |
 | --- | --- | --- |
-| 调度总览 | 顶部指标 + 快捷操作 + 最近事项 + 右侧调度入口 | `Dashboard` |
+| 调度总览 | 高频任务路径 + 独立指标快照 + 最近资源 + 完整功能面板 | `Dashboard` |
 | 表格 CRUD | 指标条 + 筛选 / 工具条 + 表格 + 右侧摘要栏 | `UserList`、`TagList`、`CategoryList`、`RoleList`、`Applications`、`StickerGroupList`、`StickerList`、`Products`、`Orders` |
 | 设置 / 配置 | 分组导航 + 设置列 + 影响范围摘要 | `Settings`、`UserProfile`、`SystemConfigList` |
 | 权限配置 | 页面标题 + 授权指标 + 主配置树 + 权限预览 | `RolePermissionPage` |

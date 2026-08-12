@@ -171,10 +171,11 @@
 ## 明天事项（2026-08-13）
 
 1. 新会话先读取本页、[R3-C05-A Dashboard 实现记录](/records/f4-r-r3-c05-a-console-dashboard-authoritative-dispatch-implementation-2026-08-12)和 [R3-C05 设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)的 Channel 门禁。
-2. 实施 `R3-C05-B Channel Discoverability`：关键词、可见性、生命周期、删除筛选和分页进入 URL，筛选草稿与已应用查询分离。
-3. 列表 / 历史分别增加请求代际和 `unavailable / stale`；CAS 冲突保留理由草稿，成功先消费权威响应快照再刷新。
+2. 先按审计给出 `R3-C05-B Channel Discoverability` 的精确实施方案并取得确认，重点固定历史分页接口、CAS 冲突草稿和成功响应快照消费顺序；不直接进入接口改造。
+3. 方案确认后再把关键词、可见性、生命周期、删除筛选和分页接入 URL，分离筛选草稿与已应用查询，并为列表 / 历史分别增加请求代际和 `unavailable / stale`。
 4. 把固定最近 `20` 条历史改为服务端真实分页；PC 保留频道表格 / 事件时间线，Mobile 使用同快照频道卡、单一显隐确认和事件卡。
-5. 不修改 Public Discover 规则、数据库字段、权限键或 Pencil；开发中不启动服务 / 浏览器，四批静态门禁成组完成后再申请 Gateway 运行态授权。
+5. 定向覆盖 URL、竞态、历史分页、CAS 草稿、成功后刷新失败 stale 与 PC / Mobile 同快照；随后执行后端专题、Console 全量、类型、Lint、build、权限和卫生门禁。
+6. 不修改 Public Discover 规则、频道消息授权、数据库字段、权限键或 Pencil；开发中不启动服务 / 浏览器，四批静态门禁成组完成后再申请 Gateway 运行态授权。
 
 ## 当前执行入口
 
