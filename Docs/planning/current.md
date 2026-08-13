@@ -177,7 +177,7 @@
 
 ## 明天事项（2026-08-14）
 
-1. 新会话先读取本页、[R3-F02 审计记录](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)、[A 批实现记录](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)和 Settings / Profile 既有测试入口。
+1. 新会话先读取本页、[今日日终记录](/records/f4-day-end-doc-review-2026-08-13)、[R3-F02 审计记录](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)、[A 批实现记录](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)和 Settings / Profile 既有测试入口。
 2. 先确认 `R3-F02-B 自服务权威状态` 精确方案：反查 Console Settings 的动态规则、dirty / CAS / stale 与 Client / Console Profile 的独立摘要快照和失败边界。
 3. B 批只收口既有自服务能力，不新增 Profile 字段、通知设置、账号恢复、2FA、会话管理、权限键、API 聚合或视觉壳层。
 4. B 批静态门禁关闭后进入 `R3-F02-C 错误与路由边界`；A / B / C 全部完成后另行申请服务启动和 Gateway 成组验收。
@@ -185,6 +185,7 @@
 
 ## 当前执行入口
 
+- [2026-08-13 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-13)
 - [R3-F02 自服务与边界页设计前代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)
 - [R3-F02-A OIDC 回流信任门禁实现与静态门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)
 - [R3-C05 Console 仪表与治理派生成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)

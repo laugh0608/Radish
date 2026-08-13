@@ -22,6 +22,7 @@
 | SystemConfig | ✅ 已接入 | 表格 CRUD + 配置面板 | `console.system-config.*` | ✅ 已补齐 | 编辑详情与站点图标链路已闭环 |
 | Coins | ✅ 已接入 | 工具型页面 | `console.coins.*` | ✅ 已补齐 | 用户余额查询、业务流水筛选与管理员调账已接入 |
 | Experience | ✅ 已接入 | 治理工作台 | `console.experience.*` | ✅ 已补齐 | 经验观察、流水、冻结、调整和等级配置已接入 |
+| Channel Discoverability | ✅ 已接入 | 治理工作台 | `console.channel-discoverability.view/manage` | ✅ 已补齐 | 匿名频道摘要资格、版本冲突与事件历史已闭环 |
 | Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.view/review/appeal/action` | ✅ 已补齐 | 案件、证据、决定、动作、申诉复核、纠正和事件页面均使用权威 API |
 | Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 个人偏好、密码修改、头像上传和资料保存不走 Console 专属权限树 |
 | Documents | ✅ 已接入 | 审核证据 + 治理工作台 | `console.docs.*` | ✅ 已补齐 | 待审队列、审核应用、独立发布、访问策略、版本和导入导出已接入 |
@@ -272,15 +273,35 @@
 
 ### 当前边界
 
-- 经验观察、经验流水、复核结论、冻结 / 解冻、管理员调整和等级配置均保留既有 API 与业务语义。
+- 经验观察、经验流水、复核结论、冻结 / 解冻、管理员调整和等级配置继续使用 `console.experience.*` 既有权限；不开放人工修改等级。
+- 调账、冻结、解冻和人工审核必须绑定已读取的权威用户与 `ExpectedVersion`；调账 / 审核另外使用稳定 `IdempotencyKey`。
+- 等级保存先生成影响预览与 `PreviewFingerprint`，执行时重新校验指纹，并将整批用户更新与 append-only 重算审计共同提交。
 - 当前不新增自动处罚、自动扣经验或经验发放主流程改造。
 
 ### 当前状态
 
 - ✅ 已按治理工作台结构承载
-- ✅ 页面拆分和视觉承载不改变经验规则、冻结语义或数据契约
-- ✅ 经验观察、经验流水、复核动作、治理表单和等级配置的内部样式已迁入页面 CSS 与 Console token
-- ✅ 经验流水表格保持治理工作台内的局部滚动、分页换行和弱文本 CSS class 口径
+- ✅ 主资料、统计、流水、动作历史与等级配置各自维护请求代际及 `loading / ready / unavailable / stale`；用户、日期、分页和动作查询可由 URL 回访
+- ✅ 经验写入使用版本 CAS，调账 / 审核支持同键同载荷重放；冲突保留表单与幂等键，精确刷新后要求重新确认
+- ✅ 冻结 / 解冻记录前后版本；过期冻结在权威读取时规范化为自动解冻并追加动作事实
+- ✅ 流水与动作使用服务端真实分页；PC 连续台账和 Mobile 单用户卡片共用权威快照、权限、dirty / busy 与 stale 停止线
+- ✅ 等级重算展示影响摘要、指纹、理由和审计，预览过期时拒绝执行
+
+## 3.12.1 Channel Discoverability
+
+### 当前边界
+
+- 查看使用 `console.channel-discoverability.view`；开启 / 关闭匿名摘要资格使用 `console.channel-discoverability.manage`。
+- `ChannelType.Public` 不等于匿名公开；只有 `DiscoverVisibility=Summary` 的合格频道才能进入 Public Discover，治理页不读取或展示消息正文、成员和在线状态。
+- 写入必须提交理由与 `ExpectedVersion`；本模块不修改 Public Discover 输出规则、频道消息授权、枚举、数据库字段或权限键。
+
+### 当前状态
+
+- ✅ 关键词、公开资格、生命周期、删除范围和分页进入 URL；列表与历史分别维护请求代际和权威快照
+- ✅ 历史事件按 `ResultVersion DESC, Id DESC` 服务端真实分页，不再固定截断最近 `20` 条
+- ✅ CAS 冲突保留理由草稿，并通过复用 view 权限的 `GetById` 精确刷新目标；刷新失败进入 stale 并冻结写入
+- ✅ 写入成功先消费权威频道响应，再刷新列表；目标退出当前筛选时立即从当前快照移除
+- ✅ PC 频道表格 / 事件时间线与 Mobile 频道卡 / 事件卡共用同一权限、快照和显式目标选择
 
 ## 3.13 Moderation
 
@@ -329,7 +350,11 @@
 ### 当前状态
 
 - ✅ 待审队列、正式正文 / 草稿证据、协作者与审核时间线已经接入；Apply 只更新权威正文并生成 Revision，不自动 Publish
-- ✅ 文档治理列表、详情、状态与访问策略、版本回看 / 回滚、Markdown 导入 / 导出均已接入
+- ✅ 正文 `Version`、审核事件、独立 `GovernanceVersion` 与 append-only 治理事件分域；普通编辑不能夹带 ACL
+- ✅ 发布、下架、归档、删除、恢复、访问策略和回滚提交理由与治理版本；Publish / Rollback 同时校验正文版本，条件更新与事件追加同事务
+- ✅ 列表 / 待审队列可由 URL 恢复真实分页；详情、Revision、Review 证据与治理历史各自维护请求代际和 `loading / ready / unavailable / stale`
+- ✅ 文档治理目标必须显式选择；冲突保留理由并精确刷新，成功先消费权威文档 / 事件响应，再刷新从属证据
+- ✅ 文档治理列表、详情、状态与访问策略、版本回看 / 回滚、Markdown 导入 / 导出均已接入，PC 与 Mobile 共用权威快照
 - ✅ 状态、可见性和来源类型按稳定字段解析中英文词元，标题、正文、Slug、角色 / 权限键和修订说明保留原文
 - ✅ 日期、数量和英文复数按当前 locale 展示；Wiki API 失败统一保留 HTTP status、`Wiki.*` Code 和 `error.wiki.*` MessageKey
 - ✅ 正式 Web Author 入口、Console 审核 / 治理和公开阅读保持职责分层，不把审核或发布动作混入作者态

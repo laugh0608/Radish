@@ -2,7 +2,7 @@
 
 > Radish 纯 Web 默认入口 `/discover` 的公开内容流说明。
 >
-> **最后更新**: 2026.08.05
+> **最后更新**: 2026.08.13
 
 ## 定位
 
@@ -18,10 +18,11 @@
 
 ## 当前实现事实
 
-截至 `2026-08-05`，`/discover` 已按统一公开读模型完成代码侧改造：
+截至 `2026-08-13`，`/discover` 已按统一公开读模型完成代码侧改造，频道匿名摘要资格的 Console 治理也已完成权威查询与事件回看收口：
 
 - `GET /api/v1/PublicDiscover/GetFeed` 统一读取 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question`，采用 snapshot cutoff 与稳定 keyset 游标，并显式输出 `VoPulse`。
 - `Channel.DiscoverVisibility` 默认 `Hidden`；只有 Console 中具备 `console.channel-discoverability.manage` 的治理者显式开启 `Summary` 后，合格公共频道才输出元数据和安全聚合。变更使用期望版本、原因和 append-only 事件留痕，不会按 `ChannelType.Public` 自动开放。
+- Console 治理页把关键词、公开资格、生命周期、删除范围与分页写入 URL；列表和历史独立维护权威快照，事件按版本真实分页。CAS 冲突保留理由并精确刷新目标，成功先消费返回的频道快照，不以列表刷新成败反推写入结果。
 - `Frontend/radish.http` 提供统一契约与 `getPublicDiscoverFeed`；页面不再并行调用帖子、标签、Wiki、商品等列表接口拼装首屏。
 - PC 使用“主内容流 + 洞察区”非对称结构；mobile 前置搜索与“全部 / 最新 / 问答 / 知识”，并把贡献者节点嵌入第三条内容后。第一条真实内容使用焦点事件，其余内容按统一编号轨道连续扫描。
 - 频道、文档、帖子 / 评论和贡献者均输出真实 `href`，普通点击继续由公共壳层接管；频道目标仍进入登录态 `/messages`，不会开放匿名消息正文。
