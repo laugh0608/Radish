@@ -19,6 +19,10 @@ public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
     Task<int> SetActiveDraftAsync(long documentId, long tenantId, long? expectedDraftId, long? targetDraftId, long operatorId, string operatorName, DateTime nowUtc);
     Task<int> ApplyDraftToDocumentAsync(WikiDraftApplyCommand command);
     Task<int> PurgeTerminalDraftPayloadsAsync(DateTime cutoffUtc, int batchSize, DateTime nowUtc);
+    Task<(IReadOnlyList<WikiDocumentGovernanceEvent> Items, int Total)> QueryGovernanceHistoryAsync(
+        WikiDocumentGovernanceHistoryQuery query);
+    Task<WikiDocumentGovernanceWriteResult> ApplyGovernanceMutationAsync(
+        WikiDocumentGovernanceMutationCommand command);
     /// <summary>根据 ID 查询文档（包含已删除数据）</summary>
     Task<WikiDocument?> QueryByIdIncludingDeletedAsync(long id);
 
@@ -103,3 +107,45 @@ public sealed record WikiCollaboratorTransitionCommand(
     long OperatorId,
     string OperatorName,
     DateTime NowUtc);
+
+public sealed record WikiDocumentGovernanceHistoryQuery(
+    long TenantId,
+    long DocumentId,
+    int PageIndex,
+    int PageSize);
+
+public sealed record WikiDocumentGovernanceContentMutation(
+    string Title,
+    string MarkdownContent,
+    int ResultDocumentVersion);
+
+public sealed record WikiDocumentGovernanceMutationCommand(
+    long TenantId,
+    long DocumentId,
+    string Action,
+    int ExpectedGovernanceVersion,
+    int? ExpectedDocumentVersion,
+    int TargetStatus,
+    DateTime? TargetPublishedAt,
+    int TargetVisibility,
+    string? TargetAllowedRoles,
+    string? TargetAllowedPermissions,
+    bool TargetIsDeleted,
+    DateTime? TargetDeletedAt,
+    string? TargetDeletedBy,
+    WikiDocumentGovernanceContentMutation? ContentMutation,
+    long? SourceRevisionId,
+    string Reason,
+    long ActorUserId,
+    string ActorName,
+    DateTime NowUtc);
+
+public sealed record WikiDocumentGovernanceWriteResult(
+    WikiDocument Document,
+    WikiDocumentGovernanceEvent GovernanceEvent);
+
+public sealed class WikiDocumentGovernanceTargetUnavailableException : Exception;
+
+public sealed class WikiDocumentGovernanceVersionConflictException : Exception;
+
+public sealed class WikiDocumentContentVersionConflictException : Exception;

@@ -17,6 +17,7 @@ public class WikiDocumentVo
     public string VoSourceType { get; set; } = string.Empty;
     public string? VoSourcePath { get; set; }
     public int VoVersion { get; set; }
+    public int VoGovernanceVersion { get; set; }
     public DateTime? VoPublishedAt { get; set; }
     public bool VoIsDeleted { get; set; }
     public DateTime? VoDeletedAt { get; set; }
@@ -43,6 +44,7 @@ public class WikiDocumentDetailVo
     public string VoSourceType { get; set; } = string.Empty;
     public string? VoSourcePath { get; set; }
     public int VoVersion { get; set; }
+    public int VoGovernanceVersion { get; set; }
     public DateTime? VoPublishedAt { get; set; }
     public bool VoIsDeleted { get; set; }
     public DateTime? VoDeletedAt { get; set; }
@@ -92,4 +94,38 @@ public class WikiDocumentRevisionDetailVo
     public string VoCreateBy { get; set; } = string.Empty;
     public long VoCreateId { get; set; }
     public bool VoIsCurrent { get; set; }
+}
+
+/// <summary>Wiki 文档追加式治理事件视图模型。</summary>
+public sealed class WikiDocumentGovernanceEventVo
+{
+    public long VoId { get; set; }
+    public long VoDocumentId { get; set; }
+    public string VoAction { get; set; } = string.Empty;
+    public int VoFromStatus { get; set; }
+    public int VoToStatus { get; set; }
+    public int VoFromVisibility { get; set; }
+    public int VoToVisibility { get; set; }
+    public List<string> VoFromAllowedRoles { get; set; } = [];
+    public List<string> VoToAllowedRoles { get; set; } = [];
+    public List<string> VoFromAllowedPermissions { get; set; } = [];
+    public List<string> VoToAllowedPermissions { get; set; } = [];
+    public bool VoFromIsDeleted { get; set; }
+    public bool VoToIsDeleted { get; set; }
+    public int VoFromDocumentVersion { get; set; }
+    public int VoToDocumentVersion { get; set; }
+    public int VoExpectedGovernanceVersion { get; set; }
+    public int VoResultGovernanceVersion { get; set; }
+    public long? VoSourceRevisionId { get; set; }
+    public string VoReason { get; set; } = string.Empty;
+    public long VoActorUserId { get; set; }
+    public string VoActorName { get; set; } = string.Empty;
+    public DateTime VoCreateTime { get; set; }
+}
+
+/// <summary>Wiki 文档治理写入的权威响应快照。</summary>
+public sealed class WikiDocumentGovernanceMutationVo
+{
+    public WikiDocumentDetailVo VoDocument { get; set; } = new();
+    public WikiDocumentGovernanceEventVo VoEvent { get; set; } = new();
 }

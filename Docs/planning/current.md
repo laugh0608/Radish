@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-C05-C Documents 文档状态与审核治理`
-- **产品下一顺位**：`关闭 Documents 独立治理版本、append-only 治理事件、真实审核分页与 Mobile 单任务承载，再进入 Experience 权威台账治理`
+- **工程第一顺位**：`F4-R R3-C05-D Experience 权威台账治理`
+- **产品下一顺位**：`先反查 Experience 证据目标、调用方 CAS / 幂等、流水分页与等级重算事务事实，确认精确方案后再实施`
 - **复核日期**：`2026-08-13`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-13` 已完成 [R3-C05-C Documents 权威治理代码及静态门禁](/records/f4-r-r3-c05-c-documents-authoritative-governance-implementation-2026-08-13)：正文 `Version`、独立 `GovernanceVersion`、Review Event 与 append-only Governance Event 保持分域；`20260813_021_wiki_document_governance` 在 SQLite / PostgreSQL 建立幂等迁移，治理条件更新和事件追加同事务。列表 / 待审队列进入 URL 真实分页，详情、Revision、Review 证据与治理历史具备独立请求代际；不自动选择首篇，CAS 冲突保留理由并精确刷新，成功先消费权威文档 / 事件响应。PC 表格—证据—动作—事件与 Mobile 单任务卡共用快照。后端全量 `1262 passed / 40 skipped`、Console `122 / 122`、类型、Lint、production build、权限与卫生门禁通过；未新增权限键，未启动服务 / 浏览器或修改 Pencil。下一顺位进入 `R3-C05-D Experience`。
 - `2026-08-13` 已完成 [R3-C05-B Channel Discoverability 权威公开资格治理代码及静态门禁](/records/f4-r-r3-c05-b-channel-discoverability-authoritative-governance-implementation-2026-08-13)：列表筛选与分页进入 URL，列表 / 历史具备独立请求代际、查询快照和 `loading / ready / unavailable / stale`；历史改为服务端真实分页，新增复用 view 权限的 `GetById` 精确刷新 CAS 冲突目标。冲突保留理由草稿并要求重新确认，成功先消费响应权威快照再刷新列表；PC 表格 / 时间线与 Mobile 频道卡 / 事件卡共用快照。后端定向 `46 passed / 1 skipped`、Console `116 / 116`、类型、Lint、production build、权限和卫生门禁通过。未新增数据库、migration 或权限键，未启动服务 / 浏览器或修改 Pencil；下一顺位进入 `R3-C05-C Documents`。
 - `2026-08-12` 已完成 [R3-C05-A Console Dashboard 权威调度面代码及静态门禁](/records/f4-r-r3-c05-a-console-dashboard-authoritative-dispatch-implementation-2026-08-12)：统计与最近订单分别具备请求代际、权威快照和 `loading / ready / unavailable / stale`，首次失败不再伪造零值 / 空列表，刷新失败保留旧快照；静态“优先队列”已纠正为高频任务路径，重复页头 / 命令组和伪“新建商品”入口已删除。PC 表格与 Mobile 订单卡共用同一快照；Statistics `4 / 4`、Console `110 / 110`、类型、Lint、production build 与卫生门禁通过。未新增跨模块聚合 API，未启动服务 / 浏览器或修改 Pencil；下一顺位进入 `R3-C05-B Channel Discoverability`。
 - `2026-08-12` 已完成 [R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)：Dashboard、Channel Discoverability、Documents 与 Experience 的既有继承均成立，不需要新建或修改 Pencil；四页按风险拆为 Dashboard、Channel、Documents、Experience 四批，不建立万能治理状态机。审计识别 Dashboard 首次失败伪零值与静态“队列”、Channel 历史截断、Documents 普通治理动作缺少独立状态版本 / append-only 事件，以及 Experience 证据目标与写入目标可分离、调账缺少调用方 CAS / 幂等、等级配置重算非整批事务等根因。下一顺位进入 `R3-C05-A Dashboard 权威调度面`；本批未修改运行时代码、数据库、权限或 Pencil，未启动服务 / 浏览器。
@@ -171,15 +172,16 @@
 
 ## 明天事项（2026-08-14）
 
-1. 新会话先读取本页、[R3-C05-B Channel 实现记录](/records/f4-r-r3-c05-b-channel-discoverability-authoritative-governance-implementation-2026-08-13)和 [R3-C05 设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)的 Documents 门禁，再反查 Wiki 实体、Revision / Review、普通治理写入和 Console 页面当前事实。
-2. 先给出 `R3-C05-C Documents` 的精确实施方案并取得确认，固定独立 `GovernanceVersion`、append-only `WikiDocumentGovernanceEvent`、migration、事务和接口契约；未确认前不修改实体、数据库或写入接口。
-3. 内容 `Version`、审核 Review Event 与生命周期 Governance Event 保持独立语义；普通治理动作携带期望治理版本，需要确认正文的动作同时携带期望内容版本，条件更新与事件写入在同一事务完成。
-4. 文档列表与待审队列分别进入 URL 真实分页；列表、详情、Revision、Review 证据和治理事件分别维护请求代际与 `unavailable / stale`，不得自动把第一篇文档当作治理目标。
-5. PC 保持队列 / 文档列表—证据—动作与事件；Mobile 固定选择任务—正文 / 草稿证据—动作—时间线，并按真实所有权拆分当前接近硬上限的页面，不创建只转发参数的空组件。
-6. 定向覆盖 SQLite / PostgreSQL migration、状态 CAS、事件事务、Review 回归、URL / 竞态和 PC / Mobile 合同，再执行 Console 与仓库门禁；不修改 Docs Author、公开 ACL、附件令牌、审核状态机或 Pencil，四批静态门禁成组关闭前不启动服务 / 浏览器。
+1. 新会话先读取本页、[R3-C05-C Documents 实现记录](/records/f4-r-r3-c05-c-documents-authoritative-governance-implementation-2026-08-13)和 [R3-C05 设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)的 Experience 门禁，再反查经验实体 / 流水 / 调账 / 审核 / 冻结 / 等级配置与 Console 当前事实。
+2. 先给出 `R3-C05-D Experience` 的精确实施方案并取得确认；重点关闭证据查看目标与写入目标可分离、`UserExperience.Version` 未返回调用方、调账 / 人工审核缺少幂等、等级配置重算非整批事务等根因，未确认前不修改接口、事务或实体。
+3. 所有写入只绑定已加载的权威用户与版本；调账携带原因、`ExpectedVersion`、`IdempotencyKey`，冻结 / 解冻携带版本与原因，审核写入携带版本与幂等键，并在领域事务内提交台账、状态和审计结果。
+4. 用户目标、统计筛选与流水筛选 / 分页进入 URL；主资料、余额、流水、动作历史和等级配置影响摘要分别维护请求代际与 `loading / ready / unavailable / stale`，禁止用清空数组伪造权威空态。
+5. PC 保持连续台账—证据—动作，Mobile 固定单一用户任务和分页卡片；等级配置保存前展示影响摘要并显式确认，批量重算必须整批事务且有审计，不建立跨模块万能治理状态机。
+6. 定向覆盖版本 CAS、幂等重放 / 异载荷冲突、事务回滚、真实分页、URL / 竞态和 PC / Mobile 合同，再执行 Console 与仓库门禁；不新增自动处罚、反作弊、公开经验详情、人工改等级、权限键或 Pencil，R3-C05 四批静态门禁关闭后再申请成组运行态验收授权。
 
 ## 当前执行入口
 
+- [R3-C05-C Documents 权威治理实现](/records/f4-r-r3-c05-c-documents-authoritative-governance-implementation-2026-08-13)
 - [R3-C05-B Channel Discoverability 权威公开资格治理实现](/records/f4-r-r3-c05-b-channel-discoverability-authoritative-governance-implementation-2026-08-13)
 - [R3-C05-A Console Dashboard 权威调度面实现](/records/f4-r-r3-c05-a-console-dashboard-authoritative-dispatch-implementation-2026-08-12)
 - [R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)

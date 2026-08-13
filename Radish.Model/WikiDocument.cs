@@ -59,6 +59,10 @@ public class WikiDocument : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = false)]
     public int Version { get; set; } = 1;
 
+    /// <summary>生命周期、访问策略与回滚治理的独立单调版本。</summary>
+    [SugarColumn(IsNullable = false, DefaultValue = "0")]
+    public int GovernanceVersion { get; set; } = 0;
+
     [SugarColumn(IsNullable = true)]
     public long? OwnerUserId { get; set; }
 

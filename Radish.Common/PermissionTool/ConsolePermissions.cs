@@ -133,6 +133,7 @@ public static class ConsolePermissions
             ["/api/v1/Wiki/AdminGetList"] = new[] { DocsView },
             ["/api/v1/Wiki/AdminGetTree"] = new[] { DocsView },
             ["/api/v1/Wiki/AdminGetById/\\d+"] = new[] { DocsView },
+            ["/api/v1/Wiki/AdminGetGovernanceHistory/\\d+"] = new[] { DocsView },
             ["/api/v1/Wiki/AdminGetReviewQueue"] = new[] { DocsReview },
             ["/api/v1/Wiki/AdminGetDraftById/\\d+"] = new[] { DocsReview },
             ["/api/v1/Wiki/AdminReviewDraft/\\d+"] = new[] { DocsReview },

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
 using Radish.Api.Controllers;
+using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -102,53 +103,76 @@ public class WikiControllerTest
     }
 
     [Fact]
-    public async Task Delete_Should_Return_Success_When_Service_Returns_True()
+    public async Task Delete_Should_Return_Authoritative_Mutation_When_Service_Succeeds()
     {
+        var action = new WikiDocumentGovernanceActionDto
+        {
+            ExpectedGovernanceVersion = 3,
+            Reason = "内容已过期"
+        };
+        var mutation = CreateGovernanceMutation(42, 4);
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.DeleteDocumentAsync(42, 10001, "Tester"))
-            .ReturnsAsync(true);
+            .Setup(s => s.DeleteDocumentAsync(42, action, 10001, "Tester"))
+            .ReturnsAsync(mutation);
 
         var controller = CreateController(serviceMock.Object, isAdmin: true);
-        var result = await controller.Delete(42);
+        var result = await controller.Delete(42, action);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
-        Assert.True(result.ResponseData);
+        Assert.NotNull(result.ResponseData);
+        Assert.Equal(4, result.ResponseData.VoDocument.VoGovernanceVersion);
     }
 
     [Fact]
-    public async Task Restore_Should_Return_Success_When_Service_Returns_True()
+    public async Task Restore_Should_Return_Authoritative_Mutation_When_Service_Succeeds()
     {
+        var action = new WikiDocumentGovernanceActionDto
+        {
+            ExpectedGovernanceVersion = 4,
+            Reason = "恢复误删文档"
+        };
+        var mutation = CreateGovernanceMutation(42, 5);
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.RestoreDocumentAsync(42, 10001, "Tester"))
-            .ReturnsAsync(true);
+            .Setup(s => s.RestoreDocumentAsync(42, action, 10001, "Tester"))
+            .ReturnsAsync(mutation);
 
         var controller = CreateController(serviceMock.Object, isAdmin: true);
-        var result = await controller.Restore(42);
+        var result = await controller.Restore(42, action);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
-        Assert.True(result.ResponseData);
+        Assert.NotNull(result.ResponseData);
+        Assert.Equal(5, result.ResponseData.VoDocument.VoGovernanceVersion);
     }
 
     [Fact]
     public async Task Publish_Should_Return_Failed_When_Document_Missing()
     {
+        var action = new WikiDocumentContentGovernanceActionDto
+        {
+            ExpectedGovernanceVersion = 0,
+            ExpectedDocumentVersion = 1,
+            Reason = "发布文档"
+        };
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.PublishAsync(404, 10001, "Tester"))
-            .ReturnsAsync(false);
+            .Setup(s => s.PublishAsync(404, action, 10001, "Tester"))
+            .ThrowsAsync(new BusinessException(
+                "文档不存在",
+                404,
+                "Wiki.GovernanceTargetUnavailable",
+                "error.wiki.governance_target_unavailable"));
 
         var controller = CreateController(serviceMock.Object, isAdmin: true);
-        var result = await controller.Publish(404);
+        var result = await controller.Publish(404, action);
 
         Assert.False(result.IsSuccess);
         Assert.Equal(404, result.StatusCode);
-        Assert.False(result.ResponseData);
-        Assert.Equal("Wiki.DocumentNotFound", result.Code);
-        Assert.Equal("error.wiki.document_not_found", result.MessageKey);
+        Assert.Equal("Wiki.GovernanceTargetUnavailable", result.Code);
+        Assert.Equal("error.wiki.governance_target_unavailable", result.MessageKey);
     }
 
     [Fact]
@@ -206,23 +230,30 @@ public class WikiControllerTest
     [Fact]
     public async Task GetRevisionList_Should_Return_Data_When_Found()
     {
-        var revisionList = new List<WikiDocumentRevisionItemVo>
+        var revisionList = new PageModel<WikiDocumentRevisionItemVo>
         {
-            new()
+            Page = 1,
+            PageSize = 20,
+            DataCount = 1,
+            PageCount = 1,
+            Data =
             {
-                VoId = 11,
-                VoDocumentId = 42,
-                VoVersion = 3,
-                VoTitle = "Wiki 文档",
-                VoCreateBy = "Tester",
-                VoSourceType = "Manual",
-                VoIsCurrent = true,
+                new WikiDocumentRevisionItemVo
+                {
+                    VoId = 11,
+                    VoDocumentId = 42,
+                    VoVersion = 3,
+                    VoTitle = "Wiki 文档",
+                    VoCreateBy = "Tester",
+                    VoSourceType = "Manual",
+                    VoIsCurrent = true,
+                }
             }
         };
 
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.GetRevisionListAsync(42))
+            .Setup(s => s.GetRevisionListAsync(42, 1, 20))
             .ReturnsAsync(revisionList);
 
         var controller = CreateController(serviceMock.Object, isAdmin: true);
@@ -231,8 +262,8 @@ public class WikiControllerTest
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
         Assert.NotNull(result.ResponseData);
-        Assert.Single(result.ResponseData);
-        Assert.Equal(3, result.ResponseData[0].VoVersion);
+        Assert.Single(result.ResponseData.Data);
+        Assert.Equal(3, result.ResponseData.Data[0].VoVersion);
     }
 
     [Fact]
@@ -254,20 +285,42 @@ public class WikiControllerTest
     }
 
     [Fact]
-    public async Task Rollback_Should_Return_Success_When_Service_Returns_True()
+    public async Task Rollback_Should_Return_Authoritative_Mutation_When_Service_Succeeds()
     {
+        var action = new WikiDocumentContentGovernanceActionDto
+        {
+            ExpectedGovernanceVersion = 7,
+            ExpectedDocumentVersion = 3,
+            Reason = "恢复已确认版本"
+        };
+        var mutation = CreateGovernanceMutation(42, 8);
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(s => s.RollbackAsync(88, 10001, "Tester"))
-            .ReturnsAsync(true);
+            .Setup(s => s.RollbackAsync(88, action, 10001, "Tester"))
+            .ReturnsAsync(mutation);
 
         var controller = CreateController(serviceMock.Object, isAdmin: true);
-        var result = await controller.Rollback(88);
+        var result = await controller.Rollback(88, action);
 
         Assert.True(result.IsSuccess);
         Assert.Equal(200, result.StatusCode);
-        Assert.True(result.ResponseData);
+        Assert.NotNull(result.ResponseData);
+        Assert.Equal(8, result.ResponseData.VoDocument.VoGovernanceVersion);
     }
+
+    private static WikiDocumentGovernanceMutationVo CreateGovernanceMutation(long documentId, int governanceVersion) => new()
+    {
+        VoDocument = new WikiDocumentDetailVo
+        {
+            VoId = documentId,
+            VoGovernanceVersion = governanceVersion
+        },
+        VoEvent = new WikiDocumentGovernanceEventVo
+        {
+            VoDocumentId = documentId,
+            VoResultGovernanceVersion = governanceVersion
+        }
+    };
 
     private static WikiController CreateController(IWikiDocumentService wikiDocumentService, bool isAdmin = false, bool isAuthenticated = true)
     {

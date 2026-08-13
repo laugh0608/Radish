@@ -13,6 +13,7 @@ using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service.Base;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
 
@@ -526,6 +527,47 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return document == null ? null : _mapper.Map<WikiDocumentDetailVo>(document);
     }
 
+    public async Task<PageModel<WikiDocumentGovernanceEventVo>> GetGovernanceHistoryAsync(
+        long documentId,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        if (documentId <= 0)
+        {
+            throw InvalidGovernanceRequest();
+        }
+
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = Math.Clamp(pageSize, 1, 100);
+        try
+        {
+            var document = await _wikiDocumentRepository.QueryByIdIncludingDeletedAsync(documentId);
+            if (document == null)
+            {
+                throw GovernanceTargetUnavailable();
+            }
+
+            var (items, total) = await _wikiDocumentRepository.QueryGovernanceHistoryAsync(
+                new WikiDocumentGovernanceHistoryQuery(
+                    document.TenantId,
+                    documentId,
+                    safePageIndex,
+                    safePageSize));
+            return new PageModel<WikiDocumentGovernanceEventVo>
+            {
+                Page = safePageIndex,
+                PageSize = safePageSize,
+                DataCount = total,
+                PageCount = (int)Math.Ceiling(total / (double)safePageSize),
+                Data = items.Select(MapGovernanceEvent).ToList()
+            };
+        }
+        catch (WikiDocumentGovernanceTargetUnavailableException)
+        {
+            throw GovernanceTargetUnavailable();
+        }
+    }
+
     [UseTran]
     public async Task<long> CreateDocumentAsync(CreateWikiDocumentDto createDto, long operatorId, string operatorName, long tenantId)
     {
@@ -601,8 +643,6 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var title = NormalizeRequired(updateDto.Title, nameof(updateDto.Title));
         var markdownContent = NormalizeRequired(updateDto.MarkdownContent, nameof(updateDto.MarkdownContent));
         var slug = await EnsureUniqueSlugForUpdateAsync(updateDto.Slug, title, id);
-        ValidateAccessPolicy(updateDto.Visibility, updateDto.AllowedRoles, updateDto.AllowedPermissions);
-
         await ValidateParentDocumentAsync(updateDto.ParentId, id);
         await ValidateWikiAttachmentReferencesAsync(
             document.TenantId,
@@ -618,10 +658,7 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             document.MarkdownContent != markdownContent ||
             document.ParentId != updateDto.ParentId ||
             document.Sort != updateDto.Sort ||
-            document.CoverAttachmentId != updateDto.CoverAttachmentId ||
-            NormalizeVisibility(document.Visibility) != NormalizeVisibility(updateDto.Visibility) ||
-            document.AllowedRoles != SerializeAccessList(updateDto.AllowedRoles) ||
-            document.AllowedPermissions != SerializeAccessList(updateDto.AllowedPermissions);
+            document.CoverAttachmentId != updateDto.CoverAttachmentId;
 
         document.Title = title;
         document.Slug = slug;
@@ -630,9 +667,6 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         document.ParentId = updateDto.ParentId;
         document.Sort = updateDto.Sort;
         document.CoverAttachmentId = updateDto.CoverAttachmentId;
-        document.Visibility = NormalizeVisibility(updateDto.Visibility);
-        document.AllowedRoles = SerializeAccessList(updateDto.AllowedRoles);
-        document.AllowedPermissions = SerializeAccessList(updateDto.AllowedPermissions);
         document.ModifyId = operatorId;
         document.ModifyBy = ResolveOperatorName(operatorName);
         document.ModifyTime = DateTime.Now;
@@ -659,25 +693,27 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return updated;
     }
 
-    public async Task<bool> UpdateAccessPolicyAsync(long id, UpdateWikiDocumentAccessPolicyDto updateDto, long operatorId, string operatorName)
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<WikiDocumentGovernanceMutationVo> UpdateAccessPolicyAsync(
+        long id,
+        UpdateWikiDocumentAccessPolicyDto updateDto,
+        long operatorId,
+        string operatorName)
     {
+        ArgumentNullException.ThrowIfNull(updateDto);
         if (id <= 0)
         {
             throw new ArgumentException("文档ID无效", nameof(id));
         }
 
-        if (updateDto == null)
-        {
-            throw new ArgumentNullException(nameof(updateDto));
-        }
-
         var document = await _wikiDocumentRepository.QueryByIdAsync(id);
         if (document == null || document.IsDeleted)
         {
-            return false;
+            throw GovernanceTargetUnavailable();
         }
 
         EnsureDocumentIsEditable(document);
+        EnsureExpectedVersions(document, updateDto.ExpectedGovernanceVersion, null);
         ValidateAccessPolicy(updateDto.Visibility, updateDto.AllowedRoles, updateDto.AllowedPermissions);
 
         var normalizedVisibility = NormalizeVisibility(updateDto.Visibility);
@@ -691,21 +727,37 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
 
         if (!hasChanges)
         {
-            return true;
+            throw GovernanceActionNotApplicable();
         }
 
-        document.Visibility = normalizedVisibility;
-        document.AllowedRoles = normalizedRoles;
-        document.AllowedPermissions = normalizedPermissions;
-        document.ModifyId = operatorId;
-        document.ModifyBy = ResolveOperatorName(operatorName);
-        document.ModifyTime = DateTime.Now;
-
-        return await UpdateAsync(document);
+        return await ApplyGovernanceMutationAsync(
+            document,
+            WikiDocumentGovernanceActions.UpdateAccessPolicy,
+            updateDto.ExpectedGovernanceVersion,
+            null,
+            document.Status,
+            document.PublishedAt,
+            normalizedVisibility,
+            normalizedRoles,
+            normalizedPermissions,
+            false,
+            null,
+            null,
+            null,
+            null,
+            updateDto.Reason,
+            operatorId,
+            operatorName);
     }
 
-    public async Task<bool> DeleteDocumentAsync(long id, long operatorId, string operatorName)
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<WikiDocumentGovernanceMutationVo> DeleteDocumentAsync(
+        long id,
+        WikiDocumentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName)
     {
+        ArgumentNullException.ThrowIfNull(actionDto);
         if (id <= 0)
         {
             throw new ArgumentException("文档ID无效", nameof(id));
@@ -714,10 +766,11 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var document = await _wikiDocumentRepository.QueryByIdAsync(id);
         if (document == null || document.IsDeleted)
         {
-            return false;
+            throw GovernanceTargetUnavailable();
         }
 
         EnsureDocumentIsEditable(document);
+        EnsureExpectedVersions(document, actionDto.ExpectedGovernanceVersion, null);
 
         var hasChildren = await _wikiDocumentRepository.QueryExistsAsync(d => d.ParentId == id && !d.IsDeleted);
         if (hasChildren)
@@ -725,11 +778,36 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             throw new BusinessException("请先处理子文档后再删除当前文档", 409, "Wiki.ChildDocumentConflict", "error.wiki.child_document_conflict");
         }
 
-        return await _wikiDocumentRepository.SoftDeleteByIdAsync(id, ResolveOperatorName(operatorName));
+        var now = DateTime.UtcNow;
+        return await ApplyGovernanceMutationAsync(
+            document,
+            WikiDocumentGovernanceActions.Delete,
+            actionDto.ExpectedGovernanceVersion,
+            null,
+            document.Status,
+            document.PublishedAt,
+            document.Visibility,
+            document.AllowedRoles,
+            document.AllowedPermissions,
+            true,
+            now,
+            ResolveOperatorName(operatorName),
+            null,
+            null,
+            actionDto.Reason,
+            operatorId,
+            operatorName,
+            now);
     }
 
-    public async Task<bool> RestoreDocumentAsync(long id, long operatorId, string operatorName)
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<WikiDocumentGovernanceMutationVo> RestoreDocumentAsync(
+        long id,
+        WikiDocumentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName)
     {
+        ArgumentNullException.ThrowIfNull(actionDto);
         if (id <= 0)
         {
             throw new ArgumentException("文档ID无效", nameof(id));
@@ -738,100 +816,197 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var document = await _wikiDocumentRepository.QueryByIdIncludingDeletedAsync(id);
         if (document == null || !document.IsDeleted)
         {
-            return false;
+            throw GovernanceTargetUnavailable();
         }
 
         EnsureDocumentIsEditable(document);
+        EnsureExpectedVersions(document, actionDto.ExpectedGovernanceVersion, null);
         await ValidateParentDocumentAsync(document.ParentId, document.Id);
 
-        var restored = await _wikiDocumentRepository.RestoreByIdAsync(id);
-        if (!restored)
-        {
-            return false;
-        }
-
-        document.IsDeleted = false;
-        document.DeletedAt = null;
-        document.DeletedBy = null;
-        document.ModifyId = operatorId;
-        document.ModifyBy = ResolveOperatorName(operatorName);
-        document.ModifyTime = DateTime.Now;
-        return await UpdateAsync(document);
+        return await ApplyGovernanceMutationAsync(
+            document,
+            WikiDocumentGovernanceActions.Restore,
+            actionDto.ExpectedGovernanceVersion,
+            null,
+            document.Status,
+            document.PublishedAt,
+            document.Visibility,
+            document.AllowedRoles,
+            document.AllowedPermissions,
+            false,
+            null,
+            null,
+            null,
+            null,
+            actionDto.Reason,
+            operatorId,
+            operatorName);
     }
 
-    public async Task<bool> PublishAsync(long id, long operatorId, string operatorName)
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<WikiDocumentGovernanceMutationVo> PublishAsync(
+        long id,
+        WikiDocumentContentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName)
     {
+        ArgumentNullException.ThrowIfNull(actionDto);
         var document = await _wikiDocumentRepository.QueryByIdAsync(id);
         if (document == null || document.IsDeleted)
         {
-            return false;
+            throw GovernanceTargetUnavailable();
         }
 
         EnsureDocumentIsEditable(document);
+        EnsureExpectedVersions(
+            document,
+            actionDto.ExpectedGovernanceVersion,
+            actionDto.ExpectedDocumentVersion);
 
-        document.Status = (int)WikiDocumentStatusEnum.Published;
-        document.PublishedAt ??= DateTime.Now;
-        document.ModifyId = operatorId;
-        document.ModifyBy = ResolveOperatorName(operatorName);
-        document.ModifyTime = DateTime.Now;
-        return await UpdateAsync(document);
+        if (document.Status == (int)WikiDocumentStatusEnum.Published)
+        {
+            throw GovernanceActionNotApplicable();
+        }
+
+        return await ApplyGovernanceMutationAsync(
+            document,
+            WikiDocumentGovernanceActions.Publish,
+            actionDto.ExpectedGovernanceVersion,
+            actionDto.ExpectedDocumentVersion,
+            (int)WikiDocumentStatusEnum.Published,
+            document.PublishedAt ?? DateTime.UtcNow,
+            document.Visibility,
+            document.AllowedRoles,
+            document.AllowedPermissions,
+            false,
+            null,
+            null,
+            null,
+            null,
+            actionDto.Reason,
+            operatorId,
+            operatorName);
     }
 
-    public async Task<bool> UnpublishAsync(long id, long operatorId, string operatorName)
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<WikiDocumentGovernanceMutationVo> UnpublishAsync(
+        long id,
+        WikiDocumentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName)
     {
+        ArgumentNullException.ThrowIfNull(actionDto);
         var document = await _wikiDocumentRepository.QueryByIdAsync(id);
         if (document == null || document.IsDeleted)
         {
-            return false;
+            throw GovernanceTargetUnavailable();
         }
 
         EnsureDocumentIsEditable(document);
+        EnsureExpectedVersions(document, actionDto.ExpectedGovernanceVersion, null);
 
-        document.Status = (int)WikiDocumentStatusEnum.Draft;
-        document.ModifyId = operatorId;
-        document.ModifyBy = ResolveOperatorName(operatorName);
-        document.ModifyTime = DateTime.Now;
-        return await UpdateAsync(document);
+        if (document.Status == (int)WikiDocumentStatusEnum.Draft)
+        {
+            throw GovernanceActionNotApplicable();
+        }
+
+        return await ApplyGovernanceMutationAsync(
+            document,
+            WikiDocumentGovernanceActions.Unpublish,
+            actionDto.ExpectedGovernanceVersion,
+            null,
+            (int)WikiDocumentStatusEnum.Draft,
+            document.PublishedAt,
+            document.Visibility,
+            document.AllowedRoles,
+            document.AllowedPermissions,
+            false,
+            null,
+            null,
+            null,
+            null,
+            actionDto.Reason,
+            operatorId,
+            operatorName);
     }
 
-    public async Task<bool> ArchiveAsync(long id, long operatorId, string operatorName)
+    [UseTran(Propagation = Propagation.Required)]
+    public async Task<WikiDocumentGovernanceMutationVo> ArchiveAsync(
+        long id,
+        WikiDocumentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName)
     {
+        ArgumentNullException.ThrowIfNull(actionDto);
         var document = await _wikiDocumentRepository.QueryByIdAsync(id);
         if (document == null || document.IsDeleted)
         {
-            return false;
+            throw GovernanceTargetUnavailable();
         }
 
         EnsureDocumentIsEditable(document);
+        EnsureExpectedVersions(document, actionDto.ExpectedGovernanceVersion, null);
 
-        document.Status = (int)WikiDocumentStatusEnum.Archived;
-        document.ModifyId = operatorId;
-        document.ModifyBy = ResolveOperatorName(operatorName);
-        document.ModifyTime = DateTime.Now;
-        return await UpdateAsync(document);
+        if (document.Status == (int)WikiDocumentStatusEnum.Archived)
+        {
+            throw GovernanceActionNotApplicable();
+        }
+
+        return await ApplyGovernanceMutationAsync(
+            document,
+            WikiDocumentGovernanceActions.Archive,
+            actionDto.ExpectedGovernanceVersion,
+            null,
+            (int)WikiDocumentStatusEnum.Archived,
+            document.PublishedAt,
+            document.Visibility,
+            document.AllowedRoles,
+            document.AllowedPermissions,
+            false,
+            null,
+            null,
+            null,
+            null,
+            actionDto.Reason,
+            operatorId,
+            operatorName);
     }
 
-    public async Task<List<WikiDocumentRevisionItemVo>> GetRevisionListAsync(long documentId)
+    public async Task<PageModel<WikiDocumentRevisionItemVo>> GetRevisionListAsync(
+        long documentId,
+        int pageIndex = 1,
+        int pageSize = 20)
     {
         if (documentId <= 0)
         {
-            return [];
+            throw InvalidGovernanceRequest();
         }
 
         var document = await _wikiDocumentRepository.QueryByIdAsync(documentId);
         if (document == null || document.IsDeleted)
         {
-            return [];
+            throw GovernanceTargetUnavailable();
         }
 
-        var revisions = await _wikiDocumentRevisionRepository.QueryWithOrderAsync(
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = Math.Clamp(pageSize, 1, 100);
+        var (revisions, total) = await _wikiDocumentRevisionRepository.QueryPageAsync(
             r => r.DocumentId == documentId,
+            safePageIndex,
+            safePageSize,
             r => r.Version,
+            OrderByType.Desc,
+            r => r.Id,
             OrderByType.Desc);
 
-        return revisions
-            .Select(revision => MapRevisionItem(revision, document.Version))
-            .ToList();
+        return new PageModel<WikiDocumentRevisionItemVo>
+        {
+            Page = safePageIndex,
+            PageSize = safePageSize,
+            DataCount = total,
+            PageCount = (int)Math.Ceiling(total / (double)safePageSize),
+            Data = revisions.Select(revision => MapRevisionItem(revision, document.Version)).ToList()
+        };
     }
 
     public async Task<WikiDocumentRevisionDetailVo?> GetRevisionDetailAsync(long revisionId)
@@ -857,8 +1032,13 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
     }
 
     [UseTran]
-    public async Task<bool> RollbackAsync(long revisionId, long operatorId, string operatorName)
+    public async Task<WikiDocumentGovernanceMutationVo> RollbackAsync(
+        long revisionId,
+        WikiDocumentContentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName)
     {
+        ArgumentNullException.ThrowIfNull(actionDto);
         if (revisionId <= 0)
         {
             throw new ArgumentException("版本ID无效", nameof(revisionId));
@@ -867,16 +1047,20 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         var revision = await _wikiDocumentRevisionRepository.QueryByIdAsync(revisionId);
         if (revision == null)
         {
-            return false;
+            throw new BusinessException("版本不存在", 404, "Wiki.RevisionNotFound", "error.wiki.revision_not_found");
         }
 
         var document = await _wikiDocumentRepository.QueryByIdAsync(revision.DocumentId);
         if (document == null || document.IsDeleted)
         {
-            return false;
+            throw GovernanceTargetUnavailable();
         }
 
         EnsureDocumentIsEditable(document);
+        EnsureExpectedVersions(
+            document,
+            actionDto.ExpectedGovernanceVersion,
+            actionDto.ExpectedDocumentVersion);
 
         var isSameContent =
             document.Title == revision.Title &&
@@ -894,26 +1078,120 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             document.CoverAttachmentId,
             operatorId);
 
-        document.Title = revision.Title;
-        document.MarkdownContent = revision.MarkdownContent;
-        document.Version += 1;
-        document.ModifyId = operatorId;
-        document.ModifyBy = ResolveOperatorName(operatorName);
-        document.ModifyTime = DateTime.Now;
-
-        var updated = await UpdateAsync(document);
-        if (!updated)
-        {
-            return false;
-        }
-
-        await SyncDocumentAttachmentReferencesAsync(
+        var mutation = await ApplyGovernanceMutationAsync(
             document,
+            WikiDocumentGovernanceActions.Rollback,
+            actionDto.ExpectedGovernanceVersion,
+            actionDto.ExpectedDocumentVersion,
+            document.Status,
+            document.PublishedAt,
+            document.Visibility,
+            document.AllowedRoles,
+            document.AllowedPermissions,
+            false,
+            null,
+            null,
+            new WikiDocumentGovernanceContentMutation(
+                revision.Title,
+                revision.MarkdownContent,
+                document.Version + 1),
+            revision.Id,
+            actionDto.Reason,
+            operatorId,
+            operatorName);
+
+        var updatedDocument = await _wikiDocumentRepository.QueryByIdAsync(document.Id)
+            ?? throw GovernanceTargetUnavailable();
+        await SyncDocumentAttachmentReferencesAsync(
+            updatedDocument,
             operatorId,
             operatorName,
-            document.ModifyTime ?? DateTime.UtcNow);
-        await AddRevisionAsync(document, $"回滚到 v{revision.Version}", "Rollback", operatorId, operatorName);
-        return true;
+            updatedDocument.ModifyTime ?? DateTime.UtcNow);
+        await AddRevisionAsync(updatedDocument, $"回滚到 v{revision.Version}", "Rollback", operatorId, operatorName);
+        return mutation;
+    }
+
+    private async Task<WikiDocumentGovernanceMutationVo> ApplyGovernanceMutationAsync(
+        WikiDocument document,
+        string action,
+        int expectedGovernanceVersion,
+        int? expectedDocumentVersion,
+        int targetStatus,
+        DateTime? targetPublishedAt,
+        int targetVisibility,
+        string? targetAllowedRoles,
+        string? targetAllowedPermissions,
+        bool targetIsDeleted,
+        DateTime? targetDeletedAt,
+        string? targetDeletedBy,
+        WikiDocumentGovernanceContentMutation? contentMutation,
+        long? sourceRevisionId,
+        string? reason,
+        long operatorId,
+        string operatorName,
+        DateTime? nowUtc = null)
+    {
+        if (document.Id <= 0 || operatorId <= 0 || expectedGovernanceVersion < 0 ||
+            expectedDocumentVersion is <= 0 || !WikiDocumentGovernanceActions.All.Contains(action))
+        {
+            throw InvalidGovernanceRequest();
+        }
+
+        var normalizedReason = NormalizeOptional(reason);
+        if (string.IsNullOrWhiteSpace(normalizedReason))
+        {
+            throw new BusinessException(
+                "文档治理操作必须填写理由",
+                400,
+                "Wiki.GovernanceReasonRequired",
+                "error.wiki.governance_reason_required");
+        }
+        if (normalizedReason.Length > 500)
+        {
+            throw InvalidGovernanceRequest();
+        }
+
+        try
+        {
+            var result = await _wikiDocumentRepository.ApplyGovernanceMutationAsync(
+                new WikiDocumentGovernanceMutationCommand(
+                    document.TenantId,
+                    document.Id,
+                    action,
+                    expectedGovernanceVersion,
+                    expectedDocumentVersion,
+                    targetStatus,
+                    targetPublishedAt,
+                    targetVisibility,
+                    targetAllowedRoles,
+                    targetAllowedPermissions,
+                    targetIsDeleted,
+                    targetDeletedAt,
+                    targetDeletedBy,
+                    contentMutation,
+                    sourceRevisionId,
+                    normalizedReason,
+                    operatorId,
+                    ResolveOperatorName(operatorName),
+                    nowUtc ?? DateTime.UtcNow));
+            return new WikiDocumentGovernanceMutationVo
+            {
+                VoDocument = _mapper.Map<WikiDocumentDetailVo>(result.Document),
+                VoEvent = MapGovernanceEvent(result.GovernanceEvent)
+            };
+        }
+        catch (WikiDocumentGovernanceTargetUnavailableException)
+        {
+            throw GovernanceTargetUnavailable();
+        }
+        catch (WikiDocumentGovernanceVersionConflictException)
+        {
+            throw GovernanceVersionConflict();
+        }
+        catch (WikiDocumentContentVersionConflictException)
+        {
+            throw DocumentVersionConflict();
+        }
     }
 
     [UseTran]
@@ -1035,6 +1313,36 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             operatorId,
             operatorName,
             revision.CreateTime);
+    }
+
+    private static WikiDocumentGovernanceEventVo MapGovernanceEvent(
+        WikiDocumentGovernanceEvent governanceEvent)
+    {
+        return new WikiDocumentGovernanceEventVo
+        {
+            VoId = governanceEvent.Id,
+            VoDocumentId = governanceEvent.DocumentId,
+            VoAction = governanceEvent.Action,
+            VoFromStatus = governanceEvent.FromStatus,
+            VoToStatus = governanceEvent.ToStatus,
+            VoFromVisibility = governanceEvent.FromVisibility,
+            VoToVisibility = governanceEvent.ToVisibility,
+            VoFromAllowedRoles = ParseAccessList(governanceEvent.FromAllowedRoles).ToList(),
+            VoToAllowedRoles = ParseAccessList(governanceEvent.ToAllowedRoles).ToList(),
+            VoFromAllowedPermissions = ParseAccessList(governanceEvent.FromAllowedPermissions).ToList(),
+            VoToAllowedPermissions = ParseAccessList(governanceEvent.ToAllowedPermissions).ToList(),
+            VoFromIsDeleted = governanceEvent.FromIsDeleted,
+            VoToIsDeleted = governanceEvent.ToIsDeleted,
+            VoFromDocumentVersion = governanceEvent.FromDocumentVersion,
+            VoToDocumentVersion = governanceEvent.ToDocumentVersion,
+            VoExpectedGovernanceVersion = governanceEvent.ExpectedGovernanceVersion,
+            VoResultGovernanceVersion = governanceEvent.ResultGovernanceVersion,
+            VoSourceRevisionId = governanceEvent.SourceRevisionId,
+            VoReason = governanceEvent.Reason,
+            VoActorUserId = governanceEvent.ActorUserId,
+            VoActorName = governanceEvent.ActorName,
+            VoCreateTime = governanceEvent.CreateTime
+        };
     }
 
     private async Task<string> EnsureUniqueSlugForCreateAsync(string? requestedSlug, string titleSeed)
@@ -1311,4 +1619,50 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
             VoIsCurrent = revision.Version == currentVersion
         };
     }
+
+    private static BusinessException InvalidGovernanceRequest() => new(
+        "文档治理请求无效",
+        400,
+        "Wiki.GovernanceRequestInvalid",
+        "error.wiki.governance_request_invalid");
+
+    private static BusinessException GovernanceTargetUnavailable() => new(
+        "文档不存在或不在当前租户的治理范围内",
+        404,
+        "Wiki.GovernanceTargetUnavailable",
+        "error.wiki.governance_target_unavailable");
+
+    private static BusinessException GovernanceActionNotApplicable() => new(
+        "文档当前状态不适用该治理动作",
+        409,
+        "Wiki.GovernanceActionNotApplicable",
+        "error.wiki.governance_action_not_applicable");
+
+    private static void EnsureExpectedVersions(
+        WikiDocument document,
+        int expectedGovernanceVersion,
+        int? expectedDocumentVersion)
+    {
+        if (document.GovernanceVersion != expectedGovernanceVersion)
+        {
+            throw GovernanceVersionConflict();
+        }
+
+        if (expectedDocumentVersion.HasValue && document.Version != expectedDocumentVersion.Value)
+        {
+            throw DocumentVersionConflict();
+        }
+    }
+
+    private static BusinessException GovernanceVersionConflict() => new(
+        "文档治理状态已变化，请刷新后重新确认",
+        409,
+        "Wiki.GovernanceVersionConflict",
+        "error.wiki.governance_version_conflict");
+
+    private static BusinessException DocumentVersionConflict() => new(
+        "文档正文版本已变化，请刷新证据后重新确认",
+        409,
+        "Wiki.DocumentVersionConflict",
+        "error.wiki.document_version_conflict");
 }

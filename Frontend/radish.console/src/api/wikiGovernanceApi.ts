@@ -30,6 +30,7 @@ export interface WikiDocumentVo {
   voSourceType: string;
   voSourcePath?: string | null;
   voVersion: number;
+  voGovernanceVersion: number;
   voPublishedAt?: string | null;
   voIsDeleted: boolean;
   voDeletedAt?: string | null;
@@ -59,6 +60,36 @@ export interface WikiDocumentRevisionDetailVo extends WikiDocumentRevisionItemVo
   voCreateId: LongId;
 }
 
+export interface WikiDocumentGovernanceEventVo {
+  voId: LongId;
+  voDocumentId: LongId;
+  voAction: string;
+  voFromStatus: number;
+  voToStatus: number;
+  voFromVisibility: number;
+  voToVisibility: number;
+  voFromAllowedRoles: string[];
+  voToAllowedRoles: string[];
+  voFromAllowedPermissions: string[];
+  voToAllowedPermissions: string[];
+  voFromIsDeleted: boolean;
+  voToIsDeleted: boolean;
+  voFromDocumentVersion: number;
+  voToDocumentVersion: number;
+  voExpectedGovernanceVersion: number;
+  voResultGovernanceVersion: number;
+  voSourceRevisionId?: LongId | null;
+  voReason: string;
+  voActorUserId: LongId;
+  voActorName: string;
+  voCreateTime: string;
+}
+
+export interface WikiDocumentGovernanceMutationVo {
+  voDocument: WikiDocumentDetailVo;
+  voEvent: WikiDocumentGovernanceEventVo;
+}
+
 export interface WikiPageModel<T> {
   page: number;
   pageSize: number;
@@ -82,6 +113,17 @@ export interface UpdateWikiAccessPolicyRequest {
   visibility: number;
   allowedRoles?: string[];
   allowedPermissions?: string[];
+  expectedGovernanceVersion: number;
+  reason: string;
+}
+
+export interface WikiGovernanceActionRequest {
+  expectedGovernanceVersion: number;
+  reason: string;
+}
+
+export interface WikiContentGovernanceActionRequest extends WikiGovernanceActionRequest {
+  expectedDocumentVersion: number;
 }
 
 function appendOptionalParam(searchParams: URLSearchParams, key: string, value: string | number | boolean | undefined) {
@@ -131,36 +173,36 @@ export async function getWikiGovernanceDetail(id: LongId, includeDeleted: boolea
   );
 }
 
-export async function publishWikiDocument(id: LongId, t: TFunction): Promise<void> {
-  await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Publish/${encodeURIComponent(id)}`, undefined, { withAuth: true }), t('documents.feedback.publishFailed'));
+export async function publishWikiDocument(id: LongId, request: WikiContentGovernanceActionRequest, t: TFunction): Promise<WikiDocumentGovernanceMutationVo> {
+  return await ensureOk(apiPost<WikiDocumentGovernanceMutationVo>(`/api/v1/Wiki/Publish/${encodeURIComponent(id)}`, request, { withAuth: true }), t('documents.feedback.publishFailed'));
 }
 
-export async function unpublishWikiDocument(id: LongId, t: TFunction): Promise<void> {
-  await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Unpublish/${encodeURIComponent(id)}`, undefined, { withAuth: true }), t('documents.feedback.unpublishFailed'));
+export async function unpublishWikiDocument(id: LongId, request: WikiGovernanceActionRequest, t: TFunction): Promise<WikiDocumentGovernanceMutationVo> {
+  return await ensureOk(apiPost<WikiDocumentGovernanceMutationVo>(`/api/v1/Wiki/Unpublish/${encodeURIComponent(id)}`, request, { withAuth: true }), t('documents.feedback.unpublishFailed'));
 }
 
-export async function archiveWikiDocument(id: LongId, t: TFunction): Promise<void> {
-  await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Archive/${encodeURIComponent(id)}`, undefined, { withAuth: true }), t('documents.feedback.archiveFailed'));
+export async function archiveWikiDocument(id: LongId, request: WikiGovernanceActionRequest, t: TFunction): Promise<WikiDocumentGovernanceMutationVo> {
+  return await ensureOk(apiPost<WikiDocumentGovernanceMutationVo>(`/api/v1/Wiki/Archive/${encodeURIComponent(id)}`, request, { withAuth: true }), t('documents.feedback.archiveFailed'));
 }
 
-export async function deleteWikiDocument(id: LongId, t: TFunction): Promise<void> {
-  await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Delete/${encodeURIComponent(id)}`, undefined, { withAuth: true }), t('documents.feedback.deleteFailed'));
+export async function deleteWikiDocument(id: LongId, request: WikiGovernanceActionRequest, t: TFunction): Promise<WikiDocumentGovernanceMutationVo> {
+  return await ensureOk(apiPost<WikiDocumentGovernanceMutationVo>(`/api/v1/Wiki/Delete/${encodeURIComponent(id)}`, request, { withAuth: true }), t('documents.feedback.deleteFailed'));
 }
 
-export async function restoreWikiDocument(id: LongId, t: TFunction): Promise<void> {
-  await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Restore/${encodeURIComponent(id)}`, undefined, { withAuth: true }), t('documents.feedback.restoreFailed'));
+export async function restoreWikiDocument(id: LongId, request: WikiGovernanceActionRequest, t: TFunction): Promise<WikiDocumentGovernanceMutationVo> {
+  return await ensureOk(apiPost<WikiDocumentGovernanceMutationVo>(`/api/v1/Wiki/Restore/${encodeURIComponent(id)}`, request, { withAuth: true }), t('documents.feedback.restoreFailed'));
 }
 
-export async function updateWikiAccessPolicy(id: LongId, request: UpdateWikiAccessPolicyRequest, t: TFunction): Promise<void> {
-  await ensureOk(
-    apiPut<boolean>(`/api/v1/Wiki/UpdateAccessPolicy/${encodeURIComponent(id)}`, request, { withAuth: true }),
+export async function updateWikiAccessPolicy(id: LongId, request: UpdateWikiAccessPolicyRequest, t: TFunction): Promise<WikiDocumentGovernanceMutationVo> {
+  return await ensureOk(
+    apiPut<WikiDocumentGovernanceMutationVo>(`/api/v1/Wiki/UpdateAccessPolicy/${encodeURIComponent(id)}`, request, { withAuth: true }),
     t('documents.feedback.accessUpdateFailed')
   );
 }
 
-export async function getWikiRevisionList(id: LongId, t: TFunction): Promise<WikiDocumentRevisionItemVo[]> {
+export async function getWikiRevisionList(id: LongId, pageIndex: number, pageSize: number, t: TFunction): Promise<WikiPageModel<WikiDocumentRevisionItemVo>> {
   return await ensureOk(
-    apiGet<WikiDocumentRevisionItemVo[]>(`/api/v1/Wiki/GetRevisionList/${encodeURIComponent(id)}`, { withAuth: true }),
+    apiGet<WikiPageModel<WikiDocumentRevisionItemVo>>(`/api/v1/Wiki/GetRevisionList/${encodeURIComponent(id)}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { withAuth: true }),
     t('documents.feedback.loadRevisionsFailed')
   );
 }
@@ -172,14 +214,21 @@ export async function getWikiRevisionDetail(revisionId: LongId, t: TFunction): P
   );
 }
 
-export async function rollbackWikiRevision(revisionId: LongId, t: TFunction): Promise<void> {
-  await ensureOk(apiPost<boolean>(`/api/v1/Wiki/Rollback/${encodeURIComponent(revisionId)}`, undefined, { withAuth: true }), t('documents.feedback.rollbackFailed'));
+export async function rollbackWikiRevision(revisionId: LongId, request: WikiContentGovernanceActionRequest, t: TFunction): Promise<WikiDocumentGovernanceMutationVo> {
+  return await ensureOk(apiPost<WikiDocumentGovernanceMutationVo>(`/api/v1/Wiki/Rollback/${encodeURIComponent(revisionId)}`, request, { withAuth: true }), t('documents.feedback.rollbackFailed'));
 }
 
-export async function getWikiReviewQueue(t: TFunction): Promise<WikiPageModel<WikiReviewQueueItemVo>> {
+export async function getWikiReviewQueue(pageIndex: number, pageSize: number, t: TFunction): Promise<WikiPageModel<WikiReviewQueueItemVo>> {
   return await ensureOk(
-    apiGet<WikiPageModel<WikiReviewQueueItemVo>>('/api/v1/Wiki/AdminGetReviewQueue?pageIndex=1&pageSize=100', { withAuth: true }),
+    apiGet<WikiPageModel<WikiReviewQueueItemVo>>(`/api/v1/Wiki/AdminGetReviewQueue?pageIndex=${pageIndex}&pageSize=${pageSize}`, { withAuth: true }),
     t('documents.review.feedback.loadQueueFailed'),
+  );
+}
+
+export async function getWikiGovernanceHistory(id: LongId, pageIndex: number, pageSize: number, t: TFunction): Promise<WikiPageModel<WikiDocumentGovernanceEventVo>> {
+  return await ensureOk(
+    apiGet<WikiPageModel<WikiDocumentGovernanceEventVo>>(`/api/v1/Wiki/AdminGetGovernanceHistory/${encodeURIComponent(id)}?pageIndex=${pageIndex}&pageSize=${pageSize}`, { withAuth: true }),
+    t('documents.governance.feedback.loadHistoryFailed'),
   );
 }
 

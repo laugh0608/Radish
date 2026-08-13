@@ -55,6 +55,7 @@ internal static class SchemaMigrationRegistry
         UserBlockNotificationSuppressionSchemaMigration.Instance,
         ChatChannelDiscoverabilitySchemaMigration.Instance,
         ConsoleRoleGovernanceSchemaMigration.Instance,
-        ProductReviewSchemaMigration.Instance
+        ProductReviewSchemaMigration.Instance,
+        WikiDocumentGovernanceSchemaMigration.Instance
     ];
 }

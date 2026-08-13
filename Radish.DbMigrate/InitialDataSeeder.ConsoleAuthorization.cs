@@ -162,6 +162,7 @@ internal static partial class InitialDataSeeder
         new(61140, "/api/v1/Wiki/AdminGetList", "View"),
         new(61140, "/api/v1/Wiki/AdminGetTree", "View"),
         new(61140, "/api/v1/Wiki/AdminGetById/\\d+", "View"),
+        new(61140, "/api/v1/Wiki/AdminGetGovernanceHistory/\\d+", "View"),
         new(61149, "/api/v1/Wiki/AdminGetReviewQueue", "View"),
         new(61149, "/api/v1/Wiki/AdminGetDraftById/\\d+", "View"),
         new(61149, "/api/v1/Wiki/AdminReviewDraft/\\d+", "Action"),

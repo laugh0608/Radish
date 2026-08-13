@@ -61,12 +61,6 @@ public class UpdateWikiDocumentDto
     [StringLength(300, ErrorMessage = "修改说明不能超过300个字符")]
     public string? ChangeSummary { get; set; }
 
-    [Range((int)WikiDocumentVisibilityEnum.Public, (int)WikiDocumentVisibilityEnum.Restricted, ErrorMessage = "文档可见性无效")]
-    public int Visibility { get; set; } = (int)WikiDocumentVisibilityEnum.Authenticated;
-
-    public List<string>? AllowedRoles { get; set; }
-
-    public List<string>? AllowedPermissions { get; set; }
 }
 
 /// <summary>导入 Markdown DTO</summary>
@@ -105,4 +99,29 @@ public class UpdateWikiDocumentAccessPolicyDto
     public List<string>? AllowedRoles { get; set; }
 
     public List<string>? AllowedPermissions { get; set; }
+
+    [Range(0, int.MaxValue, ErrorMessage = "治理版本无效")]
+    public int ExpectedGovernanceVersion { get; set; }
+
+    [Required(ErrorMessage = "治理理由不能为空")]
+    [StringLength(500, ErrorMessage = "治理理由不能超过500个字符")]
+    public string Reason { get; set; } = string.Empty;
+}
+
+/// <summary>不改变正文内容的 Wiki 文档治理动作 DTO。</summary>
+public class WikiDocumentGovernanceActionDto
+{
+    [Range(0, int.MaxValue, ErrorMessage = "治理版本无效")]
+    public int ExpectedGovernanceVersion { get; set; }
+
+    [Required(ErrorMessage = "治理理由不能为空")]
+    [StringLength(500, ErrorMessage = "治理理由不能超过500个字符")]
+    public string Reason { get; set; } = string.Empty;
+}
+
+/// <summary>需要同时确认正文版本的 Wiki 文档治理动作 DTO。</summary>
+public sealed class WikiDocumentContentGovernanceActionDto : WikiDocumentGovernanceActionDto
+{
+    [Range(1, int.MaxValue, ErrorMessage = "正文版本无效")]
+    public int ExpectedDocumentVersion { get; set; }
 }

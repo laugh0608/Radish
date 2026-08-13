@@ -1151,6 +1151,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50178L,
+                ApiModuleName = "Admin get wiki governance history",
+                LinkUrl = "/api/v1/Wiki/AdminGetGovernanceHistory/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetGovernanceHistory",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50153L,
                 ApiModuleName = "Get wiki revision list",
                 LinkUrl = "/api/v1/Wiki/GetRevisionList/\\d+",

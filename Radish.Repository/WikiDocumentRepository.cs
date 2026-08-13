@@ -1,4 +1,7 @@
+using System.Buffers.Binary;
 using System.Linq.Expressions;
+using System.Security.Cryptography;
+using System.Text;
 using Radish.IRepository;
 using Radish.Model;
 using Radish.Repository.Base;
@@ -442,6 +445,188 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
         });
     }
 
+    public Task<(IReadOnlyList<WikiDocumentGovernanceEvent> Items, int Total)> QueryGovernanceHistoryAsync(
+        WikiDocumentGovernanceHistoryQuery query)
+    {
+        return ExecuteDbOperationAsync(async () =>
+        {
+            var documentExists = await CreateTenantQueryableFor<WikiDocument>(includeDeleted: true)
+                .Where(document => document.Id == query.DocumentId && document.TenantId == query.TenantId)
+                .AnyAsync();
+            if (!documentExists)
+            {
+                throw new WikiDocumentGovernanceTargetUnavailableException();
+            }
+
+            RefAsync<int> total = 0;
+            var items = await DbProtectedClient.Queryable<WikiDocumentGovernanceEvent>()
+                .Where(governanceEvent =>
+                    governanceEvent.TenantId == query.TenantId &&
+                    governanceEvent.DocumentId == query.DocumentId)
+                .OrderByDescending(governanceEvent => governanceEvent.ResultGovernanceVersion)
+                .OrderByDescending(governanceEvent => governanceEvent.Id)
+                .ToPageListAsync(query.PageIndex, query.PageSize, total);
+            return ((IReadOnlyList<WikiDocumentGovernanceEvent>)items, total.Value);
+        });
+    }
+
+    public Task<WikiDocumentGovernanceWriteResult> ApplyGovernanceMutationAsync(
+        WikiDocumentGovernanceMutationCommand command)
+    {
+        return ExecuteDbOperationAsync(async () =>
+        {
+            var ownsTransaction = _unitOfWorkManage.TranCount <= 0;
+            if (ownsTransaction)
+            {
+                DbProtectedClient.Ado.BeginTran();
+            }
+
+            try
+            {
+                await AcquireGovernanceLockAsync(command.TenantId, command.DocumentId);
+                var document = await CreateTenantQueryableFor<WikiDocument>(includeDeleted: true)
+                    .Where(candidate =>
+                        candidate.Id == command.DocumentId &&
+                        candidate.TenantId == command.TenantId)
+                    .FirstAsync();
+                if (document == null)
+                {
+                    throw new WikiDocumentGovernanceTargetUnavailableException();
+                }
+
+                if (document.GovernanceVersion != command.ExpectedGovernanceVersion)
+                {
+                    throw new WikiDocumentGovernanceVersionConflictException();
+                }
+
+                if (command.ExpectedDocumentVersion.HasValue &&
+                    document.Version != command.ExpectedDocumentVersion.Value)
+                {
+                    throw new WikiDocumentContentVersionConflictException();
+                }
+
+                var resultGovernanceVersion = command.ExpectedGovernanceVersion + 1;
+                var update = DbProtectedClient.Updateable<WikiDocument>()
+                    .SetColumns(candidate => new WikiDocument
+                    {
+                        Status = command.TargetStatus,
+                        PublishedAt = command.TargetPublishedAt,
+                        Visibility = command.TargetVisibility,
+                        AllowedRoles = command.TargetAllowedRoles,
+                        AllowedPermissions = command.TargetAllowedPermissions,
+                        IsDeleted = command.TargetIsDeleted,
+                        DeletedAt = command.TargetDeletedAt,
+                        DeletedBy = command.TargetDeletedBy,
+                        GovernanceVersion = resultGovernanceVersion,
+                        ModifyTime = command.NowUtc,
+                        ModifyBy = command.ActorName,
+                        ModifyId = command.ActorUserId
+                    });
+                if (command.ContentMutation != null)
+                {
+                    update = update.SetColumns(candidate => new WikiDocument
+                    {
+                        Title = command.ContentMutation.Title,
+                        MarkdownContent = command.ContentMutation.MarkdownContent,
+                        Version = command.ContentMutation.ResultDocumentVersion
+                    });
+                }
+
+                update = update.Where(candidate =>
+                    candidate.Id == command.DocumentId &&
+                    candidate.TenantId == command.TenantId &&
+                    candidate.GovernanceVersion == command.ExpectedGovernanceVersion);
+                if (command.ExpectedDocumentVersion.HasValue)
+                {
+                    var expectedDocumentVersion = command.ExpectedDocumentVersion.Value;
+                    update = update.Where(candidate => candidate.Version == expectedDocumentVersion);
+                }
+
+                var affected = await update.ExecuteCommandAsync();
+                if (affected != 1)
+                {
+                    var current = await CreateTenantQueryableFor<WikiDocument>(includeDeleted: true)
+                        .Where(candidate =>
+                            candidate.Id == command.DocumentId &&
+                            candidate.TenantId == command.TenantId)
+                        .FirstAsync();
+                    if (current == null)
+                    {
+                        throw new WikiDocumentGovernanceTargetUnavailableException();
+                    }
+                    if (command.ExpectedDocumentVersion.HasValue &&
+                        current.Version != command.ExpectedDocumentVersion.Value)
+                    {
+                        throw new WikiDocumentContentVersionConflictException();
+                    }
+                    throw new WikiDocumentGovernanceVersionConflictException();
+                }
+
+                var resultDocumentVersion = command.ContentMutation?.ResultDocumentVersion ?? document.Version;
+                var governanceEvent = new WikiDocumentGovernanceEvent
+                {
+                    Id = SnowFlakeSingle.Instance.NextId(),
+                    TenantId = command.TenantId,
+                    DocumentId = command.DocumentId,
+                    Action = command.Action,
+                    FromStatus = document.Status,
+                    ToStatus = command.TargetStatus,
+                    FromVisibility = document.Visibility,
+                    ToVisibility = command.TargetVisibility,
+                    FromAllowedRoles = document.AllowedRoles,
+                    ToAllowedRoles = command.TargetAllowedRoles,
+                    FromAllowedPermissions = document.AllowedPermissions,
+                    ToAllowedPermissions = command.TargetAllowedPermissions,
+                    FromIsDeleted = document.IsDeleted,
+                    ToIsDeleted = command.TargetIsDeleted,
+                    FromDocumentVersion = document.Version,
+                    ToDocumentVersion = resultDocumentVersion,
+                    ExpectedGovernanceVersion = command.ExpectedGovernanceVersion,
+                    ResultGovernanceVersion = resultGovernanceVersion,
+                    SourceRevisionId = command.SourceRevisionId,
+                    Reason = command.Reason,
+                    ActorUserId = command.ActorUserId,
+                    ActorName = command.ActorName,
+                    CreateTime = command.NowUtc
+                };
+                await DbProtectedClient.Insertable(governanceEvent).ExecuteCommandAsync();
+
+                document.Status = command.TargetStatus;
+                document.PublishedAt = command.TargetPublishedAt;
+                document.Visibility = command.TargetVisibility;
+                document.AllowedRoles = command.TargetAllowedRoles;
+                document.AllowedPermissions = command.TargetAllowedPermissions;
+                document.IsDeleted = command.TargetIsDeleted;
+                document.DeletedAt = command.TargetDeletedAt;
+                document.DeletedBy = command.TargetDeletedBy;
+                document.GovernanceVersion = resultGovernanceVersion;
+                document.ModifyTime = command.NowUtc;
+                document.ModifyBy = command.ActorName;
+                document.ModifyId = command.ActorUserId;
+                if (command.ContentMutation != null)
+                {
+                    document.Title = command.ContentMutation.Title;
+                    document.MarkdownContent = command.ContentMutation.MarkdownContent;
+                    document.Version = command.ContentMutation.ResultDocumentVersion;
+                }
+
+                if (ownsTransaction)
+                {
+                    DbProtectedClient.Ado.CommitTran();
+                }
+                return new WikiDocumentGovernanceWriteResult(document, governanceEvent);
+            }
+            catch
+            {
+                if (ownsTransaction)
+                {
+                    DbProtectedClient.Ado.RollbackTran();
+                }
+                throw;
+            }
+        });
+    }
+
     public async Task<WikiDocument?> QueryByIdIncludingDeletedAsync(long id)
     {
         return await ExecuteDbOperationAsync(
@@ -513,4 +698,19 @@ public class WikiDocumentRepository : BaseRepository<WikiDocument>, IWikiDocumen
         (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.Rejected,
         (int)Radish.Shared.CustomEnum.WikiDocumentDraftState.Withdrawn
     ];
+
+    private async Task AcquireGovernanceLockAsync(long tenantId, long documentId)
+    {
+        if (DbProtectedClient.CurrentConnectionConfig.DbType != DbType.PostgreSQL)
+        {
+            return;
+        }
+
+        var source = $"radish-wiki-governance:{tenantId}:{documentId}";
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(source));
+        var lockKey = BinaryPrimitives.ReadInt64BigEndian(hash);
+        await DbProtectedClient.Ado.ExecuteCommandAsync(
+            "SELECT pg_advisory_xact_lock(@LockKey)",
+            new SugarParameter("@LockKey", lockKey));
+    }
 }

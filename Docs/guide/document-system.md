@@ -2,9 +2,9 @@
 
 > 本文定义 Radish 统一文档体系的长期边界，覆盖 **固定文档挂载**、**在线文档管理**、**正式 Web Author 协作**、**Console 审核治理** 与 **Markdown 导入导出**。
 >
-> **状态**：公开阅读、普通作者协作与 Console 审核已进入稳定维护；Wiki 附件服务端权威契约已完成，正式 Web 认证资源加载继续收口
+> **状态**：公开阅读、普通作者协作、Wiki 附件与 Console 权威治理均已完成代码和静态门禁，等待 R3-C05 成组运行态验收
 >
-> **最后更新**：2026-07-25
+> **最后更新**：2026-08-13
 >
 > **关联文档**：
 > - [前端设计文档](/frontend/design)
@@ -156,7 +156,7 @@ Radish.Api
 └─ Wiki 模块（内部实现命名暂保留）
    ├─ WikiController
    ├─ WikiDocumentService / Authoring Service
-   ├─ WikiDocument / Draft / Collaborator / ReviewEvent / Revision / WikiAttachmentReference
+   ├─ WikiDocument / Draft / Collaborator / ReviewEvent / Revision / GovernanceEvent / WikiAttachmentReference
    ├─ 固定文档启动同步
    └─ 附件系统复用（BusinessType = Wiki）
 
@@ -277,7 +277,7 @@ API 启动时执行固定文档同步：
 在线文档继续使用现有数据库文档模型承载，但产品口径统一为“在线文档”：
 
 - 正式 Web 作者入口支持创建、编辑和版本查看；
-- Console 治理入口支持发布、下架、归档、删除、恢复、访问策略调整、Markdown 导入 / 导出和版本回滚；
+- Console 治理入口支持发布、下架、归档、删除、恢复、访问策略调整、Markdown 导入 / 导出和版本回滚；正文 `Version`、独立 `GovernanceVersion`、审核事件与 append-only 治理事件各自表达不同事实；
 - 支持 `公开可看 / 登录可看 / 指定权限可看` 三层可见性；
 - 三层可见性当前落在 `WikiDocument.Visibility`、`WikiDocument.AllowedRoles`、`WikiDocument.AllowedPermissions` 字段；
 - 在线新建与 Markdown 导入默认创建为“登录可看”，治理人员可后续调整为公开或受限；
@@ -339,13 +339,13 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 - 公开 `/docs/search` 下关键词搜索、分页和详情回跳；
 - 正式 Web 作者入口下普通用户创建、协作者邀请 / 响应、共享工作草稿、提交 / 撤回、冲突恢复和审核时间线；
 - 正式 Web 作者库对内置固定文档和已删除文档展示只读原因，编辑入口只对非内置、未删除文档开放；
-- Console `/documents` 下待审队列、正文证据、RequestChanges / Reject / Apply，以及发布、下架、归档、删除、恢复、访问策略调整、Markdown 导入 / 导出和版本回滚；
+- Console `/documents` 下列表 / 待审队列 URL 真实分页、显式目标选择、正文 / 草稿证据、RequestChanges / Reject / Apply，以及带理由和版本 CAS 的发布、下架、归档、删除、恢复、访问策略、回滚与治理事件历史；
 - WebOS 文档应用下历史工作台阅读和管理能力；
 - 文档三层可见性：`公开可看 / 登录可看 / 指定权限可看`；
 - 文档内链按 Slug 跳转；
 - 图片与文档附件私有上传、权威引用、动态读取授权与历史 Revision 生命周期保护；
 - 父级下拉选择、子孙节点禁选与同级排序建议值；
-- 基于 Node 24 原生测试运行器的前端纯逻辑回归基线。
+- 基于 Node 24 原生测试运行器的前端纯逻辑回归基线；PC 连续表格与 Mobile 单任务卡片共用同一权威快照。
 - 文档应用已完成浅色化与侧栏/主内容区重排，提升目录浏览与阅读空间。
 
 ### 8.3.1 多语言展示与错误契约
@@ -371,7 +371,7 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
   - `Restricted`：仅匹配角色或权限键的登录用户可见；
 - 正式 Web Author 入口面向登录用户开放；创建者成为显式 Owner，Accepted Editor 共享活跃草稿，Pending Invitee 可只读预览草稿与协作上下文并响应，但不能保存；
 - 草稿保存、提交、审核 Apply 和下一稿均由服务端状态、Owner / Collaborator 关系与 CAS 版本裁决，不依赖前端角色名猜测；
-- Console 文档治理使用以下权限键：
+- Console 文档治理继续复用以下权限键；治理历史读取归入 `console.docs.view`，本批不新增权限键：
   - `console.docs.view`
   - `console.docs.review`
   - `console.docs.publish`
@@ -437,7 +437,7 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 - 落地普通作者 Owner / Collaborator、独立工作草稿、双版本 CAS、提交 / 撤回、冲突恢复和审核时间线。
 - 落地 Console `/documents` 待审队列、正文证据、RequestChanges / Reject / Apply，并与独立 `console.docs.review`、后端资源映射和种子数据对齐。
 - 落地 `20260720_007_wiki_author_collaboration` 显式迁移、可靠通知和终态草稿正文保留清理。
-- 落地 `20260725_012_wiki_attachment_authority`，完成 Wiki 私有默认、权威引用、动态 ACL、token 复核、孤立清理和 SQLite / PostgreSQL 历史回填。
+- 落地 `20260725_012_wiki_attachment_authority` 与 `20260813_021_wiki_document_governance`：前者关闭附件私有默认、权威引用、动态 ACL 与清理，后者新增独立治理版本、append-only 治理事件、SQLite / PostgreSQL 幂等迁移和历史版本回填。
 
 ### 11.2 当前稳定口径
 
@@ -446,7 +446,7 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 - `/docs` 只承接按当前身份授权的已发布文档阅读、搜索、内链和链接复制，不承接治理动作；非 Public 详情不生成公开 SEO head，正文附件继续通过认证 Blob 契约读取；
 - 正式 Web Author 入口承接 Owner 创建、协作者邀请 / 响应、共享草稿编辑、提交 / 撤回、冲突恢复和审核时间线；内置固定文档保持只读保护；
 - 作者库必须明确展示不可编辑原因：内置固定文档显示内置只读，已删除文档显示已删除只读，不用静默隐藏编辑入口掩盖数据态；
-- Console `/documents` 承接审核与治理动作，包括 RequestChanges / Reject / Apply、发布、下架、归档、删除、恢复、访问策略、版本回滚、Markdown 导入和导出；Apply 不自动 Publish；
+- Console `/documents` 承接审核与治理动作：列表 / 待审队列由 URL 恢复真实分页，操作者显式选择单一目标；普通编辑不能夹带 ACL，生命周期、访问策略、删除恢复与回滚必须提交理由和期望 `GovernanceVersion`，Publish / Rollback 还校验正文 `Version`；条件更新与 append-only 事件在同一事务提交，成功响应直接返回权威文档与事件，Apply 不自动 Publish；
 - 桌面 WebOS 文档应用当前以稳定维护和历史兼容为主，不再作为新增治理能力的默认扩展入口；
 - 文档源码 `Docs/` 仍是项目说明书 / Wiki 的唯一真相源，不允许运行时回写仓库文件；在线 Wiki 附件以 `Attachment + WikiAttachmentReference` 为真相源，上传者身份、Markdown 扫描、绝对 URL 或临时 token 都不能替代当前引用与 ACL；
 - 公开文档详情仍按“阅读入口 -> 文档正文 -> 阅读说明”的顺序组织，正文前只展示标题、摘要、访问属性、文档属性和时间线；
@@ -531,9 +531,9 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 4. Owner 与 Collaborator 使用相同旧 `ExpectedDraftVersion` 分别保存，确认只允许一个成功，冲突页面保留本地文本并提供复制、下载和重载。
 5. Owner 提交后确认草稿只读；Console `/documents` 查看正式正文 / 草稿证据并分别验证 RequestChanges、Reject 和 Apply，Apply 不自动 Publish。
 6. 对 RequestChanges 修改并重新提交；对终态草稿由 Owner 开启下一稿，确认审核事件和 `/docs/revisions/:id` 正式版本边界清楚。
-7. 使用独立 Publish 权限发布已 Apply 文档，再验证下架、归档和 `Public / Authenticated / Restricted` 访问策略；匿名 `/docs` 只列出 `Public + Published`，有权登录用户还能列出并读取对应非 Public 已发布内容。
+7. 使用独立 Publish 权限、理由、期望治理 / 正文版本发布已 Apply 文档，再验证下架、归档和 `Public / Authenticated / Restricted` 访问策略；并发旧版本应返回冲突且不追加事件，匿名 `/docs` 只列出 `Public + Published`。
 8. 撤销 Collaborator 后确认已打开页面的读取 / 保存失败；普通无权用户无法据响应判断草稿是否存在。
-9. 在 Console `/documents` 抽查 Markdown 导入 / 导出、版本回滚、删除 / 回收站 / 恢复，确认这些治理动作不进入 Author 页面。
+9. 在 Console `/documents` 抽查 Markdown 导入 / 导出、版本回滚、删除 / 回收站 / 恢复和治理事件真实分页，确认成功响应、详情与事件版本一致，且这些治理动作不进入 Author 页面。
 
 #### 12.1.5 预期结果
 
@@ -578,10 +578,10 @@ WebOS 文档应用当前实现以单应用工作台为主，并转入稳定维�
 - [ ] **访问控制生效**：匿名 `/docs` 只展示公开已发布内容；普通登录用户和命中权限用户在同一只读阅读面看到服务端 ACL 允许的已发布范围，作者入口与 Console 的草稿 / 治理范围符合预期；
 - [ ] **目录关系保护**：编辑文档时，父级下拉中不会允许选择当前文档自身及其子孙节点；
 - [ ] **排序建议可用**：切换父级时，排序建议值会联动变化，且可一键采用建议值；
-- [ ] **发布与归档**：已 Apply 的权威正文由独立权限发布；已发布文档可下架或归档，状态展示与列表筛选一致；
+- [ ] **发布与归档**：已 Apply 的权威正文由独立权限、理由、期望治理 / 正文版本发布；已发布文档可下架或归档，冲突保留理由并精确刷新目标，状态、列表和 append-only 事件一致；
 - [ ] **删除与恢复**：在线文档删除后进入回收站，可在回收站中查看并恢复；带子文档的节点会被阻止直接删除；
 - [ ] **导入与导出**：可导入单个 Markdown 文件生成在线文档，也可将在线文档导出为 Markdown；
-- [ ] **版本历史与回滚**：编辑后能看到版本历史，回滚后会生成新的回滚版本且正文恢复正确；
+- [ ] **版本历史与回滚**：正文修订与治理事件分别真实分页；回滚同时校验内容 / 治理版本，生成新正文版本与治理事件，正文恢复正确；
 - [ ] **回收站筛选**：管理员切换“正常文档 / 回收站”视图时，列表与详情加载符合预期；
 - [ ] **前端回归基线**：`npm run test --workspace=radish.client` 通过；同时确认文档应用侧栏、浅色正文与代码高亮视觉协调；
 - [ ] **前端构建**：`npm run build --workspace=radish.client` 与 `npm run build --workspace=radish.console` 通过；
