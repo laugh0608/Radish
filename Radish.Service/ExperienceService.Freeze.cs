@@ -1,6 +1,8 @@
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
+using Radish.IRepository;
 using Radish.Model;
+using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
 using Serilog;
 
@@ -8,167 +10,115 @@ namespace Radish.Service;
 
 public partial class ExperienceService
 {
-    /// <summary>
-    /// 冻结用户经验值
-    /// </summary>
-    public async Task<bool> FreezeExperienceAsync(long userId, DateTime? frozenUntil, string reason, long operatorId, string operatorName)
-    {
-        if (userId <= 0)
-        {
-            Log.Warning("冻结用户经验失败：userId 无效（{UserId}）", userId);
-            return false;
-        }
-
-        if (frozenUntil.HasValue && frozenUntil.Value <= GetUtcNow())
-        {
-            Log.Warning("冻结用户经验失败：冻结到期时间早于当前时间，userId={UserId}, frozenUntil={FrozenUntil}", userId, frozenUntil);
-            return false;
-        }
-
-        var normalizedReason = string.IsNullOrWhiteSpace(reason) ? "管理员冻结经验" : reason.Trim();
-
-        try
-        {
-            return await ExecuteWithRetryAsync(async () =>
-                await FreezeExperienceInternalAsync(userId, frozenUntil, normalizedReason, operatorId, operatorName));
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "冻结用户 {UserId} 经验失败", userId);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// 解冻用户经验值
-    /// </summary>
-    public async Task<bool> UnfreezeExperienceAsync(long userId, long operatorId, string operatorName)
-    {
-        if (userId <= 0)
-        {
-            Log.Warning("解冻用户经验失败：userId 无效（{UserId}）", userId);
-            return false;
-        }
-
-        try
-        {
-            return await ExecuteWithRetryAsync(async () =>
-                await UnfreezeExperienceInternalAsync(userId, operatorId, operatorName));
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "解冻用户 {UserId} 经验失败", userId);
-            return false;
-        }
-    }
-
+    /// <summary>按权威经验版本冻结目标经验。</summary>
     [UseTran(Propagation = Propagation.Required)]
-    private async Task<bool> FreezeExperienceInternalAsync(
+    public async Task<AdminExperienceGovernanceResultVo> FreezeExperienceAsync(
         long userId,
         DateTime? frozenUntil,
         string reason,
         long operatorId,
-        string operatorName)
+        string operatorName,
+        int expectedVersion)
     {
-        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
-        if (userExp == null)
-        {
-            userExp = await InitializeUserExperienceAsync(userId);
-            if (userExp == null)
-            {
-                Log.Error("冻结经验失败：用户 {UserId} 经验值记录初始化失败", userId);
-                return false;
-            }
-        }
-
+        ValidateExperienceMutationIdentity(userId, operatorId, expectedVersion);
         var now = GetUtcNow();
-        var updatedRows = await _userExpRepository.UpdateColumnsAsync(
-            e => new UserExperience
-            {
-                ExpFrozen = true,
-                FrozenUntil = frozenUntil,
-                FrozenReason = reason,
-                Version = e.Version + 1,
-                ModifyTime = now,
-                ModifyBy = operatorName,
-                ModifyId = operatorId
-            },
-            e => e.UserId == userId && e.Version == userExp.Version && !e.IsDeleted
-        );
-
-        if (updatedRows == 0)
+        if (frozenUntil.HasValue && frozenUntil.Value <= now)
         {
-            throw new ConcurrencyException("乐观锁冲突：经验冻结状态已被其他操作修改");
+            throw new BusinessException(
+                "冻结到期时间必须晚于当前时间",
+                400,
+                "Experience.FreezeUntilInvalid",
+                "error.experience.freeze_until_invalid");
         }
 
-        var targetInfo = await ResolveGovernanceTargetAsync(userId, userExp.TenantId);
-        await AddGovernanceActionAsync(
-            targetUserId: userId,
-            targetUserName: targetInfo.UserName,
-            tenantId: targetInfo.TenantId,
-            actionType: ExperienceGovernanceActionTypeEnum.Freeze,
-            remark: NormalizeRequiredSnapshotText(reason, "管理员冻结经验"),
-            operatorId: operatorId,
-            operatorName: operatorName,
+        var normalizedReason = NormalizeExperienceMutationReason(reason, "冻结原因");
+        var normalizedOperatorName = NormalizeExperienceOperatorName(operatorId, operatorName);
+        var current = await RequireExperienceTargetAsync(userId);
+        EnsureExperienceVersion(current.Version, expectedVersion);
+        var target = await ResolveGovernanceTargetAsync(userId, current.TenantId);
+        var action = CreateGovernanceAction(
+            userId,
+            target.UserName,
+            current.TenantId,
+            ExperienceGovernanceActionTypeEnum.Freeze,
+            normalizedReason,
+            operatorId,
+            normalizedOperatorName,
             frozenUntil: frozenUntil);
 
-        Log.Information("用户 {UserId} 经验已冻结，frozenUntil={FrozenUntil}, reason={Reason}", userId, frozenUntil, reason);
-        return true;
+        var result = await ApplyGovernanceActionAsync(
+            current.TenantId,
+            userId,
+            expectedVersion,
+            true,
+            frozenUntil,
+            normalizedReason,
+            action,
+            operatorId,
+            normalizedOperatorName,
+            now);
+        Log.Information(
+            "管理员 {OperatorName}({OperatorId}) 冻结用户 {UserId} 经验，经验版本 {ExpectedVersion} -> {ResultVersion}",
+            normalizedOperatorName,
+            operatorId,
+            userId,
+            expectedVersion,
+            result.VoExperience.VoVersion);
+        return result;
     }
 
+    /// <summary>按权威经验版本解冻目标经验。</summary>
     [UseTran(Propagation = Propagation.Required)]
-    private async Task<bool> UnfreezeExperienceInternalAsync(long userId, long operatorId, string operatorName)
+    public async Task<AdminExperienceGovernanceResultVo> UnfreezeExperienceAsync(
+        long userId,
+        string reason,
+        long operatorId,
+        string operatorName,
+        int expectedVersion)
     {
-        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
-        if (userExp == null)
+        ValidateExperienceMutationIdentity(userId, operatorId, expectedVersion);
+        var normalizedReason = NormalizeExperienceMutationReason(reason, "解冻原因");
+        var normalizedOperatorName = NormalizeExperienceOperatorName(operatorId, operatorName);
+        var current = await RequireExperienceTargetAsync(userId);
+        EnsureExperienceVersion(current.Version, expectedVersion);
+        if (!current.ExpFrozen && !current.FrozenUntil.HasValue && string.IsNullOrWhiteSpace(current.FrozenReason))
         {
-            userExp = await InitializeUserExperienceAsync(userId);
-            if (userExp == null)
-            {
-                Log.Error("解冻经验失败：用户 {UserId} 经验值记录初始化失败", userId);
-                return false;
-            }
+            throw new BusinessException(
+                "目标经验当前未冻结",
+                409,
+                "Experience.GovernanceNoChanges",
+                "error.experience.governance_no_changes");
         }
 
-        var needsReset = userExp.ExpFrozen || userExp.FrozenUntil.HasValue || !string.IsNullOrWhiteSpace(userExp.FrozenReason);
-        if (!needsReset)
-        {
-            return true;
-        }
-
-        var unfreezeRemark = BuildUnfreezeGovernanceRemark(userExp.FrozenReason);
         var now = GetUtcNow();
-        var updatedRows = await _userExpRepository.UpdateColumnsAsync(
-            e => new UserExperience
-            {
-                ExpFrozen = false,
-                FrozenUntil = null,
-                FrozenReason = string.Empty,
-                Version = e.Version + 1,
-                ModifyTime = now,
-                ModifyBy = operatorName,
-                ModifyId = operatorId
-            },
-            e => e.UserId == userId && e.Version == userExp.Version && !e.IsDeleted
-        );
-
-        if (updatedRows == 0)
-        {
-            throw new ConcurrencyException("乐观锁冲突：经验解冻状态已被其他操作修改");
-        }
-
-        var targetInfo = await ResolveGovernanceTargetAsync(userId, userExp.TenantId);
-        await AddGovernanceActionAsync(
-            targetUserId: userId,
-            targetUserName: targetInfo.UserName,
-            tenantId: targetInfo.TenantId,
-            actionType: ExperienceGovernanceActionTypeEnum.Unfreeze,
-            remark: unfreezeRemark,
-            operatorId: operatorId,
-            operatorName: operatorName);
-
-        Log.Information("用户 {UserId} 经验已解冻", userId);
-        return true;
+        var target = await ResolveGovernanceTargetAsync(userId, current.TenantId);
+        var action = CreateGovernanceAction(
+            userId,
+            target.UserName,
+            current.TenantId,
+            ExperienceGovernanceActionTypeEnum.Unfreeze,
+            normalizedReason,
+            operatorId,
+            normalizedOperatorName);
+        var result = await ApplyGovernanceActionAsync(
+            current.TenantId,
+            userId,
+            expectedVersion,
+            false,
+            null,
+            string.Empty,
+            action,
+            operatorId,
+            normalizedOperatorName,
+            now);
+        Log.Information(
+            "管理员 {OperatorName}({OperatorId}) 解冻用户 {UserId} 经验，经验版本 {ExpectedVersion} -> {ResultVersion}",
+            normalizedOperatorName,
+            operatorId,
+            userId,
+            expectedVersion,
+            result.VoExperience.VoVersion);
+        return result;
     }
 
     private async Task<UserExperience> NormalizeFreezeStateAsync(UserExperience userExp)
@@ -179,35 +129,94 @@ public partial class ExperienceService
             return userExp;
         }
 
-        var updatedRows = await _userExpRepository.UpdateColumnsAsync(
-            e => new UserExperience
-            {
-                ExpFrozen = false,
-                FrozenUntil = null,
-                FrozenReason = string.Empty,
-                Version = e.Version + 1,
-                ModifyTime = now,
-                ModifyBy = "System",
-                ModifyId = 0
-            },
-            e => e.Id == userExp.Id && e.Version == userExp.Version && !e.IsDeleted
-        );
-
-        if (updatedRows > 0)
+        var target = await ResolveGovernanceTargetAsync(userExp.UserId, userExp.TenantId);
+        var action = CreateGovernanceAction(
+            userExp.UserId,
+            target.UserName,
+            userExp.TenantId,
+            ExperienceGovernanceActionTypeEnum.AutoUnfreeze,
+            BuildAutomaticUnfreezeRemark(userExp.FrozenReason),
+            0,
+            "System");
+        try
         {
-            userExp.ExpFrozen = false;
-            userExp.FrozenUntil = null;
-            userExp.FrozenReason = string.Empty;
-            userExp.Version += 1;
-            userExp.ModifyTime = now;
-            userExp.ModifyBy = "System";
-            userExp.ModifyId = 0;
-            Log.Information("用户 {UserId} 的临时经验冻结已到期，自动释放", userExp.UserId);
-            return userExp;
+            var result = await _experienceGovernanceRepository.ApplyGovernanceActionAsync(
+                new ExperienceGovernanceMutationCommand(
+                    userExp.TenantId,
+                    userExp.UserId,
+                    userExp.Version,
+                    false,
+                    null,
+                    string.Empty,
+                    action,
+                    0,
+                    "System",
+                    now));
+            Log.Information(
+                "用户 {UserId} 的临时经验冻结已到期并追加自动解冻事件，经验版本 {ExpectedVersion} -> {ResultVersion}",
+                userExp.UserId,
+                userExp.Version,
+                result.Experience.Version);
+            return result.Experience;
         }
+        catch (ExperienceGovernanceStateConflictException)
+        {
+            return await _userExpRepository.QueryFirstAsync(item => item.Id == userExp.Id && !item.IsDeleted)
+                ?? userExp;
+        }
+    }
 
-        var refreshed = await _userExpRepository.QueryFirstAsync(e => e.Id == userExp.Id && !e.IsDeleted);
-        return refreshed ?? userExp;
+    private async Task<AdminExperienceGovernanceResultVo> ApplyGovernanceActionAsync(
+        long tenantId,
+        long userId,
+        int expectedVersion,
+        bool expFrozen,
+        DateTime? frozenUntil,
+        string frozenReason,
+        UserExperienceGovernanceAction action,
+        long operatorId,
+        string operatorName,
+        DateTime now)
+    {
+        try
+        {
+            var writeResult = await _experienceGovernanceRepository.ApplyGovernanceActionAsync(
+                new ExperienceGovernanceMutationCommand(
+                    tenantId,
+                    userId,
+                    expectedVersion,
+                    expFrozen,
+                    frozenUntil,
+                    frozenReason,
+                    action,
+                    operatorId,
+                    operatorName,
+                    now));
+            return new AdminExperienceGovernanceResultVo
+            {
+                VoExperience = await MapToVoAsync(writeResult.Experience)
+                    ?? throw new InvalidOperationException("经验治理结果映射失败"),
+                VoAction = MapGovernanceAction(writeResult.Action)
+            };
+        }
+        catch (ExperienceGovernanceTargetUnavailableException)
+        {
+            throw CreateExperienceTargetUnavailableException();
+        }
+        catch (ExperienceGovernanceStateConflictException)
+        {
+            throw CreateExperienceVersionConflictException();
+        }
+    }
+
+    private static string BuildAutomaticUnfreezeRemark(string? frozenReason)
+    {
+        var normalized = NormalizeOptionalSnapshotText(frozenReason);
+        return string.IsNullOrWhiteSpace(normalized)
+            ? "临时经验冻结到期，系统自动解除"
+            : NormalizeRequiredSnapshotText(
+                $"临时经验冻结到期，系统自动解除；原冻结原因：{normalized}",
+                "临时经验冻结到期，系统自动解除");
     }
 
     private static bool IsFreezeActive(UserExperience userExp, DateTime referenceTime)

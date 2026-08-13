@@ -30,13 +30,14 @@ namespace Radish.Service;
     private readonly IBaseRepository<LevelConfig> _levelConfigRepository;
     private readonly IBaseRepository<UserExpDailyStats> _dailyStatsRepository;
     private readonly IBaseRepository<User> _userRepository;
-    private readonly IBaseRepository<UserExperienceGovernanceAction> _governanceActionRepository;
+    private readonly IExperienceGovernanceRepository _experienceGovernanceRepository;
     private readonly IExperienceCalculator _experienceCalculator;
     private readonly ICoinService _coinService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
     private readonly ICaching _caching;
     private readonly IUnitOfWorkManage? _unitOfWorkManage;
     private readonly IReliableOutboxService? _reliableOutboxService;
+    private readonly IOperationIdempotencyService? _operationIdempotencyService;
     private readonly TimeProvider _timeProvider;
     private readonly BusinessCalendar _businessCalendar;
 
@@ -99,7 +100,7 @@ namespace Radish.Service;
         IBaseRepository<LevelConfig> levelConfigRepository,
         IBaseRepository<UserExpDailyStats> dailyStatsRepository,
         IBaseRepository<User> userRepository,
-        IBaseRepository<UserExperienceGovernanceAction> governanceActionRepository,
+        IExperienceGovernanceRepository experienceGovernanceRepository,
         IExperienceCalculator experienceCalculator,
         ICoinService coinService,
         IAttachmentUrlResolver attachmentUrlResolver,
@@ -108,7 +109,8 @@ namespace Radish.Service;
         TimeProvider timeProvider,
         BusinessCalendar businessCalendar,
         IUnitOfWorkManage? unitOfWorkManage = null,
-        IReliableOutboxService? reliableOutboxService = null)
+        IReliableOutboxService? reliableOutboxService = null,
+        IOperationIdempotencyService? operationIdempotencyService = null)
         : base(mapper, userExpRepository)
     {
         _userExpRepository = userExpRepository;
@@ -116,7 +118,7 @@ namespace Radish.Service;
         _levelConfigRepository = levelConfigRepository;
         _dailyStatsRepository = dailyStatsRepository;
         _userRepository = userRepository;
-        _governanceActionRepository = governanceActionRepository;
+        _experienceGovernanceRepository = experienceGovernanceRepository;
         _experienceCalculator = experienceCalculator;
         _coinService = coinService;
         _attachmentUrlResolver = attachmentUrlResolver;
@@ -124,6 +126,7 @@ namespace Radish.Service;
         _timeProvider = timeProvider;
         _businessCalendar = businessCalendar;
         _reliableOutboxService = reliableOutboxService;
+        _operationIdempotencyService = operationIdempotencyService;
         _unitOfWorkManage = unitOfWorkManage;
     }
 
@@ -509,126 +512,6 @@ namespace Radish.Service;
     #endregion
 
     #region 管理员操作
-
-    /// <summary>
-    /// 记录人工复核结论
-    /// </summary>
-    public async Task<bool> RecordGovernanceReviewAsync(
-        AdminRecordExperienceGovernanceReviewDto request,
-        long operatorId,
-        string operatorName)
-    {
-        if (request.UserId <= 0)
-        {
-            Log.Warning("记录经验治理复核结论失败：userId 无效（{UserId}）", request.UserId);
-            return false;
-        }
-
-        var reviewResult = ParseGovernanceReviewResult(request.ReviewResult);
-        if (reviewResult == ExperienceGovernanceReviewResultEnum.Unknown)
-        {
-            Log.Warning("记录经验治理复核结论失败：reviewResult 无效（{ReviewResult}），userId={UserId}", request.ReviewResult, request.UserId);
-            return false;
-        }
-
-        var normalizedRemark = NormalizeRequiredSnapshotText(request.Remark, "经验治理人工复核");
-        if (string.IsNullOrWhiteSpace(normalizedRemark))
-        {
-            Log.Warning("记录经验治理复核结论失败：remark 为空，userId={UserId}", request.UserId);
-            return false;
-        }
-
-        try
-        {
-            var targetInfo = await ResolveGovernanceTargetAsync(request.UserId);
-            await AddGovernanceActionAsync(
-                targetUserId: request.UserId,
-                targetUserName: targetInfo.UserName,
-                tenantId: targetInfo.TenantId,
-                actionType: ExperienceGovernanceActionTypeEnum.Review,
-                remark: normalizedRemark,
-                operatorId: operatorId,
-                operatorName: operatorName,
-                reviewResult: reviewResult,
-                windowDays: NormalizeGovernanceWindowDays(request.WindowDays),
-                statDate: request.StatDate,
-                ruleCodes: request.RuleCodes,
-                ruleLabels: request.RuleLabels,
-                recommendationLevel: NormalizeRecommendationLevel(request.RecommendationLevel),
-                recommendationReason: NormalizeOptionalSnapshotText(request.RecommendationReason));
-
-            Log.Information(
-                "管理员 {OperatorName}({OperatorId}) 记录用户 {UserId} 经验治理复核结论成功，reviewResult={ReviewResult}",
-                operatorName,
-                operatorId,
-                request.UserId,
-                request.ReviewResult);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "记录用户 {UserId} 经验治理复核结论失败", request.UserId);
-            return false;
-        }
-    }
-
-    /// <summary>
-    /// 管理员重新计算并更新所有等级配置（根据当前配置文件）
-    /// </summary>
-    public async Task<List<LevelConfigVo>> RecalculateLevelConfigsAsync(long operatorId, string operatorName)
-    {
-        try
-        {
-            Log.Information("管理员 {OperatorName}({OperatorId}) 开始重新计算等级配置", operatorName, operatorId);
-
-            // 1. 使用计算器生成新的经验值配置
-            var levelExpData = _experienceCalculator.CalculateAllLevels();
-            Log.Information("使用 {FormulaType} 公式计算经验值: {Summary}",
-                _experienceCalculator.GetFormulaType(),
-                _experienceCalculator.GetConfigSummary());
-
-            // 2. 更新数据库中的等级配置
-            var updatedConfigs = new List<LevelConfig>();
-
-            foreach (var (level, (expRequired, expCumulative)) in levelExpData)
-            {
-                var config = await _levelConfigRepository.QueryFirstAsync(l => l.Level == level);
-                if (config != null)
-                {
-                    // 更新已存在的配置
-                    config.ExpRequired = expRequired;
-                    config.ExpCumulative = expCumulative;
-                    config.ModifyTime = GetUtcNow();
-                    config.ModifyBy = operatorName;
-                    config.ModifyId = operatorId;
-
-                    await _levelConfigRepository.UpdateAsync(config);
-                    updatedConfigs.Add(config);
-
-                    Log.Information("更新等级配置: Lv.{Level} ({Name}) - ExpRequired={ExpRequired}, ExpCumulative={ExpCumulative}",
-                        level, config.LevelName, expRequired, expCumulative);
-                }
-                else
-                {
-                    Log.Warning("等级 {Level} 配置不存在，跳过更新", level);
-                }
-            }
-
-            // 3. 清除计算器缓存
-            _experienceCalculator.ClearCache();
-            await InvalidateLevelConfigsCacheAsync();
-
-            Log.Information("等级配置重新计算完成，共更新 {Count} 个等级", updatedConfigs.Count);
-
-            // 4. 返回更新后的配置列表
-            return await GetLevelConfigsAsync();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "重新计算等级配置失败");
-            throw;
-        }
-    }
 
     #endregion
 

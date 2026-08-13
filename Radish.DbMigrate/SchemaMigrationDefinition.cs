@@ -56,6 +56,7 @@ internal static class SchemaMigrationRegistry
         ChatChannelDiscoverabilitySchemaMigration.Instance,
         ConsoleRoleGovernanceSchemaMigration.Instance,
         ProductReviewSchemaMigration.Instance,
-        WikiDocumentGovernanceSchemaMigration.Instance
+        WikiDocumentGovernanceSchemaMigration.Instance,
+        ExperienceAuthoritativeGovernanceSchemaMigration.Instance
     ];
 }

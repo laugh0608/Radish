@@ -1,8 +1,8 @@
 # F4-R 家族 UI 统一接入与产品视觉重构
 
-> 日期：2026-07-30；2026-08-11 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-13 更新（Asia/Shanghai）
 >
-> 状态：A / B、v26.7.3 破坏性基线补充批、C-0、C-1A、六个 R1、四个 R2 与 `R3-P04 / P05 / P06` 已关闭；R3-C04 六批和 `R3-C05-A Dashboard` 已完成代码与静态门禁，下一顺位为 `R3-C05-B Channel Discoverability`
+> 状态：A / B、v26.7.3 基线补充、C-0、C-1A、六个 R1、四个 R2、三个 Public R3、R3-C04 六批与 R3-C05 四批均已关闭；下一顺位为 `R3-F02 自服务与边界页`
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
@@ -206,7 +206,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
-同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次完成 readiness、必要能力门禁、代表设计、正式实现和 Gateway PC / mobile 验收。六个 R1 与四个 R2 的代表类型已经形成闭环；R3 的 `P04 Forum / P05 Docs 与 Legal / P06 Shop 与 Leaderboard` 已按继承规则实现并通过 Gateway，普通 Console 资源 `C04-A` 至 `C04-F` 已全部关闭代码和静态门禁；`C05-A Dashboard` 继续继承 `R1-F01 + R2-W02 + Console 壳层`，关闭权威读取、伪队列 / 伪命令和 Mobile 最近订单承载。下一顺位为 `R3-C05-B Channel Discoverability`。
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次形成闭环。三个 Public R3、R3-C04 六批与 R3-C05 四批也已完成；[C05 成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)确认 Dashboard、Channel、Documents 与 Experience 的代表继承、PC / Mobile 和双语边界成立。下一顺位为 `R3-F02 自服务与边界页`。
 
 ### 9.2 设计源
 
@@ -262,7 +262,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 - Public 页面族。
 - Private / Author 页面族。
 - Console 页面族。
-- R3 页面按代表画板继承说明成组实现；[当前正式路由分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定 Public Forum 浏览、Docs / Legal、Shop / Leaderboard、Console 普通资源、Console 仪表 / 治理派生与自服务 / 边界页顺序。前三批已关闭，Console 普通资源继续按 [C04 风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)逐批推进；若暴露新结构或响应式模型，再升级为 R1 / R2。
+- R3 页面按代表画板继承说明成组实现；[当前正式路由分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定六组顺位。前五组已关闭，当前只剩 `R3-F02 自服务与边界页`；若审计暴露新结构或响应式模型，再升级为 R1 / R2。
 - Web 基线稳定后建立 Flutter 语义映射和高价值代表页。
 - WebOS 只做兼容回归；Tauri 不进入矩阵。
 

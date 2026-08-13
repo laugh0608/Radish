@@ -585,6 +585,21 @@
   <data name="error.experience.review_rejected" xml:space="preserve">
     <value>The governance review result could not be recorded. Verify the submitted details.</value>
   </data>
+  <data name="error.experience.target_unavailable" xml:space="preserve"><value>The experience governance target is unavailable.</value></data>
+  <data name="error.experience.version_conflict" xml:space="preserve"><value>The experience state changed. Refresh the target and confirm again.</value></data>
+  <data name="error.experience.adjustment_no_changes" xml:space="preserve"><value>This adjustment would not change the target state.</value></data>
+  <data name="error.experience.adjustment_processing" xml:space="preserve"><value>The same adjustment is still processing. Refresh experience and transactions before continuing.</value></data>
+  <data name="error.experience.adjustment_idempotency_conflict" xml:space="preserve"><value>This request identifier was already used for different adjustment details.</value></data>
+  <data name="error.experience.adjustment_idempotency_invalid" xml:space="preserve"><value>The experience adjustment request identifier is invalid.</value></data>
+  <data name="error.experience.adjustment_replay_unavailable" xml:space="preserve"><value>The previous adjustment result is unavailable. Refresh the target experience and transactions.</value></data>
+  <data name="error.experience.review_result_invalid" xml:space="preserve"><value>The experience governance review result is invalid.</value></data>
+  <data name="error.experience.review_processing" xml:space="preserve"><value>The same review is still processing. Refresh governance history before continuing.</value></data>
+  <data name="error.experience.review_idempotency_conflict" xml:space="preserve"><value>This request identifier was already used for different review details.</value></data>
+  <data name="error.experience.review_idempotency_invalid" xml:space="preserve"><value>The review request identifier is invalid.</value></data>
+  <data name="error.experience.review_replay_unavailable" xml:space="preserve"><value>The previous review result is unavailable. Refresh experience and governance history.</value></data>
+  <data name="error.experience.governance_no_changes" xml:space="preserve"><value>The target governance state did not change.</value></data>
+  <data name="error.experience.level_preview_conflict" xml:space="preserve"><value>The level configuration or formula changed. Generate a new preview and confirm again.</value></data>
+  <data name="error.experience.level_no_changes" xml:space="preserve"><value>The level configuration already matches the formula.</value></data>
   <data name="error.chat.channel_unavailable" xml:space="preserve">
     <value>The conversation does not exist or this account cannot access it.</value>
   </data>

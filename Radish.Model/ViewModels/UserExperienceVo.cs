@@ -105,4 +105,7 @@ public class UserExperienceVo
     /// 冻结原因
     /// </summary>
     public string? VoFrozenReason { get; set; }
+
+    /// <summary>经验聚合乐观锁版本。</summary>
+    public int VoVersion { get; set; }
 }

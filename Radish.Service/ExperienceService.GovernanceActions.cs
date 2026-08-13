@@ -1,7 +1,9 @@
+using Radish.Common;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
 using System.Text.Json;
+using SqlSugar;
 
 namespace Radish.Service;
 
@@ -113,6 +115,7 @@ public partial class ExperienceService
             ExperienceGovernanceActionTypeEnum.Review => "Review",
             ExperienceGovernanceActionTypeEnum.Freeze => "Freeze",
             ExperienceGovernanceActionTypeEnum.Unfreeze => "Unfreeze",
+            ExperienceGovernanceActionTypeEnum.AutoUnfreeze => "AutoUnfreeze",
             _ => "Unknown"
         };
     }
@@ -124,6 +127,7 @@ public partial class ExperienceService
             ExperienceGovernanceActionTypeEnum.Review => "人工复核",
             ExperienceGovernanceActionTypeEnum.Freeze => "冻结经验",
             ExperienceGovernanceActionTypeEnum.Unfreeze => "解除冻结",
+            ExperienceGovernanceActionTypeEnum.AutoUnfreeze => "到期自动解冻",
             _ => "未知动作"
         };
     }
@@ -224,6 +228,8 @@ public partial class ExperienceService
             VoRecommendationTitle = GetGovernanceRecommendationTitle(action.RecommendationLevel),
             VoRecommendationReason = action.RecommendationReason,
             VoFrozenUntil = action.FrozenUntil,
+            VoExpectedVersion = action.ExpectedVersion,
+            VoResultVersion = action.ResultVersion,
             VoOperatorId = action.CreateId,
             VoOperatorName = action.CreateBy,
             VoCreateTime = action.CreateTime
@@ -257,7 +263,7 @@ public partial class ExperienceService
         return new ExperienceGovernanceTargetSnapshot(tenantId, userName);
     }
 
-    private async Task AddGovernanceActionAsync(
+    private UserExperienceGovernanceAction CreateGovernanceAction(
         long targetUserId,
         string targetUserName,
         long tenantId,
@@ -274,9 +280,9 @@ public partial class ExperienceService
         string? recommendationReason = null,
         DateTime? frozenUntil = null)
     {
-        var now = GetUtcNow();
-        var action = new UserExperienceGovernanceAction
+        return new UserExperienceGovernanceAction
         {
+            Id = SnowFlakeSingle.Instance.NextId(),
             TargetUserId = targetUserId,
             TargetUserName = NormalizeOptionalSnapshotText(targetUserName, 100) ?? $"User-{targetUserId}",
             TenantId = tenantId > 0 ? tenantId : 0,
@@ -292,11 +298,9 @@ public partial class ExperienceService
             RecommendationLevel = NormalizeRecommendationLevel(recommendationLevel),
             RecommendationReason = NormalizeOptionalSnapshotText(recommendationReason),
             FrozenUntil = frozenUntil,
-            CreateTime = now,
+            CreateTime = GetUtcNow(),
             CreateBy = operatorName,
             CreateId = operatorId
         };
-
-        await _governanceActionRepository.AddAsync(action);
     }
 }

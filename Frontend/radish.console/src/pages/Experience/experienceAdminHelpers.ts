@@ -16,15 +16,13 @@ import {
 } from '@/utils/localeFormatters';
 
 export interface FreezeFormValues {
-  userId: string;
   reason: string;
   frozenUntil?: Dayjs;
 }
 
 export interface AdjustFormValues {
-  userId: string;
   deltaExp: number;
-  reason?: string;
+  reason: string;
 }
 
 export type GovernanceReviewResult = 'NoIssue' | 'Observe' | 'FreezeSuggest';
@@ -78,6 +76,17 @@ export const EXPERIENCE_TRANSACTION_TYPES = [
 export function normalizePositiveLongIdInput(value: string): string | undefined {
   const trimmed = value.trim();
   return /^[1-9]\d*$/.test(trimmed) ? trimmed : undefined;
+}
+
+export function createExperienceGovernanceIdempotencyKey(
+  operation: 'adjust' | 'review',
+  userId: string,
+  version: number
+): string {
+  const randomPart = typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+  return `experience-${operation}-${userId}-v${version}-${randomPart}`.slice(0, 80);
 }
 
 export function isFormValidationError(error: unknown): error is { errorFields: unknown[] } {
@@ -163,6 +172,7 @@ export function getGovernanceActionTagColor(actionType?: UserExperienceGovernanc
     case 'Freeze':
       return 'error';
     case 'Unfreeze':
+    case 'AutoUnfreeze':
       return 'success';
     default:
       return 'default';

@@ -1,5 +1,5 @@
 import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, type Root } from 'react-dom/client'
 import { antdLocales, ThemeProvider, App as AntApp, AntdFeedbackBridge } from '@radish/ui'
 import { useTranslation } from 'react-i18next'
 import { getApiBaseUrl } from './config/env'
@@ -34,7 +34,14 @@ export function ConsoleRoot() {
   )
 }
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById('root')!
+const root = (import.meta.hot?.data.consoleRoot as Root | undefined) ?? createRoot(rootElement)
+
+if (import.meta.hot) {
+  import.meta.hot.data.consoleRoot = root
+}
+
+root.render(
   <StrictMode>
     <ConsoleRoot />
   </StrictMode>,

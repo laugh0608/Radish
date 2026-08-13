@@ -1,8 +1,8 @@
 # F4-R C-1 代表页代码事实审计
 
-> 日期：2026-07-30；2026-08-11 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-13 更新（Asia/Shanghai）
 >
-> 状态：C-1A、六个 R1、四个 R2 与 `R3-P04 / P05 / P06` 已关闭；R3-C04 六批和 `R3-C05-A Dashboard` 已完成代码与静态门禁
+> 状态：C-1A、六个 R1、四个 R2、三个 Public R3、R3-C04 六批与 R3-C05 四批均已关闭；下一顺位为 `R3-F02 自服务与边界页`
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -122,7 +122,7 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 
 每个 R3 实现批次仍需写明代表来源、局部差异、关键状态与 mobile 转换。发现继承不成立时停止扩张并升级分级。
 
-`2026-08-11` 的[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)已按当前正式 Client / Console 路由补齐 Dashboard 与 Channel Discoverability，并确认 Settings / Profile、公开 Docs 详情与 Legal 尚未被前述 R2 批实际关闭。`R3-P04 Forum / P05 Docs 与 Legal / P06 Shop 与 Leaderboard` 随后完成正式实现与 Gateway PC / Mobile 验收；[R3-C04 普通资源审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)拆出的六批普通资源均已关闭代码和静态门禁。[R3-C05 审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)确认 Dashboard、Channel、Documents 与 Experience 的既有继承成立；`C05-A Dashboard` 已完成权威状态与响应式承载，下一步为 `C05-B Channel Discoverability`。
+`2026-08-11` 的[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定了六组 R3 顺位。`R3-P04 / P05 / P06`、R3-C04 六批与 R3-C05 四批均已完成；[R3-C05 成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)确认既有继承成立。下一步反查 `R3-F02` 的 Settings / Profile、登录、OIDC 回流和 Not Found；继承成立时继续不修改 Pencil。
 
 ## 7. 本批不纳入代表设计
 
@@ -146,7 +146,7 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 10. `R2-P03` readiness、两批能力门禁、七轮结构反馈、商品评价补充设计、正式商品详情 / 公开主页和 Gateway PC / mobile 运行态验收均已完成，专题关闭。
 11. `R2-W02` readiness、五组前端能力门禁、三张局部代表板、六个正式入口实现与 Gateway PC / mobile 成组验收均已完成，专题关闭。
 12. `R2-A02` readiness、五组能力门禁、九张确认代表板、正式实现与 Gateway PC / Mobile 运行态验收均已完成，专题关闭。
-13. 六个 R1 与四个 R2 均已形成设计—实现—运行态闭环；`R3-P04 / P05 / P06`、`R3-C04-A` 至 `C04-F` 与 `R3-C05-A` 已按分批结论关闭，下一步实施 `R3-C05-B Channel Discoverability`，保持领域 owner、既有代表继承和共享列表壳层边界。
+13. 六个 R1、四个 R2、`R3-P04 / P05 / P06`、`R3-C04-A` 至 `C04-F` 与 R3-C05 四批均已形成闭环；下一步进入 `R3-F02` 设计前代码事实审计，保持身份、错误原因、来源返回和既有代表继承边界。
 14. R3 继承不成立或发现新结构 / 响应式模型时，必须停止扩张并按自动升级条件重新裁决 R1 / R2。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。

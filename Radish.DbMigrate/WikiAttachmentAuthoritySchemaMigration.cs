@@ -332,7 +332,16 @@ internal sealed class WikiAttachmentAuthoritySchemaMigration : ISchemaMigration
 
     private static IEnumerable<SourceReferenceSet> EnumerateSources(ISqlSugarClient db)
     {
-        foreach (var document in db.Queryable<WikiDocument>().ToList())
+        var documents = db.Queryable<WikiDocument>()
+            .Select(document => new
+            {
+                document.TenantId,
+                document.Id,
+                document.MarkdownContent,
+                document.CoverAttachmentId
+            })
+            .ToList();
+        foreach (var document in documents)
         {
             yield return new SourceReferenceSet(
                 document.TenantId,
@@ -456,6 +465,11 @@ internal sealed class WikiAttachmentAuthoritySchemaMigration : ISchemaMigration
     {
         var issues = new List<string>();
         var documents = db.Queryable<WikiDocument>()
+            .Select(document => new
+            {
+                document.Id,
+                document.TenantId
+            })
             .ToList()
             .ToDictionary(document => document.Id);
         foreach (var draft in db.Queryable<WikiDocumentDraft>().ToList())

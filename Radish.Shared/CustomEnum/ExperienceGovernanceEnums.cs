@@ -6,7 +6,8 @@ public enum ExperienceGovernanceActionTypeEnum
     Unknown = 0,
     Review = 1,
     Freeze = 2,
-    Unfreeze = 3
+    Unfreeze = 3,
+    AutoUnfreeze = 4
 }
 
 /// <summary>经验治理人工复核结论</summary>

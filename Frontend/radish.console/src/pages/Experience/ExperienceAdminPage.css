@@ -179,6 +179,77 @@
   word-break: break-word;
 }
 
+.experience-authoritative-target {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: 10px;
+  background: var(--console-bg-surface);
+}
+
+.experience-authoritative-target span,
+.experience-mobile-card span,
+.experience-recalculation-preview p {
+  color: var(--console-text-secondary);
+}
+
+.experience-read-state-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.experience-read-state-strip__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: 10px;
+  background: var(--console-bg-surface);
+  color: var(--console-text-secondary);
+}
+
+.experience-mobile-list {
+  display: none;
+  gap: 10px;
+}
+
+.experience-mobile-list--always {
+  display: grid;
+}
+
+.experience-mobile-card {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: 12px;
+  background: var(--console-bg-surface);
+}
+
+.experience-recalculation-preview {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: 12px;
+  background: var(--console-bg-surface);
+}
+
+.experience-recalculation-preview p {
+  margin: 6px 0 0;
+}
+
+.experience-recalculation-changes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
 @media (max-width: 768px) {
   .experience-query-control,
   .experience-filter-control {
@@ -198,6 +269,22 @@
   }
 
   .experience-rule-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .experience-responsive-table .ant-table-container {
+    display: none;
+  }
+
+  .experience-mobile-list {
+    display: grid;
+  }
+
+  .experience-recalculation-changes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .experience-read-state-strip {
     grid-template-columns: minmax(0, 1fr);
   }
 }

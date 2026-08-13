@@ -332,6 +332,14 @@ export function createGovernanceActionColumns(t: TFunction, language?: string): 
       ),
     },
     {
+      title: t('experience.table.version'),
+      key: 'version',
+      width: 130,
+      render: (_, record) => record.voExpectedVersion == null || record.voResultVersion == null
+        ? <span className="experience-table-muted">-</span>
+        : `${record.voExpectedVersion} → ${record.voResultVersion}`,
+    },
+    {
       title: t('experience.table.operatorTime'),
       key: 'operator',
       width: 220,

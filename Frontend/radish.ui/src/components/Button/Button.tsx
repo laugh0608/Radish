@@ -9,6 +9,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 export const Button = ({
+  type = 'button',
   variant = 'primary',
   size = 'medium',
   icon,
@@ -24,7 +25,7 @@ export const Button = ({
   ].filter(Boolean).join(' ');
 
   return (
-    <button className={classes} {...props}>
+    <button type={type} className={classes} {...props}>
       {icon && <span className="radish-button__icon">{icon}</span>}
       {children}
     </button>

@@ -11,6 +11,7 @@ import {
   type GovernanceReviewFormValues,
 } from './experienceAdminHelpers';
 import { useTranslation } from 'react-i18next';
+import { formatConsoleDateTime } from '@/utils/localeFormatters';
 
 type ExperienceGovernanceReviewSectionProps = {
   reviewSectionRef: RefObject<HTMLElement | null>;
@@ -21,7 +22,11 @@ type ExperienceGovernanceReviewSectionProps = {
   canFreeze: boolean;
   reviewing: boolean;
   governanceActions: UserExperienceGovernanceActionVo[];
+  governanceActionTotal: number;
+  governanceActionPageIndex: number;
+  governanceActionPageSize: number;
   loadingGovernanceActions: boolean;
+  onGovernanceActionPageChange: (page: number, pageSize: number) => void;
   onRecordGovernanceReview: () => void;
   onClearReviewDraft: () => void;
 };
@@ -35,7 +40,11 @@ export const ExperienceGovernanceReviewSection = ({
   canFreeze,
   reviewing,
   governanceActions,
+  governanceActionTotal,
+  governanceActionPageIndex,
+  governanceActionPageSize,
   loadingGovernanceActions,
+  onGovernanceActionPageChange,
   onRecordGovernanceReview,
   onClearReviewDraft,
 }: ExperienceGovernanceReviewSectionProps) => {
@@ -126,13 +135,32 @@ export const ExperienceGovernanceReviewSection = ({
             columns={governanceActionColumns}
             dataSource={governanceActions}
             loading={loadingGovernanceActions}
-            pagination={false}
+            pagination={{
+              current: governanceActionPageIndex,
+              pageSize: governanceActionPageSize,
+              total: governanceActionTotal,
+              showSizeChanger: true,
+              onChange: onGovernanceActionPageChange,
+            }}
             scroll={{ x: 1280 }}
-            className="experience-section-gap-sm"
+            className="experience-responsive-table experience-section-gap-sm"
             locale={{
               emptyText: loadingGovernanceActions ? t('experience.review.loading') : t('experience.review.empty'),
             }}
           />
+          <div className="experience-mobile-list experience-section-gap-sm">
+            {governanceActions.map((action) => (
+              <article key={action.voActionId} className="experience-mobile-card">
+                <strong>{action.voActionTypeDisplay}</strong>
+                <span>{action.voReviewResultDisplay || action.voRemark}</span>
+                <span>{t('experience.review.versionSnapshot', {
+                  expected: action.voExpectedVersion ?? '-',
+                  result: action.voResultVersion ?? '-',
+                })}</span>
+                <span>{action.voOperatorName || `#${action.voOperatorId}`} · {formatConsoleDateTime(action.voCreateTime, i18n.resolvedLanguage)}</span>
+              </article>
+            ))}
+          </div>
         </>
       ) : (
         <div className="experience-empty-hint">

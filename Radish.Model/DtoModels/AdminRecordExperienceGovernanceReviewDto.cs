@@ -42,4 +42,13 @@ public class AdminRecordExperienceGovernanceReviewDto
     /// <summary>治理建议原因快照</summary>
     [MaxLength(500, ErrorMessage = "治理建议原因不能超过500个字符")]
     public string? RecommendationReason { get; set; }
+
+    /// <summary>证据快照对应的经验聚合版本。</summary>
+    [Range(0, int.MaxValue, ErrorMessage = "经验版本不能小于0")]
+    public int ExpectedVersion { get; set; }
+
+    /// <summary>人工复核追加写入的客户端幂等键。</summary>
+    [Required(ErrorMessage = "幂等键不能为空")]
+    [MaxLength(80, ErrorMessage = "幂等键不能超过80个字符")]
+    public string IdempotencyKey { get; set; } = string.Empty;
 }

@@ -1,4 +1,5 @@
 using Radish.Common.AttributeTool;
+using Radish.IRepository;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
@@ -83,19 +84,32 @@ public partial class ExperienceService
     /// <summary>
     /// 获取用户最近的经验治理留痕
     /// </summary>
-    public async Task<List<UserExperienceGovernanceActionVo>> GetGovernanceActionsAsync(long userId, int take = 20)
+    public async Task<PageModel<UserExperienceGovernanceActionVo>> GetGovernanceActionsAsync(
+        long userId,
+        int pageIndex = 1,
+        int pageSize = 20)
     {
         try
         {
-            var safeTake = NormalizeGovernanceActionTake(take);
-            var (actions, _) = await _governanceActionRepository.QueryPageAsync(
-                action => action.TargetUserId == userId && !action.IsDeleted,
-                1,
-                safeTake,
-                action => action.CreateTime,
-                OrderByType.Desc);
+            var safePageIndex = Math.Max(1, pageIndex);
+            var safePageSize = NormalizeGovernanceActionTake(pageSize);
+            var target = await _userExpRepository.QueryFirstAsync(item => item.UserId == userId && !item.IsDeleted)
+                ?? throw new ExperienceGovernanceTargetUnavailableException();
+            var (actions, total) = await _experienceGovernanceRepository.QueryActionsPageAsync(
+                new ExperienceGovernanceActionPageQuery(
+                    target.TenantId,
+                    userId,
+                    safePageIndex,
+                    safePageSize));
 
-            return actions.Select(MapGovernanceAction).ToList();
+            return new PageModel<UserExperienceGovernanceActionVo>
+            {
+                Page = safePageIndex,
+                PageSize = safePageSize,
+                DataCount = total,
+                PageCount = (int)Math.Ceiling(total / (double)safePageSize),
+                Data = actions.Select(MapGovernanceAction).ToList()
+            };
         }
         catch (Exception ex)
         {

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useSearchParams } from 'react-router';
+import { ApiResponseError } from '@radish/http';
 import {
   Button,
   Form,
@@ -12,6 +14,9 @@ import {
   adminFreezeExperience,
   adminUnfreezeExperience,
   getLevelConfigs,
+  getLevelRecalculationAudits,
+  type ExperienceLevelRecalculationAuditVo,
+  type ExperienceLevelRecalculationPreviewVo,
   type UserExpAnomalyRuleSummaryVo,
   getUserDailyStats,
   getUserGovernanceActions,
@@ -19,6 +24,7 @@ import {
   type UserExpGovernanceRecommendationVo,
   type UserExperienceGovernanceActionVo,
   getUserExperience,
+  previewLevelConfigRecalculation,
   recalculateLevelConfigs,
   type LevelConfigVo,
   type UserExpDailyStatsVo,
@@ -39,6 +45,7 @@ import { formatConsoleDateTime, formatConsoleInteger } from '@/utils/localeForma
 import dayjs, { type Dayjs } from 'dayjs';
 import {
   formatFullStatDate,
+  createExperienceGovernanceIdempotencyKey,
   getGovernanceReviewResultForRecommendationLevel,
   getGovernanceReviewResultForRuleSeverity,
   getTransactionExpTypePresetForRuleCodes,
@@ -61,24 +68,70 @@ import { ExperienceUserQuerySummary } from './ExperienceUserQuerySummary';
 import '../adminFeature.css';
 import './ExperienceAdminPage.css';
 
+type ExperienceReadState = 'idle' | 'loading' | 'ready' | 'unavailable' | 'stale';
+
+const getExperienceReadStateTone = (state: ExperienceReadState) => {
+  switch (state) {
+    case 'ready':
+      return 'success' as const;
+    case 'loading':
+      return 'info' as const;
+    case 'stale':
+      return 'warning' as const;
+    case 'unavailable':
+      return 'danger' as const;
+    default:
+      return 'neutral' as const;
+  }
+};
+
+const isExperienceVersionConflict = (error: unknown) => (
+  error instanceof ApiResponseError && error.code === 'Experience.VersionConflict'
+);
+
+const isExperienceWriteStateUncertain = (error: unknown) => (
+  error instanceof ApiResponseError && [
+    'Experience.AdjustmentProcessing',
+    'Experience.AdjustmentReplayUnavailable',
+    'Experience.ReviewProcessing',
+    'Experience.ReviewReplayUnavailable',
+  ].includes(error.code ?? '')
+);
+
 export const ExperienceAdminPage = () => {
   const { t, i18n } = useTranslation();
   useDocumentTitle(t('experience.documentTitle'));
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTargetUserId = normalizePositiveLongIdInput(searchParams.get('target') ?? '');
+  const initialStatsWindow = searchParams.get('stats') === '30' ? 30 : 7;
+  const initialTransactionPage = Math.max(1, Number(searchParams.get('txnPage')) || 1);
+  const initialTransactionPageSize = Math.min(100, Math.max(1, Number(searchParams.get('txnSize')) || 10));
+  const initialActionPage = Math.max(1, Number(searchParams.get('actionPage')) || 1);
+  const initialActionPageSize = Math.min(100, Math.max(1, Number(searchParams.get('actionSize')) || 10));
 
-  const [queryUserId, setQueryUserId] = useState('');
+  const [queryUserId, setQueryUserId] = useState(initialTargetUserId ?? '');
   const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
   const [experience, setExperience] = useState<UserExperienceVo | null>(null);
   const [dailyStatsWindow, setDailyStatsWindow] = useState<UserExpDailyStatsWindowVo | null>(null);
-  const [statsWindowDays, setStatsWindowDays] = useState<StatsWindowDays>(7);
+  const [statsWindowDays, setStatsWindowDays] = useState<StatsWindowDays>(initialStatsWindow);
   const [levels, setLevels] = useState<LevelConfigVo[]>([]);
   const [transactions, setTransactions] = useState<ExpTransactionVo[]>([]);
   const [governanceActions, setGovernanceActions] = useState<UserExperienceGovernanceActionVo[]>([]);
+  const [governanceActionTotal, setGovernanceActionTotal] = useState(0);
+  const [governanceActionPageIndex, setGovernanceActionPageIndex] = useState(initialActionPage);
+  const [governanceActionPageSize, setGovernanceActionPageSize] = useState(initialActionPageSize);
   const [transactionTotal, setTransactionTotal] = useState(0);
-  const [transactionPageIndex, setTransactionPageIndex] = useState(1);
-  const [transactionPageSize, setTransactionPageSize] = useState(10);
-  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string | undefined>();
-  const [transactionStartDate, setTransactionStartDate] = useState<Dayjs | null>(null);
-  const [transactionEndDate, setTransactionEndDate] = useState<Dayjs | null>(null);
+  const [transactionPageIndex, setTransactionPageIndex] = useState(initialTransactionPage);
+  const [transactionPageSize, setTransactionPageSize] = useState(initialTransactionPageSize);
+  const [transactionTypeFilter, setTransactionTypeFilter] = useState<string | undefined>(
+    searchParams.get('txnType') || undefined
+  );
+  const [transactionStartDate, setTransactionStartDate] = useState<Dayjs | null>(
+    searchParams.get('txnStart') ? dayjs(searchParams.get('txnStart')) : null
+  );
+  const [transactionEndDate, setTransactionEndDate] = useState<Dayjs | null>(
+    searchParams.get('txnEnd') ? dayjs(searchParams.get('txnEnd')) : null
+  );
   const [transactionReviewHint, setTransactionReviewHint] = useState<string | null>(null);
   const [reviewContextDraft, setReviewContextDraft] = useState<GovernanceReviewDraftContext | null>(null);
   const [loadingExperience, setLoadingExperience] = useState(false);
@@ -86,21 +139,41 @@ export const ExperienceAdminPage = () => {
   const [loadingLevels, setLoadingLevels] = useState(false);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
   const [loadingGovernanceActions, setLoadingGovernanceActions] = useState(false);
+  const [experienceReadState, setExperienceReadState] = useState<ExperienceReadState>('idle');
+  const [statsReadState, setStatsReadState] = useState<ExperienceReadState>('idle');
+  const [transactionsReadState, setTransactionsReadState] = useState<ExperienceReadState>('idle');
+  const [actionsReadState, setActionsReadState] = useState<ExperienceReadState>('idle');
+  const [levelsReadState, setLevelsReadState] = useState<ExperienceReadState>('idle');
   const [submitting, setSubmitting] = useState(false);
   const [freezing, setFreezing] = useState(false);
   const [unfreezing, setUnfreezing] = useState(false);
   const [reviewing, setReviewing] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
+  const [previewingRecalculation, setPreviewingRecalculation] = useState(false);
+  const [levelRecalculationPreview, setLevelRecalculationPreview] = useState<ExperienceLevelRecalculationPreviewVo | null>(null);
+  const [levelRecalculationAudits, setLevelRecalculationAudits] = useState<ExperienceLevelRecalculationAuditVo[]>([]);
   const [form] = Form.useForm<AdjustFormValues>();
   const [freezeForm] = Form.useForm<FreezeFormValues>();
   const [reviewForm] = Form.useForm<GovernanceReviewFormValues>();
   const transactionSectionRef = useRef<HTMLElement | null>(null);
   const reviewSectionRef = useRef<HTMLElement | null>(null);
   const freezeSectionRef = useRef<HTMLElement | null>(null);
+  const experienceRequestGeneration = useRef(0);
+  const statsRequestGeneration = useRef(0);
+  const transactionRequestGeneration = useRef(0);
+  const actionRequestGeneration = useRef(0);
+  const levelsRequestGeneration = useRef(0);
+  const initialTargetLoaded = useRef(false);
+  const adjustIdempotencyKey = useRef<string | null>(null);
+  const reviewIdempotencyKey = useRef<string | null>(null);
 
   const canAdjust = usePermission(CONSOLE_PERMISSIONS.experienceAdjust);
   const canFreeze = usePermission(CONSOLE_PERMISSIONS.experienceFreeze);
   const canRecalculate = usePermission(CONSOLE_PERMISSIONS.experienceRecalculate);
+  const hasAuthoritativeExperience = Boolean(
+    loadedUserId && experience && !loadingExperience && experienceReadState === 'ready'
+  );
+  const hasAuthoritativeLevels = !loadingLevels && levelsReadState === 'ready';
   const dailyStats = dailyStatsWindow?.voStats ?? [];
   const dailyStatsSummary = dailyStatsWindow?.voSummary ?? null;
   const anomalyRuleSummaries = dailyStatsWindow?.voRuleSummaries ?? [];
@@ -112,16 +185,51 @@ export const ExperienceAdminPage = () => {
   ).some((observation) => observation.voKind === 'anomaly')) ?? dailyStats[0] ?? null;
   const latestGovernanceAction = governanceActions[0] ?? null;
 
+  useEffect(() => {
+    setSearchParams((previous) => {
+      const next = new URLSearchParams(previous);
+      if (loadedUserId) next.set('target', loadedUserId);
+      next.set('stats', String(statsWindowDays));
+      next.set('txnPage', String(transactionPageIndex));
+      next.set('txnSize', String(transactionPageSize));
+      next.set('actionPage', String(governanceActionPageIndex));
+      next.set('actionSize', String(governanceActionPageSize));
+      if (transactionTypeFilter) next.set('txnType', transactionTypeFilter);
+      else next.delete('txnType');
+      if (transactionStartDate) next.set('txnStart', transactionStartDate.format('YYYY-MM-DD'));
+      else next.delete('txnStart');
+      if (transactionEndDate) next.set('txnEnd', transactionEndDate.format('YYYY-MM-DD'));
+      else next.delete('txnEnd');
+      return next;
+    }, { replace: true });
+  }, [
+    governanceActionPageIndex,
+    governanceActionPageSize,
+    loadedUserId,
+    setSearchParams,
+    statsWindowDays,
+    transactionEndDate,
+    transactionPageIndex,
+    transactionPageSize,
+    transactionStartDate,
+    transactionTypeFilter,
+  ]);
+
   const loadLevels = useCallback(async () => {
+    const requestGeneration = ++levelsRequestGeneration.current;
     try {
       setLoadingLevels(true);
       const result = await getLevelConfigs();
+      if (requestGeneration !== levelsRequestGeneration.current) return;
       setLevels(result);
+      setLevelsReadState('ready');
     } catch (error) {
       log.error('ExperienceAdminPage', '加载等级配置失败:', error);
+      if (requestGeneration !== levelsRequestGeneration.current) return;
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadLevelsFailed'));
+      setLevelsReadState((current) => current === 'ready' || current === 'stale' ? 'stale' : 'unavailable');
     } finally {
-      setLoadingLevels(false);
+      if (requestGeneration === levelsRequestGeneration.current) setLoadingLevels(false);
     }
   }, [t]);
 
@@ -129,7 +237,22 @@ export const ExperienceAdminPage = () => {
     void loadLevels();
   }, [loadLevels]);
 
+  const loadLevelRecalculationAudits = useCallback(async () => {
+    if (!canRecalculate) return;
+    try {
+      const result = await getLevelRecalculationAudits(1, 10);
+      setLevelRecalculationAudits(result.data);
+    } catch (error) {
+      log.error('ExperienceAdminPage', '加载等级重算审计失败:', error);
+    }
+  }, [canRecalculate]);
+
+  useEffect(() => {
+    void loadLevelRecalculationAudits();
+  }, [loadLevelRecalculationAudits]);
+
   const loadDailyStats = async (userId: string, days: StatsWindowDays = statsWindowDays) => {
+    const requestGeneration = ++statsRequestGeneration.current;
     const normalizedUserId = normalizePositiveLongIdInput(userId);
     if (!normalizedUserId) {
       setDailyStatsWindow(null);
@@ -139,19 +262,23 @@ export const ExperienceAdminPage = () => {
     try {
       setLoadingDailyStats(true);
       const result = await getUserDailyStats(normalizedUserId, days);
+      if (requestGeneration !== statsRequestGeneration.current) return;
       setDailyStatsWindow(result);
+      setStatsReadState('ready');
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验统计失败:', error);
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadStatsFailed'));
-      setDailyStatsWindow(null);
+      if (requestGeneration !== statsRequestGeneration.current) return;
+      setStatsReadState((current) => current === 'ready' || current === 'stale' ? 'stale' : 'unavailable');
     } finally {
-      setLoadingDailyStats(false);
+      if (requestGeneration === statsRequestGeneration.current) setLoadingDailyStats(false);
     }
   };
 
   useEffect(() => {
-    if (!loadedUserId) {
+    if (!loadedUserId || !experience) {
       setDailyStatsWindow(null);
+      setStatsReadState('idle');
       return;
     }
 
@@ -160,34 +287,53 @@ export const ExperienceAdminPage = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedUserId, statsWindowDays]);
 
-  const loadGovernanceActions = useCallback(async (userId: string, take: number = 20) => {
+  const loadGovernanceActions = useCallback(async (
+    userId: string,
+    pageIndex: number = governanceActionPageIndex,
+    pageSize: number = governanceActionPageSize
+  ) => {
+    const requestGeneration = ++actionRequestGeneration.current;
     const normalizedUserId = normalizePositiveLongIdInput(userId);
     if (!normalizedUserId) {
       setGovernanceActions([]);
+      setGovernanceActionTotal(0);
       return;
     }
 
     try {
       setLoadingGovernanceActions(true);
-      const result = await getUserGovernanceActions(normalizedUserId, take);
-      setGovernanceActions(result);
+      const result = await getUserGovernanceActions(normalizedUserId, pageIndex, pageSize);
+      if (requestGeneration !== actionRequestGeneration.current) return;
+      setGovernanceActions(result.data);
+      setGovernanceActionTotal(result.dataCount);
+      setGovernanceActionPageIndex(result.page);
+      setGovernanceActionPageSize(result.pageSize);
+      setActionsReadState('ready');
     } catch (error) {
       log.error('ExperienceAdminPage', '加载经验治理留痕失败:', error);
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadActionsFailed'));
-      setGovernanceActions([]);
+      if (requestGeneration !== actionRequestGeneration.current) return;
+      setActionsReadState((current) => current === 'ready' || current === 'stale' ? 'stale' : 'unavailable');
     } finally {
-      setLoadingGovernanceActions(false);
+      if (requestGeneration === actionRequestGeneration.current) setLoadingGovernanceActions(false);
     }
-  }, [t]);
+  }, [governanceActionPageIndex, governanceActionPageSize, t]);
 
   useEffect(() => {
     if (!loadedUserId) {
       setGovernanceActions([]);
+      setGovernanceActionTotal(0);
+      setActionsReadState('idle');
       return;
     }
 
-    void loadGovernanceActions(loadedUserId);
-  }, [loadGovernanceActions, loadedUserId]);
+    void loadGovernanceActions(loadedUserId, governanceActionPageIndex, governanceActionPageSize);
+  }, [
+    governanceActionPageIndex,
+    governanceActionPageSize,
+    loadGovernanceActions,
+    loadedUserId,
+  ]);
 
   const loadTransactions = async (
     userId: string,
@@ -197,6 +343,7 @@ export const ExperienceAdminPage = () => {
     targetStartDate = transactionStartDate,
     targetEndDate = transactionEndDate
   ) => {
+    const requestGeneration = ++transactionRequestGeneration.current;
     const normalizedUserId = normalizePositiveLongIdInput(userId);
     if (!normalizedUserId) {
       setTransactions([]);
@@ -215,17 +362,19 @@ export const ExperienceAdminPage = () => {
         startDate: targetStartDate ? targetStartDate.startOf('day').toDate().toISOString() : undefined,
         endDate: targetEndDate ? targetEndDate.endOf('day').toDate().toISOString() : undefined,
       });
+      if (requestGeneration !== transactionRequestGeneration.current) return;
       setTransactions(result.data);
       setTransactionTotal(result.dataCount);
       setTransactionPageIndex(result.page);
       setTransactionPageSize(result.pageSize);
+      setTransactionsReadState('ready');
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验流水失败:', error);
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadTransactionsFailed'));
-      setTransactions([]);
-      setTransactionTotal(0);
+      if (requestGeneration !== transactionRequestGeneration.current) return;
+      setTransactionsReadState((current) => current === 'ready' || current === 'stale' ? 'stale' : 'unavailable');
     } finally {
-      setLoadingTransactions(false);
+      if (requestGeneration === transactionRequestGeneration.current) setLoadingTransactions(false);
     }
   };
 
@@ -234,18 +383,21 @@ export const ExperienceAdminPage = () => {
       setTransactions([]);
       setTransactionTotal(0);
       setTransactionPageIndex(1);
+      setTransactionsReadState('idle');
       return;
     }
 
-    void loadTransactions(loadedUserId, 1, transactionPageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
+    void loadTransactions(loadedUserId, transactionPageIndex, transactionPageSize, transactionTypeFilter, transactionStartDate, transactionEndDate);
     // Transaction refresh is driven by explicit ledger filters; the loader also serves pagination callbacks with current defaults.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loadedUserId, transactionTypeFilter, transactionStartDate, transactionEndDate]);
 
-  const clearLoadedExperience = (userId: string) => {
+  const clearLoadedExperience = () => {
     setLoadedUserId(null);
     setExperience(null);
+    setExperienceReadState('idle');
     setDailyStatsWindow(null);
+    setStatsReadState('idle');
     setTransactions([]);
     setTransactionTotal(0);
     setTransactionPageIndex(1);
@@ -253,12 +405,18 @@ export const ExperienceAdminPage = () => {
     setTransactionStartDate(null);
     setTransactionEndDate(null);
     setTransactionReviewHint(null);
+    setTransactionsReadState('idle');
     setGovernanceActions([]);
+    setGovernanceActionTotal(0);
+    setGovernanceActionPageIndex(1);
+    setActionsReadState('idle');
     setReviewContextDraft(null);
-    reviewForm.resetFields();
-    form.setFieldValue('userId', userId);
+    adjustIdempotencyKey.current = null;
+    reviewIdempotencyKey.current = null;
+    if (loadedUserId) {
+      reviewForm.resetFields();
+    }
     freezeForm.setFieldsValue({
-      userId,
       reason: '',
       frozenUntil: undefined,
     });
@@ -266,8 +424,13 @@ export const ExperienceAdminPage = () => {
 
   const loadExperience = async (
     userIdOverride?: string,
-    options?: { showInvalidMessage?: boolean }
+    options?: {
+      showInvalidMessage?: boolean;
+      showFailureMessage?: boolean;
+      preserveDrafts?: boolean;
+    }
   ) => {
+    const requestGeneration = ++experienceRequestGeneration.current;
     const userId = userIdOverride ?? normalizePositiveLongIdInput(queryUserId);
     if (!userId) {
       if (options?.showInvalidMessage ?? true) {
@@ -279,22 +442,62 @@ export const ExperienceAdminPage = () => {
     try {
       setQueryUserId(String(userId));
       setLoadingExperience(true);
-      clearLoadedExperience(userId);
       const result = await getUserExperience(userId);
+      if (requestGeneration !== experienceRequestGeneration.current) return;
+      if (loadedUserId !== String(userId)) {
+        clearLoadedExperience();
+        if (!loadedUserId && initialTargetUserId === String(userId)) {
+          setTransactionPageIndex(initialTransactionPage);
+          setGovernanceActionPageIndex(initialActionPage);
+        }
+      }
       setLoadedUserId(String(userId));
       setExperience(result);
-      form.setFieldValue('userId', userId);
-      freezeForm.setFieldsValue({
-        userId,
-        reason: result.voFrozenReason || '',
-        frozenUntil: result.voFrozenUntil ? dayjs(result.voFrozenUntil) : undefined,
-      });
-      reviewForm.resetFields();
+      setExperienceReadState('ready');
+      if (!options?.preserveDrafts) {
+        freezeForm.setFieldsValue({
+          reason: result.voFrozenReason || '',
+          frozenUntil: result.voFrozenUntil ? dayjs(result.voFrozenUntil) : undefined,
+        });
+        if (loadedUserId) {
+          reviewForm.resetFields();
+        }
+      }
     } catch (error) {
       log.error('ExperienceAdminPage', '加载用户经验失败:', error);
-      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadUserFailed'));
+      if (requestGeneration !== experienceRequestGeneration.current) return;
+      if (options?.showFailureMessage ?? true) {
+        message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.loadUserFailed'));
+      }
+      setExperienceReadState((current) => current === 'ready' || current === 'stale' ? 'stale' : 'unavailable');
     } finally {
-      setLoadingExperience(false);
+      if (requestGeneration === experienceRequestGeneration.current) setLoadingExperience(false);
+    }
+  };
+
+  useEffect(() => {
+    if (initialTargetLoaded.current || !initialTargetUserId) return;
+    initialTargetLoaded.current = true;
+    void loadExperience(initialTargetUserId, { showInvalidMessage: false });
+    // Initial URL hydration must run once; later target changes are explicit queries.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTargetUserId]);
+
+  const reconcileExperienceAfterWriteFailure = async (error: unknown) => {
+    if (isExperienceVersionConflict(error)) {
+      setExperienceReadState('stale');
+      if (loadedUserId) {
+        await loadExperience(loadedUserId, {
+          showInvalidMessage: false,
+          showFailureMessage: false,
+          preserveDrafts: true,
+        });
+      }
+      return;
+    }
+
+    if (isExperienceWriteStateUncertain(error)) {
+      setExperienceReadState('stale');
     }
   };
 
@@ -343,7 +546,6 @@ export const ExperienceAdminPage = () => {
     }
 
     freezeForm.setFieldsValue({
-      userId: loadedUserId,
       reason,
     });
     focusFreezeSection();
@@ -442,8 +644,8 @@ export const ExperienceAdminPage = () => {
   };
 
   const handleRecordGovernanceReview = async () => {
-    if (!loadedUserId) {
-      message.error(t('experience.feedback.queryFirst'));
+    if (!loadedUserId || !experience || !hasAuthoritativeExperience) {
+      message.error(t('experience.feedback.authorityRequired'));
       return;
     }
 
@@ -456,7 +658,12 @@ export const ExperienceAdminPage = () => {
       }
 
       setReviewing(true);
-      await adminRecordGovernanceReview({
+      reviewIdempotencyKey.current ??= createExperienceGovernanceIdempotencyKey(
+        'review',
+        normalizedUserId,
+        experience.voVersion
+      );
+      const result = await adminRecordGovernanceReview({
         userId: normalizedUserId,
         reviewResult: values.reviewResult,
         remark: values.remark.trim(),
@@ -468,18 +675,25 @@ export const ExperienceAdminPage = () => {
         ruleLabels: reviewContextDraft?.ruleLabels,
         recommendationLevel: reviewContextDraft?.recommendationLevel,
         recommendationReason: reviewContextDraft?.recommendationReason ?? undefined,
+        expectedVersion: experience.voVersion,
+        idempotencyKey: reviewIdempotencyKey.current,
       });
 
+      setExperience(result.voExperience);
+      setExperienceReadState('ready');
       message.success(t('experience.feedback.reviewRecorded'));
-      await loadGovernanceActions(normalizedUserId);
+      setGovernanceActionPageIndex(1);
+      await loadGovernanceActions(normalizedUserId, 1, governanceActionPageSize);
       reviewForm.resetFields();
       setReviewContextDraft(null);
+      reviewIdempotencyKey.current = null;
     } catch (error) {
       if (isFormValidationError(error)) {
         return;
       }
 
       log.error('ExperienceAdminPage', '记录经验治理复核结论失败:', error);
+      await reconcileExperienceAfterWriteFailure(error);
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.reviewFailed'));
     } finally {
       setReviewing(false);
@@ -487,9 +701,14 @@ export const ExperienceAdminPage = () => {
   };
 
   const handleAdjust = async () => {
+    if (!loadedUserId || !experience || !hasAuthoritativeExperience) {
+      message.error(t('experience.feedback.authorityRequired'));
+      return;
+    }
+
     try {
       const values = await form.validateFields();
-      const normalizedUserId = normalizePositiveLongIdInput(values.userId);
+      const normalizedUserId = normalizePositiveLongIdInput(loadedUserId);
       if (!normalizedUserId) {
         message.error(t('experience.form.userIdInvalid'));
         return;
@@ -497,21 +716,39 @@ export const ExperienceAdminPage = () => {
 
       setSubmitting(true);
       setTransactionPageIndex(1);
-      await adminAdjustExperience({
+      adjustIdempotencyKey.current ??= createExperienceGovernanceIdempotencyKey(
+        'adjust',
+        normalizedUserId,
+        experience.voVersion
+      );
+      const result = await adminAdjustExperience({
         userId: normalizedUserId,
         deltaExp: values.deltaExp,
-        reason: values.reason,
+        reason: values.reason.trim(),
+        expectedVersion: experience.voVersion,
+        idempotencyKey: adjustIdempotencyKey.current,
       });
 
+      setExperience(result.voExperience);
+      setExperienceReadState('ready');
       message.success(t('experience.feedback.adjusted'));
-      await loadExperience(normalizedUserId, { showInvalidMessage: false });
+      await loadTransactions(
+        normalizedUserId,
+        1,
+        transactionPageSize,
+        transactionTypeFilter,
+        transactionStartDate,
+        transactionEndDate
+      );
       form.setFieldsValue({ deltaExp: 0, reason: '' });
+      adjustIdempotencyKey.current = null;
     } catch (error) {
       if (isFormValidationError(error)) {
         return;
       }
 
       log.error('ExperienceAdminPage', '调整经验失败:', error);
+      await reconcileExperienceAfterWriteFailure(error);
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.adjustFailed'));
     } finally {
       setSubmitting(false);
@@ -519,9 +756,14 @@ export const ExperienceAdminPage = () => {
   };
 
   const handleFreeze = async () => {
+    if (!loadedUserId || !experience || !hasAuthoritativeExperience) {
+      message.error(t('experience.feedback.authorityRequired'));
+      return;
+    }
+
     try {
       const values = await freezeForm.validateFields();
-      const normalizedUserId = normalizePositiveLongIdInput(values.userId);
+      const normalizedUserId = normalizePositiveLongIdInput(loadedUserId);
       if (!normalizedUserId) {
         message.error(t('experience.form.userIdInvalid'));
         return;
@@ -529,21 +771,25 @@ export const ExperienceAdminPage = () => {
 
       setFreezing(true);
       setTransactionPageIndex(1);
-      await adminFreezeExperience({
+      const result = await adminFreezeExperience({
         userId: normalizedUserId,
         reason: values.reason.trim(),
         frozenUntil: values.frozenUntil ? values.frozenUntil.toDate().toISOString() : undefined,
+        expectedVersion: experience.voVersion,
       });
 
+      setExperience(result.voExperience);
+      setExperienceReadState('ready');
       message.success(t('experience.feedback.frozen'));
-      await loadExperience(normalizedUserId, { showInvalidMessage: false });
-      await loadGovernanceActions(normalizedUserId);
+      setGovernanceActionPageIndex(1);
+      await loadGovernanceActions(normalizedUserId, 1, governanceActionPageSize);
     } catch (error) {
       if (isFormValidationError(error)) {
         return;
       }
 
       log.error('ExperienceAdminPage', '冻结经验失败:', error);
+      await reconcileExperienceAfterWriteFailure(error);
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.freezeFailed'));
     } finally {
       setFreezing(false);
@@ -551,9 +797,14 @@ export const ExperienceAdminPage = () => {
   };
 
   const handleUnfreeze = async () => {
+    if (!loadedUserId || !experience || !hasAuthoritativeExperience) {
+      message.error(t('experience.feedback.authorityRequired'));
+      return;
+    }
+
     try {
-      const values = await freezeForm.validateFields(['userId']);
-      const normalizedUserId = normalizePositiveLongIdInput(values.userId);
+      const values = await freezeForm.validateFields(['reason']);
+      const normalizedUserId = normalizePositiveLongIdInput(loadedUserId);
       if (!normalizedUserId) {
         message.error(t('experience.form.userIdInvalid'));
         return;
@@ -561,13 +812,18 @@ export const ExperienceAdminPage = () => {
 
       setUnfreezing(true);
       setTransactionPageIndex(1);
-      await adminUnfreezeExperience(normalizedUserId);
-
-      message.success(t('experience.feedback.unfrozen'));
-      await loadExperience(normalizedUserId, { showInvalidMessage: false });
-      await loadGovernanceActions(normalizedUserId);
-      freezeForm.setFieldsValue({
+      const result = await adminUnfreezeExperience({
         userId: normalizedUserId,
+        reason: values.reason.trim(),
+        expectedVersion: experience.voVersion,
+      });
+
+      setExperience(result.voExperience);
+      setExperienceReadState('ready');
+      message.success(t('experience.feedback.unfrozen'));
+      setGovernanceActionPageIndex(1);
+      await loadGovernanceActions(normalizedUserId, 1, governanceActionPageSize);
+      freezeForm.setFieldsValue({
         reason: '',
         frozenUntil: undefined,
       });
@@ -577,20 +833,51 @@ export const ExperienceAdminPage = () => {
       }
 
       log.error('ExperienceAdminPage', '解冻经验失败:', error);
+      await reconcileExperienceAfterWriteFailure(error);
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.unfreezeFailed'));
     } finally {
       setUnfreezing(false);
     }
   };
 
-  const handleRecalculate = async () => {
+  const handlePreviewRecalculation = async () => {
+    if (!hasAuthoritativeLevels) {
+      message.error(t('experience.feedback.authorityRequired'));
+      return;
+    }
+
+    try {
+      setPreviewingRecalculation(true);
+      setLevelRecalculationPreview(await previewLevelConfigRecalculation());
+    } catch (error) {
+      log.error('ExperienceAdminPage', '预览等级配置重算失败:', error);
+      message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.recalculateFailed'));
+    } finally {
+      setPreviewingRecalculation(false);
+    }
+  };
+
+  const handleRecalculate = async (reason: string) => {
+    if (!levelRecalculationPreview || !hasAuthoritativeLevels) {
+      message.error(t('experience.feedback.authorityRequired'));
+      return;
+    }
     try {
       setRecalculating(true);
-      const result = await recalculateLevelConfigs();
-      setLevels(result);
+      const result = await recalculateLevelConfigs({
+        expectedFingerprint: levelRecalculationPreview.voFingerprint,
+        reason,
+      });
+      setLevels(result.voLevels);
+      setLevelsReadState('ready');
+      setLevelRecalculationPreview(null);
+      await loadLevelRecalculationAudits();
       message.success(t('experience.feedback.recalculated'));
     } catch (error) {
       log.error('ExperienceAdminPage', '重算等级配置失败:', error);
+      if (error instanceof ApiResponseError && error.code === 'Experience.LevelPreviewConflict') {
+        setLevelsReadState('stale');
+      }
       message.error(getLocalizedApiErrorMessage(error, t, 'experience.feedback.recalculateFailed'));
     } finally {
       setRecalculating(false);
@@ -631,10 +918,29 @@ export const ExperienceAdminPage = () => {
         />
         <ConsoleMetricCard
           label={t('experience.metrics.actions')}
-          value={formatConsoleInteger(governanceActions.length, i18n.resolvedLanguage)}
+          value={actionsReadState === 'ready' || actionsReadState === 'stale'
+            ? formatConsoleInteger(governanceActionTotal, i18n.resolvedLanguage)
+            : '--'}
           description={t('experience.metrics.actionsDescription')}
         />
       </ConsoleMetricGrid>
+
+      <section className="experience-read-state-strip" aria-label={t('experience.metrics.ariaLabel')}>
+        {([
+          ['experience.query.title', loadingExperience ? 'loading' : experienceReadState],
+          ['experience.observation.title', loadingDailyStats ? 'loading' : statsReadState],
+          ['experience.transactions.title', loadingTransactions ? 'loading' : transactionsReadState],
+          ['experience.review.recentActions', loadingGovernanceActions ? 'loading' : actionsReadState],
+          ['experience.levels.title', loadingLevels ? 'loading' : levelsReadState],
+        ] as const).map(([labelKey, state]) => (
+          <div key={labelKey} className="experience-read-state-strip__item">
+            <span>{t(labelKey)}</span>
+            <ConsoleStatusChip tone={getExperienceReadStateTone(state)}>
+              {t(`experience.readState.${state}`)}
+            </ConsoleStatusChip>
+          </div>
+        ))}
+      </section>
 
       <section className="governance-task-flow" aria-label={t('experience.flow.ariaLabel')}>
         <div className="governance-task-flow__item">
@@ -655,7 +961,7 @@ export const ExperienceAdminPage = () => {
         <div className="governance-task-flow__item">
           <span>4</span>
           <strong>{t('experience.flow.review')}</strong>
-          <p>{governanceActions.length > 0 ? t('experience.flow.reviewReady', { count: governanceActions.length }) : t('experience.flow.reviewPending')}</p>
+          <p>{governanceActionTotal > 0 ? t('experience.flow.reviewReady', { count: governanceActionTotal }) : t('experience.flow.reviewPending')}</p>
         </div>
       </section>
 
@@ -708,14 +1014,17 @@ export const ExperienceAdminPage = () => {
             transactionEndDate={transactionEndDate}
             transactionReviewHint={transactionReviewHint}
             onTransactionTypeFilterChange={(value) => {
+              setTransactionPageIndex(1);
               setTransactionReviewHint(null);
               setTransactionTypeFilter(value);
             }}
             onTransactionStartDateChange={(value) => {
+              setTransactionPageIndex(1);
               setTransactionReviewHint(null);
               setTransactionStartDate(value);
             }}
             onTransactionEndDateChange={(value) => {
+              setTransactionPageIndex(1);
               setTransactionReviewHint(null);
               setTransactionEndDate(value);
             }}
@@ -741,10 +1050,17 @@ export const ExperienceAdminPage = () => {
             experience={experience}
             reviewForm={reviewForm}
             reviewContextDraft={reviewContextDraft}
-            canFreeze={canFreeze}
+            canFreeze={canFreeze && hasAuthoritativeExperience}
             reviewing={reviewing}
             governanceActions={governanceActions}
+            governanceActionTotal={governanceActionTotal}
+            governanceActionPageIndex={governanceActionPageIndex}
+            governanceActionPageSize={governanceActionPageSize}
             loadingGovernanceActions={loadingGovernanceActions}
+            onGovernanceActionPageChange={(page, pageSize) => {
+              setGovernanceActionPageIndex(page);
+              setGovernanceActionPageSize(pageSize);
+            }}
             onRecordGovernanceReview={handleRecordGovernanceReview}
             onClearReviewDraft={() => {
               reviewForm.resetFields();
@@ -847,8 +1163,9 @@ export const ExperienceAdminPage = () => {
             freezeForm={freezeForm}
             freezeSectionRef={freezeSectionRef}
             experience={experience}
-            canAdjust={canAdjust}
-            canFreeze={canFreeze}
+            loadedUserId={loadedUserId}
+            canAdjust={canAdjust && hasAuthoritativeExperience}
+            canFreeze={canFreeze && hasAuthoritativeExperience}
             submitting={submitting}
             freezing={freezing}
             unfreezing={unfreezing}
@@ -862,8 +1179,12 @@ export const ExperienceAdminPage = () => {
       <ExperienceLevelConfigSection
         levels={levels}
         loadingLevels={loadingLevels}
-        canRecalculate={canRecalculate}
+        canRecalculate={canRecalculate && hasAuthoritativeLevels}
         recalculating={recalculating}
+        previewing={previewingRecalculation}
+        preview={levelRecalculationPreview}
+        audits={levelRecalculationAudits}
+        onPreview={handlePreviewRecalculation}
         onRecalculate={handleRecalculate}
       />
     </div>

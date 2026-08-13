@@ -54,6 +54,12 @@ public class UserExperienceGovernanceActionVo
     /// <summary>冻结到期时间快照</summary>
     public DateTime? VoFrozenUntil { get; set; }
 
+    /// <summary>动作提交时看到的经验聚合版本。</summary>
+    public int? VoExpectedVersion { get; set; }
+
+    /// <summary>动作完成后的经验聚合版本。</summary>
+    public int? VoResultVersion { get; set; }
+
     /// <summary>操作人 ID</summary>
     public long VoOperatorId { get; set; }
 

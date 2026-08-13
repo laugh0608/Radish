@@ -6,6 +6,8 @@ public static class OperationIdempotencyOperationTypes
     public const string ShopPurchase = "ShopPurchase";
     public const string CoinTransfer = "CoinTransfer";
     public const string CoinAdminAdjustment = "CoinAdminAdjustment";
+    public const string ExperienceAdminAdjustment = "ExperienceAdminAdjustment";
+    public const string ExperienceGovernanceReview = "ExperienceGovernanceReview";
     public const string ShopInventoryUse = "ShopInventoryUse";
     public const string ContentReward = "ContentReward";
 }
@@ -23,6 +25,8 @@ public static class OperationIdempotencyResourceTypes
 {
     public const string Order = "Order";
     public const string CoinTransaction = "CoinTransaction";
+    public const string ExpTransaction = "ExpTransaction";
+    public const string UserExperienceGovernanceAction = "UserExperienceGovernanceAction";
     public const string ShopEntitlementOperation = "ShopEntitlementOperation";
     public const string ContentReward = "ContentReward";
 }
