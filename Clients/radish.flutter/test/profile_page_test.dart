@@ -2566,6 +2566,7 @@ class _FakeAuthorizationCodeExchangeService
   Future<AuthSession> redeemAuthorizationCode({
     required String code,
     required String redirectUri,
+    required String codeVerifier,
   }) async {
     final failureMessage = this.failureMessage;
     if (failureMessage != null) {

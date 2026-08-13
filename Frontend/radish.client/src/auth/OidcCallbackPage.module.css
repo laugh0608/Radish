@@ -40,3 +40,43 @@
 .error {
   color: var(--theme-state-danger);
 }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primaryAction,
+.secondaryAction {
+  min-height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.primaryAction {
+  border: 1px solid var(--theme-brand-primary);
+  background: var(--theme-brand-primary);
+  color: var(--theme-text-on-brand);
+}
+
+.secondaryAction {
+  border: 1px solid var(--theme-border-default);
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+}
+
+@media (max-width: 480px) {
+  .actions,
+  .primaryAction,
+  .secondaryAction {
+    width: 100%;
+  }
+}

@@ -180,6 +180,39 @@ class MainActivity : FlutterActivity() {
                     pendingAuthCallbackPayload = null
                     result.success(payload)
                 }
+                "writeAuthorizationAttempt" -> {
+                    val payload = call.arguments as? String
+                    if (payload.isNullOrBlank()) {
+                        result.error("invalid_payload", "OIDC authorization attempt must be a non-empty string.", null)
+                        return@setMethodCallHandler
+                    }
+
+                    val persisted = preferences.edit()
+                        .putString(OIDC_AUTHORIZATION_ATTEMPT_KEY, payload)
+                        .commit()
+                    if (!persisted) {
+                        result.error("storage_failed", "Unable to persist OIDC authorization attempt.", null)
+                        return@setMethodCallHandler
+                    }
+                    result.success(null)
+                }
+                "takeAuthorizationAttempt" -> {
+                    val payload = preferences.getString(OIDC_AUTHORIZATION_ATTEMPT_KEY, null)
+                    val removed = preferences.edit().remove(OIDC_AUTHORIZATION_ATTEMPT_KEY).commit()
+                    if (!removed) {
+                        result.error("storage_failed", "Unable to consume OIDC authorization attempt.", null)
+                        return@setMethodCallHandler
+                    }
+                    result.success(payload)
+                }
+                "clearAuthorizationAttempt" -> {
+                    val removed = preferences.edit().remove(OIDC_AUTHORIZATION_ATTEMPT_KEY).commit()
+                    if (!removed) {
+                        result.error("storage_failed", "Unable to clear OIDC authorization attempt.", null)
+                        return@setMethodCallHandler
+                    }
+                    result.success(null)
+                }
                 else -> result.notImplemented()
             }
         }
@@ -326,6 +359,7 @@ class MainActivity : FlutterActivity() {
         private const val FORUM_FOLLOW_UP_CHANNEL = "radish.flutter/forum_follow_up"
         private const val DOCS_FOLLOW_UP_CHANNEL = "radish.flutter/docs_follow_up"
         private const val AUTH_FLOW_CHANNEL = "radish.flutter/native_auth"
+        private const val OIDC_AUTHORIZATION_ATTEMPT_KEY = "oidc_authorization_attempt"
         private const val APP_LIFECYCLE_CHANNEL = "radish.flutter/app_lifecycle"
         private const val FORUM_RECENT_BROWSE_KEY = "forum_recent_browse_handoff"
         private const val FORUM_RECENT_BROWSE_LIST_KEY = "forum_recent_browse_handoffs"

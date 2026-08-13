@@ -4,6 +4,7 @@ import { getApiBaseUrl } from '@/config/env';
 import { log } from '@/utils/logger';
 import i18n from '@/i18n';
 import { getIntlLocale } from '@/locales/language';
+import { rememberConsoleAuthReturnPath } from './authReturnPath';
 
 /**
  * 配置 API 客户端的 Token 自动刷新
@@ -68,6 +69,7 @@ export function setupApiInterceptors() {
         // 如果当前不在登录页，跳转到登录页
         const isLoginPage = window.location.pathname.endsWith('/login');
         if (!isLoginPage) {
+          rememberConsoleAuthReturnPath(window.location);
           const reason = tokenService.getLastSessionClearReason() === 'idle_session_expired'
             ? '&reason=idle'
             : '';

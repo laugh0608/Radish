@@ -1020,19 +1020,3 @@ export async function toggleReaction(
 
   return response.data || [];
 }
-
-/**
- * 生成 OIDC 登录 URL
- */
-export function getOidcLoginUrl(): string {
-  if (typeof window === 'undefined') return '';
-  const currentOrigin = window.location.origin;
-  const redirectUri = `${currentOrigin}/oidc/callback`;
-  const apiBaseUrl = getApiBaseUrl();
-  const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
-  authorizeUrl.searchParams.set('client_id', 'radish-client');
-  authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-  authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
-  return authorizeUrl.toString();
-}

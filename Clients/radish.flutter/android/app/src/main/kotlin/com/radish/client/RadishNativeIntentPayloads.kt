@@ -31,6 +31,7 @@ internal object RadishNativeIntentPayloads {
             "/callback" -> jsonObject(
                 "type" to "login",
                 "code" to query["code"].normalizedOrNull(),
+                "state" to query["state"].normalizedOrNull(),
                 "error" to query["error"].normalizedOrNull(),
                 "errorDescription" to query["error_description"].normalizedOrNull(),
             )

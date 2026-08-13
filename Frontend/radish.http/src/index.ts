@@ -308,11 +308,14 @@ export {
 } from './token-refresh';
 
 export {
+  createOidcAuthorizationUrl,
   redeemOidcAuthorizationCode,
   OidcCallbackError,
 } from './oidc-callback';
 
 export type {
+  CreateOidcAuthorizationUrlOptions,
+  OidcAuthorizationErrorDetails,
   OidcTokenResponse,
   OidcTokenRequestFailureDetails,
   RedeemOidcAuthorizationCodeOptions,

@@ -1,5 +1,5 @@
 import { Suspense, type ReactNode } from 'react';
-import { Navigate, Outlet } from 'react-router';
+import { Navigate, Outlet, useLocation } from 'react-router';
 import { AdminLayout } from '../components/AdminLayout';
 import { ClientBackLink } from '../components/ClientBackLink';
 import { RouteGuard } from '../components/PermissionGuard';
@@ -25,21 +25,39 @@ function ConsoleAccessDenied() {
 
 export function AuthenticatedLayout() {
   const { t } = useTranslation();
+  const location = useLocation();
   const token = tokenService.getAccessToken();
   const { user, loading } = useUser();
 
+  const redirectToLogin = (reason?: 'idle') => {
+    const search = reason === 'idle' ? '?auto=1&reason=idle' : '?auto=1';
+    return (
+      <Navigate
+        to={`/login${search}`}
+        replace
+        state={{
+          returnLocation: {
+            pathname: location.pathname,
+            search: location.search,
+            hash: location.hash,
+          },
+        }}
+      />
+    );
+  };
+
   if (!token) {
-    return <Navigate to="/login?auto=1" replace />;
+    return redirectToLogin();
   }
 
   if (tokenService.isIdleSessionExpired()) {
     tokenService.clearTokens('idle_session_expired');
-    return <Navigate to="/login?auto=1&reason=idle" replace />;
+    return redirectToLogin('idle');
   }
 
   if (tokenService.isTokenExpired()) {
     tokenService.clearTokens();
-    return <Navigate to="/login?auto=1" replace />;
+    return redirectToLogin();
   }
 
   if (loading) {
@@ -51,7 +69,7 @@ export function AuthenticatedLayout() {
   }
 
   if (!user) {
-    return <Navigate to="/login?auto=1" replace />;
+    return redirectToLogin();
   }
 
   if (!canEnterConsole(user)) {

@@ -39,6 +39,9 @@
   <data name="auth.login.error.invalidCredentials" xml:space="preserve">
     <value>Invalid email or password. Please try again.</value>
   </data>
+  <data name="auth.login.error.invalidReturnUrl" xml:space="preserve">
+    <value>The sign-in return address is invalid. Start sign-in again from a Radish client.</value>
+  </data>
   <data name="auth.login.success.message" xml:space="preserve">
     <value>Signed in successfully. You can now close this page or return to the calling system.</value>
   </data>

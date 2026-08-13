@@ -103,11 +103,10 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OfflineAccess);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
+            EnsurePublicClientRequirements(descriptor);
 
             // 扩展属性：客户端展示信息
             ApplyOfficialMetadata(descriptor, "Radish 官方客户端，承载社区主站、WebOS 与 Flutter 原生壳层。");
-
-            //descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
             Console.WriteLine("[OpenIddictSeed] radish-client 客户端创建完成");
@@ -145,6 +144,7 @@ public class OpenIddictSeedHostedService : IHostedService
 
             // 确保扩展属性存在
             ApplyOfficialMetadata(descriptor, "Radish 官方客户端，承载社区主站、WebOS 与 Flutter 原生壳层。");
+            EnsurePublicClientRequirements(descriptor);
 
             await _applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
             Console.WriteLine("[OpenIddictSeed] radish-client 客户端更新完成");
@@ -296,6 +296,12 @@ public class OpenIddictSeedHostedService : IHostedService
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.Profile);
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.OfflineAccess);
         descriptor.Permissions.Add(OpenIddictConstants.Permissions.Prefixes.Scope + UserScopes.RadishApi);
+        EnsurePublicClientRequirements(descriptor);
+    }
+
+    private static void EnsurePublicClientRequirements(OpenIddictApplicationDescriptor descriptor)
+    {
+        descriptor.Requirements.Add(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange);
     }
 
     private static void ApplyOfficialMetadata(OpenIddictApplicationDescriptor descriptor, string description)

@@ -226,7 +226,8 @@ public class AccountControllerTest
             ControllerContext = new ControllerContext
             {
                 HttpContext = httpContext
-            }
+            },
+            Url = CreateLocalUrlHelper().Object
         };
 
         var returnUrl = "/connect/authorize";
@@ -243,7 +244,7 @@ public class AccountControllerTest
                 It.IsAny<AuthenticationProperties>()),
             Times.Once);
 
-        var redirect = Assert.IsType<RedirectResult>(result);
+        var redirect = Assert.IsType<LocalRedirectResult>(result);
         Assert.Equal(returnUrl, redirect.Url);
 
         Assert.NotNull(signInPrincipal);
@@ -257,6 +258,47 @@ public class AccountControllerTest
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Name);
         Assert.DoesNotContain(signInPrincipal.Claims, claim => claim.Type == ClaimTypes.Role);
         coinService.Verify(service => service.GrantRegistrationRewardAsync(credential.UserId), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("https://example.com/steal-session")]
+    [InlineData("//example.com/steal-session")]
+    [InlineData("/\\example.com/steal-session")]
+    public async Task Login_ShouldRejectNonLocalReturnUrlBeforeCredentialLookup(string returnUrl)
+    {
+        var userService = new Mock<IUserService>();
+        var controller = new AccountController(
+            CreateErrorsLocalizer().Object,
+            userService.Object,
+            Mock.Of<IOpenIddictApplicationManager>(),
+            Mock.Of<ICoinService>(),
+            CreateSystemSettingProvider())
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            },
+            Url = CreateLocalUrlHelper().Object
+        };
+
+        var result = await controller.Login("test@radish.test", "test123456", returnUrl);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal("auth.login.error.invalidReturnUrl", badRequest.Value);
+        userService.Verify(
+            service => service.GetEnabledUserCredentialByEmailAsync(It.IsAny<string>()),
+            Times.Never);
+    }
+
+    private static Mock<IUrlHelper> CreateLocalUrlHelper()
+    {
+        var urlHelper = new Mock<IUrlHelper>();
+        urlHelper
+            .Setup(helper => helper.IsLocalUrl(It.IsAny<string>()))
+            .Returns((string url) => url.StartsWith("/", StringComparison.Ordinal)
+                && !url.StartsWith("//", StringComparison.Ordinal)
+                && !url.StartsWith("/\\", StringComparison.Ordinal));
+        return urlHelper;
     }
 
     private static ISystemSettingProvider CreateSystemSettingProvider(

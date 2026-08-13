@@ -1,7 +1,7 @@
 # F4-R R3 路由继承实施分批审计
 
 > 日期：2026-08-11
-> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；Public 三批、R3-C04 六批与 R3-C05 四批均已关闭，下一顺位为 `R3-F02 自服务与边界页`
+> 状态：正式路由、继承来源与分批顺位已完成代码事实审计；Public 三批、R3-C04 六批、R3-C05 四批与 R3-F02-A 均已关闭，下一步进入 R3-F02-B
 > 范围：正式 Client / Console Web 路由、R3 继承成立性、局部差异、关键状态、Mobile 转换与验证边界
 
 ## 1. 结论
@@ -10,7 +10,7 @@
 
 正式代码反查同时发现原继承表存在两个覆盖缺口：Console Dashboard 与后续新增的 Channel Discoverability 没有登记继承来源；Console Settings / Profile、公开 Docs 详情与 Legal 虽已登记，但没有被前述 R2 实现批实际关闭。上述页面已纳入新的后续批次，不以历史表述冒充完成。
 
-`R3-P04 Public Forum 浏览族`、`R3-P05 Public Docs 与 Legal` 与 `R3-P06 Public Shop 浏览与 Leaderboard` 均已按继承结论完成正式实现和 Gateway 成组验收。`R3-C04 Console 普通资源` 随后按六批关闭；[R3-C05 成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)确认 Dashboard、Channel Discoverability、Documents 与 Experience 四批代码和运行态闭环成立。剩余顺位为 `R3-F02 自服务与边界页`。
+`R3-P04 Public Forum 浏览族`、`R3-P05 Public Docs 与 Legal` 与 `R3-P06 Public Shop 浏览与 Leaderboard` 均已按继承结论完成正式实现和 Gateway 成组验收。`R3-C04 Console 普通资源` 随后按六批关闭；[R3-C05 成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)确认 Dashboard、Channel Discoverability、Documents 与 Experience 四批代码和运行态闭环成立。[R3-F02 专题审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)确认最后一组的视觉继承同样成立，并按协议信任、权威状态与错误边界拆为 A / B / C。
 
 ## 2. 正式路由事实
 
@@ -95,4 +95,4 @@
 
 ## 7. 下一步
 
-`R3-P04`、`R3-P05`、`R3-P06`、`R3-C04` 六批与 `R3-C05` 四批均已完成。下一步进入 `R3-F02 自服务与边界页` 设计前代码事实审计：反查 Console Settings / Profile、Client / Console Login、OIDC 回流与 Not Found 的身份、错误原因、来源返回、PC / Mobile 和双语边界，先形成拆批方案再修改代码。
+`R3-P04`、`R3-P05`、`R3-P06`、`R3-C04` 六批、`R3-C05` 四批与 [R3-F02-A OIDC 回流信任门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)均已完成。下一步等待确认后实施 `R3-F02-B 自服务权威状态`，随后进入 C 错误 / 路由边界。既有代表继承成立，不修改 Pencil。

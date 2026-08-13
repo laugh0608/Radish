@@ -115,6 +115,12 @@ public class AccountController : Controller
         var totalStopwatch = Stopwatch.StartNew();
         var normalizedEmail = NormalizeEmail(email);
 
+        if (!string.IsNullOrWhiteSpace(returnUrl) && !Url.IsLocalUrl(returnUrl))
+        {
+            Log.Warning("[Account/Login] 拒绝非本地登录回跳地址");
+            return BadRequest(_errorsLocalizer["auth.login.error.invalidReturnUrl"].Value);
+        }
+
         if (normalizedEmail == null || string.IsNullOrWhiteSpace(password))
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
@@ -215,7 +221,7 @@ public class AccountController : Controller
 
         if (!string.IsNullOrEmpty(returnUrl))
         {
-            return Redirect(returnUrl);
+            return LocalRedirect(returnUrl);
         }
 
         // 直接访问 /Account/Login 并登录成功时，返回一个简单的确认信息

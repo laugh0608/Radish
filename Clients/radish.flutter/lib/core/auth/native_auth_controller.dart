@@ -1,4 +1,8 @@
+import 'dart:convert';
+import 'dart:math';
+
 import 'package:flutter/foundation.dart';
+import 'package:crypto/crypto.dart';
 
 import '../config/app_environment.dart';
 import 'authorization_code_exchange_service.dart';
@@ -55,6 +59,8 @@ class NativeAuthState {
 }
 
 class NativeAuthController extends ChangeNotifier {
+  static const _authorizationAttemptTtl = Duration(minutes: 5);
+
   NativeAuthController({
     required AppEnvironment environment,
     required SessionController sessionController,
@@ -93,8 +99,15 @@ class NativeAuthController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      await _gateway.openAuthorizeUrl(_buildAuthorizeUri());
+      final attempt = _createAuthorizationAttempt();
+      await _gateway.writeAuthorizationAttempt(attempt);
+      await _gateway.openAuthorizeUrl(_buildAuthorizeUri(attempt));
     } catch (_) {
+      try {
+        await _gateway.clearAuthorizationAttempt();
+      } catch (_) {
+        // The visible start failure remains authoritative even when cleanup fails.
+      }
       _state = const NativeAuthState.idle(
         lastErrorMessage: '无法打开浏览器登录流程。',
       );
@@ -111,6 +124,7 @@ class NativeAuthController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await _gateway.clearAuthorizationAttempt();
       await _gateway.openLogoutUrl(_buildLogoutUri());
       await _sessionController.clearSession();
       _state = const NativeAuthState.idle();
@@ -154,13 +168,29 @@ class NativeAuthController extends ChangeNotifier {
       return;
     }
 
+    final attempt = await _gateway.takeAuthorizationAttempt();
+    if (!_isValidAuthorizationAttempt(attempt)) {
+      _state = const NativeAuthState.idle(
+        lastErrorMessage: '找不到对应的登录尝试，或登录尝试已经过期。',
+      );
+      notifyListeners();
+      return;
+    }
+
+    final callbackState = callback.state?.trim();
+    if (callbackState == null || callbackState != attempt!.state) {
+      _state = const NativeAuthState.idle(
+        lastErrorMessage: '登录回调校验失败，请重新登录。',
+      );
+      notifyListeners();
+      return;
+    }
+
     final callbackError = callback.error?.trim();
     if (callbackError != null && callbackError.isNotEmpty) {
-      final description = callback.errorDescription?.trim();
       _state = NativeAuthState.idle(
         lastErrorMessage: _buildCallbackErrorMessage(
           callbackError,
-          description,
         ),
       );
       notifyListeners();
@@ -183,6 +213,7 @@ class NativeAuthController extends ChangeNotifier {
       final session = await _exchangeService.redeemAuthorizationCode(
         code: code,
         redirectUri: _environment.nativeOidcRedirectUri,
+        codeVerifier: attempt.codeVerifier,
       );
       await _sessionController.setSession(session);
       _state = const NativeAuthState.idle();
@@ -199,8 +230,38 @@ class NativeAuthController extends ChangeNotifier {
     notifyListeners();
   }
 
-  Uri _buildAuthorizeUri() {
+  NativeOidcAuthorizationAttempt _createAuthorizationAttempt() {
+    final state = _createRandomBase64Url();
+    final codeVerifier = _createRandomBase64Url();
+    return NativeOidcAuthorizationAttempt(
+      state: state,
+      codeVerifier: codeVerifier,
+      redirectUri: _environment.nativeOidcRedirectUri,
+      startedAt: DateTime.now().toUtc(),
+    );
+  }
+
+  String _createRandomBase64Url() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+    return base64Url.encode(bytes).replaceAll('=', '');
+  }
+
+  bool _isValidAuthorizationAttempt(NativeOidcAuthorizationAttempt? attempt) {
+    if (attempt == null ||
+        attempt.redirectUri != _environment.nativeOidcRedirectUri) {
+      return false;
+    }
+
+    final age = DateTime.now().toUtc().difference(attempt.startedAt);
+    return !age.isNegative && age <= _authorizationAttemptTtl;
+  }
+
+  Uri _buildAuthorizeUri(NativeOidcAuthorizationAttempt attempt) {
     final uri = Uri.parse('${_environment.authBaseUrl}/connect/authorize');
+    final challenge = base64Url
+        .encode(sha256.convert(utf8.encode(attempt.codeVerifier)).bytes)
+        .replaceAll('=', '');
     return uri.replace(
       queryParameters: {
         ...uri.queryParameters,
@@ -208,6 +269,9 @@ class NativeAuthController extends ChangeNotifier {
         'response_type': 'code',
         'redirect_uri': _environment.nativeOidcRedirectUri,
         'scope': _environment.oidcScopes,
+        'state': attempt.state,
+        'code_challenge': challenge,
+        'code_challenge_method': 'S256',
       },
     );
   }
@@ -226,19 +290,14 @@ class NativeAuthController extends ChangeNotifier {
 
   String _buildCallbackErrorMessage(
     String error,
-    String? description,
   ) {
     final normalizedError = error.trim();
-    final normalizedDescription = description?.trim();
-    if (normalizedDescription != null && normalizedDescription.isNotEmpty) {
-      return normalizedDescription;
-    }
 
     return switch (normalizedError) {
       'access_denied' => '已在浏览器中取消登录。',
       'login_required' => '浏览器登录会话已失效，请重新登录。',
       'server_error' => '身份服务暂时无法完成登录，请重试。',
-      _ => normalizedError,
+      _ => '浏览器登录未完成，请重新登录。',
     };
   }
 }

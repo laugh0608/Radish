@@ -50,11 +50,11 @@ class RadishNativeIntentPayloadsTest {
     @Test
     fun authCallbackPayloadParsesLoginCode() {
         val payload = RadishNativeIntentPayloads.authCallbackPayload(
-            "radish://oidc/callback?code=native-code-1",
+            "radish://oidc/callback?code=native-code-1&state=native-state-1",
         )
 
         assertEquals(
-            "{\"type\":\"login\",\"code\":\"native-code-1\"}",
+            "{\"type\":\"login\",\"code\":\"native-code-1\",\"state\":\"native-state-1\"}",
             payload,
         )
     }
@@ -62,11 +62,11 @@ class RadishNativeIntentPayloadsTest {
     @Test
     fun authCallbackPayloadParsesBrowserCancellation() {
         val payload = RadishNativeIntentPayloads.authCallbackPayload(
-            "radish://oidc/callback?error=access_denied&error_description=User+canceled",
+            "radish://oidc/callback?error=access_denied&error_description=User+canceled&state=native-state-2",
         )
 
         assertEquals(
-            "{\"type\":\"login\",\"error\":\"access_denied\",\"errorDescription\":\"User canceled\"}",
+            "{\"type\":\"login\",\"state\":\"native-state-2\",\"error\":\"access_denied\",\"errorDescription\":\"User canceled\"}",
             payload,
         )
     }

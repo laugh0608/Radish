@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router';
-import { message } from '@radish/ui';
-import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
+import { AntButton, message } from '@radish/ui';
+import { redeemOidcAuthorizationCode } from '@radish/http';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 import { tokenService } from '../../services/tokenService';
 import { log } from '@/utils/logger';
 import { ClientBackLink } from '@/components/ClientBackLink';
 import i18n from '@/i18n';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { consumeConsoleAuthReturnPath } from '@/services/authReturnPath';
 
 /**
  * OIDC 回调处理页面
@@ -39,13 +40,26 @@ export function OidcCallback() {
           redirectUri,
           missingCodeMessage: i18n.t('console.callback.missingCode'),
           staleCallbackMessage: i18n.t('console.callback.stale'),
+          stateMismatchMessage: i18n.t('console.callback.stateMismatch'),
+          attemptMissingOrExpiredMessage: i18n.t('console.callback.attemptMissing'),
+          buildAuthorizationErrorMessage: ({ error }) => {
+            if (error === 'access_denied') {
+              return i18n.t('console.callback.accessDenied');
+            }
+            if (error === 'login_required') {
+              return i18n.t('console.callback.loginRequired');
+            }
+            if (error === 'server_error') {
+              return i18n.t('console.callback.serverError');
+            }
+            return i18n.t('console.callback.authorizationError');
+          },
+          tokenRequestNetworkErrorMessage: i18n.t('console.callback.tokenRequestNetworkError'),
+          invalidTokenResponseMessage: i18n.t('console.callback.invalidTokenResponse'),
           missingAccessTokenMessage: i18n.t('console.callback.missingAccessToken'),
-          buildTokenRequestFailedMessage: ({ status, statusText, error, errorDescription }) => {
-            const detailMessage = errorDescription || error;
-            return detailMessage
-              ? i18n.t('console.callback.tokenRequestFailedWithDetail', { status, statusText, detail: detailMessage })
-              : i18n.t('console.callback.tokenRequestFailed', { status, statusText });
-          }
+          buildTokenRequestFailedMessage: ({ status, statusText }) => (
+            i18n.t('console.callback.tokenRequestFailed', { status, statusText })
+          )
         });
 
         if (cancelled) {
@@ -69,18 +83,10 @@ export function OidcCallback() {
 
         // 使用 React Router 导航到首页
         redirectTimer = setTimeout(() => {
-          navigate('/', { replace: true });
+          navigate(consumeConsoleAuthReturnPath(), { replace: true });
         }, 500);
       } catch (err) {
         if (cancelled) {
-          return;
-        }
-
-        if (err instanceof OidcCallbackError && err.code === 'stale_callback') {
-          const staleMessage = i18n.t('console.callback.stale');
-          setError(staleMessage);
-          setMessageText(i18n.t('console.callback.failure'));
-          message.error(staleMessage);
           return;
         }
 
@@ -106,7 +112,14 @@ export function OidcCallback() {
       <h1>{t('console.callback.heading')}</h1>
       <p>{messageText}</p>
       {error && <p style={{ color: 'red' }}>{t('console.callback.errorDetails', { detail: error })}</p>}
-      {error ? <ClientBackLink /> : null}
+      {error ? (
+        <>
+          <AntButton type="primary" onClick={() => navigate('/login')}>
+            {t('console.callback.retryLogin')}
+          </AntButton>
+          <ClientBackLink />
+        </>
+      ) : null}
     </div>
   );
 }

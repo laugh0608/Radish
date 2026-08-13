@@ -138,7 +138,7 @@ test('Console 应提供安全的 client 来源返回入口与 Web 主线对象�
   assert.match(clientBackLinkSource, /clearRememberedClientBackTo\(\)/);
   assert.match(clientBackLinkSource, /t\('console\.clientBack\.returning'\)/);
   assert.match(loginSource, /<ClientBackLink \/>/);
-  assert.match(oidcCallbackSource, /error \? <ClientBackLink \/>/);
+  assert.match(oidcCallbackSource, /<ClientBackLink \/>/);
   assert.match(routerComponentsSource, /<ClientBackLink \/>/);
   assert.match(moderationSource, /normalizeConsoleReturnTo/);
   assert.doesNotMatch(moderationSource, /new URL\('\/desktop'/);

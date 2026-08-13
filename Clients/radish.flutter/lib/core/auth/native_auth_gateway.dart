@@ -11,12 +11,14 @@ class NativeAuthCallbackPayload {
   const NativeAuthCallbackPayload({
     required this.type,
     this.code,
+    this.state,
     this.error,
     this.errorDescription,
   });
 
   final NativeAuthCallbackType type;
   final String? code;
+  final String? state;
   final String? error;
   final String? errorDescription;
 
@@ -38,8 +40,60 @@ class NativeAuthCallbackPayload {
     return NativeAuthCallbackPayload(
       type: type,
       code: json['code']?.toString(),
+      state: json['state']?.toString(),
       error: json['error']?.toString(),
       errorDescription: json['errorDescription']?.toString(),
+    );
+  }
+}
+
+class NativeOidcAuthorizationAttempt {
+  const NativeOidcAuthorizationAttempt({
+    required this.state,
+    required this.codeVerifier,
+    required this.redirectUri,
+    required this.startedAt,
+  });
+
+  final String state;
+  final String codeVerifier;
+  final String redirectUri;
+  final DateTime startedAt;
+
+  Map<String, Object?> toJson() {
+    return {
+      'state': state,
+      'codeVerifier': codeVerifier,
+      'redirectUri': redirectUri,
+      'startedAt': startedAt.toUtc().toIso8601String(),
+    };
+  }
+
+  static NativeOidcAuthorizationAttempt? fromJson(Object? json) {
+    if (json is! Map) {
+      return null;
+    }
+
+    final state = json['state']?.toString().trim();
+    final codeVerifier = json['codeVerifier']?.toString().trim();
+    final redirectUri = json['redirectUri']?.toString().trim();
+    final startedAt =
+        DateTime.tryParse(json['startedAt']?.toString() ?? '')?.toUtc();
+    if (state == null ||
+        state.isEmpty ||
+        codeVerifier == null ||
+        codeVerifier.length < 43 ||
+        redirectUri == null ||
+        redirectUri.isEmpty ||
+        startedAt == null) {
+      return null;
+    }
+
+    return NativeOidcAuthorizationAttempt(
+      state: state,
+      codeVerifier: codeVerifier,
+      redirectUri: redirectUri,
+      startedAt: startedAt,
     );
   }
 }
@@ -50,14 +104,24 @@ abstract class NativeAuthGateway {
   Future<void> openLogoutUrl(Uri logoutUri);
 
   Future<NativeAuthCallbackPayload?> takePendingCallback();
+
+  Future<void> writeAuthorizationAttempt(
+      NativeOidcAuthorizationAttempt attempt);
+
+  Future<NativeOidcAuthorizationAttempt?> takeAuthorizationAttempt();
+
+  Future<void> clearAuthorizationAttempt();
 }
 
 class InMemoryNativeAuthGateway implements NativeAuthGateway {
   InMemoryNativeAuthGateway({
     NativeAuthCallbackPayload? initialPendingCallback,
-  }) : _pendingCallback = initialPendingCallback;
+    NativeOidcAuthorizationAttempt? initialAuthorizationAttempt,
+  })  : _pendingCallback = initialPendingCallback,
+        _authorizationAttempt = initialAuthorizationAttempt;
 
   NativeAuthCallbackPayload? _pendingCallback;
+  NativeOidcAuthorizationAttempt? _authorizationAttempt;
   Uri? lastAuthorizeUri;
   Uri? lastLogoutUri;
 
@@ -80,6 +144,24 @@ class InMemoryNativeAuthGateway implements NativeAuthGateway {
     final callback = _pendingCallback;
     _pendingCallback = null;
     return callback;
+  }
+
+  @override
+  Future<void> writeAuthorizationAttempt(
+      NativeOidcAuthorizationAttempt attempt) async {
+    _authorizationAttempt = attempt;
+  }
+
+  @override
+  Future<NativeOidcAuthorizationAttempt?> takeAuthorizationAttempt() async {
+    final attempt = _authorizationAttempt;
+    _authorizationAttempt = null;
+    return attempt;
+  }
+
+  @override
+  Future<void> clearAuthorizationAttempt() async {
+    _authorizationAttempt = null;
   }
 }
 
@@ -114,5 +196,30 @@ class PlatformNativeAuthGateway implements NativeAuthGateway {
     }
 
     return NativeAuthCallbackPayload.fromJson(jsonDecode(payload));
+  }
+
+  @override
+  Future<void> writeAuthorizationAttempt(
+      NativeOidcAuthorizationAttempt attempt) async {
+    await _channel.invokeMethod<void>(
+      'writeAuthorizationAttempt',
+      jsonEncode(attempt.toJson()),
+    );
+  }
+
+  @override
+  Future<NativeOidcAuthorizationAttempt?> takeAuthorizationAttempt() async {
+    final payload =
+        await _channel.invokeMethod<String>('takeAuthorizationAttempt');
+    if (payload == null || payload.trim().isEmpty) {
+      return null;
+    }
+
+    return NativeOidcAuthorizationAttempt.fromJson(jsonDecode(payload));
+  }
+
+  @override
+  Future<void> clearAuthorizationAttempt() async {
+    await _channel.invokeMethod<void>('clearAuthorizationAttempt');
   }
 }

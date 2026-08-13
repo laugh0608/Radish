@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-13 更新（Asia/Shanghai）
 >
-> 状态：C-1A、六个 R1、四个 R2、三个 Public R3、R3-C04 六批与 R3-C05 四批均已关闭；下一顺位为 `R3-F02 自服务与边界页`
+> 状态：C-1A、六个 R1、四个 R2、三个 Public R3、R3-C04 六批与 R3-C05 四批均已关闭；R3-F02 继承审计已完成，不新增 Pencil
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -122,7 +122,7 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 
 每个 R3 实现批次仍需写明代表来源、局部差异、关键状态与 mobile 转换。发现继承不成立时停止扩张并升级分级。
 
-`2026-08-11` 的[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定了六组 R3 顺位。`R3-P04 / P05 / P06`、R3-C04 六批与 R3-C05 四批均已完成；[R3-C05 成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)确认既有继承成立。下一步反查 `R3-F02` 的 Settings / Profile、登录、OIDC 回流和 Not Found；继承成立时继续不修改 Pencil。
+`2026-08-11` 的[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定了六组 R3 顺位。`R3-P04 / P05 / P06`、R3-C04 六批与 R3-C05 四批均已完成；[R3-F02 代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)进一步确认 Settings / Profile 继承 `R1-C01 + R2-C03`，Login / OIDC / Not Found / Error 继承 `R1-F01`，没有新壳层或响应式模型，继续不修改 Pencil。[R3-F02-A OIDC 回流信任门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)已完成代码与静态门禁，下一步进入自服务权威状态。
 
 ## 7. 本批不纳入代表设计
 
@@ -146,7 +146,7 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 10. `R2-P03` readiness、两批能力门禁、七轮结构反馈、商品评价补充设计、正式商品详情 / 公开主页和 Gateway PC / mobile 运行态验收均已完成，专题关闭。
 11. `R2-W02` readiness、五组前端能力门禁、三张局部代表板、六个正式入口实现与 Gateway PC / mobile 成组验收均已完成，专题关闭。
 12. `R2-A02` readiness、五组能力门禁、九张确认代表板、正式实现与 Gateway PC / Mobile 运行态验收均已完成，专题关闭。
-13. 六个 R1、四个 R2、`R3-P04 / P05 / P06`、`R3-C04-A` 至 `C04-F` 与 R3-C05 四批均已形成闭环；下一步进入 `R3-F02` 设计前代码事实审计，保持身份、错误原因、来源返回和既有代表继承边界。
+13. 六个 R1、四个 R2、`R3-P04 / P05 / P06`、`R3-C04-A` 至 `C04-F`、R3-C05 四批与 R3-F02-A 均已形成闭环；下一步按 B / C 实施自服务权威状态与错误路由边界，不修改 Pencil。
 14. R3 继承不成立或发现新结构 / 响应式模型时，必须停止扩张并按自动升级条件重新裁决 R1 / R2。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。

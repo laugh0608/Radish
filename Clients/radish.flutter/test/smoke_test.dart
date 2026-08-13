@@ -1364,9 +1364,10 @@ void main() {
     await tester.pumpAndSettle();
 
     gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
+      NativeAuthCallbackPayload(
         type: NativeAuthCallbackType.login,
         code: 'profile-login-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
       ),
     );
     await authController.consumePendingCallback();
@@ -1440,9 +1441,10 @@ void main() {
     await tester.pumpAndSettle();
 
     gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
+      NativeAuthCallbackPayload(
         type: NativeAuthCallbackType.login,
         code: 'profile-login-rebuild-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
       ),
     );
     await authController.consumePendingCallback();
@@ -1519,14 +1521,15 @@ void main() {
       findsOneWidget,
     );
 
-    gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
-        type: NativeAuthCallbackType.login,
-        code: 'forum-login-code',
-      ),
-    );
     await tester.tap(find.text('重试登录'));
     await tester.pumpAndSettle();
+    gateway.setPendingCallback(
+      NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'forum-login-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
+      ),
+    );
     await authController.consumePendingCallback();
     await tester.pump();
     await tester.pumpAndSettle();
@@ -1606,9 +1609,10 @@ void main() {
     await tester.pumpAndSettle();
 
     gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
+      NativeAuthCallbackPayload(
         type: NativeAuthCallbackType.login,
         code: 'forum-login-rebuild-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
       ),
     );
     await authController.consumePendingCallback();
@@ -1680,14 +1684,15 @@ void main() {
     expect(find.text('登录需要处理'), findsOneWidget);
     expect(find.text('重试登录'), findsOneWidget);
 
-    gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
-        type: NativeAuthCallbackType.login,
-        code: 'forum-detail-login-code',
-      ),
-    );
     await tester.tap(find.text('重试登录'));
     await tester.pumpAndSettle();
+    gateway.setPendingCallback(
+      NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'forum-detail-login-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
+      ),
+    );
     await authController.consumePendingCallback();
     await tester.pump();
     await tester.pumpAndSettle();
@@ -1767,14 +1772,15 @@ void main() {
     expect(find.text('登录需要处理'), findsWidgets);
     expect(find.text('重试登录'), findsWidgets);
 
-    gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
-        type: NativeAuthCallbackType.login,
-        code: 'notification-detail-login-code',
-      ),
-    );
     await tester.tap(find.text('重试登录').first);
     await tester.pumpAndSettle();
+    gateway.setPendingCallback(
+      NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'notification-detail-login-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
+      ),
+    );
     await authController.consumePendingCallback();
     await tester.pump();
     await tester.pumpAndSettle();
@@ -1842,14 +1848,15 @@ void main() {
     );
     expect(find.text('登录后可以发布轻回应'), findsOneWidget);
 
-    gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
-        type: NativeAuthCallbackType.login,
-        code: 'quick-reply-login-code',
-      ),
-    );
     await tester.tap(find.text('登录后发布'));
     await tester.pumpAndSettle();
+    gateway.setPendingCallback(
+      NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'quick-reply-login-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
+      ),
+    );
     await authController.consumePendingCallback();
     await tester.pump();
     await tester.pumpAndSettle();
@@ -1916,14 +1923,15 @@ void main() {
     );
     expect(find.text('登录后可以发表评论'), findsOneWidget);
 
-    gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
-        type: NativeAuthCallbackType.login,
-        code: 'comment-login-code',
-      ),
-    );
     await tester.tap(find.text('登录后评论'));
     await tester.pumpAndSettle();
+    gateway.setPendingCallback(
+      NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'comment-login-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
+      ),
+    );
     await authController.consumePendingCallback();
     await tester.pump();
     await tester.pumpAndSettle();
@@ -1988,12 +1996,6 @@ void main() {
       '匿名态进入登录后，回来继续发布同一份草稿。',
     );
 
-    gateway.setPendingCallback(
-      const NativeAuthCallbackPayload(
-        type: NativeAuthCallbackType.login,
-        code: 'post-login-code',
-      ),
-    );
     await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
     await tester.pumpAndSettle();
 
@@ -2001,6 +2003,14 @@ void main() {
     expect(find.text('登录后可继续提交当前帖子。'), findsOneWidget);
     expect(find.text('登录回流发帖'), findsOneWidget);
     expect(find.text('匿名态进入登录后，回来继续发布同一份草稿。'), findsOneWidget);
+
+    gateway.setPendingCallback(
+      NativeAuthCallbackPayload(
+        type: NativeAuthCallbackType.login,
+        code: 'post-login-code',
+        state: gateway.lastAuthorizeUri!.queryParameters['state'],
+      ),
+    );
 
     await authController.consumePendingCallback();
     await tester.pump();
@@ -3203,11 +3213,31 @@ NativeAuthController _buildAuthController(
   AuthSession? nextSession,
   String? exchangeFailureMessage,
 }) {
+  const restoredState = 'restored-native-oidc-state';
+  final restoredCallback = pendingCallback == null
+      ? null
+      : NativeAuthCallbackPayload(
+          type: pendingCallback.type,
+          code: pendingCallback.code,
+          state: pendingCallback.state ?? restoredState,
+          error: pendingCallback.error,
+          errorDescription: pendingCallback.errorDescription,
+        );
   return NativeAuthController(
     environment: const AppEnvironment.development(),
     sessionController: sessionController,
     gateway: InMemoryNativeAuthGateway(
-      initialPendingCallback: pendingCallback,
+      initialPendingCallback: restoredCallback,
+      initialAuthorizationAttempt: pendingCallback == null
+          ? null
+          : NativeOidcAuthorizationAttempt(
+              state: restoredState,
+              codeVerifier:
+                  'test-verifier-abcdefghijklmnopqrstuvwxyz-1234567890',
+              redirectUri:
+                  const AppEnvironment.development().nativeOidcRedirectUri,
+              startedAt: DateTime.now().toUtc(),
+            ),
     ),
     exchangeService: _FakeAuthorizationCodeExchangeService(
       nextSession: nextSession,
@@ -5030,6 +5060,7 @@ class _FakeAuthorizationCodeExchangeService
   Future<AuthSession> redeemAuthorizationCode({
     required String code,
     required String redirectUri,
+    required String codeVerifier,
   }) async {
     final failureMessage = this.failureMessage;
     if (failureMessage != null) {

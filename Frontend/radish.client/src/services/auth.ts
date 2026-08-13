@@ -3,6 +3,7 @@
  * 统一管理登录/退出逻辑
  */
 import i18n from '@/i18n';
+import { createOidcAuthorizationUrl } from '@radish/http';
 import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
 import {
@@ -29,28 +30,29 @@ export function redirectToLogin(options: RedirectToLoginOptions = {}): void {
   if (typeof window === 'undefined') return;
 
   const startLogin = async () => {
-    rememberAuthReturnPath(options.returnPath);
-
     const redirectUri = isTauriRuntime() ? await prepareOidcRedirectUri() : getOidcRedirectUri();
     const authServerBaseUrl = getAuthBaseUrl();
 
-    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
-    authorizeUrl.searchParams.set('client_id', CLIENT_ID);
-    authorizeUrl.searchParams.set('response_type', 'code');
-    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
-
     // 传递当前语言设置
     const currentLanguage = i18n.language || 'zh';
-    authorizeUrl.searchParams.set('culture', currentLanguage);
-    authorizeUrl.searchParams.set('ui-culture', currentLanguage);
+    const authorizeUrl = await createOidcAuthorizationUrl({
+      clientId: CLIENT_ID,
+      authServerBaseUrl,
+      redirectUri,
+      scope: 'openid profile offline_access radish-api',
+      additionalParameters: {
+        culture: currentLanguage,
+        'ui-culture': currentLanguage,
+      },
+    });
+    rememberAuthReturnPath(options.returnPath);
 
     if (isTauriRuntime()) {
-      await openExternalUrl(authorizeUrl.toString());
+      await openExternalUrl(authorizeUrl);
       return;
     }
 
-    window.location.href = authorizeUrl.toString();
+    window.location.href = authorizeUrl;
   };
 
   void startLogin().catch((error: unknown) => {
