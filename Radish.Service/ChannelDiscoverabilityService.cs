@@ -60,23 +60,45 @@ public sealed class ChannelDiscoverabilityService : IChannelDiscoverabilityServi
         };
     }
 
-    public async Task<IReadOnlyList<ChannelDiscoverVisibilityEventVo>> GetHistoryAsync(
-        long tenantId,
-        long channelId,
-        int take)
+    public async Task<ChannelDiscoverabilityVo> GetByIdAsync(long tenantId, long channelId)
     {
         if (tenantId < 0 || channelId <= 0)
         {
             throw InvalidArgument();
         }
 
+        var channel = await _repository.QueryByIdAsync(tenantId, channelId);
+        return channel == null ? throw TargetUnavailable() : MapChannel(channel);
+    }
+
+    public async Task<PageModel<ChannelDiscoverVisibilityEventVo>> GetHistoryAsync(
+        long tenantId,
+        long channelId,
+        int pageIndex,
+        int pageSize)
+    {
+        if (tenantId < 0 || channelId <= 0)
+        {
+            throw InvalidArgument();
+        }
+
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = Math.Clamp(pageSize, 1, 100);
         try
         {
-            var items = await _repository.QueryHistoryAsync(
+            var (items, total) = await _repository.QueryHistoryAsync(new ChannelDiscoverVisibilityHistoryQuery(
                 tenantId,
                 channelId,
-                Math.Clamp(take, 1, 100));
-            return items.Select(MapEvent).ToList();
+                safePageIndex,
+                safePageSize));
+            return new PageModel<ChannelDiscoverVisibilityEventVo>
+            {
+                Page = safePageIndex,
+                PageSize = safePageSize,
+                DataCount = total,
+                PageCount = (int)Math.Ceiling(total / (double)safePageSize),
+                Data = items.Select(MapEvent).ToList()
+            };
         }
         catch (ChannelDiscoverabilityTargetUnavailableException)
         {

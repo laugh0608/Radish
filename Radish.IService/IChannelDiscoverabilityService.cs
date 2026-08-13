@@ -15,10 +15,13 @@ public interface IChannelDiscoverabilityService
         bool? isEnabled,
         bool includeDeleted);
 
-    Task<IReadOnlyList<ChannelDiscoverVisibilityEventVo>> GetHistoryAsync(
+    Task<ChannelDiscoverabilityVo> GetByIdAsync(long tenantId, long channelId);
+
+    Task<PageModel<ChannelDiscoverVisibilityEventVo>> GetHistoryAsync(
         long tenantId,
         long channelId,
-        int take);
+        int pageIndex,
+        int pageSize);
 
     Task<ChannelDiscoverVisibilityMutationVo> UpdateVisibilityAsync(
         long tenantId,

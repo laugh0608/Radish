@@ -63,6 +63,83 @@ public sealed class ChannelDiscoverabilityRepositoryTest
     }
 
     [Fact]
+    public async Task QueryByIdAsync_ShouldUseExactTenantGovernanceScope()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-channel-discover-by-id-{Guid.NewGuid():N}.db");
+        using var db = CreateSqliteScope(path);
+
+        try
+        {
+            var chatDb = db.GetConnectionScope("chat");
+            chatDb.CodeFirst.InitTables<Channel, ChannelDiscoverVisibilityEvent>();
+            chatDb.Insertable(new[]
+            {
+                CreateChannel(70001, 30000, "tenant-channel", ChannelType.Public),
+                CreateChannel(70002, 0, "public-tenant-channel", ChannelType.Public),
+                CreateChannel(70003, 30000, "private-channel", ChannelType.Private)
+            }).ExecuteCommand();
+            var repository = CreateRepository(db);
+
+            var channel = await repository.QueryByIdAsync(30000, 70001);
+            var sharedTenantChannel = await repository.QueryByIdAsync(30000, 70002);
+            var privateChannel = await repository.QueryByIdAsync(30000, 70003);
+
+            Assert.NotNull(channel);
+            Assert.Equal(30000, channel.TenantId);
+            Assert.Null(sharedTenantChannel);
+            Assert.Null(privateChannel);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task QueryHistoryAsync_ShouldReturnStablePagedTimelineAndTotal()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-channel-discover-history-{Guid.NewGuid():N}.db");
+        using var db = CreateSqliteScope(path);
+
+        try
+        {
+            var chatDb = db.GetConnectionScope("chat");
+            chatDb.CodeFirst.InitTables<Channel, ChannelDiscoverVisibilityEvent>();
+            chatDb.Insertable(CreateChannel(
+                70001,
+                30000,
+                "general",
+                ChannelType.Public,
+                ChannelDiscoverVisibility.Summary)).ExecuteCommand();
+            chatDb.Insertable(new[]
+            {
+                CreateHistoryEvent(71001, 1),
+                CreateHistoryEvent(71002, 2),
+                CreateHistoryEvent(71003, 3)
+            }).ExecuteCommand();
+            var repository = CreateRepository(db);
+
+            var (items, total) = await repository.QueryHistoryAsync(
+                new ChannelDiscoverVisibilityHistoryQuery(30000, 70001, 2, 2));
+
+            Assert.Equal(3, total);
+            var item = Assert.Single(items);
+            Assert.Equal(1, item.ResultVersion);
+            Assert.Equal(71001, item.Id);
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     public async Task SetVisibilityAsync_ShouldPersistStateAndAppendAuditEventAtomically()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-channel-discover-write-{Guid.NewGuid():N}.db");
@@ -282,4 +359,23 @@ public sealed class ChannelDiscoverabilityRepositoryTest
         20001,
         "Moderator",
         NowUtc);
+
+    private static ChannelDiscoverVisibilityEvent CreateHistoryEvent(long id, int resultVersion) => new()
+    {
+        Id = id,
+        TenantId = 30000,
+        ChannelId = 70001,
+        FromVisibility = resultVersion % 2 == 0
+            ? ChannelDiscoverVisibility.Summary
+            : ChannelDiscoverVisibility.Hidden,
+        ToVisibility = resultVersion % 2 == 0
+            ? ChannelDiscoverVisibility.Hidden
+            : ChannelDiscoverVisibility.Summary,
+        ExpectedVersion = resultVersion - 1,
+        ResultVersion = resultVersion,
+        Reason = $"history-{resultVersion}",
+        ActorUserId = 20001,
+        ActorName = "Moderator",
+        CreateTime = NowUtc.AddMinutes(resultVersion)
+    };
 }

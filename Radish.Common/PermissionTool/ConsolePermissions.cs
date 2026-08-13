@@ -99,6 +99,7 @@ public static class ConsolePermissions
             ["/api/v1/User/GetUserList"] = new[] { UsersView },
             ["/api/v1/User/GetUserById/\\d+"] = new[] { UsersView },
             ["/api/v1/ChannelDiscoverability/GetPage"] = new[] { ChannelDiscoverabilityView },
+            ["/api/v1/ChannelDiscoverability/GetById"] = new[] { ChannelDiscoverabilityView },
             ["/api/v1/ChannelDiscoverability/GetHistory"] = new[] { ChannelDiscoverabilityView },
             ["/api/v1/ChannelDiscoverability/UpdateVisibility/.+"] = new[] { ChannelDiscoverabilityManage },
             ["/api/v1/Client/GetClients"] = new[] { ApplicationsView },

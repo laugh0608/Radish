@@ -131,6 +131,7 @@ internal static partial class InitialDataSeeder
         new(61040, "/api/v1/User/GetUserList", "View"),
         new(61040, "/api/v1/User/GetUserById/\\d+", "View"),
         new(61150, "/api/v1/ChannelDiscoverability/GetPage", "View"),
+        new(61150, "/api/v1/ChannelDiscoverability/GetById", "View"),
         new(61150, "/api/v1/ChannelDiscoverability/GetHistory", "View"),
         new(61151, "/api/v1/ChannelDiscoverability/UpdateVisibility/.+", "Action"),
         new(61050, "/api/v1/Role/GetRoleList", "View"),

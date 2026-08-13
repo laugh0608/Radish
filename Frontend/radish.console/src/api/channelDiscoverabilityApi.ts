@@ -1,4 +1,5 @@
 import { apiGet, apiPut, createApiResponseError } from '@radish/http';
+import type { TFunction } from 'i18next';
 
 export type ChannelDiscoverVisibility = 0 | 1;
 
@@ -33,17 +34,24 @@ export interface ChannelDiscoverVisibilityEventVo {
   voCreateTime: string;
 }
 
-export interface ChannelDiscoverabilityPageModel {
+export interface ChannelDiscoverabilityPageModel<T> {
   page: number;
   pageSize: number;
   dataCount: number;
   pageCount: number;
-  data: ChannelDiscoverabilityVo[];
+  data: T[];
 }
+
+export type ChannelDiscoverabilityListPageModel = ChannelDiscoverabilityPageModel<ChannelDiscoverabilityVo>;
+export type ChannelDiscoverVisibilityEventPageModel = ChannelDiscoverabilityPageModel<ChannelDiscoverVisibilityEventVo>;
 
 export interface ChannelDiscoverVisibilityMutationVo {
   voChannel: ChannelDiscoverabilityVo;
   voChanged: boolean;
+}
+
+function translateFallback(t: TFunction | undefined, key: string, fallback: string): string {
+  return t ? t(key) : fallback;
 }
 
 export async function getChannelDiscoverabilityPage(params: {
@@ -53,7 +61,7 @@ export async function getChannelDiscoverabilityPage(params: {
   discoverVisibility?: ChannelDiscoverVisibility;
   isEnabled?: boolean;
   includeDeleted?: boolean;
-}): Promise<ChannelDiscoverabilityPageModel> {
+}, t?: TFunction): Promise<ChannelDiscoverabilityListPageModel> {
   const searchParams = new URLSearchParams();
   searchParams.set('pageIndex', String(params.pageIndex ?? 1));
   searchParams.set('pageSize', String(params.pageSize ?? 20));
@@ -70,27 +78,56 @@ export async function getChannelDiscoverabilityPage(params: {
     searchParams.set('includeDeleted', String(params.includeDeleted));
   }
 
-  const response = await apiGet<ChannelDiscoverabilityPageModel>(
+  const response = await apiGet<ChannelDiscoverabilityListPageModel>(
     `/api/v1/ChannelDiscoverability/GetPage?${searchParams.toString()}`,
     { withAuth: true },
   );
   if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '获取频道公开摘要列表失败');
+    throw createApiResponseError(
+      response,
+      translateFallback(t, 'channelDiscoverability.feedback.loadFailed', '获取频道公开摘要列表失败'),
+    );
   }
   return response.data;
 }
 
-export async function getChannelDiscoverabilityHistory(
+export async function getChannelDiscoverabilityById(
   channelId: string,
-  take = 20,
-): Promise<ChannelDiscoverVisibilityEventVo[]> {
-  const searchParams = new URLSearchParams({ channelId, take: String(take) });
-  const response = await apiGet<ChannelDiscoverVisibilityEventVo[]>(
+  t?: TFunction,
+): Promise<ChannelDiscoverabilityVo> {
+  const searchParams = new URLSearchParams({ channelId });
+  const response = await apiGet<ChannelDiscoverabilityVo>(
+    `/api/v1/ChannelDiscoverability/GetById?${searchParams.toString()}`,
+    { withAuth: true },
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(
+      response,
+      translateFallback(t, 'channelDiscoverability.feedback.targetRefreshFailed', '刷新频道状态失败'),
+    );
+  }
+  return response.data;
+}
+
+export async function getChannelDiscoverabilityHistory(params: {
+  channelId: string;
+  pageIndex?: number;
+  pageSize?: number;
+}, t?: TFunction): Promise<ChannelDiscoverVisibilityEventPageModel> {
+  const searchParams = new URLSearchParams({
+    channelId: params.channelId,
+    pageIndex: String(params.pageIndex ?? 1),
+    pageSize: String(params.pageSize ?? 20),
+  });
+  const response = await apiGet<ChannelDiscoverVisibilityEventPageModel>(
     `/api/v1/ChannelDiscoverability/GetHistory?${searchParams.toString()}`,
     { withAuth: true },
   );
   if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '获取频道公开摘要历史失败');
+    throw createApiResponseError(
+      response,
+      translateFallback(t, 'channelDiscoverability.feedback.historyFailed', '获取频道公开摘要历史失败'),
+    );
   }
   return response.data;
 }
@@ -102,6 +139,7 @@ export async function updateChannelDiscoverVisibility(
     expectedVersion: number;
     reason: string;
   },
+  t?: TFunction,
 ): Promise<ChannelDiscoverVisibilityMutationVo> {
   const response = await apiPut<ChannelDiscoverVisibilityMutationVo>(
     `/api/v1/ChannelDiscoverability/UpdateVisibility/${encodeURIComponent(channelId)}`,
@@ -109,7 +147,10 @@ export async function updateChannelDiscoverVisibility(
     { withAuth: true },
   );
   if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '更新频道公开摘要资格失败');
+    throw createApiResponseError(
+      response,
+      translateFallback(t, 'channelDiscoverability.feedback.updateFailed', '更新频道公开摘要资格失败'),
+    );
   }
   return response.data;
 }

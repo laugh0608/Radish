@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-C05-B Channel Discoverability 权威公开资格治理`
-- **产品下一顺位**：`关闭频道 URL 权威查询、历史真实分页、CAS 草稿保留与 Mobile 频道 / 事件承载，再进入 Documents 治理版本与事件设计`
-- **复核日期**：`2026-08-12`
+- **工程第一顺位**：`F4-R R3-C05-C Documents 文档状态与审核治理`
+- **产品下一顺位**：`关闭 Documents 独立治理版本、append-only 治理事件、真实审核分页与 Mobile 单任务承载，再进入 Experience 权威台账治理`
+- **复核日期**：`2026-08-13`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-13` 已完成 [R3-C05-B Channel Discoverability 权威公开资格治理代码及静态门禁](/records/f4-r-r3-c05-b-channel-discoverability-authoritative-governance-implementation-2026-08-13)：列表筛选与分页进入 URL，列表 / 历史具备独立请求代际、查询快照和 `loading / ready / unavailable / stale`；历史改为服务端真实分页，新增复用 view 权限的 `GetById` 精确刷新 CAS 冲突目标。冲突保留理由草稿并要求重新确认，成功先消费响应权威快照再刷新列表；PC 表格 / 时间线与 Mobile 频道卡 / 事件卡共用快照。后端定向 `46 passed / 1 skipped`、Console `116 / 116`、类型、Lint、production build、权限和卫生门禁通过。未新增数据库、migration 或权限键，未启动服务 / 浏览器或修改 Pencil；下一顺位进入 `R3-C05-C Documents`。
 - `2026-08-12` 已完成 [R3-C05-A Console Dashboard 权威调度面代码及静态门禁](/records/f4-r-r3-c05-a-console-dashboard-authoritative-dispatch-implementation-2026-08-12)：统计与最近订单分别具备请求代际、权威快照和 `loading / ready / unavailable / stale`，首次失败不再伪造零值 / 空列表，刷新失败保留旧快照；静态“优先队列”已纠正为高频任务路径，重复页头 / 命令组和伪“新建商品”入口已删除。PC 表格与 Mobile 订单卡共用同一快照；Statistics `4 / 4`、Console `110 / 110`、类型、Lint、production build 与卫生门禁通过。未新增跨模块聚合 API，未启动服务 / 浏览器或修改 Pencil；下一顺位进入 `R3-C05-B Channel Discoverability`。
 - `2026-08-12` 已完成 [R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)：Dashboard、Channel Discoverability、Documents 与 Experience 的既有继承均成立，不需要新建或修改 Pencil；四页按风险拆为 Dashboard、Channel、Documents、Experience 四批，不建立万能治理状态机。审计识别 Dashboard 首次失败伪零值与静态“队列”、Channel 历史截断、Documents 普通治理动作缺少独立状态版本 / append-only 事件，以及 Experience 证据目标与写入目标可分离、调账缺少调用方 CAS / 幂等、等级配置重算非整批事务等根因。下一顺位进入 `R3-C05-A Dashboard 权威调度面`；本批未修改运行时代码、数据库、权限或 Pencil，未启动服务 / 浏览器。
 - `2026-08-12` 已完成 [R3-C04-F Coins 权威调账与流水治理代码及静态门禁](/records/f4-r-r3-c04-f-console-coins-implementation-2026-08-12)：调账只绑定权威用户、余额与版本，显式确认目标 / 方向 / 金额 / 原因；独立 `CoinAdminAdjustment` 幂等域支持同载荷重放，异载荷、Processing、回放缺失和余额版本变化返回结构化冲突，首次记录创建用 savepoint 收敛 PostgreSQL 同键竞争，Main 余额 CAS、交易流水与幂等成功结果共同提交。Console 查询与筛选可由 URL 回访，独立请求代际与 `stale / unavailable` 冻结非权威写入；PC 连续流水表格和 Mobile 流水卡 / 筛选 Bottom Sheet 共用同一快照。后端 `1253 passed / 39 skipped`、Console `106 / 106`、构建、类型、Lint、权限 / LongId 门禁通过；未启动服务、浏览器或修改 Pencil。R3-C04 六批代码和静态门禁全部关闭，下一顺位进入 `R3-C05` 设计前审计。
@@ -168,17 +169,18 @@
 64. 按确认设计完成 R2-A02 正式前端实现：Docs / Forum 共享相邻 / 当前双快照差异，Mine 主轴与 Mobile 顺序收敛，正式 Composer 以同一实例承载 PC / Mobile 半屏和全屏；Client 全量 `536 / 536`、类型、Lint、构建与变更卫生通过。
 65. 获授权后使用种子管理员完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` 成组验收；修正选中文档行 Mobile 断点和 Composer 图标按钮可访问名称，复验无横向溢出，干净标签页 `0 warning / 0 error`，R2-A02 关闭。
 
-## 明天事项（2026-08-13）
+## 明天事项（2026-08-14）
 
-1. 新会话先读取本页、[R3-C05-A Dashboard 实现记录](/records/f4-r-r3-c05-a-console-dashboard-authoritative-dispatch-implementation-2026-08-12)和 [R3-C05 设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)的 Channel 门禁。
-2. 先按审计给出 `R3-C05-B Channel Discoverability` 的精确实施方案并取得确认，重点固定历史分页接口、CAS 冲突草稿和成功响应快照消费顺序；不直接进入接口改造。
-3. 方案确认后再把关键词、可见性、生命周期、删除筛选和分页接入 URL，分离筛选草稿与已应用查询，并为列表 / 历史分别增加请求代际和 `unavailable / stale`。
-4. 把固定最近 `20` 条历史改为服务端真实分页；PC 保留频道表格 / 事件时间线，Mobile 使用同快照频道卡、单一显隐确认和事件卡。
-5. 定向覆盖 URL、竞态、历史分页、CAS 草稿、成功后刷新失败 stale 与 PC / Mobile 同快照；随后执行后端专题、Console 全量、类型、Lint、build、权限和卫生门禁。
-6. 不修改 Public Discover 规则、频道消息授权、数据库字段、权限键或 Pencil；开发中不启动服务 / 浏览器，四批静态门禁成组完成后再申请 Gateway 运行态授权。
+1. 新会话先读取本页、[R3-C05-B Channel 实现记录](/records/f4-r-r3-c05-b-channel-discoverability-authoritative-governance-implementation-2026-08-13)和 [R3-C05 设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)的 Documents 门禁，再反查 Wiki 实体、Revision / Review、普通治理写入和 Console 页面当前事实。
+2. 先给出 `R3-C05-C Documents` 的精确实施方案并取得确认，固定独立 `GovernanceVersion`、append-only `WikiDocumentGovernanceEvent`、migration、事务和接口契约；未确认前不修改实体、数据库或写入接口。
+3. 内容 `Version`、审核 Review Event 与生命周期 Governance Event 保持独立语义；普通治理动作携带期望治理版本，需要确认正文的动作同时携带期望内容版本，条件更新与事件写入在同一事务完成。
+4. 文档列表与待审队列分别进入 URL 真实分页；列表、详情、Revision、Review 证据和治理事件分别维护请求代际与 `unavailable / stale`，不得自动把第一篇文档当作治理目标。
+5. PC 保持队列 / 文档列表—证据—动作与事件；Mobile 固定选择任务—正文 / 草稿证据—动作—时间线，并按真实所有权拆分当前接近硬上限的页面，不创建只转发参数的空组件。
+6. 定向覆盖 SQLite / PostgreSQL migration、状态 CAS、事件事务、Review 回归、URL / 竞态和 PC / Mobile 合同，再执行 Console 与仓库门禁；不修改 Docs Author、公开 ACL、附件令牌、审核状态机或 Pencil，四批静态门禁成组关闭前不启动服务 / 浏览器。
 
 ## 当前执行入口
 
+- [R3-C05-B Channel Discoverability 权威公开资格治理实现](/records/f4-r-r3-c05-b-channel-discoverability-authoritative-governance-implementation-2026-08-13)
 - [R3-C05-A Console Dashboard 权威调度面实现](/records/f4-r-r3-c05-a-console-dashboard-authoritative-dispatch-implementation-2026-08-12)
 - [R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)
 - [R3-C04-F Coins 权威调账与流水治理实现](/records/f4-r-r3-c04-f-console-coins-implementation-2026-08-12)

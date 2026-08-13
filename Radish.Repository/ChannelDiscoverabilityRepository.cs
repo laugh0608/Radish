@@ -82,17 +82,26 @@ public sealed class ChannelDiscoverabilityRepository : BaseRepository<Channel>,
         });
     }
 
-    public Task<IReadOnlyList<ChannelDiscoverVisibilityEvent>> QueryHistoryAsync(
-        long tenantId,
-        long channelId,
-        int take)
+    public Task<Channel?> QueryByIdAsync(long tenantId, long channelId)
+    {
+        return ExecuteDbOperationAsync(async () => (Channel?)await DbProtectedClient.Queryable<Channel>()
+            .Where(channel =>
+                channel.Id == channelId &&
+                channel.TenantId == tenantId &&
+                (channel.Type == ChannelType.Public ||
+                 channel.DiscoverVisibility == ChannelDiscoverVisibility.Summary))
+            .FirstAsync());
+    }
+
+    public Task<(IReadOnlyList<ChannelDiscoverVisibilityEvent> Items, int Total)> QueryHistoryAsync(
+        ChannelDiscoverVisibilityHistoryQuery query)
     {
         return ExecuteDbOperationAsync(async () =>
         {
             var channelExists = await DbProtectedClient.Queryable<Channel>()
                 .Where(channel =>
-                    channel.Id == channelId &&
-                    channel.TenantId == tenantId &&
+                    channel.Id == query.ChannelId &&
+                    channel.TenantId == query.TenantId &&
                     (channel.Type == ChannelType.Public ||
                      channel.DiscoverVisibility == ChannelDiscoverVisibility.Summary))
                 .AnyAsync();
@@ -101,13 +110,13 @@ public sealed class ChannelDiscoverabilityRepository : BaseRepository<Channel>,
                 throw new ChannelDiscoverabilityTargetUnavailableException();
             }
 
+            RefAsync<int> total = 0;
             var items = await DbProtectedClient.Queryable<ChannelDiscoverVisibilityEvent>()
-                .Where(change => change.TenantId == tenantId && change.ChannelId == channelId)
+                .Where(change => change.TenantId == query.TenantId && change.ChannelId == query.ChannelId)
                 .OrderByDescending(change => change.ResultVersion)
                 .OrderByDescending(change => change.Id)
-                .Take(take)
-                .ToListAsync();
-            return (IReadOnlyList<ChannelDiscoverVisibilityEvent>)items;
+                .ToPageListAsync(query.PageIndex, query.PageSize, total);
+            return ((IReadOnlyList<ChannelDiscoverVisibilityEvent>)items, total.Value);
         });
     }
 

@@ -11,6 +11,12 @@ public sealed record ChannelDiscoverabilityPageQuery(
     bool? IsEnabled,
     bool IncludeDeleted);
 
+public sealed record ChannelDiscoverVisibilityHistoryQuery(
+    long TenantId,
+    long ChannelId,
+    int PageIndex,
+    int PageSize);
+
 public sealed record ChannelDiscoverVisibilityChangeCommand(
     long TenantId,
     long ChannelId,
@@ -41,10 +47,10 @@ public interface IChannelDiscoverabilityRepository
 {
     Task<(IReadOnlyList<Channel> Items, int Total)> QueryPageAsync(ChannelDiscoverabilityPageQuery query);
 
-    Task<IReadOnlyList<ChannelDiscoverVisibilityEvent>> QueryHistoryAsync(
-        long tenantId,
-        long channelId,
-        int take);
+    Task<Channel?> QueryByIdAsync(long tenantId, long channelId);
+
+    Task<(IReadOnlyList<ChannelDiscoverVisibilityEvent> Items, int Total)> QueryHistoryAsync(
+        ChannelDiscoverVisibilityHistoryQuery query);
 
     Task<ChannelDiscoverVisibilityWriteResult> SetVisibilityAsync(
         ChannelDiscoverVisibilityChangeCommand command);

@@ -55,6 +55,61 @@ public sealed class ChannelDiscoverabilityServiceTest
     }
 
     [Fact]
+    public async Task GetByIdAsync_ShouldReturnAuthoritativeTargetSnapshot()
+    {
+        var repository = new Mock<IChannelDiscoverabilityRepository>(MockBehavior.Strict);
+        repository
+            .Setup(candidate => candidate.QueryByIdAsync(30000, 70001))
+            .ReturnsAsync(CreateChannel(ChannelDiscoverVisibility.Summary, version: 4));
+        var service = CreateService(repository);
+
+        var result = await service.GetByIdAsync(30000, 70001);
+
+        Assert.Equal("70001", result.VoChannelId);
+        Assert.Equal(ChannelDiscoverVisibility.Summary, result.VoDiscoverVisibility);
+        Assert.Equal(4, result.VoDiscoverVisibilityVersion);
+        repository.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetHistoryAsync_ShouldClampPagingAndReturnPageMetadata()
+    {
+        var repository = new Mock<IChannelDiscoverabilityRepository>(MockBehavior.Strict);
+        repository
+            .Setup(candidate => candidate.QueryHistoryAsync(It.Is<ChannelDiscoverVisibilityHistoryQuery>(query =>
+                query.TenantId == 30000 &&
+                query.ChannelId == 70001 &&
+                query.PageIndex == 1 &&
+                query.PageSize == 100)))
+            .ReturnsAsync(((IReadOnlyList<ChannelDiscoverVisibilityEvent>)[new ChannelDiscoverVisibilityEvent
+            {
+                Id = 71003,
+                TenantId = 30000,
+                ChannelId = 70001,
+                FromVisibility = ChannelDiscoverVisibility.Hidden,
+                ToVisibility = ChannelDiscoverVisibility.Summary,
+                ExpectedVersion = 2,
+                ResultVersion = 3,
+                Reason = "重新开放",
+                ActorUserId = 20001,
+                ActorName = "Moderator",
+                CreateTime = NowUtc
+            }], 201));
+        var service = CreateService(repository);
+
+        var result = await service.GetHistoryAsync(30000, 70001, pageIndex: 0, pageSize: 500);
+
+        Assert.Equal(1, result.Page);
+        Assert.Equal(100, result.PageSize);
+        Assert.Equal(201, result.DataCount);
+        Assert.Equal(3, result.PageCount);
+        var item = Assert.Single(result.Data);
+        Assert.Equal("71003", item.VoId);
+        Assert.Equal("70001", item.VoChannelId);
+        repository.VerifyAll();
+    }
+
+    [Fact]
     public async Task UpdateVisibilityAsync_ShouldMapVersionConflictToStableBusinessError()
     {
         var repository = new Mock<IChannelDiscoverabilityRepository>(MockBehavior.Strict);

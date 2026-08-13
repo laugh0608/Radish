@@ -69,6 +69,7 @@ public class AuthorizationBoundaryTests
     [InlineData("/api/v1/ContentModeration/ExecuteAppealRelief", ConsolePermissions.ModerationAction)]
     [InlineData("/api/v1/ContentModeration/ApplyCorrectiveAction", ConsolePermissions.ModerationAction)]
     [InlineData("/api/v1/ChannelDiscoverability/GetPage", ConsolePermissions.ChannelDiscoverabilityView)]
+    [InlineData("/api/v1/ChannelDiscoverability/GetById", ConsolePermissions.ChannelDiscoverabilityView)]
     [InlineData("/api/v1/ChannelDiscoverability/GetHistory", ConsolePermissions.ChannelDiscoverabilityView)]
     [InlineData("/api/v1/ChannelDiscoverability/UpdateVisibility/92900", ConsolePermissions.ChannelDiscoverabilityManage)]
     public void ConsolePermissions_ShouldResolveConsoleApiMappings(string apiUrl, string expectedPermission)

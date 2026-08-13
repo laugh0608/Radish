@@ -1295,6 +1295,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50177L,
+                ApiModuleName = "Get channel discoverability target",
+                LinkUrl = "/api/v1/ChannelDiscoverability/GetById",
+                ControllerName = "ChannelDiscoverability",
+                ActionName = "GetById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50176L,
                 ApiModuleName = "Update channel discoverability",
                 LinkUrl = "/api/v1/ChannelDiscoverability/UpdateVisibility/.+",

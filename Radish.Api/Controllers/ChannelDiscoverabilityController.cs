@@ -59,14 +59,29 @@ public sealed class ChannelDiscoverabilityController : ControllerBase
 
     [HttpGet]
     [RequireConsolePermission(ConsolePermissions.ChannelDiscoverabilityView)]
-    [ProducesResponseType(typeof(MessageModel<IReadOnlyList<ChannelDiscoverVisibilityEventVo>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel<ChannelDiscoverabilityVo>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
-    public async Task<MessageModel<IReadOnlyList<ChannelDiscoverVisibilityEventVo>>> GetHistory(
-        long channelId,
-        int take = 20)
+    public async Task<MessageModel<ChannelDiscoverabilityVo>> GetById(long channelId)
     {
-        var history = await _service.GetHistoryAsync(Current.TenantId, channelId, take);
-        return MessageModel<IReadOnlyList<ChannelDiscoverVisibilityEventVo>>.Success("获取成功", history);
+        var channel = await _service.GetByIdAsync(Current.TenantId, channelId);
+        return MessageModel<ChannelDiscoverabilityVo>.Success("获取成功", channel);
+    }
+
+    [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.ChannelDiscoverabilityView)]
+    [ProducesResponseType(typeof(MessageModel<PageModel<ChannelDiscoverVisibilityEventVo>>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel<PageModel<ChannelDiscoverVisibilityEventVo>>> GetHistory(
+        long channelId,
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        var history = await _service.GetHistoryAsync(
+            Current.TenantId,
+            channelId,
+            pageIndex,
+            pageSize);
+        return MessageModel<PageModel<ChannelDiscoverVisibilityEventVo>>.Success("获取成功", history);
     }
 
     [HttpPut("{channelId:long}")]
