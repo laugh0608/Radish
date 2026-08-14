@@ -9,14 +9,19 @@ internal sealed record DatabaseColumnReference(
 
 internal static class DatabaseIdentifierResolver
 {
+    public static string? ResolveTable(ISqlSugarClient db, string configuredTableName)
+    {
+        return ResolveName(
+            db.DbMaintenance.GetTableInfoList(false).Select(table => table.Name),
+            configuredTableName);
+    }
+
     public static DatabaseColumnReference? ResolveColumn(
         ISqlSugarClient db,
         string configuredTableName,
         string configuredColumnName)
     {
-        var tableName = ResolveName(
-            db.DbMaintenance.GetTableInfoList(false).Select(table => table.Name),
-            configuredTableName);
+        var tableName = ResolveTable(db, configuredTableName);
         if (tableName == null)
         {
             return null;

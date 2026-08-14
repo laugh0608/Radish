@@ -1,7 +1,9 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using Radish.DbMigrate;
 using Radish.IRepository;
 using Radish.Model;
 using Radish.Repository;
@@ -130,9 +132,8 @@ public sealed class ChatMessageReactionRepositoryTest
             using var firstDb = CreatePostgreSqlScope(connectionString);
             using var secondDb = CreatePostgreSqlScope(connectionString);
             var chatDb = setupDb.GetConnectionScope("chat");
-            chatDb.CodeFirst.InitTables<ChannelMessage>();
-            chatDb.CodeFirst.InitTables<ChatMessageReaction>();
-            chatDb.CodeFirst.InitTables<ChatMessageReactionOperation>();
+            using var services = new ServiceCollection().BuildServiceProvider();
+            ChatMessageReactionSchemaMigration.Instance.Apply(chatDb, services);
             var now = new DateTime(2026, 7, 19, 8, 0, 0, DateTimeKind.Utc);
             chatDb.Insertable(CreateMessage(now)).ExecuteCommand();
             var firstRepository = new ChatMessageReactionRepository(

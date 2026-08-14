@@ -51,6 +51,29 @@ internal sealed class WikiAttachmentAuthoritySchemaMigration : ISchemaMigration
         {
             db.CodeFirst.InitTables<WikiAttachmentReference>();
         }
+        EnsureReferenceIndex(
+            db,
+            "idx_wikiattachment_source_attachment",
+            true,
+            nameof(WikiAttachmentReference.TenantId),
+            nameof(WikiAttachmentReference.ReferenceKind),
+            nameof(WikiAttachmentReference.ReferenceSourceId),
+            nameof(WikiAttachmentReference.AttachmentId));
+        EnsureReferenceIndex(
+            db,
+            "idx_wikiattachment_attachment_active",
+            false,
+            nameof(WikiAttachmentReference.TenantId),
+            nameof(WikiAttachmentReference.AttachmentId),
+            nameof(WikiAttachmentReference.IsDeleted));
+        EnsureReferenceIndex(
+            db,
+            "idx_wikiattachment_document_kind_active",
+            false,
+            nameof(WikiAttachmentReference.TenantId),
+            nameof(WikiAttachmentReference.DocumentId),
+            nameof(WikiAttachmentReference.ReferenceKind),
+            nameof(WikiAttachmentReference.IsDeleted));
 
         if (!HasSourceTables(db))
         {
@@ -526,6 +549,34 @@ internal sealed class WikiAttachmentAuthoritySchemaMigration : ISchemaMigration
                                 ?? tableName;
         return db.DbMaintenance.GetIndexList(physicalTableName)
             .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void EnsureReferenceIndex(
+        ISqlSugarClient db,
+        string indexName,
+        bool isUnique,
+        params string[] configuredColumnNames)
+    {
+        if (IndexExists(db, ReferenceTable, indexName))
+        {
+            return;
+        }
+
+        var columns = configuredColumnNames
+            .Select(columnName => DatabaseIdentifierResolver.ResolveColumn(db, ReferenceTable, columnName)
+                                  ?? throw new InvalidOperationException(
+                                      $"{ReferenceTable}.{columnName} 不存在。"))
+            .ToList();
+        var tableName = columns[0].TableName;
+        var created = db.DbMaintenance.CreateIndex(
+            tableName,
+            columns.Select(column => column.ColumnName).ToArray(),
+            indexName,
+            isUnique);
+        if (!created && !IndexExists(db, ReferenceTable, indexName))
+        {
+            throw new InvalidOperationException($"创建索引 {indexName} 失败。");
+        }
     }
 
     private sealed record SourceReferenceSet(

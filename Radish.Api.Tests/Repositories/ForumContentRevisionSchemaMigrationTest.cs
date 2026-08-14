@@ -167,7 +167,7 @@ public sealed class ForumContentRevisionSchemaMigrationTest
         {
             var connectionString =
                 $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
-            using var db = new SqlSugarScope(new ConnectionConfig
+            using var db = PostgreSqlIntegrationSqlSugarFactory.CreateScope(new ConnectionConfig
             {
                 ConfigId = "main",
                 ConnectionString = connectionString,

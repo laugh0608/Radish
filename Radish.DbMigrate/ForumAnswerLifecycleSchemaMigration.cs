@@ -32,6 +32,7 @@ internal sealed class ForumAnswerLifecycleSchemaMigration : ISchemaMigration
         db.CodeFirst.InitTables<PostAnswerContentRevision>();
         db.CodeFirst.InitTables<PostAnswerAcceptanceEvent>();
         db.CodeFirst.InitTables<ForumContentRevisionAttachment>();
+        ForumContentRevisionSchemaMigration.EnsureRevisionAttachmentIndexes(db);
 
         if (!db.DbMaintenance.IsAnyTable(nameof(PostAnswer), false))
         {

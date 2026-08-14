@@ -376,10 +376,10 @@ public sealed class UserPostBookmarkRepository
             return;
         }
 
-        var tableName = RepositorySqlHelper.QuoteIdentifier(
-            DbProtectedClient.EntityMaintenance.GetEntityInfo<Post>().DbTableName);
-        var tenantColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.TenantId));
-        var idColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.Id));
+        var storage = ResolvePostStorage();
+        var tableName = RepositorySqlHelper.QuoteIdentifier(storage.TableName);
+        var tenantColumn = RepositorySqlHelper.QuoteIdentifier(storage.TenantColumnName);
+        var idColumn = RepositorySqlHelper.QuoteIdentifier(storage.IdColumnName);
         await DbProtectedClient.Ado.GetScalarAsync(
             $"SELECT 1 FROM {tableName} WHERE {tenantColumn} = @tenantId AND {idColumn} = @postId FOR UPDATE",
             new SugarParameter("@tenantId", tenantId),
@@ -388,11 +388,11 @@ public sealed class UserPostBookmarkRepository
 
     private async Task ApplyCollectCountDeltaAsync(long tenantId, long postId, int delta)
     {
-        var tableName = RepositorySqlHelper.QuoteIdentifier(
-            DbProtectedClient.EntityMaintenance.GetEntityInfo<Post>().DbTableName);
-        var tenantColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.TenantId));
-        var idColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.Id));
-        var collectCountColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.CollectCount));
+        var storage = ResolvePostStorage();
+        var tableName = RepositorySqlHelper.QuoteIdentifier(storage.TableName);
+        var tenantColumn = RepositorySqlHelper.QuoteIdentifier(storage.TenantColumnName);
+        var idColumn = RepositorySqlHelper.QuoteIdentifier(storage.IdColumnName);
+        var collectCountColumn = RepositorySqlHelper.QuoteIdentifier(storage.CollectCountColumnName);
         if (delta > 0)
         {
             await DbProtectedClient.Ado.ExecuteCommandAsync(
@@ -414,6 +414,27 @@ public sealed class UserPostBookmarkRepository
             """,
             new SugarParameter("@tenantId", tenantId),
             new SugarParameter("@postId", postId));
+    }
+
+    private (
+        string TableName,
+        string TenantColumnName,
+        string IdColumnName,
+        string CollectCountColumnName) ResolvePostStorage()
+    {
+        var configuredTableName = DbProtectedClient.EntityMaintenance.GetEntityInfo<Post>().DbTableName;
+        var tableName = RepositorySqlHelper.ResolvePhysicalTableName(
+            DbProtectedClient,
+            configuredTableName);
+        var columnNames = DbProtectedClient.DbMaintenance
+            .GetColumnInfosByTableName(tableName, false)
+            .Select(column => column.DbColumnName)
+            .ToList();
+        return (
+            tableName,
+            RepositorySqlHelper.ResolvePhysicalColumnName(columnNames, tableName, nameof(Post.TenantId)),
+            RepositorySqlHelper.ResolvePhysicalColumnName(columnNames, tableName, nameof(Post.Id)),
+            RepositorySqlHelper.ResolvePhysicalColumnName(columnNames, tableName, nameof(Post.CollectCount)));
     }
 
     private async Task<Post?> QueryPostAsync(long tenantId, long postId)

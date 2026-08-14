@@ -30,6 +30,7 @@ internal sealed class ShopEntitlementOperationSchemaMigration : ISchemaMigration
         // 该迁移只增加独立业务流水表，不对历史背包扣减做不可靠反推。
         // 历史 ledger 必须固定在 v1 形状，后续列只能由新的 migration 演进。
         db.CodeFirst.InitTables<ShopEntitlementOperationV1>();
+        EnsureIndexes(db);
     }
 
     public IReadOnlyList<string> Verify(ISqlSugarClient db, IServiceProvider services)
@@ -71,7 +72,7 @@ internal sealed class ShopEntitlementOperationSchemaMigration : ISchemaMigration
 
         foreach (var indexName in new[] { IdempotencyIndexName, UserTimeIndexName, InventoryTimeIndexName })
         {
-            if (!db.DbMaintenance.IsAnyIndex(indexName))
+            if (!IndexExists(db, indexName))
             {
                 issues.Add($"{TableName} 缺少索引 {indexName}。");
             }
@@ -106,6 +107,69 @@ internal sealed class ShopEntitlementOperationSchemaMigration : ISchemaMigration
         }
 
         return issues;
+    }
+
+    private static void EnsureIndexes(ISqlSugarClient db)
+    {
+        EnsureIndex(
+            db,
+            IdempotencyIndexName,
+            true,
+            (nameof(ShopEntitlementOperationV1.TenantId), false),
+            (nameof(ShopEntitlementOperationV1.UserId), false),
+            (nameof(ShopEntitlementOperationV1.OperationType), false),
+            (nameof(ShopEntitlementOperationV1.IdempotencyKey), false));
+        EnsureIndex(
+            db,
+            UserTimeIndexName,
+            false,
+            (nameof(ShopEntitlementOperationV1.TenantId), false),
+            (nameof(ShopEntitlementOperationV1.UserId), false),
+            (nameof(ShopEntitlementOperationV1.CreateTime), true));
+        EnsureIndex(
+            db,
+            InventoryTimeIndexName,
+            false,
+            (nameof(ShopEntitlementOperationV1.TenantId), false),
+            (nameof(ShopEntitlementOperationV1.InventoryId), false),
+            (nameof(ShopEntitlementOperationV1.CreateTime), true));
+    }
+
+    private static void EnsureIndex(
+        ISqlSugarClient db,
+        string indexName,
+        bool isUnique,
+        params (string ColumnName, bool Descending)[] columns)
+    {
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, TableName)
+                                ?? throw new InvalidOperationException(
+                                    $"{TableName} 不存在，无法创建索引 {indexName}。");
+        var physicalColumns = columns.Select(column =>
+        {
+            var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                physicalTableName,
+                column.ColumnName)
+                ?? throw new InvalidOperationException(
+                    $"{TableName}.{column.ColumnName} 不存在，无法创建索引 {indexName}。");
+            return $"{QuoteIdentifier(physicalColumn.ColumnName)}{(column.Descending ? " DESC" : string.Empty)}";
+        });
+        db.Ado.ExecuteCommand(
+            $"CREATE {(isUnique ? "UNIQUE " : string.Empty)}INDEX IF NOT EXISTS " +
+            $"{QuoteIdentifier(indexName)} ON {QuoteIdentifier(physicalTableName)} " +
+            $"({string.Join(", ", physicalColumns)})");
+    }
+
+    private static bool IndexExists(ISqlSugarClient db, string indexName)
+    {
+        if (db.CurrentConnectionConfig.DbType != DbType.PostgreSQL)
+        {
+            return db.DbMaintenance.IsAnyIndex(indexName);
+        }
+
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, TableName);
+        return physicalTableName != null && db.DbMaintenance.GetIndexList(physicalTableName)
+            .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string Column(

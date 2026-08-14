@@ -43,7 +43,7 @@ internal sealed class ConsoleRoleGovernanceSchemaMigration : ISchemaMigration
     {
         _ = services;
         var issues = new List<string>();
-        if (db.DbMaintenance.IsAnyTable(nameof(Role), false))
+        if (TableExists(db, nameof(Role)))
         {
             var roles = db.Queryable<Role>().ToList();
             var duplicateNames = roles
@@ -61,7 +61,7 @@ internal sealed class ConsoleRoleGovernanceSchemaMigration : ISchemaMigration
             VerifyBuiltInRole(issues, roles, AdminRoleId, "Admin");
         }
 
-        if (db.DbMaintenance.IsAnyTable(nameof(RoleConsoleResource), false))
+        if (TableExists(db, nameof(RoleConsoleResource)))
         {
             var duplicateLinks = db.Queryable<RoleConsoleResource>()
                 .ToList()
@@ -82,7 +82,7 @@ internal sealed class ConsoleRoleGovernanceSchemaMigration : ISchemaMigration
     {
         _ = services;
         var issues = Diagnose(db, services).ToList();
-        if (!db.DbMaintenance.IsAnyTable(nameof(Role), false))
+        if (!TableExists(db, nameof(Role)))
         {
             issues.Add("缺少表 Role。");
         }
@@ -91,7 +91,7 @@ internal sealed class ConsoleRoleGovernanceSchemaMigration : ISchemaMigration
             issues.Add($"缺少索引 {RoleNameIndex}。");
         }
 
-        if (!db.DbMaintenance.IsAnyTable(nameof(RoleConsoleResource), false))
+        if (!TableExists(db, nameof(RoleConsoleResource)))
         {
             issues.Add("缺少表 RoleConsoleResource。");
         }
@@ -110,12 +110,20 @@ internal sealed class ConsoleRoleGovernanceSchemaMigration : ISchemaMigration
             return;
         }
 
+        var roleName = DatabaseIdentifierResolver.ResolveColumn(db, nameof(Role), nameof(Role.RoleName))
+                       ?? throw new InvalidOperationException("Role.RoleName 不存在。");
+        var isDeleted = DatabaseIdentifierResolver.ResolveColumn(db, nameof(Role), nameof(Role.IsDeleted))
+                        ?? throw new InvalidOperationException("Role.IsDeleted 不存在。");
         var sql = db.CurrentConnectionConfig.DbType switch
         {
             DbType.Sqlite =>
-                $"CREATE UNIQUE INDEX \"{RoleNameIndex}\" ON \"Role\" (LOWER(TRIM(\"RoleName\"))) WHERE \"IsDeleted\" = 0",
+                $"CREATE UNIQUE INDEX {QuoteIdentifier(RoleNameIndex)} " +
+                $"ON {QuoteIdentifier(roleName.TableName)} (LOWER(TRIM({QuoteIdentifier(roleName.ColumnName)}))) " +
+                $"WHERE {QuoteIdentifier(isDeleted.ColumnName)} = 0",
             DbType.PostgreSQL =>
-                $"CREATE UNIQUE INDEX \"{RoleNameIndex}\" ON \"Role\" (LOWER(TRIM(\"RoleName\"))) WHERE NOT \"IsDeleted\"",
+                $"CREATE UNIQUE INDEX {QuoteIdentifier(RoleNameIndex)} " +
+                $"ON {QuoteIdentifier(roleName.TableName)} (LOWER(TRIM({QuoteIdentifier(roleName.ColumnName)}))) " +
+                $"WHERE NOT {QuoteIdentifier(isDeleted.ColumnName)}",
             _ => throw new InvalidOperationException(
                 $"Console 角色治理迁移不支持数据库 {db.CurrentConnectionConfig.DbType}。")
         };
@@ -145,7 +153,8 @@ internal sealed class ConsoleRoleGovernanceSchemaMigration : ISchemaMigration
 
     private static bool IndexExists(ISqlSugarClient db, string tableName, string indexName)
     {
-        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        var physicalTableName = DatabaseIdentifierResolver.ResolveColumn(db, tableName, "Id")?.TableName;
+        if (physicalTableName == null)
         {
             return false;
         }
@@ -155,7 +164,7 @@ internal sealed class ConsoleRoleGovernanceSchemaMigration : ISchemaMigration
             return db.DbMaintenance.IsAnyIndex(indexName);
         }
 
-        return db.DbMaintenance.GetIndexList(tableName)
+        return db.DbMaintenance.GetIndexList(physicalTableName)
             .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -166,14 +175,35 @@ internal sealed class ConsoleRoleGovernanceSchemaMigration : ISchemaMigration
             return;
         }
 
+        var roleId = DatabaseIdentifierResolver.ResolveColumn(
+                         db,
+                         nameof(RoleConsoleResource),
+                         nameof(RoleConsoleResource.RoleId))
+                     ?? throw new InvalidOperationException("RoleConsoleResource.RoleId 不存在。");
+        var resourceId = DatabaseIdentifierResolver.ResolveColumn(
+                             db,
+                             nameof(RoleConsoleResource),
+                             nameof(RoleConsoleResource.ConsoleResourceId))
+                         ?? throw new InvalidOperationException(
+                             "RoleConsoleResource.ConsoleResourceId 不存在。");
         var created = db.DbMaintenance.CreateIndex(
-            nameof(RoleConsoleResource),
-            [nameof(RoleConsoleResource.RoleId), nameof(RoleConsoleResource.ConsoleResourceId)],
+            roleId.TableName,
+            [roleId.ColumnName, resourceId.ColumnName],
             RoleResourceIndex,
             true);
         if (!created && !IndexExists(db, nameof(RoleConsoleResource), RoleResourceIndex))
         {
             throw new InvalidOperationException($"创建索引 {RoleResourceIndex} 失败。");
         }
+    }
+
+    private static bool TableExists(ISqlSugarClient db, string configuredTableName)
+    {
+        return DatabaseIdentifierResolver.ResolveColumn(db, configuredTableName, "Id") != null;
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 }

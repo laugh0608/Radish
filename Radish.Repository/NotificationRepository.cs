@@ -454,17 +454,9 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
                 var orphanNotificationIds = notificationIds
                     .Except(remainingNotificationIds)
                     .ToList();
-                var orphanNotifications = orphanNotificationIds.Count == 0
-                    ? []
-                    : await DbProtectedClient.Queryable<Notification>()
-                        .SplitTable()
-                        .Where(notification => orphanNotificationIds.Contains(notification.Id))
-                        .ToListAsync();
-                var deletedNotificationCount = orphanNotifications.Count == 0
+                var deletedNotificationCount = orphanNotificationIds.Count == 0
                     ? 0
-                    : await DbProtectedClient.Deleteable(orphanNotifications)
-                        .SplitTable()
-                        .ExecuteCommandAsync();
+                    : await DeleteNotificationsFromPhysicalTablesAsync(orphanNotificationIds);
 
                 var capacityRows = await DbProtectedClient.Queryable<UserNotification>()
                     .GroupBy(relation => new { relation.TenantId, relation.UserId })
@@ -668,6 +660,43 @@ public sealed class NotificationRepository : BaseRepository<Notification>, INoti
             ? definition!.RetentionDays
             : 365;
         return group.LastOccurredAtUtc <= nowUtc.AddDays(-retentionDays);
+    }
+
+    private async Task<int> DeleteNotificationsFromPhysicalTablesAsync(
+        IReadOnlyCollection<long> notificationIds)
+    {
+        const int deleteBatchSize = 500;
+        var tableNames = DbProtectedClient.DbMaintenance
+            .GetTableInfoList(false)
+            .Select(table => table.Name)
+            .Where(tableName => tableName.StartsWith($"{nameof(Notification)}_", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        var deletedCount = 0;
+        foreach (var tableName in tableNames)
+        {
+            var columnNames = DbProtectedClient.DbMaintenance
+                .GetColumnInfosByTableName(tableName, false)
+                .Select(column => column.DbColumnName)
+                .ToList();
+            var idColumnName = RepositorySqlHelper.ResolvePhysicalColumnName(
+                columnNames,
+                tableName,
+                nameof(Notification.Id));
+            foreach (var batch in notificationIds.Chunk(deleteBatchSize))
+            {
+                var parameters = batch
+                    .Select((notificationId, index) =>
+                        new SugarParameter($"@notificationId{index}", notificationId))
+                    .ToArray();
+                var placeholders = string.Join(", ", parameters.Select(parameter => parameter.ParameterName));
+                deletedCount += await DbProtectedClient.Ado.ExecuteCommandAsync(
+                    $"DELETE FROM {RepositorySqlHelper.QuoteIdentifier(tableName)} " +
+                    $"WHERE {RepositorySqlHelper.QuoteIdentifier(idColumnName)} IN ({placeholders})",
+                    parameters);
+            }
+        }
+
+        return deletedCount;
     }
 
     private async Task<Notification?> QueryExistingNotificationAsync(Notification candidate)

@@ -25,7 +25,7 @@ public sealed class LeaderboardRepositoryTest : IDisposable
         $"radish-leaderboard-{Guid.NewGuid():N}.db");
     private readonly SqlSugarScope _db;
     private readonly LeaderboardRepository _repository;
-    private readonly DateTime _now = new(2026, 7, 30, 10, 0, 0, DateTimeKind.Local);
+    private readonly DateTime _now = new(2026, 7, 30, 10, 0, 0, DateTimeKind.Utc);
 
     public LeaderboardRepositoryTest()
     {
@@ -172,6 +172,9 @@ public sealed class LeaderboardRepositoryTest : IDisposable
             var (popularityItems, popularityTotal) =
                 await repository.GetPopularityRankingAsync(1, 20);
 
+            Assert.Equal(
+                [1001L, 1002L, 1007L, 1005L],
+                experienceItems.Select(item => item.UserId).ToArray());
             Assert.Equal(4, experienceTotal);
             Assert.Equal(3, postTotal);
             Assert.Equal(3, popularityTotal);

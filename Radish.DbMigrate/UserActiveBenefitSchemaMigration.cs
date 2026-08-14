@@ -31,6 +31,7 @@ internal sealed class UserActiveBenefitSchemaMigration : ISchemaMigration
         db.CodeFirst.InitTables<UserBenefit>();
         db.CodeFirst.InitTables<UserActiveBenefit>();
         db.CodeFirst.InitTables<ShopEntitlementOperation>();
+        EnsureIndexes(db);
 
         var nowUtc = services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
         var activeBenefits = db.Queryable<UserBenefit>()
@@ -203,7 +204,7 @@ internal sealed class UserActiveBenefitSchemaMigration : ISchemaMigration
                      "idx_shop_entitlement_operation_benefit_time"
                  })
         {
-            if (!db.DbMaintenance.IsAnyIndex(indexName))
+            if (!IndexExists(db, indexName))
             {
                 issues.Add($"缺少索引 {indexName}。");
             }
@@ -249,6 +250,78 @@ internal sealed class UserActiveBenefitSchemaMigration : ISchemaMigration
         }
 
         return issues;
+    }
+
+    private static void EnsureIndexes(ISqlSugarClient db)
+    {
+        EnsureIndex(
+            db,
+            ActiveTableName,
+            "idx_active_benefit_tenant_user_type",
+            true,
+            (nameof(UserActiveBenefit.TenantId), false),
+            (nameof(UserActiveBenefit.UserId), false),
+            (nameof(UserActiveBenefit.BenefitType), false));
+        EnsureIndex(
+            db,
+            ActiveTableName,
+            "idx_active_benefit_tenant_benefit",
+            false,
+            (nameof(UserActiveBenefit.TenantId), false),
+            (nameof(UserActiveBenefit.BenefitId), false));
+        EnsureIndex(
+            db,
+            OperationTableName,
+            "idx_shop_entitlement_operation_benefit_time",
+            false,
+            (nameof(ShopEntitlementOperation.TenantId), false),
+            (nameof(ShopEntitlementOperation.BenefitId), false),
+            (nameof(ShopEntitlementOperation.CreateTime), true));
+    }
+
+    private static void EnsureIndex(
+        ISqlSugarClient db,
+        string configuredTableName,
+        string indexName,
+        bool isUnique,
+        params (string ColumnName, bool Descending)[] columns)
+    {
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, configuredTableName)
+                                ?? throw new InvalidOperationException(
+                                    $"{configuredTableName} 不存在，无法创建索引 {indexName}。");
+        var physicalColumns = columns.Select(column =>
+        {
+            var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                physicalTableName,
+                column.ColumnName)
+                ?? throw new InvalidOperationException(
+                    $"{configuredTableName}.{column.ColumnName} 不存在，无法创建索引 {indexName}。");
+            return $"{QuoteIdentifier(physicalColumn.ColumnName)}{(column.Descending ? " DESC" : string.Empty)}";
+        });
+        db.Ado.ExecuteCommand(
+            $"CREATE {(isUnique ? "UNIQUE " : string.Empty)}INDEX IF NOT EXISTS " +
+            $"{QuoteIdentifier(indexName)} ON {QuoteIdentifier(physicalTableName)} " +
+            $"({string.Join(", ", physicalColumns)})");
+    }
+
+    private static bool IndexExists(ISqlSugarClient db, string indexName)
+    {
+        if (db.CurrentConnectionConfig.DbType != DbType.PostgreSQL)
+        {
+            return db.DbMaintenance.IsAnyIndex(indexName);
+        }
+
+        return new[] { ActiveTableName, OperationTableName }
+            .Select(table => DatabaseIdentifierResolver.ResolveTable(db, table))
+            .Where(table => table != null)
+            .Any(table => db.DbMaintenance.GetIndexList(table!)
+                .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase)));
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 
     private sealed class BenefitDiagnosticRow
