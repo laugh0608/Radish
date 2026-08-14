@@ -2159,6 +2159,7 @@ class _UnusedAuthorizationCodeExchangeService
   Future<AuthSession> redeemAuthorizationCode({
     required String code,
     required String redirectUri,
+    required String codeVerifier,
   }) {
     throw UnimplementedError();
   }

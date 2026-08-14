@@ -2,7 +2,7 @@
 
 > 状态：`创建 / 编辑提交意图、创建类限频、Flutter 既有入口与论坛业务写原子事务均已完成`
 >
-> 最后复核：`2026-07-16`（Asia/Shanghai）
+> 最后复核：`2026-08-10`（Asia/Shanghai）
 >
 > 关联说明：[写操作可靠性与并发保护治理](/guide/write-operation-reliability-governance)、[论坛帖子/评论编辑历史设计与实现](/features/forum-edit-history)、[P3-10 Web-first 信息架构与下一批开发任务选择](/planning/p3-10-cross-platform-information-architecture)
 
@@ -18,6 +18,8 @@
 - 编辑历史继续以现有 `PostEditHistory` / `CommentEditHistory` 为真值，不新增通用编辑历史表。
 
 当前代码已按确认方案覆盖创建链路、首批编辑重试幂等和创建类短窗口频率限制：`PublishPostDto`、`CreateCommentDto`、`CreateAnswerDto`、`UpdatePostDto` 与 `UpdateCommentDto` 新增可选 `ClientSubmissionId`，服务端新增 `ContentSubmissionRecord` 作为内容提交意图记录，Web 论坛发帖、评论、回答、帖子编辑和评论编辑会按提交意图生成并复用 key。正式 Web 首批作者态通过 `/forum/compose` 与 `/forum/post/:postId?intent=answer|edit|history` 复用同一提交意图规则，不新增临时 API 调用通道。Flutter 原生纯文本发帖、根评论 / 回复、问答回答、作者帖子正文编辑和作者根评论编辑也已复用同一 `clientSubmissionId` 字段与 `forum-post:` / `forum-comment:` / `forum-answer:` / `forum-post-edit:` / `forum-comment-edit:` 前缀规则。发帖、评论 / 回复和回答已基于近期成功的 `ContentSubmissionRecord` 做创建类短窗口限频；帖子 / 评论编辑历史继续使用既有 `PostEditHistory` / `CommentEditHistory`，不新增通用编辑历史表。
+
+Web 发帖状态机已收敛为单一 `ForumPostComposer`：正式 `/forum/compose` 使用页面承载，WebOS 使用薄 Bottom Sheet 外壳，二者继续提交同一 `clientSubmissionId`。本地草稿不是服务端幂等事实，只作为账号级恢复缓存；当前使用版本化 owner envelope 按 `userId` 分区，旧无 owner 全局草稿不迁移，账号切换先清空内存再读取新账号，Workbench 与发布器共用同一 helper。发布失败由 Composer 依结构化错误只反馈一次并保留当前账号草稿。
 
 ## 当前代码事实
 

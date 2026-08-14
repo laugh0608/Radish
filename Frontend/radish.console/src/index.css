@@ -1,40 +1,25 @@
 :root {
-  --console-font-sans: var(
-    --theme-font-sans,
-    system-ui,
-    Avenir,
-    Helvetica,
-    Arial,
-    sans-serif
-  );
-  --console-bg-app: var(--theme-bg-app, #f5f1ea);
-  --console-bg-surface: var(--theme-bg-surface, #fffdf8);
-  --console-bg-muted: var(--theme-bg-muted, #f0ebe3);
-  --console-text-primary: var(--theme-text-primary, #25221f);
-  --console-text-secondary: var(--theme-text-secondary, #726960);
-  --console-text-muted: #9a9186;
-  --console-text-on-dark: #fffdf8;
-  --console-border-subtle: var(--theme-border-soft, #ded4c7);
-  --console-border-muted: #eee4d8;
-  --console-brand-primary: var(--theme-brand-primary, #314b63);
-  --console-info: var(--theme-state-info, #314b63);
-  --console-success: #2f806c;
-  --console-danger: #a7374d;
-  --console-warning-text: var(--theme-accent-earth, #966d34);
-  --console-warning-border: color-mix(
-    in srgb,
-    var(--theme-state-warning, #faad14) 45%,
-    #ffffff 55%
-  );
-  --console-warning-bg: color-mix(
-    in srgb,
-    var(--theme-state-warning, #faad14) 10%,
-    #ffffff 90%
-  );
-  --console-shadow-soft: var(--theme-shadow-soft, 0 8px 24px rgba(37, 34, 31, 0.05));
-  --console-shadow-card: var(--theme-shadow-soft, 0 14px 34px rgba(37, 34, 31, 0.04));
-  --console-radius-panel: 12px;
-  --console-radius-control: 8px;
+  --console-font-sans: var(--rd-font-sans);
+  --console-bg-app: var(--rd-bg-app);
+  --console-bg-surface: var(--rd-bg-surface);
+  --console-bg-muted: var(--rd-bg-muted);
+  --console-text-primary: var(--rd-text-primary);
+  --console-text-secondary: var(--rd-text-secondary);
+  --console-text-muted: var(--rd-text-muted);
+  --console-text-on-dark: var(--rd-text-on-ink);
+  --console-border-subtle: var(--rd-border-soft);
+  --console-border-muted: color-mix(in srgb, var(--rd-border-soft) 68%, transparent);
+  --console-brand-primary: var(--rd-action-primary);
+  --console-info: var(--rd-state-info);
+  --console-success: var(--rd-state-success);
+  --console-danger: var(--rd-state-danger);
+  --console-warning-text: var(--rd-state-warning);
+  --console-warning-border: color-mix(in srgb, var(--rd-state-warning) 45%, transparent);
+  --console-warning-bg: var(--rd-state-warning-soft);
+  --console-shadow-soft: var(--rd-shadow-panel);
+  --console-shadow-card: var(--rd-shadow-soft);
+  --console-radius-panel: var(--rd-radius-md);
+  --console-radius-control: var(--rd-radius-sm);
 
   font-family: var(--console-font-sans);
   line-height: 1.5;

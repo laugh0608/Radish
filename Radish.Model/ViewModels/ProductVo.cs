@@ -228,8 +228,6 @@ public class CreateProductDto
     /// <summary>排序权重</summary>
     public int SortOrder { get; set; }
 
-    /// <summary>是否上架</summary>
-    public bool IsOnSale { get; set; }
 }
 
 /// <summary>更新商品 DTO</summary>

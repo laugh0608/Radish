@@ -73,6 +73,28 @@ public class AuthResourceParityTest
     }
 
     [Fact]
+    public void TagDiscoveryErrorCodes_ShouldResolveToChineseAndEnglishApiResources()
+    {
+        var resourcesDirectory = Path.Combine(FindRepositoryRoot(), "Radish.Api", "Resources");
+        var chineseKeys = ReadResourceKeys(Path.Combine(resourcesDirectory, "Errors.zh.resx")).ToHashSet(StringComparer.Ordinal);
+        var englishKeys = ReadResourceKeys(Path.Combine(resourcesDirectory, "Errors.en.resx")).ToHashSet(StringComparer.Ordinal);
+        var errorCodes = typeof(TagDiscoveryErrorCodes)
+            .GetFields(BindingFlags.Public | BindingFlags.Static)
+            .Where(field => field.IsLiteral && !field.IsInitOnly && field.FieldType == typeof(string))
+            .Select(field => Assert.IsType<string>(field.GetRawConstantValue()))
+            .ToArray();
+
+        Assert.NotEmpty(errorCodes);
+        Assert.Equal(errorCodes.Length, errorCodes.Distinct(StringComparer.Ordinal).Count());
+        foreach (var errorCode in errorCodes)
+        {
+            var messageKey = TagDiscoveryErrorCodes.ResolveMessageKey(errorCode);
+            Assert.Contains(messageKey, chineseKeys);
+            Assert.Contains(messageKey, englishKeys);
+        }
+    }
+
+    [Fact]
     public void AttachmentErrorCodes_ShouldResolveToChineseAndEnglishApiResources()
     {
         var resourcesDirectory = Path.Combine(FindRepositoryRoot(), "Radish.Api", "Resources");

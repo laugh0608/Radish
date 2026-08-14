@@ -1,0 +1,532 @@
+.reviewSection {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 76%, transparent);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-surface-highlight) 6%);
+  box-shadow: var(--theme-shadow-soft);
+  min-width: 0;
+}
+
+.sectionHeader,
+.editorHeader,
+.reviewItemHeader,
+.reviewMeta,
+.editorActions,
+.pagination,
+.reviewFeedback,
+.compactSummary,
+.ratingStars,
+.ratingButtons,
+.reviewActionArea {
+  display: flex;
+  align-items: center;
+}
+
+.sectionHeader,
+.editorHeader,
+.reviewItemHeader,
+.reviewFeedback {
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.sectionHeader > div:first-child {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.sectionHeader h2,
+.editorHeader h3,
+.sectionHeader p,
+.editorHeader p,
+.reviewFeedback p,
+.reviewComment,
+.reviewCommentEmpty {
+  margin: 0;
+}
+
+.sectionHeader h2 {
+  font-size: 20px;
+  line-height: 1.35;
+}
+
+.sectionHeader > div:first-child > p:last-child {
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+}
+
+.eyebrow {
+  color: var(--theme-brand-primary);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.compactSummary {
+  align-self: flex-start;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 78%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+}
+
+.compactSummary[data-state='ready'] strong {
+  color: var(--theme-text-primary);
+  font-size: 18px;
+}
+
+.ratingStars,
+.ratingButtons {
+  gap: 2px;
+  color: color-mix(in srgb, var(--theme-accent-earth) 78%, var(--theme-brand-primary) 22%);
+}
+
+.summaryGrid {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.72fr) minmax(280px, 1.28fr);
+  gap: 12px;
+}
+
+.scorePanel,
+.distribution,
+.editor,
+.reviewItem,
+.emptyState,
+.loadingState {
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 72%, transparent);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-muted) 66%, var(--theme-bg-surface) 34%);
+}
+
+.scorePanel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6px;
+  padding: 16px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.scorePanel > strong:first-child {
+  color: var(--theme-text-primary);
+  font-size: 32px;
+  line-height: 1;
+}
+
+.scorePanel .emptyScore {
+  color: var(--theme-text-primary);
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.distribution {
+  display: grid;
+  gap: 7px;
+  padding: 14px 16px;
+}
+
+.distributionRow {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 8px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.distributionRow strong {
+  color: var(--theme-text-primary);
+  text-align: right;
+}
+
+.distributionTrack {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--theme-border-soft) 54%, transparent);
+}
+
+.distributionTrack > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--theme-accent-earth), var(--theme-brand-primary));
+}
+
+.eligibilityNotice {
+  max-width: 310px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+  text-align: right;
+}
+
+.secondaryButton,
+.primaryButton,
+.dangerButton,
+.inlineButton,
+.reportButton,
+.pagination button,
+.conflictNotice button,
+.reviewFeedback button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 7px 13px;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.secondaryButton,
+.pagination button,
+.conflictNotice button,
+.reviewFeedback button {
+  border: 1px solid var(--theme-border-soft);
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+}
+
+.primaryButton {
+  border: 1px solid color-mix(in srgb, var(--theme-brand-primary) 24%, transparent);
+  background: linear-gradient(135deg, var(--theme-brand-primary), var(--theme-brand-hover));
+  color: var(--theme-text-inverse);
+}
+
+.dangerButton {
+  margin-right: auto;
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 24%, transparent);
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, var(--theme-bg-surface) 92%);
+  color: var(--theme-state-danger);
+}
+
+.inlineButton,
+.reportButton {
+  min-height: auto;
+  padding: 3px 0;
+  border: 0;
+  background: transparent;
+  color: var(--theme-brand-primary);
+}
+
+.editor {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background: color-mix(in srgb, var(--theme-brand-soft) 22%, var(--theme-bg-surface) 78%);
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 18%, var(--theme-border-soft) 82%);
+}
+
+.editorHeader > div {
+  display: grid;
+  gap: 4px;
+}
+
+.dirtyBadge,
+.savedBadge,
+.verifiedBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.dirtyBadge {
+  background: color-mix(in srgb, var(--theme-state-warning) 14%, var(--theme-bg-surface) 86%);
+  color: color-mix(in srgb, var(--theme-state-warning) 72%, var(--theme-text-primary) 28%);
+}
+
+.savedBadge,
+.verifiedBadge {
+  background: color-mix(in srgb, var(--theme-state-success) 10%, var(--theme-bg-surface) 90%);
+  color: color-mix(in srgb, var(--theme-state-success) 74%, var(--theme-text-primary) 26%);
+}
+
+.ratingFieldset {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.ratingFieldset legend,
+.commentField > span:first-child {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ratingButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--theme-text-muted);
+  cursor: pointer;
+}
+
+.ratingButton[data-selected='true'] {
+  background: color-mix(in srgb, var(--theme-accent-earth) 12%, transparent);
+  color: color-mix(in srgb, var(--theme-accent-earth) 78%, var(--theme-brand-primary) 22%);
+}
+
+.commentField {
+  position: relative;
+  display: grid;
+  gap: 7px;
+}
+
+.commentField textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 100px;
+  padding: 11px 12px 26px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 12px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
+  font: inherit;
+  line-height: 1.6;
+  box-sizing: border-box;
+}
+
+.characterCount {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  color: var(--theme-text-muted);
+  font-size: 11px;
+}
+
+.conflictNotice,
+.reviewFeedback {
+  padding: 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-warning) 24%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--theme-state-warning) 9%, var(--theme-bg-surface) 91%);
+}
+
+.conflictNotice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.conflictNotice > div,
+.reviewFeedback > div {
+  display: grid;
+  gap: 4px;
+}
+
+.conflictNotice p,
+.reviewFeedback p {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.reviewFeedback[data-state='unavailable'] {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 22%, transparent);
+  background: color-mix(in srgb, var(--theme-state-danger) 7%, var(--theme-bg-surface) 93%);
+}
+
+.editorError {
+  margin: 0;
+  color: var(--theme-state-danger);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.editorActions {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.reviewList {
+  display: grid;
+  gap: 10px;
+}
+
+.reviewItem {
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+}
+
+.reviewItemHeader {
+  align-items: flex-start;
+}
+
+.reviewItemHeader > div:first-child,
+.reviewMeta {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.reviewItemHeader > div:first-child {
+  align-items: baseline;
+}
+
+.reviewItemHeader > div:first-child span,
+.reviewMeta time {
+  color: var(--theme-text-muted);
+  font-size: 11px;
+}
+
+.reviewMeta {
+  justify-content: flex-end;
+  font-size: 11px;
+}
+
+.reviewComment,
+.reviewCommentEmpty {
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.reviewCommentEmpty {
+  color: var(--theme-text-muted);
+  font-style: italic;
+}
+
+.reportButton {
+  justify-self: end;
+  color: var(--theme-text-secondary);
+}
+
+.emptyState,
+.loadingState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 90px;
+  padding: 16px;
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  text-align: center;
+}
+
+.emptyState {
+  flex-direction: column;
+}
+
+.pagination {
+  justify-content: center;
+  gap: 12px;
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.pagination button:disabled,
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled,
+.ratingButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+}
+
+@media (max-width: 720px) {
+  .reviewSection {
+    gap: 14px;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
+  .sectionHeader,
+  .reviewItemHeader,
+  .reviewFeedback,
+  .conflictNotice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .reviewActionArea {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .reviewActionArea .secondaryButton,
+  .reviewActionArea .inlineButton {
+    width: 100%;
+    min-height: 42px;
+  }
+
+  .eligibilityNotice {
+    max-width: none;
+    text-align: left;
+  }
+
+  .summaryGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .scorePanel {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: center;
+    justify-content: start;
+  }
+
+  .scorePanel > strong:first-child {
+    font-size: 28px;
+  }
+
+  .scorePanel > span:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .editorHeader,
+  .editorActions {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .dangerButton {
+    width: 100%;
+    margin-right: 0;
+  }
+
+  .editorActions .secondaryButton,
+  .editorActions .primaryButton {
+    flex: 1 1 120px;
+    min-height: 42px;
+  }
+
+  .reviewMeta {
+    justify-content: flex-start;
+  }
+
+  .pagination {
+    justify-content: space-between;
+  }
+}

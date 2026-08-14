@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { OidcCallbackError, redeemOidcAuthorizationCode } from '@radish/http';
+import { redeemOidcAuthorizationCode } from '@radish/http';
 import i18n from '@/i18n';
 import { getApiBaseUrl, getAuthBaseUrl } from '@/config/env';
 import { hydrateAuthUser } from '@/services/authBootstrap';
@@ -8,6 +8,7 @@ import { recordAuthSessionActivity } from '@/services/authSession';
 import { consumeAuthReturnPath } from '@/services/authReturnPath';
 import { tokenService } from '@/services/tokenService';
 import { getOidcRedirectUri } from '@/platform/tauriBridge';
+import { redirectToLogin } from '@/services/auth';
 import styles from './OidcCallbackPage.module.css';
 
 function syncLanguageFromCallbackUrl(url: URL): void {
@@ -43,12 +44,26 @@ export function OidcCallbackPage() {
           redirectUri,
           missingCodeMessage: t('oidc.missingCode'),
           staleCallbackMessage: t('oidc.staleCallback'),
-          missingAccessTokenMessage: t('oidc.missingAccessToken'),
-          buildTokenRequestFailedMessage: ({ status, statusText, error: tokenError, errorDescription }) => {
-            const baseMessage = t('oidc.tokenRequestFailed', { status, statusText });
-            const detailMessage = errorDescription || tokenError;
-            return detailMessage ? `${baseMessage} (${detailMessage})` : baseMessage;
+          stateMismatchMessage: t('oidc.stateMismatch'),
+          attemptMissingOrExpiredMessage: t('oidc.attemptMissing'),
+          buildAuthorizationErrorMessage: ({ error }) => {
+            if (error === 'access_denied') {
+              return t('oidc.accessDenied');
+            }
+            if (error === 'login_required') {
+              return t('oidc.loginRequired');
+            }
+            if (error === 'server_error') {
+              return t('oidc.serverError');
+            }
+            return t('oidc.authorizationError');
           },
+          tokenRequestNetworkErrorMessage: t('oidc.tokenRequestNetworkError'),
+          invalidTokenResponseMessage: t('oidc.invalidTokenResponse'),
+          missingAccessTokenMessage: t('oidc.missingAccessToken'),
+          buildTokenRequestFailedMessage: ({ status, statusText }) => (
+            t('oidc.tokenRequestFailed', { status, statusText })
+          ),
         });
 
         if (cancelled) {
@@ -88,12 +103,6 @@ export function OidcCallbackPage() {
           return;
         }
 
-        if (err instanceof OidcCallbackError && err.code === 'stale_callback') {
-          setError(t('oidc.staleCallback'));
-          setMessage(t('oidc.loginFailed'));
-          return;
-        }
-
         const detail = err instanceof Error ? err.message : String(err);
         setError(detail);
         setMessage(t('oidc.loginFailed'));
@@ -113,6 +122,16 @@ export function OidcCallbackPage() {
         <h1 className={styles.title}>{t('oidc.title')}</h1>
         <p className={styles.message}>{message}</p>
         {error ? <p className={styles.error}>{t('oidc.errorDetailPrefix')}{error}</p> : null}
+        {error ? (
+          <div className={styles.actions}>
+            <button className={styles.primaryAction} type="button" onClick={() => redirectToLogin()}>
+              {t('oidc.retryLogin')}
+            </button>
+            <a className={styles.secondaryAction} href="/">
+              {t('oidc.backHome')}
+            </a>
+          </div>
+        ) : null}
       </section>
     </main>
   );

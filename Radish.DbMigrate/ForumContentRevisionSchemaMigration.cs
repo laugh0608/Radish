@@ -38,6 +38,7 @@ internal sealed class ForumContentRevisionSchemaMigration : ISchemaMigration
         db.CodeFirst.InitTables<PostContentRevisionTag>();
         db.CodeFirst.InitTables<CommentContentRevision>();
         db.CodeFirst.InitTables<ForumContentRevisionAttachment>();
+        EnsureRevisionIndexes(db);
 
         if (!HasSourceTables(db))
         {
@@ -544,6 +545,12 @@ internal sealed class ForumContentRevisionSchemaMigration : ISchemaMigration
         }
 
         var attachments = db.Queryable<Attachment>().ToList().ToDictionary(item => item.Id);
+        var answerIds = db.DbMaintenance.IsAnyTable(nameof(PostAnswer), false)
+            ? db.Queryable<PostAnswer>().Select(item => item.Id).ToList().ToHashSet()
+            : [];
+        var answerRevisions = db.DbMaintenance.IsAnyTable(nameof(PostAnswerContentRevision), false)
+            ? db.Queryable<PostAnswerContentRevision>().ToList().ToDictionary(item => item.Id)
+            : new Dictionary<long, PostAnswerContentRevision>();
         foreach (var relation in db.Queryable<ForumContentRevisionAttachment>().ToList())
         {
             var revisionExists = relation.TargetType switch
@@ -558,6 +565,11 @@ internal sealed class ForumContentRevisionSchemaMigration : ISchemaMigration
                     commentRevision.CommentId == relation.TargetId &&
                     commentRevision.TenantId == relation.TenantId &&
                     comments.ContainsKey(relation.TargetId),
+                ForumContentRevisionTargetTypes.PostAnswer =>
+                    answerRevisions.TryGetValue(relation.RevisionId, out var answerRevision) &&
+                    answerRevision.AnswerId == relation.TargetId &&
+                    answerRevision.TenantId == relation.TenantId &&
+                    answerIds.Contains(relation.TargetId),
                 _ => false
             };
             if (!revisionExists)
@@ -621,7 +633,120 @@ internal sealed class ForumContentRevisionSchemaMigration : ISchemaMigration
             return db.DbMaintenance.IsAnyIndex(indexName);
         }
 
-        return db.DbMaintenance.GetIndexList(tableName)
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, tableName);
+        return physicalTableName != null && db.DbMaintenance.GetIndexList(physicalTableName)
             .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void EnsureRevisionIndexes(ISqlSugarClient db)
+    {
+        EnsureIndex(
+            db,
+            PostRevisionTable,
+            "idx_postcontentrevision_tenant_post_revision",
+            true,
+            (nameof(PostContentRevision.TenantId), false),
+            (nameof(PostContentRevision.PostId), false),
+            (nameof(PostContentRevision.RevisionNumber), true));
+        EnsureIndex(
+            db,
+            PostRevisionTable,
+            "idx_postcontentrevision_tenant_restore_source",
+            false,
+            (nameof(PostContentRevision.TenantId), false),
+            (nameof(PostContentRevision.RestoredFromRevisionId), false));
+        EnsureIndex(
+            db,
+            PostRevisionTagTable,
+            "idx_postcontentrevisiontag_tenant_revision_tag",
+            true,
+            (nameof(PostContentRevisionTag.TenantId), false),
+            (nameof(PostContentRevisionTag.RevisionId), false),
+            (nameof(PostContentRevisionTag.TagId), false));
+        EnsureIndex(
+            db,
+            PostRevisionTagTable,
+            "idx_postcontentrevisiontag_tenant_revision_sort",
+            false,
+            (nameof(PostContentRevisionTag.TenantId), false),
+            (nameof(PostContentRevisionTag.RevisionId), false),
+            (nameof(PostContentRevisionTag.SortOrder), false));
+        EnsureIndex(
+            db,
+            CommentRevisionTable,
+            "idx_commentcontentrevision_tenant_comment_revision",
+            true,
+            (nameof(CommentContentRevision.TenantId), false),
+            (nameof(CommentContentRevision.CommentId), false),
+            (nameof(CommentContentRevision.RevisionNumber), true));
+        EnsureIndex(
+            db,
+            CommentRevisionTable,
+            "idx_commentcontentrevision_tenant_restore_source",
+            false,
+            (nameof(CommentContentRevision.TenantId), false),
+            (nameof(CommentContentRevision.RestoredFromRevisionId), false));
+        EnsureRevisionAttachmentIndexes(db);
+    }
+
+    internal static void EnsureRevisionAttachmentIndexes(ISqlSugarClient db)
+    {
+        EnsureIndex(
+            db,
+            RevisionAttachmentTable,
+            "idx_forumrevisionattachment_revision_attachment",
+            true,
+            (nameof(ForumContentRevisionAttachment.TenantId), false),
+            (nameof(ForumContentRevisionAttachment.TargetType), false),
+            (nameof(ForumContentRevisionAttachment.RevisionId), false),
+            (nameof(ForumContentRevisionAttachment.AttachmentId), false),
+            (nameof(ForumContentRevisionAttachment.ReferenceKind), false));
+        EnsureIndex(
+            db,
+            RevisionAttachmentTable,
+            "idx_forumrevisionattachment_attachment",
+            false,
+            (nameof(ForumContentRevisionAttachment.TenantId), false),
+            (nameof(ForumContentRevisionAttachment.AttachmentId), false));
+        EnsureIndex(
+            db,
+            RevisionAttachmentTable,
+            "idx_forumrevisionattachment_target",
+            false,
+            (nameof(ForumContentRevisionAttachment.TenantId), false),
+            (nameof(ForumContentRevisionAttachment.TargetType), false),
+            (nameof(ForumContentRevisionAttachment.TargetId), false),
+            (nameof(ForumContentRevisionAttachment.RevisionId), false));
+    }
+
+    private static void EnsureIndex(
+        ISqlSugarClient db,
+        string configuredTableName,
+        string indexName,
+        bool isUnique,
+        params (string ColumnName, bool Descending)[] columns)
+    {
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, configuredTableName)
+                                ?? throw new InvalidOperationException(
+                                    $"{configuredTableName} 不存在，无法创建索引 {indexName}。");
+        var physicalColumns = columns.Select(column =>
+        {
+            var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                physicalTableName,
+                column.ColumnName)
+                ?? throw new InvalidOperationException(
+                    $"{configuredTableName}.{column.ColumnName} 不存在，无法创建索引 {indexName}。");
+            return $"{QuoteIdentifier(physicalColumn.ColumnName)}{(column.Descending ? " DESC" : string.Empty)}";
+        });
+        db.Ado.ExecuteCommand(
+            $"CREATE {(isUnique ? "UNIQUE " : string.Empty)}INDEX IF NOT EXISTS " +
+            $"{QuoteIdentifier(indexName)} ON {QuoteIdentifier(physicalTableName)} " +
+            $"({string.Join(", ", physicalColumns)})");
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 }

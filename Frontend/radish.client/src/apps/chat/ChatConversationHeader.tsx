@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
+import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { toast } from '@radish/ui/toast';
 import {
   acceptDirectConversation,
@@ -15,6 +16,7 @@ import {
 } from '@/services/userInteractionSync';
 import type { ChannelVo, DirectConversationAction, EntityIdValue } from '@/types/chat';
 import { normalizeEntityId } from '@/types/chat';
+import { resolveMediaUrl } from '@/utils/media';
 import { getErrorMessage } from './chatApp.helpers';
 import { isDirectConversationChannel, resolveConversationNoticeKey } from './chatConversationPresentation';
 import styles from './ChatApp.module.css';
@@ -35,6 +37,10 @@ interface ChatConversationHeaderProps {
   onConversationChanged: (action: DirectConversationAction) => Promise<void>;
   searchOpen: boolean;
   onOpenSearch: () => void;
+  compact: boolean;
+  showMembersAction: boolean;
+  memberPanelOpen: boolean;
+  onToggleMembers: () => void;
 }
 
 export function ChatConversationHeader({
@@ -47,6 +53,10 @@ export function ChatConversationHeader({
   onConversationChanged,
   searchOpen,
   onOpenSearch,
+  compact,
+  showMembersAction,
+  memberPanelOpen,
+  onToggleMembers,
 }: ChatConversationHeaderProps) {
   const { t } = useTranslation();
   const [pendingAction, setPendingAction] = useState<DirectConversationAction | null>(null);
@@ -57,9 +67,13 @@ export function ChatConversationHeader({
   const peerUserId = normalizeEntityId(activeChannel?.voPeerUserId);
   const channelName = activeChannel?.voPeerDisplayName?.trim() || activeChannel?.voName;
   const peerPublicId = activeChannel?.voPeerPublicId?.trim() ?? '';
+  const channelAvatarUrl = resolveMediaUrl(activeChannel?.voPeerAvatarUrl);
+  const conversationKindKey = activeChannel?.voConversationKind
+    ? `chat.section.${activeChannel.voConversationKind}`
+    : null;
 
   useEffect(() => {
-    if (!confirmAction) {
+    if (!confirmAction || compact) {
       return;
     }
 
@@ -70,7 +84,7 @@ export function ChatConversationHeader({
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [confirmAction, pendingAction]);
+  }, [compact, confirmAction, pendingAction]);
 
   const performAction = async (action: DirectConversationAction) => {
     if (!activeChannel || pendingAction) {
@@ -146,6 +160,40 @@ export function ChatConversationHeader({
     });
   };
 
+  const confirmationTitle = confirmAction
+    ? t(confirmAction === 'block' ? 'userBlock.confirm.blockTitle' : 'userBlock.confirm.unblockTitle', {
+        name: channelName,
+      })
+    : '';
+  const confirmationContent = confirmAction ? (
+    <>
+      <p className={styles.relationshipConfirmKicker}>{t('userBlock.confirm.kicker')}</p>
+      <p>
+        {t(confirmAction === 'block'
+          ? 'userBlock.confirm.blockDescription'
+          : 'userBlock.confirm.unblockDescription')}
+      </p>
+      <ul>
+        <li>{t('userBlock.confirm.followImpact')}</li>
+        <li>{t('userBlock.confirm.directImpact')}</li>
+        <li>{t('userBlock.confirm.publicImpact')}</li>
+      </ul>
+      <div className={styles.relationshipConfirmActions}>
+        <button type="button" autoFocus disabled={pendingAction !== null} onClick={() => setConfirmAction(null)}>
+          {t('common.cancel')}
+        </button>
+        <button
+          type="button"
+          data-primary="true"
+          disabled={pendingAction !== null}
+          onClick={() => void performAction(confirmAction)}
+        >
+          {t(pendingAction ? 'chat.action.processing' : `chat.action.${confirmAction}`)}
+        </button>
+      </div>
+    </>
+  ) : null;
+
   return (
     <header className={styles.mainHeader}>
       <div className={styles.headerMain}>
@@ -161,13 +209,25 @@ export function ChatConversationHeader({
               <span>{t('chat.backToConversations')}</span>
             </a>
           ))}
-          <div>
-            <div className={styles.channelTitle}>
-              {activeChannel ? `${activeChannel.voIconEmoji || '#'} ${channelName}` : t('chat.selectChannel')}
-            </div>
-            {activeChannel?.voDescription && (
-              <div className={styles.channelDescription}>{activeChannel.voDescription}</div>
+          <div className={styles.conversationIdentity}>
+            {activeChannel && (
+              <span className={styles.conversationAvatar} aria-hidden="true">
+                {channelAvatarUrl ? (
+                  <img src={channelAvatarUrl} alt="" loading="lazy" />
+                ) : (
+                  activeChannel.voIconEmoji || channelName?.charAt(0).toUpperCase() || '#'
+                )}
+              </span>
             )}
+            <div className={styles.conversationIdentityCopy}>
+              <div className={styles.channelTitle}>
+                {activeChannel ? channelName : t('chat.selectChannel')}
+              </div>
+              <div className={styles.conversationMeta}>
+                {conversationKindKey && <span>{t(conversationKindKey)}</span>}
+                {activeChannel?.voDescription && <span>{activeChannel.voDescription}</span>}
+              </div>
+            </div>
           </div>
         </div>
 
@@ -175,41 +235,59 @@ export function ChatConversationHeader({
           <button
             type="button"
             className={searchStyles.conversationSearchButton}
+            data-chat-search-trigger="true"
+            aria-label={t('chat.search.open')}
             aria-pressed={searchOpen}
             onClick={onOpenSearch}
           >
             <Icon icon="mdi:magnify" size={17} />
             <span>{t('chat.search.open')}</span>
           </button>
+          {showMembersAction && (
+            <button
+              type="button"
+              className={styles.conversationMembersButton}
+              aria-pressed={memberPanelOpen}
+              onClick={onToggleMembers}
+            >
+              <Icon icon="mdi:account-group-outline" size={17} />
+              <span>{t('chat.onlineMembers')}</span>
+            </button>
+          )}
           {isDirect && activeChannel && (
             <>
-            {peerUserId && activeChannel.voIsPeerAvailable && (
-              <button type="button" className={styles.conversationProfileButton} onClick={openPeerProfile}>
-                <Icon icon="mdi:account-outline" size={17} />
-                <span>{t('chat.openPeerProfile')}</span>
-              </button>
-            )}
-            <details className={styles.conversationMenu}>
-              <summary aria-label={t('chat.conversationMenu.open')}>
-                <Icon icon="mdi:dots-horizontal" size={20} />
-              </summary>
-              <div className={styles.conversationMenuPanel}>
+              {peerUserId && activeChannel.voIsPeerAvailable && (
                 <button
                   type="button"
-                  disabled={pendingAction !== null}
-                  onClick={() => void performAction(activeChannel.voIsArchived ? 'unarchive' : 'archive')}
+                  className={styles.conversationProfileButton}
+                  aria-label={t('chat.openPeerProfile')}
+                  onClick={openPeerProfile}
                 >
-                  <Icon icon={activeChannel.voIsArchived ? 'mdi:archive-arrow-up-outline' : 'mdi:archive-outline'} size={17} />
-                  <span>{t(activeChannel.voIsArchived ? 'chat.action.unarchive' : 'chat.action.archive')}</span>
+                  <Icon icon="mdi:account-outline" size={17} />
+                  <span>{t('chat.openPeerProfile')}</span>
                 </button>
-                {activeChannel.voCanBlock && peerPublicId && (
-                  <button type="button" disabled={pendingAction !== null} onClick={() => setConfirmAction('block')}>
-                    <Icon icon="mdi:shield-off-outline" size={17} />
-                    <span>{t('chat.action.block')}</span>
+              )}
+              <details className={styles.conversationMenu}>
+                <summary aria-label={t('chat.conversationMenu.open')}>
+                  <Icon icon="mdi:dots-horizontal" size={20} />
+                </summary>
+                <div className={styles.conversationMenuPanel}>
+                  <button
+                    type="button"
+                    disabled={pendingAction !== null}
+                    onClick={() => void performAction(activeChannel.voIsArchived ? 'unarchive' : 'archive')}
+                  >
+                    <Icon icon={activeChannel.voIsArchived ? 'mdi:archive-arrow-up-outline' : 'mdi:archive-outline'} size={17} />
+                    <span>{t(activeChannel.voIsArchived ? 'chat.action.unarchive' : 'chat.action.archive')}</span>
                   </button>
-                )}
-              </div>
-            </details>
+                  {activeChannel.voCanBlock && peerPublicId && (
+                    <button type="button" disabled={pendingAction !== null} onClick={() => setConfirmAction('block')}>
+                      <Icon icon="mdi:shield-off-outline" size={17} />
+                      <span>{t('chat.action.block')}</span>
+                    </button>
+                  )}
+                </div>
+              </details>
             </>
           )}
         </div>
@@ -229,6 +307,11 @@ export function ChatConversationHeader({
             <span>{t('chat.request.description')}</span>
           </div>
           <div className={styles.conversationNoticeActions}>
+            {activeChannel.voCanBlock && peerPublicId && (
+              <button type="button" disabled={pendingAction !== null} onClick={() => setConfirmAction('block')}>
+                {t('chat.action.block')}
+              </button>
+            )}
             {activeChannel.voCanDecline && (
               <button type="button" disabled={pendingAction !== null} onClick={() => void performAction('decline')}>
                 {t(pendingAction === 'decline' ? 'chat.action.processing' : 'chat.action.decline')}
@@ -254,7 +337,20 @@ export function ChatConversationHeader({
 
       {actionError && <div className={styles.conversationActionError} role="alert">{actionError}</div>}
 
-      {confirmAction && (
+      {confirmAction && compact && (
+        <BottomSheet
+          isOpen
+          onClose={() => setConfirmAction(null)}
+          closeLabel={t('common.close')}
+          title={confirmationTitle}
+          height="min(68%, 560px)"
+          bodyClassName={styles.relationshipConfirmSheetBody}
+        >
+          <div className={styles.relationshipConfirmSheet}>{confirmationContent}</div>
+        </BottomSheet>
+      )}
+
+      {confirmAction && !compact && (
         <div className={styles.relationshipConfirmBackdrop} role="presentation">
           <section
             className={styles.relationshipConfirmDialog}
@@ -262,35 +358,8 @@ export function ChatConversationHeader({
             aria-modal="true"
             aria-labelledby="chat-relationship-confirm-title"
           >
-            <p className={styles.relationshipConfirmKicker}>{t('userBlock.confirm.kicker')}</p>
-            <h2 id="chat-relationship-confirm-title">
-              {t(confirmAction === 'block' ? 'userBlock.confirm.blockTitle' : 'userBlock.confirm.unblockTitle', {
-                name: channelName,
-              })}
-            </h2>
-            <p>
-              {t(confirmAction === 'block'
-                ? 'userBlock.confirm.blockDescription'
-                : 'userBlock.confirm.unblockDescription')}
-            </p>
-            <ul>
-              <li>{t('userBlock.confirm.followImpact')}</li>
-              <li>{t('userBlock.confirm.directImpact')}</li>
-              <li>{t('userBlock.confirm.publicImpact')}</li>
-            </ul>
-            <div className={styles.relationshipConfirmActions}>
-              <button type="button" autoFocus disabled={pendingAction !== null} onClick={() => setConfirmAction(null)}>
-                {t('common.cancel')}
-              </button>
-              <button
-                type="button"
-                data-primary="true"
-                disabled={pendingAction !== null}
-                onClick={() => void performAction(confirmAction)}
-              >
-                {t(pendingAction ? 'chat.action.processing' : `chat.action.${confirmAction}`)}
-              </button>
-            </div>
+            <h2 id="chat-relationship-confirm-title">{confirmationTitle}</h2>
+            {confirmationContent}
           </section>
         </div>
       )}

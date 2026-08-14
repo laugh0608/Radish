@@ -247,59 +247,6 @@
   font-weight: 800;
 }
 
-.railLinkList,
-.railInfoList {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.railLinkRow,
-.railInfoRow {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  min-width: 0;
-  padding: 7px 0;
-  color: inherit;
-  text-decoration: none;
-}
-
-.railLinkRow {
-  border-radius: 12px;
-  padding: 8px 9px;
-  transition: background var(--theme-transition-standard), color var(--theme-transition-standard);
-}
-
-.railLinkRow:hover,
-.railLinkRowActive {
-  background: color-mix(in srgb, var(--theme-brand-soft) 60%, var(--theme-surface-highlight) 40%);
-  color: var(--theme-brand-primary);
-}
-
-.railLinkBody {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.railLinkTitle {
-  color: var(--theme-text-primary);
-  font-size: 13px;
-  line-height: 1.45;
-  font-weight: 800;
-  overflow-wrap: anywhere;
-}
-
-.railLinkMeta {
-  color: var(--theme-text-secondary);
-  font-size: 12px;
-  line-height: 1.45;
-  overflow-wrap: anywhere;
-}
-
 .railStatGrid {
   display: grid;
   gap: 8px;
@@ -445,15 +392,15 @@
 }
 
 .rankBadge[data-rank='1'] {
-  background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+  background: var(--theme-rank-first-surface);
 }
 
 .rankBadge[data-rank='2'] {
-  background: linear-gradient(135deg, #dfe9f3 0%, #ffffff 100%);
+  background: var(--theme-rank-second-surface);
 }
 
 .rankBadge[data-rank='3'] {
-  background: linear-gradient(135deg, #c79081 0%, #dfa579 100%);
+  background: var(--theme-rank-third-surface);
 }
 
 .rankMedal,
@@ -836,9 +783,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .leaderboardRail > :last-child {
-    grid-column: 1 / -1;
-  }
 }
 
 @media (max-width: 760px) {

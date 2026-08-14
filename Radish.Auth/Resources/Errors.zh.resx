@@ -60,6 +60,9 @@
   <data name="auth.login.error.invalidCredentials" xml:space="preserve">
     <value>邮箱或密码错误，请重试。</value>
   </data>
+  <data name="auth.login.error.invalidReturnUrl" xml:space="preserve">
+    <value>登录回跳地址无效，请从 Radish 客户端重新发起登录。</value>
+  </data>
   <data name="auth.login.success.message" xml:space="preserve">
     <value>登录成功，您现在可以关闭此页面或返回调用系统。</value>
   </data>

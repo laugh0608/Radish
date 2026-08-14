@@ -45,8 +45,18 @@ internal static class SchemaMigrationRegistry
         UserBlockAuthoritySchemaMigration.Instance,
         WikiAttachmentAuthoritySchemaMigration.Instance,
         ForumContentRevisionSchemaMigration.Instance,
+        ContentRewardSchemaMigration.Instance,
+        ContentRewardAuditProjectionSchemaMigration.Instance,
+        ForumAnswerLifecycleSchemaMigration.Instance,
+        ForumAnswerLifecycleStrictSchemaMigration.Instance,
+        ForumPostBookmarkSchemaMigration.Instance,
         NotificationInboxSchemaMigration.Instance,
         NotificationDeliveryCleanupSchemaMigration.Instance,
-        UserBlockNotificationSuppressionSchemaMigration.Instance
+        UserBlockNotificationSuppressionSchemaMigration.Instance,
+        ChatChannelDiscoverabilitySchemaMigration.Instance,
+        ConsoleRoleGovernanceSchemaMigration.Instance,
+        ProductReviewSchemaMigration.Instance,
+        WikiDocumentGovernanceSchemaMigration.Instance,
+        ExperienceAuthoritativeGovernanceSchemaMigration.Instance
     ];
 }

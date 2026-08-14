@@ -27,7 +27,8 @@ public class ForumProfile : Profile
             .ForMember(dest => dest.VoCategoryName, opt => opt.Ignore()) // 需要在 Service 中手动填充
             .ForMember(dest => dest.VoTags, opt => opt.Ignore())          // 需要在 Service 中手动填充
             .ForMember(dest => dest.VoQuestion, opt => opt.Ignore())      // 需要在 Service 中手动填充
-            .ForMember(dest => dest.VoLottery, opt => opt.Ignore());      // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoLottery, opt => opt.Ignore())       // 需要在 Service 中手动填充
+            .ForMember(dest => dest.VoIsBookmarked, opt => opt.Ignore()); // 收藏状态在 Service 中动态填充
         RecognizePrefixes("Vo");
         CreateMap<PostVo, Post>()
             .ForMember(dest => dest.TenantId, opt => opt.Ignore()); // 避免从 VO 覆盖租户 ID

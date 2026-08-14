@@ -4,7 +4,7 @@
 >
 > **版本**: v26.7.1
 >
-> **最后更新**: 2026.07.21
+> **最后更新**: 2026.08.10
 
 ---
 
@@ -63,15 +63,15 @@ Radish 论坛应用是一个基于 WebOS 架构的现代化社区讨论平台，
 - **公开详情分享基线已补齐**：forum detail 当前提供复制 canonical 公共链接入口，复制状态在页面内反馈；该链接用于外链分享和公开回流，不携带工作台窗口上下文或临时来源状态，也不把长帖子 ID、评论 ID、作者 ID 或分类 ID 作为普通用户可见标题 / 摘要 fallback。
 - **公开内容链接契约已收口**：公开发现、公开个人页、forum 列表 / 搜索 / 标签 / 类型流中的帖子入口应输出真实公开 `href`；普通点击可用 `history.state` 保留来源返回，新标签打开、复制链接、canonical、OpenGraph、JSON-LD 与 sitemap 只使用公开真实路径。
 - **治理案件与证据契约已落地**：同一租户、同一目标的多份举报聚合到唯一开放 `ContentModerationCase`；举报时快照、当前复核证据和动作结果追加保存，目标后续编辑、删除、撤回或下架不会覆盖历史依据。
-- **治理决定与动作已分离**：案件使用版本保护登记决定，帖子、评论、轻回应和商品在 Main 事务内执行目标限制，聊天消息通过可靠任务在 Chat 库撤回；禁言 / 封禁当前状态由唯一 `UserModerationState` 提供，不再扫描动作日志推导。
+- **治理决定与动作已分离**：案件使用版本保护登记决定，帖子、评论、回答、轻回应、商品和商品评价在 Main 事务内执行目标限制，聊天消息通过可靠任务在 Chat 库撤回；禁言 / 封禁当前状态由唯一 `UserModerationState` 提供，不再扫描动作日志推导。
 
 ## M12-P0 社区主线收口快照（2026-05-10）
 
 本轮社区主线收口以“**主流程可验收**”为目标，不继续扩张到 P1/P2 体验项。当前与论坛 App 直接相关的社区能力边界如下：
 
 - **关系链**：已完成关注/取关、关注状态、粉丝列表、关注列表、关注动态流；个人主页“关系链”页签已区分“关注动态”与“推荐/热门/最新”分发流入口。
-- **内容治理**：已完成举报收件、同目标案件聚合、追加式证据、案件决定、五类目标处置、禁言 / 封禁唯一当前状态、精简举报结果与可靠通知；发帖与评论入口继续读取服务端权威发布权限。
-- **治理后台承载方式**：首版审核台已集成进 `radish.console` 的 `Moderation` 页面，不额外拆独立治理 App；当前接入对象已扩展为 `Post / Comment / PostQuickReply / ChatMessage / Product` 五类目标。
+- **内容治理**：已完成举报收件、同目标案件聚合、追加式证据、案件决定、七类目标处置、禁言 / 封禁唯一当前状态、精简举报结果与可靠通知；发帖与评论入口继续读取服务端权威发布权限。
+- **治理后台承载方式**：首版审核台已集成进 `radish.console` 的 `Moderation` 页面，不额外拆独立治理 App；当前接入对象已扩展为 `Post / Comment / PostAnswer / PostQuickReply / ChatMessage / Product / ProductReview` 七类目标。
 - **治理回看语义**：案件详情分别保存举报聚合、举报时固化证据、当前复核证据、目标处置、用户状态和追加式事件；目标失效时保留安全快照与不可用状态，不伪造可访问链接。
 - **分发能力**：已完成 `recommend` / `hot` / `newest` 三路流与基础权重配置化；当前定位为基础分发能力，不包含更复杂召回/排序策略。
 - **联调资产**：`Radish.Api.Tests/HttpTest/Radish.Api.Community.http` 已覆盖关系链与内容治理的主链路验收请求；论坛主链基础能力与帖子编辑历史则继续参考 `Radish.Api.Forum.Core.http`。
@@ -966,91 +966,17 @@ const isAuthor = post && currentUserId > 0 && post.authorId === currentUserId;
 
 **功能目标**: 防止用户意外丢失编辑中的内容。
 
-**实现位置**: `PublishPostForm` 组件
+**实现位置**：`ForumPostComposer`、兼容 `PublishPostForm` 与 `forumPostDraftStorage`。
 
-**localStorage 存储**:
-```typescript
-const DRAFT_STORAGE_KEY = 'forum_post_draft';
+**当前存储契约**：
 
-// 存储结构
-{
-  title: string,
-  content: string,
-  savedAt: number  // 时间戳（用于后续扩展：过期清理）
-}
-```
+- 本地草稿使用版本化 envelope，键按当前登录 `userId` 分区，并在内容内再次校验 `ownerUserId`。
+- 标题、正文、标签、分类快照、编辑模式、问答、投票和抽奖配置由共享 Composer 自动保存；Workbench 通过同一 helper 判断是否存在可继续的真实写作内容。
+- 账号变化时先清空内存状态，再只读取新账号草稿。发布成功只删除当前账号记录，不影响同浏览器中的其他账号。
+- 旧无 owner 的全局草稿无法证明归属，升级后失败关闭且不自动迁移；损坏、版本不匹配或 owner 不匹配的 envelope 同样忽略。
+- 草稿只用于本地恢复，不替代服务端 `clientSubmissionId`、权限、分类和发布结果；发布失败保留草稿并只展示一次结构化本地化反馈。
 
-**自动保存逻辑**:
-```typescript
-// 监听标题和内容变化
-useEffect(() => {
-  if (title || content) {
-    try {
-      localStorage.setItem(
-        DRAFT_STORAGE_KEY,
-        JSON.stringify({ title, content, savedAt: Date.now() })
-      );
-    } catch (err) {
-      console.error('Failed to save draft:', err);
-    }
-  }
-}, [title, content]);
-```
-
-**特性**:
-- 任一字段变化时自动保存
-- 使用 try-catch 处理存储异常（如 localStorage 已满）
-- 仅在有内容时才保存（避免空白覆盖）
-
-**草稿恢复逻辑**:
-```typescript
-// 组件加载时恢复草稿
-useEffect(() => {
-  try {
-    const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-    if (savedDraft) {
-      const draft = JSON.parse(savedDraft);
-      if (draft.title || draft.content) {
-        setTitle(draft.title || '');
-        setContent(draft.content || '');
-      }
-    }
-  } catch (err) {
-    console.error('Failed to load draft:', err);
-  }
-}, []);
-```
-
-**草稿清理**:
-```typescript
-// 发布成功后清空草稿
-const handleSubmit = () => {
-  if (!title.trim() || !content.trim()) return;
-
-  onPublish(title, content);
-
-  // 清空表单和草稿
-  setTitle('');
-  setContent('');
-  try {
-    localStorage.removeItem(DRAFT_STORAGE_KEY);
-  } catch (err) {
-    console.error('Failed to clear draft:', err);
-  }
-};
-```
-
-**用户体验**:
-- ✅ 无需手动保存，自动持久化
-- ✅ 页面刷新后内容不丢失
-- ✅ 关闭浏览器后下次打开仍然保留
-- ✅ 发布成功后自动清空（不会保留已发布的内容）
-
-**后续优化方向**:
-- 多个草稿支持（使用唯一 key）
-- 过期草稿自动清理（基于 savedAt 时间戳）
-- 草稿列表管理界面
-- 云端同步（需要后端支持）
+当前只维护每账号一份发帖草稿。多个草稿、云端同步和草稿管理界面仍需独立价值与隐私设计，不作为自动扩展项。
 
 #### 6.10 数据同步
 
@@ -1916,7 +1842,7 @@ GET http://localhost:5100/api/v1/CommentHighlight/GetCurrentGodComments?postId=1
 3. **个人中心**:
    - 我的帖子
    - 我的点赞
-   - 我的收藏
+   - ✅ 我的收藏（F4-P 已完成私有帖子收藏、稳定分页、不可用占位与详情返回）
    - 我的评论
    - ✅ 我的轻回应回看（已完成）
 

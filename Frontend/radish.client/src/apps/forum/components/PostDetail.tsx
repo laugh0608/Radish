@@ -1,5 +1,6 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { ContentRewardTargetStateVo } from '@radish/http';
 import { createReactionBarLabels } from '../utils/reactionBarLabels';
 import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import { UserAdornment } from '@/components/UserAdornment';
@@ -19,6 +20,7 @@ import {
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { MarkdownRenderer, type MarkdownStickerMap } from '@radish/ui/markdown-renderer';
+import { ContentRewardPanel } from './ContentRewardPanel';
 import styles from './PostDetail.module.css';
 
 const MarkdownEditor = lazy(() =>
@@ -37,6 +39,9 @@ interface PostDetailProps {
   postTitleHeadingLevel?: PostTitleHeadingLevel;
   isLiked?: boolean;
   onLike?: (postId: LongId) => void;
+  isBookmarked?: boolean;
+  bookmarkLoading?: boolean;
+  onSetBookmarkState?: (isBookmarked: boolean) => Promise<void> | void;
   onVotePoll?: (optionId: number) => Promise<void>;
   onClosePoll?: () => Promise<void>;
   onDrawLottery?: () => Promise<void>;
@@ -48,6 +53,7 @@ interface PostDetailProps {
   onAnswerSortChange?: (sortBy: QuestionAnswerSort) => Promise<void>;
   onAnswerFilterChange?: (filterBy: QuestionAnswerFilter) => void;
   answerAutoFocusKey?: string | null;
+  questionAnswerSection?: ReactNode;
   isAuthenticated?: boolean;
   currentUserId?: LongId;
   canToggleTop?: boolean;
@@ -71,6 +77,9 @@ interface PostDetailProps {
   onPollClick?: () => void;
   onLotteryClick?: () => void;
   onReport?: (postId: LongId) => void;
+  contentRewardState?: ContentRewardTargetStateVo;
+  onContentRewardStateChange?: (state: ContentRewardTargetStateVo) => void;
+  onRequireContentRewardLogin?: () => void;
 }
 
 const isSameLongId = (left: LongId | null | undefined, right: LongId | null | undefined): boolean => {
@@ -107,6 +116,9 @@ export const PostDetail = ({
   postTitleHeadingLevel = 4,
   isLiked = false,
   onLike,
+  isBookmarked = false,
+  bookmarkLoading = false,
+  onSetBookmarkState,
   onVotePoll,
   onClosePoll,
   onDrawLottery,
@@ -118,6 +130,7 @@ export const PostDetail = ({
   onAnswerSortChange,
   onAnswerFilterChange,
   answerAutoFocusKey,
+  questionAnswerSection,
   isAuthenticated = false,
   currentUserId = '0',
   canToggleTop = false,
@@ -141,6 +154,9 @@ export const PostDetail = ({
   onPollClick,
   onLotteryClick,
   onReport,
+  contentRewardState,
+  onContentRewardStateChange,
+  onRequireContentRewardLogin,
 }: PostDetailProps) => {
   const { t, i18n } = useTranslation();
   const reactionLabels = useMemo(() => createReactionBarLabels(t), [t]);
@@ -457,7 +473,9 @@ export const PostDetail = ({
       {showSectionTitle && <h3 className={styles.title}>{t('forum.postDetail.title')}</h3>}
       <div className={styles.postContent}>
         {renderPostTitle(post.voTitle, postTitleHeadingLevel)}
-        {isQuestionPost && (
+        {isQuestionPost && questionAnswerSection}
+
+        {isQuestionPost && !questionAnswerSection && (
           <div className={styles.statusRow}>
             {onQuestionClick ? (
               <button
@@ -746,7 +764,7 @@ export const PostDetail = ({
           </section>
         )}
 
-        {isQuestionPost && (
+        {isQuestionPost && !questionAnswerSection && (
           <section className={styles.questionCard}>
             <div className={styles.questionHeader}>
               <div>
@@ -987,6 +1005,45 @@ export const PostDetail = ({
           <span className={styles.commentCount}>
             💬 {t('forum.postDetail.commentCount', { count: post.voCommentCount || 0 })}
           </span>
+          {!isReadOnly && onSetBookmarkState ? (
+            <button
+              type="button"
+              className={`${styles.bookmarkButton} ${isBookmarked ? styles.bookmarked : ''}`}
+              onClick={() => {
+                void onSetBookmarkState(!isBookmarked);
+              }}
+              disabled={bookmarkLoading}
+              aria-pressed={isBookmarked}
+              aria-busy={bookmarkLoading}
+              title={bookmarkLoading
+                ? t('forum.postDetail.bookmark.loading')
+                : !isAuthenticated
+                  ? t('forum.postDetail.bookmark.login')
+                  : isBookmarked
+                    ? t('forum.postDetail.bookmark.remove')
+                    : t('forum.postDetail.bookmark.add')}
+            >
+              <Icon
+                icon={isBookmarked ? 'mdi:bookmark' : 'mdi:bookmark-outline'}
+                size={18}
+              />
+              <span>
+                {bookmarkLoading
+                  ? t('forum.postDetail.bookmark.loading')
+                  : isBookmarked
+                    ? t('forum.postDetail.bookmark.bookmarked')
+                    : t('forum.postDetail.bookmark.add')}
+              </span>
+              <span className={styles.bookmarkCount}>
+                {post.voCollectCount ?? 0}
+              </span>
+            </button>
+          ) : (
+            <span className={styles.commentCount}>
+              <Icon icon="mdi:bookmark-outline" size={16} />
+              {post.voCollectCount ?? 0}
+            </span>
+          )}
 
           {!isReadOnly && !!onReport && !isAuthor && (
             <button
@@ -1106,6 +1163,17 @@ export const PostDetail = ({
             </div>
           )}
         </div>
+        {contentRewardState && onContentRewardStateChange && onRequireContentRewardLogin && (
+          <ContentRewardPanel
+            targetType="Post"
+            targetId={post.voId}
+            state={contentRewardState}
+            displayTimeZone={displayTimeZone}
+            isAuthenticated={isAuthenticated}
+            onRequireLogin={onRequireContentRewardLogin}
+            onStateChange={onContentRewardStateChange}
+          />
+        )}
       </div>
     </div>
   );

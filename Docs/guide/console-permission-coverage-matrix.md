@@ -1,6 +1,6 @@
 # Console 权限覆盖矩阵
 
-> 最后更新：2026-07-25
+> 最后更新：2026-08-09
 > 适用范围：`radish.console` 当前已接入权限治理的页面与其真实依赖的后端资源
 
 本文档用于把 Console 权限治理涉及的四层对象放到同一张表里：
@@ -38,22 +38,23 @@
 
 | 模块/页面 | 路由 | 路由访问权限 | 页面内操作权限 | 真实后端资源 | 种子状态 | 备注 |
 | --- | --- | --- | --- | --- | --- | --- |
-| Dashboard | `/` | `console.dashboard.view` | `console.orders.view`、`console.products.create`、`console.users.view`、`console.applications.view` | `Statistics/GetDashboardStats`、`Shop/AdminGetOrders` | ✅ | 最近订单按订单查看权限单独控制，并支持带 `orderNo` 深链进入订单治理面 |
+| Dashboard | `/` | `console.dashboard.view` | `console.moderation.view`、`console.experience.view`、`console.orders.view`、`console.docs.view`、`console.users.view`、`console.roles.view` | `Statistics/GetDashboardStats`、`Shop/AdminGetOrders` | ✅ | 高频任务路径按具体查看权限裁剪；最近订单按订单权限单独读取，并使用字符串 `orderId` 深链进入订单治理面 |
 | Applications | `/applications` | `console.applications.view` | `console.applications.create/edit/delete/reset-secret` | `Client/GetClients`、`GetClient/.+`、`CreateClient`、`UpdateClient/.+`、`DeleteClient/.+`、`ResetClientSecret/.+` | ✅ | 列表与弹窗链路均已闭环 |
 | Products | `/products` | `console.products.view` | `console.products.create/edit/delete/toggle-sale` | `Shop/GetCategories`、`AdminGetProducts`、`AdminGetProduct/.+`、`CreateProduct`、`UpdateProduct`、`DeleteProduct/.+`、`PutOnSale/.+`、`TakeOffSale/.+` | ✅ | 已接商品详情弹窗、商品到订单回跳和订单回看入口；详情编辑 footer 仅在 `console.products.edit` 下传入写入回调 |
 | Orders | `/orders` | `console.orders.view` | `console.orders.retry`、`console.orders.remark` | `Shop/AdminGetOrders`、`AdminGetOrder/.+`、`RetryGrantBenefit/.+`、`AdminRemarkOrder/.+` | ✅ | 详情已改为独立真实接口加载，并支持订单到用户 / 商品治理回跳；失败重试 footer 仅在 `console.orders.retry` 下传入写入回调 |
-| Users | `/users` | `console.users.view` | 无额外操作权限 | `User/GetUserList`、`GetUserById/\\d+` | ✅ | 未落地操作已收口，不再保留伪权限 |
-| User Detail | `/users/:userId` | `console.users.view` | 无额外操作权限 | 当前页面仍以 mock 为主，无新增真实资源依赖 | ✅ | 路由边界已稳定，后续若接真接口需重新补矩阵 |
-| Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 首批闭环模块 |
+| Users | `/users` | `console.users.view` | 无额外操作权限 | `User/GetUserList`、`GetUserById/\\d+` | ✅ | 关键词、启用状态和角色均由服务端权威筛选；页面保持只读，不保留伪状态或用户写能力 |
+| User Detail | `/users/:userId` | `console.users.view` | `console.roles.view` 读取角色 / 权限；Coins、Experience、Orders、Benefits、Moderation 继续各自独立授权 | `User/GetUserById/\\d+`、`User/GetUserAuthorization/\\d+`，以及 Coin / Experience / Shop 既有聚合读取 | ✅ | 主资料、授权、余额、经验、流水、订单、权益分别维护局部权威状态；无授权来源不发起读取，Mobile 为保留来源返回的单任务详情 |
+| Roles | `/roles` | `console.roles.view` | `console.roles.create/edit/toggle/delete` | `Role/GetRoleList`、`GetRoleById`、`CreateRole`、`UpdateRole`、`DeleteRole`、`ToggleRoleStatus` | ✅ | 内建角色、保留名、活动名称唯一性和明确更新命令已由服务端权威约束；Mobile 只开放列表与权限查看 |
+| Role Permissions | `/roles/:roleId/permissions` | `console.roles.view` | `console.roles.edit` | `ConsoleAuthorization/GetResourceTree`、`GetRoleAuthorization/.+`、`GetRolePermissionPreview/.+`、`SaveRoleAuthorization` | ✅ | View-only Operator 可达；内建角色与 Mobile 只读，保存使用 Role 聚合版本、事务内 CAS 和结构化 `409` |
 | Categories | `/categories` | `console.categories.view` | `console.categories.create/edit/delete/restore/toggle/sort` | `Category/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 分类与标签已拆分为独立后台模块 |
 | Tags | `/tags` | `console.tags.view` | `console.tags.create/edit/delete/restore/toggle/sort` | `Tag/GetPage`、`Create`、`Update/.+`、`Delete/.+`、`Restore/.+`、`ToggleStatus/.+`、`UpdateSort/.+` | ✅ | 页面与资源映射已一致 |
 | Documents | `/documents` | `console.docs.view` | `console.docs.review/publish/archive/delete/restore/permissions/rollback/import/export` | `Wiki/AdminGetReviewQueue`、`AdminGetDraftById/\\d+`、`AdminReviewDraft/\\d+`、`AdminGetList`、`AdminGetTree`、`AdminGetById/\\d+`、`GetRevisionList/\\d+`、`GetRevisionDetail/\\d+`、`Publish/\\d+`、`Unpublish/\\d+`、`Archive/\\d+`、`Delete/\\d+`、`Restore/\\d+`、`UpdateAccessPolicy/\\d+`、`Rollback/\\d+`、`ImportMarkdown`、`ExportMarkdown/\\d+` | ✅ | Console 承接草稿审核与文档治理；`review` 只负责 RequestChanges / Reject / Apply，Publish 继续独立授权；作者正文创建 / 编辑归正式 Web Author 入口 |
-| Stickers Groups | `/stickers` | `console.stickers.view` | `console.stickers.create/edit/delete/toggle` | `Sticker/GetAdminGroups`、`CreateGroup`、`UpdateGroup/.+`、`DeleteGroup/.+`、`CheckGroupCode` | ✅ | 分组启停复用 `UpdateGroup` |
+| Stickers Groups | `/stickers` | `console.stickers.view` | `console.stickers.create/edit/delete/toggle` | `Sticker/GetAdminGroups`、`CreateGroup`、`UpdateGroup/.+`、`UpdateGroupStatus/.+`、`DeleteGroup/.+`、`CheckGroupCode` | ✅ | 完整编辑与 toggle-only 使用独立 payload / 路由，窄权限不能改写分组其他字段 |
 | Stickers Items | `/stickers/:groupId/items` | `console.stickers.view` | `console.stickers.create/edit/delete/sort/batch-upload` | `Sticker/GetGroupStickers/.+`、`AddSticker`、`UpdateSticker/.+`、`DeleteSticker/.+`、`BatchAddStickers`、`BatchUpdateSort`、`CheckStickerCode`、`NormalizeCode` | ✅ | 上传文件仍走共享接口，但已按 `businessType` 对 Sticker 链路收口，见第 4 节 |
 | Moderation | `/moderation` | `console.moderation.view` | `console.moderation.review`、`console.moderation.appeal`、`console.moderation.action` | 案件：`GetCaseQueue`、`GetCase/.+`、`GetCaseEvents`、`CaptureEvidence`、`ReviewCase`、`ApplyCorrectiveAction`；申诉：`GetAppealQueue`、`GetAppeal/.+`、`GetAppealEvents`、`StartAppealReview`、`CaptureAppealEvidence`、`ReviewAppeal`、`ExecuteAppealRelief` | ✅ | Case 与 Appeal 页面均已迁移到权威 API。View 可读案件和脱敏申诉队列，Review 处理原案件，Appeal 读取申诉正文并复核，Action 执行用户动作与已获准纠正；四类权限不互相替代 |
-| Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`Coin/AdminGetTransactions`、`AdminAdjustBalance` | ✅ | 管理端查询指定用户余额、交易流水与调账能力；流水支持按业务类型 / 业务 ID 定位订单扣款；调账后同页刷新 `ADMIN_ADJUST` 流水用于人工复核 |
+| Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`Coin/AdminGetTransactions`、`AdminAdjustBalance` | ✅ | 查询返回权威目标身份 / 余额版本；调账绑定该快照并携带幂等键、显式确认，版本或结果不确定时冻结写入；流水支持稳定分页和按业务类型 / 业务 ID 定位订单扣款 |
 | Experience | `/experience` | `console.experience.view` | `console.experience.adjust/freeze/recalculate` | `Experience/GetUserExperience/.+`、`GetUserDailyStats/.+`、`GetUserTransactions/.+`、`GetUserGovernanceActions/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience`、`AdminRecordGovernanceReview`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口；每日统计、经验流水与治理留痕共同支撑 Console 经验治理回看与人工复核 |
-| SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ✅ | `CreateConfig` 兼容旧路由但拒绝新增未知设置；`DeleteConfig` 兼容旧路由并收敛为恢复默认；Medium 设置要求原因与确认参数；favicon 上传 / 恢复默认和编辑抽屉 handler 会复核 `console.system-config.edit` 与可编辑状态 |
+| SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ✅ | Low / Medium 写入已具备结构化 400 / 409、持久化点 CAS、配置—审计共同提交和显式 Medium 确认；Mobile 只编辑 Low。Create / Delete 仅兼容旧路由，不扩为动态设置能力 |
 | Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `/hangfire(/.*)?` | ✅ | 特殊入口，走 `HangfireAuthorizationFilter` |
 
 ## 3. `authOnly` 路由矩阵
@@ -62,8 +63,8 @@
 
 | 路由 | 类型 | 真实依赖 | 是否进入 ConsolePermissions | 备注 |
 | --- | --- | --- | --- | --- |
-| `/profile` | `authOnly` | `Attachment/UploadImage`、`User/SetMyAvatar` | 否 | 个人资料页，当前不按 `console.*` 控制 |
-| `/settings` | `authOnly` | 当前主要为本地设置/占位 | 否 | 仍属登录态页面 |
+| `/profile` | `authOnly` | `User/GetMyProfile`、`User/UpdateMyProfile`、`Attachment/UploadImage`、`User/SetMyAvatar` | 否 | 真实个人资料与头像能力；仍不按 `console.*` 控制，资料与展示名审计在同一事务命令中提交，加载失败可重试 |
+| `/settings` | `authOnly` | `User/GetMyTimePreference`、`User/UpdateMyTimePreference`、`User/ChangeMyLoginPassword`；语言使用正式 i18n 持久化 | 否 | 时区与密码为真实能力；通知、主题、分页、2FA、会话超时仍是显式禁用项 |
 | `/theme-test` | `authOnly` | 无后台依赖 | 否 | 调试/展示页，不纳入治理主线 |
 
 ## 4. 共享接口边界矩阵
@@ -92,12 +93,20 @@
 
 ### 5.1 已完成
 
-- 已接入权限治理的 Console 主页面，路由访问权限已全部具备来源
+- 已接入权限治理的 Console 主页面均具备稳定路由来源；Role Permissions 已按 view-only 读取边界放行
 - 页面真实调用的 Console 专属后台接口当前已基本完成 `ConsolePermissions + DbMigrate` 对齐
 - `Users` 未落地能力已从页面、前后端权限常量与文档口径中一并清理
 - 默认 `Test` 角色已被收口为普通用户基线，不再保留任何 Console 资源授权，也不再保留标签管理等后台 API 权限
 
-### 5.2 工具化校验已落地
+### 5.2 R2-C03 门禁与正式实现结论
+
+- 角色聚合已具备内建保护、保留名、唯一性与明确命令更新边界
+- 权限矩阵已使用 Role 聚合版本、事务内 CAS 与结构化 `409`，纯删除 / 清空同样推进版本
+- 系统设置已具备结构化 400 / 409、持久化点 CAS、配置—审计共同提交和用户显式 Medium 确认
+- PC / Mobile 正式页面已落地只读 Operator、内建保护、权限 key 含义、Low `BottomSheet`、Medium PC-only、dirty / 离开保护和冲突草稿，并通过 Gateway 复核
+- 详细代码事实、Mobile 停止线与验证证据见 [readiness 记录](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)、[能力门禁实现记录](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)和[正式实现记录](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)
+
+### 5.3 工具化校验已落地
 
 当前已补充轻量扫描脚本：`npm run check:console-permissions`
 
@@ -122,7 +131,7 @@
 - 新增按钮级权限或页面真实接口依赖时
 - 调整 `ConsolePermissions` 或 `DbMigrate` 种子时
 
-### 5.3 暂不视为缺口的项
+### 5.4 暂不视为缺口的项
 
 - `GetOrderTrend`、`GetProductSalesRanking`、`GetUserLevelDistribution`：当前页面未实际接入
 - `GetUserStats`：用户详情页仍以 mock/TODO 为主

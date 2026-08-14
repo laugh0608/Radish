@@ -22,6 +22,7 @@
 | SystemConfig | ✅ 已接入 | 表格 CRUD + 配置面板 | `console.system-config.*` | ✅ 已补齐 | 编辑详情与站点图标链路已闭环 |
 | Coins | ✅ 已接入 | 工具型页面 | `console.coins.*` | ✅ 已补齐 | 用户余额查询、业务流水筛选与管理员调账已接入 |
 | Experience | ✅ 已接入 | 治理工作台 | `console.experience.*` | ✅ 已补齐 | 经验观察、流水、冻结、调整和等级配置已接入 |
+| Channel Discoverability | ✅ 已接入 | 治理工作台 | `console.channel-discoverability.view/manage` | ✅ 已补齐 | 匿名频道摘要资格、版本冲突与事件历史已闭环 |
 | Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.view/review/appeal/action` | ✅ 已补齐 | 案件、证据、决定、动作、申诉复核、纠正和事件页面均使用权威 API |
 | Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 个人偏好、密码修改、头像上传和资料保存不走 Console 专属权限树 |
 | Documents | ✅ 已接入 | 审核证据 + 治理工作台 | `console.docs.*` | ✅ 已补齐 | 待审队列、审核应用、独立发布、访问策略、版本和导入导出已接入 |
@@ -35,14 +36,17 @@
 
 - 页面访问依赖 `console.dashboard.view`
 - “最近订单”仅在拥有 `console.orders.view` 时加载
-- 快捷入口按具体模块权限分别控制
-- 页面视觉使用调度总览型结构：指标、快捷操作、最近事项和右侧调度入口
+- 高频任务路径按 Moderation、Experience、Orders、Documents、Users、Roles 的具体查看权限分别控制；它们是稳定职责入口，不代表实时待办队列
+- “全部功能”继续消费当前账号的权威路由组，不能由 Dashboard 另建平行导航或伪动作
+- 页面使用“高频任务路径—独立指标快照—最近订单—完整功能面板”的调度总览结构
 
 ### 当前状态
 
 - ✅ 页面权限闭环完成
 - ✅ 资源种子闭环完成
-- ✅ 已按调度总览型页面基座对齐
+- ✅ 统计与最近订单分别维护请求代际和 `loading / ready / unavailable / stale`；首次失败不伪造零值或空列表，刷新失败保留旧快照
+- ✅ 页头只保留统一刷新；PC 最近订单表格与 Mobile 订单摘要卡消费同一快照和 `orderId` 详情深链
+- ✅ 静态“优先队列”、重复命令组与不能打开创建任务的伪入口已退出正式页面
 - ⏸️ 趋势图与扩展统计接口未纳入本阶段
 
 ## 3.3 Applications
@@ -58,8 +62,10 @@
 ### 当前状态
 
 - ✅ 页面访问与按钮级权限均已接入
-- ✅ 详情加载资源映射已对齐
-- ✅ 已按表格 CRUD 页面基座对齐
+- ✅ 列表由 OpenIddict 存储完成服务端搜索、软删除过滤、稳定排序和权威分页，查询可由 URL 回访
+- ✅ PC 连续表格 / Modal 与 Mobile 应用卡 / 单任务表单共用同一数据快照；详情按需读取
+- ✅ 创建 / 编辑表单覆盖 client type、grant、Scopes、consent、PKCE 与回调 URI，并具备 handler / Form 双重权限、dirty / busy 停止线
+- ✅ Secret 只在机密客户端创建或轮换成功后一次性展示；公开客户端不返回 Secret，轮换需显式确认和主动保存确认
 - ⏸️ 独立详情页、使用统计暂不作为当前主线
 
 ## 3.4 Users
@@ -85,7 +91,8 @@
 
 - ✅ 页面访问闭环完成
 - ✅ 误暴露入口收口完成
-- ✅ 用户详情已接入基础信息、资产、经验和订单摘要，按详情型页面基座承载
+- ✅ 列表关键词、启用状态和角色由服务端权威筛选并稳定分页，查询参数可由 URL 回访
+- ✅ 用户详情已接入基础信息、授权、资产、经验、流水、订单和权益；各来源独立维护权威读取状态和服务端分页
 - ✅ 用户详情可进入内容治理并带入目标用户过滤，继续排查该用户相关举报、手动治理和治理日志
 - ✅ 列表、详情、资产、经验、订单与权益摘要已使用 Console 中英文资源、locale 格式化和稳定系统词元；人工资料与备注保持原文
 - ⏸️ 创建用户、强制下线、重置密码等管理动作仍未重新开放
@@ -106,6 +113,8 @@
 - ✅ 详情加载与编辑链路已对齐到资源映射
 - ✅ 角色列表已按表格 CRUD 页面基座对齐
 - ✅ 角色权限配置已按权限配置型页面基座承载
+- ✅ View-only Operator 和内建 `System / Admin` 均为只读；授权使用 Role 聚合版本与原子 CAS，冲突保留本地草稿
+- ✅ Mobile 使用连续角色目录与独立只读权限详情，权限项同时展示技术 key、含义和已授权状态，不提供保存或批量授权入口
 
 ## 3.6 Products
 
@@ -129,6 +138,7 @@
 - ✅ 辅助接口资源种子已补齐
 - ✅ 已按表格 CRUD 页面基座对齐
 - ✅ 商品详情进入相关订单时保留当前商品详情 `returnTo`，并继续保持商品 / 订单 ID 字符串查询参数
+- ✅ Create / Update DTO 不接受上下架状态；创建固定未上架，普通编辑保持既有状态，上下架只由独立接口与 `console.products.toggle-sale` 执行
 - ✅ 商品编辑、上架和下架使用 `VoVersion` / `ExpectedVersion` 乐观并发语义，旧详情快照提交会被服务端拒绝
 - ✅ 商品类型与能力展示消费稳定枚举和 `voConfigurationRequirementKeys / voUnavailableReasonKey`；兼容说明文本不参与可售与上架控制
 - ⏸️ `AdminGetProduct` 未被当前页面实际使用，暂不纳入额外补齐范围
@@ -146,10 +156,12 @@
 - ✅ 页面访问已接入
 - ✅ 重试按钮按权限控制
 - ✅ 管理员备注已接入独立权限，适用于失败 / 异常订单留痕
-- ✅ 仪表盘最近订单现已支持携带 `orderNo` 深链进入订单页，并自动展开目标订单详情
+- ✅ 仪表盘最近订单使用字符串 `orderId` 深链进入订单页，并自动展开目标订单详情
 - ✅ 订单详情已展示扣款流水 ID；拥有 `console.coins.view` 时可跳转到对应胡萝卜流水筛选结果
 - ✅ 从商品详情或胡萝卜流水进入订单页时，订单详情关闭、分页、筛选和重置会保留合法 `returnTo`
-- ✅ 已按表格 CRUD 页面基座对齐
+- ✅ PC 已收敛为单行薄表格与显式选择后的按需 inspector；Mobile 使用连续三列订单行、按需筛选层和隐藏全局导航的全屏详情任务
+- ✅ `Failed` 筛选表示全部失败订单，行级继续区分支付失败 / 履约失败；本页失败与可重试统计分别消费 `Status` 和 `VoCanRetryFulfillment`
+- ✅ `userId / productId / orderId` 输入、URL 和 API 全链保持 LongId 字符串；产品文案统一为“重试发放”，不把候选资格表述为服务端复核已经成功
 - ✅ 订单状态、失败阶段、商品类型与权益摘要按稳定字段本地化，API 失败保留结构化错误字段，不匹配展示消息控制流程
 - ⏸️ 更完整的订单处理后台不在本阶段展开
 
@@ -231,6 +243,7 @@
 - ✅ 系统设置变更历史落盘到 `DataBases/SystemConfigs/system-config-change-logs.json`，用于记录旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间
 - ✅ 当前开放 `Site.Branding.FaviconUrl`、账号身份长度、帖子标题 / 正文 / 摘要长度、评论内容长度、论坛轻回应内容 / 返回条数 / 冷却 / 去重窗口，以及神评 / 沙发稳定窗口和替换阈值设置
 - ✅ Medium 设置必须填写修改原因并确认风险等级 / 设置键，High / Critical 设置不开放编辑
+- ✅ Low / Medium 写入使用 `ExpectedVersion` 与结构化 `409`，覆盖值和审计共同提交；冲突保留本地草稿并要求人工重新读取
 - ✅ 数字设置已展示数值范围、整数约束和影响范围摘要，前端控件按规则约束输入，后端仍是最终校验权威
 - ✅ SystemConfig 页面已支持站点 favicon `.ico` 上传、预览与恢复默认
 - ✅ 默认站点图标已固定为 `/uploads/DefaultIco/bailuobo.ico`，默认种子文件位于 `DataBases/Uploads/DefaultIco/bailuobo.ico`
@@ -239,6 +252,7 @@
 - ✅ 已按表格 CRUD + 配置面板页面基座对齐
 - ✅ 数字设置控件宽度、变更历史表格滚动和移动端分页换行已按 Console 表格交互口径收口
 - ✅ 设置定义使用稳定 `voKey` 解析本地名称、说明和影响摘要；未知定义与设置值保留服务端原文，语言偏好不写入 SystemConfig
+- ✅ PC 的 Low 使用旧值 / 新值轻量确认，Medium 显式确认风险等级和完整 key；Mobile 只允许 Low 进入共享 `BottomSheet`，Medium 在列表和提交 handler 双重保持 PC-only
 
 ## 3.11 Coins
 
@@ -259,21 +273,41 @@
 
 ### 当前边界
 
-- 经验观察、经验流水、复核结论、冻结 / 解冻、管理员调整和等级配置均保留既有 API 与业务语义。
+- 经验观察、经验流水、复核结论、冻结 / 解冻、管理员调整和等级配置继续使用 `console.experience.*` 既有权限；不开放人工修改等级。
+- 调账、冻结、解冻和人工审核必须绑定已读取的权威用户与 `ExpectedVersion`；调账 / 审核另外使用稳定 `IdempotencyKey`。
+- 等级保存先生成影响预览与 `PreviewFingerprint`，执行时重新校验指纹，并将整批用户更新与 append-only 重算审计共同提交。
 - 当前不新增自动处罚、自动扣经验或经验发放主流程改造。
 
 ### 当前状态
 
 - ✅ 已按治理工作台结构承载
-- ✅ 页面拆分和视觉承载不改变经验规则、冻结语义或数据契约
-- ✅ 经验观察、经验流水、复核动作、治理表单和等级配置的内部样式已迁入页面 CSS 与 Console token
-- ✅ 经验流水表格保持治理工作台内的局部滚动、分页换行和弱文本 CSS class 口径
+- ✅ 主资料、统计、流水、动作历史与等级配置各自维护请求代际及 `loading / ready / unavailable / stale`；用户、日期、分页和动作查询可由 URL 回访
+- ✅ 经验写入使用版本 CAS，调账 / 审核支持同键同载荷重放；冲突保留表单与幂等键，精确刷新后要求重新确认
+- ✅ 冻结 / 解冻记录前后版本；过期冻结在权威读取时规范化为自动解冻并追加动作事实
+- ✅ 流水与动作使用服务端真实分页；PC 连续台账和 Mobile 单用户卡片共用权威快照、权限、dirty / busy 与 stale 停止线
+- ✅ 等级重算展示影响摘要、指纹、理由和审计，预览过期时拒绝执行
+
+## 3.12.1 Channel Discoverability
+
+### 当前边界
+
+- 查看使用 `console.channel-discoverability.view`；开启 / 关闭匿名摘要资格使用 `console.channel-discoverability.manage`。
+- `ChannelType.Public` 不等于匿名公开；只有 `DiscoverVisibility=Summary` 的合格频道才能进入 Public Discover，治理页不读取或展示消息正文、成员和在线状态。
+- 写入必须提交理由与 `ExpectedVersion`；本模块不修改 Public Discover 输出规则、频道消息授权、枚举、数据库字段或权限键。
+
+### 当前状态
+
+- ✅ 关键词、公开资格、生命周期、删除范围和分页进入 URL；列表与历史分别维护请求代际和权威快照
+- ✅ 历史事件按 `ResultVersion DESC, Id DESC` 服务端真实分页，不再固定截断最近 `20` 条
+- ✅ CAS 冲突保留理由草稿，并通过复用 view 权限的 `GetById` 精确刷新目标；刷新失败进入 stale 并冻结写入
+- ✅ 写入成功先消费权威频道响应，再刷新列表；目标退出当前筛选时立即从当前快照移除
+- ✅ PC 频道表格 / 事件时间线与 Mobile 频道卡 / 事件卡共用同一权限、快照和显式目标选择
 
 ## 3.13 Moderation
 
 ### 当前边界
 
-- 服务端已建立 Case / Evidence / Event / TargetAction / Appeal / AppealEvent / UserModerationState 权威契约，五类目标统一进入案件、决定、动作、申诉和纠正链路。
+- 服务端已建立 Case / Evidence / Event / TargetAction / Appeal / AppealEvent / UserModerationState 权威契约，七类目标统一进入案件、决定、动作、申诉和纠正链路。
 - 权限拆分为 `console.moderation.view / review / appeal / action`：View 读取案件与脱敏申诉队列，Review 处理原案件，Appeal 查看申诉正文并复核，Action 执行用户动作和已获准的纠正。
 - 正式页面已经迁移到 Case / Appeal API；旧 `GetReviewQueue / Review / ApplyUserAction / GetActionLogs` HTTP 入口已删除，不再作为兼容消费者。
 - 当前不新增批量治理、敏感词策略或自动化处罚平台。
@@ -316,7 +350,11 @@
 ### 当前状态
 
 - ✅ 待审队列、正式正文 / 草稿证据、协作者与审核时间线已经接入；Apply 只更新权威正文并生成 Revision，不自动 Publish
-- ✅ 文档治理列表、详情、状态与访问策略、版本回看 / 回滚、Markdown 导入 / 导出均已接入
+- ✅ 正文 `Version`、审核事件、独立 `GovernanceVersion` 与 append-only 治理事件分域；普通编辑不能夹带 ACL
+- ✅ 发布、下架、归档、删除、恢复、访问策略和回滚提交理由与治理版本；Publish / Rollback 同时校验正文版本，条件更新与事件追加同事务
+- ✅ 列表 / 待审队列可由 URL 恢复真实分页；详情、Revision、Review 证据与治理历史各自维护请求代际和 `loading / ready / unavailable / stale`
+- ✅ 文档治理目标必须显式选择；冲突保留理由并精确刷新，成功先消费权威文档 / 事件响应，再刷新从属证据
+- ✅ 文档治理列表、详情、状态与访问策略、版本回看 / 回滚、Markdown 导入 / 导出均已接入，PC 与 Mobile 共用权威快照
 - ✅ 状态、可见性和来源类型按稳定字段解析中英文词元，标题、正文、Slug、角色 / 权限键和修订说明保留原文
 - ✅ 日期、数量和英文复数按当前 locale 展示；Wiki API 失败统一保留 HTTP status、`Wiki.*` Code 和 `error.wiki.*` MessageKey
 - ✅ 正式 Web Author 入口、Console 审核 / 治理和公开阅读保持职责分层，不把审核或发布动作混入作者态

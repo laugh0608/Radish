@@ -31,4 +31,5 @@ export interface UserListItem {
   voUpdateTime?: string;
   voIsDeleted: boolean;
   voTenantId: string;
+  voRoleNames: string[];
 }

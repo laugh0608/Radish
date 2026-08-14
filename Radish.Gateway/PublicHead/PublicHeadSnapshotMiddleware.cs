@@ -9,6 +9,7 @@ public sealed class PublicHeadSnapshotMiddleware
 {
     private static readonly TimeSpan InjectedHtmlCacheTtl = TimeSpan.FromMinutes(10);
     private static readonly Regex ForumPostPathPattern = new("^/forum/post/([^/?#]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+    private static readonly Regex ForumTagPathPattern = new("^/forum/tag/([^/?#]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex DocsPathPattern = new("^/docs/([^/?#]+)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly Regex ShopProductPathPattern = new("^/shop/product/([1-9][0-9]*)$", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
     private static readonly IReadOnlyDictionary<string, string> StaticRouteSnapshotApiPaths =
@@ -100,10 +101,18 @@ public sealed class PublicHeadSnapshotMiddleware
             return true;
         }
 
-        var forumMatch = ForumPostPathPattern.Match(path);
-        if (forumMatch.Success)
+        var forumTagMatch = ForumTagPathPattern.Match(path);
+        if (forumTagMatch.Success)
         {
-            snapshotRequest = new SnapshotRequest($"/api/public-head/forum/post/{Uri.EscapeDataString(Uri.UnescapeDataString(forumMatch.Groups[1].Value))}");
+            var slug = Uri.UnescapeDataString(forumTagMatch.Groups[1].Value);
+            snapshotRequest = new SnapshotRequest($"/api/public-head/forum/tag/{Uri.EscapeDataString(slug)}");
+            return true;
+        }
+
+        var forumPostMatch = ForumPostPathPattern.Match(path);
+        if (forumPostMatch.Success)
+        {
+            snapshotRequest = new SnapshotRequest($"/api/public-head/forum/post/{Uri.EscapeDataString(Uri.UnescapeDataString(forumPostMatch.Groups[1].Value))}");
             return true;
         }
 

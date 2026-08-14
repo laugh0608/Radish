@@ -13,7 +13,8 @@ const readClientSource = (relativePath: string): string => fs.readFileSync(
 const optionsSource = readClientSource('docs/docsProtectedAttachments.ts');
 const authorSource = readClientSource('docs/DocsAuthorApp.tsx');
 const editorSource = readClientSource('docs/DocsAuthorEditorPage.tsx');
-const publicDocsSource = readClientSource('public/docs/PublicDocsApp.tsx');
+const editorContextSource = readClientSource('docs/DocsAuthorEditorContext.tsx');
+const publicDocsSource = readClientSource('public/docs/PublicDocsDetail.tsx');
 
 test('Docs 宿主通过统一 HTTP Blob 契约注入认证附件能力', () => {
   assert.match(optionsSource, /loadAttachmentAssetBlob/);
@@ -26,7 +27,9 @@ test('Author 编辑预览与 Revision 使用同一受保护附件契约', () => 
   assert.match(authorSource, /createDocsProtectedAttachmentOptions/);
   assert.match(authorSource, /protectedAttachments=\{protectedAttachments\}/);
   assert.match(editorSource, /<MarkdownEditor[\s\S]*protectedAttachments=\{protectedAttachments\}/);
-  assert.match(editorSource, /wiki\.author\.form\.coverPreview/);
+  assert.match(editorSource, /<DocsAuthorEditorContext[\s\S]*protectedAttachments=\{protectedAttachments\}/);
+  assert.match(editorContextSource, /wiki\.author\.form\.coverPreview/);
+  assert.match(editorContextSource, /<MarkdownRenderer[\s\S]*protectedAttachments=\{protectedAttachments\}/);
 });
 
 test('公开 Docs 只对非 Public 文档启用认证资源加载', () => {

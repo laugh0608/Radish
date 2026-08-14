@@ -4,7 +4,7 @@ import { formatLocalizedDateTime } from '@radish/ui';
 import { Icon } from '@radish/ui/icon';
 import type { LongId } from '@/api/user';
 import type { ShopProductCapability, UserBenefit, UserInventoryItem } from '@/types/shop';
-import { WebStateSlot, type WebStateSlotAction } from '@/components/web-shell';
+import { WebStateSlot, WebTaskRailDisclosure, type WebStateSlotAction } from '@/components/web-shell';
 import { resolveMediaUrl } from '@/utils/media';
 import type { ShopLoadError } from '../hooks/useShopData';
 import styles from './Inventory.module.css';
@@ -394,25 +394,6 @@ export const Inventory = ({
         </div>
       </div>
 
-      <div className={styles.summaryGrid}>
-        <article className={styles.summaryCard}>
-          <span>{t('shop.inventory.tabBenefits', { count: benefits.length })}</span>
-          <strong>{benefits.length}</strong>
-        </article>
-        <article className={styles.summaryCard}>
-          <span>{t('shop.inventory.tabItems', { count: inventory.length })}</span>
-          <strong>{consumableQuantity}</strong>
-        </article>
-        <article className={styles.summaryCard}>
-          <span>{t('shop.inventory.availableBenefits')}</span>
-          <strong>{availableBenefits}</strong>
-        </article>
-        <article className={styles.summaryCard}>
-          <span>{t('shop.inventory.activeBenefits')}</span>
-          <strong>{activeBenefits}</strong>
-        </article>
-      </div>
-
       <div className={styles.inventoryWorkspace}>
         <main className={styles.inventoryMain}>
           <div className={styles.scopeChips}>
@@ -658,29 +639,38 @@ export const Inventory = ({
         </main>
 
         <aside className={styles.inventoryRail}>
-          <section className={styles.railCard}>
-            <span>{t('shop.inventory.availableBenefits')}</span>
-            <strong>{availableBenefits}</strong>
-          </section>
-          <section className={styles.railCard}>
-            <span>{t('shop.inventory.activeBenefits')}</span>
-            <strong>{activeBenefits}</strong>
-          </section>
-          <section className={styles.railCard}>
-            <span>{t('shop.inventory.sourceOrders')}</span>
-            <strong>{sourceOrderBenefits}</strong>
-          </section>
-          <p className={styles.railHint}>{t('shop.inventory.railScopeHint')}</p>
-          {backHref && (
-            <a
-              className={styles.shopReturnButton}
-              href={backHref}
-              onClick={(event) => handleInventoryLinkClick(event, onBack)}
-            >
-              <Icon icon="mdi:storefront-outline" size={17} />
-              <span>{t('shop.inventory.returnToShop')}</span>
-            </a>
-          )}
+          <WebTaskRailDisclosure
+            label={t('shop.inventory.title')}
+            summary={t('shop.inventory.railScopeHint')}
+          >
+            <section className={styles.railCard}>
+              <span>{t('shop.inventory.availableBenefits')}</span>
+              <strong>{availableBenefits}</strong>
+            </section>
+            <section className={styles.railCard}>
+              <span>{t('shop.inventory.activeBenefits')}</span>
+              <strong>{activeBenefits}</strong>
+            </section>
+            <section className={styles.railCard}>
+              <span>{t('shop.inventory.sourceOrders')}</span>
+              <strong>{sourceOrderBenefits}</strong>
+            </section>
+            <section className={styles.railCard}>
+              <span>{t('shop.inventory.tabItems', { count: inventory.length })}</span>
+              <strong>{consumableQuantity}</strong>
+            </section>
+            <p className={styles.railHint}>{t('shop.inventory.railScopeHint')}</p>
+            {backHref && (
+              <a
+                className={styles.shopReturnButton}
+                href={backHref}
+                onClick={(event) => handleInventoryLinkClick(event, onBack)}
+              >
+                <Icon icon="mdi:storefront-outline" size={17} />
+                <span>{t('shop.inventory.returnToShop')}</span>
+              </a>
+            )}
+          </WebTaskRailDisclosure>
         </aside>
       </div>
 

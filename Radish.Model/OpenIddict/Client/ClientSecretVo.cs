@@ -11,9 +11,9 @@ public class ClientSecretVo
     public string ClientId { get; set; } = string.Empty;
 
     /// <summary>
-    /// 客户端密钥（明文，仅返回一次）
+    /// 客户端密钥（明文，仅机密客户端创建或轮换成功后返回一次）
     /// </summary>
-    public string ClientSecret { get; set; } = string.Empty;
+    public string? ClientSecret { get; set; }
 
     /// <summary>
     /// 提示信息

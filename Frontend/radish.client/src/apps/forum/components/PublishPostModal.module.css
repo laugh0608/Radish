@@ -33,6 +33,40 @@
   overflow: hidden;
 }
 
+.composerPage {
+  position: fixed;
+  right: 6px;
+  bottom: 6px;
+  left: 6px;
+  z-index: 900;
+  height: 54dvh;
+  min-height: min(420px, calc(100dvh - 12px));
+  max-height: calc(100dvh - 12px);
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 18px 18px 10px 10px;
+  background: var(--theme-bg-surface);
+  box-shadow: 0 -18px 44px color-mix(in srgb, var(--theme-accent-ink) 18%, transparent);
+}
+
+.composerFullscreen {
+  position: fixed;
+  inset: 6px;
+  z-index: 1200;
+  height: calc(100dvh - 12px);
+  min-height: 0;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 18px;
+  background: var(--theme-bg-app);
+  box-shadow: 0 24px 48px color-mix(in srgb, var(--theme-accent-ink) 18%, transparent);
+}
+
+.composerFooter {
+  flex: 0 0 auto;
+  padding: 8px 16px 12px;
+  border-top: 1px solid var(--theme-border-soft);
+  background: color-mix(in srgb, var(--theme-bg-surface) 84%, var(--theme-bg-muted) 16%);
+}
+
 .composerHeader {
   display: flex;
   align-items: center;
@@ -720,16 +754,19 @@
 }
 
 @media (max-width: 900px) {
-  .composerHeader,
   .footer,
-  .footerActions,
-  .headerActions {
+  .footerActions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .headerIconButton {
-    align-self: flex-end;
+  .composerHeader {
+    flex-wrap: wrap;
+  }
+
+  .headerActions {
+    flex-direction: row;
+    align-items: center;
   }
 
   .settingsSummary {
@@ -788,5 +825,56 @@
 
   .settingsDrawer {
     width: 100%;
+  }
+
+  .composerPage {
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 72dvh;
+    min-height: 0;
+    max-height: calc(100dvh - 6px);
+    border-radius: 16px 16px 0 0;
+  }
+
+  .composerFullscreen {
+    inset: 0;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+  }
+
+  .composerHeader {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .composerPrimary {
+    width: auto;
+  }
+
+  .composerMeta {
+    display: none;
+  }
+
+  .headerActions {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .headerActionButton {
+    width: 32px;
+    height: 32px;
+    padding: 0;
+  }
+
+  .headerActionButton span {
+    display: none;
+  }
+
+  .composerFooter {
+    padding-left: 14px;
+    padding-right: 14px;
   }
 }

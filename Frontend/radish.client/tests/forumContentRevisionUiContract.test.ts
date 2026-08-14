@@ -56,6 +56,11 @@ test('版本页面应覆盖 PC mobile、CAS 冲突、失权清理与旧历史只
   assert.match(modalSource, /getPostEditHistory/);
   assert.match(modalSource, /getCommentEditHistory/);
   assert.match(modalSource, /buildContentRevisionRestoreFingerprint/);
+  assert.match(modalSource, /<ContentSnapshotDiff/);
+  assert.match(modalSource, /comparisonEpochRef/);
+  assert.match(modalSource, /comparisonMode === 'previous'/);
+  assert.match(modalSource, /getPostRevisionList\(targetId, pageIndex, PAGE_SIZE\)/);
+  assert.match(modalSource, /setComparisonStale\(Boolean\(comparisonDetailRef\.current\)\)/);
   assert.match(modalSource, /closeOnOverlayClick=\{!restoring && !confirmingRestore\}/);
   assert.doesNotMatch(modalSource, /localStorage|sessionStorage/);
   assert.match(modalStyles, /@media \(max-width: 768px\)/);
@@ -82,9 +87,9 @@ test('正式论坛应同时接入帖子、根评论与子评论版本入口和�
 });
 
 test('正式个人中心应提供统一登出入口以支持版本验收账号切换', () => {
-  const meSource = readClientSource('src/me/MeApp.tsx');
+  const meSource = readClientSource('src/me/MeDashboardView.tsx');
 
-  assert.match(meSource, /import \{ logout, redirectToLogin \} from '@\/services\/auth';/);
+  assert.match(meSource, /import \{ logout \} from '@\/services\/auth';/);
   assert.match(meSource, /onClick=\{logout\}/);
   assert.match(meSource, /t\('auth\.logout'\)/);
 });

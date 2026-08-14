@@ -197,6 +197,13 @@ catch
 
 商城购买使用同一套 `OperationIdempotencyRecord` 机制，具体见 [支付与转账幂等治理](/guide/payment-idempotency-governance)。
 
+Console 管理员调账同样复用该记录，但使用独立的 `CoinAdminAdjustment` 操作域：
+
+- Console 为一份金额 / 原因草稿生成 `coin-admin-adjust:{uuid}`，失败重试保留原 key，目标或载荷变化后生成新 key。
+- 服务端唯一范围为 `TenantId + OperatorId + CoinAdminAdjustment + IdempotencyKey`，请求摘要包含目标用户、正负金额、规范化原因和查询时余额版本。
+- 同 key 同摘要成功重放返回原 `CoinTransaction` 流水号；不同摘要返回 `409`，Processing / 缺失回放结果要求先刷新余额和流水，不允许自动换 key 猜测执行结果。
+- `AdminAdjustBalanceAsync` 的公开服务入口使用 `[UseTran(Required)]`，把幂等 Begin、余额版本 CAS、Main 交易流水和幂等成功结果包在同一事务；任一步失败都不得返回成功。
+
 ### 11.3 性能优化
 
 **缓存策略**：

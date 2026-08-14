@@ -352,7 +352,14 @@ for (const requiredFragment of [
   'uses: ./.github/workflows/candidate-quality.yml',
   'aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25',
   'severity: HIGH,CRITICAL',
-  "exit-code: '1'",
+  'format: json',
+  "exit-code: '0'",
+  'ignore-unfixed: false',
+  'node Scripts/evaluate-image-vulnerabilities.mjs',
+  '--exceptions .github/image-vulnerability-exceptions.json',
+  '--summary "${GITHUB_STEP_SUMMARY}"',
+  'uses: actions/upload-artifact@v4',
+  'retention-days: 30',
   'sbom: true',
   'provenance: mode=max',
   'org.opencontainers.image.source=',
@@ -361,6 +368,24 @@ for (const requiredFragment of [
   if (!dockerWorkflowContent.includes(requiredFragment)) {
     failures.push(`Docker Images workflow 缺少供应链门禁片段: ${requiredFragment}`);
   }
+}
+
+for (const forbiddenFragment of [
+  'format: table',
+  "exit-code: '1'",
+]) {
+  if (dockerWorkflowContent.includes(forbiddenFragment)) {
+    failures.push(`Docker Images workflow 仍保留旧的全量阻断扫描片段: ${forbiddenFragment}`);
+  }
+}
+
+const imagePolicyEvaluatorCount = dockerWorkflowContent.split(
+  'node Scripts/evaluate-image-vulnerabilities.mjs',
+).length - 1;
+if (imagePolicyEvaluatorCount !== 2) {
+  failures.push(
+    `Docker Images workflow 应分别为 backend matrix 与 frontend 调用镜像漏洞策略评估器，实际调用 ${imagePolicyEvaluatorCount} 次。`,
+  );
 }
 
 for (const requiredFragment of [
@@ -403,9 +428,17 @@ assertPackageScript(
   failures
 );
 
+assertPackageScript(
+  packageScripts,
+  'check:image-vulnerability-policy:self-test',
+  'node --test Scripts/evaluate-image-vulnerabilities.test.mjs',
+  failures
+);
+
 for (const requiredFragment of [
   "args: ['run', 'check:version-contract']",
   "args: ['run', 'check:version-contract:self-test']",
+  "args: ['run', 'check:image-vulnerability-policy:self-test']",
   "args: ['run', 'check:sensitive-literals:self-test']",
   "args: ['run', 'check:sensitive-literals']",
 ]) {

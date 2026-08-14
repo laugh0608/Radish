@@ -13,7 +13,10 @@ import {
   type SaveWikiAuthorDraftRequest,
   type SubmitWikiDraftRequest,
   type WikiAuthorDocumentVo,
+  type WikiAuthorListQuery,
   type WikiAuthorDraftDetailVo,
+  type WikiAuthorRevisionDetailVo,
+  type WikiAuthorRevisionHistoryVo,
   type WikiDocumentCollaboratorVo,
 } from '@radish/http';
 import type { TFunction } from 'i18next';
@@ -72,9 +75,18 @@ export async function getWikiDocumentBySlug(slug: string, t: TFunction): Promise
   return await ensureOk(apiGet<WikiDocumentDetailVo>(`/api/v1/Wiki/GetBySlug/${encodeURIComponent(slug)}`, { withAuth: true }), t('wiki.toast.loadDetailFailed'));
 }
 
-export async function getWikiAuthorList(t: TFunction): Promise<WikiPageModel<WikiAuthorDocumentVo>> {
+export async function getWikiAuthorList(
+  query: WikiAuthorListQuery,
+  t: TFunction,
+): Promise<WikiPageModel<WikiAuthorDocumentVo>> {
+  const search = new URLSearchParams({
+    scope: query.scope,
+    draftStage: query.draftStage,
+    pageIndex: String(query.pageIndex),
+    pageSize: String(query.pageSize),
+  });
   return await ensureOk(
-    apiGet<WikiPageModel<WikiAuthorDocumentVo>>('/api/v1/Wiki/AuthorGetList?pageIndex=1&pageSize=100', { withAuth: true }),
+    apiGet<WikiPageModel<WikiAuthorDocumentVo>>(`/api/v1/Wiki/AuthorGetList?${search.toString()}`, { withAuth: true }),
     t('wiki.author.feedback.loadListFailed'),
   );
 }
@@ -83,6 +95,32 @@ export async function getWikiAuthorDraft(documentId: LongId, t: TFunction): Prom
   return await ensureOk(
     apiGet<WikiAuthorDraftDetailVo>(`/api/v1/Wiki/AuthorGetById/${encodeURIComponent(String(documentId))}`, { withAuth: true }),
     t('wiki.author.feedback.loadDetailFailed'),
+  );
+}
+
+export async function getWikiAuthorRevisionHistory(
+  documentId: LongId,
+  t: TFunction,
+): Promise<WikiAuthorRevisionHistoryVo> {
+  return await ensureOk(
+    apiGet<WikiAuthorRevisionHistoryVo>(
+      `/api/v1/Wiki/AuthorGetRevisionHistory/${encodeURIComponent(String(documentId))}`,
+      { withAuth: true },
+    ),
+    t('wiki.author.feedback.loadRevisionsFailed'),
+  );
+}
+
+export async function getWikiAuthorRevisionDetail(
+  revisionId: LongId,
+  t: TFunction,
+): Promise<WikiAuthorRevisionDetailVo> {
+  return await ensureOk(
+    apiGet<WikiAuthorRevisionDetailVo>(
+      `/api/v1/Wiki/AuthorGetRevisionDetail/${encodeURIComponent(String(revisionId))}`,
+      { withAuth: true },
+    ),
+    t('wiki.author.feedback.loadRevisionDetailFailed'),
   );
 }
 

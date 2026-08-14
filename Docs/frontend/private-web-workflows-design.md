@@ -40,13 +40,21 @@
 >
 > 更新：2026-07-25（Asia/Shanghai）：F4-K-C 已新增 `P13C / P27C` Direct 关系只读、`P14B / P28B` 圈子权威刷新和 `P35 / P36` `/me/blocked` PC / mobile 画板；页面只消费服务端能力与关系版本失效，不在本地推断屏蔽方向。
 >
-> 状态：设计源 `P01-P30`、治理申诉 `P33 / P34` 与 Docs 作者协作扩展已完成对应代码实现；治理申诉的 Gateway PC / mobile 成组验收进入 F4-J-D，后续新增作者态能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
+> 更新：2026-08-08（Asia/Shanghai）：`R1-A01` 已完成设计前代码事实、能力覆盖门禁修复与静态验收，正式代表锚点固定为 `/docs/edit/:id` 的普通 Owner 共享草稿；Author Revision 读取、终态审核证据、写响应证据与 Apply 基准版本 CAS 已闭合，不由 Pencil 暗中扩写。移动壳层继续服从共享 `WebShellHeader`，不恢复历史 Private 专属底栏。
+>
+> 更新：2026-08-08（Asia/Shanghai）：Pencil 被占用期间临时完成 `R1-W01` readiness，并按后续授权闭合举报 ACL / LongId、失败重试幂等和历史错误契约，详见[审计记录](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)与[修复记录](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)。该准备不抢占 `R1-A01`，也不提前制作 W01 画板。
+>
+> 更新：2026-08-08（Asia/Shanghai）：`R1-A01` 随后完成 PC / mobile 正式代表设计、Author 编辑任务面实现与 Gateway 验收；`R1-W01` 完成 PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 验收。两者均继续复用正式 Web 壳层和既有服务契约，旧 `P01-P30` 不恢复为活动设计源。
+>
+> 状态：设计源 `P01-P30`、治理申诉 `P33 / P34` 与 Docs 作者协作扩展已完成对应代码实现；当前 Private / Author 活动代表以 `radish-web-family-ui-v1.pen` 中已关闭的 `R1-A01 / R1-W01` 为准，后续新增能力继续复用现有正式 Web 页面族，不拆第二套移动或 WebOS 状态模型
 
 ## 设计源
 
 ```text
-Docs/frontend/design-sources/private-web-workflows.pen
+Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 ```
+
+当前 Private / Author 代表设计使用 `R1-W01 / R1-A01` 与 `R2-W02 / R2-A02`。旧 `private-web-workflows.pen` 保留为只读历史资产；下表记录其历史画板与既有功能边界，不再作为后续修改入口。
 
 画板：
 
@@ -124,7 +132,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - `/workbench` 已补齐继续处理队列、私域状态 rail 和 mobile private 底栏承接；队列仅指向现有正式 Web 路由，不新增业务 API 或路由语义。
 - E3-B 后 `/workbench` 不再只是功能地图：会汇总通知行动、聊天未读 / 提及 / 本地草稿、论坛发帖草稿、订单 / Docs / 宠物等继续处理项，并展示同步状态、草稿数、活动数和加载 / 错误提示。
 - E5-A 后 `/workbench` 对通知或消息同步失败不再只显示普通错误；会生成“活动同步不完整”的可恢复队列项，引导用户直接进入通知或消息处理，并允许稍后刷新工作台重试。
-- `/me` 首页已在个人状态与业务入口前加入隐私与安全边界提示；`/me/content`、`/me/history`、`/me/attachments` 和 `/me/experience` 已按 `P03-P06 / P23` 补任务状态、筛选上下文和移动单列节奏。
+- `/me` 首页已在个人状态与业务入口前加入隐私与安全边界提示；`/me/content`、`/me/history`、`/me/attachments` 和 `/me/experience` 已按 `P03-P06 / P23` 补任务状态、筛选上下文和移动单列节奏。F4-P 后正式代码在既有 `P03 / P23` 布局内扩展私有帖子收藏 tab、稳定分页、Unavailable 脱敏占位、按 Bookmark PublicId 移除和完整 `MeRoute` 来源返回；没有新增独立画板或页面族，不扩成收藏夹或跨对象收藏。
 
 ### 资产 / 订单 / 背包
 
@@ -179,6 +187,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 
 ### 编辑器 / 版本
 
+- `R1-A01` 默认代表身份为“登录普通 Owner + Custom 已发布文档 + `Editing` 活跃共享草稿 + Accepted Editor”；`ChangesRequested`、`Submitted`、版本冲突和 Invitee / Editor 权限作为必要关键状态，不按角色与状态复制整页。
 - 编辑器主区展示标题、正文、元信息、草稿版本、保存状态、提交 / 撤回和冲突恢复；Editor 不显示提交动作。
 - 协作与审核侧栏展示 Owner、Invitee / Editor、审核状态、意见和事件；版本页只展示已批准 Revision。
 - 编辑器加载目录树时只能影响父级选择、排序建议和目录展示，不应在用户已经进入 `/docs/compose` 或 `/docs/edit/:id` 后重建草稿并覆盖正在编辑的标题、正文、摘要或元信息。
@@ -192,7 +201,7 @@ Docs/frontend/design-sources/private-web-workflows.pen
 - 移动页必须围绕各自真实任务组织信息：工作台展示今日队列和功能地图，通知展示未读汇总和目标队列，消息展示会话上下文，宠物展示状态条和照护日志，创作展示草稿 / 发布检查 / 版本状态；不得只用统一 header + 简单卡片列表撑页。
 - D51 之后的移动复核继续按 `P21-P30` 判断首屏摘要、真实任务内容、状态槽、tab / 筛选、底部空间和横向溢出；D54 已通过 Pencil MCP 读取设计源并收紧 `/me` 系列移动密度，且已补 Gateway PC / mobile 真实页面复核。
 - 主要动作放在可触达区域，关键入口使用纵向列表，不依赖横向滚动或桌面三栏。
-- 底部 tab 只保留工作台、资产、创作、消息和我的，使用 64px 高浮动胶囊、图标上文字下和柔和品牌色激活态；不复刻 Dock、窗口系统、桌面背景或 WebOS app 外壳。
+- 移动端继续复用当前 `WebShellHeader` 的共享底部导航和 Author 深链；不维护 Private / Author 专属五项底栏，不复刻 Dock、窗口系统、桌面背景或 WebOS app 外壳。
 
 ## 视觉约束
 

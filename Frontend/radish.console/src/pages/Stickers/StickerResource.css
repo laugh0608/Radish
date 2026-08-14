@@ -1,0 +1,33 @@
+.sticker-resource-mobile-card__identity {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+}
+
+.sticker-resource-mobile-card__identity img,
+.sticker-resource-mobile-card__placeholder {
+  display: flex;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: 10px;
+  background: var(--console-bg-muted);
+  color: var(--console-text-muted);
+  object-fit: cover;
+}
+
+.sticker-resource-mobile-card__identity > div {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sticker-resource-mobile-card__identity span {
+  overflow-wrap: anywhere;
+}

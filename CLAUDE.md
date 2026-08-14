@@ -67,8 +67,8 @@
 - 后端：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite）
 - 网关：`Radish.Gateway`，统一门户与 API 网关
 - 认证：`Radish.Auth`，基于 OpenIddict 的 OIDC 认证服务器
-- 前端：React 19 + Vite（Rolldown） + TypeScript，纯 Web 为唯一正式产品主线，WebOS 仅保留 `/desktop` 历史入口
-- 多端口径：Flutter 仅条件式维护现有 MVP；`Clients/radish-tauri` 冻结为实验资产，不进入当前开发与发布门禁
+- 前端：React 19 + Vite（Rolldown） + TypeScript，Web 为正式优先主线，WebOS 仅保留 `/desktop` 历史入口
+- 多端口径：Flutter 是次级移动原生产品线，按明确移动价值推进；`Clients/radish-tauri` 暂时弃用并保留历史验证资产，未来等待重新评估
 - UI 组件库：`@radish/ui`，基于 npm workspaces 的共享组件库
 - HTTP 客户端：`@radish/http`，统一 API 客户端与相关类型封装
 - Rust 扩展：`Lib/radish.lib/`
@@ -128,7 +128,7 @@
 ### 客户端
 
 - `Clients/radish.flutter`：Flutter Android / iOS 移动原生安装包路线
-- `Clients/radish-tauri`：Tauri 桌面安装包壳层，复用 `Frontend/radish.client` 的 WebOS 构建产物
+- `Clients/radish-tauri`：暂时弃用的 Tauri 桌面验证资产，未来重新评估时默认复用正式 Web
 
 ## 环境与命令
 
@@ -328,7 +328,11 @@ Log.Information("User {UserId} logged in", userId);
 
 ### 前端视觉与主题规范
 
+- 家族通用视觉遵循 RadishX `docs/design/family-ui/` `v26.7.3`；灰玉仅为上游参考默认值，Radish 产品配色、四主题与多端边界见 `Docs/frontend/ui-addendum.md`
 - 视觉口径以 `Docs/frontend/visual-theme-spec.md` 与 `Docs/frontend/visual-color-reference.md` 为准
+- Pencil 协作遵循 `Docs/frontend/pencil-representative-page-workflow.md`：先审计专题文档与当前代码，再按自动升级条件和六维评分裁决 R1 / R2 / R3
+- R1 / R2 维护必要代表画板，R3 明确继承来源后直接实现并通过真实 PC / mobile 截图复核；禁止为每条路由、主题、文案或等价状态复制完整画板
+- 功能、按钮、文案、权限、接口和状态机以专题文档与当前代码为准；Pencil 只约束共享视觉契约、代表结构、关键状态和响应式变化
 - `radish.client` 必须支持 `default / guofeng` 主题切换
 - 风格方向为淡雅新中式，保持留白、克制和阅读优先
 - 云纹、山纹、水纹仅用于边缘、角标、分区收边和弱背景修饰

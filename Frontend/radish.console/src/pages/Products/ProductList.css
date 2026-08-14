@@ -2,6 +2,10 @@
   min-width: 0;
 }
 
+.product-list-filter-controls {
+  grid-template-columns: repeat(3, minmax(120px, 150px)) minmax(200px, 1fr) auto;
+}
+
 .product-list-filter-input {
   width: 200px;
 }
@@ -16,8 +20,16 @@
 }
 
 .product-list-image {
+  flex: 0 0 auto;
   object-fit: cover;
   border-radius: 4px;
+}
+
+.product-list-identity {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .product-list-name {
@@ -27,6 +39,7 @@
 
 .product-list-name__title {
   color: var(--console-text-primary);
+  overflow-wrap: anywhere;
 }
 
 .product-list-name__meta {
@@ -92,6 +105,8 @@
 }
 
 .product-detail-warning {
+  display: grid;
+  gap: 4px;
   margin-top: 16px;
   padding: 12px 16px;
   border-radius: 8px;
@@ -99,7 +114,71 @@
   color: var(--console-warning-text);
 }
 
+.product-detail-warning strong,
+.product-detail-warning span {
+  overflow-wrap: anywhere;
+}
+
+.product-detail-warning span {
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .product-detail-empty {
   padding: 24px 0;
   color: var(--console-text-secondary);
+}
+
+@media (max-width: 1200px) {
+  .product-list-filter-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 768px) {
+  .product-list-page .console-page-header__actions,
+  .product-list-page .console-page-header__actions > * {
+    width: 100%;
+  }
+
+  .product-list-filter-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .product-list-filter-input,
+  .product-list-filter-select,
+  .product-list-filter-select--type,
+  .product-list-filter-select--sale {
+    width: 100%;
+  }
+
+  .product-mobile-card .console-resource-mobile-card__header {
+    align-items: flex-start;
+  }
+
+  .product-mobile-card .product-list-identity {
+    align-items: flex-start;
+  }
+
+  .product-mobile-card .product-list-image {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .product-mobile-card .console-resource-mobile-card__facts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .product-mobile-card .console-resource-mobile-card__footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .product-mobile-card .console-resource-mobile-card__footer > .ant-space {
+    width: 100%;
+  }
+
+  .product-detail-media {
+    gap: 14px;
+  }
 }

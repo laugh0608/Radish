@@ -124,6 +124,113 @@ public sealed class ContentModerationCaseRepositoryTest
     }
 
     [Fact]
+    public async Task ReviewAndAppealRelief_ShouldRestrictAndRestoreProductReviewWithCasVersions()
+    {
+        using var harness = new RepositoryHarness();
+        harness.Db.Insertable(new Product
+        {
+            Id = 7002,
+            TenantId = 9,
+            Name = "青玉头像框",
+            CategoryId = "appearance",
+            IsEnabled = true,
+            IsOnSale = true,
+            CreateTime = NowUtc,
+            CreateBy = "shop",
+            CreateId = 6001
+        }).ExecuteCommand();
+        harness.Db.Insertable(new ProductReview
+        {
+            Id = 8002,
+            TenantId = 9,
+            ProductId = 7002,
+            UserId = 5001,
+            EligibleOrderId = 7102,
+            AuthorName = "target",
+            Rating = 4,
+            Comment = "待治理评价",
+            Version = 1,
+            CreateTime = NowUtc,
+            CreateBy = "target",
+            CreateId = 5001
+        }).ExecuteCommand();
+        var submitted = await harness.Repository.SubmitReportAsync(CreateReportCommand(1001) with
+        {
+            TargetType = (int)ContentReportTargetTypeEnum.ProductReview,
+            TargetContentId = 8002,
+            TargetPostId = null,
+            TargetProductId = 7002,
+            SnapshotTitle = "青玉头像框",
+            SnapshotSummary = "待治理评价"
+        });
+
+        var result = await harness.Repository.ReviewCaseAsync(
+            new ContentModerationCaseReviewWriteCommand(
+                9,
+                submitted.Case.PublicId,
+                1,
+                (int)ContentModerationDecision.Violation,
+                (int)ContentModerationTargetDisposition.Restricted,
+                1,
+                "MeasuresTaken",
+                "限制违规评价",
+                null,
+                "case-review-product-review",
+                9001,
+                "reviewer",
+                NowUtc.AddMinutes(1)));
+
+        var review = harness.Db.Queryable<ProductReview>().InSingle(8002)!;
+        Assert.True(review.IsDeleted);
+        Assert.Equal(2, review.Version);
+        Assert.Equal(result.TargetAction!.Id, review.ModerationTargetActionId);
+        Assert.Equal(2, result.TargetAction.ResultTargetVersion);
+        Assert.Equal("Restricted", result.TargetAction.ResultCode);
+
+        var submittedAppeal = await harness.Repository.SubmitAppealAsync(
+            new ContentModerationAppealSubmitCommand(
+                9,
+                submitted.Case.PublicId,
+                5001,
+                "target",
+                "请求恢复商品评价",
+                "appeal-submit-product-review",
+                NowUtc.AddMinutes(2)));
+        var appealDecision = await harness.Repository.ReviewAppealAsync(
+            new ContentModerationAppealReviewCommand(
+                9,
+                submittedAppeal.Appeal.PublicId,
+                1,
+                (int)ContentModerationAppealOutcome.Granted,
+                (int)ContentModerationReliefScope.TargetContent,
+                "Granted",
+                "评价限制予以纠正",
+                null,
+                "appeal-decision-product-review",
+                9002,
+                "appeal-reviewer",
+                NowUtc.AddMinutes(3)));
+        var relief = await harness.Repository.ExecuteAppealReliefAsync(
+            new ContentModerationAppealReliefCommand(
+                9,
+                submittedAppeal.Appeal.PublicId,
+                appealDecision.Appeal.Version,
+                "appeal-relief-product-review",
+                9003,
+                "action-executor",
+                NowUtc.AddMinutes(4)));
+
+        var restored = harness.Db.Queryable<ProductReview>().InSingle(8002)!;
+        Assert.False(restored.IsDeleted);
+        Assert.Equal(3, restored.Version);
+        Assert.Null(restored.ModerationTargetActionId);
+        var restoreAction = Assert.Single(relief.TargetActions);
+        Assert.Equal(result.TargetAction.Id, restoreAction.SourceTargetActionId);
+        Assert.Equal(3, restoreAction.ResultTargetVersion);
+        Assert.Equal("Restored", restoreAction.ResultCode);
+    }
+
+    [Fact]
     public async Task ReviewCaseAsync_ShouldReplayDecisionWithoutUserActionAndRejectDifferentPayload()
     {
         using var harness = new RepositoryHarness();
@@ -561,6 +668,7 @@ public sealed class ContentModerationCaseRepositoryTest
             "target",
             7001,
             null,
+            null,
             "reported",
             "snapshot",
             new string('a', 64),
@@ -600,7 +708,7 @@ public sealed class ContentModerationCaseRepositoryTest
                 UserModerationState,
                 ReliableOutboxMessage>();
             Db.CodeFirst.InitTables<Post, Comment, PostQuickReply>();
-            Db.CodeFirst.InitTables<Product>();
+            Db.CodeFirst.InitTables<Product, ProductReview>();
             Repository = new ContentModerationCaseRepository(
                 new UnitOfWorkManage(Db, NullLogger<UnitOfWorkManage>.Instance));
         }

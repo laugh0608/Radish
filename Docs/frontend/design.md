@@ -1,6 +1,6 @@
 # 前端设计文档
 
-> Radish 第一开发阶段以前端 **WebOS / 超级应用** 为主入口完成首版交付；第二开发阶段开始演进出公开内容壳层、Flutter 移动客户端与 Tauri 桌面壳验证。`2026-07-12` 路线复盘后，纯 Web 成为唯一正式产品主线：根路径 `/` 与默认浏览器入口使用纯 Web，`/desktop` 仅保留 WebOS 历史入口，Flutter 转为条件式维护，Tauri 冻结为实验资产。`2026-06-21` 起，公开商品购买回流、订单 / 背包、完整个人中心子路径、论坛作者态和 Docs 作者态首批能力已进入正式 Web 路由；`2026-07-08` 起，正式 Web 主导航收敛为 PC `发现 / 论坛 / 聊天 / 更多` 与移动 `发现 / 论坛 / 聊天 / 更多 / 我的`，`/workbench` 由“更多”承接功能地图，`/desktop` 只作为其中的历史入口。本文档描述当前前端事实、演进方向与相关实现约束。
+> Radish 第一开发阶段以前端 **WebOS / 超级应用** 为主入口完成首版交付；第二开发阶段开始演进出公开内容壳层、Flutter 移动客户端与 Tauri 桌面壳验证。`2026-07-30` 路线裁决后，当前投入顺位为 Web 优先、Flutter 次级：根路径 `/` 与默认浏览器入口使用正式 Web，`/desktop` 仅保留 WebOS 历史入口；Flutter 按明确移动价值推进，Tauri 暂时弃用并等待未来重新评估。`2026-06-21` 起，公开商品购买回流、订单 / 背包、完整个人中心子路径、论坛作者态和 Docs 作者态首批能力已进入正式 Web 路由；`2026-07-08` 起，正式 Web 主导航收敛为 PC `发现 / 论坛 / 聊天 / 更多` 与移动 `发现 / 论坛 / 聊天 / 更多 / 我的`，`/workbench` 由“更多”承接功能地图，`/desktop` 只作为其中的历史入口。本文档描述当前前端事实、演进方向与相关实现约束。
 
 ## 1. 设计理念
 
@@ -23,18 +23,18 @@
 [控制台] → 外部应用
 ```
 
-### 1.2 当前定位：纯 Web 唯一正式主线
+### 1.2 当前定位：Web 优先、Flutter 次级
 
-截至 `2026-07-12`，当前官方定位已经从“所有能力统一走桌面入口”和“三端并行分工”进一步收敛为：
+截至 `2026-07-30`，当前官方定位已经从“所有能力统一走桌面入口”和“三端并行分工”进一步收敛为：
 
 - **纯 Web 壳层**
   - 面向公开浏览、分享传播、搜索流量、PC / 移动浏览器与登录后轻量链路
-- **Flutter 条件维护壳层**
-  - 保留 Android MVP 已有路径；只有受控试用证明原生能力价值后才恢复开发
+- **Flutter 次级移动原生壳层**
+  - 保留 Android MVP 已有路径，并在 Web 边界成立后按明确移动价值继续推进
 - **WebOS `/desktop` 保留入口**
   - 面向已有桌面工作台能力和迁移过渡，不再作为新增功能默认承载层
-- **PC/Tauri 冻结实验壳**
-  - 不进入当前开发与发布门禁；若后续解冻，只增强纯 Web，不再默认分发 WebOS
+- **PC/Tauri 暂时弃用资产**
+  - 不进入当前开发、UI、CI 与发布门禁；未来满足桌面原生价值、目标用户和维护预算后再重新评估
 
 当前决策以 [前端多壳层策略](/frontend/shell-strategy) 为准。
 
@@ -44,14 +44,14 @@
 2. **权限控制**：公开内容匿名可访问，登录后能力按登录态与权限分层控制
 3. **Web 优先体验**：浏览器默认入口服务公开访问、移动阅读、PC 浏览器使用和轻量登录后链路
 4. **内容直达能力**：公开内容不强制要求先进入桌面再打开窗口
-5. **受控扩展性**：纯 Web 先覆盖 PC 与移动浏览器；Flutter / Tauri 只在原生价值有证据时复用数据、认证和主题语义
+5. **受控扩展性**：Web 先覆盖 PC 与移动浏览器；Flutter 在明确移动价值成立时复用数据、认证和主题语义，Tauri 不进入当前扩展范围
 
 ### 1.4 当前边界
 
 - 当前代码事实仍然保留 `Desktop Shell + WindowManager`，但该能力后续仅作为 `/desktop` 历史入口维护和迁移来源
-- `Clients/radish.flutter` 已完成 Android MVP 第一轮 RC 验收并落地登录、forum / docs / discover / profile、轻量通知回流、商城与个人复访等移动路径；当前转为条件式维护，只修复阻断既有 MVP、认证兼容或安全边界的问题，不默认补新页面、追平 Web 功能、扩 iOS 或恢复完整移动套件
-- Android / iOS 若未来恢复原生安装包开发，仍优先复用 Flutter 已有资产，但必须先有系统推送、后台任务、商店分发或原生生命周期等真实需求证据；Capacitor Android spike 继续只保留历史参考
-- Windows / macOS / Linux 的 Tauri 壳已完成个人开发阶段验证，当前冻结为实验资产，不进入日常开发、候选 CI 必需矩阵、签名或分发；若未来因托盘、文件系统、协议唤起、自动启动等明确需求解冻，只增强纯 Web，不绑定 WebOS
+- `Clients/radish.flutter` 已完成 Android MVP 第一轮 RC 验收并落地登录、forum / docs / discover / profile、轻量通知回流、商城与个人复访等移动路径；当前作为次级移动原生产品线，可在 Web 产品边界成立后按明确移动价值推进，但不机械追平 Web
+- Android 继续复用 Flutter 已有资产；系统推送、后台任务、商店分发、原生生命周期和 iOS 产品化仍需独立价值判断，Capacitor Android spike 继续只保留历史参考
+- Windows / macOS / Linux 的 Tauri 壳已完成个人开发阶段验证，当前暂时弃用，不进入日常开发、UI、候选 CI 必需矩阵、签名或分发；未来只有桌面原生价值、目标用户和维护预算明确时才重新评估
 - WebOS 桌面工作台当前已补首批“继续使用”复访面板：桌面首页按最近应用、最近浏览、我的轻回应分组承接已登录用户的回到工作台场景；最近应用使用本地轻量记录，最近浏览与我的轻回应复用既有 API 与工作台打开能力；forum 回流统一优先使用 `postPublicId`，旧 `postId` 仅作为兼容 fallback，docs / shop 仍保留现有 slug 或 long 路由兼容但不把旧 long 路径作为用户可见文案；该面板不等于完整历史中心，不扩删除 / 清空、跨端同步或新的后端 API
 - 公开内容壳层当前已完成 `/discover`、forum、docs、个人公开页、公开榜单与公开商城浏览入口，并继续补到 forum 公开分类、forum 公开搜索与 docs 公开搜索首批：`/discover`、`/forum`、`/forum/category/:categoryId`、`/forum/search`、`/forum/post/:postId`、`/docs`、`/docs/search`、`/docs/:slug`、`/u/:identifier`、`/leaderboard`、`/leaderboard/:type`、`/shop`、`/shop/products` 与 `/shop/product/:productId` 都已可直接进入公开壳层；其中 forum detail 路由参数当前可承接 `Post.PublicId` 或旧 long 字符串，公开个人页路由参数当前可承接 `User.PublicId` 或旧 long 字符串，canonical / 分享 / 普通内容入口优先使用 `PublicId`
 - 纯 Web 已开始承担根路径 `/` 与默认浏览器入口；普通浏览器 `/` 当前进入 `/discover` 公开分发页，公开内容壳层的已有路径是纯 Web 主线的第一批基础，不再回塞进 WebOS 窗口系统
@@ -59,13 +59,13 @@
 - `/workbench` 当前作为正式 Web “更多”功能地图与社区活动中心，除公开浏览、登录态私域、后台治理和历史桌面四组功能地图外，还会汇总通知行动、聊天未读 / 提及 / 草稿、论坛草稿、订单 / Docs / 宠物等继续处理项；公共头部“更多”动作指向 `/workbench`，`/desktop` 作为 WebOS 历史工作台入口保留在功能地图内
 - `/legal` 当前作为公开用户承诺入口，承载社区内容规范、隐私边界、账号安全、通知、虚拟商品和退款 / 不退款边界；`/legal` 与登录态 `/me` 复用同一套隐私与安全边界组件，帮助用户区分公开、本人私域、仅 Console 和不可公开数据。
 - 正式 Web 当前已形成共享头部视觉和动作基线：PC 主导航固定为 `发现 / 论坛 / 聊天 / 更多`，右侧固定为 `通知 / 登录注册或头像用户名`；移动底栏固定为 `发现 / 论坛 / 聊天 / 更多 / 我的`。`/me`、`/circle`、`/pet` 归属“我的”，`/messages` 归属“聊天”，Docs、商城、榜单、规则、Console、订单 / 背包、作者态和 `/desktop` 兼容入口由“更多”进入 `/workbench` 承接；共享头部和移动底栏由 `components/web-shell/WebShellHeader` 承接，页面状态槽由 `WebStateSlot` 承接
-- `P3-12-D2` 已将公开 Web 统一体验设计源 `Docs/frontend/design-sources/public-web-unified-experience.pen` 扩展为 `P01-P16` 公开社区 App 页面族，覆盖公开首页、发现流、论坛列表 / 详情、紧凑评论树、轻回应、公开聊天室、文档列表 / 详情、商城、榜单、公开主页和移动公开任务流；实现口径见 [公开 Web 统一体验设计说明](/frontend/public-web-unified-experience-design)
-- `P3-12-D3` 已将私域与作者态 Web 工作流设计源 `Docs/frontend/design-sources/private-web-workflows.pen` 扩展为 `P01-P30` 真实路由驱动页面族，覆盖 `/workbench`、`/me` 系列、资产流水、订单、背包、通知、消息、圈子、宠物、论坛作者态、Docs 作者态和移动端 10 个单任务页面；实现口径见 [私域与作者态 Web 工作流设计说明](/frontend/private-web-workflows-design)
-- `P3-12-D4 / D7` 已将 Web UI 共享基座设计源 `Docs/frontend/design-sources/web-ui-foundation.pen` 扩展为 `F01-F02`，统一 header 合法变体、按钮 / pill、卡片 / rail、状态槽、移动 shell / tab、client 公共壳层组件契约和 5 项以内浮动胶囊移动底栏；E8 后 `radish.client` public / private 默认共用产品级主导航，跨业务设计源的视觉样式先在 [Web UI 共享基座设计说明](/frontend/web-ui-foundation-design) 确认，再同步到具体 `.pen`
+- `2026-08-03` 起唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`；`2026-08-04` 已确认 `R1-P01 / 社区发现 / PC 1440` 并清理旧 PC / mobile 与全部失败研究，当前文件只保留该 PC、`8` 个必要组件母版和主题变量。后续 R1 / R2 继续在同一文件维护，普通迭代更新 `v1`，只有不兼容升级才新建下一主版本
+- `P3-12-D2 / D3 / D4 / D7` 历史批次曾分别扩展 `public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `web-ui-foundation.pen`；这些文件及 `console-governance-workbench.pen` 现均只读留档，不再跨文件同步，功能口径继续见对应页面族说明
+- `2026-07-30` 起采用[代表页驱动 Pencil 协作](/frontend/pencil-representative-page-workflow)，只维护共享基座、R1 / R2 代表结构和关键状态，不按路由、主题、文案或功能点扩张完整页面镜像
 - `P3-12-D8` 已将共享 Web shell 首批落入 `radish.client` 代码：`Frontend/radish.client/src/components/web-shell/` 提供 `WebShellHeader`、`WebStateSlot` 和对应类型，公开 / 私域页面优先复用该目录，不再各自维护分叉 header、状态卡、移动 tab 或内容宽度硬编码
 - 正式 Web 可恢复错误反馈遵循 [可恢复错误与诊断复制](/frontend/recoverable-error-diagnostics)：页面级加载失败、上传失败、聊天发送失败和通知目标缺失必须提供可继续行动的恢复路径与有限诊断上下文
-- 进入跨页面视觉代码实现前，必须先确认对应设计源、设计说明和共享基座是否一致；不得绕过 Pencil 设计稿直接把 public、private 或 Console 的 header、按钮、卡片样式各自写成分叉版本
-- Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度，设计稿见 `Docs/frontend/design-sources/console-governance-workbench.pen`；该方向可作为 `radish.client` 后续重新设计时的视觉气质参考，但不直接复刻 Console 的管理后台信息结构
+- 进入跨页面视觉代码实现前，必须先确认对应设计说明、共享基座和代表页继承关系；R1 / R2 先确认必要 Pencil，R3 直接继承实现并截图复核，任何级别都不得把 public、private 或 Console 的 header、按钮、卡片样式写成分叉版本
+- Console 当前已形成 `Case Desk` 设计方向：低饱和暖灰 / 纸色背景、轻侧栏、克制边框、明确按钮层级和可扫描的后台信息密度；旧设计稿在 `console-governance-workbench.pen` 留档，当前代表设计进入 `radish-web-family-ui-v1.pen` 的 `R1-C01 / R1-C02`，但不直接复刻 Console 的管理后台信息结构
 - Console 当前按页面类型选择实现基座：治理页使用“队列 / 详情 / 动作留痕”，表格 CRUD 使用“指标 / 工具条 / 表格 / 摘要栏”，设置页使用“分组导航 / 设置列 / 影响范围”，调度总览使用“关键指标 / 快捷操作 / 最近事项 / 右侧入口”；内容治理、经验治理、订单 / 商品、文档治理、用户管理和权限矩阵已补任务流提示和证据 rail，移动端内容治理优先按“筛选队列 -> 目标证据 -> 处理动作 -> 留痕回看”顺序承载；新增或明显改动页面优先复用 `--console-*` token、`AdminLayout` 和 `adminFeature.css`
 - `/discover` 当前已从公开导航聚合页推进为公开内容流：首屏和内容区会复用公开帖子、公开文档、商品和榜单入口，让用户先在同一页面判断下一步阅读路径，再进入 forum / docs / leaderboard / shop / 公开主页
 - `/discover` 当前继续保留公开来源返回；从公开专题页顶部回到“社区发现”时，应优先回到公开发现语境，而不是每次都丢回桌面或其他专题默认页
@@ -73,11 +73,11 @@
 - 公开内容壳层当前仍保持分批阅读优先边界：forum 公开详情已开放登录后轻回应、根评论发布，以及受控作者态 `intent=answer|edit|history`；`/forum/compose` 承接正式 Web 发帖入口。点赞、评论回复直达、投票提交、删除、治理或完整通知中心仍不进入公开详情主流程；文档阅读不承载编辑、发布、回收站或版本历史等桌面治理交互
 - `/circle` 当前作为“我的圈子”登录后关系流入口，不进入公开 SEO 或分享范围；未登录访问走登录回流，登录后保留圈子来源，并允许继续把来源状态一次性交接给公开详情
 - `/notifications`、`/me`、`/messages`、`/pet` 进入公开详情或公开个人页时同样使用一次性来源转交，返回文案分别保持“通知中心 / 我的状态 / 聊天 / 电子宠物”；新开标签、复制链接、canonical、OpenGraph 和 sitemap 仍只保留公开 URL
-- forum 公开分类、公开标签、公开结构化类型与公开搜索首批当前只承载分类 / 标签 / 类型上下文、关键词检索、帖子列表阅读、排序分页与详情回跳上下文；标签 SEO 深化仍放在后续规划
+- forum 公开分类、公开标签、公开结构化类型与公开搜索承载分类 / 标签 / 类型上下文、关键词检索、帖子列表阅读、排序分页与详情回跳；[F4-Q](/features/forum-tag-public-discovery-seo-design)已完成标签相关主题、统一公开可见性、Gateway 首包 head、runtime canonical、不可用态 `noindex` 与 tags sitemap，并保持标签关注、推荐和独立标签首页后置
 - 个人公开页首批当前只承载公开资料、公开统计、公开帖子与公开评论阅读；不把编辑资料、浏览记录、附件管理或完整关系链治理搬进公开壳层
 - 个人公开页首屏当前也已开始补“公开主页阅读说明”这一类只读说明增强：优先解释基础资料、公开帖子 / 评论阅读与工作台边界，而不是把个人治理或账号历史动作误带进公开壳层；帖子与评论内容项必须给出明确的“打开帖子详情 / 打开评论上下文”动作，普通点击进入公开 forum 详情并保留当前公开主页来源返回
 - 公开文档详情当前已补访问属性、文档属性和时间线三组元信息：访问属性展示可见性 / 发布状态，文档属性展示 slug / 来源类型，时间线展示更新时间 / 创建时间；公开 `/docs` 列表、目录、搜索和详情只展示公开已发布文档，登录可看、受限、草稿和已删除内容进入作者态或 Console 治理，不在公开阅读页混排
-- 公开榜单首批当前只承载榜单切换、分页、登录用户“我的排名”增强，以及用户榜单跳转个人公开页；默认经验榜单页 `/leaderboard`（兼容 `/leaderboard/experience` 收口）当前会额外展示“经验体系公开展示”说明，但不把经验明细、商城详情、购买链路或其他工作台动作搬进公开壳层
+- 公开榜单首批当前承载榜单切换、分页、登录用户“我的排名”增强，以及用户榜单跳转个人公开页、热门商品榜单跳转公开商品详情；默认经验榜单页 `/leaderboard`（兼容 `/leaderboard/experience` 收口）会额外展示“经验体系公开展示”说明。榜单自身继续保持只读，不直接发起购买，也不把经验明细、订单、背包、资产或其他账号工作流搬进公开壳层
 - 公开榜单的非经验榜单当前也已开始补轻量只读说明：用户榜单会强调“公开比较 + 公开个人页跳转 + 不带账号明细”，商品榜单会强调“只读展示 + 购买从商品详情登录后继续 + 订单 / 背包留在私域 Web 路由”
 - 公开商城浏览首批当前承载首页、商品列表与商品详情阅读；购买确认通过 `/shop/product/:productId?intent=purchase` 进入登录后购买现场，订单和背包分别由 `/shop/orders`、`/shop/order/:orderId`、`/shop/inventory` 承接，举报或其他“我的”动作仍不搬进公开壳层
 - 公开商城当前也已开始补结构化导览：`/shop` 与 `/shop/products` 会强调“先看内容 / 继续进入 / 不在这里”，商品详情则会明确“详情重点 / 登录后继续购买 / 订单与背包归属”，避免把公开浏览误读成完整私域商城页
@@ -92,11 +92,11 @@
 - Flutter 原生 forum / docs / shop detail 的公开链接展示与复制使用当前 Gateway Base URL 加 Web 公开路由，不复制内部 handoff、`radish://` deep link、API 地址、来源 tab 或评论定位状态；当前只提供剪贴板复制，不接系统分享 SDK、海报生成或分享统计
 - 公开详情页来源返回使用 `history.state` 保留来源语义，不污染公开 URL、canonical、分享链接或 sitemap；详情加载后如需规范化到 `Post.PublicId`、`User.PublicId` 或真实 docs slug，replace 必须保留当前来源返回状态。公开商品详情需要继续购买时，当前通过 `/shop/product/:productId?intent=purchase` 进入正式 Web 登录回流，未登录用户可保存该返回路径并在 OIDC 回调后恢复到原商品详情。订单详情、订单列表和背包入口分别通过 `/shop/order/:orderId`、`/shop/orders`、`/shop/inventory` 承接，并要求登录后消费；`/desktop?app=shop...` 只作为 WebOS 历史工作台深链保留
 - HTTPS Gateway 下的公开页面会把本地 HTTP 媒体、favicon、头像和 Markdown 附件归一到当前 Gateway origin；公开分享链接通过运行时公开域名配置生成，docs 分享保留锚点，canonical / sitemap 不携带临时来源状态；公开详情与公开集合页都会输出运行时 JSON-LD，但公开商品仍不把积分价格伪装成法币 offer
-- 后续不立即删除现有 WebOS 路由，而是把 `/desktop` 作为保留入口；有长期价值的能力优先进入纯 Web，Flutter 只在原生需求经过验证后条件承接
+- 后续不立即删除现有 WebOS 路由，而是把 `/desktop` 作为保留入口；有长期价值的能力优先进入 Web，具有明确移动原生价值时再由 Flutter 次级承接
 
 ## 2. 系统架构
 
-> 说明：本节的大部分代码与结构图仍然描述 **当前 WebOS `/desktop` 保留入口的真实实现**。纯 Web 正式主线、Flutter 条件维护与 Tauri 冻结实验的职责分工，请优先参考 [前端多壳层策略](/frontend/shell-strategy)。
+> 说明：本节的大部分代码与结构图仍然描述 **当前 WebOS `/desktop` 保留入口的真实实现**。Web 优先、Flutter 次级、Tauri 暂时弃用的职责分工，请优先参考 [前端多壳层策略](/frontend/shell-strategy)。
 
 ### 2.1 整体结构
 
@@ -275,17 +275,17 @@ export const AdminApp = () => {
 };
 ```
 
-## 6. 移动端与纯 Web 适配（执行中：纯 Web 主线，Flutter 条件维护）
+## 6. 移动端与 Web 适配（执行中：Web 优先，Flutter 次级）
 
-> 截至 `2026-07-12`，`radish.client` 已形成公开内容直达路径和 WebOS `/desktop` 保留入口，普通浏览器根路径 `/` 已切向 `/discover` 公开分发页；Flutter 只维护已完成的 Android MVP，移动浏览器能力继续由纯 Web 主线承担。
+> 截至 `2026-07-30`，`radish.client` 已形成公开内容直达路径和 WebOS `/desktop` 保留入口，普通浏览器根路径 `/` 已切向 `/discover` 公开分发页；Web 继续承担移动浏览器主路径，Flutter 作为次级移动原生产品线按明确移动价值推进。
 
 ### 6.1 当前现实
 
 - 论坛等个别页面已有窗口内响应式处理，但这不等于真正的移动端产品形态
 - 当前代码仍保留桌面 Shell、Dock 与窗口系统；产品主入口口径已转向纯 Web
 - 公开内容壳层当前已完成 forum、docs、个人公开页、公开榜单与公开商城浏览五个首批入口落地；帖子列表、分类直达、搜索直达、帖子详情、公开文档目录、公开文档详情、个人公开页、公开榜单与公开商城入口都可以绕开桌面 Shell 直接进入公开阅读形态
-- Android MVP 第一轮已完成后，前端多端形态不再按“Flutter 扩所有平台”或“React WebView 统一所有端”继续推进；当前分工固定为纯 Web 唯一正式主线、Flutter 条件维护、WebOS `/desktop` 历史兼容和 Tauri 冻结实验
-- Tauri 桌面壳个人开发阶段安装包验证已通过，但当前不继续建设；若未来因明确桌面原生需求解冻，应承载纯 Web 增强体验，不再默认进入 `/desktop`
+- Android MVP 第一轮已完成后，前端多端形态不再按“Flutter 扩所有平台”或“React WebView 统一所有端”继续推进；当前分工固定为 Web 优先、Flutter 次级、WebOS `/desktop` 历史兼容和 Tauri 暂时弃用
+- Tauri 桌面壳个人开发阶段安装包验证已通过，但当前暂时弃用；未来若重新评估成立，应承载正式 Web 增强体验，不再默认进入 `/desktop`
 - 公开 forum 当前已冻结“列表 + 分类 + 标签 + 结构化类型列表 + 搜索 + 详情 + 轻回应墙展示 + 评论阅读”的公开阅读结构；详情页额外开放登录后轻回应、根评论和受控作者态 `answer / edit / history`，`/forum/compose` 承接正式 Web 发帖。评论回复直达、点赞、投票提交、删除和治理仍不进入公开壳层主流程
 - 公开文档阅读当前冻结“公开已发布目录 + 搜索 + 正文阅读 + 详情元信息分组 + 复制公开链接 + 返回浏览态 + 文档内链跳转”，并明确保持只读阅读边界；当前已补齐返回目录滚动位置保持、搜索结果上下文回跳、详情页复制链接入口，以及旧 `__documents__` 文档链接继续落入公开文档页面
 - 公开榜单当前已开始补“经验体系公开展示”这一类只读说明增强：优先解释排行依据、等级含义与公开边界，而不是直接把桌面里的“我的经验明细”搬进公开壳层
@@ -296,7 +296,7 @@ export const AdminApp = () => {
 - 浏览器端应进入纯 Web 响应式主线，而不是继续以 WebOS 作为默认入口
 - 第一批已先从公开内容浏览起步：forum 列表、分类直达、搜索直达、帖子详情、轻回应墙展示与评论阅读当前已进入公开内容壳层；公开帖子详情的登录后轻回应和根评论作为轻参与链路接入，不代表完整论坛工作台迁入公开壳层
 - 个人公开页、公开榜单与公开商城浏览首批当前都已先接入公开内容壳层，更深的轻互动能力与商城购买链路仍按价值逐步接入，不一次性照搬桌面 App
-- 登录后的轻量链路优先接入纯 Web；只有原生价值被真实使用证据证明后，才在 Flutter 中增加对应能力
+- 登录后的轻量链路优先接入 Web；具有明确移动原生价值时，再在 Flutter 中增加对应能力
 
 ### 6.3 规划示意
 
@@ -356,7 +356,7 @@ const MobileShell = () => {
 - React 19 + Vite（Rolldown）+ TypeScript
 - npm workspaces 管理 `radish.http`、`radish.client`、`radish.console`、`radish.ui`
 - API 客户端统一使用 `@radish/http`
-- 纯 Web 是唯一正式产品主线；Flutter 条件维护，WebOS `/desktop` 保留历史入口，Tauri 冻结为实验资产，Console 继续作为治理后台
+- Web 是正式优先主线；Flutter 是次级移动原生产品线，WebOS `/desktop` 保留历史入口，Tauri 暂时弃用，Console 继续作为治理后台
 
 专题细节见 [前端技术栈细节](/frontend/technical-stack)、[@radish/http](/frontend/http-client) 与 [前端 workspace 开发指南](/frontend/development)。
 
@@ -523,7 +523,7 @@ WebOS 保留入口：/desktop
 WebOS 内部应用状态：由 /desktop 内部 hash、query 或本地状态表达，不构成公开 URL 契约
 
 示例：
-/ - 纯 Web 默认入口（普通浏览器切向 /discover；Tauri 当前仍保留 /desktop）
+/ - Web 默认入口（普通浏览器切向 /discover；Tauri 历史资产不再作为正式入口）
 /desktop - WebOS 保留入口
 /forum - 论坛首页
 /forum/tag/community-news - 公开标签页（canonical slug）

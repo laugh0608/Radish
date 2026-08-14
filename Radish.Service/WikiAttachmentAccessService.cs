@@ -122,7 +122,7 @@ public sealed class WikiAttachmentAccessService : IWikiAttachmentAccessService
             documentIds.Contains(document.Id) &&
             !document.IsDeleted);
         var documentMap = documents.ToDictionary(document => document.Id);
-        var acceptedDocumentIds = await GetAcceptedCollaboratorDocumentIdsAsync(
+        var collaboratorAccess = await GetCollaboratorDocumentAccessAsync(
             normalizedTenantId,
             documentIds,
             userId);
@@ -168,12 +168,14 @@ public sealed class WikiAttachmentAccessService : IWikiAttachmentAccessService
                 }
 
                 var isOwner = userId.HasValue && document.OwnerUserId == userId.Value;
-                var isCollaborator = acceptedDocumentIds.Contains(document.Id);
+                var isAcceptedCollaborator = collaboratorAccess.AcceptedDocumentIds.Contains(document.Id);
+                var isPendingOrAcceptedCollaborator =
+                    collaboratorAccess.PendingOrAcceptedDocumentIds.Contains(document.Id);
                 if (reference.ReferenceKind is
                     (int)WikiAttachmentReferenceKind.DocumentContent or
                     (int)WikiAttachmentReferenceKind.DocumentCover)
                 {
-                    if (isOwner || isCollaborator || permissionKeys.Contains(ConsolePermissions.DocsView) ||
+                    if (isOwner || isAcceptedCollaborator || permissionKeys.Contains(ConsolePermissions.DocsView) ||
                         CanReadPublishedDocument(document, userId, roleNames, permissionKeys))
                     {
                         readableIds.Add(attachmentId);
@@ -187,7 +189,8 @@ public sealed class WikiAttachmentAccessService : IWikiAttachmentAccessService
                     (int)WikiAttachmentReferenceKind.DraftCover)
                 {
                     if (draftDocumentMap.GetValueOrDefault(reference.ReferenceSourceId) == document.Id &&
-                        (isOwner || isCollaborator || permissionKeys.Contains(ConsolePermissions.DocsReview)))
+                        (isOwner || isPendingOrAcceptedCollaborator ||
+                         permissionKeys.Contains(ConsolePermissions.DocsReview)))
                     {
                         readableIds.Add(attachmentId);
                         break;
@@ -197,7 +200,8 @@ public sealed class WikiAttachmentAccessService : IWikiAttachmentAccessService
 
                 if (reference.ReferenceKind == (int)WikiAttachmentReferenceKind.RevisionContent &&
                     revisionDocumentMap.GetValueOrDefault(reference.ReferenceSourceId) == document.Id &&
-                    (isOwner || isCollaborator || permissionKeys.Contains(ConsolePermissions.DocsView)))
+                    (isOwner || isPendingOrAcceptedCollaborator ||
+                     permissionKeys.Contains(ConsolePermissions.DocsView)))
                 {
                     readableIds.Add(attachmentId);
                     break;
@@ -248,23 +252,30 @@ public sealed class WikiAttachmentAccessService : IWikiAttachmentAccessService
         return permissionKeys.Contains(ConsolePermissions.DocsPermissions);
     }
 
-    private async Task<HashSet<long>> GetAcceptedCollaboratorDocumentIdsAsync(
+    private async Task<WikiCollaboratorDocumentAccess> GetCollaboratorDocumentAccessAsync(
         long tenantId,
         IReadOnlyCollection<long> documentIds,
         long? userId)
     {
         if (!userId.HasValue || userId.Value <= 0 || documentIds.Count == 0)
         {
-            return [];
+            return WikiCollaboratorDocumentAccess.Empty;
         }
 
         var collaborators = await _collaboratorRepository.QueryAsync(collaborator =>
             collaborator.TenantId == tenantId &&
             collaborator.UserId == userId.Value &&
             documentIds.Contains(collaborator.DocumentId) &&
-            collaborator.InviteState == (int)WikiDocumentCollaboratorState.Accepted &&
+            (collaborator.InviteState == (int)WikiDocumentCollaboratorState.Pending ||
+             collaborator.InviteState == (int)WikiDocumentCollaboratorState.Accepted) &&
             !collaborator.IsDeleted);
-        return collaborators.Select(collaborator => collaborator.DocumentId).ToHashSet();
+        return new WikiCollaboratorDocumentAccess(
+            collaborators
+                .Where(collaborator =>
+                    collaborator.InviteState == (int)WikiDocumentCollaboratorState.Accepted)
+                .Select(collaborator => collaborator.DocumentId)
+                .ToHashSet(),
+            collaborators.Select(collaborator => collaborator.DocumentId).ToHashSet());
     }
 
     private async Task<HashSet<string>> GetPermissionKeysAsync(
@@ -326,5 +337,12 @@ public sealed class WikiAttachmentAccessService : IWikiAttachmentAccessService
         return (rawValue ?? string.Empty)
             .Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    private sealed record WikiCollaboratorDocumentAccess(
+        HashSet<long> AcceptedDocumentIds,
+        HashSet<long> PendingOrAcceptedDocumentIds)
+    {
+        public static WikiCollaboratorDocumentAccess Empty { get; } = new([], []);
     }
 }

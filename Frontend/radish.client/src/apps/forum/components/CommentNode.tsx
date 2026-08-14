@@ -1,5 +1,10 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
+import type {
+  ContentRewardTargetRequest,
+  ContentRewardTargetStateVo,
+  ContentRewardTargetType,
+} from '@radish/http';
 import { createReactionBarLabels } from '../utils/reactionBarLabels';
 import { log } from '@/utils/logger';
 import { buildAttachmentAssetUrl, parseAttachmentMarkdownUrl, resolveConfiguredMediaUrl } from '@radish/ui';
@@ -19,6 +24,8 @@ import { ImageLightbox } from '@radish/ui/image-lightbox';
 import { ReactionBar, type ReactionTogglePayload } from '@radish/ui/reaction-bar';
 import type { StickerPickerGroup } from '@radish/ui/sticker-picker';
 import { buildCommentReplyPreview } from '../utils/commentReplyPreview';
+import { buildContentRewardTargetKey } from '../utils/contentRewardState';
+import { ContentRewardPanel } from './ContentRewardPanel';
 import styles from './CommentNode.module.css';
 
 interface CommentNodeProps {
@@ -56,6 +63,13 @@ interface CommentNodeProps {
   onReport?: (commentId: LongId) => void;
   registerCommentAnchor?: (commentId: LongId, element: HTMLDivElement | null) => void;
   onNavigateToComment?: (commentId: LongId) => void | Promise<void>;
+  contentRewardStateMap?: Record<string, ContentRewardTargetStateVo>;
+  onContentRewardStateChange?: (state: ContentRewardTargetStateVo) => void;
+  onContentRewardTargetsVisible?: (targets: ContentRewardTargetRequest[]) => void;
+  onRequireContentRewardLogin?: (
+    targetType: ContentRewardTargetType,
+    targetId: LongId,
+  ) => void;
 }
 
 /**
@@ -289,6 +303,10 @@ export const CommentNode = ({
   onReport,
   registerCommentAnchor,
   onNavigateToComment,
+  contentRewardStateMap = {},
+  onContentRewardStateChange,
+  onContentRewardTargetsVisible,
+  onRequireContentRewardLogin,
 }: CommentNodeProps) => {
   const { t } = useTranslation();
   const reactionLabels = useMemo(() => createReactionBarLabels(t), [t]);
@@ -415,6 +433,12 @@ export const CommentNode = ({
         const normalized = Array.isArray(children) ? children : [];
         setLoadedChildren(normalized);
         setCurrentPage(1);
+        onContentRewardTargetsVisible?.(
+          normalized.map((comment) => ({
+            targetType: 'Comment',
+            targetId: comment.voId,
+          })),
+        );
       })
       .catch(error => {
         log.error(t('forum.comment.preloadChildrenFailed'), error);
@@ -422,7 +446,7 @@ export const CommentNode = ({
       .finally(() => {
         setIsLoadingMore(false);
       });
-  }, [hasChildren, hasPreloadedChildren, isLoadingMore, level, loadedChildren.length, node.voId, onLoadMoreChildren, pageSize, t]);
+  }, [hasChildren, hasPreloadedChildren, isLoadingMore, level, loadedChildren.length, node.voId, onContentRewardTargetsVisible, onLoadMoreChildren, pageSize, t]);
 
   // 处理点赞
   const handleLike = async () => {
@@ -538,6 +562,12 @@ export const CommentNode = ({
       const nextPage = loadedChildren.length === 0 ? 1 : currentPage + 1;
       const moreChildren = await onLoadMoreChildren(node.voId, nextPage, pageSize);
       const normalized = Array.isArray(moreChildren) ? moreChildren : [];
+      onContentRewardTargetsVisible?.(
+        normalized.map((comment) => ({
+          targetType: 'Comment',
+          targetId: comment.voId,
+        })),
+      );
       setLoadedChildren((prev) => {
         if (nextPage === 1) {
           return normalized;
@@ -840,6 +870,20 @@ export const CommentNode = ({
             <span>{t('report.action')}</span>
           </button>
         )}
+        {onContentRewardStateChange && onRequireContentRewardLogin && (
+          <ContentRewardPanel
+            targetType="Comment"
+            targetId={node.voId}
+            state={contentRewardStateMap[
+              buildContentRewardTargetKey('Comment', node.voId)
+            ]}
+            displayTimeZone={displayTimeZone}
+            isAuthenticated={isAuthenticated}
+            variant="compact"
+            onRequireLogin={() => onRequireContentRewardLogin('Comment', node.voId)}
+            onStateChange={onContentRewardStateChange}
+          />
+        )}
       </div>
 
       {/* 子评论区域（仅顶级评论显示，限制2级结构） */}
@@ -899,6 +943,10 @@ export const CommentNode = ({
                   onReport={onReport}
                   registerCommentAnchor={registerCommentAnchor}
                   onNavigateToComment={onNavigateToComment}
+                  contentRewardStateMap={contentRewardStateMap}
+                  onContentRewardStateChange={onContentRewardStateChange}
+                  onContentRewardTargetsVisible={onContentRewardTargetsVisible}
+                  onRequireContentRewardLogin={onRequireContentRewardLogin}
                   density={density}
                 />
               ))}

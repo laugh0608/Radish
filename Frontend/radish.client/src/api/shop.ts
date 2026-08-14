@@ -3,7 +3,20 @@
  * 直接使用后端 Vo 字段名，不进行映射
  */
 
-import { apiGet, apiPost, configureApiClient, type ParsedApiResponse } from '@radish/http';
+import {
+  apiGet,
+  apiPost,
+  configureApiClient,
+  deleteProductReview as deleteProductReviewRequest,
+  getMyProductReview as getMyProductReviewRequest,
+  getProductReviews as getProductReviewsRequest,
+  upsertProductReview as upsertProductReviewRequest,
+  type MyProductReviewVo,
+  type ParsedApiResponse,
+  type ProductReviewPageVo,
+  type ProductReviewVo,
+  type UpsertProductReviewRequest,
+} from '@radish/http';
 import type { TFunction } from 'i18next';
 import type { LongId } from '@/api/user';
 import type {
@@ -49,6 +62,12 @@ export type {
   UseItemRequest,
   UseRenameCardRequest,
   UseItemResult
+};
+export type {
+  MyProductReviewVo,
+  ProductReviewPageVo,
+  ProductReviewVo,
+  UpsertProductReviewRequest,
 };
 
 // ==================== 枚举常量（用于比较） ====================
@@ -164,6 +183,42 @@ export async function getProduct(productId: LongId, t: TFunction): Promise<Parse
 export async function getProductCapabilities(t: TFunction): Promise<ParsedApiResponse<ShopProductCapability[]>> {
   void t;
   return await apiGet<ShopProductCapability[]>('/api/v1/Shop/GetProductCapabilities');
+}
+
+export async function getProductReviews(
+  productId: LongId,
+  t: TFunction,
+  pageIndex = 1,
+  pageSize = 10,
+): Promise<ParsedApiResponse<ProductReviewPageVo>> {
+  void t;
+  return await getProductReviewsRequest(String(productId), pageIndex, pageSize);
+}
+
+export async function getMyProductReview(
+  productId: LongId,
+  t: TFunction,
+): Promise<ParsedApiResponse<MyProductReviewVo>> {
+  void t;
+  return await getMyProductReviewRequest(String(productId));
+}
+
+export async function upsertProductReview(
+  productId: LongId,
+  request: UpsertProductReviewRequest,
+  t: TFunction,
+): Promise<ParsedApiResponse<ProductReviewVo>> {
+  void t;
+  return await upsertProductReviewRequest(String(productId), request);
+}
+
+export async function deleteProductReview(
+  reviewId: LongId,
+  expectedVersion: number,
+  t: TFunction,
+): Promise<ParsedApiResponse<ProductReviewVo>> {
+  void t;
+  return await deleteProductReviewRequest(String(reviewId), expectedVersion);
 }
 
 /**

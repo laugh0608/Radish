@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.07.19
+> **最后更新**: 2026.08.12
 >
 > **关联文档**：
 > [Console 管理后台实现](./emoji-sticker-console.md) ·
@@ -402,6 +402,7 @@ interface MarkdownRendererProps {
 | POST | `/api/v1/Sticker/RecordUse` | 登录 | 记录表情使用次数（UseCount++）|
 | POST | `/api/v1/Sticker/CreateGroup` | System/Admin | 创建分组 |
 | PUT | `/api/v1/Sticker/UpdateGroup/{id}` | System/Admin | 编辑分组（自动失效缓存） |
+| PUT | `/api/v1/Sticker/UpdateGroupStatus/{id}` | System/Admin | 独立更新分组启停状态（自动失效缓存） |
 | DELETE | `/api/v1/Sticker/DeleteGroup/{id}` | System/Admin | 软删除分组（自动失效缓存） |
 | POST | `/api/v1/Sticker/AddSticker` | System/Admin | 单个新增表情 |
 | POST | `/api/v1/Sticker/BatchAddStickers` | System/Admin | 批量新增表情（含 Code/Name 确认，见 Console 文档） |
@@ -662,7 +663,7 @@ Reaction 领域失败以真实 HTTP 状态返回，并保留 `MessageModel` 壳�
 
 | 缓存键 | 内容 | TTL | 失效触发 |
 |--------|------|-----|---------|
-| `sticker:groups:{tenantId}` | `StickerGroupVo[]`（含所有表情） | 30 分钟 | 任意 Admin 写操作（CreateGroup / UpdateGroup / DeleteGroup / BatchAddStickers / UpdateSticker / DeleteSticker） |
+| `sticker:groups:{tenantId}` | `StickerGroupVo[]`（含所有表情） | 30 分钟 | 任意 Admin 写操作（CreateGroup / UpdateGroup / UpdateGroupStatus / DeleteGroup / BatchAddStickers / BatchUpdateSort / UpdateSticker / DeleteSticker） |
 
 **实现位置**：`StickerService.GetGroupsAsync()` 中先查缓存，未命中再查库并写入。写操作方法末尾调用 `cache.RemoveAsync($"sticker:groups:{tenantId}")` 主动失效。
 

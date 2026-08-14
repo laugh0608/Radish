@@ -10,6 +10,7 @@ type ExperienceGovernanceActionFormsProps = {
   freezeForm: FormInstance<FreezeFormValues>;
   freezeSectionRef: RefObject<HTMLElement | null>;
   experience: UserExperienceVo | null;
+  loadedUserId: string | null;
   canAdjust: boolean;
   canFreeze: boolean;
   submitting: boolean;
@@ -25,6 +26,7 @@ export const ExperienceGovernanceActionForms = ({
   freezeForm,
   freezeSectionRef,
   experience,
+  loadedUserId,
   canAdjust,
   canFreeze,
   submitting,
@@ -47,16 +49,10 @@ export const ExperienceGovernanceActionForms = ({
         </div>
 
         <Form form={adjustForm} layout="vertical" className="admin-feature-form">
-          <Form.Item
-            name="userId"
-            label={t('experience.form.userId')}
-            rules={[
-              { required: true, message: t('experience.form.userIdRequired') },
-              { pattern: /^[1-9]\d*$/, message: t('experience.form.userIdInvalid') },
-            ]}
-          >
-            <Input className="experience-filter-control" />
-          </Form.Item>
+          <div className="experience-authoritative-target">
+            <span>{t('experience.form.userId')}</span>
+            <strong>{loadedUserId ? (experience?.voUserName || `#${loadedUserId}`) : t('experience.common.notQueried')}</strong>
+          </div>
 
           <Form.Item
             name="deltaExp"
@@ -66,14 +62,18 @@ export const ExperienceGovernanceActionForms = ({
             <InputNumber className="experience-filter-control" />
           </Form.Item>
 
-          <Form.Item name="reason" label={t('experience.form.adjustReason')}>
+          <Form.Item
+            name="reason"
+            label={t('experience.form.adjustReason')}
+            rules={[{ required: true, message: t('experience.form.adjustReasonRequired') }]}
+          >
             <Input.TextArea rows={4} maxLength={500} showCount placeholder={t('experience.form.adjustReasonPlaceholder')} />
           </Form.Item>
 
           <div>
             <Button
               variant="primary"
-              disabled={!canAdjust || submitting}
+              disabled={!loadedUserId || !experience || !canAdjust || submitting}
               onClick={() => {
                 void onAdjust();
               }}
@@ -93,16 +93,10 @@ export const ExperienceGovernanceActionForms = ({
         </div>
 
         <Form form={freezeForm} layout="vertical" className="admin-feature-form">
-          <Form.Item
-            name="userId"
-            label={t('experience.form.userId')}
-            rules={[
-              { required: true, message: t('experience.form.userIdRequired') },
-              { pattern: /^[1-9]\d*$/, message: t('experience.form.userIdInvalid') },
-            ]}
-          >
-            <Input className="experience-filter-control" />
-          </Form.Item>
+          <div className="experience-authoritative-target">
+            <span>{t('experience.form.userId')}</span>
+            <strong>{loadedUserId ? (experience?.voUserName || `#${loadedUserId}`) : t('experience.common.notQueried')}</strong>
+          </div>
 
           <Form.Item name="frozenUntil" label={t('experience.form.frozenUntil')}>
             <DatePicker
@@ -124,7 +118,7 @@ export const ExperienceGovernanceActionForms = ({
           <div className="experience-inline-actions">
             <Button
               variant="primary"
-              disabled={!canFreeze || freezing}
+              disabled={!loadedUserId || !experience || !canFreeze || freezing}
               onClick={() => {
                 void onFreeze();
               }}

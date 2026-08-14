@@ -208,10 +208,21 @@ public sealed class ChatChannelAccessService : IChatChannelAccessService
             return false;
         }
 
-        var message = await _messageRepository.QueryFirstAsync(candidate =>
-            candidate.AttachmentId == attachmentId &&
-            (!messageId.HasValue || candidate.Id == messageId.Value) &&
-            !candidate.IsDeleted);
+        ChannelMessage? message;
+        if (messageId.HasValue)
+        {
+            var requiredMessageId = messageId.Value;
+            message = await _messageRepository.QueryFirstAsync(candidate =>
+                candidate.AttachmentId == attachmentId &&
+                candidate.Id == requiredMessageId &&
+                !candidate.IsDeleted);
+        }
+        else
+        {
+            message = await _messageRepository.QueryFirstAsync(candidate =>
+                candidate.AttachmentId == attachmentId &&
+                !candidate.IsDeleted);
+        }
         if (message == null || !IsTenantVisible(message.TenantId, tenantId))
         {
             return false;

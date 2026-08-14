@@ -32,6 +32,7 @@ npm run collect:tracked
 npm run collect:m14-host-record
 npm run collect:change-regression-record
 npm run check:public-head-smoke
+npm run check:frontend-server
 npm run check:identity-impact
 npm run check:identity-impact:staged
 npm run check:backend-impact
@@ -103,6 +104,9 @@ npm run validate:candidate
 - `check:public-head-smoke`
   - 运行公开详情 HTML head 首包 smoke 检查
   - 默认检查 `/robots.txt`、`/sitemap.xml` 与公开详情 head；详细用法见 [公开详情 Head Smoke 验收](/guide/public-head-smoke)
+- `check:frontend-server`
+  - 通过原始 HTTP 请求验证生产前端静态服务器的 client、console 与 `/healthz` 入口
+  - 覆盖 `//`、非法百分号编码、absolute-form 等异常请求目标，确保返回 `400` 后进程仍可继续服务，并阻断查询参数进入拒绝日志
 - `check:identity-impact`
   - 只判定“当前变更是否命中身份语义影响面”
   - 默认同时输出命中文件与命中原因类别，便于直接回写 PR / 维护记录
@@ -116,6 +120,7 @@ npm run validate:candidate
 - `check:dotnet-warnings`
   - 以 `--warnaserror` 构建 `Radish.slnx`，用于候选前阻断新增编译 warning
 - `validate:baseline`
+  - 运行生产迁移发布编排与前端静态服务器合约测试
   - 运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
   - 运行四个前端 workspace 的现有测试；`radish.client` 以 `--test-isolation=none` 兼容受限环境
   - 运行高置信敏感字面量规则自测与全仓扫描
@@ -131,6 +136,7 @@ npm run validate:candidate
   - 运行后端 `build`
   - 运行后端 `test`
 - `validate:baseline:quick`
+  - 运行产品版本、生产迁移发布编排、前端静态服务器和镜像漏洞策略的轻量合约测试
   - 只运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
   - `radish.client` 最小测试
   - `Console` 权限链路扫描
@@ -170,7 +176,7 @@ npm run validate:candidate
   - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline、外部 LongId 字符串安全与联网依赖安全审计
   - `.github/workflows/candidate-quality.yml` 作为 `PR -> master` 的 required check，并保留手动与 Docker 镜像发布前复用入口；不再定时运行
   - 远程门禁在 PostgreSQL 17 服务下运行环境集成测试，确保数据库迁移与 Repository 专题不会因普通本地入口缺少连接而被跳过
-  - Docker 镜像先进行本地单平台构建与 High / Critical 漏洞扫描；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像
+  - Docker 镜像先进行本地单平台构建与分层漏洞扫描：`CRITICAL` 和存在修复版本的 `HIGH` 默认阻断，无修复 `HIGH` 留痕但不阻断；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像，例外和报告规则见[镜像漏洞门禁分层](/guide/image-vulnerability-gate)
 
 ## 分层使用建议
 
@@ -246,7 +252,7 @@ https://localhost:5000/console/
 - 用户跳转：用户类榜单点击排行项时，优先使用 `voUserPublicId` 跳到 `/u/usr_...`；缺少公开标识时才用旧 `voUserId` 字符串兼容，不因大整数用户 ID 被前端当作 `number` 而打开失败
 - 榜单回跳：从 `/discover` 或公开榜单进入 `/u/usr_...` 后，返回动作会优先回到原榜单与公开来源链路，而不是异常跳桌面或退回其他专题默认页
 - 登录增强：直接打开 `/leaderboard` 时，公开壳层也会完成认证初始化；登录用户在用户类榜单下可见“我的排名”，未登录或商品类榜单不会误显示该信息
-- 商品只读边界：热门商品榜单当前只做公开展示，不会误跳商城详情、订单、背包或其他桌面工作台能力
+- 商品只读边界：热门商品榜单本身只做公开排行阅读；商品行可以进入公开商品详情，但不得直接发起购买或跳到订单、背包、资产和其他账号工作流，购买仍只由商品详情的登录回流入口承接
 
 当前批次与公开商城浏览首批直接相关的人工确认面：
 
@@ -277,9 +283,9 @@ https://localhost:5000/console/
 - 匿名阅读：未登录状态可以阅读正文、轻回应墙和评论树
 - 登录回流：匿名用户触发轻回应、根评论、回答、作者编辑或历史查看时，只保存 `/forum/post/:postId?intent=quickReply|comment|answer|edit|history` 一次性返回路径；OIDC 回调后回到同一详情并聚焦对应输入区
 - 发帖入口：`/forum/compose` 未登录访问应保存正式 Web 返回路径，登录后回到发帖现场；发帖成功后进入正式 Web 帖子详情
-- 登录参与：已登录用户可在公开详情直接发布轻回应和根评论，成功后局部更新轻回应墙或评论区
+- 登录参与：已登录用户可在公开详情直接发布轻回应和两级回帖，并执行帖子 / 回帖点赞与 reaction；成功后按服务端回包和实时事件更新局部状态
 - 分享边界：复制链接、canonical、OpenGraph、JSON-LD 和 sitemap 不携带 `intent`、`commentId`、来源状态或桌面窗口参数
-- 工作台边界：评论回复直达 URL、点赞、投票提交、删除、举报治理和完整通知中心仍不进入公开详情主流程；WebOS 三栏工作台、Dock、窗口参数和 `openApp` 语义不迁入正式 Web 作者态
+- 工作台边界：公开详情不新增点赞 / reaction 专属 intent，也不承接投票提交、删除、举报治理和完整通知中心；WebOS 三栏工作台、Dock、窗口参数和 `openApp` 语义不迁入正式 Web 作者态
 
 当前批次与 forum 公开分类首批直接相关的人工确认面：
 
@@ -287,7 +293,7 @@ https://localhost:5000/console/
 - 路由收口：旧 `/forum?category=...` 链接继续兼容，但会稳定收口到 `/forum/category/:categoryId`，刷新后仍能恢复当前分类、排序与分页状态
 - 分类上下文：公开分类页会展示分类标题、简介或兜底描述，以及帖子数等只读上下文；分类资料读取失败时会给出只读降级提示
 - 分类异常态：不存在或不可访问的 `categoryId` 会给出公开壳层状态页，而不是静默回退到全部帖子或空白页
-- 范围边界：公开分类首批当前只承载分类阅读；标签点击会继续回落到公开标签直达，进入公开详情后才允许登录后轻回应和根评论；分类页自身不开放发帖、评论回复、点赞或其他桌面互动动作
+- 范围边界：公开分类首批当前只承载分类阅读；标签点击会继续回落到公开标签直达，进入公开详情后才允许登录后轻回应、两级回帖、点赞与 reaction；分类页自身不开放发帖、评论回复、点赞或其他桌面互动动作
 
 当前批次与 forum 公开搜索首批直接相关的人工确认面：
 
@@ -296,7 +302,7 @@ https://localhost:5000/console/
 - 返回链路：从公开搜索结果进入 `/forum/post/:postId` 后，返回时会回到原来的搜索结果，而不是丢失到默认列表
 - 外部 ID：公开搜索结果点击帖子、作者与详情内回跳时，`postId / userId` 继续保持字符串口径，不因大整数被前端当作 `number` 而打开失败
 - 列表补查：公开搜索结果读取批量神评预览返回值时，帖子 ID 键不会再经 `Number(...)` 转回前端映射，避免大整数帖子出现“搜索结果可读但神评摘要丢失”
-- 范围边界：公开搜索首批当前只承载关键词检索、时间范围过滤、排序分页与帖子详情阅读；标签点击会继续回落到公开标签直达，进入公开详情后才允许登录后轻回应和根评论；搜索页自身不开放发帖、评论回复、点赞或其他桌面互动动作
+- 范围边界：公开搜索首批当前只承载关键词检索、时间范围过滤、排序分页与帖子详情阅读；标签点击会继续回落到公开标签直达，进入公开详情后才允许登录后轻回应、两级回帖、点赞与 reaction；搜索页自身不开放发帖、评论回复、点赞或其他桌面互动动作
 
 当前批次与 forum 公开标签首批直接相关的人工确认面：
 
@@ -308,7 +314,7 @@ https://localhost:5000/console/
 - 标签跳转：公开列表卡片、帖子详情中的标签点击会统一跳到 `/forum/tag/:tagSlug`，不再停留在纯展示文本
 - 结构化类型直达：公开列表卡片、帖子详情中的“问答 / 投票 / 抽奖”徽标当前会统一跳到 `/forum/question`、`/forum/poll` 与 `/forum/lottery`
 - SQLite 本地稳定性：若本轮同时改到公开标签 slug 解析、仓储通用读查询或后台作业读取链路，宿主重启后需额外确认 `ShopJob / PostLotteryJob` 不再出现 `reader is closed / FieldCount when reader is closed`，并确认公开标签直链不会再触发 `near \"(\": syntax error`
-- 范围边界：公开标签首批当前只承载标签上下文、帖子列表阅读、排序分页与帖子详情阅读，进入公开详情后才允许登录后轻回应和根评论；标签页自身不开放标签关注、标签订阅、发帖、评论回复、点赞、投票或其他桌面互动动作
+- 范围边界：公开标签首批当前只承载标签上下文、帖子列表阅读、排序分页与帖子详情阅读，进入公开详情后才允许登录后轻回应、两级回帖、点赞与 reaction；标签页自身不开放标签关注、标签订阅、发帖、评论回复、点赞、投票或其他桌面互动动作
 
 当前批次与 forum 公开结构化类型直达直接相关的人工确认面：
 
@@ -317,7 +323,7 @@ https://localhost:5000/console/
 - 分页规范化：类型页 `page` 会稳定回写到 URL；若直接打开越界页码，当前会 replace 收口到最后一页，而不是停留在空页 URL
 - 返回链路：从公开类型列表进入 `/forum/post/:postId` 后，返回时会回到原来的类型结果，并保留 `sort / page` 上下文，而不是丢失到默认列表
 - 类型跳转：公开列表卡片、帖子详情中的“问答 / 投票 / 抽奖”徽标会统一跳到对应公开类型列表，不再停留在纯展示徽标
-- 范围边界：公开类型页首批当前只承载结构化帖子列表阅读、排序分页与帖子详情阅读，进入公开详情后才允许登录后轻回应和根评论；类型页自身不开放提问、发起投票、参与抽奖、评论回复、点赞、投票提交或其他桌面互动动作
+- 范围边界：公开类型页首批当前只承载结构化帖子列表阅读、排序分页与帖子详情阅读，进入公开详情后才允许登录后轻回应、两级回帖、点赞与 reaction；类型页自身不开放提问、发起投票、参与抽奖、评论回复、点赞、投票提交或其他桌面互动动作
 
 当前批次与 docs 公开阅读首批直接相关的人工确认面：
 
@@ -623,9 +629,9 @@ Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 
 - 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
 
-## Tauri 冻结实验壳验证分层
+## Tauri 暂时弃用资产验证边界
 
-Tauri 当前冻结，不进入日常开发、候选 CI 必需矩阵、签名或分发门禁，也不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；只有明确桌面原生需求与维护预算成立后才评估解冻，并以 Tauri 增强纯 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
+Tauri 当前暂时弃用，不进入开发、UI、候选 CI 必需矩阵、签名、分发或验收门禁，也不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；只有桌面原生价值、目标用户和维护预算同时明确后才重新评估，并以 Tauri 增强正式 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
 
 只有改动实际触达 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link 或历史 Tauri + WebOS 验证路径时，才补 `npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `cargo build`；涉及 release exe 时补 `cargo build --release`，涉及 installer bundle 时补 `cargo tauri build`。单纯修改纯 Web 或 WebOS `/desktop` 不要求追加 Tauri 构建。
 

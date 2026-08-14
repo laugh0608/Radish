@@ -40,6 +40,19 @@ public class AuthorizationBoundaryTests
         }
     }
 
+    [Fact]
+    public void PublicDiscoverFeed_ShouldRemainAnonymousAndDisableResponseCaching()
+    {
+        var action = typeof(PublicDiscoverController).GetMethod(nameof(PublicDiscoverController.GetFeed));
+
+        action.ShouldNotBeNull();
+        action.GetCustomAttributes<AllowAnonymousAttribute>(true).ShouldNotBeEmpty();
+        var responseCache = action.GetCustomAttribute<ResponseCacheAttribute>(true);
+        responseCache.ShouldNotBeNull();
+        responseCache.NoStore.ShouldBeTrue();
+        responseCache.Location.ShouldBe(ResponseCacheLocation.None);
+    }
+
     [Theory]
     [InlineData("/api/v1/ConsoleAuthorization/GetResourceTree", ConsolePermissions.RolesView)]
     [InlineData("/api/v1/ConsoleAuthorization/SaveRoleAuthorization", ConsolePermissions.RolesEdit)]
@@ -55,6 +68,10 @@ public class AuthorizationBoundaryTests
     [InlineData("/api/v1/ContentModeration/ReviewAppeal", ConsolePermissions.ModerationAppeal)]
     [InlineData("/api/v1/ContentModeration/ExecuteAppealRelief", ConsolePermissions.ModerationAction)]
     [InlineData("/api/v1/ContentModeration/ApplyCorrectiveAction", ConsolePermissions.ModerationAction)]
+    [InlineData("/api/v1/ChannelDiscoverability/GetPage", ConsolePermissions.ChannelDiscoverabilityView)]
+    [InlineData("/api/v1/ChannelDiscoverability/GetById", ConsolePermissions.ChannelDiscoverabilityView)]
+    [InlineData("/api/v1/ChannelDiscoverability/GetHistory", ConsolePermissions.ChannelDiscoverabilityView)]
+    [InlineData("/api/v1/ChannelDiscoverability/UpdateVisibility/92900", ConsolePermissions.ChannelDiscoverabilityManage)]
     public void ConsolePermissions_ShouldResolveConsoleApiMappings(string apiUrl, string expectedPermission)
     {
         var permissions = ConsolePermissions.GetPermissionsByApiUrl(apiUrl);

@@ -203,6 +203,7 @@ docker build \
 - 静态服务会在请求 `/runtime-config.js` 时动态返回运行时配置
 - 运行时默认优先读取 `RADISH_PUBLIC_URL`
 - 部署态默认只注入 `RADISH_PUBLIC_URL`，前端运行时配置统一回退到同一个 Gateway 公开入口
+- 静态服务会拒绝 `//`、非法路径编码和 absolute-form 等异常请求目标并返回 `400`；拒绝日志只记录截断、转义且移除查询参数后的路径，单个异常请求不得结束 Node 进程
 
 > 说明：当前 `frontend` 镜像已纳入统一 GHCR 推送链路，并完全切到运行时配置注入。最终层不承担依赖安装或现场构建职责；基础镜像、系统包或 Node 运行层发生变化时，必须重新执行最终镜像 High / Critical 扫描，不能只依据构建层审计结果。
 
@@ -299,6 +300,7 @@ docker compose up -d
 - 本地容器验证和测试 Compose 会在依赖健康后执行 `dbmigrate apply`，再启动 `api / auth / gateway`；生产环境改由固定脚本显式执行备份、`apply`、独立 `verify` 和应用发布。
 - `DataBases/` 与 `Logs/` 会挂载到宿主机，便于保留本地 SQLite、上传文件与运行日志。
 - `Frontend` 运行的是预构建镜像；该镜像在 `CI` 中统一构建，并同时托管 `radish.client` 与 `radish.console`。
+- 部署态 `frontend / api / auth / gateway` 统一使用 `restart: unless-stopped`，用于进程异常退出后的自动恢复；一次性 `dbmigrate` 不配置重启策略，人工 `docker compose stop` 仍保持停止语义。
 - `Gateway` 会通过环境变量把 `/` 与 `/console/` 反代到前端容器，并把 `/api`、`/connect`、`/Account` 等路径转发给对应后端服务。
 - `GatewayRuntime__EnableHttpsRedirection` 当前已作为运行时开关显式暴露，可与 `ASPNETCORE_URLS` 一起切换容器内部的 HTTP / HTTPS 监听模式。
 - 开发运行默认使用 IDE / 宿主机直跑，不走 Compose。

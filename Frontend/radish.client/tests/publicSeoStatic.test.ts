@@ -8,7 +8,7 @@ const testDir = dirname(fileURLToPath(import.meta.url));
 const clientRoot = resolve(testDir, '..');
 
 function readLocaleResources(): string {
-  const domainNames = ['core', 'shell', 'discover', 'community', 'forumRevision', 'chat', 'account', 'commerce', 'docs'];
+  const domainNames = ['core', 'shell', 'discover', 'community', 'notification', 'forumRevision', 'chat', 'account', 'commerce', 'docs'];
   return ['en', 'zh']
     .flatMap((language) => domainNames.map((domain) =>
       readFileSync(resolve(clientRoot, `src/locales/${language}/${domain}.ts`), 'utf8')))
@@ -64,6 +64,23 @@ test('公开商城详情购买入口应指向正式 Web 购买回流路径', () 
   assert.doesNotMatch(source, /buildDesktopShopProductReturnPath/);
   assert.doesNotMatch(source, /desktopProductEntryUrl/);
   assert.doesNotMatch(source, /className=\{styles\.primaryLink\} href="\/"/);
+});
+
+test('公开商品详情应复用共享商品举报并保持匿名守卫', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopApp.tsx'), 'utf8');
+  const detailSource = readFileSync(resolve(clientRoot, 'src/public/shop/PublicShopViews.tsx'), 'utf8');
+
+  assert.match(source, /import \{ ContentReportModal \} from '@\/components\/ContentReportModal';/);
+  assert.match(source, /type: 'Product' \| 'ProductReview';/);
+  assert.match(source, /setReportTarget\(\{ type: 'Product', id: productId \}\)/);
+  assert.match(source, /if \(!loggedIn\) \{\s+toast\.error\(t\('report\.loginRequired'\)\);\s+return;/);
+  assert.match(source, /onReport=\{handleOpenProductReport\}/);
+  assert.match(source, /targetType=\{reportTarget\.type\}/);
+  assert.match(source, /targetId=\{reportTarget\.id\}/);
+  assert.match(detailSource, /onReport: \(productId: LongId\) => void;/);
+  assert.match(detailSource, /onClick=\{\(\) => onReport\(product\.voId\)\}/);
+  assert.match(detailSource, /t\('report\.action'\)/);
+  assert.doesNotMatch(source, /intent=report|intent: 'report'/);
 });
 
 test('公开商品榜单文案应指向商品详情购买而不是阻断购买能力', () => {
@@ -126,9 +143,30 @@ test('公开个人页内容查询不应依赖内部用户 ID', () => {
   assert.doesNotMatch(source, /GetUserStats/);
   assert.doesNotMatch(source, /GetUserPosts/);
   assert.doesNotMatch(source, /GetUserComments/);
-  assert.match(source, /getPublicUserStats\(route\.userId\)/);
+  assert.match(source, /getPublicUserStats\(profileRouteIdentifier\)/);
   assert.match(source, /getPublicUserPosts\(profileRouteIdentifier, route\.page, 10\)/);
   assert.match(source, /getPublicUserComments\(profileRouteIdentifier, route\.page, 10\)/);
+});
+
+test('公开个人页应由主资料独立裁决存在性并局部降级统计', () => {
+  const source = readFileSync(resolve(clientRoot, 'src/public/profile/PublicProfileApp.tsx'), 'utf8');
+  const apiSource = readFileSync(resolve(clientRoot, 'src/api/user.ts'), 'utf8');
+
+  assert.match(source, /const profileResult = await getPublicProfile\(route\.userId\);/);
+  assert.doesNotMatch(source, /Promise\.all\(\[\s*getPublicProfile/);
+  assert.match(source, /setProfileNotFound\(isApiResponseNotFoundError\(error\)\)/);
+  assert.match(source, /const result = await getPublicUserStats\(profileRouteIdentifier\);/);
+  assert.match(source, /setStatsError\(message\)/);
+  assert.match(source, /profile\.public\.statsUnavailable/);
+  assert.match(source, /setStatsReloadToken\(\(current\) => current \+ 1\)/);
+  assert.doesNotMatch(source, /stats\?\.voPostCount \?\? 0/);
+  assert.doesNotMatch(source, /stats\?\.voCommentCount \?\? 0/);
+  assert.doesNotMatch(source, /stats\?\.voTotalLikeCount \?\? 0/);
+  assert.doesNotMatch(source, /followStatus\?\.voFollowerCount \?\? '—'/);
+  assert.match(source, /\{followStatus \? \(\s*<div className=\{styles\.statCard\}>/);
+  assert.match(apiSource, /throw createApiResponseError\(response, '加载用户统计失败'\);/);
+  assert.match(apiSource, /throw createApiResponseError\(response, '加载用户帖子失败'\);/);
+  assert.match(apiSource, /throw createApiResponseError\(response, '加载用户评论失败'\);/);
 });
 
 test('公开个人页返回、tab 和分页应提供公开链接并保留壳层导航拦截', () => {
@@ -166,7 +204,7 @@ test('公开发现和论坛列表不应渲染教学式阅读说明卡', () => {
   const i18nSource = readLocaleResources();
 
   assert.doesNotMatch(discoverSource, /discoverGuideItems|heroTitleRow|heroGuideGrid|pulseKicker|discussionKicker/);
-  assert.doesNotMatch(discoverSource, /summaryCards|routeGuideCards|routeGuideMap|PublicDiscoverFeed/);
+  assert.doesNotMatch(discoverSource, /summaryCards|routeGuideCards|routeGuideMap/);
   assert.doesNotMatch(discoverSource, /featuredLeaderboardConfigs|forumSectionCueDefinitions|docsSectionCueDefinitions|shopSectionCueDefinitions/);
   assert.doesNotMatch(discoverStylesSource, /heroGuide|streamBoundary|streamKicker/);
   assert.doesNotMatch(forumListSource, /PublicReadingGuide|readingGuide|forum\.public\.guide\.label|listRailRulesTitle|sideRuleList/);
@@ -181,26 +219,38 @@ test('公开社区发现页应为跨入口导航提供公开链接并保留壳�
   assert.match(source, /buildPublicDocsPath/);
   assert.match(source, /buildPublicLeaderboardPath/);
   assert.match(source, /buildPublicShopPath/);
+  assert.match(source, /buildMessagesPath/);
+  assert.match(source, /buildPublicProfilePath/);
   assert.match(source, /shouldHandlePublicDiscoverLink\(event\)/);
   assert.match(source, /href=\{forumListHref\}/);
   assert.match(source, /href=\{forumSearchHref\}/);
   assert.match(source, /href=\{forumQuestionHref\}/);
   assert.match(source, /href=\{forumHotHref\}/);
-  assert.match(source, /href=\{buildPublicForumPath\(tagRoute\)\}/);
-  assert.match(source, /featuredDocument \? buildPublicDocsPath\(\{ kind: 'detail', slug: featuredDocument\.voSlug \}\) : docsListHref/);
-  assert.match(source, /featuredProduct \? buildPublicShopPath\(\{ kind: 'detail', productId: String\(featuredProduct\.voId\) \}\) : shopProductsHref/);
   assert.match(source, /href=\{leaderboardHref\}/);
+  assert.match(source, /const getItemHref = useCallback/);
+  assert.match(source, /return buildMessagesPath\(\{ channelId: item\.voTarget\.voChannelId \}\)/);
+  assert.match(source, /return buildPublicDocsPath\(\{ kind: 'detail', slug: item\.voTarget\.voDocumentSlug \}\)/);
+  assert.match(source, /postId: item\.voTarget\.voPostPublicId/);
+  assert.match(source, /userId: contributor\.publicId/);
   assert.match(source, /handlePublicDiscoverLinkClick\(event,/);
 });
 
-test('公开社区发现页应保持单一社区内容主流并只加载少量辅助内容', () => {
+test('公开社区发现页应由统一读模型驱动单一连续内容流', () => {
   const source = readFileSync(resolve(clientRoot, 'src/public/discover/PublicDiscoverApp.tsx'), 'utf8');
+  const contractSource = readFileSync(resolve(clientRoot, '../radish.http/src/public-discover-contract.ts'), 'utf8');
 
-  assert.match(source, /getPostList\(null, t, 1, 8, 'newest'\)/);
-  assert.match(source, /const spotlightPosts = forumPosts\.slice\(0, 5\)/);
-  assert.match(source, /getPublicWikiList\(\{ pageIndex: 1, pageSize: 1 \}\)/);
-  assert.match(source, /getProducts\(t, undefined, undefined, undefined, 1, 1\)/);
-  assert.equal((source.match(/<PostCard/g) ?? []).length, 1);
+  assert.match(source, /getPublicDiscoverFeed\(\{ pageSize: DISCOVER_PAGE_SIZE \}\)/);
+  assert.match(source, /cursor: feed\.voNextCursor/);
+  assert.match(source, /PublicDiscoverItemKinds\.ChannelSummary/);
+  assert.match(source, /const isFocus = index === 0;/);
+  assert.match(source, /items\.map\(\(item, index\) =>/);
+  assert.match(source, /index === 2 && renderContributorStrip\(styles\.mobileContributorNode\)/);
+  assert.match(source, /feed\?\.voHasMore/);
+  assert.match(contractSource, /voValue: string;/);
+  assert.match(contractSource, /voDiscoverableChannelCount: string;/);
+  assert.match(source, /format\(BigInt\(normalized\)\)/);
+  assert.match(source, /count: getPublicDiscoverPluralCount\(metricValue\)/);
+  assert.doesNotMatch(source, /getPostList|getPublicWikiList|getProducts|<PostCard/);
   assert.doesNotMatch(source, /docs\.map|products\.map|featuredLeaderboardConfigs\.map/);
   assert.doesNotMatch(source, /sectionRefs|scrollToSection|previewSection|rememberSection/);
 });
@@ -319,9 +369,10 @@ test('聊天正式 Web 页面应把聊天窗口作为主体而不是仪表盘卡
   assert.match(messagesSource, /hideMobileNav=\{route\.channelId !== undefined \|\| searchVisible\}/);
   assert.match(messagesSource, /messages\.web\.chatWorkspaceLabel/);
   assert.doesNotMatch(messagesSource, /summaryPanel|messageRail|summaryCards|channelQueue/);
-  assert.match(messagesStylesSource, /width: min\(1560px, calc\(100vw - 32px\)\)/);
-  assert.match(messagesStylesSource, /height: calc\(100dvh - var\(--rx-shell-header-height\) - 40px\)/);
-  assert.match(chatSource, /useState\(true\)/);
+  assert.match(messagesStylesSource, /width: min\(1440px, calc\(100vw - 24px\)\)/);
+  assert.match(messagesStylesSource, /height: calc\(100dvh - var\(--rx-shell-header-height\) - 28px\)/);
+  assert.match(messagesStylesSource, /border-radius: 0;[\s\S]*box-shadow: none;/);
+  assert.match(chatSource, /\[memberPanelOpen, setMemberPanelOpen\] = useState\(false\)/);
   assert.match(chatSource, /chatAppFocused/);
   assert.match(chatSidebarSource, /key: 'mutual'[\s\S]*key: 'stranger'[\s\S]*key: 'group'[\s\S]*key: 'public'/);
   assert.match(chatSidebarSource, /voConversationKind/);
@@ -366,23 +417,27 @@ test('公开规则页应使用应用内滚动容器而不是依赖 body 滚动',
 });
 
 test('公开文档浏览和详情返回应提供公开链接并保留壳层导航拦截', () => {
-  const source = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const appSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const listSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsList.tsx'), 'utf8');
+  const searchSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsSearch.tsx'), 'utf8');
+  const detailSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsDetail.tsx'), 'utf8');
+  const supportSource = readFileSync(resolve(clientRoot, 'src/public/docs/publicDocsViewSupport.ts'), 'utf8');
   const stylesSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.module.css'), 'utf8');
 
-  assert.match(source, /buildDocsAuthorPath/);
-  assert.match(source, /canUseDocsAuthorTools/);
-  assert.match(source, /const authorHref = buildDocsAuthorPath\(\{ kind: 'mine' \}\);/);
-  assert.match(source, /href=\{authorHref\}/);
-  assert.match(source, /href=\{editHref\}/);
-  assert.match(source, /function handlePublicDocsLinkClick/);
-  assert.match(source, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicDocsPath\(fallbackBrowseRoute\);/);
-  assert.match(source, /href=\{searchHref\}/);
-  assert.match(source, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: row\.slug \}\);/);
-  assert.match(source, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: document\.voSlug \}\);/);
-  assert.match(source, /href=\{browseDirectoryHref\}/);
-  assert.match(source, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page - 1 \}\)\}/);
-  assert.match(source, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
-  assert.match(source, /href=\{backHref\}/);
+  assert.match(`${appSource}\n${listSource}\n${detailSource}`, /canUseDocsAuthorTools/);
+  assert.match(listSource, /const authorHref = buildDocsAuthorPath\(\{ kind: 'mine' \}\);/);
+  assert.match(listSource, /authorHref=\{authorHref\}/);
+  assert.match(detailSource, /href=\{editHref\}/);
+  assert.match(supportSource, /export function handlePublicDocsLinkClick/);
+  assert.match(appSource, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicDocsPath\(fallbackBrowseRoute\);/);
+  assert.match(listSource, /href=\{searchHref\}/);
+  assert.match(listSource, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: row\.slug \}\);/);
+  assert.match(listSource, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: document\.voSlug \}\);/);
+  assert.match(searchSource, /const href = buildPublicDocsPath\(\{ kind: 'detail', slug: document\.voSlug \}\);/);
+  assert.match(searchSource, /href=\{browseDirectoryHref\}/);
+  assert.match(searchSource, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page - 1 \}\)\}/);
+  assert.match(searchSource, /href=\{buildPublicDocsPath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
+  assert.match(detailSource, /href=\{backHref\}/);
   assert.match(stylesSource, /\.directoryItem[\s\S]*text-decoration: none;/);
   assert.match(stylesSource, /\.docCard[\s\S]*text-decoration: none;/);
 });
@@ -406,7 +461,13 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   const browserRouterSource = readFileSync(resolve(clientRoot, 'src/bootstrap/BrowserAppRouter.tsx'), 'utf8');
   const entryRouteSource = readFileSync(resolve(clientRoot, 'src/bootstrap/entryRoute.ts'), 'utf8');
   const docsAuthorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorApp.tsx'), 'utf8');
+  const docsMineSource = readFileSync(resolve(clientRoot, 'src/docs/DocsMinePage.tsx'), 'utf8');
+  const docsRevisionsSource = readFileSync(resolve(clientRoot, 'src/docs/DocsRevisionsPage.tsx'), 'utf8');
   const docsAuthorEditorSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorPage.tsx'), 'utf8');
+  const docsAuthorEditorContextSource = readFileSync(resolve(clientRoot, 'src/docs/DocsAuthorEditorContext.tsx'), 'utf8');
+  const docsAuthorPresentationSource = readFileSync(resolve(clientRoot, 'src/docs/docsAuthorPresentation.ts'), 'utf8');
+  const wikiApiSource = readFileSync(resolve(clientRoot, 'src/apps/wiki/api/wiki.ts'), 'utf8');
+  const docsAuthorWorkspaceSource = `${docsAuthorSource}\n${docsMineSource}\n${docsRevisionsSource}\n${docsAuthorEditorSource}\n${docsAuthorEditorContextSource}`;
 
   assert.match(mainSource, /import \{ BrowserAppRouter \} from '@\/bootstrap\/BrowserAppRouter';/);
   assert.match(browserRouterSource, /const DocsAuthorEntry = lazy/);
@@ -421,18 +482,47 @@ test('文档作者正式 Web 入口应独立于公开 SEO 壳层且不承载治�
   assert.match(docsAuthorSource, /buildSaveAuthorDraftRequest\(editorState\.draft, currentDocument\.voDraftVersion\)/);
   assert.match(docsAuthorSource, /accountEpochRef\.current \+= 1;/);
   assert.match(docsAuthorSource, /accountEpoch !== accountEpochRef\.current/);
-  assert.match(docsAuthorSource, /getWikiRevisionList/);
+  assert.match(docsAuthorSource, /getWikiAuthorRevisionHistory/);
+  assert.match(docsAuthorSource, /getWikiAuthorRevisionDetail/);
+  assert.doesNotMatch(docsAuthorSource, /getWikiDocumentById/);
+  assert.doesNotMatch(docsAuthorSource, /getWikiRevisionList/);
+  assert.doesNotMatch(docsAuthorSource, /getWikiRevisionDetail/);
+  assert.match(wikiApiSource, /Wiki\/AuthorGetRevisionHistory\//);
+  assert.match(wikiApiSource, /Wiki\/AuthorGetRevisionDetail\//);
+  assert.match(wikiApiSource, /Promise<WikiAuthorRevisionDetailVo>/);
+  assert.match(docsMineSource, /document\.voCanStartDraft/);
+  assert.match(docsMineSource, /previewDocument\.voCanStartDraft/);
+  assert.match(docsMineSource, /document\.voLatestDraftId/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /!document\.voDraftId/);
+  assert.match(docsAuthorSource, /document: saved/);
+  assert.match(docsAuthorSource, /document: submitted/);
+  assert.match(docsAuthorSource, /document: withdrawn/);
+  assert.doesNotMatch(docsAuthorSource, /voCollaborators:\s*\[\]/);
+  assert.doesNotMatch(docsAuthorSource, /voReviewEvents:\s*\[\]/);
+  assert.match(docsAuthorEditorSource, /voHasDraftPayload === false/);
+  assert.match(docsAuthorEditorSource, /state\.document\?\.voCanSubmit/);
+  assert.match(docsAuthorEditorContextSource, /document\.voCanManageCollaborators/);
+  assert.match(docsAuthorPresentationSource, /status === WikiDocumentStatus\.Published/);
+  assert.match(docsAuthorPresentationSource, /\(documentVersion \?\? 0\) > 0/);
+  assert.match(docsAuthorPresentationSource, /&& !isDeleted/);
+  assert.match(docsMineSource, /documentSlug: previewDocument\.voDocumentSlug/);
+  assert.match(docsMineSource, /documentSlug: document\.voDocumentSlug/);
+  assert.match(docsRevisionsSource, /documentSlug: state\.history\.voSlug/);
+  assert.match(docsAuthorEditorSource, /documentSlug: state\.document\.voDocumentSlug/);
+  assert.equal((`${docsAuthorSource}\n${docsMineSource}\n${docsRevisionsSource}`.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 3);
+  assert.equal((docsAuthorEditorSource.match(/resolveDocsAuthorPublicReadSlug\(\{/g) || []).length, 1);
   assert.match(docsAuthorSource, /const treeRef = useRef<WikiDocumentTreeNodeVo\[\]>\(\[\]\);/);
   assert.match(docsAuthorSource, /treeRef\.current = collectionState\.tree;/);
-  assert.match(docsAuthorEditorSource, /preventNavigationWhileUploading\(event\);[\s\S]*onNavigate\(event, \{ kind: 'revisions', documentId: route\.documentId \}\);/);
-  assert.match(docsAuthorEditorSource, /const publicReadHref = state\.document && state\.document\.voDocumentVersion > 0 && state\.document\.voSlug\.trim\(\)/);
+  assert.match(docsAuthorSource, /const handleRouteLinkClick[\s\S]*if \(isEditorUploading\) \{\s*return;\s*\}[\s\S]*navigateToRoute\(nextRoute\);/);
+  assert.match(docsAuthorEditorContextSource, /onNavigate\(event, \{ kind: 'revisions', documentId: route\.documentId \}\)/);
   assert.match(docsAuthorEditorSource, /href=\{publicReadHref\}/);
-  assert.doesNotMatch(docsAuthorSource, /publishWikiDocument/);
-  assert.doesNotMatch(docsAuthorSource, /unpublishWikiDocument/);
-  assert.doesNotMatch(docsAuthorSource, /archiveWikiDocument/);
-  assert.doesNotMatch(docsAuthorSource, /rollbackWikiRevision/);
-  assert.doesNotMatch(docsAuthorSource, /deleteWikiDocument/);
-  assert.doesNotMatch(docsAuthorSource, /restoreWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /reviewWikiDraft/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /publishWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /unpublishWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /archiveWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /rollbackWikiRevision/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /deleteWikiDocument/);
+  assert.doesNotMatch(docsAuthorWorkspaceSource, /restoreWikiDocument/);
 });
 
 test('公开商城复用的商品列表组件应提供公开链接能力', () => {
@@ -513,8 +603,8 @@ test('公开壳层的 head DOM 写入应只由 lifecycle owner 调用 helper', (
 
 test('公开详情页应只提交 head 快照，不再直接写 DOM', () => {
   const detailSources = [
-    'src/public/forum/PublicForumDetail.tsx',
-    'src/public/docs/PublicDocsApp.tsx',
+    'src/public/forum/usePublicForumPostHead.ts',
+    'src/public/docs/PublicDocsDetail.tsx',
     'src/public/profile/PublicProfileApp.tsx',
     'src/public/shop/PublicShopApp.tsx',
   ].map((path) => readFileSync(resolve(clientRoot, path), 'utf8'));
@@ -527,15 +617,21 @@ test('公开详情页应只提交 head 快照，不再直接写 DOM', () => {
 });
 
 test('Docs 与 Forum 详情应以 keyed remount 和实体身份校验形成 head 双保险', () => {
-  const docsSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const docsAppSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsApp.tsx'), 'utf8');
+  const docsDetailSource = readFileSync(resolve(clientRoot, 'src/public/docs/PublicDocsDetail.tsx'), 'utf8');
   const forumAppSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
-  const forumDetailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const forumDetailSource = readFileSync(resolve(clientRoot, 'src/public/forum/usePublicForumPostHead.ts'), 'utf8');
 
-  assert.equal(docsSource.includes("key={`docs-${route.slug}-${route.anchor ?? 'root'}`}"), true);
-  assert.match(docsSource, /isCurrentDocsHeadSource\(route, documentDetail\)/);
-  assert.match(docsSource, /buildLocalizedPublicRouteHead\(\{ app: 'docs', route: canonicalRoute \}, t\)/);
-  assert.match(docsSource, /buildPublicDocsHeadSnapshot\(documentDetail, route\.anchor, \{/);
-  assert.equal(forumAppSource.includes("key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.intent ?? 'read'}`}"), true);
+  assert.equal(docsAppSource.includes("key={`docs-${route.slug}-${route.anchor ?? 'root'}`}"), true);
+  assert.match(docsDetailSource, /isCurrentDocsHeadSource\(route, documentDetail\)/);
+  assert.match(docsDetailSource, /buildLocalizedPublicRouteHead\(\{ app: 'docs', route: canonicalRoute \}, t\)/);
+  assert.match(docsDetailSource, /buildPublicDocsHeadSnapshot\(documentDetail, route\.anchor, \{/);
+  assert.equal(
+    forumAppSource.includes(
+      "key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.answerPublicId ?? 'none'}-${route.intent ?? 'read'}`}"
+    ),
+    true,
+  );
   assert.match(forumDetailSource, /isCurrentForumPostHeadSource\(postId, post\)/);
   assert.match(forumDetailSource, /buildLocalizedPublicRouteHead\(\{/);
 });
@@ -576,7 +672,7 @@ test('公开用户承诺页应进入公共壳层并归属工作台入口', () =>
   const workbenchSource = readFileSync(resolve(clientRoot, 'src/workbench/WorkbenchApp.tsx'), 'utf8');
 
   assert.match(entryRouteSource, /isPublicLegalPathname\(pathname\)/);
-  assert.match(publicEntrySource, /parsePublicLegalRoute\(window\.location\.pathname\)/);
+  assert.match(publicEntrySource, /parsePublicLegalRoute\(window\.location\.pathname, window\.location\.hash\)/);
   assert.match(publicEntrySource, /<PublicCommitmentsApp/);
   assert.doesNotMatch(publicShellSource, /href: '\/legal'/);
   assert.match(webShellSource, /pathname === '\/legal'[\s\S]*return 'more';/);
@@ -585,7 +681,7 @@ test('公开用户承诺页应进入公共壳层并归属工作台入口', () =>
 });
 
 test('公开论坛详情加载后应向唯一 head owner 提交共用 canonical 快照', () => {
-  const source = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const source = readFileSync(resolve(clientRoot, 'src/public/forum/usePublicForumPostHead.ts'), 'utf8');
 
   assert.match(source, /usePublicHeadSnapshot\(publicHeadSnapshot\)/);
   assert.match(source, /buildForumPostPublicHead/);
@@ -603,6 +699,7 @@ test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截',
   const statusSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicStatusCard.tsx'), 'utf8');
   const appSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const detailViewSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetailView.tsx'), 'utf8');
   const listSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumList.tsx'), 'utf8');
   const stylesSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.module.css'), 'utf8');
   const searchSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumSearch.tsx'), 'utf8');
@@ -615,15 +712,17 @@ test('公开论坛浏览入口应提供公开链接并保留壳层导航拦截',
   assert.match(statusSource, /href: primaryAction\.href/);
   assert.match(statusSource, /href: secondaryAction\.href/);
   assert.match(appSource, /const detailBackHref = detailBackAction\?\.href \?\? buildPublicForumPath\(fallbackBrowseRoute\);/);
-  assert.match(detailSource, /href=\{backHref\}/);
-  assert.match(detailSource, /secondaryAction=\{\{[\s\S]*label: backLabel,[\s\S]*href: backHref,[\s\S]*onClick: handleBackWhileEditorIdle[\s\S]*\}\}/);
+  assert.match(detailViewSource, /href=\{backHref\}/);
+  assert.match(detailViewSource, /secondaryAction=\{\{ label: backLabel, href: backHref, onClick: onBack \}\}/);
+  assert.match(detailSource, /onBack=\{handleBackWhileEditorIdle\}/);
   assert.match(listSource, /PublicForumPagination/);
   assert.match(listSource, /route=\{createDefaultSearchRoute\(\)\}/);
   assert.match(listSource, /route=\{buildListRoute\(1, selectedCategoryId, 'hottest'\)\}/);
   assert.match(listSource, /route=\{buildListRoute\(1, nextCategoryId\)\}/);
   assert.match(listSource, /styles\.sidePanelAction/);
-  assert.match(stylesSource, /\.workspaceActionButtons \.workspaceActionButton \{\s*flex: 1 1 150px;/);
-  assert.doesNotMatch(stylesSource, /\n {2}\.workspaceActionButton \{\n {4}flex:/);
+  assert.match(stylesSource, /\.detailForumGrid \{\s*grid-template-columns: minmax\(190px, 220px\) minmax\(0, 820px\) minmax\(220px, 250px\);/);
+  assert.match(stylesSource, /@media \(max-width: 1120px\)[\s\S]*\.detailCommunityRail,[\s\S]*\.detailThreadRail \{\s*display: none;/);
+  assert.match(stylesSource, /@media \(max-width: 720px\)[\s\S]*\.detailActionBand \{[\s\S]*overflow-x: auto;/);
   assert.match(searchSource, /route=\{backToListRoute\}/);
   assert.match(searchSource, /route=\{defaultSearchRoute\}/);
   assert.match(searchSource, /route=\{buildSearchRoute\(1, sortBy, value\)\}/);
@@ -638,24 +737,36 @@ test('公开论坛发帖入口应使用正式 Web 路径和统一论坛发布器
   const appSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumApp.tsx'), 'utf8');
   const publicEntrySource = readFileSync(resolve(clientRoot, 'src/public/PublicEntry.tsx'), 'utf8');
   const publishModalSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PublishPostModal.tsx'), 'utf8');
+  const forumPostComposerSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/ForumPostComposer.tsx'), 'utf8');
 
   assert.match(composeSource, /buildPublicForumComposeReturnPath/);
   assert.match(composeSource, /publishPost\(/);
   assert.match(composeSource, /buildPostSubmissionFingerprint/);
   assert.match(composeSource, /loginReturnPath=\{loginReturnPath\}/);
+  assert.match(composeSource, /<ForumPostComposer/);
+  assert.match(composeSource, /surface="page"/);
   assert.match(composeSource, /onNavigate\(\{ kind: 'detail', postId: publishedPostId \}, \{ replace: true \}\)/);
   assert.doesNotMatch(composeSource, /buildDesktopForumReturnPath/);
+  assert.doesNotMatch(composeSource, /<PublishPostModal/);
   assert.match(appSource, /<PublicForumCompose/);
   assert.match(appSource, /route\.kind === 'compose'/);
   assert.match(publicEntrySource, /parsedRoute\.kind === 'detail' \|\| parsedRoute\.kind === 'compose'/);
   assert.match(publicEntrySource, /nextRoute\.route\.kind !== 'detail' && nextRoute\.route\.kind !== 'compose'/);
-  assert.match(publishModalSource, /loginReturnPath\?: string \| null;/);
-  assert.match(publishModalSource, /returnPath: loginReturnPath \?\? buildDesktopForumReturnPath\(\)/);
+  assert.match(publishModalSource, /<BottomSheet/);
+  assert.match(publishModalSource, /<ForumPostComposer/);
+  assert.match(forumPostComposerSource, /loginReturnPath\?: string \| null;/);
+  assert.match(forumPostComposerSource, /returnPath: loginReturnPath \?\? buildDesktopForumReturnPath\(\)/);
 });
 
 test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指纹', () => {
   const detailSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetail.tsx'), 'utf8');
+  const detailViewSource = readFileSync(resolve(clientRoot, 'src/public/forum/PublicForumDetailView.tsx'), 'utf8');
+  const answerPageSource = readFileSync(resolve(clientRoot, 'src/public/forum/usePublicForumAnswerPage.ts'), 'utf8');
   const postDetailSource = readFileSync(resolve(clientRoot, 'src/apps/forum/components/PostDetail.tsx'), 'utf8');
+  const answerLifecycleSource = readFileSync(
+    resolve(clientRoot, 'src/apps/forum/components/PostAnswerLifecycleSection.tsx'),
+    'utf8'
+  );
   const revisionModalSource = readFileSync(
     resolve(clientRoot, 'src/apps/forum/components/ContentRevisionModal.tsx'),
     'utf8'
@@ -664,27 +775,39 @@ test('公开论坛详情作者态应使用正式 Web intent 和共享幂等指�
   assert.match(detailSource, /intent: 'answer'/);
   assert.match(detailSource, /intent: 'edit'/);
   assert.match(detailSource, /intent: 'history'/);
-  assert.match(detailSource, /href=\{answerReturnPath\}/);
-  assert.match(detailSource, /href=\{quickReplyReturnPath\}/);
-  assert.match(detailSource, /href=\{editReturnPath\}/);
-  assert.match(detailSource, /href=\{historyReturnPath\}/);
-  assert.match(detailSource, /href=\{commentReturnPath\}/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, handleAnswerAction\)/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, handleQuickReplyAction\)/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, \(\) => void handleEditPostAction\(\)\)/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, \(\) => void handleViewPostHistory\(\)\)/);
-  assert.match(detailSource, /handlePublicForumLinkClick\(event, handleCommentAction\)/);
-  assert.match(detailSource, /answerQuestion\(/);
-  assert.match(detailSource, /acceptQuestionAnswer\(/);
+  assert.match(detailSource, /href: answerReturnPath/);
+  assert.match(detailSource, /href: quickReplyReturnPath/);
+  assert.match(detailSource, /href: editReturnPath/);
+  assert.match(detailSource, /href: historyReturnPath/);
+  assert.match(detailSource, /href: commentReturnPath/);
+  assert.match(detailSource, /onActivate: handleAnswerAction/);
+  assert.match(detailSource, /onActivate: handleQuickReplyAction/);
+  assert.match(detailSource, /onActivate: \(\) => void handleEditPostAction\(\)/);
+  assert.match(detailSource, /onActivate: \(\) => void handleViewPostHistory\(\)/);
+  assert.match(detailSource, /onActivate: handleCommentAction/);
+  assert.match(detailViewSource, /handlePublicForumLinkClick\(event, action\.onActivate\)/);
+  assert.match(answerPageSource, /getPostAnswerPage\(/);
+  assert.match(detailSource, /<PostAnswerLifecycleSection/);
+  assert.match(answerLifecycleSource, /createPostAnswer\(/);
+  assert.match(answerLifecycleSource, /acceptPostAnswer\(/);
+  assert.match(answerLifecycleSource, /revokePostAnswerAcceptance\(/);
   assert.match(detailSource, /updatePost\(/);
   assert.match(detailSource, /ContentRevisionModal/);
   assert.match(revisionModalSource, /getPostEditHistory\(/);
   assert.match(revisionModalSource, /getCommentEditHistory\(/);
-  assert.match(detailSource, /buildAnswerSubmissionFingerprint/);
+  assert.match(answerLifecycleSource, /buildAnswerCreateFingerprint/);
+  assert.match(answerLifecycleSource, /buildAnswerAcceptanceFingerprint/);
   assert.match(detailSource, /buildPostEditSubmissionFingerprint/);
   assert.doesNotMatch(detailSource, /buildDesktopForumPostReturnPath/);
   assert.doesNotMatch(detailSource, /openApp/);
   assert.match(postDetailSource, /answerAutoFocusKey\?: string \| null;/);
+  assert.match(postDetailSource, /questionAnswerSection\?: ReactNode;/);
+  assert.match(postDetailSource, /isQuestionPost && questionAnswerSection/);
+  assert.match(postDetailSource, /isQuestionPost && !questionAnswerSection/);
+  assert.match(
+    postDetailSource,
+    /\{isQuestionPost && !questionAnswerSection && \(\s*<section className=\{styles\.questionCard\}>/
+  );
   assert.match(postDetailSource, /!isReadOnly && onAnswerQuestion/);
   assert.match(postDetailSource, /!isReadOnly && onLike/);
 });
@@ -696,6 +819,7 @@ test('公开论坛详情应复用统一举报组件覆盖帖子、轻回应和�
   assert.match(source, /handleOpenReport\('Post', targetId\)/);
   assert.match(source, /handleOpenReport\('PostQuickReply', targetId\)/);
   assert.match(source, /handleOpenReport\('Comment', targetId\)/);
+  assert.match(source, /handleOpenReport\('PostAnswer', targetId\)/);
   assert.match(source, /toast\.error\(t\('report\.loginRequired'\)\)/);
   assert.match(source, /<ContentReportModal/);
 });
@@ -703,6 +827,7 @@ test('公开论坛详情应复用统一举报组件覆盖帖子、轻回应和�
 test('登录态私域入口生成公开链接前应复用 PublicId 校验', () => {
   const circleSource = readFileSync(resolve(clientRoot, 'src/circle/CircleApp.tsx'), 'utf8');
   const meSource = readFileSync(resolve(clientRoot, 'src/me/MeApp.tsx'), 'utf8');
+  const meDashboardSource = readFileSync(resolve(clientRoot, 'src/me/MeDashboardView.tsx'), 'utf8');
   const leaderboardSource = readFileSync(resolve(clientRoot, 'src/public/leaderboard/PublicLeaderboardApp.tsx'), 'utf8');
   const publicIdSource = readFileSync(resolve(clientRoot, 'src/public/publicId.ts'), 'utf8');
 
@@ -714,7 +839,7 @@ test('登录态私域入口生成公开链接前应复用 PublicId 校验', () =
   assert.match(circleSource, /href=\{buildCirclePath\(\{ \.\.\.route, page: route\.page \+ 1 \}\)\}/);
   assert.doesNotMatch(circleSource, /voPublicId\?\.trim\(\)/);
   assert.match(meSource, /resolvePublicUserRouteIdentifier/);
-  assert.match(meSource, /href=\{buildMePath\(\{ kind: 'assets-transactions' \}\)\}/);
+  assert.match(meDashboardSource, /href=\{buildMePath\(\{ kind: 'assets-transactions' \}\)\}/);
   assert.match(meSource, /function isPublicDocsDetailPath/);
   assert.match(meSource, /if \(isPublicDocsDetailPath\(pathname\)\) \{/);
   assert.match(meSource, /rememberPublicRouteSourceTransfer\(href, sourceState\)/);

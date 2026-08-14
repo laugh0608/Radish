@@ -410,9 +410,20 @@ Console 使用独立受权接口：
 - `GetUserTransactions/{userId}`；
 - `GetUserDailyStats/{userId}`；
 - `GetUserGovernanceActions/{userId}`；
-- `AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience` 和人工复核接口。
+- `AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience` 和人工复核接口；
+- 等级配置预览、重算与重算审计接口。
 
 查询、调整和冻结分别受 `ExperienceView / ExperienceAdjust / ExperienceFreeze` 等 Console 权限保护。client 不复用这些管理接口，也不在前端实现等级公式、每日上限或冻结判断。
+
+当前权威写入契约如下：
+
+- `UserExperienceVo.VoVersion` 是经验状态版本；调账、冻结、解冻与人工审核均提交理由和 `ExpectedVersion`，调账 / 审核另外提交稳定 `IdempotencyKey`。
+- 同键同载荷可重放已完成的调账 / 审核结果；同键异载荷、处理中或结果缺失返回结构化冲突。幂等重放先于版本判断，允许调用方在响应丢失后安全取回原结果。
+- Repository 在同一领域事务中完成版本 CAS、经验台账 / 状态更新、治理动作和幂等结果；PostgreSQL 对同一用户使用目标级 advisory lock，SQLite 保持相同原子语义。
+- 冻结 / 解冻动作保存前后版本；过期冻结在权威读取时自动规范化，并追加 `AutoUnfreeze` 动作事实。
+- 等级重算先生成影响预览与 `PreviewFingerprint`；正式执行重新校验指纹，并将整批等级更新与公式、变更数、理由、操作者、时间审计共同提交。过期预览必须拒绝执行。
+
+`20260813_022_experience_authoritative_governance` 为 SQLite / PostgreSQL 增加动作版本快照、等级重算 append-only 审计与稳定索引；迁移前动作的版本快照保持为空，不伪造历史事实。
 
 每日统计窗口按系统业务时区计算，`VoStatDate` 等自然日字段是纯 `yyyy-MM-dd`。客户端不得把它当 UTC 午夜时间戳再进行本地时区转换。
 
@@ -428,6 +439,6 @@ Console 使用独立受权接口：
 
 API 中英文资源位于 `Radish.Api/Resources/Errors.zh.resx` 与 `Errors.en.resx`。client 必须通过 `@radish/http` 保留 status、`Code / MessageKey / TraceId` 并抛出 `ApiResponseError`；用户可见 fallback 由宿主当前语言提供，业务控制流不得依赖 `MessageInfo` 文本。
 
-本契约治理不改变经验获取规则、等级公式、每日上限、排行算法、冻结语义、数据库或迁移。
+本契约治理不改变经验获取规则、等级公式、每日上限、排行算法或冻结业务语义；新增结构只服务于版本、幂等和审计事实。
 
 ---

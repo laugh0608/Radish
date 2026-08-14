@@ -8,8 +8,24 @@ import { fileURLToPath } from 'node:url';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(scriptDirectory, '..');
+const composePath = path.join(repoRoot, 'Deploy', 'docker-compose.yaml');
 const deployScript = path.join(repoRoot, 'Deploy', 'deploy-production.sh');
 const releaseTag = 'v26.7.1.1204-release';
+
+function readComposeServiceBlock(serviceName) {
+  const lines = fs.readFileSync(composePath, 'utf8').split('\n');
+  const startIndex = lines.findIndex((line) => line === `  ${serviceName}:`);
+  assert.notEqual(startIndex, -1, serviceName);
+
+  const nextServiceOffset = lines
+    .slice(startIndex + 1)
+    .findIndex((line) => /^  [a-z0-9_-]+:$/.test(line));
+  const endIndex = nextServiceOffset === -1
+    ? lines.length
+    : startIndex + 1 + nextServiceOffset;
+
+  return lines.slice(startIndex, endIndex).join('\n');
+}
 
 function createFixture(t, options = {}) {
   const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'radish-production-deploy-'));
@@ -186,6 +202,18 @@ test('production deploy preflight rejects floating image aliases before Docker c
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /immutable v\*-release tag/);
   assert.equal(readCommandLog(fixture), '');
+});
+
+test('production compose restarts long-running application services after process failures', () => {
+  for (const serviceName of ['frontend', 'api', 'auth', 'gateway']) {
+    assert.match(
+      readComposeServiceBlock(serviceName),
+      /^    restart: unless-stopped$/m,
+      serviceName,
+    );
+  }
+
+  assert.doesNotMatch(readComposeServiceBlock('dbmigrate'), /^    restart:/m);
 });
 
 test('production deploy creates and verifies six backups before explicit apply and rollout', (t) => {

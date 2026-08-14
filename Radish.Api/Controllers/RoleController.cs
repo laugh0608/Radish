@@ -1,5 +1,4 @@
 using Asp.Versioning;
-using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
@@ -7,9 +6,8 @@ using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
-using Radish.IService.Base;
 using Radish.Model;
-using Radish.Model.ViewModels;
+using Radish.Model.DtoModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
 
@@ -24,14 +22,14 @@ namespace Radish.Api.Controllers;
 [Authorize(Policy = AuthorizationPolicies.Client)]
 public class RoleController : ControllerBase
 {
-    private readonly IBaseService<Role, RoleVo> _roleService;
-    private readonly IMapper _mapper;
+    private readonly IRoleGovernanceService _roleGovernanceService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
 
-    public RoleController(IMapper mapper, IBaseService<Role, RoleVo> roleService, IServiceScopeFactory scopeFactory, ICurrentUserAccessor currentUserAccessor)
+    public RoleController(
+        IRoleGovernanceService roleGovernanceService,
+        ICurrentUserAccessor currentUserAccessor)
     {
-        _roleService = roleService;
-        _mapper = mapper;
+        _roleGovernanceService = roleGovernanceService;
         _currentUserAccessor = currentUserAccessor;
     }
 
@@ -44,7 +42,7 @@ public class RoleController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> GetRoleList()
     {
-        var data = await _roleService.QueryAsync();
+        var data = await _roleGovernanceService.GetRolesAsync();
         return new MessageModel
         {
             IsSuccess = true,
@@ -72,7 +70,7 @@ public class RoleController : ControllerBase
             };
         }
 
-        var role = await _roleService.QueryByIdAsync(id);
+        var role = await _roleGovernanceService.GetRoleAsync(id);
         if (role == null)
         {
             return new MessageModel
@@ -93,14 +91,14 @@ public class RoleController : ControllerBase
     }
 
     /// <summary>创建角色</summary>
-    /// <param name="roleVo">角色信息</param>
+    /// <param name="request">角色信息</param>
     /// <returns>创建结果</returns>
     [HttpPost]
     [RequireConsolePermission(ConsolePermissions.RolesCreate)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> CreateRole([FromBody] RoleVo roleVo)
+    public async Task<MessageModel> CreateRole([FromBody] RoleMutationDto request)
     {
-        if (roleVo == null)
+        if (request == null)
         {
             return new MessageModel
             {
@@ -110,46 +108,27 @@ public class RoleController : ControllerBase
             };
         }
 
-        if (string.IsNullOrWhiteSpace(roleVo.VoRoleName))
+        var result = await _roleGovernanceService.CreateRoleAsync(
+            request,
+            Current.UserId,
+            Current.UserName);
+        return new MessageModel
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "角色名称不能为空"
-            };
-        }
-
-        try
-        {
-            var role = _mapper.Map<Role>(roleVo);
-            role.CreateTime = DateTime.Now;
-            role.IsDeleted = false; // 新创建的角色默认不删除
-
-            var result = await _roleService.AddAsync(role);
-
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "创建成功",
-                ResponseData = result
-            };
-        }
-        catch (Exception ex)
-        {
-            throw BuildUnexpectedError("创建角色失败，请稍后重试", ex);
-        }
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "创建成功",
+            ResponseData = result
+        };
     }
 
     /// <summary>更新角色</summary>
     /// <param name="id">角色ID</param>
-    /// <param name="roleVo">角色信息</param>
+    /// <param name="request">角色信息</param>
     /// <returns>更新结果</returns>
     [HttpPut]
     [RequireConsolePermission(ConsolePermissions.RolesEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
-    public async Task<MessageModel> UpdateRole(long id, [FromBody] RoleVo roleVo)
+    public async Task<MessageModel> UpdateRole(long id, [FromBody] RoleMutationDto request)
     {
         if (id <= 0)
         {
@@ -161,7 +140,7 @@ public class RoleController : ControllerBase
             };
         }
 
-        if (roleVo == null)
+        if (request == null)
         {
             return new MessageModel
             {
@@ -171,47 +150,18 @@ public class RoleController : ControllerBase
             };
         }
 
-        if (string.IsNullOrWhiteSpace(roleVo.VoRoleName))
+        var result = await _roleGovernanceService.UpdateRoleAsync(
+            id,
+            request,
+            Current.UserId,
+            Current.UserName);
+        return new MessageModel
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "角色名称不能为空"
-            };
-        }
-
-        try
-        {
-            var existingRole = await _roleService.QueryByIdAsync(id);
-            if (existingRole == null)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                    MessageInfo = "角色不存在"
-                };
-            }
-
-            var role = _mapper.Map<Role>(roleVo);
-            role.Id = id;
-            role.ModifyTime = DateTime.Now;
-
-            var result = await _roleService.UpdateAsync(role);
-
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "更新成功",
-                ResponseData = result
-            };
-        }
-        catch (Exception ex)
-        {
-            throw BuildUnexpectedError("更新角色失败，请稍后重试", ex);
-        }
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "更新成功",
+            ResponseData = result
+        };
     }
 
     /// <summary>删除角色（软删除）</summary>
@@ -232,41 +182,16 @@ public class RoleController : ControllerBase
             };
         }
 
-        try
+        await _roleGovernanceService.DeleteRoleAsync(
+            id,
+            Current.UserId,
+            Current.UserName);
+        return new MessageModel
         {
-            var existingRole = await _roleService.QueryByIdAsync(id);
-            if (existingRole == null)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                    MessageInfo = "角色不存在"
-                };
-            }
-
-            // 软删除：设置 IsDeleted = true，并记录删除者信息
-            await _roleService.UpdateColumnsAsync(
-                r => new Role
-                {
-                    IsDeleted = true,
-                    ModifyTime = DateTime.Now,
-                    ModifyBy = Current.UserName,
-                    ModifyId = Current.UserId
-                },
-                r => r.Id == id);
-
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = "删除成功"
-            };
-        }
-        catch (Exception ex)
-        {
-            throw BuildUnexpectedError("删除角色失败，请稍后重试", ex);
-        }
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = "删除成功"
+        };
     }
 
     /// <summary>启用/禁用角色</summary>
@@ -288,46 +213,17 @@ public class RoleController : ControllerBase
             };
         }
 
-        try
+        var result = await _roleGovernanceService.ToggleRoleAsync(
+            id,
+            enabled,
+            Current.UserId,
+            Current.UserName);
+        return new MessageModel
         {
-            var existingRole = await _roleService.QueryByIdAsync(id);
-            if (existingRole == null)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                    MessageInfo = "角色不存在"
-                };
-            }
-
-            var role = _mapper.Map<Role>(existingRole);
-            role.IsEnabled = enabled;
-            role.ModifyTime = DateTime.Now;
-
-            var result = await _roleService.UpdateAsync(role);
-
-            return new MessageModel
-            {
-                IsSuccess = true,
-                StatusCode = (int)HttpStatusCodeEnum.Success,
-                MessageInfo = enabled ? "启用成功" : "禁用成功",
-                ResponseData = result
-            };
-        }
-        catch (Exception ex)
-        {
-            throw BuildUnexpectedError("更新角色状态失败，请稍后重试", ex);
-        }
-    }
-
-    private static BusinessException BuildUnexpectedError(string message, Exception exception)
-    {
-        return new BusinessException(
-            message,
-            exception,
-            StatusCodes.Status500InternalServerError,
-            "System.UnexpectedError",
-            "error.system.unexpected_error");
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = enabled ? "启用成功" : "禁用成功",
+            ResponseData = result
+        };
     }
 }

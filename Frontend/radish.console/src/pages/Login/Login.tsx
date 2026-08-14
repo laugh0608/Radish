@@ -1,15 +1,28 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { AntButton } from '@radish/ui';
+import { createOidcAuthorizationUrl } from '@radish/http';
+import { AntButton, message } from '@radish/ui';
 import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
 import { ClientBackLink } from '@/components/ClientBackLink';
 import './Login.css';
 import { useTranslation } from 'react-i18next';
+import { useLocation } from 'react-router';
 import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
 import { normalizeLanguage } from '@/locales/language';
+import { log } from '@/utils/logger';
+import { rememberConsoleAuthReturnPath } from '@/services/authReturnPath';
+
+interface LoginLocationState {
+  returnLocation?: {
+    pathname: string;
+    search?: string;
+    hash?: string;
+  };
+}
 
 export function Login() {
   const { t, i18n } = useTranslation();
+  const location = useLocation();
   const language = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) ?? 'zh';
   useDocumentTitle(t('console.login.title'));
   const [loading, setLoading] = useState(false);
@@ -18,19 +31,27 @@ export function Login() {
   const handleLogin = useCallback(() => {
     setLoading(true);
 
-    const redirectUri = getRedirectUri();
-    const authServerBaseUrl = getAuthServerBaseUrl();
-
-    const authorizeUrl = new URL(`${authServerBaseUrl}/connect/authorize`);
-    authorizeUrl.searchParams.set('client_id', 'radish-console');
-    authorizeUrl.searchParams.set('response_type', 'code');
-    authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-    authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
-    authorizeUrl.searchParams.set('culture', language);
-    authorizeUrl.searchParams.set('ui_locales', language);
-
-    window.location.href = authorizeUrl.toString();
-  }, [language]);
+    void createOidcAuthorizationUrl({
+      clientId: 'radish-console',
+      authServerBaseUrl: getAuthServerBaseUrl(),
+      redirectUri: getRedirectUri(),
+      scope: 'openid profile offline_access radish-api',
+      additionalParameters: {
+        culture: language,
+        ui_locales: language,
+      },
+    }).then((authorizeUrl) => {
+      const locationState = location.state as LoginLocationState | null;
+      if (locationState?.returnLocation) {
+        rememberConsoleAuthReturnPath(locationState.returnLocation);
+      }
+      window.location.href = authorizeUrl;
+    }).catch((error: unknown) => {
+      log.error('Login', '启动 OIDC 登录失败', error);
+      setLoading(false);
+      message.error(t('console.login.startFailed'));
+    });
+  }, [language, location.state, t]);
 
   useEffect(() => {
     if (typeof window === 'undefined') {

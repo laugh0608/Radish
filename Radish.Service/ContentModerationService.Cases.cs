@@ -25,19 +25,11 @@ public partial class ContentModerationService
 
         var repository = RequireCaseRepository();
         var targetType = ParseTargetType(dto.TargetType);
-        ResolvedReportTargetSnapshot targetSnapshot;
-        try
-        {
-            targetSnapshot = await ResolveReportTargetSnapshotAsync(targetType, dto.TargetContentId);
-        }
-        catch (InvalidOperationException)
-        {
-            throw new BusinessException(
-                "举报目标不存在或已不可用",
-                404,
-                "Moderation.TargetUnavailable",
-                "error.moderation.target_unavailable");
-        }
+        var targetSnapshot = await ResolveReportSubmissionTargetSnapshotAsync(
+            targetType,
+            dto.TargetContentId,
+            tenantId,
+            reporterUserId);
 
         if (targetSnapshot.TargetUserId < 0)
         {
@@ -69,6 +61,7 @@ public partial class ContentModerationService
             targetSnapshot.TargetUserName,
             targetSnapshot.TargetPostId,
             targetSnapshot.TargetChannelId,
+            targetSnapshot.TargetProductId,
             targetSnapshot.SnapshotTitle,
             targetSnapshot.SnapshotSummary,
             snapshotHash,
@@ -230,6 +223,7 @@ public partial class ContentModerationService
         var targetState = ContentModerationTargetState.Available;
         long? targetPostId = null;
         long? targetChannelId = null;
+        int? contentRevision = null;
         if (dto.EvidenceType == (int)ContentModerationEvidenceType.CurrentTargetSnapshot)
         {
             try
@@ -241,6 +235,7 @@ public partial class ContentModerationService
                 summary = snapshot.SnapshotSummary;
                 targetPostId = snapshot.TargetPostId;
                 targetChannelId = snapshot.TargetChannelId;
+                contentRevision = snapshot.ContentRevision;
             }
             catch (InvalidOperationException)
             {
@@ -274,7 +269,7 @@ public partial class ContentModerationService
                 moderationCase.TargetType == (int)ContentReportTargetTypeEnum.ChatMessage
                     ? moderationCase.TargetContentId
                     : null,
-                null,
+                contentRevision,
                 null,
                 ComputeSnapshotHash(
                     moderationCase.TargetType,
@@ -505,6 +500,7 @@ public partial class ContentModerationService
             VoTargetCommentId = navigation?.VoTargetCommentId,
             VoTargetChannelId = navigation?.VoTargetChannelId,
             VoTargetMessageId = navigation?.VoTargetMessageId,
+            VoTargetProductId = navigation?.VoTargetProductId,
             VoTargetNavigationStatus = navigation?.VoTargetNavigationStatus ?? "Unavailable",
             VoTargetNavigationMessage = navigation?.VoTargetNavigationMessage,
             VoTargetSnapshotTitle = navigation?.VoTargetSnapshotTitle ?? report.TargetSnapshotTitle,

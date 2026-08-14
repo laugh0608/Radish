@@ -258,16 +258,28 @@ public sealed class ChatChannelAccessServiceTest
             RequestStatus = DirectConversationRequestStatus.Accepted,
             TenantId = 30000
         });
-        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
-        messageRepository
-            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>?>()))
-            .ReturnsAsync(new ChannelMessage
+        var messages = new[]
+        {
+            new ChannelMessage
+            {
+                Id = 499,
+                ChannelId = 100,
+                AttachmentId = 600,
+                TenantId = 30000
+            },
+            new ChannelMessage
             {
                 Id = 500,
                 ChannelId = 100,
                 AttachmentId = 600,
                 TenantId = 30000
-            });
+            }
+        };
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        messageRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>?>()))
+            .ReturnsAsync((Expression<Func<ChannelMessage, bool>>? predicate) =>
+                predicate == null ? messages.FirstOrDefault() : messages.FirstOrDefault(predicate.Compile()));
         messageRepository
             .Setup(repository => repository.QueryExistsAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>>() ))
             .ReturnsAsync(true);
@@ -287,6 +299,34 @@ public sealed class ChatChannelAccessServiceTest
         var result = await service.CanAccessChatAttachmentAsync(30000, 20001, 600, 500);
 
         Assert.True(result);
+    }
+
+    [Fact]
+    public async Task CanAccessChatAttachmentAsync_ShouldRejectMismatchedBoundMessage()
+    {
+        var messageRepository = new Mock<IChannelMessageRepository>(MockBehavior.Strict);
+        messageRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<ChannelMessage, bool>>?>()))
+            .ReturnsAsync((Expression<Func<ChannelMessage, bool>>? predicate) =>
+            {
+                var message = new ChannelMessage
+                {
+                    Id = 500,
+                    ChannelId = 100,
+                    AttachmentId = 600,
+                    TenantId = 30000
+                };
+                return predicate?.Compile()(message) == true ? message : null;
+            });
+        var service = CreateService(
+            CreateRepository<Channel>(),
+            CreateRepository<ChannelMember>(),
+            CreateRepository<DirectConversation>(),
+            messageRepository: messageRepository.Object);
+
+        var result = await service.CanAccessChatAttachmentAsync(30000, 20001, 600, 501);
+
+        Assert.False(result);
     }
 
     [Fact]

@@ -44,10 +44,13 @@ test('Console 商品与订单详情 footer 动作应继承列表权限态', () =
   const productListSource = readConsoleSource('src/pages/Products/ProductList.tsx');
   const orderListSource = readConsoleSource('src/pages/Orders/OrderList.tsx');
 
-  assert.match(productListSource, /onEdit=\{canEditProduct \? handleEditProduct : undefined\}/);
-  assert.match(orderListSource, /onRetry=\{canRetryOrder \? \(\) => \{/);
+  assert.match(
+    productListSource,
+    /onEdit=\{canEditProduct && actionsAreAuthoritative && metadataIsAuthoritative \? handleEditProduct : undefined\}/,
+  );
+  assert.match(orderListSource, /onRetry=\{canRetryOrder \? handleRetry : undefined\}/);
   assert.doesNotMatch(productListSource, /<ProductDetail[\s\S]*onEdit=\{handleEditProduct\}/);
-  assert.doesNotMatch(orderListSource, /<OrderDetail[\s\S]*onRetry=\{\(\) => \{/);
+  assert.doesNotMatch(orderListSource, /<OrderDetail[\s\S]*onRetry=\{handleRetry\}/);
 });
 
 test('Console 深层写入 handler 应复核权限态', () => {
@@ -61,7 +64,7 @@ test('Console 深层写入 handler 应复核权限态', () => {
   assert.match(documentGovernanceSource, /if \(!canImport\) \{/);
   assert.match(documentGovernanceSource, /if \(!canExport\) \{/);
   assert.match(systemConfigSource, /if \(!canEditSystemConfig \|\| !faviconConfig\) \{/);
-  assert.match(systemConfigSource, /if \(!canEditSystemConfig \|\| !record\.voIsEditable\) \{/);
+  assert.match(systemConfigSource, /if \(!canEditSystemConfig \|\| !record\.voIsEditable \|\| \(isCompactTable && record\.voRiskLevel !== 'Low'\)\) \{/);
 });
 
 test('Console 内容治理入口应支持用户排障深链与来源返回', () => {
@@ -135,7 +138,7 @@ test('Console 应提供安全的 client 来源返回入口与 Web 主线对象�
   assert.match(clientBackLinkSource, /clearRememberedClientBackTo\(\)/);
   assert.match(clientBackLinkSource, /t\('console\.clientBack\.returning'\)/);
   assert.match(loginSource, /<ClientBackLink \/>/);
-  assert.match(oidcCallbackSource, /error \? <ClientBackLink \/>/);
+  assert.match(oidcCallbackSource, /<ClientBackLink \/>/);
   assert.match(routerComponentsSource, /<ClientBackLink \/>/);
   assert.match(moderationSource, /normalizeConsoleReturnTo/);
   assert.doesNotMatch(moderationSource, /new URL\('\/desktop'/);
@@ -169,8 +172,9 @@ test('Console 内容治理应只消费案件 API 并保留冲突草稿', () => {
   assert.match(appealSource, /caseDetail\?\.voPublicResultCode/);
   assert.match(appealSource, /loadAppeal\(selectedAppealId, false\)/);
   assert.match(appealSource, /conflictDraftPreserved/);
-  assert.match(appealSource, /linkedAppealId && canAppeal/);
-  assert.match(appealSource, /appealPublicId,[\s\S]*replace: true/);
+  assert.match(appealSource, /parseModerationAppealPublicId\(searchParams\.get\('appeal'\)\)/);
+  assert.match(appealSource, /void loadAppeal\(selectedAppealId\)/);
+  assert.match(appealSource, /appealPublicId,[\s\S]*buildModerationPath/);
   assert.match(appealStyles, /@media \(max-width: 768px\)[\s\S]*moderation-appeal-write-panel[\s\S]*display: none/);
   assert.match(appealStyles, /@media \(max-width: 768px\)[\s\S]*moderation-appeal-desktop-action[\s\S]*display: none/);
 });

@@ -1,0 +1,438 @@
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--theme-bg-surface) 94%, var(--theme-brand-soft) 6%);
+}
+
+.panelCompact {
+  position: relative;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin-top: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.summaryRow,
+.summaryActions,
+.dialogActions,
+.pagination {
+  display: flex;
+  align-items: center;
+}
+
+.summaryRow {
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.summaryCopy {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 3px;
+  color: var(--theme-text-primary);
+}
+
+.summaryCopy strong {
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.summaryCopy span {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.panelCompact .summaryCopy strong {
+  color: var(--theme-brand-primary);
+  font-size: 12px;
+}
+
+.panelCompact .summaryCopy span {
+  display: none;
+}
+
+.summaryActions {
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.rewardButton,
+.recordsButton,
+.secondaryButton,
+.primaryButton,
+.recordsError button,
+.inlineError button,
+.pagination button {
+  min-height: 36px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 999px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.rewardButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 13px;
+  border-color: color-mix(in srgb, var(--theme-brand-primary) 56%, var(--theme-border-soft));
+  background: color-mix(in srgb, var(--theme-brand-soft) 70%, var(--theme-bg-surface));
+  color: var(--theme-brand-primary);
+}
+
+.rewardButtonDone {
+  border-color: var(--theme-border-soft);
+  background: var(--theme-bg-muted);
+  color: var(--theme-text-secondary);
+}
+
+.recordsButton {
+  padding: 0 12px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-secondary);
+}
+
+.panelCompact .recordsButton,
+.panelCompact .rewardButton {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.rewardButton:focus-visible,
+.recordsButton:focus-visible,
+.secondaryButton:focus-visible,
+.primaryButton:focus-visible,
+.reasonOption:has(input:focus-visible),
+.recordsError button:focus-visible,
+.inlineError button:focus-visible,
+.pagination button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--theme-brand-primary) 32%, transparent);
+  outline-offset: 2px;
+}
+
+.rewardButton:disabled,
+.secondaryButton:disabled,
+.primaryButton:disabled,
+.pagination button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.recordsRegion {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--theme-border-soft);
+}
+
+.panelCompact .recordsRegion {
+  position: absolute;
+  z-index: 3;
+  width: min(420px, calc(100vw - 32px));
+  margin-top: 38px;
+  padding: 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 12px;
+  background: var(--theme-bg-surface);
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--theme-text-primary) 20%, transparent);
+}
+
+.recordList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.recordItem {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.recordAvatar {
+  display: inline-flex;
+  width: 30px;
+  height: 30px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 50%;
+  background: var(--theme-bg-muted);
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.recordAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.recordText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1px;
+  color: var(--theme-text-secondary);
+  font-size: 11px;
+}
+
+.recordText strong {
+  overflow: hidden;
+  color: var(--theme-text-primary);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recordItem time {
+  color: var(--theme-text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.mutedText {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.recordsError,
+.inlineError {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--theme-state-danger);
+  font-size: 12px;
+}
+
+.recordsError button,
+.inlineError button {
+  min-height: 30px;
+  padding: 0 10px;
+  background: transparent;
+  color: inherit;
+}
+
+.pagination {
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.pagination button {
+  min-height: 30px;
+  padding: 0 10px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-secondary);
+}
+
+.dialogBody {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.costCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 14px;
+  background: var(--theme-bg-muted);
+}
+
+.costCard > div,
+.balanceBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.costLabel,
+.balanceBlock span {
+  color: var(--theme-text-secondary);
+  font-size: 12px;
+}
+
+.costValue {
+  color: var(--theme-brand-primary);
+  font-family: var(--theme-font-heading);
+  font-size: 20px;
+}
+
+.balanceBlock {
+  align-items: flex-end;
+  color: var(--theme-text-primary);
+  font-size: 14px;
+}
+
+.reasonFieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.reasonFieldset legend {
+  margin-bottom: 9px;
+  color: var(--theme-text-primary);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.reasonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.reasonOption {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 12px;
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.reasonOption input {
+  accent-color: var(--theme-brand-primary);
+}
+
+.reasonOptionSelected {
+  border-color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 62%, var(--theme-bg-surface));
+  color: var(--theme-brand-primary);
+}
+
+.inlineError {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-danger) 45%, var(--theme-border-soft));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--theme-state-danger) 8%, var(--theme-bg-surface));
+}
+
+.inlineError a {
+  flex: 0 0 auto;
+  color: var(--theme-brand-primary);
+  font-weight: 800;
+}
+
+.dialogActions {
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.secondaryButton,
+.primaryButton {
+  display: inline-flex;
+  min-width: 104px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+}
+
+.secondaryButton {
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-secondary);
+}
+
+.primaryButton {
+  border-color: var(--theme-brand-primary);
+  background: var(--theme-brand-primary);
+  color: var(--theme-text-inverse);
+}
+
+.mobileDialogBody {
+  padding-bottom: 12px;
+}
+
+@media (max-width: 768px) {
+  .panel {
+    padding: 12px 13px;
+  }
+
+  .summaryRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .summaryActions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .panelCompact .summaryRow {
+    align-items: center;
+    flex-direction: row;
+    gap: 8px;
+  }
+
+  .panelCompact .summaryActions {
+    width: auto;
+  }
+
+  .recordItem {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .recordItem time {
+    grid-column: 2;
+  }
+
+  .reasonGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .dialogActions {
+    width: 100%;
+  }
+
+  .secondaryButton,
+  .primaryButton {
+    flex: 1 1 0;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .rewardButton:not(:disabled):active {
+    transform: translateY(-1px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rewardButton,
+  .recordsButton,
+  .secondaryButton,
+  .primaryButton {
+    transition: none;
+  }
+}

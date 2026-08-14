@@ -9,6 +9,8 @@ public sealed class NotificationTargetVo
     public string? VoPostId { get; set; }
     public string? VoPostPublicId { get; set; }
     public string? VoCommentId { get; set; }
+    public string? VoAnswerId { get; set; }
+    public string? VoAnswerPublicId { get; set; }
     public string? VoChannelId { get; set; }
     public string? VoMessageId { get; set; }
     public string? VoUserId { get; set; }

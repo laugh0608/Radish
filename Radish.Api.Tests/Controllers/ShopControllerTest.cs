@@ -17,6 +17,26 @@ namespace Radish.Api.Tests.Controllers;
 public class ShopControllerTest
 {
     [Fact]
+    public void ProductWriteDtos_ShouldNotExposeSaleState()
+    {
+        Assert.Null(typeof(CreateProductDto).GetProperty("IsOnSale"));
+        Assert.Null(typeof(UpdateProductDto).GetProperty("IsOnSale"));
+    }
+
+    [Fact]
+    public async Task AdminGetProducts_ShouldRejectInvalidPagingBeforeServiceCall()
+    {
+        var productServiceMock = new Mock<IProductService>(MockBehavior.Strict);
+        var controller = CreateController(productServiceMock.Object, Mock.Of<IOrderService>());
+
+        var result = await controller.AdminGetProducts(pageIndex: 0, pageSize: 101);
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains("分页参数无效", result.MessageInfo);
+        productServiceMock.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task GetProductCapabilities_ShouldReturnServerAuthorityMetadata()
     {
         var capabilities = new List<ShopProductCapabilityVo>
@@ -194,7 +214,8 @@ public class ShopControllerTest
             Mock.Of<IUserInventoryService>(),
             Mock.Of<IUserBrowseHistoryService>(),
             currentUserAccessorMock.Object,
-            CreateErrorsLocalizer());
+            CreateErrorsLocalizer(),
+            Mock.Of<IProductReviewService>());
     }
 
     private static IStringLocalizer<Errors> CreateErrorsLocalizer()

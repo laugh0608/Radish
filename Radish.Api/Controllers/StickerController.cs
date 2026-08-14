@@ -198,7 +198,7 @@ public class StickerController : ControllerBase
     /// <summary>更新分组（管理端）</summary>
     [HttpPut("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    [RequireConsolePermission(ConsolePermissions.StickersEdit, ConsolePermissions.StickersToggle)]
+    [RequireConsolePermission(ConsolePermissions.StickersEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
     public async Task<MessageModel> UpdateGroup(long id, [FromBody] UpdateStickerGroupDto request)
     {
@@ -238,6 +238,47 @@ public class StickerController : ControllerBase
             IsSuccess = true,
             StatusCode = (int)HttpStatusCodeEnum.Success,
             MessageInfo = "更新成功",
+            ResponseData = true
+        };
+    }
+
+    /// <summary>更新分组启用状态（管理端）</summary>
+    [HttpPut("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.StickersToggle)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    public async Task<MessageModel> UpdateGroupStatus(long id, [FromBody] UpdateStickerGroupStatusDto request)
+    {
+        if (id <= 0)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+                MessageInfo = "分组ID无效"
+            };
+        }
+
+        var updated = await _stickerService.UpdateGroupStatusAsync(
+            id,
+            request.IsEnabled,
+            Current.UserId,
+            Current.UserName);
+        if (!updated)
+        {
+            return new MessageModel
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "分组不存在"
+            };
+        }
+
+        return new MessageModel
+        {
+            IsSuccess = true,
+            StatusCode = (int)HttpStatusCodeEnum.Success,
+            MessageInfo = request.IsEnabled ? "已启用" : "已停用",
             ResponseData = true
         };
     }
@@ -412,19 +453,38 @@ public class StickerController : ControllerBase
             };
         }
 
-        var updatedCount = await _stickerService.BatchUpdateSortAsync(request.Items, Current.UserId, Current.UserName);
-        var result = new StickerBatchUpdateSortResultVo
+        try
         {
-            VoUpdatedCount = updatedCount
-        };
+            var updatedCount = await _stickerService.BatchUpdateSortAsync(request, Current.UserId, Current.UserName);
+            var result = new StickerBatchUpdateSortResultVo
+            {
+                VoUpdatedCount = updatedCount
+            };
 
-        return new MessageModel
+            return new MessageModel
+            {
+                IsSuccess = true,
+                StatusCode = (int)HttpStatusCodeEnum.Success,
+                MessageInfo = "排序已更新",
+                ResponseData = result
+            };
+        }
+        catch (ArgumentException ex)
         {
-            IsSuccess = true,
-            StatusCode = (int)HttpStatusCodeEnum.Success,
-            MessageInfo = "排序已更新",
-            ResponseData = result
-        };
+            return BuildError(
+                (int)HttpStatusCodeEnum.BadRequest,
+                ex.Message,
+                ApiErrorCodes.ValidationFailed,
+                "error.common.validation_failed");
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BuildError(
+                StatusCodes.Status409Conflict,
+                ex.Message,
+                "StickerSortSnapshotStale",
+                "error.common.conflict");
+        }
     }
 
     /// <summary>更新单个表情（管理端）</summary>

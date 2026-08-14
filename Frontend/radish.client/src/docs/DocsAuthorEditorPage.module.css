@@ -1,0 +1,889 @@
+.editorMain.editorMain {
+  width: min(1400px, calc(100vw - 32px));
+  padding-top: 14px;
+  gap: 12px;
+}
+
+.statusPanel {
+  min-width: 0;
+  margin: 20px;
+}
+
+.authorEditorPage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.editorTaskCard,
+.authorEditorSurface,
+.editorDesktopContext {
+  border: 1px solid color-mix(in srgb, var(--theme-border-soft) 88%, transparent);
+  background: color-mix(in srgb, var(--theme-bg-surface) 96%, var(--theme-surface-highlight) 4%);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--theme-text-primary) 4%, transparent);
+}
+
+.editorTaskCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-radius: 14px;
+}
+
+.editorTaskMetaRow,
+.editorTaskTitleRow,
+.editorStatusBand,
+.editorPrimaryActions,
+.editorBreadcrumb,
+.editorPublishedLink,
+.editorSaveState,
+.editorPeopleSummary,
+.editorMarkdownLabel,
+.editorContextHeading,
+.editorContextLink,
+.editorVersionFlow,
+.editorConflictHeading,
+.editorConflictActions button,
+.editorBoundaryNote {
+  display: flex;
+  align-items: center;
+}
+
+.editorTaskMetaRow,
+.editorTaskTitleRow {
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+}
+
+.editorBreadcrumb {
+  gap: 7px;
+  min-width: 0;
+  color: var(--theme-text-muted);
+  font-size: 11px;
+}
+
+.editorBreadcrumb a,
+.editorPublishedLink,
+.editorContextLink {
+  color: var(--theme-brand-primary);
+  text-decoration: none;
+}
+
+.editorBreadcrumb a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.editorBreadcrumb > span:last-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editorPublishedLink {
+  flex: 0 0 auto;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.editorTaskTitleRow h1 {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-serif);
+  font-size: clamp(24px, 2.4vw, 32px);
+  line-height: 1.2;
+}
+
+.editorPrimaryActions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.editorSaveState {
+  gap: 5px;
+  min-height: 34px;
+  color: var(--theme-state-success, var(--theme-accent-jade));
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.editorSaveStateDirty {
+  color: var(--theme-state-warning);
+}
+
+.editorSaveButton,
+.editorSubmitButton,
+.editorConflictActions button,
+.editorPersonRow button,
+.editorInviteForm button,
+.editorInvitationActions button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 8px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.editorSaveButton,
+.editorConflictActions button,
+.editorPersonRow button,
+.editorInvitationActions button {
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-surface);
+}
+
+.editorSubmitButton,
+.editorConflictActions .editorConflictPrimary,
+.editorInvitationActions .editorInvitationPrimary {
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-surface-highlight);
+  background: var(--theme-brand-primary);
+}
+
+.editorSaveButton:disabled,
+.editorSubmitButton:disabled,
+.editorConflictActions button:disabled,
+.editorPersonRow button:disabled,
+.editorInviteForm button:disabled,
+.editorInvitationActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.editorStatusBand {
+  gap: 9px;
+  min-height: 48px;
+  padding: 8px 11px;
+  border-radius: 10px;
+  color: var(--theme-text-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 68%, var(--theme-bg-surface) 32%);
+}
+
+.editorStatusDot {
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--theme-brand-primary);
+}
+
+.editorStatusCopy {
+  min-width: 0;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editorStatusCopy strong {
+  font-size: 11px;
+}
+
+.editorStatusCopy span {
+  color: var(--theme-text-secondary);
+  font-size: 9px;
+}
+
+.editorPeopleSummary {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  padding-left: 8px;
+}
+
+.editorPeopleSummary span {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: -5px;
+  border: 2px solid var(--theme-bg-surface);
+  border-radius: 9px;
+  color: var(--theme-accent-jade);
+  background: color-mix(in srgb, var(--theme-accent-jade) 14%, var(--theme-bg-surface));
+  font-family: var(--theme-font-serif);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.editorPeopleSummary span:nth-child(2) {
+  color: var(--theme-brand-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 72%, var(--theme-bg-surface));
+}
+
+.editorPeopleSummary strong {
+  margin-left: 5px;
+  color: var(--theme-text-secondary);
+  font-size: 10px;
+}
+
+.editorMobileViewSwitch {
+  display: none;
+}
+
+.editorWorkspaceGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 320px;
+  align-items: start;
+  gap: 12px;
+  min-width: 0;
+}
+
+.authorEditorForm,
+.authorEditorSurface {
+  min-width: 0;
+}
+
+.authorEditorSurface {
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.editorReadOnlyNotice,
+.editorReviewNotice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 10px 10px 0;
+  padding: 10px 11px;
+  border-radius: 8px;
+  color: var(--theme-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.editorReadOnlyNotice {
+  border: 1px solid color-mix(in srgb, var(--theme-state-warning) 32%, transparent);
+  background: color-mix(in srgb, var(--theme-state-warning) 11%, var(--theme-bg-surface));
+}
+
+.editorReviewNotice {
+  border-left: 3px solid var(--theme-state-danger);
+  background: color-mix(in srgb, var(--theme-state-danger) 9%, var(--theme-bg-surface));
+}
+
+.editorReviewNotice div {
+  display: grid;
+  gap: 2px;
+}
+
+.editorReviewNotice strong {
+  color: var(--theme-state-danger);
+}
+
+.editorTitleField {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 7px 9px;
+  border-bottom: 1px solid var(--theme-border-soft);
+  color: var(--theme-text-secondary);
+  background: color-mix(in srgb, var(--theme-bg-muted) 66%, var(--theme-bg-surface) 34%);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.editorTitleField em {
+  margin-left: 4px;
+  color: var(--theme-state-danger);
+  font-size: 9px;
+  font-style: normal;
+}
+
+.editorTitleField input {
+  width: 100%;
+  min-width: 0;
+  min-height: 32px;
+  box-sizing: border-box;
+  padding: 5px 10px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 7px;
+  outline: none;
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-surface);
+  font: inherit;
+  font-size: 13px;
+}
+
+.editorTitleField input:focus,
+.editorCompactField input:focus,
+.editorCompactField select:focus,
+.editorCompactField textarea:focus,
+.editorInviteForm input:focus {
+  border-color: var(--theme-brand-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-brand-primary) 14%, transparent);
+}
+
+.authorMarkdownEditor {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.editorMarkdownLabel {
+  gap: 5px;
+  color: var(--theme-text-primary);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.editorConflictPanel {
+  display: grid;
+  gap: 12px;
+  margin: 10px;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-warning) 36%, var(--theme-border-soft));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--theme-state-warning) 10%, var(--theme-bg-surface));
+}
+
+.editorConflictHeading {
+  align-items: flex-start;
+  gap: 9px;
+}
+
+.editorConflictHeading > span {
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  color: var(--theme-state-warning);
+  background: var(--theme-bg-surface);
+}
+
+.editorConflictHeading div {
+  min-width: 0;
+}
+
+.editorConflictHeading p {
+  margin: 3px 0 0;
+  color: var(--theme-text-secondary);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.editorConflictActions {
+  justify-content: flex-end;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+
+.editorSourceStatus {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px;
+  border-top: 1px solid var(--theme-border-soft);
+  color: var(--theme-text-muted);
+  background: color-mix(in srgb, var(--theme-bg-muted) 72%, var(--theme-bg-surface) 28%);
+  font-size: 9px;
+}
+
+.editorDesktopContext {
+  position: sticky;
+  top: 82px;
+  overflow: hidden;
+  border-radius: 14px;
+}
+
+.editorContextPanel {
+  min-width: 0;
+  color: var(--theme-text-primary);
+  background: var(--theme-bg-surface);
+}
+
+.editorContextSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+}
+
+.editorContextSection + .editorContextSection {
+  border-top: 1px solid var(--theme-border-soft);
+}
+
+.editorContextHeading {
+  gap: 7px;
+  min-width: 0;
+  color: var(--theme-text-secondary);
+}
+
+.editorContextHeading h2 {
+  min-width: 0;
+  flex: 1;
+  margin: 0;
+  color: var(--theme-text-primary);
+  font-family: var(--theme-font-serif);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.editorStatusBadge,
+.editorSectionCount {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  color: var(--theme-brand-primary);
+  background: var(--theme-brand-soft);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.editorOutlineList,
+.editorPeopleList,
+.editorTimeline {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.editorOutlineItem {
+  min-height: 30px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 7px;
+  padding: 5px 8px;
+  border-left: 2px solid transparent;
+  border-radius: 7px;
+  color: var(--theme-text-secondary);
+}
+
+.editorOutlineItem[data-level='2'] {
+  padding-left: 16px;
+}
+
+.editorOutlineItem[data-level='3'] {
+  padding-left: 24px;
+}
+
+.editorOutlineItem span {
+  color: var(--theme-text-muted);
+  font-family: var(--theme-font-mono);
+  font-size: 9px;
+}
+
+.editorOutlineItem strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.editorOutlineItemActive {
+  border-left-color: var(--theme-brand-primary);
+  color: var(--theme-text-primary);
+  background: color-mix(in srgb, var(--theme-brand-soft) 70%, var(--theme-bg-surface));
+}
+
+.editorContextEmpty,
+.editorContextText,
+.editorInvitationActions p {
+  margin: 0;
+  color: var(--theme-text-secondary);
+  font-size: 10px;
+  line-height: 1.55;
+}
+
+.editorVersionFlow {
+  gap: 7px;
+  color: var(--theme-text-secondary);
+  font-size: 10px;
+}
+
+.editorVersionFlow strong {
+  color: var(--theme-brand-primary);
+}
+
+.editorContextLink {
+  width: fit-content;
+  gap: 5px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.editorPropertyGrid {
+  display: grid;
+  gap: 9px;
+}
+
+.editorPropertyReadOnly {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: var(--theme-text-muted);
+  font-size: 9px;
+}
+
+.editorPropertyReadOnly strong {
+  color: var(--theme-text-primary);
+  font-size: 10px;
+}
+
+.editorCompactField {
+  display: grid;
+  gap: 5px;
+  color: var(--theme-text-muted);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.editorCompactField input,
+.editorCompactField select,
+.editorCompactField textarea,
+.editorInviteForm input {
+  width: 100%;
+  min-width: 0;
+  min-height: 34px;
+  box-sizing: border-box;
+  padding: 7px 9px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 7px;
+  outline: none;
+  color: var(--theme-text-primary);
+  background: color-mix(in srgb, var(--theme-bg-muted) 42%, var(--theme-bg-surface));
+  font: inherit;
+  font-size: 10px;
+}
+
+.editorCompactField textarea {
+  min-height: 64px;
+  resize: vertical;
+}
+
+.editorCoverPreview {
+  max-height: 160px;
+  overflow: auto;
+  border-radius: 8px;
+}
+
+.editorPersonRow {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 7px 0;
+}
+
+.editorPersonAvatar {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  color: var(--theme-accent-jade);
+  background: color-mix(in srgb, var(--theme-accent-jade) 14%, var(--theme-bg-muted));
+  font-family: var(--theme-font-serif);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.editorPersonRow div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.editorPersonRow strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+.editorPersonRow div span {
+  color: var(--theme-text-muted);
+  font-size: 9px;
+}
+
+.editorPersonRow button {
+  min-height: 28px;
+  padding: 4px 8px;
+  font-size: 9px;
+}
+
+.editorInviteForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+}
+
+.editorInviteForm button {
+  border-color: var(--theme-brand-primary);
+  color: var(--theme-brand-primary);
+  background: var(--theme-bg-surface);
+}
+
+.editorInvitationActions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 7px;
+  padding: 9px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-accent-jade) 10%, var(--theme-bg-surface));
+}
+
+.editorTimeline li {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 7px;
+}
+
+.editorTimelineIcon {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--theme-brand-primary);
+  background: var(--theme-brand-soft);
+}
+
+.editorTimeline li div {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding-bottom: 8px;
+}
+
+.editorTimeline strong {
+  font-size: 10px;
+}
+
+.editorTimeline span,
+.editorTimeline p {
+  margin: 0;
+  color: var(--theme-text-muted);
+  font-size: 9px;
+  line-height: 1.45;
+}
+
+.editorBoundaryNote {
+  gap: 7px;
+  padding: 11px 14px;
+  border-top: 1px solid var(--theme-border-soft);
+  color: var(--theme-text-secondary);
+  background: color-mix(in srgb, var(--theme-bg-muted) 62%, var(--theme-bg-surface));
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.editorContextSheetBody {
+  padding: 0;
+  background: var(--theme-bg-surface);
+}
+
+@media (max-width: 1080px) {
+  .editorMain.editorMain {
+    width: min(1040px, calc(100vw - 24px));
+  }
+
+  .editorWorkspaceGrid {
+    grid-template-columns: minmax(0, 1fr) 292px;
+  }
+}
+
+@media (max-width: 860px) {
+  .editorWorkspaceGrid {
+    grid-template-columns: minmax(0, 1fr) 276px;
+  }
+
+  .editorTaskTitleRow {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .editorPrimaryActions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 760px) {
+  .editorMain.editorMain {
+    width: calc(100vw - 20px);
+    padding-top: 10px;
+    padding-bottom: 96px;
+  }
+
+  .editorTaskCard {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 10px;
+    padding: 12px;
+    border-radius: 13px;
+  }
+
+  .editorTaskMetaRow {
+    grid-column: 1 / -1;
+    align-items: flex-start;
+  }
+
+  .editorBreadcrumb {
+    max-width: calc(100% - 76px);
+  }
+
+  .editorTaskTitleRow {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .editorTaskTitleRow h1 {
+    align-self: auto;
+    font-size: 23px;
+    line-height: 1.18;
+  }
+
+  .editorPrimaryActions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+  }
+
+  .editorSaveState {
+    justify-content: flex-start;
+    min-height: 36px;
+    white-space: nowrap;
+  }
+
+  .editorSaveButton,
+  .editorSubmitButton {
+    min-width: 86px;
+    width: auto;
+  }
+
+  .editorStatusBand {
+    grid-column: 1 / -1;
+    min-height: 40px;
+    padding: 7px 9px;
+  }
+
+  .editorStatusCopy {
+    flex-direction: row;
+    align-items: baseline;
+    column-gap: 7px;
+    row-gap: 2px;
+    flex-wrap: wrap;
+  }
+
+  .editorPeopleSummary span {
+    width: 25px;
+    height: 25px;
+  }
+
+  .editorMobileViewSwitch {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+    padding: 4px;
+    border-radius: 10px;
+    background: var(--theme-bg-muted);
+  }
+
+  .editorMobileViewSwitch button {
+    min-height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 0;
+    border-radius: 7px;
+    color: var(--theme-text-secondary);
+    background: transparent;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .editorMobileViewSwitch .editorMobileViewActive {
+    color: var(--theme-brand-primary);
+    background: var(--theme-bg-surface);
+    box-shadow: var(--theme-shadow-soft);
+  }
+
+  .editorWorkspaceGrid {
+    display: block;
+  }
+
+  .authorEditorSurface {
+    border-radius: 13px;
+  }
+
+  .editorTitleField {
+    grid-template-columns: 70px minmax(0, 1fr);
+    padding: 7px;
+  }
+
+  .editorMarkdownLabel {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .editorConflictActions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editorConflictActions .editorConflictPrimary {
+    grid-column: 1 / -1;
+  }
+
+  .editorSourceStatus {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .editorContextSection {
+    padding: 14px 16px;
+  }
+
+  .editorInvitationActions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .editorInvitationActions p {
+    grid-column: 1 / -1;
+  }
+}

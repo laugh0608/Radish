@@ -267,6 +267,24 @@
   <data name="error.product.operation_rejected" xml:space="preserve">
     <value>商品操作无法完成，请刷新后重试。</value>
   </data>
+  <data name="error.product_review.authentication_required" xml:space="preserve">
+    <value>请先登录后再评价。</value>
+  </data>
+  <data name="error.product_review.product_not_found" xml:space="preserve">
+    <value>商品不存在或当前不可评价。</value>
+  </data>
+  <data name="error.product_review.not_found" xml:space="preserve">
+    <value>商品评价不存在。</value>
+  </data>
+  <data name="error.product_review.purchase_required" xml:space="preserve">
+    <value>仅已完成订单的购买者可以评价。</value>
+  </data>
+  <data name="error.product_review.version_conflict" xml:space="preserve">
+    <value>评价已发生变化，请刷新后重试。</value>
+  </data>
+  <data name="error.product_review.moderated" xml:space="preserve">
+    <value>评价已被治理限制，当前不可修改。</value>
+  </data>
   <data name="error.moderation.validation_failed" xml:space="preserve">
     <value>治理请求参数无效，请检查后重试。</value>
   </data>
@@ -531,8 +549,26 @@
   <data name="error.coin.balance_query_rejected" xml:space="preserve">
     <value>无法读取用户余额，请核对账号后重试。</value>
   </data>
+  <data name="error.coin.transaction_query_rejected" xml:space="preserve">
+    <value>无法读取用户资产流水，请核对账号与筛选条件。</value>
+  </data>
   <data name="error.coin.admin_adjust_rejected" xml:space="preserve">
     <value>余额调整无法完成，请核对余额和提交内容。</value>
+  </data>
+  <data name="error.coin.admin_adjust_version_conflict" xml:space="preserve">
+    <value>余额已发生变化，请刷新目标账户后重新确认调账。</value>
+  </data>
+  <data name="error.coin.admin_adjust_processing" xml:space="preserve">
+    <value>相同调账请求仍在处理中，请先刷新余额与流水确认结果。</value>
+  </data>
+  <data name="error.coin.admin_adjust_idempotency_conflict" xml:space="preserve">
+    <value>同一请求标识已用于其他调账内容。</value>
+  </data>
+  <data name="error.coin.admin_adjust_idempotency_invalid" xml:space="preserve">
+    <value>调账请求标识格式无效。</value>
+  </data>
+  <data name="error.coin.admin_adjust_replay_unavailable" xml:space="preserve">
+    <value>暂时无法读取此前的调账结果，请刷新目标余额与流水。</value>
   </data>
   <data name="error.experience.admin_adjust_rejected" xml:space="preserve">
     <value>经验调整无法完成，请核对账号和提交内容。</value>
@@ -549,6 +585,21 @@
   <data name="error.experience.review_rejected" xml:space="preserve">
     <value>经验治理复核结论无法记录，请核对提交内容。</value>
   </data>
+  <data name="error.experience.target_unavailable" xml:space="preserve"><value>经验治理目标不存在或不可用。</value></data>
+  <data name="error.experience.version_conflict" xml:space="preserve"><value>经验状态已变化，请刷新目标后重新确认。</value></data>
+  <data name="error.experience.adjustment_no_changes" xml:space="preserve"><value>本次经验调整不会改变目标状态。</value></data>
+  <data name="error.experience.adjustment_processing" xml:space="preserve"><value>相同经验调整仍在处理中，请刷新经验与流水确认结果。</value></data>
+  <data name="error.experience.adjustment_idempotency_conflict" xml:space="preserve"><value>同一请求标识已用于其他经验调整内容。</value></data>
+  <data name="error.experience.adjustment_idempotency_invalid" xml:space="preserve"><value>经验调整请求标识格式无效。</value></data>
+  <data name="error.experience.adjustment_replay_unavailable" xml:space="preserve"><value>暂时无法读取此前的经验调整结果，请刷新目标经验与流水。</value></data>
+  <data name="error.experience.review_result_invalid" xml:space="preserve"><value>经验治理复核结论无效。</value></data>
+  <data name="error.experience.review_processing" xml:space="preserve"><value>相同人工复核请求仍在处理中，请刷新治理留痕确认结果。</value></data>
+  <data name="error.experience.review_idempotency_conflict" xml:space="preserve"><value>同一请求标识已用于其他人工复核内容。</value></data>
+  <data name="error.experience.review_idempotency_invalid" xml:space="preserve"><value>人工复核请求标识格式无效。</value></data>
+  <data name="error.experience.review_replay_unavailable" xml:space="preserve"><value>暂时无法读取此前的人工复核结果，请刷新经验与治理留痕。</value></data>
+  <data name="error.experience.governance_no_changes" xml:space="preserve"><value>目标经验治理状态未发生变化。</value></data>
+  <data name="error.experience.level_preview_conflict" xml:space="preserve"><value>等级配置或公式已变化，请重新生成预览后确认。</value></data>
+  <data name="error.experience.level_no_changes" xml:space="preserve"><value>等级配置与公式结果一致，无需重算。</value></data>
   <data name="error.chat.channel_unavailable" xml:space="preserve">
     <value>会话不存在或当前账号无权访问。</value>
   </data>
@@ -737,5 +788,17 @@
   </data>
   <data name="error.forum.revision_restore_key_conflict" xml:space="preserve">
     <value>该恢复操作标识已用于其他请求，请刷新后重试。</value>
+  </data>
+  <data name="error.forum.tag_discovery_top_count_invalid" xml:space="preserve">
+    <value>标签返回数量必须在 1 到 20 之间。</value>
+  </data>
+  <data name="error.forum.tag_discovery_tag_unavailable" xml:space="preserve">
+    <value>标签不存在或已不可用。</value>
+  </data>
+  <data name="error.leaderboard.type_unavailable" xml:space="preserve">
+    <value>该排行榜类型不提供公开访问。</value>
+  </data>
+  <data name="error.leaderboard.user_rank_unavailable" xml:space="preserve">
+    <value>该排行榜类型不支持用户个人排名。</value>
   </data>
 </root>

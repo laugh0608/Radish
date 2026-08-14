@@ -1,3 +1,4 @@
+using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
@@ -58,7 +59,11 @@ public class SystemConfigService : ISystemConfigService
     public Task<SystemConfigVo> CreateConfigAsync(CreateSystemConfigDto request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        throw new InvalidOperationException("系统设置由代码注册，不支持通过 Console 新增未知配置");
+        throw new BusinessException(
+            "系统设置由代码注册，不支持通过 Console 新增未知配置",
+            400,
+            "SystemConfig.RegistryOnly",
+            "error.system_config.registry_only");
     }
 
     public async Task<SystemConfigVo?> UpdateConfigAsync(long id, UpdateSystemConfigDto request, SystemConfigChangeContext? context = null)
@@ -75,88 +80,90 @@ public class SystemConfigService : ISystemConfigService
         EnsureChangeConfirmation(definition, request.Reason, request.ConfirmRiskLevel, request.ConfirmKey);
 
         var existedRecord = await _systemConfigRepository.GetByKeyAsync(definition.Key);
-        var effectiveOverrideRecord = GetEffectiveOverrideRecord(definition, existedRecord);
-        EnsureExpectedVersion(effectiveOverrideRecord, request.ExpectedVersion);
+        var observedDefaultRecord = SystemConfigValueNormalizer.HasEnabledOverride(definition, existedRecord)
+            ? null
+            : existedRecord;
         var oldEffectiveValue = GetEffectiveValue(definition, existedRecord);
 
         if (!request.IsEnabled)
         {
-            await _systemConfigRepository.DeleteByKeyAsync(definition.Key);
-            await CreateChangeLogIfChangedAsync(
-                definition,
-                SystemConfigChangeAction.RestoreDefault,
-                oldEffectiveValue,
-                definition.DefaultValue,
-                request.Reason,
-                request.ConfirmRiskLevel,
-                request.ConfirmKey,
-                context);
+            var mutationResult = await _systemConfigRepository.ApplyMutationAsync(new SystemConfigMutation
+            {
+                Key = definition.Key,
+                ExpectedVersion = request.ExpectedVersion,
+                ObservedDefaultRecordVersion = observedDefaultRecord == null ? null : NormalizeRecordVersion(observedDefaultRecord),
+                ObservedDefaultRecordValue = observedDefaultRecord?.Value,
+                ChangeLog = BuildChangeLogIfChanged(
+                    definition,
+                    SystemConfigChangeAction.RestoreDefault,
+                    oldEffectiveValue,
+                    definition.DefaultValue,
+                    request.Reason,
+                    request.ConfirmRiskLevel,
+                    request.ConfirmKey,
+                    context)
+            });
+            EnsureMutationSucceeded(mutationResult);
             return MapToVo(definition, null);
         }
 
-        var normalizedValue = SystemConfigValueNormalizer.NormalizeAndValidateValue(definition, request.Value);
+        var normalizedValue = NormalizeRequestedValue(definition, request.Value);
         if (string.Equals(normalizedValue, definition.DefaultValue, StringComparison.Ordinal))
         {
-            await _systemConfigRepository.DeleteByKeyAsync(definition.Key);
-            await CreateChangeLogIfChangedAsync(
-                definition,
-                SystemConfigChangeAction.RestoreDefault,
-                oldEffectiveValue,
-                definition.DefaultValue,
-                request.Reason,
-                request.ConfirmRiskLevel,
-                request.ConfirmKey,
-                context);
+            var mutationResult = await _systemConfigRepository.ApplyMutationAsync(new SystemConfigMutation
+            {
+                Key = definition.Key,
+                ExpectedVersion = request.ExpectedVersion,
+                ObservedDefaultRecordVersion = observedDefaultRecord == null ? null : NormalizeRecordVersion(observedDefaultRecord),
+                ObservedDefaultRecordValue = observedDefaultRecord?.Value,
+                ChangeLog = BuildChangeLogIfChanged(
+                    definition,
+                    SystemConfigChangeAction.RestoreDefault,
+                    oldEffectiveValue,
+                    definition.DefaultValue,
+                    request.Reason,
+                    request.ConfirmRiskLevel,
+                    request.ConfirmKey,
+                    context)
+            });
+            EnsureMutationSucceeded(mutationResult);
             return MapToVo(definition, null);
         }
 
         var now = DateTime.Now;
-        SystemConfigRecord updatedRecord;
-
-        if (existedRecord == null)
+        var nextRecord = new SystemConfigRecord
         {
-            updatedRecord = await _systemConfigRepository.CreateAsync(new SystemConfigRecord
-            {
-                Category = definition.Category,
-                Key = definition.Key,
-                Name = definition.Name,
-                Value = normalizedValue,
-                Description = definition.Description,
-                Type = definition.ValueType,
-                IsEnabled = true,
-                Version = 1,
-                CreateTime = now,
-                ModifyTime = now
-            });
-        }
-        else
+            Id = existedRecord?.Id ?? 0,
+            Category = definition.Category,
+            Key = definition.Key,
+            Name = definition.Name,
+            Value = normalizedValue,
+            Description = definition.Description,
+            Type = definition.ValueType,
+            IsEnabled = true,
+            CreateTime = existedRecord?.CreateTime ?? now,
+            ModifyTime = now
+        };
+        var updateResult = await _systemConfigRepository.ApplyMutationAsync(new SystemConfigMutation
         {
-            existedRecord.Category = definition.Category;
-            existedRecord.Name = definition.Name;
-            existedRecord.Value = normalizedValue;
-            existedRecord.Description = definition.Description;
-            existedRecord.Type = definition.ValueType;
-            existedRecord.IsEnabled = true;
-            existedRecord.Version = effectiveOverrideRecord == null
-                ? 1
-                : NormalizeRecordVersion(existedRecord) + 1;
-            existedRecord.ModifyTime = now;
+            Key = definition.Key,
+            ExpectedVersion = request.ExpectedVersion,
+            ObservedDefaultRecordVersion = observedDefaultRecord == null ? null : NormalizeRecordVersion(observedDefaultRecord),
+            ObservedDefaultRecordValue = observedDefaultRecord?.Value,
+            NextRecord = nextRecord,
+            ChangeLog = BuildChangeLogIfChanged(
+                definition,
+                SystemConfigChangeAction.UpdateOverride,
+                oldEffectiveValue,
+                normalizedValue,
+                request.Reason,
+                request.ConfirmRiskLevel,
+                request.ConfirmKey,
+                context)
+        });
+        EnsureMutationSucceeded(updateResult);
 
-            updatedRecord = await _systemConfigRepository.UpdateAsync(existedRecord)
-                ?? throw new InvalidOperationException("系统设置覆盖值更新失败");
-        }
-
-        await CreateChangeLogIfChangedAsync(
-            definition,
-            SystemConfigChangeAction.UpdateOverride,
-            oldEffectiveValue,
-            normalizedValue,
-            request.Reason,
-            request.ConfirmRiskLevel,
-            request.ConfirmKey,
-            context);
-
-        return MapToVo(definition, updatedRecord);
+        return MapToVo(definition, updateResult.Record);
     }
 
     public async Task<SystemConfigVo?> RestoreConfigDefaultAsync(long id, RestoreSystemConfigDefaultDto? request = null, SystemConfigChangeContext? context = null)
@@ -170,18 +177,27 @@ public class SystemConfigService : ISystemConfigService
         EnsureEditable(definition);
         EnsureChangeConfirmation(definition, request?.Reason, request?.ConfirmRiskLevel, request?.ConfirmKey);
         var existedRecord = await _systemConfigRepository.GetByKeyAsync(definition.Key);
-        EnsureExpectedVersion(GetEffectiveOverrideRecord(definition, existedRecord), request?.ExpectedVersion ?? 0);
+        var observedDefaultRecord = SystemConfigValueNormalizer.HasEnabledOverride(definition, existedRecord)
+            ? null
+            : existedRecord;
         var oldEffectiveValue = GetEffectiveValue(definition, existedRecord);
-        await _systemConfigRepository.DeleteByKeyAsync(definition.Key);
-        await CreateChangeLogIfChangedAsync(
-            definition,
-            SystemConfigChangeAction.RestoreDefault,
-            oldEffectiveValue,
-            definition.DefaultValue,
-            request?.Reason,
-            request?.ConfirmRiskLevel,
-            request?.ConfirmKey,
-            context);
+        var mutationResult = await _systemConfigRepository.ApplyMutationAsync(new SystemConfigMutation
+        {
+            Key = definition.Key,
+            ExpectedVersion = request?.ExpectedVersion ?? 0,
+            ObservedDefaultRecordVersion = observedDefaultRecord == null ? null : NormalizeRecordVersion(observedDefaultRecord),
+            ObservedDefaultRecordValue = observedDefaultRecord?.Value,
+            ChangeLog = BuildChangeLogIfChanged(
+                definition,
+                SystemConfigChangeAction.RestoreDefault,
+                oldEffectiveValue,
+                definition.DefaultValue,
+                request?.Reason,
+                request?.ConfirmRiskLevel,
+                request?.ConfirmKey,
+                context)
+        });
+        EnsureMutationSucceeded(mutationResult);
         return MapToVo(definition, null);
     }
 
@@ -247,13 +263,38 @@ public class SystemConfigService : ISystemConfigService
     {
         if (!definition.IsEditable)
         {
-            throw new InvalidOperationException($"系统设置不允许在 Console 修改：{definition.Key}");
+            throw new BusinessException(
+                $"系统设置不允许在 Console 修改：{definition.Key}",
+                400,
+                "SystemConfig.NotEditable",
+                "error.system_config.not_editable");
         }
 
         if (!definition.RiskLevel.Equals(SystemConfigRiskLevel.Low, StringComparison.OrdinalIgnoreCase) &&
             !definition.RiskLevel.Equals(SystemConfigRiskLevel.Medium, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"当前仅允许修改 Low / Medium 风险系统设置：{definition.Key}");
+            throw new BusinessException(
+                $"当前仅允许修改 Low / Medium 风险系统设置：{definition.Key}",
+                400,
+                "SystemConfig.RiskNotEditable",
+                "error.system_config.risk_not_editable");
+        }
+    }
+
+    private static string NormalizeRequestedValue(SystemConfigDefinition definition, string value)
+    {
+        try
+        {
+            return SystemConfigValueNormalizer.NormalizeAndValidateValue(definition, value);
+        }
+        catch (InvalidOperationException exception)
+        {
+            throw new BusinessException(
+                exception.Message,
+                exception,
+                400,
+                "SystemConfig.InvalidValue",
+                "error.system_config.invalid_value");
         }
     }
 
@@ -270,17 +311,29 @@ public class SystemConfigService : ISystemConfigService
 
         if (!string.Equals(confirmRiskLevel?.Trim(), definition.RiskLevel, StringComparison.OrdinalIgnoreCase))
         {
-            throw new InvalidOperationException($"系统设置 {definition.Key} 需要确认风险等级 {definition.RiskLevel}");
+            throw new BusinessException(
+                $"系统设置 {definition.Key} 需要确认风险等级 {definition.RiskLevel}",
+                400,
+                "SystemConfig.RiskConfirmationRequired",
+                "error.system_config.risk_confirmation_required");
         }
 
         if (string.IsNullOrWhiteSpace(reason))
         {
-            throw new InvalidOperationException($"系统设置 {definition.Key} 需要填写修改原因");
+            throw new BusinessException(
+                $"系统设置 {definition.Key} 需要填写修改原因",
+                400,
+                "SystemConfig.ReasonRequired",
+                "error.system_config.reason_required");
         }
 
         if (!string.Equals(confirmKey?.Trim(), definition.Key, StringComparison.Ordinal))
         {
-            throw new InvalidOperationException($"系统设置 {definition.Key} 需要确认设置键");
+            throw new BusinessException(
+                $"系统设置 {definition.Key} 需要确认设置键",
+                400,
+                "SystemConfig.KeyConfirmationRequired",
+                "error.system_config.key_confirmation_required");
         }
     }
 
@@ -289,7 +342,7 @@ public class SystemConfigService : ISystemConfigService
         return SystemConfigValueNormalizer.GetEffectiveValue(definition, record);
     }
 
-    private async Task CreateChangeLogIfChangedAsync(
+    private static SystemConfigChangeLogRecord? BuildChangeLogIfChanged(
         SystemConfigDefinition definition,
         string actionType,
         string oldValue,
@@ -301,10 +354,10 @@ public class SystemConfigService : ISystemConfigService
     {
         if (string.Equals(oldValue, newValue, StringComparison.Ordinal))
         {
-            return;
+            return null;
         }
 
-        await _systemConfigChangeLogRepository.CreateAsync(new SystemConfigChangeLogRecord
+        return new SystemConfigChangeLogRecord
         {
             Category = definition.Category,
             Key = definition.Key,
@@ -323,7 +376,7 @@ public class SystemConfigService : ISystemConfigService
             RequestIp = NormalizeAuditText(context?.RequestIp, 100),
             UserAgent = NormalizeAuditText(context?.UserAgent, 500),
             CreateTime = DateTime.Now
-        });
+        };
     }
 
     private static SystemConfigVo MapToVo(SystemConfigDefinition definition, SystemConfigRecord? record)
@@ -358,23 +411,21 @@ public class SystemConfigService : ISystemConfigService
         };
     }
 
-    private static void EnsureExpectedVersion(SystemConfigRecord? record, int expectedVersion)
+    private static void EnsureMutationSucceeded(SystemConfigMutationResult result)
     {
-        var currentVersion = record == null ? 0 : NormalizeRecordVersion(record);
-        if (currentVersion != expectedVersion)
+        if (result.IsVersionConflict)
         {
-            throw new InvalidOperationException("系统设置已被其他管理员修改，请刷新后重试");
+            throw new BusinessException(
+                "系统设置已被其他管理员修改，请刷新后重试",
+                409,
+                "SystemConfig.VersionConflict",
+                "error.system_config.version_conflict");
         }
     }
 
     private static int NormalizeRecordVersion(SystemConfigRecord? record)
     {
         return record == null ? 0 : Math.Max(1, record.Version);
-    }
-
-    private static SystemConfigRecord? GetEffectiveOverrideRecord(SystemConfigDefinition definition, SystemConfigRecord? record)
-    {
-        return SystemConfigValueNormalizer.HasEnabledOverride(definition, record) ? record : null;
     }
 
     private static SystemConfigChangeLogVo MapChangeLogToVo(SystemConfigChangeLogRecord record)

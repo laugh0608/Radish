@@ -310,6 +310,8 @@ export interface PostDetail {
   voViewCount?: number;
   voLikeCount?: number;
   voCommentCount?: number;
+  voCollectCount?: number;
+  voIsBookmarked?: boolean;
   voIsTop?: boolean;
   voIsEssence?: boolean;
   voIsLocked?: boolean;

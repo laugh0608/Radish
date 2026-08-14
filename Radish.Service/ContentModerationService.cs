@@ -29,8 +29,11 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<Comment> _commentRepository;
     private readonly IChannelMessageRepository _channelMessageRepository;
+    private readonly IChatChannelAccessService _chatChannelAccessService;
     private readonly IBaseRepository<Product> _productRepository;
     private readonly IBaseRepository<PostQuickReply> _postQuickReplyRepository;
+    private readonly IBaseRepository<PostAnswer>? _postAnswerRepository;
+    private readonly IBaseRepository<ProductReview>? _productReviewRepository;
     private readonly IBaseRepository<User> _userRepository;
     private readonly IUnitOfWorkManage? _unitOfWorkManage;
     private readonly IContentModerationCaseRepository? _moderationCaseRepository;
@@ -42,11 +45,14 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         IBaseRepository<Post> postRepository,
         IBaseRepository<Comment> commentRepository,
         IChannelMessageRepository channelMessageRepository,
+        IChatChannelAccessService chatChannelAccessService,
         IBaseRepository<Product> productRepository,
         IBaseRepository<PostQuickReply> postQuickReplyRepository,
         IBaseRepository<User> userRepository,
         IUnitOfWorkManage? unitOfWorkManage = null,
-        IContentModerationCaseRepository? moderationCaseRepository = null)
+        IContentModerationCaseRepository? moderationCaseRepository = null,
+        IBaseRepository<PostAnswer>? postAnswerRepository = null,
+        IBaseRepository<ProductReview>? productReviewRepository = null)
         : base(mapper, baseRepository)
     {
         _contentReportRepository = baseRepository;
@@ -54,8 +60,11 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         _postRepository = postRepository;
         _commentRepository = commentRepository;
         _channelMessageRepository = channelMessageRepository;
+        _chatChannelAccessService = chatChannelAccessService;
         _productRepository = productRepository;
         _postQuickReplyRepository = postQuickReplyRepository;
+        _postAnswerRepository = postAnswerRepository;
+        _productReviewRepository = productReviewRepository;
         _userRepository = userRepository;
         _unitOfWorkManage = unitOfWorkManage;
         _moderationCaseRepository = moderationCaseRepository;
@@ -74,7 +83,11 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         }
 
         var targetType = ParseTargetType(dto.TargetType);
-        var targetSnapshot = await ResolveReportTargetSnapshotAsync(targetType, dto.TargetContentId);
+        var targetSnapshot = await ResolveReportSubmissionTargetSnapshotAsync(
+            targetType,
+            dto.TargetContentId,
+            tenantId,
+            reporterUserId);
         if (targetSnapshot.TargetUserId < 0)
         {
             throw new BusinessException("举报目标用户不存在", 404, "Moderation.TargetUserNotFound", "error.moderation.target_user_not_found");
@@ -106,6 +119,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             TargetContentId = dto.TargetContentId,
             TargetSnapshotPostId = targetSnapshot.TargetPostId,
             TargetSnapshotChannelId = targetSnapshot.TargetChannelId,
+            TargetSnapshotProductId = targetSnapshot.TargetProductId,
             TargetSnapshotTitle = targetSnapshot.SnapshotTitle,
             TargetSnapshotSummary = targetSnapshot.SnapshotSummary,
             TargetUserId = targetSnapshot.TargetUserId,
@@ -839,7 +853,9 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             "chatmessage" => ContentReportTargetTypeEnum.ChatMessage,
             "product" => ContentReportTargetTypeEnum.Product,
             "postquickreply" => ContentReportTargetTypeEnum.PostQuickReply,
-            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、ChatMessage、Product 或 PostQuickReply")
+            "postanswer" => ContentReportTargetTypeEnum.PostAnswer,
+            "productreview" => ContentReportTargetTypeEnum.ProductReview,
+            _ => throw new ArgumentException("举报目标类型仅支持 Post、Comment、PostAnswer、ChatMessage、Product、ProductReview 或 PostQuickReply")
         };
     }
 
@@ -991,6 +1007,8 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
             (int)ContentReportTargetTypeEnum.ChatMessage => "ChatMessage",
             (int)ContentReportTargetTypeEnum.Product => "Product",
             (int)ContentReportTargetTypeEnum.PostQuickReply => "PostQuickReply",
+            (int)ContentReportTargetTypeEnum.PostAnswer => "PostAnswer",
+            (int)ContentReportTargetTypeEnum.ProductReview => "ProductReview",
             _ => "Unknown"
         };
     }

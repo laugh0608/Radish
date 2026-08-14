@@ -12,7 +12,7 @@ export interface PublicShopProductsRoute {
 export interface PublicShopDetailRoute {
   kind: 'detail';
   productId: string;
-  intent?: 'purchase';
+  intent?: 'purchase' | 'review';
 }
 
 export type PublicShopRoute =
@@ -77,13 +77,14 @@ function normalizeKeyword(value: string | null): string | undefined {
   return normalized || undefined;
 }
 
-function normalizePurchaseIntent(search: string): 'purchase' | undefined {
+function normalizeDetailIntent(search: string): 'purchase' | 'review' | undefined {
   const params = new URLSearchParams(search);
   if (params.getAll('intent').length !== 1) {
     return undefined;
   }
 
-  return params.get('intent') === 'purchase' ? 'purchase' : undefined;
+  const intent = params.get('intent');
+  return intent === 'purchase' || intent === 'review' ? intent : undefined;
 }
 
 export function isPublicShopPathname(pathname: string): boolean {
@@ -114,7 +115,7 @@ export function parsePublicShopRoute(pathname: string, search: string): PublicSh
   const detailMatched = pathname.match(/^\/shop\/product\/([1-9]\d*)\/?$/);
   const productId = normalizePositiveIntegerString(detailMatched?.[1]);
   if (productId) {
-    const intent = normalizePurchaseIntent(search);
+    const intent = normalizeDetailIntent(search);
     return intent ? {
       kind: 'detail',
       productId,
@@ -135,7 +136,7 @@ export function buildPublicShopPath(route: PublicShopRoute): string {
 
   if (route.kind === 'detail') {
     const path = `/shop/product/${route.productId}`;
-    return route.intent === 'purchase' ? `${path}?intent=purchase` : path;
+    return route.intent ? `${path}?intent=${route.intent}` : path;
   }
 
   const search = new URLSearchParams();

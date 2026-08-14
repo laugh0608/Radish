@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Upload, Alert, Steps, Progress } from 'antd';
+import { Alert, Grid, Progress, Steps, Upload } from 'antd';
 import type { RcFile, UploadChangeParam, UploadFile } from 'antd/es/upload/interface';
 import {
   AntModal as Modal,
+  BottomSheet,
   Button,
   Space,
   Table,
@@ -27,6 +28,7 @@ import './StickerBatchUploadModal.css';
 interface StickerBatchUploadModalProps {
   visible: boolean;
   groupId: string;
+  canSubmit: boolean;
   onCancel: () => void;
   onSuccess: () => void;
 }
@@ -73,13 +75,15 @@ function uploadImageWithProgress(file: RcFile, onProgress: (percent: number) => 
   return uploadAttachmentImage(file as File, { businessType: 'Sticker' }, onProgress);
 }
 
-export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess }: StickerBatchUploadModalProps) => {
+export const StickerBatchUploadModal = ({ visible, groupId, canSubmit, onCancel, onSuccess }: StickerBatchUploadModalProps) => {
   const { t } = useTranslation();
   const [currentStep, setCurrentStep] = useState(0);
   const [selectedFiles, setSelectedFiles] = useState<UploadFile[]>([]);
   const [rows, setRows] = useState<BatchUploadRow[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
 
   const uploadedRows = useMemo(
     () => rows.filter((row) => row.uploadStatus === 'uploaded' && !!row.attachmentId),
@@ -93,6 +97,8 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     () => rows.filter((row) => !!row.serverMessage && row.uploadStatus === 'uploaded' && !!row.attachmentId),
     [rows]
   );
+  const hasUnsavedWork = selectedFiles.length > 0 || rows.length > 0;
+  const hasUploadedAttachments = uploadedRows.length > 0;
 
   const updateRow = (rowId: string, updater: (row: BatchUploadRow) => BatchUploadRow) => {
     setRows((prev) => prev.map((row) => (row.rowId === rowId ? updater(row) : row)));
@@ -112,16 +118,49 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     }
   }, [visible]);
 
+  useEffect(() => {
+    if (!visible || !hasUnsavedWork) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedWork, visible]);
+
+  const closeBatch = () => {
+    resetState();
+    onCancel();
+  };
+
   const handleSafeCancel = () => {
     if (uploading || submitting) {
       message.warning(t('stickers.batch.processing'));
       return;
     }
 
-    onCancel();
+    if (!hasUnsavedWork) {
+      closeBatch();
+      return;
+    }
+
+    Modal.confirm({
+      title: t('stickers.common.discardTitle'),
+      content: t(hasUploadedAttachments
+        ? 'stickers.batch.discardUploadedDescription'
+        : 'stickers.batch.discardSelectionDescription'),
+      okText: t('stickers.common.discardConfirm'),
+      cancelText: t('stickers.common.continueEditing'),
+      okButtonProps: { danger: true },
+      onOk: closeBatch,
+    });
   };
 
   const handleFilesChange = (info: UploadChangeParam<UploadFile>) => {
+    if (!canSubmit) {
+      message.error(t('stickers.common.permissionDenied'));
+      return;
+    }
     if (info.fileList.length > MAX_BATCH_COUNT) {
       message.warning(t('stickers.batch.maxSelect', { count: MAX_BATCH_COUNT }));
     }
@@ -161,6 +200,10 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
   };
 
   const uploadRows = async (targetRows: BatchUploadRow[]) => {
+    if (!canSubmit) {
+      message.error(t('stickers.common.permissionDenied'));
+      return;
+    }
     if (targetRows.length === 0) {
       return;
     }
@@ -226,6 +269,10 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
   };
 
   const handleStartUpload = async () => {
+    if (!canSubmit) {
+      message.error(t('stickers.common.permissionDenied'));
+      return;
+    }
     if (!/^[1-9]\d*$/.test(groupId)) {
       message.error(t('stickers.batch.invalidGroup'));
       return;
@@ -257,6 +304,10 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
   };
 
   const handleRetryUploadFailed = async () => {
+    if (!canSubmit) {
+      message.error(t('stickers.common.permissionDenied'));
+      return;
+    }
     const targets = rows.filter((row) => row.uploadStatus === 'failed');
     if (targets.length === 0) {
       message.info(t('stickers.batch.noRetryUploads'));
@@ -290,6 +341,10 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
   };
 
   const submitRows = async (targets: BatchUploadRow[]) => {
+    if (!canSubmit) {
+      message.error(t('stickers.common.permissionDenied'));
+      return;
+    }
     if (targets.length === 0) {
       message.warning(t('stickers.batch.noData'));
       return;
@@ -554,6 +609,29 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     },
   ];
 
+  const renderMobileRows = (targetRows: BatchUploadRow[], editable: boolean) => (
+    <div className="sticker-batch-mobile-list">
+      {targetRows.map((row) => (
+        <article className={`sticker-batch-mobile-card${row.serverMessage ? ' sticker-batch-mobile-card--conflict' : ''}`} key={row.rowId}>
+          <div className="sticker-batch-mobile-card__header">
+            <strong>{row.originalIndex + 1}. {row.fileName}</strong>
+            <Tag color={row.uploadStatus === 'uploaded' ? 'success' : row.uploadStatus === 'failed' ? 'error' : 'processing'}>
+              {t(`stickers.batch.status.${row.uploadStatus === 'failed' ? 'failed' : row.uploadStatus}`)}
+            </Tag>
+          </div>
+          {editable ? (
+            <div className="sticker-batch-mobile-card__fields">
+              <label><span>Code</span><Input value={row.code} disabled={!canSubmit || row.uploadStatus !== 'uploaded'} onChange={(event) => updateRow(row.rowId, (item) => ({ ...item, code: event.target.value.toLowerCase().trim() }))} /></label>
+              <label><span>{t('stickers.batch.table.displayName')}</span><Input value={row.name} disabled={!canSubmit || row.uploadStatus !== 'uploaded'} onChange={(event) => updateRow(row.rowId, (item) => ({ ...item, name: event.target.value }))} /></label>
+              <label className="sticker-batch-mobile-card__switch"><span>{t('stickers.batch.table.inline')}</span><Switch checked={row.allowInline} disabled={!canSubmit || row.uploadStatus !== 'uploaded'} onChange={(checked) => updateRow(row.rowId, (item) => ({ ...item, allowInline: checked }))} /></label>
+            </div>
+          ) : <Progress percent={row.uploadStatus === 'uploaded' ? 100 : row.uploadProgress} size="small" status={row.uploadStatus === 'failed' ? 'exception' : row.uploadStatus === 'uploaded' ? 'success' : 'active'} />}
+          {row.serverMessage || row.uploadError ? <p className="sticker-batch-mobile-card__issue">{row.serverMessage || row.uploadError}</p> : null}
+        </article>
+      ))}
+    </div>
+  );
+
   const renderStepBody = () => {
     if (currentStep === 0) {
       return (
@@ -567,6 +645,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
             multiple
             accept={attachmentImageAccept}
             fileList={selectedFiles}
+            disabled={!canSubmit || uploading || submitting}
             beforeUpload={(file) => {
               const isImage = isSupportedAttachmentImageFile(file);
 
@@ -615,6 +694,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
               scroll={{ x: 860 }}
             />
           </div>
+          {renderMobileRows(rows, false)}
         </div>
       );
     }
@@ -639,6 +719,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
               scroll={{ x: 1300, y: 360 }}
             />
           </div>
+          {renderMobileRows(rows, true)}
         </div>
       );
     }
@@ -662,6 +743,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
             scroll={{ x: 1300 }}
           />
         </div>
+        {renderMobileRows(retryRows, true)}
       </div>
     );
   };
@@ -673,7 +755,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           <Button onClick={handleSafeCancel}>{t('stickers.batch.actions.cancel')}</Button>
           <Button
             variant="primary"
-            disabled={uploading || submitting}
+            disabled={!canSubmit || uploading || submitting}
             onClick={() => {
               void handleStartUpload();
             }}
@@ -707,7 +789,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
         <Space>
           <Button onClick={handleSafeCancel}>{t('stickers.batch.actions.close')}</Button>
           <Button
-            disabled={failedUploadRows.length === 0 || uploading || submitting}
+            disabled={!canSubmit || failedUploadRows.length === 0 || uploading || submitting}
             onClick={() => {
               void handleRetryUploadFailed();
             }}
@@ -716,7 +798,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
           </Button>
           <Button
             variant="primary"
-            disabled={uploadedRows.length === 0 || submitting || uploading}
+            disabled={!canSubmit || uploadedRows.length === 0 || submitting || uploading}
             onClick={() => {
               void handleSubmitAllUploaded();
             }}
@@ -739,7 +821,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
         </Button>
         <Button
           variant="primary"
-          disabled={retryRows.length === 0 || submitting || uploading}
+          disabled={!canSubmit || retryRows.length === 0 || submitting || uploading}
           onClick={() => {
             void handleSubmitRetryRows();
           }}
@@ -750,19 +832,8 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
     );
   };
 
-  return (
-    <Modal
-      title={t('stickers.batch.title')}
-      open={visible}
-      width={1200}
-      onCancel={() => {
-        handleSafeCancel();
-      }}
-      footer={renderFooter}
-      destroyOnHidden
-      maskClosable={false}
-    >
-      <div className="sticker-batch-upload-modal">
+  const content = (
+    <div className="sticker-batch-upload-modal">
         <Steps
           current={currentStep}
           items={[
@@ -774,6 +845,38 @@ export const StickerBatchUploadModal = ({ visible, groupId, onCancel, onSuccess 
         />
         {renderStepBody()}
       </div>
+  );
+
+  if (isMobile) {
+    return (
+      <BottomSheet
+        isOpen={visible}
+        onClose={handleSafeCancel}
+        closeLabel={t('stickers.batch.actions.cancel')}
+        title={t('stickers.batch.title')}
+        height="94%"
+        closeOnOverlayClick={false}
+        closeOnEscape={!uploading && !submitting}
+        className="sticker-batch-sheet"
+        footer={<div className="sticker-batch-mobile-footer">{renderFooter()}</div>}
+      >
+        {content}
+      </BottomSheet>
+    );
+  }
+
+  return (
+    <Modal
+      title={t('stickers.batch.title')}
+      open={visible}
+      width={1200}
+      onCancel={handleSafeCancel}
+      footer={renderFooter}
+      destroyOnHidden
+      maskClosable={false}
+      keyboard={false}
+    >
+      {content}
     </Modal>
   );
 };

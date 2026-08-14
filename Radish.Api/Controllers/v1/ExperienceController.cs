@@ -140,21 +140,22 @@ public class ExperienceController : ControllerBase
     /// </summary>
     [HttpGet("{userId:long}")]
     [RequireConsolePermission(ConsolePermissions.ExperienceView)]
-    public async Task<MessageModel<List<UserExperienceGovernanceActionVo>>> GetUserGovernanceActions(
+    public async Task<MessageModel<PageModel<UserExperienceGovernanceActionVo>>> GetUserGovernanceActions(
         long userId,
-        [FromQuery] int take = 20)
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 20)
     {
         if (userId <= 0)
         {
-            return BuildError<List<UserExperienceGovernanceActionVo>>(
+            return BuildError<PageModel<UserExperienceGovernanceActionVo>>(
                 HttpStatusCodeEnum.BadRequest,
                 "用户 ID 无效",
                 ApiErrorCodes.ValidationFailed,
                 "error.common.validation_failed");
         }
 
-        var result = await _experienceService.GetGovernanceActionsAsync(userId, take);
-        return MessageModel<List<UserExperienceGovernanceActionVo>>.Success("查询成功", result);
+        var result = await _experienceService.GetGovernanceActionsAsync(userId, pageIndex, pageSize);
+        return MessageModel<PageModel<UserExperienceGovernanceActionVo>>.Success("查询成功", result);
     }
 
     #endregion
@@ -298,15 +299,16 @@ public class ExperienceController : ControllerBase
     /// 管理员调整用户经验值
     /// </summary>
     /// <param name="request">调整请求</param>
-    /// <returns>是否成功</returns>
+    /// <returns>权威经验与流水</returns>
     [HttpPost]
     [RequireConsolePermission(ConsolePermissions.ExperienceAdjust)]
-    public async Task<MessageModel<bool>> AdminAdjustExperience([FromBody] AdminAdjustExpDto request)
+    public async Task<MessageModel<AdminExperienceAdjustmentResultVo>> AdminAdjustExperience(
+        [FromBody] AdminAdjustExpDto request)
     {
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return BuildError<bool>(
+            return BuildError<AdminExperienceAdjustmentResultVo>(
                 HttpStatusCodeEnum.Unauthorized,
                 "请先登录后再继续操作",
                 ApiErrorCodes.Unauthorized,
@@ -316,45 +318,35 @@ public class ExperienceController : ControllerBase
         var result = await _experienceService.AdminAdjustExperienceAsync(
             request.UserId,
             request.DeltaExp,
-            request.Reason ?? "管理员调整",
+            request.Reason,
             operatorId,
-            GetCurrentOperatorName());
+            GetCurrentOperatorName(),
+            request.ExpectedVersion,
+            request.IdempotencyKey);
 
-        return result
-            ? MessageModel<bool>.Success("调整成功", true)
-            : BuildError<bool>(
-                HttpStatusCodeEnum.BadRequest,
-                "经验调整失败",
-                "Experience.AdminAdjustRejected",
-                "error.experience.admin_adjust_rejected");
+        return MessageModel<AdminExperienceAdjustmentResultVo>.Success(
+            result.VoReplayed ? "已返回此前的调整结果" : "调整成功",
+            result);
     }
 
     /// <summary>
     /// 管理员冻结用户经验值
     /// </summary>
     /// <param name="request">冻结请求</param>
-    /// <returns>是否成功</returns>
+    /// <returns>权威经验与治理动作</returns>
     [HttpPost]
     [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
-    public async Task<MessageModel<bool>> AdminFreezeExperience([FromBody] AdminFreezeExperienceDto request)
+    public async Task<MessageModel<AdminExperienceGovernanceResultVo>> AdminFreezeExperience(
+        [FromBody] AdminFreezeExperienceDto request)
     {
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return BuildError<bool>(
+            return BuildError<AdminExperienceGovernanceResultVo>(
                 HttpStatusCodeEnum.Unauthorized,
                 "请先登录后再继续操作",
                 ApiErrorCodes.Unauthorized,
                 "error.auth.unauthorized");
-        }
-
-        if (request.FrozenUntil.HasValue && request.FrozenUntil.Value <= DateTime.Now)
-        {
-            return BuildError<bool>(
-                HttpStatusCodeEnum.BadRequest,
-                "冻结到期时间必须晚于当前时间",
-                "Experience.FreezeUntilInvalid",
-                "error.experience.freeze_until_invalid");
         }
 
         var result = await _experienceService.FreezeExperienceAsync(
@@ -362,29 +354,25 @@ public class ExperienceController : ControllerBase
             request.FrozenUntil,
             request.Reason.Trim(),
             operatorId,
-            GetCurrentOperatorName());
-        return result
-            ? MessageModel<bool>.Success("冻结成功", true)
-            : BuildError<bool>(
-                HttpStatusCodeEnum.BadRequest,
-                "经验冻结失败",
-                "Experience.FreezeRejected",
-                "error.experience.freeze_rejected");
+            GetCurrentOperatorName(),
+            request.ExpectedVersion);
+        return MessageModel<AdminExperienceGovernanceResultVo>.Success("冻结成功", result);
     }
 
     /// <summary>
     /// 管理员解冻用户经验值
     /// </summary>
     /// <param name="request">解冻请求</param>
-    /// <returns>是否成功</returns>
+    /// <returns>权威经验与治理动作</returns>
     [HttpPost]
     [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
-    public async Task<MessageModel<bool>> AdminUnfreezeExperience([FromBody] AdminUnfreezeExperienceDto request)
+    public async Task<MessageModel<AdminExperienceGovernanceResultVo>> AdminUnfreezeExperience(
+        [FromBody] AdminUnfreezeExperienceDto request)
     {
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return BuildError<bool>(
+            return BuildError<AdminExperienceGovernanceResultVo>(
                 HttpStatusCodeEnum.Unauthorized,
                 "请先登录后再继续操作",
                 ApiErrorCodes.Unauthorized,
@@ -393,15 +381,11 @@ public class ExperienceController : ControllerBase
 
         var result = await _experienceService.UnfreezeExperienceAsync(
             request.UserId,
+            request.Reason,
             operatorId,
-            GetCurrentOperatorName());
-        return result
-            ? MessageModel<bool>.Success("解冻成功", true)
-            : BuildError<bool>(
-                HttpStatusCodeEnum.BadRequest,
-                "经验解冻失败",
-                "Experience.UnfreezeRejected",
-                "error.experience.unfreeze_rejected");
+            GetCurrentOperatorName(),
+            request.ExpectedVersion);
+        return MessageModel<AdminExperienceGovernanceResultVo>.Success("解冻成功", result);
     }
 
     /// <summary>
@@ -409,12 +393,13 @@ public class ExperienceController : ControllerBase
     /// </summary>
     [HttpPost]
     [RequireConsolePermission(ConsolePermissions.ExperienceFreeze)]
-    public async Task<MessageModel<bool>> AdminRecordGovernanceReview([FromBody] AdminRecordExperienceGovernanceReviewDto request)
+    public async Task<MessageModel<AdminExperienceGovernanceResultVo>> AdminRecordGovernanceReview(
+        [FromBody] AdminRecordExperienceGovernanceReviewDto request)
     {
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return BuildError<bool>(
+            return BuildError<AdminExperienceGovernanceResultVo>(
                 HttpStatusCodeEnum.Unauthorized,
                 "请先登录后再继续操作",
                 ApiErrorCodes.Unauthorized,
@@ -426,13 +411,29 @@ public class ExperienceController : ControllerBase
             operatorId,
             GetCurrentOperatorName());
 
-        return result
-            ? MessageModel<bool>.Success("复核结论记录成功", true)
-            : BuildError<bool>(
-                HttpStatusCodeEnum.BadRequest,
-                "复核结论记录失败",
-                "Experience.ReviewRejected",
-                "error.experience.review_rejected");
+        return MessageModel<AdminExperienceGovernanceResultVo>.Success(
+            result.VoReplayed ? "已返回此前的复核结果" : "复核结论记录成功",
+            result);
+    }
+
+    /// <summary>预览等级配置重算差异。</summary>
+    [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.ExperienceRecalculate)]
+    public async Task<MessageModel<ExperienceLevelRecalculationPreviewVo>> PreviewLevelConfigRecalculation()
+    {
+        var result = await _experienceService.PreviewLevelConfigRecalculationAsync();
+        return MessageModel<ExperienceLevelRecalculationPreviewVo>.Success("预览生成成功", result);
+    }
+
+    /// <summary>查询等级配置重算审计。</summary>
+    [HttpGet]
+    [RequireConsolePermission(ConsolePermissions.ExperienceRecalculate)]
+    public async Task<MessageModel<PageModel<ExperienceLevelRecalculationAuditVo>>> GetLevelRecalculationAudits(
+        [FromQuery] int pageIndex = 1,
+        [FromQuery] int pageSize = 20)
+    {
+        var result = await _experienceService.GetLevelRecalculationAuditsAsync(pageIndex, pageSize);
+        return MessageModel<PageModel<ExperienceLevelRecalculationAuditVo>>.Success("查询成功", result);
     }
 
     /// <summary>
@@ -445,32 +446,26 @@ public class ExperienceController : ControllerBase
     /// <returns>更新后的等级配置列表</returns>
     [HttpPost]
     [RequireConsolePermission(ConsolePermissions.ExperienceRecalculate)]
-    public async Task<MessageModel<List<LevelConfigVo>>> RecalculateLevelConfigs()
+    public async Task<MessageModel<ExperienceLevelRecalculationResultVo>> RecalculateLevelConfigs(
+        [FromBody] RecalculateLevelConfigsDto request)
     {
         var operatorId = GetCurrentUserId();
         if (operatorId <= 0)
         {
-            return BuildError<List<LevelConfigVo>>(
+            return BuildError<ExperienceLevelRecalculationResultVo>(
                 HttpStatusCodeEnum.Unauthorized,
                 "请先登录后再继续操作",
                 ApiErrorCodes.Unauthorized,
                 "error.auth.unauthorized");
         }
 
-        try
-        {
-            var result = await _experienceService.RecalculateLevelConfigsAsync(operatorId, GetCurrentOperatorName());
-            return MessageModel<List<LevelConfigVo>>.Success($"成功重新计算 {result.Count} 个等级配置", result);
-        }
-        catch (Exception ex)
-        {
-            throw new BusinessException(
-                "重新计算等级配置失败，请稍后重试",
-                ex,
-                StatusCodes.Status500InternalServerError,
-                "System.UnexpectedError",
-                "error.system.unexpected_error");
-        }
+        var result = await _experienceService.RecalculateLevelConfigsAsync(
+            request,
+            operatorId,
+            GetCurrentOperatorName());
+        return MessageModel<ExperienceLevelRecalculationResultVo>.Success(
+            $"成功更新 {result.VoAudit.VoChangedLevelCount} 个等级配置",
+            result);
     }
 
     #endregion

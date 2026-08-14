@@ -316,6 +316,38 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         return updated;
     }
 
+    public async Task<bool> UpdateGroupStatusAsync(long id, bool isEnabled, long operatorId, string operatorName)
+    {
+        if (id <= 0)
+        {
+            throw new ArgumentException("分组ID无效", nameof(id));
+        }
+
+        var entity = await _stickerGroupRepository.QueryByIdAsync(id);
+        if (entity == null || entity.IsDeleted)
+        {
+            return false;
+        }
+
+        var affected = await _stickerGroupRepository.UpdateColumnsAsync(
+            group => new StickerGroup
+            {
+                IsEnabled = isEnabled,
+                ModifyTime = DateTime.UtcNow,
+                ModifyBy = NormalizeOperatorName(operatorName),
+                ModifyId = operatorId
+            },
+            group => group.Id == id);
+
+        if (affected > 0)
+        {
+            await InvalidateGroupsCacheAsync(entity.TenantId);
+        }
+
+        return affected > 0;
+    }
+
+    [UseTran(Propagation = Propagation.Required)]
     public async Task<bool> DeleteGroupAsync(long id, long operatorId, string operatorName)
     {
         if (id <= 0)
@@ -443,27 +475,19 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             return false;
         }
 
-        if (updateDto.AttachmentId.HasValue)
+        var group = await _stickerGroupRepository.QueryByIdAsync(entity.GroupId);
+        if (group == null || group.IsDeleted)
         {
-            var groupCode = string.Empty;
-            if (updateDto.AttachmentId.HasValue)
-            {
-                var group = await _stickerGroupRepository.QueryByIdAsync(entity.GroupId);
-                groupCode = group?.Code ?? string.Empty;
-            }
+            return false;
+        }
 
-            var isAnimated = await ResolveStickerAttachmentAsync(
-                updateDto.AttachmentId,
-                updateDto.IsAnimated,
-                groupCode,
-                entity.Code);
-            entity.IsAnimated = isAnimated;
-            entity.AttachmentId = updateDto.AttachmentId;
-        }
-        else
-        {
-            entity.IsAnimated = updateDto.IsAnimated;
-        }
+        var isAnimated = await ResolveStickerAttachmentAsync(
+            updateDto.AttachmentId,
+            updateDto.IsAnimated,
+            group.Code,
+            entity.Code);
+        entity.IsAnimated = isAnimated;
+        entity.AttachmentId = updateDto.AttachmentId;
 
         entity.Name = updateDto.Name.Trim();
         entity.AllowInline = updateDto.AllowInline;
@@ -491,6 +515,12 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         var entity = await _stickerRepository.QueryByIdAsync(id);
         if (entity == null || entity.IsDeleted)
+        {
+            return false;
+        }
+
+        var group = await _stickerGroupRepository.QueryByIdAsync(entity.GroupId);
+        if (group == null || group.IsDeleted)
         {
             return false;
         }
@@ -529,6 +559,12 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             return false;
         }
 
+        var group = await _stickerGroupRepository.QueryByIdAsync(groupId);
+        if (group == null || group.IsDeleted)
+        {
+            return false;
+        }
+
         var exists = await _stickerRepository.QueryExistsAsync(
             s => s.GroupId == groupId && s.Code == normalizedCode);
         return !exists;
@@ -537,6 +573,12 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
     public async Task<List<StickerVo>> GetGroupStickersAsync(long groupId, bool includeDisabled = true)
     {
         if (groupId <= 0)
+        {
+            return new List<StickerVo>();
+        }
+
+        var group = await _stickerGroupRepository.QueryByIdAsync(groupId);
+        if (group == null || group.IsDeleted)
         {
             return new List<StickerVo>();
         }
@@ -747,32 +789,49 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
     }
 
     [UseTran(Propagation = Propagation.Required)]
-    public async Task<int> BatchUpdateSortAsync(List<StickerSortItemDto> items, long operatorId, string operatorName)
+    public async Task<int> BatchUpdateSortAsync(BatchUpdateStickerSortDto request, long operatorId, string operatorName)
     {
-        if (items == null || items.Count == 0)
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (request.GroupId <= 0)
+        {
+            throw new ArgumentException("分组ID无效", nameof(request.GroupId));
+        }
+
+        if (request.Items == null || request.Items.Count == 0)
         {
             return 0;
         }
 
-        var normalizedItems = items
-            .Where(i => i.Id > 0)
-            .GroupBy(i => i.Id)
-            .Select(g => g.Last())
+        if (request.Items.Any(item => item.Id <= 0))
+        {
+            throw new ArgumentException("排序列表包含无效的表情ID", nameof(request.Items));
+        }
+
+        var duplicateIds = request.Items
+            .GroupBy(item => item.Id)
+            .Where(group => group.Count() > 1)
+            .Select(group => group.Key)
             .ToList();
-
-        if (normalizedItems.Count == 0)
+        if (duplicateIds.Count > 0)
         {
-            return 0;
+            throw new ArgumentException("排序列表包含重复的表情ID", nameof(request.Items));
         }
 
-        var idList = normalizedItems.Select(i => i.Id).ToList();
+        var group = await _stickerGroupRepository.QueryByIdAsync(request.GroupId);
+        if (group == null || group.IsDeleted)
+        {
+            throw new InvalidOperationException("分组不存在或已删除");
+        }
+
+        var idList = request.Items.Select(item => item.Id).ToList();
         var stickers = await _stickerRepository.QueryByIdsAsync(idList);
-        if (stickers.Count == 0)
+        if (stickers.Count != idList.Count || stickers.Any(sticker => sticker.GroupId != request.GroupId))
         {
-            return 0;
+            throw new InvalidOperationException("排序快照已失效，请刷新后重试");
         }
 
-        var sortMap = normalizedItems.ToDictionary(i => i.Id, i => Math.Max(0, i.Sort));
+        var sortMap = request.Items.ToDictionary(item => item.Id, item => item.Sort);
         var modifier = NormalizeOperatorName(operatorName);
         var now = DateTime.Now;
 
@@ -790,12 +849,12 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
 
         var affected = await _stickerRepository.UpdateRangeAsync(stickers);
-
-        var groupIds = stickers.Select(s => s.GroupId).Distinct().ToList();
-        foreach (var groupId in groupIds)
+        if (affected != stickers.Count)
         {
-            await InvalidateGroupsCacheByGroupIdAsync(groupId);
+            throw new InvalidOperationException("排序写入未完整提交，请刷新后重试");
         }
+
+        await InvalidateGroupsCacheAsync(group.TenantId);
 
         return affected;
     }

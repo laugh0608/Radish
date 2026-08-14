@@ -36,6 +36,7 @@ internal sealed class WikiAuthorCollaborationSchemaMigration : ISchemaMigration
         EnsureTable<WikiDocumentCollaborator>(db, CollaboratorTable);
         Console.WriteLine("[Radish.DbMigrate] Wiki authoring: 检查审核事件表。");
         EnsureTable<WikiDocumentReviewEvent>(db, ReviewEventTable);
+        EnsureAuthoringIndexes(db);
 
         if (!db.DbMaintenance.IsAnyTable("User", false))
         {
@@ -139,8 +140,88 @@ internal sealed class WikiAuthorCollaborationSchemaMigration : ISchemaMigration
         {
             return db.DbMaintenance.IsAnyIndex(indexName);
         }
-        return db.DbMaintenance.GetIndexList(tableName)
+
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, tableName);
+        return physicalTableName != null && db.DbMaintenance.GetIndexList(physicalTableName)
             .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static void EnsureAuthoringIndexes(ISqlSugarClient db)
+    {
+        EnsureIndex(
+            db,
+            DraftTable,
+            "idx_wikidraft_document_state",
+            false,
+            (nameof(WikiDocumentDraft.TenantId), false),
+            (nameof(WikiDocumentDraft.DocumentId), false),
+            (nameof(WikiDocumentDraft.ReviewState), false));
+        EnsureIndex(
+            db,
+            DraftTable,
+            "idx_wikidraft_review_time",
+            false,
+            (nameof(WikiDocumentDraft.TenantId), false),
+            (nameof(WikiDocumentDraft.ReviewState), false),
+            (nameof(WikiDocumentDraft.SubmittedAt), true));
+        EnsureIndex(
+            db,
+            CollaboratorTable,
+            "idx_wikicollab_document_user",
+            true,
+            (nameof(WikiDocumentCollaborator.TenantId), false),
+            (nameof(WikiDocumentCollaborator.DocumentId), false),
+            (nameof(WikiDocumentCollaborator.UserId), false));
+        EnsureIndex(
+            db,
+            CollaboratorTable,
+            "idx_wikicollab_user_state",
+            false,
+            (nameof(WikiDocumentCollaborator.TenantId), false),
+            (nameof(WikiDocumentCollaborator.UserId), false),
+            (nameof(WikiDocumentCollaborator.InviteState), false));
+        EnsureIndex(
+            db,
+            ReviewEventTable,
+            "idx_wikireview_document_time",
+            false,
+            (nameof(WikiDocumentReviewEvent.TenantId), false),
+            (nameof(WikiDocumentReviewEvent.DocumentId), false),
+            (nameof(WikiDocumentReviewEvent.CreateTime), true));
+        EnsureIndex(
+            db,
+            ReviewEventTable,
+            "idx_wikireview_draft_time",
+            false,
+            (nameof(WikiDocumentReviewEvent.TenantId), false),
+            (nameof(WikiDocumentReviewEvent.DraftId), false),
+            (nameof(WikiDocumentReviewEvent.CreateTime), true));
+    }
+
+    private static void EnsureIndex(
+        ISqlSugarClient db,
+        string configuredTableName,
+        string indexName,
+        bool isUnique,
+        params (string ColumnName, bool Descending)[] columns)
+    {
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, configuredTableName)
+                                ?? throw new InvalidOperationException(
+                                    $"{configuredTableName} 不存在，无法创建索引 {indexName}。");
+        var physicalColumns = columns.Select(column =>
+        {
+            var resolvedColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                physicalTableName,
+                column.ColumnName)
+                ?? throw new InvalidOperationException(
+                    $"{configuredTableName}.{column.ColumnName} 不存在，无法创建索引 {indexName}。");
+            return $"{QuoteIdentifier(resolvedColumn.ColumnName)}{(column.Descending ? " DESC" : string.Empty)}";
+        });
+        db.Ado.ExecuteCommand(
+            $"CREATE {(isUnique ? "UNIQUE " : string.Empty)}INDEX IF NOT EXISTS " +
+            $"{QuoteIdentifier(indexName)} ON {QuoteIdentifier(physicalTableName)} " +
+            $"({string.Join(", ", physicalColumns)})");
     }
 
     private static void EnsureWikiDocumentAuthoringColumns(ISqlSugarClient db)
@@ -198,7 +279,7 @@ internal sealed class WikiAuthorCollaborationSchemaMigration : ISchemaMigration
 
     private static void EnsureTable<TEntity>(ISqlSugarClient db, string tableName)
     {
-        if (!db.DbMaintenance.IsAnyTable(tableName, false))
+        if (DatabaseIdentifierResolver.ResolveTable(db, tableName) == null)
         {
             db.CodeFirst.InitTables<TEntity>();
         }

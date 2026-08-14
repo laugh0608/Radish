@@ -113,8 +113,7 @@ public class ProductServiceTest
             BenefitValue = "theme-not-registered",
             Price = 200,
             StockType = StockType.Unlimited,
-            DurationType = DurationType.Permanent,
-            IsOnSale = false
+            DurationType = DurationType.Permanent
         };
 
         var exception = await Assert.ThrowsAsync<BusinessException>(
@@ -172,7 +171,6 @@ public class ProductServiceTest
             ProductType = ProductType.Consumable,
             ConsumableType = ConsumableType.CoinCard,
             BenefitValue = null,
-            IsOnSale = true,
             Price = 50,
             StockType = StockType.Limited,
             Stock = 10,
@@ -466,7 +464,6 @@ public class ProductServiceTest
                 target.StockType = source.StockType;
                 target.Stock = source.Stock;
                 target.DurationType = source.DurationType;
-                target.IsOnSale = source.IsOnSale;
             })
             .Returns((UpdateProductDto _, Product target) => target);
         var productRepository = CreateProductRepository(product);
@@ -510,7 +507,6 @@ public class ProductServiceTest
                 StockType = StockType.Limited,
                 Stock = 8,
                 DurationType = DurationType.Permanent,
-                IsOnSale = true,
                 ExpectedVersion = 3
             },
             10001,

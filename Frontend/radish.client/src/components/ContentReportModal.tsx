@@ -53,6 +53,8 @@ export const ContentReportModal = ({
         return t('report.target.chatMessage');
       case 'Product':
         return t('report.target.product');
+      case 'ProductReview':
+        return t('report.target.productReview');
       case 'Post':
       default:
         return t('report.target.post');

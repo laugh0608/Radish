@@ -42,7 +42,7 @@ public interface IChatService : IBaseService<Channel, ChannelVo>
     Task<List<ChannelMessageVo>> GetHistoryAsync(long tenantId, long userId, long channelId, long? beforeMessageId, long? afterMessageId, int pageSize = 50);
 
     /// <summary>获取目标消息附近的窗口消息</summary>
-    Task<ChannelMessageWindowVo?> GetMessageWindowAsync(
+    Task<ChannelMessageWindowVo> GetMessageWindowAsync(
         long tenantId,
         long userId,
         long channelId,

@@ -37,7 +37,7 @@ import {
   resolvePublicForumReadSectionState,
 } from './publicForumViewState';
 import { PublicStatusCard } from './PublicStatusCard';
-import styles from './PublicForumApp.module.css';
+import { publicForumBrowseStyles as styles } from './publicForumBrowseStyles';
 
 interface PublicForumListProps {
   routeState: PublicForumListRoute;
@@ -375,7 +375,7 @@ export const PublicForumList = ({
   };
 
   return (
-    <div className={styles.forumGrid}>
+    <div className={styles.forumGrid} data-public-forum-browse="list">
       <section className={`${styles.sectionCard} ${styles.listSectionCard}`}>
       <div className={styles.sectionHeader}>
         <div className={styles.sectionHeading}>

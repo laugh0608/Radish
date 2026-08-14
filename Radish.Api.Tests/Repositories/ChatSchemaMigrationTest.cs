@@ -551,6 +551,92 @@ public sealed class ChatSchemaMigrationTest
     }
 
     [Fact]
+    public void ChatChannelDiscoverabilityMigration_ShouldKeepLegacyChannelsHiddenAndRemainRepeatable()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-chat-discoverability-{Guid.NewGuid():N}.db");
+        using var db = CreateClient(path, "Chat");
+        using var services = new ServiceCollection().BuildServiceProvider();
+
+        try
+        {
+            db.CodeFirst.InitTables<Channel>();
+            db.Insertable(CreateChannel(5501)).ExecuteCommand();
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_tenant_discover\"");
+            db.Ado.ExecuteCommand("ALTER TABLE \"Channel\" DROP COLUMN \"DiscoverVisibilityVersion\"");
+            db.Ado.ExecuteCommand("ALTER TABLE \"Channel\" DROP COLUMN \"DiscoverVisibility\"");
+
+            var migration = ChatChannelDiscoverabilitySchemaMigration.Instance;
+            Assert.Contains(
+                migration.Diagnose(db, services),
+                warning => warning.Contains("1 个历史 Chat 频道", StringComparison.Ordinal));
+
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            var channel = db.Queryable<Channel>().InSingle(5501);
+            Assert.Equal(ChannelDiscoverVisibility.Hidden, channel.DiscoverVisibility);
+            Assert.Equal(0, channel.DiscoverVisibilityVersion);
+            Assert.True(db.DbMaintenance.IsAnyTable("ChannelDiscoverVisibilityEvent", false));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_channel_tenant_discover"));
+            Assert.True(db.DbMaintenance.IsAnyIndex("idx_channel_discover_event_version"));
+
+            db.Insertable(CreateDiscoverVisibilityEvent(5601, 5501)).ExecuteCommand();
+            Assert.ThrowsAny<Exception>(() =>
+                db.Insertable(CreateDiscoverVisibilityEvent(5602, 5501)).ExecuteCommand());
+            Assert.Empty(migration.Verify(db, services));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Database", "PostgreSQL")]
+    public async Task ChatChannelDiscoverabilityMigration_ShouldSupportPostgreSql()
+    {
+        var adminConnectionString = Environment.GetEnvironmentVariable(PostgreSqlConnectionStringEnvironmentVariable);
+        Assert.SkipWhen(
+            string.IsNullOrWhiteSpace(adminConnectionString),
+            $"未配置 {PostgreSqlConnectionStringEnvironmentVariable}，跳过 Chat discoverability PostgreSQL 迁移测试");
+
+        var schema = $"chat_discoverability_{Guid.NewGuid():N}";
+        using var adminDb = CreatePostgreSqlClient(adminConnectionString!);
+        await adminDb.Ado.ExecuteCommandAsync($"CREATE SCHEMA {QuoteIdentifier(schema)}");
+        try
+        {
+            var connectionString = $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
+            using var db = CreatePostgreSqlClient(connectionString);
+            using var services = new ServiceCollection().BuildServiceProvider();
+            db.CodeFirst.InitTables<Channel>();
+            db.Insertable(CreateChannel(5501)).ExecuteCommand();
+            db.Ado.ExecuteCommand("DROP INDEX IF EXISTS \"idx_channel_tenant_discover\"");
+            DropColumn(db, "Channel", "DiscoverVisibilityVersion");
+            DropColumn(db, "Channel", "DiscoverVisibility");
+
+            var migration = ChatChannelDiscoverabilitySchemaMigration.Instance;
+            migration.Apply(db, services);
+            migration.Apply(db, services);
+
+            Assert.Empty(migration.Verify(db, services));
+            var channel = db.Queryable<Channel>().InSingle(5501);
+            Assert.Equal(ChannelDiscoverVisibility.Hidden, channel.DiscoverVisibility);
+            Assert.Equal(0, channel.DiscoverVisibilityVersion);
+            db.Insertable(CreateDiscoverVisibilityEvent(5601, 5501)).ExecuteCommand();
+            Assert.ThrowsAny<Exception>(() =>
+                db.Insertable(CreateDiscoverVisibilityEvent(5602, 5501)).ExecuteCommand());
+        }
+        finally
+        {
+            await adminDb.Ado.ExecuteCommandAsync($"DROP SCHEMA IF EXISTS {QuoteIdentifier(schema)} CASCADE");
+        }
+    }
+
+    [Fact]
     public void ChatAttachmentPrivacyMigration_ShouldOnlyMakeChatAttachmentsPrivate()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-chat-attachment-migration-{Guid.NewGuid():N}.db");
@@ -685,6 +771,24 @@ public sealed class ChatSchemaMigrationTest
             CreateTime = DateTime.UtcNow,
             CreateBy = "Tester",
             CreateId = 20001
+        };
+    }
+
+    private static ChannelDiscoverVisibilityEvent CreateDiscoverVisibilityEvent(long id, long channelId)
+    {
+        return new ChannelDiscoverVisibilityEvent
+        {
+            Id = id,
+            TenantId = 30000,
+            ChannelId = channelId,
+            FromVisibility = ChannelDiscoverVisibility.Hidden,
+            ToVisibility = ChannelDiscoverVisibility.Summary,
+            ExpectedVersion = 0,
+            ResultVersion = 1,
+            Reason = "公开经过确认的频道摘要",
+            ActorUserId = 20001,
+            ActorName = "Tester",
+            CreateTime = DateTime.UtcNow
         };
     }
 

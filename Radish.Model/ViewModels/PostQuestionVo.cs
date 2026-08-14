@@ -14,6 +14,12 @@ public class PostQuestionVo
     /// <summary>已采纳答案 ID</summary>
     public long? VoAcceptedAnswerId { get; set; }
 
+    /// <summary>已采纳回答公开标识</summary>
+    public string? VoAcceptedAnswerPublicId { get; set; }
+
+    /// <summary>采纳状态 CAS 版本</summary>
+    public int VoAcceptanceRevision { get; set; }
+
     /// <summary>回答数</summary>
     public int VoAnswerCount { get; set; }
 
@@ -28,6 +34,9 @@ public class PostAnswerVo
 {
     /// <summary>回答 ID</summary>
     public long VoAnswerId { get; set; }
+
+    /// <summary>回答公开标识</summary>
+    public string VoPublicId { get; set; } = string.Empty;
 
     /// <summary>帖子 ID</summary>
     public long VoPostId { get; set; }
@@ -53,6 +62,20 @@ public class PostAnswerVo
     /// <summary>是否已采纳</summary>
     public bool VoIsAccepted { get; set; }
 
+    public int VoContentRevision { get; set; }
+
+    public int VoEditCount { get; set; }
+
+    public bool VoIsEnabled { get; set; }
+
+    public bool VoCanEdit { get; set; }
+
+    public bool VoCanDelete { get; set; }
+
+    public bool VoCanReport { get; set; }
+
     /// <summary>创建时间</summary>
     public DateTime VoCreateTime { get; set; }
+
+    public DateTime? VoModifyTime { get; set; }
 }

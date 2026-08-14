@@ -8,6 +8,7 @@ import { tokenService } from './services/tokenService';
 import { env } from './config/env';
 import { log } from './utils/logger';
 import { ConsoleRouterProvider } from './router';
+import { rememberConsoleAuthReturnPath } from './services/authReturnPath';
 
 setupApiInterceptors();
 
@@ -19,6 +20,7 @@ function App() {
 
       const isLoginPage = window.location.pathname.endsWith('/login');
       if (!isLoginPage) {
+        rememberConsoleAuthReturnPath(window.location);
         window.location.href = '/console/login?auto=1&reason=idle';
       }
     });

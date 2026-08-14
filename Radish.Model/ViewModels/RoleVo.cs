@@ -1,4 +1,4 @@
-﻿namespace Radish.Model.ViewModels;
+namespace Radish.Model.ViewModels;
 
 public class RoleVo
 {
@@ -9,6 +9,7 @@ public class RoleVo
     public string VoDepartmentIds { get; set; } = string.Empty;
     public int VoAuthorityScope { get; set; }
     public bool VoIsEnabled { get; set; }
+    public bool VoIsBuiltIn { get; set; }
     public bool VoIsDeleted { get; set; }
     public long VoCreateId { get; set; }
     public string VoCreateBy { get; set; } = string.Empty;

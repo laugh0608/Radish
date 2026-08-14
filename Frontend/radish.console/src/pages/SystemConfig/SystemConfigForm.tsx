@@ -3,14 +3,19 @@ import type { TFunction } from 'i18next';
 import { useTranslation } from 'react-i18next';
 import {
   AntModal as Modal,
+  BottomSheet,
   Form,
   AntInput as Input,
   AntSelect as Select,
+  Button,
   Descriptions,
   InputNumber,
+  SettingOutlined,
   Tag,
   message,
 } from '@radish/ui';
+import { Grid } from 'antd';
+import { ApiResponseError } from '@radish/http';
 import {
   updateConfig,
   getConfigById,
@@ -27,6 +32,13 @@ interface SystemConfigFormProps {
   configId?: number;
   onCancel: () => void;
   onSuccess: () => void;
+}
+
+interface SystemConfigFormValues {
+  value?: string | number;
+  reason?: string;
+  confirmRiskLevel?: string;
+  confirmKey?: string;
 }
 
 const hasNumberConstraint = (value?: number | null): value is number => (
@@ -94,32 +106,47 @@ export const SystemConfigForm = ({
   const [config, setConfig] = useState<SystemConfigVo>();
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string>();
+  const [dirty, setDirty] = useState(false);
+  const [versionConflict, setVersionConflict] = useState(false);
+  const watchedValue = Form.useWatch('value', form);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
+  const mobileRiskBlocked = isMobile && config !== undefined && config.voRiskLevel !== 'Low';
 
   const loadConfigDetail = useCallback(async (id: number) => {
     try {
       setInitialLoading(true);
+      setLoadError(undefined);
+      setVersionConflict(false);
+      setConfig(undefined);
+      form.resetFields();
       const nextConfig = await getConfigById(id, t);
       setConfig(nextConfig);
       form.setFieldsValue({
         value: normalizeFormValue(nextConfig),
         reason: '',
+        confirmRiskLevel: '',
+        confirmKey: '',
       });
+      setDirty(false);
     } catch (error) {
       log.error('SystemConfigForm', '加载系统设置详情失败:', error);
-      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.loadDetailFailed'));
+      const errorMessage = error instanceof Error ? error.message : t('systemConfig.feedback.loadDetailFailed');
+      setLoadError(errorMessage);
+      message.error(errorMessage);
     } finally {
       setInitialLoading(false);
     }
   }, [form, t]);
 
-  const handleSubmit = async () => {
+  const performSubmit = async (values: SystemConfigFormValues) => {
     if (!configId || !config) {
       message.error(t('systemConfig.feedback.notReady'));
       return;
     }
 
     try {
-      const values = await form.validateFields();
       setLoading(true);
 
       let processedValue = String(values.value);
@@ -130,25 +157,106 @@ export const SystemConfigForm = ({
       await updateConfig(configId, {
         value: processedValue,
         isEnabled: true,
-        reason: String(values.reason).trim(),
-        confirmRiskLevel: config.voRiskLevel,
-        confirmKey: config.voKey,
+        reason: values.reason?.trim() ?? '',
+        confirmRiskLevel: values.confirmRiskLevel?.trim(),
+        confirmKey: values.confirmKey?.trim(),
         expectedVersion: config.voVersion,
       }, t);
       message.success(t('systemConfig.feedback.updateSuccess'));
+      setDirty(false);
       onSuccess();
     } catch (error) {
       log.error('SystemConfigForm', '提交系统设置失败:', error);
-      message.error(error instanceof Error ? error.message : t('systemConfig.feedback.updateFailed'));
+      const isConflict = error instanceof ApiResponseError &&
+        (error.httpStatus === 409 || error.statusCode === 409 || error.code === 'SystemConfig.VersionConflict');
+      if (isConflict) {
+        setVersionConflict(true);
+        message.warning(t('systemConfig.feedback.versionConflict'));
+      } else {
+        message.error(error instanceof Error ? error.message : t('systemConfig.feedback.updateFailed'));
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
+  const handleSubmit = async () => {
+    if (!config) {
+      message.error(t('systemConfig.feedback.notReady'));
+      return;
+    }
+
+    if (isMobile && config.voRiskLevel !== 'Low') {
+      message.error(t('systemConfig.feedback.mediumDesktopOnly'));
+      return;
+    }
+
+    let values: SystemConfigFormValues;
+    try {
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    if (config.voRiskLevel === 'Low') {
+      Modal.confirm({
+        title: t('systemConfig.confirm.lowTitle'),
+        content: t('systemConfig.confirm.lowDescription', {
+          key: config.voKey,
+          oldValue: config.voEffectiveValue,
+          newValue: String(values.value ?? ''),
+        }),
+        okText: t('systemConfig.confirm.apply'),
+        cancelText: t('roles.common.cancel'),
+        onOk: () => performSubmit(values),
+      });
+      return;
+    }
+
+    await performSubmit(values);
+  };
+
+  const closeForm = () => {
     form.resetFields();
     setConfig(undefined);
+    setLoadError(undefined);
+    setDirty(false);
+    setVersionConflict(false);
     onCancel();
+  };
+
+  const handleCancel = () => {
+    if (!dirty) {
+      closeForm();
+      return;
+    }
+
+    Modal.confirm({
+      title: t('systemConfig.form.discardTitle'),
+      content: t('systemConfig.form.discardDescription'),
+      okText: t('systemConfig.form.discardConfirm'),
+      cancelText: t('roles.common.cancel'),
+      onOk: closeForm,
+    });
+  };
+
+  const requestReloadAuthority = () => {
+    if (!configId) {
+      return;
+    }
+
+    if (!dirty) {
+      void loadConfigDetail(configId);
+      return;
+    }
+
+    Modal.confirm({
+      title: t('systemConfig.form.reloadConfirmTitle'),
+      content: t('systemConfig.form.reloadConfirmDescription'),
+      okText: t('systemConfig.form.reloadAuthority'),
+      cancelText: t('roles.common.cancel'),
+      onOk: () => loadConfigDetail(configId),
+    });
   };
 
   useEffect(() => {
@@ -157,8 +265,24 @@ export const SystemConfigForm = ({
     } else {
       form.resetFields();
       setConfig(undefined);
+      setLoadError(undefined);
+      setDirty(false);
+      setVersionConflict(false);
     }
   }, [visible, configId, form, loadConfigDetail]);
+
+  useEffect(() => {
+    if (!visible || !dirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [dirty, visible]);
 
   const renderValueInput = () => {
     switch (config?.voType) {
@@ -225,6 +349,11 @@ export const SystemConfigForm = ({
         label: t('systemConfig.form.effectiveMode'),
         children: t(`systemConfig.mode.${config.voEffectiveMode}`, { defaultValue: config.voEffectiveMode }),
       },
+      {
+        key: 'version',
+        label: t('systemConfig.form.version'),
+        children: <code>{config.voVersion}</code>,
+      },
     ];
 
     if (config.voType === 'number') {
@@ -246,20 +375,8 @@ export const SystemConfigForm = ({
     return items;
   };
 
-  return (
-    <Modal
-      title={t('systemConfig.form.title')}
-      open={visible}
-      onOk={handleSubmit}
-      onCancel={handleCancel}
-      confirmLoading={loading}
-      okButtonProps={{
-        disabled: initialLoading || !config?.voIsEditable,
-      }}
-      width={640}
-      destroyOnHidden
-      forceRender
-    >
+  const formContent = (
+    <>
       {config ? (
         <Descriptions
           column={1}
@@ -275,11 +392,61 @@ export const SystemConfigForm = ({
         </div>
       ) : null}
 
+      {config ? (
+        <div className="system-config-change-summary">
+          <div><span>{t('systemConfig.form.oldValue')}</span><strong>{config.voEffectiveValue}</strong></div>
+          <div><span>{t('systemConfig.form.newValue')}</span><strong>{watchedValue === undefined ? '-' : String(watchedValue)}</strong></div>
+          <div><span>{t('systemConfig.form.impact')}</span><strong>{getSystemConfigImpact(config, t)}</strong></div>
+          <div><span>{t('systemConfig.form.effectiveMode')}</span><strong>{t(`systemConfig.mode.${config.voEffectiveMode}`, { defaultValue: config.voEffectiveMode })}</strong></div>
+        </div>
+      ) : null}
+
+      {dirty && config ? (
+        <div className="system-config-dirty-note">
+          <strong>{t('systemConfig.form.dirtyTitle')}</strong>
+          <span>{t('systemConfig.form.dirtyDescription', {
+            oldValue: config.voEffectiveValue,
+            newValue: watchedValue === undefined ? '-' : String(watchedValue),
+          })}</span>
+        </div>
+      ) : null}
+
+      {config ? (
+        <div className="system-config-cas-note">
+          <strong>{t('systemConfig.form.casTitle', { version: config.voVersion })}</strong>
+          <span>{t('systemConfig.form.casDescription')}</span>
+        </div>
+      ) : null}
+
+      {versionConflict ? (
+        <div className="system-config-risk-note" role="alert">
+          <strong>{t('systemConfig.form.conflictTitle')}</strong>
+          <p>{t('systemConfig.form.conflictDescription')}</p>
+          <Button onClick={requestReloadAuthority}>
+            {t('systemConfig.form.reloadAuthority')}
+          </Button>
+        </div>
+      ) : null}
+
+      {loadError ? (
+        <div className="system-config-risk-note" role="alert">
+          <strong>{t('systemConfig.form.unavailableTitle')}</strong>
+          <p>{loadError}</p>
+          <Button onClick={() => configId && void loadConfigDetail(configId)}>
+            {t('systemConfig.form.retry')}
+          </Button>
+        </div>
+      ) : null}
+
       <Form
         form={form}
         layout="vertical"
         disabled={initialLoading || !config?.voIsEditable}
         className="system-config-edit-form"
+        onValuesChange={() => {
+          setDirty(true);
+          setVersionConflict(false);
+        }}
       >
         <Form.Item
           name="value"
@@ -307,6 +474,42 @@ export const SystemConfigForm = ({
         >
           {renderValueInput()}
         </Form.Item>
+        {config && config.voRiskLevel !== 'Low' ? (
+          <>
+            <Form.Item
+              name="confirmRiskLevel"
+              label={t('systemConfig.form.confirmRiskLevel')}
+              rules={[
+                { required: true, message: t('systemConfig.form.confirmRiskLevelRequired') },
+                {
+                  validator: async (_, value) => {
+                    if (String(value ?? '').trim().toLowerCase() !== config.voRiskLevel.toLowerCase()) {
+                      throw new Error(t('systemConfig.form.confirmRiskLevelMismatch', { value: config.voRiskLevel }));
+                    }
+                  },
+                },
+              ]}
+            >
+              <Input placeholder={t('systemConfig.form.confirmRiskLevelPlaceholder', { value: config.voRiskLevel })} />
+            </Form.Item>
+            <Form.Item
+              name="confirmKey"
+              label={t('systemConfig.form.confirmKey')}
+              rules={[
+                { required: true, message: t('systemConfig.form.confirmKeyRequired') },
+                {
+                  validator: async (_, value) => {
+                    if (String(value ?? '').trim() !== config.voKey) {
+                      throw new Error(t('systemConfig.form.confirmKeyMismatch'));
+                    }
+                  },
+                },
+              ]}
+            >
+              <Input placeholder={config.voKey} />
+            </Form.Item>
+          </>
+        ) : null}
         <Form.Item
           name="reason"
           label={t('systemConfig.form.reason')}
@@ -323,6 +526,64 @@ export const SystemConfigForm = ({
           />
         </Form.Item>
       </Form>
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <BottomSheet
+        isOpen={visible}
+        onClose={handleCancel}
+        closeLabel={t('roles.common.cancel')}
+        title={t('systemConfig.form.title')}
+        height="88%"
+        closeOnOverlayClick={false}
+        className="system-config-edit-sheet"
+        footer={(
+          <div className="system-config-edit-sheet__actions">
+            <Button onClick={handleCancel} disabled={loading}>
+              {t('roles.common.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              disabled={loading || initialLoading || !config?.voIsEditable || mobileRiskBlocked}
+              onClick={() => void handleSubmit()}
+            >
+              {t(loading ? 'systemConfig.form.saving' : 'systemConfig.form.saveLow')}
+            </Button>
+          </div>
+        )}
+      >
+        {mobileRiskBlocked ? (
+          <div className="system-config-mobile-boundary system-config-edit-sheet__boundary">
+            <SettingOutlined />
+            <div>
+              <strong>{t('systemConfig.mobile.boundaryTitle')}</strong>
+              <span>{t('systemConfig.mobile.boundaryDescription')}</span>
+            </div>
+          </div>
+        ) : formContent}
+      </BottomSheet>
+    );
+  }
+
+  return (
+    <Modal
+      title={t('systemConfig.form.title')}
+      open={visible}
+      onOk={handleSubmit}
+      onCancel={handleCancel}
+      confirmLoading={loading}
+      okText={t('systemConfig.form.save')}
+      cancelText={t('roles.common.cancel')}
+      okButtonProps={{
+        disabled: initialLoading || !config?.voIsEditable,
+      }}
+      width={640}
+      destroyOnHidden
+      forceRender
+    >
+      {formContent}
     </Modal>
   );
 };

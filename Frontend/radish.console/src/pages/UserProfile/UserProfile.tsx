@@ -39,6 +39,7 @@ export const UserProfile = () => {
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [profileData, setProfileData] = useState<UserProfileData | null>(null);
+  const [loadError, setLoadError] = useState<string>();
 
   const setProfileFormValues = useCallback((profile: UserProfileData) => {
     form.setFieldsValue({
@@ -54,6 +55,7 @@ export const UserProfile = () => {
 
     try {
       setLoading(true);
+      setLoadError(undefined);
       const response = await userApi.getMyProfile();
       if (!response.ok || !response.data) {
         throw new Error(response.message || t('profile.feedback.loadFailed'));
@@ -66,7 +68,9 @@ export const UserProfile = () => {
       setProfileData(nextProfile);
     } catch (error) {
       log.error('UserProfile', '加载个人信息失败:', error);
-      message.error(error instanceof Error ? error.message : t('profile.feedback.loadFailed'));
+      const errorMessage = error instanceof Error ? error.message : t('profile.feedback.loadFailed');
+      setLoadError(errorMessage);
+      message.error(errorMessage);
       setProfileData(null);
     } finally {
       setLoading(false);
@@ -249,15 +253,23 @@ export const UserProfile = () => {
     return (
       <div className="admin-feature-page user-profile-page">
         <section className="admin-feature-card">
-          <div className="admin-feature-header">
-            <div>
-              <h2>
-                <UserOutlined /> {t('profile.title')}
-              </h2>
-              <p className="admin-feature-subtle">{t('profile.loading.form')}</p>
+          {loadError && !loading ? (
+            <div className="user-profile-empty" role="alert">
+              <h2><UserOutlined /> {t('profile.unavailable.title')}</h2>
+              <p>{loadError}</p>
+              <Button onClick={() => void loadProfile()}>{t('profile.unavailable.retry')}</Button>
             </div>
-            <Tag color="processing">{t('profile.loading.tag')}</Tag>
-          </div>
+          ) : (
+            <div className="admin-feature-header">
+              <div>
+                <h2>
+                  <UserOutlined /> {t('profile.title')}
+                </h2>
+                <p className="admin-feature-subtle">{t('profile.loading.form')}</p>
+              </div>
+              <Tag color="processing">{t('profile.loading.tag')}</Tag>
+            </div>
+          )}
         </section>
       </div>
     );
@@ -376,7 +388,6 @@ export const UserProfile = () => {
                 label={t('profile.form.displayName')}
                 rules={[
                   { required: true, message: t('profile.form.displayNameRequired') },
-                  { min: 2, max: 50, message: t('profile.form.displayNameLength') },
                 ]}
               >
                 <Input placeholder={t('profile.form.displayNamePlaceholder')} />

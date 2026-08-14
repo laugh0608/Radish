@@ -7,6 +7,8 @@
 > 仅 `radish.client` 的公开内容壳层需要对搜索引擎和外链分享友好；`radish.console`、登录后 WebOS 工作台和治理类页面默认不做 SEO 要求。
 >
 > 当前已完成首批公开增长基线：运行时 head / canonical、运行时公开域名配置、公开详情分享入口、公开个人页复制链接入口、公开详情与集合页运行时 JSON-LD、API + Gateway 动态 sitemap、浏览器可见资源 URL 归一，以及公开集合页和 forum / docs / shop 公开详情首包 head snapshot 注入。完整正文 SSR / SSG、预渲染和公开个人页动态 sitemap 继续后置。
+>
+> [F4-Q](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭：`/forum/tag/:tagSlug` 的公开可见性、相关主题、首包 head、runtime canonical、单一 JSON-LD、不可用态 `noindex` 与 tags sitemap 均已落地并通过代表运行态验收。
 
 ##### 10.5.1 当前公开 URL 范围
 
@@ -30,6 +32,7 @@
 
 - `document.title`
 - `meta[name="description"]`
+- 不可索引页面使用的 `meta[name="robots"]`
 - `link[rel="canonical"]`
 - `meta[property="og:title"]`
 - `meta[property="og:description"]`
@@ -48,9 +51,11 @@
 当前 Gateway 注入范围如下：
 
 - 静态公开集合页：`/discover`、`/forum`、`/docs`、`/leaderboard`、`/shop`，对应 `/api/public-head/static/{routeKey}`。
-- 公开详情页：`/forum/post/{postPublicId 或旧 postId}`、`/docs/{slug}`、`/shop/product/{productId}`。
+- 公开详情与聚合页：`/forum/post/{postPublicId 或旧 postId}`、`/forum/tag/{canonicalSlug}`、`/docs/{slug}`、`/shop/product/{productId}`。
 - `GET` / `HEAD` 且 `Accept` 允许 HTML 的请求才进入注入；WebSocket、API、静态资源和非 HTML 请求不进入该链路。
 - `/docs/search`、公开个人页 `/u/:identifier`、登录后页面、Console 和治理后台暂不进入 Gateway 首包 head snapshot。
+
+可用标签的首包与 runtime 都使用无排序、页码和来源参数的 canonical slug，并只保留一份 `radish-public-jsonld` `CollectionPage`。标签被禁用、删除或不存在时，Client runtime 使用 `noindex, nofollow`，移除 canonical、OpenGraph URL 和 JSON-LD；Gateway 对没有公开快照的标签继续失败开放到 SPA，不伪造可索引 head。
 
 API 侧根据 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 生成公开 canonical；缺省时允许使用安全的 `X-Forwarded-Proto / X-Forwarded-Host` 回推公开 origin。Gateway 调 API 时会根据同一公开 URL 配置补 forwarded headers，避免 API 在反代后生成内部地址。
 
@@ -85,7 +90,7 @@ API 侧根据 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 生成公开 cano
 
 `Frontend/radish.client/src/public/publicStructuredData.ts` 负责运行时 JSON-LD 的构建与 DOM helper；实际注入、替换和清理由 `PublicHeadLifecycle` 与同一份页面快照协调。
 
-- 公开集合页：`discover / leaderboard / forum / docs / shop` 的非详情路由输出 `CollectionPage`；其他公开非详情路由输出 `WebPage`。fallback JSON-LD 必须复用 owner 最终解析的本地化 head，保证 `name / description` 与页面当前语言一致。
+- 公开集合页：`discover / leaderboard / forum / forum tag / docs / shop` 的非详情路由输出 `CollectionPage`；其他公开非详情路由输出 `WebPage`。fallback JSON-LD 必须复用 owner 最终解析的本地化 head，保证 `name / description` 与页面当前语言一致。
 - forum detail：输出 `BlogPosting`，优先使用 `PostVo.VoPublicId` canonical。
 - docs detail：输出 `Article`，使用 `/docs/:slug` canonical。
 - shop detail：输出 `Product`，不把积分价格伪装成法币 offer。
@@ -96,7 +101,7 @@ API 侧根据 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL` 生成公开 cano
 
 - `Frontend/radish.client/public/robots.txt` 仍作为静态抓取入口约束，允许公开内容壳层，禁止 Console、认证回调、桌面工作台和登录后治理类路径，并指向公开域名下 `/sitemap.xml`。
 - `/sitemap.xml` 与 `/sitemaps/{fileName}` 当前由 Gateway 高优先级路由转发到 API，不应被前端 SPA catch-all 覆盖。
-- API 输出 sitemap index 与 `static / forum / docs / shop` 分片；forum 优先使用 `/forum/post/{VoPublicId}`，docs 使用 `/docs/{slug}`，shop 使用 `/shop/product/{productId}`。
+- API 输出 sitemap index 与 `static / forum / tags / docs / shop` 分片；forum 优先使用 `/forum/post/{VoPublicId}`，tags 只收录具备公开帖子的可用 canonical 标签，docs 使用 `/docs/{slug}`，shop 使用 `/shop/product/{productId}`。
 - sitemap `<loc>` 必须使用公开 Gateway origin。配置优先使用 `GatewayService:PublicUrl` / `RADISH_PUBLIC_URL`；经 Gateway 转发到 API 时，允许使用安全的 `X-Forwarded-Proto / X-Forwarded-Host` 回推公开 origin。
 - 首批不把 `/u/:identifier` 公开个人页纳入动态 sitemap；即使 User PublicId 已落地，动态 sitemap 仍需先完成用户隐私、展示意愿和收录策略评审。
 

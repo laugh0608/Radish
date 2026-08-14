@@ -68,6 +68,7 @@ public class ChannelMessageController : ControllerBase
     /// <summary>获取频道历史消息</summary>
     [HttpGet]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     public async Task<MessageModel> GetHistory(
         [FromQuery] long channelId,
         [FromQuery] long? beforeMessageId,
@@ -114,6 +115,7 @@ public class ChannelMessageController : ControllerBase
     /// <summary>获取目标消息附近的窗口消息</summary>
     [HttpGet]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
     public async Task<MessageModel> GetMessageWindow(
         [FromQuery] long channelId,
         [FromQuery] long messageId,
@@ -147,16 +149,6 @@ public class ChannelMessageController : ControllerBase
             messageId,
             beforeCount,
             afterCount);
-
-        if (window == null)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "目标消息不存在或不属于当前频道"
-            };
-        }
 
         return new MessageModel
         {

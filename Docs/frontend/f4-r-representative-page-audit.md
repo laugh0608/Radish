@@ -1,0 +1,152 @@
+# F4-R C-1 代表页代码事实审计
+
+> 日期：2026-07-30；2026-08-13 更新（Asia/Shanghai）
+>
+> 状态：C-1A、六个 R1、四个 R2、三个 Public R3、R3-C04 六批与 R3-C05 四批均已关闭；R3-F02 继承审计已完成，不新增 Pencil
+>
+> 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
+
+## 1. 结论
+
+当前代码不支持按路由逐页维护 Pencil，也不支持把 Console 所有后台页面压缩成同一种代表类型。
+
+C-1A 最终裁决为：
+
+- `7` 个 R1：`1` 个共享基础矩阵和 `6` 个完整页面类型；
+- `4` 个 R2：只维护关键区块、状态或响应式差异；
+- 其余正式路由按明确继承关系进入 R3，直接实现后用真实页面截图复核；
+- Console 普通表格 / 明细与案件治理 / 审计拆成两个 R1，它们不再共用一张完整代表画板；
+- 功能、按钮、权限、文案和状态机继续服从专题与代码，以下裁决只定义本批视觉与响应式设计投入。
+
+## 2. 审计依据
+
+### 2.1 路由与壳层
+
+- Client 正式入口以 `Frontend/radish.client/src/bootstrap/entryRoute.ts` 和 `BrowserAppRouter.tsx` 为准，包含 Public、Private、Author 与登录回流入口。
+- Public 当前覆盖 Discover、Forum 列表 / 搜索 / 标签 / 详情 / 发布、Docs 列表 / 详情、Shop、排行榜、公开主页与 Legal。
+- Private 当前覆盖 Messages、Notifications、Me、Circle、Pet、Private Shop 与 Workbench。
+- Author 当前覆盖 Docs Mine、Compose、Edit 与 Revisions。
+- Console 以 `Frontend/radish.console/src/router/routes.ts`、`routeMeta.ts` 和 `AdminLayout.tsx` 为准，覆盖普通资源表格、订单、权限、设置、治理与审计页面。
+
+### 2.2 共享结构
+
+- `WebShellHeader` 同时承载 Public / Private PC 顶栏和 mobile 底部导航，已被多数正式 Web 页面复用。
+- `WebStateSlot` 是跨 Public / Private 的加载、空态、错误和不可用状态入口。
+- `AdminLayout`、`ConsolePage` 和 `adminFeature.css` 已形成 Console 导航、页面头、指标、表格、侧栏和响应式基线；R3-C04-A 新增的 `ConsoleResourceList` 只承载普通资源的 PC 连续表格—Mobile 卡片壳层，不持有查询、权限、详情或 Modal 状态。
+- 四主题、双语和 PC / mobile 是共享契约，不为每个路由复制画板。
+
+### 2.3 代码证明存在的页面类型
+
+| 代码事实 | 结构判断 |
+| --- | --- |
+| `PublicDiscoverApp` 为内容流 + 辅助侧栏，mobile 转为单列、横向筛选与任务条 | Public 内容流 |
+| `PublicForumDetail` 同时包含阅读、回答、评论、Reaction、版本、赞赏和收藏状态 | Public 详情与互动 |
+| `DocsAuthorApp` 包含列表、编辑、修订、冲突和协作状态 | Author 编辑 / 发布 |
+| `ChatApp` 在 PC 使用列表—详情工作台，mobile 按会话焦点切换列表和主区 | Private 消息工作台 |
+| `OrderList` 使用指标、筛选、高密度表格、上下文侧栏与详情 / 重试动作 | Console 表格 / 明细 |
+| `ModerationPage` 使用案件队列、证据、决定、纠正动作、事件时间线和版本冲突 | Console 案件治理 / 审计 |
+
+`OrderList` 与 `ModerationPage` 的主任务、信息密度、动作风险和 mobile 转换均不同，因此原候选“Console 表格治理与详情 / 审计组合页”必须拆分。
+
+## 3. 评分说明
+
+评分维度按[代表页协作流程](/frontend/pencil-representative-page-workflow)执行：
+
+- `B`：业务关键度；
+- `L`：布局独特性；
+- `S`：状态复杂度；
+- `R`：复用影响面；
+- `M`：响应式风险；
+- `U`：现状不确定性。
+
+自动升级条件和评分只判断“本批目标视觉是否需要建立或改变该交互契约”。页面虽然已有高风险动作，但本批明确不改变其行为且能完整继承既有契约时，不因功能本身机械升级；关键动作区仍需纳入 R2 / R3 继承与真实页面复核。
+
+## 4. R1 完整代表类型
+
+| 编号 | 代表类型与真实锚点 | B/L/S/R/M/U | 总分 | 自动升级依据 | 活动设计源 |
+| --- | --- | --- | --- | --- | --- |
+| `R1-F01` | 共享组件、状态、主题与壳层矩阵 | `2/2/2/2/2/1` | `11` | 改变跨 Public、Private / Author、Console 复用契约 | `radish-web-family-ui-v1.pen`（已完成） |
+| `R1-P01` | Public 内容流；锚点 `/discover` | `2/2/1/2/2/1` | `10` | 建立家族化内容流和 Public 响应式语法 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
+| `R1-P02` | Public 详情与互动；锚点 `/forum/post/:id` | `2/2/2/2/2/1` | `11` | 核心写操作、多状态、跨 PC / mobile 互动模型 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
+| `R1-A01` | Author 编辑 / 协作 / 提交审核；锚点 `/docs/edit/:id` | `2/2/2/1/2/1` | `10` | 草稿、冲突、修订、协作与高价值写操作 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
+| `R1-W01` | Private 消息列表—详情；锚点 `/messages` | `2/2/2/1/2/1` | `10` | 实时状态，mobile 在列表与会话间切换交互模型 | `radish-web-family-ui-v1.pen`（PC / mobile、实现与运行态已关闭） |
+| `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen`（PC / Mobile、实现与运行态已关闭） |
+| `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `radish-web-family-ui-v1.pen` |
+
+R1 只在唯一活动设计源中维护必要代表设计，不为主题、locale、权限和每个状态复制完整页面。业务类型必须提供可按真实尺寸独立审核的 PC / mobile 顶层业务画板；关键状态与辅助说明可单独成板，复合说明板中的嵌入缩略图不计作业务页面完成。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点。
+
+`R1-P01` 的稳定代码事实现为：`/discover` 只消费统一 `PublicDiscoverFeedVo`，由服务端按 snapshot cutoff 与稳定 keyset 游标合并 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question`；Channel 摘要必须经 Console 显式 opt-in，页面不再自行拼装帖子、热门标签、Wiki 或商品列表。分类、`#标签` 与结构化状态仍由 Forum 列表 / 详情分层表达，不挤入紧凑混合轨道。`2026-08-04`—`08-05` 已完成公开能力审计、PC / mobile 视觉确认、代码实现与 Gateway 阶段性运行态复核，最终结构以国风暖白表面、无衬线层级、克制圆角阴影、灰玉品牌语义、墨蓝操作语义和内嵌数据反馈建立现代自然紧凑气质；活动设计源只保留正式 PC / mobile 和必要母版。匿名 / 登录回流、双语、代表主题、Console 治理只读路径与横向溢出检查均通过，运行态发现的 Int64 wire contract 偏差已在统一 HTTP 契约层修正。详见[结构研究记录](/records/f4-r-r1-p01-public-discover-structure-study-2026-08-04)、[设计记录](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)与[实现记录](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)。全局品牌 token 尚未机械替换，继续由共享主题批治理。
+
+`R1-P02` 已于 `2026-08-05` 完成[代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)，并于 `2026-08-06` 完成[正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)。随后已完成 PC / mobile 正式代表设计、成组实现和 Gateway 运行态验收；普通帖子正式 Web 已承接帖子 / 回帖点赞、reaction、赞赏和两级回帖，详见[实现记录](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)。
+
+`R1-A01` 已于 `2026-08-08` 完成[设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)。正式代表身份固定为“登录普通 Owner + Custom 已发布文档 + `Editing` 活跃共享草稿 + Accepted Editor”；普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 随后已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。同日完成 PC / mobile 正式代表设计、页面实现与 Gateway 运行态验收；标题 / Markdown 正文主轴、`320px` context rail、Mobile Bottom Sheet、权限停止线与临时数据清理均已关闭，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
+
+`R1-W01` 已于 `2026-08-08` 完成[消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)。正式 `/messages` 与 WebOS 共用同一 Chat 核心，主体能力没有迁移缺口；举报 ACL / LongId、失败重试幂等和历史错误契约已由同日[能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、连续会话列表 / 消息主轴 / 按需成员上下文、搜索与成员互斥、紧凑 Pin、Mobile 单任务流和 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。撤回能力证据与频道角色权限仍需另行裁决，不在代表页中暗示扩权。
+
+`R1-C01` 已于 `2026-08-08` 完成[Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)、PC `1440 × 900` / Mobile `390 × 844` 与必要关键状态正式代表设计，以及[正式代码、静态验证和 Gateway 运行态验收](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)。PC 使用连续单行薄表格与按需详情 inspector；Mobile 使用连续三列订单行、Client 风格五项胶囊导航和隐藏全局导航的全屏详情任务，中列承载商品类型 / 单价与支付证据。只读 Operator、重试 `409`、备注冲突、详情不可用、列表 stale、筛选空结果、LongId URL 与受权资源回跳均通过；现有 API、权限、结构化错误、LongId、幂等与事务边界保持不变。下一任务从 `R1-C02` 设计前代码事实与能力覆盖门禁开始。
+
+`R1-C02` 已于 `2026-08-09` 完成[Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)。服务端 Case / Appeal、六类目标、权限、版本、幂等、结构化错误和 Main / Chat 事务边界足以支撑代表设计；随后由同日[前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL 与 mobile 全屏任务、stale / unavailable，以及 View-only 写入表面。唯一活动 `.pen` 中的[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)已经确认，并由[正式成组实现与 Gateway 验收](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)落地 PC 三段治理桌、Mobile 连续三列案件队列 / 按需筛选，以及保留 Console 顶部品牌栏且隐藏五项底部导航的全屏任务；PC `1440 × 900` 与 Mobile `390 × 844` 无横向溢出，真实管理员读取、空结果、申诉空队列与详情 unavailable 通过，权限、冲突和 stale 边界继续由自动化分层守卫。`R1-C02` 已关闭，下一步从 `R2-C03` 设计前代码事实与能力覆盖审计开始。
+
+`R2-C03` 已于 `2026-08-09` 完成[Console 设置与权限矩阵设计前代码事实与能力覆盖审计](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)，随后由[代码能力门禁实现](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)闭合内建角色保护、只读矩阵、授权单调版本 / 原子 CAS、系统设置结构化冲突、配置—审计共同提交、显式 Medium 确认和 Settings / Profile 真实性。唯一活动 `.pen` 中的[局部代表设计](/records/f4-r-r2-c03-console-settings-permissions-representative-design-2026-08-09)已确认，并由同日[正式实现与 Gateway 验收](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)落地：PC 增强权限矩阵 / 内建保护、Low / Medium 设置确认与 dirty / CAS / `409` 表面；Mobile 使用三个独立页面内容承接连续角色目录、当前角色只读权限详情和 Low 设置 `BottomSheet`，权限项同时展示技术 key、含义与授权状态，Medium 在列表和提交 handler 双重保持 PC-only。实现继续复用 `AdminLayout`、Console 五项真实入口、R1-C01 高密度资源表面和 R1-C02 权限 / 冲突状态，不复制 Settings / Profile 路由，不新增移动任务壳层；Settings / Profile 只表现已有自服务能力，不进入 `console.*`。Console `83 / 83` 测试、Lint、strict type-check、production build 与权限扫描通过；Gateway PC `1440 × 900` 与 Mobile `390 × 844` 的真实角色、权限、Low / Medium、unavailable、空结果、导航和无横向溢出复核通过，稳定态干净页签无 `warning / error`。运行态发现并修正系统设置表单初始 `config` 未装载时解引用风险等级的根因；未保存角色授权或系统设置，临时 OIDC 登录增量已精确清理，服务端口已停止。`R2-C03` 已关闭。
+
+`R2-P03` 已于 `2026-08-09` 完成 [Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)，并由同日第一批[能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)闭合正式商品 `Product` 举报与公开主页权威加载。用户随后确认[商品评价与公开等级范围](/records/f4-r-r2-p03-product-review-public-level-scope-audit-2026-08-09)，第二批[能力门禁实现](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)关闭公开等级安全投影、Completed 购买资格、单用户单商品五星评价、数据库聚合、CAS 和 `ProductReview` 治理 / 申诉。唯一活动 `.pen` 中的[局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)保持三个独立 PC 与三个独立 Mobile 页面，商品 PC / Mobile 已补综合评分、五星分布和已购评价预览；七轮反馈统一 PC `24px` 外边距 / `12px` 分栏、修正主按钮对比度，将公开身份拆为昵称、`用户名#公开ID`、个性签名和等级四层，并以 `carrot` 萝卜轮廓替代真实法币符号。`2026-08-10` 由[正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)接入评价完整生命周期、失败状态、举报，以及公开主页等级、真实签名空态和独立权威统计；Gateway 匿名与种子管理员 PC / mobile 覆盖零评价、Completed 资格、CRUD、登录回跳、dirty、真实 CAS 冲突和无横向溢出，临时数据已清理。Client `518 / 518`、type-check、Lint 与 production build 通过，`R2-P03` 关闭；下一顺位进入 `R2-W02` 设计前审计，不提前推进 R3。
+
+`R2-W02` 已于 `2026-08-10` 完成 [Private 仪表 / 任务侧栏设计前代码事实与能力覆盖审计](/records/f4-r-r2-w02-private-dashboard-task-rail-readiness-audit-2026-08-10)，并由同日[前端能力门禁](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)关闭权威读取、dirty、Pet 幂等重试、Private Shop 结构化错误和 Me 超限容器。唯一活动 `.pen` 中的[局部代表设计](/records/f4-r-r2-w02-private-dashboard-task-rail-representative-design-2026-08-10)已经确认：PC 使用六个主任务宽列—窄辅助轨关键区块，Mobile 使用六个真实 `390px` 的“主任务—摘要—折叠辅助信息”顺序，关键状态覆盖权威首次读取、unavailable / stale、dirty、原幂等键重试、Shop 诊断和 Me 局部失败。随后由[正式实现与 Gateway 验收](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10)接入共享 `WebTaskRailDisclosure`、紧凑摘要和主任务优先顺序；Client `526 / 526`、type-check、Lint、production build、PC `1440 × 980` 与 Mobile `390 × 844` 运行态复核通过，页面无横向溢出且浏览器 `0 error`。种子库没有 Pet、订单、权益或背包业务数据，因此对应有数据态继续由静态契约与自动化守卫；本批没有制造业务数据。`R2-W02` 已关闭，下一顺位进入 `R2-A02` readiness，不提前推进 R3。
+
+`R2-A02` 已于 `2026-08-10` 完成 [Author 列表、修订与 Forum 发布差异设计前代码事实与能力覆盖审计](/records/f4-r-r2-a02-author-list-revisions-forum-compose-readiness-audit-2026-08-10)。分级继续保持 R2，Docs Mine / Revisions 与 Forum Compose 继承 `R1-A01 / R1-P02`，既有 Wiki Author、Forum 发布、附件、标签、问答、投票、抽奖和提交幂等能力足够，不新增数据库、权限、业务实体或移动壳层。同日[能力门禁实现](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)关闭五组门禁，随后完成并确认[九张第二轮局部代表设计](/records/f4-r-r2-a02-author-list-revisions-forum-compose-representative-design-2026-08-10)。`2026-08-11` 的[正式实现与 Gateway 验收](/records/f4-r-r2-a02-author-list-revisions-forum-compose-implementation-2026-08-11)已落地共享双快照差异、Mine 主轴和同实例 Composer 双形态，并通过 PC / Mobile 成组复核；R2-A02 正式关闭，R3 可按下表进入分批审计与成组实现。
+
+## 5. R2 局部设计类型
+
+| 编号 | 局部类型 | B/L/S/R/M/U | 总分 | 只需确认的差异 | 继承来源 |
+| --- | --- | --- | --- | --- | --- |
+| `R2-P03` | Public 只读详情变体 | `1/1/1/2/1/0` | `6` | 元数据、目录 / 购买 / 关注 CTA、长内容与 mobile 顺序 | `R1-P02`、`R1-F01` |
+| `R2-W02` | Private 仪表 / 任务侧栏 | `1/1/1/2/1/0` | `6` | 主任务、状态摘要、辅助侧栏在 mobile 的排序与折叠 | `R1-F01`、`R1-W01` |
+| `R2-A02` | Author 列表、修订与 Forum 发布差异 | `1/1/2/1/1/0` | `6` | 修订时间线、列表操作、发布器关键状态，不复制完整编辑页 | `R1-A01`、`R1-P02` |
+| `R2-C03` | Console 设置与权限矩阵 | `1/1/2/1/1/0` | `6` | 分区、权限矩阵、危险确认和 mobile 只读 / 低风险边界 | `R1-C01`、`R1-C02` |
+
+R2 交付物可以是关键区块、状态带或交互序列；若设计时发现新壳层、结构冲突或 mobile 新交互模型，再升级为 R1。
+
+## 6. R3 路由继承关系
+
+| 路由族 | 继承规则 | 允许的局部差异 |
+| --- | --- | --- |
+| Forum 列表 / 搜索 / 标签 / 类型流、Docs 列表 / 搜索、Shop 列表、排行榜 | `R1-P01` + `R2-P03` | 筛选项、卡片字段、排序、分页和业务 CTA |
+| Docs 详情、商品详情、公开主页、Legal | `R1-P02` + `R2-P03` | 只读内容结构、目录、价格、关系状态或法务长文本 |
+| Notifications、Me、Circle、Pet、Private Shop、Workbench | `R1-F01` + `R2-W02` | 业务卡片、指标、状态摘要和已有表单 |
+| Docs Mine / Revisions、Forum Compose | `R1-A01` + `R2-A02` | 列表操作、修订信息和 Forum 字段 |
+| Applications、Products、Users、Categories、Tags、Stickers、Coins | `R1-C01` | 字段、筛选、批量动作、详情内容和权限 |
+| Documents、Experience、Appeals、Channel Discoverability | `R1-C01` + `R1-C02` | 资源表格、治理详情、显隐事件或复核动作 |
+| Roles / Permissions、System Config、Settings、Profile | `R1-C01` + `R2-C03` | 表单分区、权限单元和危险确认 |
+| Console Dashboard | `R1-F01` + `R2-W02` + Console 壳层 | 主任务、紧凑指标、最近资源和辅助摘要 |
+| 登录、OIDC 回流、Not Found 等边界页 | `R1-F01` | 认证文案、错误原因和返回动作 |
+
+每个 R3 实现批次仍需写明代表来源、局部差异、关键状态与 mobile 转换。发现继承不成立时停止扩张并升级分级。
+
+`2026-08-11` 的[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定了六组 R3 顺位。`R3-P04 / P05 / P06`、R3-C04 六批与 R3-C05 四批均已完成；[R3-F02 代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)进一步确认 Settings / Profile 继承 `R1-C01 + R2-C03`，Login / OIDC / Not Found / Error 继承 `R1-F01`，没有新壳层或响应式模型，继续不修改 Pencil。[R3-F02-A OIDC 回流信任门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)已完成代码与静态门禁，下一步进入自服务权威状态。
+
+## 7. 本批不纳入代表设计
+
+- WebOS `/desktop` 只保留历史兼容，不承接 F4-R 新页面类型。
+- Tauri 暂时弃用，不进入 UI、实现或验收矩阵。
+- Flutter 等 Web 视觉契约稳定后，按原生高价值路径重新评分，不复制 Web 画板。
+- Console `theme-test` 是内部验证入口，Hangfire 是外部运维工作面，不作为产品代表页。
+- C-1A 不改变路由、功能、权限、API 或运行时行为，也不启动服务或执行真实 smoke。
+
+## 8. C-1B 执行顺序
+
+1. `R1-F01` 已在 `radish-web-family-ui-v1.pen` 完成，固定共享契约；`R1-P01` 历史失败稿只由 Git 留档，最终 PC / mobile 已确认为正式视觉基准。
+2. 参考 `13 / 16 / 18 / 27` 的结构转译，以及帖子之外公开实体、API、路由、权限与失败边界审计已经完成。
+3. `R1-P01` 的统一公开读模型、Channel opt-in 治理、`@radish/http`、页面结构、双语资源和静态测试已经成组实现，代码侧构建与定向回归通过。
+4. `R1-P01` 阶段性 PC / mobile 真实截图与交互复核已通过并关闭；未暴露需要回写 Pencil 的共享结构偏差。
+5. `R1-P02` 的 PC / mobile 正式代表设计、成组实现和 Gateway 运行态验收已关闭。
+6. `R1-A01` readiness、能力修复、PC / mobile 正式代表设计、页面实现和 Gateway 运行态验收已完成并关闭。
+7. `R1-W01 → R1-C01 → R1-C02` 设计轨已全部关闭；R2 只补必要差异，不扩为路由镜像。
+8. `R1-W01` 与 `R1-C01` 均已完成并关闭；`R1-C01` 的 readiness、PC / Mobile / 必要关键状态设计、正式 Console 代码、静态验证和 Gateway 运行态验收已形成闭环。
+9. `R2-C03` readiness、代码能力门禁、局部代表设计、正式页面代码与 Gateway PC / mobile 运行态验收均已完成，专题关闭。
+10. `R2-P03` readiness、两批能力门禁、七轮结构反馈、商品评价补充设计、正式商品详情 / 公开主页和 Gateway PC / mobile 运行态验收均已完成，专题关闭。
+11. `R2-W02` readiness、五组前端能力门禁、三张局部代表板、六个正式入口实现与 Gateway PC / mobile 成组验收均已完成，专题关闭。
+12. `R2-A02` readiness、五组能力门禁、九张确认代表板、正式实现与 Gateway PC / Mobile 运行态验收均已完成，专题关闭。
+13. 六个 R1、四个 R2、`R3-P04 / P05 / P06`、`R3-C04-A` 至 `C04-F`、R3-C05 四批与 R3-F02-A 均已形成闭环；下一步按 B / C 实施自服务权威状态与错误路由边界，不修改 Pencil。
+14. R3 继承不成立或发现新结构 / 响应式模型时，必须停止扩张并按自动升级条件重新裁决 R1 / R2。
+
+进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。

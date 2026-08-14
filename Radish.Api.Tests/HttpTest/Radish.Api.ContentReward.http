@@ -1,0 +1,36 @@
+@gateway = https://localhost:5000
+@token = {{$processEnv RADISH_ACCESS_TOKEN}}
+@postId = 1
+@commentId = 1
+
+### 赞赏帖子；需先显式启用 Forum.ContentReward.Enabled，响应丢失重试必须复用同一 idempotencyKey
+POST {{gateway}}/api/v1/ContentReward/Create
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "targetType": "Post",
+  "targetId": {{postId}},
+  "reasonCode": "Helpful",
+  "idempotencyKey": "content-reward:replace-me-post"
+}
+
+### 查询帖子的公开赞赏记录
+GET {{gateway}}/api/v1/ContentReward/GetTargetRewards?targetType=Post&targetId={{postId}}&pageIndex=1&pageSize=20
+
+### 批量查询帖子与评论赞赏状态；匿名请求的 viewerRewarded 固定为 false
+POST {{gateway}}/api/v1/ContentReward/GetTargetStates
+Content-Type: application/json
+
+{
+  "targets": [
+    {
+      "targetType": "Post",
+      "targetId": {{postId}}
+    },
+    {
+      "targetType": "Comment",
+      "targetId": {{commentId}}
+    }
+  ]
+}

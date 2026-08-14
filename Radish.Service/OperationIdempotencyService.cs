@@ -5,6 +5,7 @@ using Radish.Common.AttributeTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Repository.UnitOfWorks;
 using Radish.Shared.Constants;
 using Serilog;
 using SqlSugar;
@@ -20,13 +21,16 @@ public class OperationIdempotencyService : IOperationIdempotencyService
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);
 
     private readonly IBaseRepository<OperationIdempotencyRecord> _recordRepository;
+    private readonly IUnitOfWorkManage _unitOfWorkManage;
     private readonly TimeProvider _timeProvider;
 
     public OperationIdempotencyService(
         IBaseRepository<OperationIdempotencyRecord> recordRepository,
+        IUnitOfWorkManage unitOfWorkManage,
         TimeProvider timeProvider)
     {
         _recordRepository = recordRepository;
+        _unitOfWorkManage = unitOfWorkManage;
         _timeProvider = timeProvider;
     }
 
@@ -96,7 +100,8 @@ public class OperationIdempotencyService : IOperationIdempotencyService
 
         try
         {
-            record.Id = await _recordRepository.AddAsync(record);
+            record.Id = await _unitOfWorkManage.ExecuteInSavepointAsync(
+                () => _recordRepository.AddAsync(record));
             return Started(record.Id);
         }
         catch (Exception ex) when (IsUniqueConstraintConflict(ex))
@@ -137,6 +142,10 @@ public class OperationIdempotencyService : IOperationIdempotencyService
         record.ErrorCode = request.ErrorCode;
         record.ErrorMessage = Truncate(request.ErrorMessage, 500);
         record.CompleteTime = now;
+        if (request.ExtendRetentionFromCompletion)
+        {
+            record.ExpiresAt = now.AddHours(RetentionHours);
+        }
         record.ModifyTime = now;
         record.ModifyBy = "System";
         record.ModifyId = 0;
@@ -189,6 +198,23 @@ public class OperationIdempotencyService : IOperationIdempotencyService
     {
         if (record.ExpiresAt <= now)
         {
+            if (record.Status == OperationIdempotencyStatuses.Processing &&
+                !request.AllowExpiredProcessingReset)
+            {
+                if (!string.Equals(record.RequestHash, request.RequestHash, StringComparison.Ordinal))
+                {
+                    return Conflict("幂等键已被不同请求使用");
+                }
+
+                return new OperationIdempotencyBeginResult
+                {
+                    Status = OperationIdempotencyBeginStatus.Processing,
+                    RecordId = record.Id,
+                    Message = "请求处理已超时，需要先核对权威业务事实",
+                    IsExpiredProcessing = true
+                };
+            }
+
             await ResetToProcessingAsync(record, request, now);
             return Started(record.Id);
         }

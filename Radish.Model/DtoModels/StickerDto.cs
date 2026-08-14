@@ -48,6 +48,12 @@ public class UpdateStickerGroupDto
     public int Sort { get; set; } = 0;
 }
 
+/// <summary>更新表情包分组启用状态 DTO</summary>
+public class UpdateStickerGroupStatusDto
+{
+    public bool IsEnabled { get; set; }
+}
+
 /// <summary>创建表情 DTO</summary>
 public class CreateStickerDto
 {
@@ -67,6 +73,8 @@ public class CreateStickerDto
 
     public bool AllowInline { get; set; } = true;
 
+    [Required(ErrorMessage = "附件ID不能为空")]
+    [Range(1, long.MaxValue, ErrorMessage = "附件ID无效")]
     public long? AttachmentId { get; set; }
 
     public bool IsEnabled { get; set; } = true;
@@ -86,6 +94,8 @@ public class UpdateStickerDto
 
     public bool AllowInline { get; set; } = true;
 
+    [Required(ErrorMessage = "附件ID不能为空")]
+    [Range(1, long.MaxValue, ErrorMessage = "附件ID无效")]
     public long? AttachmentId { get; set; }
 
     public bool IsEnabled { get; set; } = true;
@@ -136,6 +146,9 @@ public class BatchAddStickerItemDto
 /// <summary>批量更新排序 DTO</summary>
 public class BatchUpdateStickerSortDto
 {
+    [Range(1, long.MaxValue, ErrorMessage = "分组ID无效")]
+    public long GroupId { get; set; }
+
     [Required(ErrorMessage = "排序列表不能为空")]
     public List<StickerSortItemDto> Items { get; set; } = new();
 }

@@ -16,6 +16,9 @@ export const NotificationApp = () => {
   ) => {
     switch (group.voTarget.voKind) {
       case 'ForumPost': {
+        if (group.voTarget.voAnswerPublicId) {
+          break;
+        }
         const params = buildForumAppParams({
           postId: group.voTarget.voPostId ?? undefined,
           postPublicId: group.voTarget.voPostPublicId ?? undefined,

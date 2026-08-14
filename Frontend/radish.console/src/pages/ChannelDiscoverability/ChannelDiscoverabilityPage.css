@@ -1,0 +1,142 @@
+.channel-discoverability-page .channel-discoverability-name {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.channel-discoverability-name__icon {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 10px;
+  background: var(--color-bg-secondary);
+  font-size: 18px;
+}
+
+.channel-discoverability-name__copy {
+  min-width: 0;
+}
+
+.channel-discoverability-name__copy strong,
+.channel-discoverability-name__copy span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-discoverability-name__copy span,
+.channel-discoverability-modal-note,
+.channel-discoverability-history-summary {
+  color: var(--color-text-secondary);
+}
+
+.channel-discoverability-modal-note {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 12px;
+  background: var(--color-bg-secondary);
+  line-height: 1.65;
+}
+
+.channel-discoverability-modal-field {
+  display: grid;
+  gap: 8px;
+}
+
+.channel-discoverability-modal-field label {
+  font-weight: 650;
+}
+
+.channel-discoverability-history-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.channel-discoverability-history-summary > div:first-child,
+.channel-discoverability-mutation-snapshot,
+.channel-discoverability-conflict {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.channel-discoverability-history-summary span,
+.channel-discoverability-mutation-snapshot span,
+.channel-discoverability-conflict span {
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+
+.channel-discoverability-history-summary__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.channel-discoverability-mutation-snapshot,
+.channel-discoverability-conflict {
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-secondary);
+  border-radius: 10px;
+  background: var(--color-bg-secondary);
+}
+
+.channel-discoverability-conflict {
+  color: var(--console-warning-text);
+  border-color: var(--console-warning-border);
+  background: var(--console-warning-bg);
+}
+
+.channel-discoverability-conflict .ant-btn {
+  justify-self: start;
+  margin-top: 4px;
+}
+
+.channel-discoverability-history-mobile {
+  display: none;
+}
+
+.channel-discoverability-event-card .console-resource-mobile-card__footer {
+  color: var(--color-text-secondary);
+  font-size: 11px;
+}
+
+@media (max-width: 768px) {
+  .channel-discoverability-history-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .channel-discoverability-history-summary__actions {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .channel-discoverability-history-desktop {
+    display: none;
+  }
+
+  .channel-discoverability-history-mobile {
+    display: grid;
+    overflow: hidden;
+    border: 1px solid var(--console-border-subtle);
+    border-radius: var(--console-radius-control);
+  }
+
+  .channel-discoverability-mobile-card .console-resource-mobile-card__header {
+    align-items: flex-start;
+  }
+
+  .channel-discoverability-mobile-card .channel-discoverability-name {
+    flex: 1;
+  }
+}

@@ -115,6 +115,22 @@ public static class NotificationDefinitionRegistry
             NotificationPriority.Normal, NotificationTargetKind.UserProfile, active: true,
             suppressWhenInteractionBlocked: true,
             requiredTemplateArguments: ["actorName"]);
+        yield return Define(NotificationType.ContentRewardReceived, NotificationCategory.Reaction,
+            NotificationPriority.Normal, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
+            requiredTemplateArguments: ["actorName", "reasonCode", "targetTitle"]);
+        yield return Define(NotificationType.QuestionAnswered, NotificationCategory.Discussion,
+            NotificationPriority.Normal, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
+            requiredTemplateArguments: ["actorName", "targetTitle"]);
+        yield return Define(NotificationType.AnswerAccepted, NotificationCategory.Discussion,
+            NotificationPriority.Normal, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
+            requiredTemplateArguments: ["actorName", "targetTitle"]);
+        yield return Define(NotificationType.AnswerAcceptanceRevoked, NotificationCategory.Discussion,
+            NotificationPriority.Normal, NotificationTargetKind.ForumPost, active: true,
+            suppressWhenInteractionBlocked: true,
+            requiredTemplateArguments: ["actorName", "targetTitle"]);
         yield return Define(NotificationType.WikiCollaboratorInvited, NotificationCategory.Knowledge,
             NotificationPriority.Normal, NotificationTargetKind.DocsAuthorDraft, active: true,
             requiredTemplateArguments: ["actorName", "targetTitle"]);

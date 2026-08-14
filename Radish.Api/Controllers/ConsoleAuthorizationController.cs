@@ -19,6 +19,7 @@ namespace Radish.Api.Controllers;
 [ApiVersion(1)]
 [Route("api/v{version:apiVersion}/[controller]/[action]")]
 [Produces("application/json")]
+[ApiErrorContract]
 [Authorize(Policy = AuthorizationPolicies.Client)]
 public class ConsoleAuthorizationController : ControllerBase
 {
@@ -87,6 +88,7 @@ public class ConsoleAuthorizationController : ControllerBase
     [HttpPost]
     [RequireConsolePermission(ConsolePermissions.RolesEdit)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status409Conflict)]
     public async Task<MessageModel> SaveRoleAuthorization([FromBody] SaveRoleAuthorizationDto dto)
     {
         if (dto == null || dto.RoleId <= 0)

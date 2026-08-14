@@ -11,3 +11,221 @@
 .role-form-full-width {
   width: 100%;
 }
+.role-list-mobile-row {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.role-list-mobile-row__header,
+.role-list-mobile-row__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.role-list-mobile-row p {
+  margin: 0;
+  color: var(--console-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.role-list-mobile-row__meta {
+  flex-wrap: wrap;
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+.role-list-mobile-row__meta code {
+  overflow-wrap: anywhere;
+}
+
+.role-list-mobile-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  background: var(--console-border-subtle);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
+}
+
+.role-list-mobile-metrics > div {
+  display: grid;
+  gap: 2px;
+  padding: 10px 8px;
+  text-align: center;
+  background: var(--console-bg-muted);
+}
+
+.role-list-mobile-metrics strong {
+  color: var(--console-text-primary);
+  font-size: 17px;
+}
+
+.role-list-mobile-metrics span {
+  color: var(--console-text-secondary);
+  font-size: 11px;
+}
+
+.role-list-mobile-directory {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.role-list-mobile-directory__header,
+.role-list-mobile-card__header,
+.role-list-mobile-card__footer {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.role-list-mobile-directory__header h2 {
+  margin: 0;
+  color: var(--console-text-primary);
+  font-size: 16px;
+}
+
+.role-list-mobile-directory__header p {
+  margin: 3px 0 0;
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+.role-list-mobile-directory__list {
+  overflow: hidden;
+  background: var(--console-bg-surface);
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-panel);
+}
+
+.role-list-mobile-card {
+  display: grid;
+  gap: 9px;
+  padding: 14px;
+  border-bottom: 1px solid var(--console-border-subtle);
+}
+
+.role-list-mobile-card:last-child {
+  border-bottom: 0;
+}
+
+.role-list-mobile-card__header > div:first-child {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.role-list-mobile-card__header strong {
+  color: var(--console-text-primary);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.role-list-mobile-card__header span,
+.role-list-mobile-card > p,
+.role-list-mobile-card__protection,
+.role-list-mobile-card__footer code {
+  color: var(--console-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.role-list-mobile-card > p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.role-list-mobile-card__protection {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 9px;
+  color: var(--console-warning-text);
+  background: var(--console-warning-bg);
+  border-radius: var(--console-radius-control);
+}
+
+.role-list-mobile-card__footer {
+  align-items: center;
+}
+
+.role-list-mobile-card__footer code {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.role-list-mobile-boundary {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px;
+  color: var(--console-info);
+  background: color-mix(in srgb, var(--console-info) 9%, var(--console-bg-surface) 91%);
+  border: 1px solid color-mix(in srgb, var(--console-info) 22%, var(--console-border-subtle) 78%);
+  border-radius: var(--console-radius-control);
+}
+
+.role-list-mobile-boundary > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.role-list-mobile-boundary strong {
+  color: var(--console-text-primary);
+  font-size: 12px;
+}
+
+.role-list-mobile-boundary span {
+  color: var(--console-text-secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.role-list-mobile-empty {
+  display: grid;
+  gap: 4px;
+  padding: 20px;
+  text-align: center;
+  background: var(--console-bg-surface);
+  border: 1px dashed var(--console-border-subtle);
+  border-radius: var(--console-radius-panel);
+}
+
+.role-list-mobile-empty strong {
+  color: var(--console-text-primary);
+}
+
+.role-list-mobile-empty span {
+  color: var(--console-text-secondary);
+  font-size: 12px;
+}
+
+@media (max-width: 768px) {
+  .role-list-page--mobile {
+    gap: 14px;
+  }
+
+  .role-list-page--mobile .console-page-header {
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .role-list-page--mobile .console-page-header__actions {
+    width: auto;
+  }
+
+  .role-list-page--mobile .console-page-header__actions .ant-btn {
+    width: auto;
+  }
+}

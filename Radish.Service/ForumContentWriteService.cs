@@ -43,17 +43,20 @@ public class ForumContentWriteService : IForumContentWriteService
     private readonly IPostService _postService;
     private readonly ICommentService _commentService;
     private readonly IForumContentRevisionService? _contentRevisionService;
+    private readonly IForumQuestionService? _forumQuestionService;
 
     public ForumContentWriteService(
         IContentSubmissionService contentSubmissionService,
         IPostService postService,
         ICommentService commentService,
-        IForumContentRevisionService? contentRevisionService = null)
+        IForumContentRevisionService? contentRevisionService = null,
+        IForumQuestionService? forumQuestionService = null)
     {
         _contentSubmissionService = contentSubmissionService;
         _postService = postService;
         _commentService = commentService;
         _contentRevisionService = contentRevisionService;
+        _forumQuestionService = forumQuestionService;
     }
 
     [UseTran]
@@ -204,6 +207,23 @@ public class ForumContentWriteService : IForumContentWriteService
         long tenantId,
         string? clientSubmissionId)
     {
+        if (_forumQuestionService != null)
+        {
+            var mutation = await _forumQuestionService.CreateAnswerAsync(
+                tenantId,
+                postId.ToString(),
+                content,
+                authorId,
+                authorName,
+                clientSubmissionId);
+            return ContentWriteResult<PostQuestionVo>.CreatedResult(new PostQuestionVo
+            {
+                VoPostId = postId,
+                VoAnswerCount = mutation.VoAnswerCount,
+                VoAnswers = [mutation.VoAnswer]
+            });
+        }
+
         var snapshot = _contentSubmissionService.CreateRequestSnapshot(
             BuildAnswerCreateRequestValues(postId, content),
             BuildAnswerCreateFingerprintValues(postId, content));

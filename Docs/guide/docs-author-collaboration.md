@@ -1,8 +1,10 @@
 # 文档作者协作与审核使用说明
 
-> 最后更新：2026-07-25
+> 最后更新：2026-08-10
 >
 > 适用入口：正式 Web `/docs/mine`、`/docs/compose`、`/docs/edit/:id`、`/docs/revisions/:id`，以及 Console `/documents`。
+
+> 当前实现提示：`2026-08-08` 的 R1-A01 Revision 关系授权、终态证据、写响应证据与 Apply 基准版本 CAS 已完成[代码修复和静态验收](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)，并形成[成组实现与 Gateway 验收](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。`2026-08-10` 又关闭 R2-A02 的 Author 列表权威查询与 Revision 局部状态门禁，详见[能力门禁实现记录](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)。
 
 本文面向文档所有者、协作者和 Console 审核者，说明当前文档贡献流程怎么使用。底层数据、并发和权限设计见 [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)，公开阅读与固定文档边界见 [文档系统方案](/guide/document-system)。
 
@@ -20,18 +22,18 @@
 
 ## 2. 创建与保存草稿
 
-1. 登录后打开 `/docs/mine`，查看“我拥有的”和“与我协作的”文档。
+1. 登录后打开 `/docs/mine`，通过“全部 / 我拥有的 / 与我协作”和“全部 / 可编辑 / 已提交 / 已结束 / 无草稿记录”查询权威列表；列表按更新时间与 ID 稳定分页，角色名称随当前语言显示。
 2. 进入 `/docs/compose`，填写标题、可选 Slug、摘要、Markdown 正文、封面、目录建议和修改摘要。
 3. 创建成功后会同时生成稳定文档身份与第一份工作草稿；新正文不会进入公开阅读。
 4. 在 `/docs/edit/:id` 继续保存。每次保存都携带当前 `ExpectedDraftVersion`，成功后页面采用服务端返回的新版本。
-5. `/docs/revisions/:id` 只查看已经批准的正式版本；日常草稿保存不会伪造成正式 Revision。
+5. `/docs/revisions/:id` 只查看已经批准的正式版本；日常草稿保存不会伪造成正式 Revision。版本轨、已选版本与比较基准独立加载，默认比较 `vN-1 → vN`，可切换为“选中版本 → 当前版本”；PC 并排、Mobile unified diff。任一比较基准失败时保留已选快照并局部重试，已有同版本快照刷新失败时标记 stale。
 
 内置固定文档、已删除文档或当前无编辑权的文档保持只读，并显示原因。既有文档在上一份草稿进入终态后，由 Owner 开启下一份草稿。
 
 ## 3. 邀请与协作
 
 - Owner 使用用户 `usr_...` PublicId 邀请协作者，不使用邮箱、登录名或内部 LongId 搜索。
-- 邀请处于 Pending 时，受邀者可以只读查看共享草稿和协作上下文，以决定接受或拒绝，但不能保存。
+- 邀请处于 Pending 时，受邀者可以只读查看共享草稿、正式 Revision 和协作上下文，以决定接受或拒绝，但不能保存。
 - 接受后，Editor 与 Owner 共享同一份活跃草稿；不存在每人一份私有副本。
 - Owner 移除协作者后，服务端立即拒绝该用户继续读取或保存；已经打开的页面不能依靠缓存继续写入。
 - 首批每篇文档最多 `20` 名 Pending / Accepted 协作者，每名用户最多拥有 `20` 份活跃草稿；实际限制以服务端配置为准。
@@ -70,7 +72,7 @@ Markdown 正文默认不超过 `1 MiB` UTF-8 字节。页面必须保留服务�
 
 - Wiki 图片和文档必须以 `BusinessType=Wiki` 上传；新附件默认私有，保存前的未绑定附件只有上传者本人可读。
 - 正文使用 `attachment://{id}`，封面提交 `coverAttachmentId`。保存文档或草稿时，服务端会在同一业务事务内校验租户、业务类型、上传者 / 既有文档关系并同步权威引用；不能引用其他用户未绑定的 Wiki 附件。
-- 附件一旦绑定，不再以“谁上传”决定长期读取。Owner、Accepted Editor、审核者和已发布文档读者按当前文档 / 草稿 ACL 读取；协作者被移除、文档删除或访问策略变化后，旧页面地址和临时 token 都不能绕过新权限。
+- 附件一旦绑定，不再以“谁上传”决定长期读取。Owner 与 Accepted Editor 按当前文档 / 草稿 ACL 读取；Pending Invitee 只可读取已获权 Draft / Revision 的附件，不因邀请关系获得当前正式 DocumentContent；审核者和已发布文档读者继续按对应权限读取。协作者被拒绝、撤销或移除，文档被删除或访问策略变化后，旧页面地址和临时 token 都不能绕过新权限。
 - 历史 Revision 的附件引用追加保留，以支持受权版本回看和回滚；清理任务以 `WikiAttachmentReference` 为准，不靠扫描当前 Markdown 猜测旧附件是否仍被使用。
 - 高频失败使用 `WikiAttachment.InvalidReference / ReferenceForbidden / TypeMismatch / ReferenceConflict` 和对应 `error.wiki_attachment.*` MessageKey。页面应保留本地草稿并显示可恢复错误，不删除正文或改写附件 URL。
 
@@ -78,7 +80,7 @@ Markdown 正文默认不超过 `1 MiB` UTF-8 字节。页面必须保留服务�
 
 ## 7. 公开性、通知与保留
 
-- 公开 `/docs` 只读取 `Published + Public` 的权威正文；Editing、Submitted、ChangesRequested、Rejected、Withdrawn 及 Applied 但未发布的内容都不会公开。
+- 公开 `/docs` 只读取 `Published + Public` 的权威正文；Editing、Submitted、ChangesRequested、Rejected、Withdrawn 及 Applied 但未发布的内容都不会公开。Author 页的具体公开链接必须使用正式 `VoDocumentSlug`，不能使用尚未 Apply 的草稿 Slug。
 - 邀请和审核结果进入通知中心的 Knowledge 分类，服务端使用 `DocsAuthorDraft` 结构化目标并在返回前重新检查 Owner / Accepted Editor 权限。
 - 目标失效、草稿被清理或用户失权时，通知保留安全摘要但不应提供伪造链接。
 - 活跃草稿不自动过期；Applied、Rejected、Withdrawn 的正文载荷默认保留 `90` 天后小批次清空，审核事件和正式 Revision 继续保留。

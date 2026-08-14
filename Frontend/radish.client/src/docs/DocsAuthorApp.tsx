@@ -1,21 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
 import { Icon } from '@radish/ui/icon';
-import { MarkdownRenderer } from '@radish/ui/markdown-renderer';
 import { toast } from '@radish/ui/toast';
 import {
-  type ProtectedMarkdownAttachmentOptions,
   type MarkdownDocumentUploadResult,
   type MarkdownImageUploadResult,
 } from '@radish/ui';
 import {
   ApiResponseError,
-  WikiDraftReviewState,
   type CreateWikiAuthorDraftRequest,
   type SaveWikiAuthorDraftRequest,
-  type WikiAuthorDocumentVo,
   type WikiAuthorDraftDetailVo,
+  type WikiAuthorListQuery,
+  type WikiAuthorRevisionItemVo,
 } from '@radish/http';
 import type { LongId } from '@/api/user';
 import { uploadDocument, uploadImage } from '@/api/attachment';
@@ -23,9 +20,8 @@ import {
   createWikiAuthorDraft,
   getWikiAuthorDraft,
   getWikiAuthorList,
-  getWikiDocumentById,
-  getWikiRevisionDetail,
-  getWikiRevisionList,
+  getWikiAuthorRevisionDetail,
+  getWikiAuthorRevisionHistory,
   getWikiTree,
   inviteWikiAuthorCollaborator,
   removeWikiAuthorCollaborator,
@@ -37,17 +33,11 @@ import {
 } from '@/apps/wiki/api/wiki';
 import {
   EMPTY_DRAFT,
-  formatWikiTime,
   getSuggestedSortValue,
   normalizeOptionalLongId,
   type EditorDraft,
 } from '@/apps/wiki/wikiApp.helpers';
-import type {
-  WikiDocumentDetailVo,
-  WikiDocumentRevisionDetailVo,
-  WikiDocumentRevisionItemVo,
-  WikiDocumentTreeNodeVo,
-} from '@/apps/wiki/types/wiki';
+import type { WikiDocumentTreeNodeVo } from '@/apps/wiki/types/wiki';
 import { WikiDocumentVisibility } from '@/apps/wiki/types/wiki';
 import { WebStateSlot, type WebStateSlotTone } from '@/components/web-shell';
 import { getApiBaseUrl } from '@/config/env';
@@ -65,12 +55,12 @@ import { useAuthStore } from '@/stores/authStore';
 import { useUserStore } from '@/stores/userStore';
 import { log } from '@/utils/logger';
 import {
-  formatDocsAuthorNumber,
-  getDocsAuthorSourceText,
-  getDocsAuthorSummaryPreview,
   validateDocsAuthorDraft,
 } from './docsAuthorPresentation';
+import { areDocsAuthorDraftsEqual } from './docsAuthorEditorPresentation';
 import { DocsAuthorEditorPage, type DocsAuthorEditorState } from './DocsAuthorEditorPage';
+import { DocsMinePage, type CollectionState } from './DocsMinePage';
+import { DocsRevisionsPage } from './DocsRevisionsPage';
 import { createDocsProtectedAttachmentOptions } from './docsProtectedAttachments';
 import {
   buildDocsAuthorPath,
@@ -78,36 +68,38 @@ import {
   type DocsAuthorRoute,
 } from './docsAuthorRouteState';
 import { shouldHandleAuthorLinkClick, useDocsAuthorNavigation } from './useDocsAuthorNavigation';
+import {
+  findPreviousRevision,
+  isSameLongId,
+  type RevisionComparisonMode,
+  type RevisionState,
+} from './docsRevisionComparison';
 import styles from './DocsAuthorApp.module.css';
+import editorStyles from './DocsAuthorEditorPage.module.css';
 
-interface CollectionState {
-  tree: WikiDocumentTreeNodeVo[];
-  documents: WikiAuthorDocumentVo[];
-  totalDocuments: number;
-  loading: boolean;
-  error: string | null;
-}
-
-interface RevisionState {
-  document: WikiDocumentDetailVo | null;
-  revisions: WikiDocumentRevisionItemVo[];
-  selectedRevision: WikiDocumentRevisionDetailVo | null;
-  selectedRevisionId: LongId | null;
-  loading: boolean;
-  loadingDetail: boolean;
-  error: string | null;
-}
+const DEFAULT_AUTHOR_LIST_QUERY: WikiAuthorListQuery = {
+  scope: 'all',
+  draftStage: 'all',
+  pageIndex: 1,
+  pageSize: 20,
+};
 
 const initialCollectionState: CollectionState = {
   tree: [],
   documents: [],
   totalDocuments: 0,
+  page: DEFAULT_AUTHOR_LIST_QUERY.pageIndex,
+  pageSize: DEFAULT_AUTHOR_LIST_QUERY.pageSize,
+  pageCount: 0,
+  scope: DEFAULT_AUTHOR_LIST_QUERY.scope,
+  draftStage: DEFAULT_AUTHOR_LIST_QUERY.draftStage,
   loading: false,
   error: null,
 };
 
 const initialEditorState: DocsAuthorEditorState = {
   draft: EMPTY_DRAFT,
+  baselineDraft: EMPTY_DRAFT,
   document: null,
   loading: false,
   submitting: false,
@@ -117,18 +109,23 @@ const initialEditorState: DocsAuthorEditorState = {
 };
 
 const initialRevisionState: RevisionState = {
-  document: null,
+  history: null,
   revisions: [],
   selectedRevision: null,
   selectedRevisionId: null,
+  comparisonMode: 'previous',
+  comparisonRevision: null,
+  comparisonRevisionId: null,
   loading: false,
   loadingDetail: false,
-  error: null,
+  loadingComparison: false,
+  historyError: null,
+  detailError: null,
+  detailStale: false,
+  comparisonError: null,
+  comparisonStale: false,
+  comparisonMissing: false,
 };
-
-function canEditDocument(document: WikiAuthorDraftDetailVo | null): boolean {
-  return document?.voCanEdit === true;
-}
 
 function getErrorMessage(error: unknown, fallback: string): string {
   return error instanceof Error && error.message.trim() ? error.message : fallback;
@@ -176,18 +173,6 @@ function buildSaveAuthorDraftRequest(draft: EditorDraft, expectedDraftVersion: n
   };
 }
 
-function countOwnedDocuments(documents: WikiAuthorDocumentVo[]): number {
-  return documents.filter((document) => document.voAuthorRole.toLowerCase() === 'owner').length;
-}
-
-function countCollaboratingDocuments(documents: WikiAuthorDocumentVo[]): number {
-  return documents.filter((document) => document.voAuthorRole.toLowerCase() !== 'owner').length;
-}
-
-function pickPreviewDocument(documents: WikiAuthorDocumentVo[]): WikiAuthorDocumentVo | null {
-  return documents[0] ?? null;
-}
-
 function buildRouteReturnPath(route: DocsAuthorRoute): string {
   if (route.kind === 'compose') {
     return buildDocsAuthorComposeReturnPath();
@@ -218,7 +203,19 @@ export function DocsAuthorApp() {
   const [collectionState, setCollectionState] = useState<CollectionState>(initialCollectionState);
   const [editorState, setEditorState] = useState<DocsAuthorEditorState>(initialEditorState);
   const [isEditorUploading, setIsEditorUploading] = useState(false);
-  const { route, navigateToRoute } = useDocsAuthorNavigation(isEditorUploading);
+  const isEditorDirty = !areDocsAuthorDraftsEqual(editorState.draft, editorState.baselineDraft);
+  const acknowledgeEditorDraft = useCallback(() => {
+    setEditorState((current) => ({
+      ...current,
+      baselineDraft: current.draft,
+    }));
+  }, []);
+  const { route, navigateToRoute } = useDocsAuthorNavigation({
+    navigationLocked: isEditorUploading,
+    confirmRequired: isEditorDirty,
+    confirmMessage: t('wiki.author.editor.unsavedLeaveConfirm'),
+    onConfirmNavigation: acknowledgeEditorDraft,
+  });
   const [revisionState, setRevisionState] = useState<RevisionState>(initialRevisionState);
   const protectedAttachmentRouteDocumentId = route.kind === 'edit' || route.kind === 'revisions'
     ? route.documentId
@@ -249,6 +246,12 @@ export function DocsAuthorApp() {
   ]);
   const treeRef = useRef<WikiDocumentTreeNodeVo[]>([]);
   const accountEpochRef = useRef(0);
+  const authorListQueryRef = useRef<WikiAuthorListQuery>(DEFAULT_AUTHOR_LIST_QUERY);
+  const authorListEpochRef = useRef(0);
+  const revisionDocumentIdRef = useRef<LongId | null>(null);
+  const revisionHistoryEpochRef = useRef(0);
+  const revisionDetailEpochRef = useRef(0);
+  const revisionComparisonEpochRef = useRef(0);
 
   const mineHref = buildDocsAuthorPath({ kind: 'mine' });
   const composeHref = buildDocsAuthorPath({ kind: 'compose' });
@@ -257,20 +260,36 @@ export function DocsAuthorApp() {
     treeRef.current = collectionState.tree;
   }, [collectionState.tree]);
 
-  const loadCollections = useCallback(async () => {
+  const loadCollections = useCallback(async (requestedQuery?: WikiAuthorListQuery) => {
     const accountEpoch = accountEpochRef.current;
-    setCollectionState((current) => ({
-      ...current,
-      loading: true,
-      error: null,
-    }));
+    const requestEpoch = ++authorListEpochRef.current;
+    const query = requestedQuery ?? authorListQueryRef.current;
+    authorListQueryRef.current = query;
+    setCollectionState((current) => {
+      const preserveExisting = current.scope === query.scope &&
+        current.draftStage === query.draftStage &&
+        current.page === query.pageIndex &&
+        current.pageSize === query.pageSize;
+      return {
+        ...current,
+        documents: preserveExisting ? current.documents : [],
+        totalDocuments: preserveExisting ? current.totalDocuments : 0,
+        pageCount: preserveExisting ? current.pageCount : 0,
+        scope: query.scope,
+        draftStage: query.draftStage,
+        page: query.pageIndex,
+        pageSize: query.pageSize,
+        loading: true,
+        error: null,
+      };
+    });
 
     try {
       const [tree, list] = await Promise.all([
         getWikiTree(t),
-        getWikiAuthorList(t),
+        getWikiAuthorList(query, t),
       ]);
-      if (accountEpoch !== accountEpochRef.current) {
+      if (accountEpoch !== accountEpochRef.current || requestEpoch !== authorListEpochRef.current) {
         return;
       }
 
@@ -278,11 +297,16 @@ export function DocsAuthorApp() {
         tree,
         documents: list.data || [],
         totalDocuments: list.dataCount || list.data?.length || 0,
+        page: list.page || query.pageIndex,
+        pageSize: list.pageSize || query.pageSize,
+        pageCount: list.pageCount || 0,
+        scope: query.scope,
+        draftStage: query.draftStage,
         loading: false,
         error: null,
       });
     } catch (error) {
-      if (accountEpoch !== accountEpochRef.current) {
+      if (accountEpoch !== accountEpochRef.current || requestEpoch !== authorListEpochRef.current) {
         return;
       }
       log.error('DocsAuthorApp', '加载文档作者集合失败:', error);
@@ -303,6 +327,7 @@ export function DocsAuthorApp() {
       setEditorState({
         ...initialEditorState,
         draft,
+        baselineDraft: draft,
         sortSuggestion: draft.sort,
       });
       return;
@@ -326,6 +351,7 @@ export function DocsAuthorApp() {
       const draft = createDraftFromDocument(document);
       setEditorState({
         draft,
+        baselineDraft: draft,
         document,
         loading: false,
         submitting: false,
@@ -348,80 +374,228 @@ export function DocsAuthorApp() {
     }
   }, [t]);
 
-  const loadRevisionDetail = useCallback(async (revisionId: LongId) => {
+  const loadRevisionDetail = useCallback(async (revisionId: LongId, documentId = revisionDocumentIdRef.current) => {
+    if (!documentId) {
+      return;
+    }
     const accountEpoch = accountEpochRef.current;
+    const requestEpoch = ++revisionDetailEpochRef.current;
+    revisionComparisonEpochRef.current += 1;
     setRevisionState((current) => ({
       ...current,
       selectedRevisionId: revisionId,
-      selectedRevision: null,
+      selectedRevision: isSameLongId(current.selectedRevision?.voId, revisionId)
+        ? current.selectedRevision
+        : null,
+      comparisonRevision: isSameLongId(current.selectedRevisionId, revisionId)
+        ? current.comparisonRevision
+        : null,
+      comparisonRevisionId: isSameLongId(current.selectedRevisionId, revisionId)
+        ? current.comparisonRevisionId
+        : null,
       loadingDetail: true,
-      error: null,
+      loadingComparison: false,
+      detailError: null,
+      detailStale: false,
+      comparisonError: null,
+      comparisonStale: false,
+      comparisonMissing: false,
     }));
 
     try {
-      const detail = await getWikiRevisionDetail(revisionId, t);
-      if (accountEpoch !== accountEpochRef.current) {
+      const detail = await getWikiAuthorRevisionDetail(revisionId, t);
+      if (accountEpoch !== accountEpochRef.current ||
+          requestEpoch !== revisionDetailEpochRef.current ||
+          documentId !== revisionDocumentIdRef.current) {
         return;
       }
       setRevisionState((current) => ({
         ...current,
-        selectedRevision: detail,
+        selectedRevision: isSameLongId(current.selectedRevisionId, revisionId) ? detail : current.selectedRevision,
         loadingDetail: false,
+        detailError: null,
+        detailStale: false,
       }));
     } catch (error) {
-      if (accountEpoch !== accountEpochRef.current) {
+      if (accountEpoch !== accountEpochRef.current ||
+          requestEpoch !== revisionDetailEpochRef.current ||
+          documentId !== revisionDocumentIdRef.current) {
         return;
       }
       log.error('DocsAuthorApp', '加载文档修订详情失败:', error);
       setRevisionState((current) => ({
         ...current,
-        selectedRevision: null,
+        selectedRevision: isSameLongId(current.selectedRevisionId, revisionId)
+          ? current.selectedRevision
+          : null,
         loadingDetail: false,
-        error: getErrorMessage(error, t('wiki.author.feedback.loadRevisionDetailFailed')),
+        detailError: getErrorMessage(error, t('wiki.author.feedback.loadRevisionDetailFailed')),
+        detailStale: Boolean(
+          isSameLongId(current.selectedRevisionId, revisionId)
+          && isSameLongId(current.selectedRevision?.voId, revisionId),
+        ),
       }));
+    }
+  }, [t]);
+
+  const loadRevisionComparison = useCallback(async (
+    selectedRevisionId: LongId,
+    mode: RevisionComparisonMode,
+    revisions: WikiAuthorRevisionItemVo[],
+    documentId = revisionDocumentIdRef.current,
+  ) => {
+    if (!documentId) {
+      return;
+    }
+
+    const comparisonSummary = mode === 'previous'
+      ? findPreviousRevision(revisions, selectedRevisionId)
+      : revisions.find((revision) => revision.voIsCurrent) ?? null;
+    const accountEpoch = accountEpochRef.current;
+    const requestEpoch = ++revisionComparisonEpochRef.current;
+
+    if (!comparisonSummary || isSameLongId(comparisonSummary.voId, selectedRevisionId)) {
+      setRevisionState((current) => (
+        isSameLongId(current.selectedRevisionId, selectedRevisionId) && current.comparisonMode === mode
+          ? {
+              ...current,
+              comparisonRevision: null,
+              comparisonRevisionId: null,
+              loadingComparison: false,
+              comparisonError: null,
+              comparisonStale: false,
+              comparisonMissing: mode === 'previous',
+            }
+          : current
+      ));
+      return;
+    }
+
+    setRevisionState((current) => {
+      if (!isSameLongId(current.selectedRevisionId, selectedRevisionId) || current.comparisonMode !== mode) {
+        return current;
+      }
+
+      const preserveExisting = isSameLongId(current.comparisonRevisionId, comparisonSummary.voId);
+      return {
+        ...current,
+        comparisonRevision: preserveExisting ? current.comparisonRevision : null,
+        comparisonRevisionId: comparisonSummary.voId,
+        loadingComparison: true,
+        comparisonError: null,
+        comparisonStale: false,
+        comparisonMissing: false,
+      };
+    });
+
+    try {
+      const detail = await getWikiAuthorRevisionDetail(comparisonSummary.voId, t);
+      if (accountEpoch !== accountEpochRef.current
+          || requestEpoch !== revisionComparisonEpochRef.current
+          || documentId !== revisionDocumentIdRef.current) {
+        return;
+      }
+      setRevisionState((current) => (
+        isSameLongId(current.selectedRevisionId, selectedRevisionId)
+        && current.comparisonMode === mode
+        && isSameLongId(current.comparisonRevisionId, comparisonSummary.voId)
+          ? {
+              ...current,
+              comparisonRevision: detail,
+              loadingComparison: false,
+              comparisonError: null,
+              comparisonStale: false,
+            }
+          : current
+      ));
+    } catch (error) {
+      if (accountEpoch !== accountEpochRef.current
+          || requestEpoch !== revisionComparisonEpochRef.current
+          || documentId !== revisionDocumentIdRef.current) {
+        return;
+      }
+      log.error('DocsAuthorApp', '加载文档差异比较基准失败:', error);
+      setRevisionState((current) => {
+        if (!isSameLongId(current.selectedRevisionId, selectedRevisionId)
+            || current.comparisonMode !== mode
+            || !isSameLongId(current.comparisonRevisionId, comparisonSummary.voId)) {
+          return current;
+        }
+        return {
+          ...current,
+          loadingComparison: false,
+          comparisonError: getErrorMessage(error, t('wiki.author.feedback.loadRevisionComparisonFailed')),
+          comparisonStale: Boolean(current.comparisonRevision),
+        };
+      });
     }
   }, [t]);
 
   const loadRevisions = useCallback(async (documentId: LongId) => {
     const accountEpoch = accountEpochRef.current;
-    setRevisionState({
-      ...initialRevisionState,
-      loading: true,
-    });
+    const requestEpoch = ++revisionHistoryEpochRef.current;
+    revisionDetailEpochRef.current += 1;
+    revisionComparisonEpochRef.current += 1;
+    const preserveExisting = revisionDocumentIdRef.current === documentId;
+    revisionDocumentIdRef.current = documentId;
+    setRevisionState((current) => preserveExisting
+      ? {
+          ...current,
+          loading: true,
+          loadingDetail: false,
+          historyError: null,
+          detailError: null,
+          detailStale: false,
+        }
+      : {
+          ...initialRevisionState,
+          loading: true,
+        });
 
     try {
-      const [document, revisions] = await Promise.all([
-        getWikiDocumentById(documentId, true, t),
-        getWikiRevisionList(documentId, t),
-      ]);
-      if (accountEpoch !== accountEpochRef.current) {
+      const history = await getWikiAuthorRevisionHistory(documentId, t);
+      if (accountEpoch !== accountEpochRef.current ||
+          requestEpoch !== revisionHistoryEpochRef.current ||
+          documentId !== revisionDocumentIdRef.current) {
         return;
       }
+      const revisions = history.voRevisions;
       const selectedRevisionId = revisions.find((revision) => revision.voIsCurrent)?.voId ?? revisions[0]?.voId ?? null;
 
       setRevisionState({
-        document,
+        ...initialRevisionState,
+        history,
         revisions,
         selectedRevision: null,
         selectedRevisionId,
         loading: false,
         loadingDetail: false,
-        error: null,
+        historyError: null,
+        detailError: null,
+        detailStale: false,
       });
 
       if (selectedRevisionId) {
-        await loadRevisionDetail(selectedRevisionId);
+        await loadRevisionDetail(selectedRevisionId, documentId);
       }
     } catch (error) {
-      if (accountEpoch !== accountEpochRef.current) {
+      if (accountEpoch !== accountEpochRef.current ||
+          requestEpoch !== revisionHistoryEpochRef.current ||
+          documentId !== revisionDocumentIdRef.current) {
         return;
       }
       log.error('DocsAuthorApp', '加载文档修订列表失败:', error);
-      setRevisionState({
-        ...initialRevisionState,
-        loading: false,
-        error: getErrorMessage(error, t('wiki.author.feedback.loadRevisionsFailed')),
-      });
+      setRevisionState((current) => preserveExisting
+        ? {
+            ...current,
+            loading: false,
+            historyError: getErrorMessage(error, t('wiki.author.feedback.loadRevisionsFailed')),
+          }
+        : {
+            ...initialRevisionState,
+            loading: false,
+            historyError: getErrorMessage(error, t('wiki.author.feedback.loadRevisionsFailed')),
+          });
     }
   }, [loadRevisionDetail, t]);
 
@@ -452,7 +626,13 @@ export function DocsAuthorApp() {
 
   useEffect(() => {
     accountEpochRef.current += 1;
+    authorListEpochRef.current += 1;
+    revisionHistoryEpochRef.current += 1;
+    revisionDetailEpochRef.current += 1;
+    revisionComparisonEpochRef.current += 1;
+    revisionDocumentIdRef.current = null;
     treeRef.current = [];
+    authorListQueryRef.current = DEFAULT_AUTHOR_LIST_QUERY;
     setCollectionState(initialCollectionState);
     setEditorState(initialEditorState);
     setRevisionState(initialRevisionState);
@@ -493,6 +673,25 @@ export function DocsAuthorApp() {
     }
   }, [authReady, loadEditor, loadRevisions, loggedIn, route, userId]);
 
+  useEffect(() => {
+    if (route.kind !== 'revisions' || !revisionState.selectedRevisionId || revisionState.revisions.length === 0) {
+      return;
+    }
+
+    void loadRevisionComparison(
+      revisionState.selectedRevisionId,
+      revisionState.comparisonMode,
+      revisionState.revisions,
+      route.documentId,
+    );
+  }, [
+    loadRevisionComparison,
+    revisionState.comparisonMode,
+    revisionState.revisions,
+    revisionState.selectedRevisionId,
+    route,
+  ]);
+
   const handleRouteLinkClick = (event: MouseEvent<HTMLAnchorElement>, nextRoute: DocsAuthorRoute) => {
     if (!shouldHandleAuthorLinkClick(event)) {
       return;
@@ -506,9 +705,23 @@ export function DocsAuthorApp() {
     navigateToRoute(nextRoute);
   };
 
-  const preventEditorNavigationWhileUploading = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (isEditorUploading && shouldHandleAuthorLinkClick(event)) {
+  const handleExternalAuthorNavigation = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (!shouldHandleAuthorLinkClick(event)) {
+      return;
+    }
+
+    if (isEditorUploading) {
       event.preventDefault();
+      return;
+    }
+
+    if (isEditorDirty && !window.confirm(t('wiki.author.editor.unsavedLeaveConfirm'))) {
+      event.preventDefault();
+      return;
+    }
+
+    if (isEditorDirty) {
+      acknowledgeEditorDraft();
     }
   };
 
@@ -587,7 +800,7 @@ export function DocsAuthorApp() {
       return;
     }
 
-    if (route.kind === 'edit' && !canEditDocument(editorState.document)) {
+    if (route.kind === 'edit' && editorState.document?.voCanEdit !== true) {
       toast.error(t('wiki.author.feedback.editUnavailable'));
       return;
     }
@@ -604,11 +817,22 @@ export function DocsAuthorApp() {
           return;
         }
         toast.success(t('wiki.author.feedback.created'));
+        const createdDraft = createDraftFromDocument(created);
+        setEditorState({
+          draft: createdDraft,
+          baselineDraft: createdDraft,
+          document: created,
+          loading: false,
+          submitting: false,
+          error: null,
+          sortSuggestion: createdDraft.sort,
+          conflict: null,
+        });
         await loadCollections();
         if (accountEpoch !== accountEpochRef.current) {
           return;
         }
-        navigateToRoute({ kind: 'edit', documentId: created.voDocumentId });
+        navigateToRoute({ kind: 'edit', documentId: created.voDocumentId }, { skipConfirmation: true });
         return;
       }
 
@@ -634,6 +858,7 @@ export function DocsAuthorApp() {
         ...current,
         document: saved,
         draft: createDraftFromDocument(saved),
+        baselineDraft: createDraftFromDocument(saved),
         conflict: null,
       }));
       await loadCollections();
@@ -699,6 +924,11 @@ export function DocsAuthorApp() {
     const detail = editorState.document;
     if (!detail?.voCanSubmit) {
       toast.error(t('wiki.author.feedback.submitUnavailable'));
+      return;
+    }
+
+    if (isEditorDirty) {
+      toast.error(t('wiki.author.editor.saveBeforeSubmit'));
       return;
     }
 
@@ -847,9 +1077,11 @@ export function DocsAuthorApp() {
           route={route}
           tree={collectionState.tree}
           state={editorState}
+          isDirty={isEditorDirty}
           isEditorUploading={isEditorUploading}
           onBack={(event) => handleRouteLinkClick(event, createDefaultDocsAuthorRoute())}
           onNavigate={handleRouteLinkClick}
+          onExternalNavigate={handleExternalAuthorNavigation}
           onParentChange={handleParentChange}
           onSetDraft={setDraft}
           onSave={handleSave}
@@ -876,8 +1108,38 @@ export function DocsAuthorApp() {
           state={revisionState}
           language={i18n.resolvedLanguage}
           onBack={(event) => handleRouteLinkClick(event, createDefaultDocsAuthorRoute())}
-          onSelectRevision={(revisionId) => void loadRevisionDetail(revisionId)}
-          protectedAttachments={protectedAttachments}
+          onReload={() => void loadRevisions(route.documentId)}
+          onSelectRevision={(revisionId) => {
+            const selectedSummary = revisionState.revisions.find((revision) => isSameLongId(revision.voId, revisionId));
+            if (selectedSummary?.voIsCurrent) {
+              setRevisionState((current) => ({ ...current, comparisonMode: 'previous' }));
+            }
+            void loadRevisionDetail(revisionId, route.documentId);
+          }}
+          onComparisonModeChange={(comparisonMode) => {
+            revisionComparisonEpochRef.current += 1;
+            setRevisionState((current) => ({
+              ...current,
+              comparisonMode,
+              comparisonRevision: null,
+              comparisonRevisionId: null,
+              loadingComparison: false,
+              comparisonError: null,
+              comparisonStale: false,
+              comparisonMissing: false,
+            }));
+          }}
+          onRetryRevision={() => revisionState.selectedRevisionId
+            ? void loadRevisionDetail(revisionState.selectedRevisionId, route.documentId)
+            : undefined}
+          onRetryComparison={() => revisionState.selectedRevisionId
+            ? void loadRevisionComparison(
+                revisionState.selectedRevisionId,
+                revisionState.comparisonMode,
+                revisionState.revisions,
+                route.documentId,
+              )
+            : undefined}
         />
       );
     }
@@ -887,6 +1149,7 @@ export function DocsAuthorApp() {
         state={collectionState}
         language={i18n.resolvedLanguage}
         onReload={() => void loadCollections()}
+        onQueryChange={(query) => void loadCollections(query)}
         onNavigate={handleRouteLinkClick}
         onStartDraft={(documentId) => void handleStartDraft(documentId)}
       />
@@ -905,67 +1168,38 @@ export function DocsAuthorApp() {
         navigationLocked={isEditorUploading}
       />
 
-      <main className={styles.main}>
-        <section className={styles.authorHero} aria-label={t('wiki.author.heroAriaLabel')}>
-          <div className={styles.authorHeroCopy}>
-            <p className={styles.kicker}>Author Workspace</p>
-            <h1 className={styles.authorHeroTitle}>{t('wiki.author.title')}</h1>
-            <p className={styles.authorHeroDescription}>{t('wiki.author.heroDescription')}</p>
+      <main className={`${styles.main} ${route.kind === 'compose' || route.kind === 'edit' ? editorStyles.editorMain : ''}`}>
+        {route.kind !== 'compose' && route.kind !== 'edit' ? (
+          <div className={styles.navBar}>
+              <a
+                className={route.kind === 'mine' ? styles.navItemActive : styles.navItem}
+                href={mineHref}
+                onClick={(event) => handleRouteLinkClick(event, { kind: 'mine' })}
+                aria-disabled={isEditorUploading}
+              >
+                <Icon icon="mdi:file-document-multiple-outline" size={18} />
+                <span>{t('wiki.author.actions.myDocuments')}</span>
+              </a>
+              <a
+                className={styles.navItem}
+                href={composeHref}
+                onClick={(event) => handleRouteLinkClick(event, { kind: 'compose' })}
+                aria-disabled={isEditorUploading}
+              >
+                <Icon icon="mdi:plus-box-outline" size={18} />
+                <span>{t('wiki.author.actions.create')}</span>
+              </a>
+              <a
+                className={styles.navItem}
+                href={buildPublicDocsPath({ kind: 'list' })}
+                onClick={handleExternalAuthorNavigation}
+                aria-disabled={isEditorUploading}
+              >
+                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
+                <span>{t('wiki.author.actions.publicReading')}</span>
+              </a>
           </div>
-          <div className={styles.authorSummaryGrid}>
-            <div className={styles.authorSummaryCard}>
-              <span className={styles.authorSummaryIcon}>
-                <Icon icon="mdi:file-tree-outline" size={20} />
-              </span>
-              <strong>{formatDocsAuthorNumber(collectionState.tree.length, i18n.resolvedLanguage)}</strong>
-              <span>{t('wiki.author.metrics.directoryNodes')}</span>
-            </div>
-            <div className={styles.authorSummaryCard}>
-              <span className={styles.authorSummaryIcon}>
-                <Icon icon="mdi:file-document-multiple-outline" size={20} />
-              </span>
-              <strong>{formatDocsAuthorNumber(collectionState.totalDocuments, i18n.resolvedLanguage)}</strong>
-              <span>{t('wiki.author.metrics.totalDocuments')}</span>
-            </div>
-            <div className={styles.authorSummaryCard}>
-              <span className={styles.authorSummaryIcon}>
-                <Icon icon={loggedIn ? 'mdi:shield-check-outline' : 'mdi:shield-alert-outline'} size={20} />
-              </span>
-              <strong>{loggedIn ? t('wiki.author.access.writable') : t('wiki.author.access.restricted')}</strong>
-              <span>{t(`wiki.author.route.${route.kind}`)}</span>
-            </div>
-          </div>
-        </section>
-
-        <div className={styles.navBar}>
-          <a
-            className={route.kind === 'mine' ? styles.navItemActive : styles.navItem}
-            href={mineHref}
-            onClick={(event) => handleRouteLinkClick(event, { kind: 'mine' })}
-            aria-disabled={isEditorUploading}
-          >
-            <Icon icon="mdi:file-document-multiple-outline" size={18} />
-            <span>{t('wiki.author.actions.myDocuments')}</span>
-          </a>
-          <a
-            className={route.kind === 'compose' ? styles.navItemActive : styles.navItem}
-            href={composeHref}
-            onClick={(event) => handleRouteLinkClick(event, { kind: 'compose' })}
-            aria-disabled={isEditorUploading}
-          >
-            <Icon icon="mdi:plus-box-outline" size={18} />
-            <span>{t('wiki.author.actions.create')}</span>
-          </a>
-          <a
-            className={styles.navItem}
-            href={buildPublicDocsPath({ kind: 'list' })}
-            onClick={preventEditorNavigationWhileUploading}
-            aria-disabled={isEditorUploading}
-          >
-            <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-            <span>{t('wiki.author.actions.publicReading')}</span>
-          </a>
-        </div>
+        ) : null}
 
         {renderContent()}
       </main>
@@ -979,9 +1213,10 @@ interface StatusPanelProps {
   description: string;
   actionHref?: string;
   actionLabel?: string;
+  actionOnClick?: () => void;
 }
 
-function StatusPanel({ icon, title, description, actionHref, actionLabel }: StatusPanelProps) {
+function StatusPanel({ icon, title, description, actionHref, actionLabel, actionOnClick }: StatusPanelProps) {
   const tone: WebStateSlotTone = icon === 'mdi:progress-clock'
     ? 'loading'
     : icon === 'mdi:shield-alert-outline'
@@ -1001,433 +1236,8 @@ function StatusPanel({ icon, title, description, actionHref, actionLabel }: Stat
         icon={icon}
         title={title}
         description={description}
-        actions={actionHref && actionLabel ? [{ label: actionLabel, href: actionHref }] : undefined}
+        actions={actionLabel ? [{ label: actionLabel, href: actionHref, onClick: actionOnClick }] : undefined}
       />
     </section>
-  );
-}
-
-interface DocsMinePageProps {
-  state: CollectionState;
-  language?: string;
-  onReload: () => void;
-  onNavigate: (event: MouseEvent<HTMLAnchorElement>, route: DocsAuthorRoute) => void;
-  onStartDraft: (documentId: LongId) => void;
-}
-
-function DocsMinePage({ state, language, onReload, onNavigate, onStartDraft }: DocsMinePageProps) {
-  const { t } = useTranslation();
-  const hasDocuments = state.documents.length > 0;
-  const previewDocument = pickPreviewDocument(state.documents);
-  const ownedCount = countOwnedDocuments(state.documents);
-  const collaboratingCount = countCollaboratingDocuments(state.documents);
-  const submittedCount = state.documents.filter((document) => document.voReviewState === WikiDraftReviewState.Submitted).length;
-
-  return (
-    <div className={styles.authorWorkspace}>
-      <section className={styles.panel}>
-        <div className={styles.panelHeader}>
-          <div>
-            <p className={styles.kicker}>Author Workspace</p>
-            <h1 className={styles.pageTitle}>{t('wiki.author.title')}</h1>
-            <p className={styles.pageIntro}>{t('wiki.author.mine.intro')}</p>
-          </div>
-          <div className={styles.headerActions}>
-            <a
-              className={styles.primaryButton}
-              href={buildDocsAuthorPath({ kind: 'compose' })}
-              onClick={(event) => onNavigate(event, { kind: 'compose' })}
-            >
-              <Icon icon="mdi:plus" size={18} />
-              <span>{t('wiki.author.actions.create')}</span>
-            </a>
-            <button type="button" className={styles.secondaryButton} onClick={onReload} disabled={state.loading}>
-              <Icon icon={state.loading ? 'mdi:progress-clock' : 'mdi:refresh'} size={18} />
-              <span>{state.loading ? t('wiki.author.actions.refreshing') : t('wiki.author.actions.refresh')}</span>
-            </button>
-          </div>
-        </div>
-
-        <div className={styles.summaryGrid}>
-          <SummaryTile label={t('wiki.author.metrics.directoryNodes')} value={state.tree.length} language={language} />
-          <SummaryTile label={t('wiki.author.metrics.totalDocuments')} value={state.totalDocuments} language={language} />
-          <SummaryTile label={t('wiki.author.metrics.loadedDocuments')} value={state.documents.length} language={language} />
-        </div>
-
-        {state.error ? (
-          <StatusPanel
-            icon="mdi:alert-circle-outline"
-            title={t('wiki.author.mine.errorTitle')}
-            description={state.error}
-          />
-        ) : state.loading && !hasDocuments ? (
-          <StatusPanel
-            icon="mdi:progress-clock"
-            title={t('wiki.author.mine.loadingTitle')}
-            description={t('wiki.author.mine.loadingDescription')}
-          />
-        ) : !hasDocuments ? (
-          <StatusPanel
-            icon="mdi:file-document-outline"
-            title={t('wiki.author.mine.emptyTitle')}
-            description={t('wiki.author.mine.emptyDescription')}
-            actionHref={buildDocsAuthorPath({ kind: 'compose' })}
-            actionLabel={t('wiki.author.actions.create')}
-          />
-        ) : (
-          <div className={styles.documentList}>
-            {state.documents.map((document) => (
-              <DocumentRow
-                key={document.voDocumentId}
-                document={document}
-                language={language}
-                onNavigate={onNavigate}
-                onStartDraft={onStartDraft}
-              />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <aside className={styles.authorRail} aria-label={t('wiki.author.mine.contextAriaLabel')}>
-        <section className={styles.railCard}>
-          <p className={styles.railKicker}>{t('wiki.author.rail.library')}</p>
-          <div className={styles.railMetricGrid}>
-            <RailMetric label={t('wiki.author.rail.owned')} value={ownedCount} language={language} />
-            <RailMetric label={t('wiki.author.rail.collaborating')} value={collaboratingCount} language={language} />
-            <RailMetric label={t('wiki.author.rail.submitted')} value={submittedCount} language={language} />
-          </div>
-          <p className={styles.railText}>{t('wiki.author.rail.libraryDescription')}</p>
-        </section>
-
-        <section className={styles.railCard}>
-          <p className={styles.railKicker}>{t('wiki.author.rail.preview')}</p>
-          {previewDocument ? (
-            <>
-              <h2 className={styles.railTitle}>{previewDocument.voTitle}</h2>
-              <p className={styles.railText}>{getDocsAuthorSummaryPreview(previewDocument.voSummary, t)}</p>
-              <div className={styles.railChipList}>
-                <span className={styles.railChip}>{previewDocument.voAuthorRole}</span>
-                <span className={styles.railChip}>{getDraftReviewStateText(previewDocument.voReviewState, t)}</span>
-                <span className={styles.railChip}>{t('wiki.author.document.versionPair', { document: previewDocument.voDocumentVersion, draft: previewDocument.voDraftVersion ?? '-' })}</span>
-              </div>
-              <div className={styles.railActionList}>
-                {previewDocument.voDraftId && previewDocument.voCanEdit ? (
-                  <a
-                    className={styles.railLink}
-                    href={buildDocsAuthorPath({ kind: 'edit', documentId: previewDocument.voDocumentId })}
-                    onClick={(event) => onNavigate(event, { kind: 'edit', documentId: previewDocument.voDocumentId })}
-                  >
-                    <Icon icon="mdi:pencil-outline" size={18} />
-                    <span>{t('wiki.author.actions.edit')}</span>
-                  </a>
-                ) : previewDocument.voCanEdit ? (
-                  <button type="button" className={styles.railLink} onClick={() => onStartDraft(previewDocument.voDocumentId)}>
-                    <Icon icon="mdi:file-plus-outline" size={18} />
-                    <span>{t('wiki.author.actions.startDraft')}</span>
-                  </button>
-                ) : null}
-                <a
-                  className={styles.railLink}
-                  href={buildDocsAuthorPath({ kind: 'revisions', documentId: previewDocument.voDocumentId })}
-                  onClick={(event) => onNavigate(event, { kind: 'revisions', documentId: previewDocument.voDocumentId })}
-                >
-                  <Icon icon="mdi:history" size={18} />
-                  <span>{t('wiki.author.actions.revisions')}</span>
-                </a>
-                {previewDocument.voDocumentVersion > 0 ? <a className={styles.railLink} href={buildPublicDocsPath({ kind: 'detail', slug: previewDocument.voSlug })}>
-                  <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                  <span>{t('wiki.author.actions.publicReading')}</span>
-                </a> : null}
-              </div>
-            </>
-          ) : (
-            <p className={styles.railText}>{t('wiki.author.rail.previewEmpty')}</p>
-          )}
-        </section>
-
-        <section className={styles.railCard}>
-          <p className={styles.railKicker}>{t('wiki.author.rail.boundary')}</p>
-          <ul className={styles.railRuleList}>
-            <li>{t('wiki.author.rail.boundaryAuthor')}</li>
-            <li>{t('wiki.author.rail.boundaryPublic')}</li>
-            <li>{t('wiki.author.rail.boundaryGovernance')}</li>
-          </ul>
-        </section>
-      </aside>
-    </div>
-  );
-}
-
-interface SummaryTileProps {
-  label: string;
-  value: number;
-  language?: string;
-}
-
-function SummaryTile({ label, value, language }: SummaryTileProps) {
-  return (
-    <div className={styles.summaryTile}>
-      <span className={styles.summaryLabel}>{label}</span>
-      <strong className={styles.summaryValue}>{formatDocsAuthorNumber(value, language)}</strong>
-    </div>
-  );
-}
-
-interface RailMetricProps {
-  label: string;
-  value: number | string;
-  language?: string;
-}
-
-function RailMetric({ label, value, language }: RailMetricProps) {
-  return (
-    <div className={styles.railMetric}>
-      <span>{label}</span>
-      <strong>{typeof value === 'number' ? formatDocsAuthorNumber(value, language) : value}</strong>
-    </div>
-  );
-}
-
-function getDraftReviewStateText(state: number | null | undefined, t: TFunction): string {
-  switch (state) {
-    case WikiDraftReviewState.Submitted:
-      return t('wiki.author.reviewState.submitted');
-    case WikiDraftReviewState.ChangesRequested:
-      return t('wiki.author.reviewState.changesRequested');
-    case WikiDraftReviewState.Applied:
-      return t('wiki.author.reviewState.applied');
-    case WikiDraftReviewState.Rejected:
-      return t('wiki.author.reviewState.rejected');
-    case WikiDraftReviewState.Withdrawn:
-      return t('wiki.author.reviewState.withdrawn');
-    default:
-      return t('wiki.author.reviewState.editing');
-  }
-}
-
-interface DocumentRowProps {
-  document: WikiAuthorDocumentVo;
-  language?: string;
-  onNavigate: (event: MouseEvent<HTMLAnchorElement>, route: DocsAuthorRoute) => void;
-  onStartDraft: (documentId: LongId) => void;
-}
-
-function DocumentRow({ document, language, onNavigate, onStartDraft }: DocumentRowProps) {
-  const { t } = useTranslation();
-  const editRoute: DocsAuthorRoute = { kind: 'edit', documentId: document.voDocumentId };
-  const revisionsRoute: DocsAuthorRoute = { kind: 'revisions', documentId: document.voDocumentId };
-  const publicHref = buildPublicDocsPath({ kind: 'detail', slug: document.voSlug });
-  const isPendingInvitee = document.voAuthorRole === 'Invitee';
-  const canStartDraft = !document.voDraftId && document.voAuthorRole === 'Owner';
-
-  return (
-    <article className={styles.documentRow}>
-      <div className={styles.documentMain}>
-        <div className={styles.metaRow}>
-          <span className={styles.statusChip}>{getDraftReviewStateText(document.voReviewState, t)}</span>
-          <span className={styles.metaChip}>{document.voAuthorRole}</span>
-          <span className={styles.metaChip}>{t('wiki.author.document.documentVersion', { version: document.voDocumentVersion })}</span>
-          <span className={styles.metaChip}>{t('wiki.author.document.draftVersion', { version: document.voDraftVersion ?? '-' })}</span>
-        </div>
-        <h2 className={styles.documentTitle}>{document.voTitle}</h2>
-        <p className={styles.documentSummary}>
-          {document.voSummary?.trim() || t('wiki.author.summaryFallback')}
-        </p>
-        <div className={styles.documentMeta}>
-          <span>slug: {document.voSlug}</span>
-          <span>{t('wiki.author.document.updated', { time: formatWikiTime(document.voModifyTime || document.voCreateTime, language) })}</span>
-        </div>
-      </div>
-      <div className={styles.documentActions}>
-        {document.voDraftId && (document.voCanEdit || isPendingInvitee) ? (
-          <a
-            className={styles.primaryButton}
-            href={buildDocsAuthorPath(editRoute)}
-            onClick={(event) => onNavigate(event, editRoute)}
-          >
-            {t(isPendingInvitee ? 'wiki.author.actions.respondInvitation' : 'wiki.author.actions.edit')}
-          </a>
-        ) : canStartDraft ? (
-          <button type="button" className={styles.primaryButton} onClick={() => onStartDraft(document.voDocumentId)}>
-            {t('wiki.author.actions.startDraft')}
-          </button>
-        ) : <span className={styles.readOnlyButton}>{t('wiki.author.access.readOnly')}</span>}
-        <a
-          className={styles.secondaryButton}
-          href={buildDocsAuthorPath(revisionsRoute)}
-          onClick={(event) => onNavigate(event, revisionsRoute)}
-        >
-          {t('wiki.author.actions.revisions')}
-        </a>
-        {document.voDocumentVersion > 0 ? <a className={styles.secondaryButton} href={publicHref}>
-          {t('wiki.author.actions.read')}
-        </a> : null}
-      </div>
-    </article>
-  );
-}
-
-interface DocsRevisionsPageProps {
-  state: RevisionState;
-  language?: string;
-  onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
-  onSelectRevision: (revisionId: LongId) => void;
-  protectedAttachments: ProtectedMarkdownAttachmentOptions;
-}
-
-function DocsRevisionsPage({
-  state,
-  language,
-  onBack,
-  onSelectRevision,
-  protectedAttachments,
-}: DocsRevisionsPageProps) {
-  const { t } = useTranslation();
-  const publicReadHref = state.document && !state.document.voIsDeleted && state.document.voSlug.trim()
-    ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
-    : null;
-  const currentRevision = state.revisions.find((revision) => revision.voIsCurrent) ?? null;
-  const selectedVersion = state.selectedRevision?.voVersion ?? currentRevision?.voVersion ?? state.document?.voVersion ?? '-';
-
-  return (
-    <div className={styles.authorWorkspace}>
-      <section className={styles.panel}>
-        <div className={styles.panelHeader}>
-          <div>
-            <p className={styles.kicker}>Revision History</p>
-            <h1 className={styles.pageTitle}>{state.document?.voTitle || t('wiki.author.revisions.title')}</h1>
-            <p className={styles.pageIntro}>{t('wiki.author.revisions.intro')}</p>
-          </div>
-          <div className={styles.headerActions}>
-            <a className={styles.secondaryButton} href={buildDocsAuthorPath({ kind: 'mine' })} onClick={onBack}>
-              <Icon icon="mdi:arrow-left" size={18} />
-              <span>{t('wiki.author.actions.backToList')}</span>
-            </a>
-            {publicReadHref ? (
-              <a className={styles.secondaryButton} href={publicReadHref}>
-                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                <span>{t('wiki.author.actions.publicReading')}</span>
-              </a>
-            ) : null}
-          </div>
-        </div>
-
-      {state.loading ? (
-        <StatusPanel
-          icon="mdi:progress-clock"
-          title={t('wiki.author.revisions.loadingTitle')}
-          description={t('wiki.author.revisions.loadingDescription')}
-        />
-      ) : state.error && state.revisions.length === 0 ? (
-        <StatusPanel
-          icon="mdi:alert-circle-outline"
-          title={t('wiki.author.revisions.errorTitle')}
-          description={state.error}
-        />
-      ) : state.revisions.length === 0 ? (
-        <StatusPanel
-          icon="mdi:history"
-          title={t('wiki.author.revisions.emptyTitle')}
-          description={t('wiki.author.revisions.emptyDescription')}
-        />
-      ) : (
-        <div className={styles.revisionLayout}>
-          <aside className={styles.revisionList}>
-            {state.revisions.map((revision) => (
-              <button
-                key={revision.voId}
-                type="button"
-                className={revision.voId === state.selectedRevisionId ? styles.revisionItemActive : styles.revisionItem}
-                onClick={() => onSelectRevision(revision.voId)}
-              >
-                <span className={styles.revisionTitle}>v{revision.voVersion}</span>
-                <span className={styles.revisionSummary}>{revision.voChangeSummary || t('wiki.author.revisions.noSummary')}</span>
-                <span className={styles.revisionMeta}>
-                  {formatWikiTime(revision.voCreateTime, language)} · {revision.voCreateBy}
-                </span>
-                {revision.voIsCurrent ? <span className={styles.statusChip}>{t('wiki.author.revisions.current')}</span> : null}
-              </button>
-            ))}
-          </aside>
-
-          <article className={styles.revisionPreview}>
-            {state.loadingDetail ? (
-              <StatusPanel
-                icon="mdi:progress-clock"
-                title={t('wiki.author.revisions.detailLoadingTitle')}
-                description={t('wiki.author.revisions.detailLoadingDescription')}
-              />
-            ) : state.selectedRevision ? (
-              <>
-                <div className={styles.revisionPreviewHeader}>
-                  <div>
-                    <h2 className={styles.revisionPreviewTitle}>v{state.selectedRevision.voVersion}</h2>
-                    <p className={styles.revisionMeta}>{state.selectedRevision.voTitle}</p>
-                  </div>
-                  <div className={styles.metaRow}>
-                    <span className={styles.metaChip}>{getDocsAuthorSourceText(state.selectedRevision.voSourceType, t)}</span>
-                    <span className={styles.metaChip}>{formatWikiTime(state.selectedRevision.voCreateTime, language)}</span>
-                  </div>
-                </div>
-                <MarkdownRenderer
-                  content={state.selectedRevision.voMarkdownContent}
-                  className={styles.markdownContent}
-                  protectedAttachments={protectedAttachments}
-                />
-              </>
-            ) : (
-              <StatusPanel
-                icon="mdi:file-search-outline"
-                title={t('wiki.author.revisions.selectTitle')}
-                description={t('wiki.author.revisions.selectDescription')}
-              />
-            )}
-          </article>
-        </div>
-        )}
-      </section>
-
-      <aside className={styles.authorRail} aria-label={t('wiki.author.revisions.contextAriaLabel')}>
-        <section className={styles.railCard}>
-          <p className={styles.railKicker}>{t('wiki.author.revisions.evidence')}</p>
-          <div className={styles.railMetricGrid}>
-            <RailMetric label={t('wiki.author.revisions.count')} value={state.revisions.length} language={language} />
-            <RailMetric label={t('wiki.author.revisions.currentVersion')} value={currentRevision ? `v${currentRevision.voVersion}` : '-'} />
-            <RailMetric label={t('wiki.author.revisions.selectedVersion')} value={selectedVersion === '-' ? '-' : `v${selectedVersion}`} />
-          </div>
-          <p className={styles.railText}>{t('wiki.author.revisions.boundary')}</p>
-        </section>
-
-        {state.selectedRevision ? (
-          <section className={styles.railCard}>
-            <p className={styles.railKicker}>{t('wiki.author.revisions.selectedSnapshot')}</p>
-            <h2 className={styles.railTitle}>{state.selectedRevision.voTitle}</h2>
-            <p className={styles.railText}>{state.selectedRevision.voChangeSummary || t('wiki.author.revisions.noSummary')}</p>
-            <div className={styles.railChipList}>
-              <span className={styles.railChip}>{getDocsAuthorSourceText(state.selectedRevision.voSourceType, t)}</span>
-              <span className={styles.railChip}>{formatWikiTime(state.selectedRevision.voCreateTime, language)}</span>
-              {state.selectedRevision.voIsCurrent ? <span className={styles.railChip}>{t('wiki.author.revisions.current')}</span> : null}
-            </div>
-          </section>
-        ) : null}
-
-        <section className={styles.railCard}>
-          <p className={styles.railKicker}>{t('wiki.author.revisions.flowActions')}</p>
-          <div className={styles.railActionList}>
-            <a className={styles.railLink} href={buildDocsAuthorPath({ kind: 'mine' })} onClick={onBack}>
-              <Icon icon="mdi:arrow-left" size={18} />
-              <span>{t('wiki.author.actions.backToList')}</span>
-            </a>
-            {publicReadHref ? (
-              <a className={styles.railLink} href={publicReadHref}>
-                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                <span>{t('wiki.author.actions.publicReading')}</span>
-              </a>
-            ) : null}
-          </div>
-        </section>
-      </aside>
-    </div>
   );
 }

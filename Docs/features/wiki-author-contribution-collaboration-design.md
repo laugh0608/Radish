@@ -1,8 +1,8 @@
 # Docs / Wiki 普通作者贡献与协作设计
 
-> 状态：`F4-G-A-D` 已完成，专题关闭；验收结论见 [F4-G-D 成组验收记录](/records/f4-g-d-wiki-author-collaboration-stage-acceptance-2026-07-20)。
+> 状态：`F4-G-A-D` 已按当时矩阵完成；`2026-08-08` 的 F4-R 设计前复核发现的 Author Revision、终态证据、写响应证据与 Apply 基准版本 CAS 漂移已完成代码修复和静态验收，R1-A01 PC / mobile 代表设计、Author 编辑任务面与 Gateway 验收随后关闭。详见 [R1-A01 readiness 审计](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)、[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)与[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 >
-> 最后更新：2026-07-20
+> 最后更新：2026-08-08
 >
 > 本文负责普通作者、协作者、工作草稿、审核应用和冲突恢复的长期边界。公开阅读、固定文档同步和 Console 既有治理仍以 [文档系统方案](/guide/document-system) 为准。
 >
@@ -207,8 +207,10 @@ WHERE Id = draftId
 
 Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按所有者 / 协作者关系授权：
 
-- `GET Wiki/AuthorGetList`
+- `GET Wiki/AuthorGetList?scope=all|owned|collaborating&draftStage=all|editable|submitted|terminal|none&pageIndex={n}&pageSize={n}`
 - `GET Wiki/AuthorGetById/{documentId}`
+- `GET Wiki/AuthorGetRevisionHistory/{documentId}`
+- `GET Wiki/AuthorGetRevisionDetail/{revisionId}`
 - `POST Wiki/AuthorCreate`
 - `POST Wiki/AuthorStartDraft/{documentId}`
 - `PUT Wiki/AuthorSaveDraft/{draftId}`
@@ -219,7 +221,7 @@ Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按�
 - `POST Wiki/AuthorRespondInvitation/{collaboratorId}`
 - `POST Wiki/AuthorRemoveCollaborator/{collaboratorId}`
 
-`AuthorCreate` 创建新文档身份与首份草稿；既有文档在没有活跃草稿时，由所有者通过 `AuthorStartDraft` 从当前正式版本创建下一份草稿。旧 `Create / Update` HTTP 作者写入口已经删除，WebOS 兼容写入也复用 Author Service，不得恢复平行正文写入口。
+`AuthorGetList` 在专属 Repository 内按租户、Owner / Pending / Accepted 关系和当前 / 终态草稿证据完成数据库筛选，使用 `ModifyTime ?? CreateTime DESC, Id DESC` 稳定分页；未知查询词元返回结构化 `Wiki.AuthorListQueryInvalid`，不得先取全量再由 Service 或前端过滤。`AuthorCreate` 创建新文档身份与首份草稿；既有文档在没有活跃草稿时，由所有者通过 `AuthorStartDraft` 从当前正式版本创建下一份草稿。Author Revision 只读入口按 Owner、Pending Invitee、Accepted Editor 与 System / Admin 关系授权，不复用 Console 权限接口，也不向普通 Author 返回内部创建者 LongId。旧 `Create / Update` HTTP 作者写入口已经删除，WebOS 兼容写入也复用 Author Service，不得恢复平行正文写入口。
 
 ### 8.2 Console API
 
@@ -234,8 +236,9 @@ Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按�
 详情契约必须明确返回：
 
 - 当前用户的 `VoAuthorRole / VoCanEdit / VoCanSubmit / VoCanManageCollaborators`
-- `VoDraftId / VoDraftVersion / VoBaseDocumentVersion / VoReviewState`
-- 正式 `VoVersion / VoStatus / VoVisibility`
+- `VoDraftId / VoActiveDraftId / VoLatestDraftId / VoDraftVersion / VoBaseDocumentVersion / VoReviewState`
+- `VoIsActiveDraft / VoCanStartDraft / VoHasDraftPayload / VoPayloadPurgedAt`
+- 正式 `VoDocumentVersion / VoDocumentStatus / VoDocumentSlug` 与草稿 `VoSlug` 分离，公开链接不得使用未应用的草稿 Slug
 - 只读原因和允许动作，不让前端通过角色名或 `SourceType` 猜测权限
 
 稳定错误至少包括：
@@ -261,10 +264,10 @@ Author API 全部要求 `AuthorizationPolicies.Client`，并在 Service 内按�
 
 ### 9.1 Author 页面族
 
-- `/docs/mine`：展示“我拥有的 / 与我协作的”，按草稿和审核状态筛选。
+- `/docs/mine`：展示“我拥有的 / 与我协作的”，按草稿和审核状态使用服务端权威筛选与分页；快速切换只接受最新查询响应，首次失败与已有页 stale 分开呈现，角色 code 只经双语映射展示。
 - `/docs/compose`：创建文档身份与首份工作草稿；匿名用户走统一登录回流。
 - `/docs/edit/:id`：只编辑工作草稿，顶部明确显示所有者、协作状态、正式版本和草稿版本。
-- `/docs/revisions/:id`：继续展示已批准版本，不把每次草稿保存伪装成正式版本。
+- `/docs/revisions/:id`：继续展示已批准版本，不把每次草稿保存伪装成正式版本；history 与 detail 独立裁决 unavailable / stale，并分别拒绝过期响应。
 
 PC 使用编辑器主区与协作 / 审核侧栏；mobile 使用同一页面结构，将协作者和审核时间线放入共享 Bottom Sheet 或抽屉。不得建立第二套移动 Author App。
 
@@ -281,7 +284,7 @@ PC 使用编辑器主区与协作 / 审核侧栏；mobile 使用同一页面结�
 
 - 所有者、协作者、提交说明和审核历史。
 - 当前正式版本与草稿基准版本。
-- Markdown 差异或至少安全的双栏正文对照。
+- 默认 `vN-1 → vN` 的修改前 / 后差异，并允许切换为“选中版本 → 当前版本”；PC 使用标题、元数据与 Markdown 并排差异，Mobile 使用单列 unified diff，比较基准失败时不得清空已选版本。
 - 请求修改、驳回、批准应用动作及权限原因。
 
 Console mobile 顺序固定为“队列 -> 正文证据 -> 版本与权限 -> 审核动作 -> 留痕”，与既有治理工作台语义一致。

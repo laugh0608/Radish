@@ -191,27 +191,35 @@ public class ExperienceControllerTest
     {
         var serviceMock = CreateServiceMock();
         serviceMock
-            .Setup(service => service.GetGovernanceActionsAsync(9527, 20))
-            .ReturnsAsync([
-                new UserExperienceGovernanceActionVo
+            .Setup(service => service.GetGovernanceActionsAsync(9527, 1, 20))
+            .ReturnsAsync(new PageModel<UserExperienceGovernanceActionVo>
+            {
+                Page = 1,
+                PageSize = 20,
+                DataCount = 1,
+                PageCount = 1,
+                Data =
                 {
-                    VoActionId = 70021,
-                    VoTargetUserId = 9527,
-                    VoActionType = "Review",
-                    VoActionTypeDisplay = "人工复核",
-                    VoReviewResult = "Observe",
-                    VoReviewResultDisplay = "已复核，继续观察",
-                    VoRemark = "已回看经验流水，继续观察。"
+                    new UserExperienceGovernanceActionVo
+                    {
+                        VoActionId = 70021,
+                        VoTargetUserId = 9527,
+                        VoActionType = "Review",
+                        VoActionTypeDisplay = "人工复核",
+                        VoReviewResult = "Observe",
+                        VoReviewResultDisplay = "已复核，继续观察",
+                        VoRemark = "已回看经验流水，继续观察。"
+                    }
                 }
-            ]);
+            });
 
         var controller = CreateController(serviceMock.Object);
-        var result = await controller.GetUserGovernanceActions(9527, 20);
+        var result = await controller.GetUserGovernanceActions(9527, 1, 20);
 
         Assert.True(result.IsSuccess);
-        var payload = Assert.IsType<List<UserExperienceGovernanceActionVo>>(result.ResponseData);
-        Assert.Single(payload);
-        Assert.Equal("人工复核", payload[0].VoActionTypeDisplay);
+        var payload = Assert.IsType<PageModel<UserExperienceGovernanceActionVo>>(result.ResponseData);
+        Assert.Single(payload.Data);
+        Assert.Equal("人工复核", payload.Data[0].VoActionTypeDisplay);
     }
 
     [Fact]
@@ -227,7 +235,9 @@ public class ExperienceControllerTest
             RuleCodes = ["LIKE_SHARE_HEAVY"],
             RuleLabels = ["点赞占比偏高"],
             RecommendationLevel = "review",
-            RecommendationReason = "最近 7 天重复命中"
+            RecommendationReason = "最近 7 天重复命中",
+            ExpectedVersion = 4,
+            IdempotencyKey = "review-9527-4"
         };
 
         var serviceMock = CreateServiceMock();
@@ -239,13 +249,18 @@ public class ExperienceControllerTest
                     && dto.WindowDays == 7),
                 10001,
                 "Tester"))
-            .ReturnsAsync(true);
+            .ReturnsAsync(new AdminExperienceGovernanceResultVo
+            {
+                VoExperience = new UserExperienceVo { VoUserId = 9527, VoVersion = 5 },
+                VoAction = new UserExperienceGovernanceActionVo { VoActionId = 70022, VoTargetUserId = 9527 }
+            });
 
         var controller = CreateController(serviceMock.Object);
         var result = await controller.AdminRecordGovernanceReview(request);
 
         Assert.True(result.IsSuccess);
-        Assert.True(Assert.IsType<bool>(result.ResponseData));
+        var payload = Assert.IsType<AdminExperienceGovernanceResultVo>(result.ResponseData);
+        Assert.Equal(5, payload.VoExperience.VoVersion);
         serviceMock.Verify(service => service.RecordGovernanceReviewAsync(
             It.IsAny<AdminRecordExperienceGovernanceReviewDto>(),
             10001,

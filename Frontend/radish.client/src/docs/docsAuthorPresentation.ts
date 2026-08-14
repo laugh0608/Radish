@@ -6,6 +6,28 @@ import {
 } from '../apps/wiki/wikiApp.helpers.ts';
 import { WikiDocumentStatus, WikiDocumentVisibility } from '../apps/wiki/types/wiki.ts';
 
+interface DocsAuthorPublicReadCandidate {
+  status: number | null | undefined;
+  documentVersion: number | null | undefined;
+  documentSlug: string | null | undefined;
+  isDeleted?: boolean;
+}
+
+export function resolveDocsAuthorPublicReadSlug({
+  status,
+  documentVersion,
+  documentSlug,
+  isDeleted = false,
+}: DocsAuthorPublicReadCandidate): string | null {
+  const normalizedSlug = documentSlug?.trim();
+  return status === WikiDocumentStatus.Published
+    && (documentVersion ?? 0) > 0
+    && !isDeleted
+    && normalizedSlug
+    ? normalizedSlug
+    : null;
+}
+
 export function getDocsAuthorStatusText(status: number | undefined, t: TFunction): string {
   switch (status) {
     case WikiDocumentStatus.Published:

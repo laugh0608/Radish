@@ -2,311 +2,326 @@ using Radish.IRepository;
 using Radish.Model;
 using Radish.Repository.Base;
 using Radish.Repository.UnitOfWorks;
-using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.Repository;
 
-/// <summary>排行榜仓储</summary>
-/// <remarks>
-/// 提供排行榜聚合查询方法
-/// </remarks>
+/// <summary>公开排行榜权威聚合仓储。</summary>
 public class LeaderboardRepository : BaseRepository<User>, ILeaderboardRepository
 {
     public LeaderboardRepository(IUnitOfWorkManage unitOfWorkManage) : base(unitOfWorkManage)
     {
     }
 
-    #region 购买数量排行榜
-
     /// <inheritdoc />
-    public async Task<List<(long UserId, int TotalQuantity)>> GetPurchaseCountRankingAsync(int pageIndex, int pageSize)
+    public Task<(List<UserLeaderboardMetric> Items, int TotalCount)> GetExperienceRankingAsync(
+        DateTime now,
+        int pageIndex,
+        int pageSize)
     {
-        var result = await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Order>()
-                .Where(o => o.Status == OrderStatus.Completed && !o.IsDeleted)
-                .GroupBy(o => o.UserId)
-                .Select(o => new
-                {
-                    UserId = o.UserId,
-                    TotalQuantity = SqlFunc.AggregateSum(o.Quantity)
-                })
-                .OrderByDescending(x => x.TotalQuantity)
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync());
-
-        return result.Select(x => (x.UserId, x.TotalQuantity)).ToList();
+        return ExecuteDbOperationAsync(() =>
+            QueryMetricPageAsync(BuildExperienceRankingQuery(now), pageIndex, pageSize));
     }
 
     /// <inheritdoc />
-    public async Task<int> GetPurchaseCountRankingTotalAsync()
+    public Task<int> GetUserExperienceRankAsync(long userId, DateTime now)
     {
-        return await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Order>()
-            .Where(o => o.Status == OrderStatus.Completed && !o.IsDeleted)
-            .GroupBy(o => o.UserId)
-            .CountAsync());
-    }
-
-    /// <inheritdoc />
-    public async Task<int> GetUserPurchaseCountRankAsync(long userId)
-    {
-        return await ExecuteDbOperationAsync(async () =>
+        return ExecuteDbOperationAsync(async () =>
         {
-            // 先获取用户的购买总数
-            var userTotal = await CreateTenantQueryableFor<Order>()
-                .Where(o => o.UserId == userId && o.Status == OrderStatus.Completed && !o.IsDeleted)
-                .SumAsync(o => o.Quantity);
-
-            if (userTotal == 0) return 0;
-
-            // 计算排名（比该用户购买数量多的用户数 + 1）
-            var rank = await CreateTenantQueryableFor<Order>()
-                .Where(o => o.Status == OrderStatus.Completed && !o.IsDeleted)
-                .GroupBy(o => o.UserId)
-                .Having(o => SqlFunc.AggregateSum(o.Quantity) > userTotal)
-                .CountAsync();
-
-            return rank + 1;
+            var target = await BuildExperienceRankingQuery(now)
+                .Where(item => item.UserId == userId)
+                .FirstAsync();
+            return target == null
+                ? 0
+                : await CountOrdinalRankAsync(BuildExperienceRankingQuery(now), target);
         });
     }
 
-    #endregion
-
-    #region 发帖数量排行榜
-
     /// <inheritdoc />
-    public async Task<List<(long UserId, int PostCount)>> GetPostCountRankingAsync(int pageIndex, int pageSize)
+    public Task<(List<UserLeaderboardMetric> Items, int TotalCount)> GetPostCountRankingAsync(
+        int pageIndex,
+        int pageSize)
     {
-        var result = await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Post>()
-                .Where(p => p.IsPublished && p.IsEnabled && !p.IsDeleted)
-                .GroupBy(p => p.AuthorId)
-                .Select(p => new
-                {
-                    UserId = p.AuthorId,
-                    PostCount = SqlFunc.AggregateCount(p.Id)
-                })
-                .OrderByDescending(x => x.PostCount)
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync());
-
-        return result.Select(x => (x.UserId, x.PostCount)).ToList();
+        return ExecuteDbOperationAsync(() =>
+            QueryMetricPageAsync(BuildPostCountRankingQuery(), pageIndex, pageSize));
     }
 
     /// <inheritdoc />
-    public async Task<int> GetPostCountRankingTotalAsync()
+    public Task<int> GetUserPostCountRankAsync(long userId)
     {
-        return await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Post>()
-            .Where(p => p.IsPublished && p.IsEnabled && !p.IsDeleted)
-            .GroupBy(p => p.AuthorId)
-            .CountAsync());
-    }
-
-    /// <inheritdoc />
-    public async Task<int> GetUserPostCountRankAsync(long userId)
-    {
-        return await ExecuteDbOperationAsync(async () =>
+        return ExecuteDbOperationAsync(async () =>
         {
-            // 先获取用户的发帖数
-            var userCount = await CreateTenantQueryableFor<Post>()
-                .Where(p => p.AuthorId == userId && p.IsPublished && p.IsEnabled && !p.IsDeleted)
-                .CountAsync();
-
-            if (userCount == 0) return 0;
-
-            // 计算排名
-            var rank = await CreateTenantQueryableFor<Post>()
-                .Where(p => p.IsPublished && p.IsEnabled && !p.IsDeleted)
-                .GroupBy(p => p.AuthorId)
-                .Having(p => SqlFunc.AggregateCount(p.Id) > userCount)
-                .CountAsync();
-
-            return rank + 1;
+            var target = await BuildPostCountRankingQuery()
+                .Where(item => item.UserId == userId)
+                .FirstAsync();
+            return target == null
+                ? 0
+                : await CountOrdinalRankAsync(BuildPostCountRankingQuery(), target);
         });
     }
 
-    #endregion
-
-    #region 评论数量排行榜
-
     /// <inheritdoc />
-    public async Task<List<(long UserId, int CommentCount)>> GetCommentCountRankingAsync(int pageIndex, int pageSize)
+    public Task<(List<UserLeaderboardMetric> Items, int TotalCount)> GetCommentCountRankingAsync(
+        int pageIndex,
+        int pageSize)
     {
-        var result = await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Comment>()
-                .Where(c => c.IsEnabled && !c.IsDeleted)
-                .GroupBy(c => c.AuthorId)
-                .Select(c => new
-                {
-                    UserId = c.AuthorId,
-                    CommentCount = SqlFunc.AggregateCount(c.Id)
-                })
-                .OrderByDescending(x => x.CommentCount)
-                .Skip((pageIndex - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync());
-
-        return result.Select(x => (x.UserId, x.CommentCount)).ToList();
+        return ExecuteDbOperationAsync(() =>
+            QueryMetricPageAsync(BuildCommentCountRankingQuery(), pageIndex, pageSize));
     }
 
     /// <inheritdoc />
-    public async Task<int> GetCommentCountRankingTotalAsync()
+    public Task<int> GetUserCommentCountRankAsync(long userId)
     {
-        return await ExecuteDbOperationAsync(() => CreateTenantQueryableFor<Comment>()
-            .Where(c => c.IsEnabled && !c.IsDeleted)
-            .GroupBy(c => c.AuthorId)
-            .CountAsync());
-    }
-
-    /// <inheritdoc />
-    public async Task<int> GetUserCommentCountRankAsync(long userId)
-    {
-        return await ExecuteDbOperationAsync(async () =>
+        return ExecuteDbOperationAsync(async () =>
         {
-            // 先获取用户的评论数
-            var userCount = await CreateTenantQueryableFor<Comment>()
-                .Where(c => c.AuthorId == userId && c.IsEnabled && !c.IsDeleted)
-                .CountAsync();
-
-            if (userCount == 0) return 0;
-
-            // 计算排名
-            var rank = await CreateTenantQueryableFor<Comment>()
-                .Where(c => c.IsEnabled && !c.IsDeleted)
-                .GroupBy(c => c.AuthorId)
-                .Having(c => SqlFunc.AggregateCount(c.Id) > userCount)
-                .CountAsync();
-
-            return rank + 1;
+            var target = await BuildCommentCountRankingQuery()
+                .Where(item => item.UserId == userId)
+                .FirstAsync();
+            return target == null
+                ? 0
+                : await CountOrdinalRankAsync(BuildCommentCountRankingQuery(), target);
         });
     }
 
-    #endregion
-
-    #region 人气排行榜
+    /// <inheritdoc />
+    public Task<(List<UserLeaderboardMetric> Items, int TotalCount)> GetPopularityRankingAsync(
+        int pageIndex,
+        int pageSize)
+    {
+        return ExecuteDbOperationAsync(async () =>
+        {
+            var ranking = await LoadPopularityRankingAsync();
+            var safePageIndex = Math.Max(1, pageIndex);
+            var safePageSize = Math.Max(1, pageSize);
+            var items = ranking
+                .Skip((safePageIndex - 1) * safePageSize)
+                .Take(safePageSize)
+                .ToList();
+            return (items, ranking.Count);
+        });
+    }
 
     /// <inheritdoc />
-    public async Task<List<(long UserId, int TotalLikes)>> GetPopularityRankingAsync(int pageIndex, int pageSize)
+    public Task<int> GetUserPopularityRankAsync(long userId)
     {
-        var (postLikesList, commentLikesList) = await ExecuteDbOperationAsync(async () =>
+        return ExecuteDbOperationAsync(async () =>
         {
-            // 获取帖子点赞数
-            var postLikes = CreateTenantQueryableFor<Post>()
-                .Where(p => p.IsPublished && p.IsEnabled && !p.IsDeleted)
-                .GroupBy(p => p.AuthorId)
-                .Select(p => new
-                {
-                    UserId = p.AuthorId,
-                    LikeCount = SqlFunc.AggregateSum(p.LikeCount)
-                });
-
-            // 获取评论点赞数
-            var commentLikes = CreateTenantQueryableFor<Comment>()
-                .Where(c => c.IsEnabled && !c.IsDeleted)
-                .GroupBy(c => c.AuthorId)
-                .Select(c => new
-                {
-                    UserId = c.AuthorId,
-                    LikeCount = SqlFunc.AggregateSum(c.LikeCount)
-                });
-
-            // 合并两个查询结果
-            var postLikesResult = await postLikes.ToListAsync();
-            var commentLikesResult = await commentLikes.ToListAsync();
-            return (postLikesResult, commentLikesResult);
+            var ranking = await LoadPopularityRankingAsync();
+            var index = ranking.FindIndex(item => item.UserId == userId);
+            return index < 0 ? 0 : index + 1;
         });
+    }
 
-        // 在内存中合并计算
-        var combined = postLikesList
-            .Concat(commentLikesList)
-            .GroupBy(x => x.UserId)
-            .Select(g => new
+    /// <inheritdoc />
+    public Task<(List<Product> Items, int TotalCount)> GetHotProductRankingAsync(
+        int pageIndex,
+        int pageSize)
+    {
+        return ExecuteDbOperationAsync(async () =>
+        {
+            var safePageIndex = Math.Max(1, pageIndex);
+            var safePageSize = Math.Max(1, pageSize);
+            RefAsync<int> totalCount = 0;
+            var items = await CreateTenantQueryableFor<Product>()
+                .Where(product =>
+                    product.IsEnabled &&
+                    product.IsOnSale &&
+                    !product.IsDeleted &&
+                    product.SoldCount > 0)
+                .OrderBy(product => product.SoldCount, OrderByType.Desc)
+                .OrderBy(product => product.Id, OrderByType.Asc)
+                .ToPageListAsync(safePageIndex, safePageSize, totalCount);
+            return (items, totalCount.Value);
+        });
+    }
+
+    /// <inheritdoc />
+    public Task<List<LeaderboardUserProjection>> GetEligibleUsersAsync(
+        IReadOnlyCollection<long> userIds)
+    {
+        if (userIds.Count == 0)
+        {
+            return Task.FromResult(new List<LeaderboardUserProjection>());
+        }
+
+        var resolvedUserIds = userIds.Distinct().ToList();
+        return ExecuteDbOperationAsync(() => CreateTenantQueryableFor<User>()
+            .Where(user =>
+                resolvedUserIds.Contains(user.Id) &&
+                user.Id > 0 &&
+                user.IsEnable &&
+                !user.IsDeleted)
+            .Select(user => new LeaderboardUserProjection
             {
-                UserId = g.Key,
-                TotalLikes = g.Sum(x => x.LikeCount)
+                UserId = user.Id,
+                UserName = user.UserName,
+                PublicId = user.PublicId,
+                PublicIndex = user.PublicIndex
             })
-            .OrderByDescending(x => x.TotalLikes)
-            .Skip((pageIndex - 1) * pageSize)
-            .Take(pageSize)
-            .ToList();
-
-        return combined.Select(x => (x.UserId, x.TotalLikes)).ToList();
+            .ToListAsync());
     }
 
-    /// <inheritdoc />
-    public async Task<int> GetPopularityRankingTotalAsync()
+    private ISugarQueryable<LeaderboardMetricRow> BuildExperienceRankingQuery(DateTime now)
     {
-        var (postAuthors, commentAuthors) = await ExecuteDbOperationAsync(async () =>
-        {
-            // 获取有帖子或评论的用户数
-            var postAuthorList = await CreateTenantQueryableFor<Post>()
-                .Where(p => p.IsPublished && p.IsEnabled && !p.IsDeleted && p.LikeCount > 0)
-                .Select(p => p.AuthorId)
-                .Distinct()
-                .ToListAsync();
-
-            var commentAuthorList = await CreateTenantQueryableFor<Comment>()
-                .Where(c => c.IsEnabled && !c.IsDeleted && c.LikeCount > 0)
-                .Select(c => c.AuthorId)
-                .Distinct()
-                .ToListAsync();
-
-            return (postAuthorList, commentAuthorList);
-        });
-
-        return postAuthors.Union(commentAuthors).Count();
-    }
-
-    /// <inheritdoc />
-    public async Task<int> GetUserPopularityRankAsync(long userId)
-    {
-        return await ExecuteDbOperationAsync(async () =>
-        {
-            // 获取用户的帖子点赞数
-            var postLikes = await CreateTenantQueryableFor<Post>()
-                .Where(p => p.AuthorId == userId && p.IsPublished && p.IsEnabled && !p.IsDeleted)
-                .SumAsync(p => p.LikeCount);
-
-            // 获取用户的评论点赞数
-            var commentLikes = await CreateTenantQueryableFor<Comment>()
-                .Where(c => c.AuthorId == userId && c.IsEnabled && !c.IsDeleted)
-                .SumAsync(c => c.LikeCount);
-
-            var userTotalLikes = postLikes + commentLikes;
-            if (userTotalLikes == 0)
+        return CreateTenantQueryableFor<UserExperience>()
+            .InnerJoin<User>((experience, user) =>
+                experience.UserId == user.Id &&
+                experience.TenantId == user.TenantId)
+            .Where((experience, user) =>
+                experience.UserId > 0 &&
+                !experience.IsDeleted &&
+                (!experience.ExpFrozen ||
+                 (experience.FrozenUntil != null && experience.FrozenUntil <= now)) &&
+                user.Id > 0 &&
+                user.IsEnable &&
+                !user.IsDeleted)
+            .Select((experience, user) => new LeaderboardMetricRow
             {
-                return 0;
-            }
-
-            // 获取所有用户的点赞数并计算排名
-            var postLikesList = await CreateTenantQueryableFor<Post>()
-                .Where(p => p.IsPublished && p.IsEnabled && !p.IsDeleted)
-                .GroupBy(p => p.AuthorId)
-                .Select(p => new
-                {
-                    UserId = p.AuthorId,
-                    LikeCount = SqlFunc.AggregateSum(p.LikeCount)
-                })
-                .ToListAsync();
-
-            var commentLikesList = await CreateTenantQueryableFor<Comment>()
-                .Where(c => c.IsEnabled && !c.IsDeleted)
-                .GroupBy(c => c.AuthorId)
-                .Select(c => new
-                {
-                    UserId = c.AuthorId,
-                    LikeCount = SqlFunc.AggregateSum(c.LikeCount)
-                })
-                .ToListAsync();
-
-            var combined = postLikesList
-                .Concat(commentLikesList)
-                .GroupBy(x => x.UserId)
-                .Select(g => g.Sum(x => x.LikeCount))
-                .Count(total => total > userTotalLikes);
-
-            return combined + 1;
-        });
+                UserId = experience.UserId,
+                Value = experience.TotalExp
+            })
+            .MergeTable();
     }
 
-    #endregion
+    private ISugarQueryable<LeaderboardMetricRow> BuildPostCountRankingQuery()
+    {
+        return CreateTenantQueryableFor<Post>()
+            .InnerJoin<User>((post, user) =>
+                post.AuthorId == user.Id &&
+                post.TenantId == user.TenantId)
+            .Where((post, user) =>
+                post.IsPublished &&
+                post.IsEnabled &&
+                !post.IsDeleted &&
+                user.Id > 0 &&
+                user.IsEnable &&
+                !user.IsDeleted)
+            .GroupBy((post, user) => post.AuthorId)
+            .Select((post, user) => new LeaderboardMetricRow
+            {
+                UserId = post.AuthorId,
+                Value = SqlFunc.AggregateCount(post.Id)
+            })
+            .MergeTable();
+    }
+
+    private ISugarQueryable<LeaderboardMetricRow> BuildCommentCountRankingQuery()
+    {
+        return CreateTenantQueryableFor<Comment>()
+            .InnerJoin<User>((comment, user) =>
+                comment.AuthorId == user.Id &&
+                comment.TenantId == user.TenantId)
+            .Where((comment, user) =>
+                comment.IsEnabled &&
+                !comment.IsDeleted &&
+                user.Id > 0 &&
+                user.IsEnable &&
+                !user.IsDeleted)
+            .GroupBy((comment, user) => comment.AuthorId)
+            .Select((comment, user) => new LeaderboardMetricRow
+            {
+                UserId = comment.AuthorId,
+                Value = SqlFunc.AggregateCount(comment.Id)
+            })
+            .MergeTable();
+    }
+
+    private ISugarQueryable<LeaderboardMetricRow> BuildPostPopularityQuery()
+    {
+        return CreateTenantQueryableFor<Post>()
+            .InnerJoin<User>((post, user) =>
+                post.AuthorId == user.Id &&
+                post.TenantId == user.TenantId)
+            .Where((post, user) =>
+                post.IsPublished &&
+                post.IsEnabled &&
+                !post.IsDeleted &&
+                post.LikeCount > 0 &&
+                user.Id > 0 &&
+                user.IsEnable &&
+                !user.IsDeleted)
+            .GroupBy((post, user) => post.AuthorId)
+            .Select((post, user) => new LeaderboardMetricRow
+            {
+                UserId = post.AuthorId,
+                Value = SqlFunc.AggregateSum(post.LikeCount)
+            })
+            .MergeTable();
+    }
+
+    private ISugarQueryable<LeaderboardMetricRow> BuildCommentPopularityQuery()
+    {
+        return CreateTenantQueryableFor<Comment>()
+            .InnerJoin<User>((comment, user) =>
+                comment.AuthorId == user.Id &&
+                comment.TenantId == user.TenantId)
+            .Where((comment, user) =>
+                comment.IsEnabled &&
+                !comment.IsDeleted &&
+                comment.LikeCount > 0 &&
+                user.Id > 0 &&
+                user.IsEnable &&
+                !user.IsDeleted)
+            .GroupBy((comment, user) => comment.AuthorId)
+            .Select((comment, user) => new LeaderboardMetricRow
+            {
+                UserId = comment.AuthorId,
+                Value = SqlFunc.AggregateSum(comment.LikeCount)
+            })
+            .MergeTable();
+    }
+
+    private async Task<List<UserLeaderboardMetric>> LoadPopularityRankingAsync()
+    {
+        var postMetrics = await BuildPostPopularityQuery().ToListAsync();
+        var commentMetrics = await BuildCommentPopularityQuery().ToListAsync();
+
+        return postMetrics
+            .Concat(commentMetrics)
+            .GroupBy(item => item.UserId)
+            .Select(group => new UserLeaderboardMetric(
+                group.Key,
+                group.Sum(item => item.Value)))
+            .Where(item => item.Value > 0)
+            .OrderByDescending(item => item.Value)
+            .ThenBy(item => item.UserId)
+            .ToList();
+    }
+
+    private static async Task<(List<UserLeaderboardMetric> Items, int TotalCount)> QueryMetricPageAsync(
+        ISugarQueryable<LeaderboardMetricRow> query,
+        int pageIndex,
+        int pageSize)
+    {
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = Math.Max(1, pageSize);
+        RefAsync<int> totalCount = 0;
+        var rows = await query
+            .OrderBy(item => item.Value, OrderByType.Desc)
+            .OrderBy(item => item.UserId, OrderByType.Asc)
+            .ToPageListAsync(safePageIndex, safePageSize, totalCount);
+        var items = rows
+            .Select(item => new UserLeaderboardMetric(item.UserId, item.Value))
+            .ToList();
+        return (items, totalCount.Value);
+    }
+
+    private static async Task<int> CountOrdinalRankAsync(
+        ISugarQueryable<LeaderboardMetricRow> query,
+        LeaderboardMetricRow target)
+    {
+        var precedingCount = await query
+            .Where(item =>
+                item.Value > target.Value ||
+                (item.Value == target.Value && item.UserId < target.UserId))
+            .CountAsync();
+        return precedingCount + 1;
+    }
+
+    private sealed class LeaderboardMetricRow
+    {
+        public long UserId { get; set; }
+
+        public long Value { get; set; }
+    }
 }

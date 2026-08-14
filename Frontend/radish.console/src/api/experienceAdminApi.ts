@@ -17,6 +17,7 @@ export interface UserExperienceVo {
   voExpFrozen: boolean;
   voFrozenUntil?: string | null;
   voFrozenReason?: string | null;
+  voVersion: number;
 }
 
 export interface LevelConfigVo {
@@ -88,7 +89,7 @@ export interface UserExperienceGovernanceActionVo {
   voActionId: string;
   voTargetUserId: string;
   voTargetUserName?: string | null;
-  voActionType: 'Review' | 'Freeze' | 'Unfreeze' | 'Unknown' | string;
+  voActionType: 'Review' | 'Freeze' | 'Unfreeze' | 'AutoUnfreeze' | 'Unknown' | string;
   voActionTypeDisplay: string;
   voReviewResult?: 'NoIssue' | 'Observe' | 'FreezeSuggest' | null;
   voReviewResultDisplay?: string | null;
@@ -102,6 +103,8 @@ export interface UserExperienceGovernanceActionVo {
   voRecommendationTitle?: string | null;
   voRecommendationReason?: string | null;
   voFrozenUntil?: string | null;
+  voExpectedVersion?: number | null;
+  voResultVersion?: number | null;
   voOperatorId: string;
   voOperatorName?: string | null;
   voCreateTime: string;
@@ -148,13 +151,22 @@ export interface ExpTransactionVo {
 export interface AdminAdjustExperienceRequest {
   userId: string;
   deltaExp: number;
-  reason?: string;
+  reason: string;
+  expectedVersion: number;
+  idempotencyKey: string;
 }
 
 export interface AdminFreezeExperienceRequest {
   userId: string;
   reason: string;
   frozenUntil?: string;
+  expectedVersion: number;
+}
+
+export interface AdminUnfreezeExperienceRequest {
+  userId: string;
+  reason: string;
+  expectedVersion: number;
 }
 
 export interface AdminRecordExperienceGovernanceReviewRequest {
@@ -167,6 +179,56 @@ export interface AdminRecordExperienceGovernanceReviewRequest {
   ruleLabels?: string[];
   recommendationLevel?: 'normal' | 'review' | 'freeze-suggest';
   recommendationReason?: string;
+  expectedVersion: number;
+  idempotencyKey: string;
+}
+
+export interface AdminExperienceAdjustmentResultVo {
+  voExperience: UserExperienceVo;
+  voTransaction: ExpTransactionVo;
+  voReplayed: boolean;
+}
+
+export interface AdminExperienceGovernanceResultVo {
+  voExperience: UserExperienceVo;
+  voAction: UserExperienceGovernanceActionVo;
+  voReplayed: boolean;
+}
+
+export interface ExperienceLevelRecalculationChangeVo {
+  voLevel: number;
+  voLevelName: string;
+  voBeforeExpRequired: number;
+  voAfterExpRequired: number;
+  voBeforeExpCumulative: number;
+  voAfterExpCumulative: number;
+  voChanged: boolean;
+}
+
+export interface ExperienceLevelRecalculationPreviewVo {
+  voFingerprint: string;
+  voFormulaType: string;
+  voFormulaSummary: string;
+  voChangedLevelCount: number;
+  voMissingLevels: number[];
+  voChanges: ExperienceLevelRecalculationChangeVo[];
+}
+
+export interface ExperienceLevelRecalculationAuditVo {
+  voAuditId: string;
+  voFormulaType: string;
+  voFormulaSummary: string;
+  voPreviewFingerprint: string;
+  voChangedLevelCount: number;
+  voReason: string;
+  voOperatorId: string;
+  voOperatorName: string;
+  voCreateTime: string;
+}
+
+export interface ExperienceLevelRecalculationResultVo {
+  voLevels: LevelConfigVo[];
+  voAudit: ExperienceLevelRecalculationAuditVo;
 }
 
 export async function getUserExperience(userId: string): Promise<UserExperienceVo> {
@@ -210,12 +272,14 @@ export async function getUserDailyStats(
 
 export async function getUserGovernanceActions(
   userId: string,
-  take: number = 20
-): Promise<UserExperienceGovernanceActionVo[]> {
+  pageIndex: number = 1,
+  pageSize: number = 20
+): Promise<PagedResponse<UserExperienceGovernanceActionVo>> {
   const searchParams = new URLSearchParams({
-    take: String(take),
+    pageIndex: String(pageIndex),
+    pageSize: String(pageSize),
   });
-  const response = await apiGet<UserExperienceGovernanceActionVo[]>(
+  const response = await apiGet<PagedResponse<UserExperienceGovernanceActionVo>>(
     `/api/v1/Experience/GetUserGovernanceActions/${encodeURIComponent(String(userId))}?${searchParams.toString()}`,
     { withAuth: true }
   );
@@ -262,42 +326,103 @@ export async function getUserTransactions(params: {
   return response.data;
 }
 
-export async function adminAdjustExperience(request: AdminAdjustExperienceRequest): Promise<void> {
-  const response = await apiPost('/api/v1/Experience/AdminAdjustExperience', request, { withAuth: true });
-  if (!response.ok) {
-    throw createApiResponseError(response, 'experience.feedback.adjustFailed');
-  }
-}
-
-export async function adminFreezeExperience(request: AdminFreezeExperienceRequest): Promise<void> {
-  const response = await apiPost('/api/v1/Experience/AdminFreezeExperience', request, { withAuth: true });
-  if (!response.ok) {
-    throw createApiResponseError(response, 'experience.feedback.freezeFailed');
-  }
-}
-
-export async function adminUnfreezeExperience(userId: string): Promise<void> {
-  const response = await apiPost(
-    '/api/v1/Experience/AdminUnfreezeExperience',
-    { userId },
+export async function adminAdjustExperience(
+  request: AdminAdjustExperienceRequest
+): Promise<AdminExperienceAdjustmentResultVo> {
+  const response = await apiPost<AdminExperienceAdjustmentResultVo>(
+    '/api/v1/Experience/AdminAdjustExperience',
+    request,
     { withAuth: true }
   );
-  if (!response.ok) {
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, 'experience.feedback.adjustFailed');
+  }
+
+  return response.data;
+}
+
+export async function adminFreezeExperience(
+  request: AdminFreezeExperienceRequest
+): Promise<AdminExperienceGovernanceResultVo> {
+  const response = await apiPost<AdminExperienceGovernanceResultVo>(
+    '/api/v1/Experience/AdminFreezeExperience',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, 'experience.feedback.freezeFailed');
+  }
+
+  return response.data;
+}
+
+export async function adminUnfreezeExperience(
+  request: AdminUnfreezeExperienceRequest
+): Promise<AdminExperienceGovernanceResultVo> {
+  const response = await apiPost<AdminExperienceGovernanceResultVo>(
+    '/api/v1/Experience/AdminUnfreezeExperience',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
     throw createApiResponseError(response, 'experience.feedback.unfreezeFailed');
   }
+
+  return response.data;
 }
 
 export async function adminRecordGovernanceReview(
   request: AdminRecordExperienceGovernanceReviewRequest
-): Promise<void> {
-  const response = await apiPost('/api/v1/Experience/AdminRecordGovernanceReview', request, { withAuth: true });
-  if (!response.ok) {
+): Promise<AdminExperienceGovernanceResultVo> {
+  const response = await apiPost<AdminExperienceGovernanceResultVo>(
+    '/api/v1/Experience/AdminRecordGovernanceReview',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
     throw createApiResponseError(response, 'experience.feedback.reviewFailed');
   }
+
+  return response.data;
 }
 
-export async function recalculateLevelConfigs(): Promise<LevelConfigVo[]> {
-  const response = await apiPost<LevelConfigVo[]>('/api/v1/Experience/RecalculateLevelConfigs', {}, { withAuth: true });
+export async function previewLevelConfigRecalculation(): Promise<ExperienceLevelRecalculationPreviewVo> {
+  const response = await apiGet<ExperienceLevelRecalculationPreviewVo>(
+    '/api/v1/Experience/PreviewLevelConfigRecalculation',
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, 'experience.feedback.recalculateFailed');
+  }
+
+  return response.data;
+}
+
+export async function recalculateLevelConfigs(request: {
+  expectedFingerprint: string;
+  reason: string;
+}): Promise<ExperienceLevelRecalculationResultVo> {
+  const response = await apiPost<ExperienceLevelRecalculationResultVo>(
+    '/api/v1/Experience/RecalculateLevelConfigs',
+    request,
+    { withAuth: true }
+  );
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, 'experience.feedback.recalculateFailed');
+  }
+
+  return response.data;
+}
+
+export async function getLevelRecalculationAudits(
+  pageIndex: number = 1,
+  pageSize: number = 20
+): Promise<PagedResponse<ExperienceLevelRecalculationAuditVo>> {
+  const searchParams = new URLSearchParams({ pageIndex: String(pageIndex), pageSize: String(pageSize) });
+  const response = await apiGet<PagedResponse<ExperienceLevelRecalculationAuditVo>>(
+    `/api/v1/Experience/GetLevelRecalculationAudits?${searchParams.toString()}`,
+    { withAuth: true }
+  );
   if (!response.ok || !response.data) {
     throw createApiResponseError(response, 'experience.feedback.recalculateFailed');
   }

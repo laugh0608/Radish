@@ -25,11 +25,14 @@ namespace Radish.Api.Controllers;
 [ApiErrorContract]
 public class ShopController : ControllerBase
 {
+    private const int MaxAdminProductPageSize = 100;
+    private const int MaxAdminProductKeywordLength = 100;
     private readonly IProductService _productService;
     private readonly IOrderService _orderService;
     private readonly IUserBenefitService _userBenefitService;
     private readonly IUserInventoryService _userInventoryService;
     private readonly IUserBrowseHistoryService _userBrowseHistoryService;
+    private readonly IProductReviewService _productReviewService;
     private readonly ICurrentUserAccessor _currentUserAccessor;
     private readonly IStringLocalizer<Errors> _errorsLocalizer;
 
@@ -40,7 +43,8 @@ public class ShopController : ControllerBase
         IUserInventoryService userInventoryService,
         IUserBrowseHistoryService userBrowseHistoryService,
         ICurrentUserAccessor currentUserAccessor,
-        IStringLocalizer<Errors> errorsLocalizer)
+        IStringLocalizer<Errors> errorsLocalizer,
+        IProductReviewService productReviewService)
     {
         _productService = productService;
         _orderService = orderService;
@@ -49,6 +53,7 @@ public class ShopController : ControllerBase
         _userBrowseHistoryService = userBrowseHistoryService;
         _currentUserAccessor = currentUserAccessor;
         _errorsLocalizer = errorsLocalizer;
+        _productReviewService = productReviewService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -155,6 +160,66 @@ public class ShopController : ControllerBase
     {
         var result = await _productService.GetProductCapabilitiesAsync();
         return MessageModel<List<ShopProductCapabilityVo>>.Success("查询成功", result);
+    }
+
+    /// <summary>获取商品公开综合评分与评价分页。</summary>
+    [HttpGet("{productId:long}")]
+    [AllowAnonymous]
+    public async Task<MessageModel<ProductReviewPageVo>> GetProductReviews(
+        long productId,
+        int pageIndex = 1,
+        int pageSize = 10)
+    {
+        var result = await _productReviewService.GetPageAsync(
+            productId,
+            pageIndex,
+            pageSize,
+            Current.TenantId);
+        return MessageModel<ProductReviewPageVo>.Success("查询成功", result);
+    }
+
+    /// <summary>获取本人评价资格、当前评价与 CAS 写入版本。</summary>
+    [HttpGet("{productId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<MyProductReviewVo>> GetMyProductReview(long productId)
+    {
+        var result = await _productReviewService.GetMineAsync(
+            productId,
+            GetCurrentUserId(),
+            Current.TenantId);
+        return MessageModel<MyProductReviewVo>.Success("查询成功", result);
+    }
+
+    /// <summary>创建、编辑或恢复本人对商品的唯一评价。</summary>
+    [HttpPut("{productId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<ProductReviewVo>> UpsertProductReview(
+        long productId,
+        [FromBody] UpsertProductReviewDto request)
+    {
+        var result = await _productReviewService.UpsertAsync(
+            productId,
+            request,
+            GetCurrentUserId(),
+            GetCurrentUserName(),
+            Current.TenantId);
+        return MessageModel<ProductReviewVo>.Success("评价已保存", result);
+    }
+
+    /// <summary>按 CAS 版本删除本人商品评价。</summary>
+    [HttpDelete("{reviewId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<ProductReviewVo>> DeleteProductReview(
+        long reviewId,
+        [FromQuery] int expectedVersion)
+    {
+        var result = await _productReviewService.DeleteAsync(
+            reviewId,
+            expectedVersion,
+            GetCurrentUserId(),
+            GetCurrentUserName(),
+            Current.TenantId);
+        return MessageModel<ProductReviewVo>.Success("评价已删除", result);
     }
 
     /// <summary>
@@ -530,8 +595,21 @@ public class ShopController : ControllerBase
         int pageIndex = 1,
         int pageSize = 20)
     {
+        if (pageIndex < 1 || pageSize < 1 || pageSize > MaxAdminProductPageSize)
+        {
+            return MessageModel<PageModel<ProductVo>>.Failed(
+                $"分页参数无效：pageIndex 必须大于 0，pageSize 必须在 1-{MaxAdminProductPageSize} 之间");
+        }
+
+        var normalizedKeyword = keyword?.Trim();
+        if (normalizedKeyword?.Length > MaxAdminProductKeywordLength)
+        {
+            return MessageModel<PageModel<ProductVo>>.Failed(
+                $"搜索关键词长度不能超过 {MaxAdminProductKeywordLength}");
+        }
+
         var result = await _productService.GetProductListForAdminAsync(
-            categoryId, productType, isOnSale, keyword, pageIndex, pageSize);
+            categoryId, productType, isOnSale, normalizedKeyword, pageIndex, pageSize);
         return MessageModel<PageModel<ProductVo>>.Success("查询成功", result);
     }
 

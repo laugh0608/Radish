@@ -43,6 +43,18 @@ public static class NotificationType
     /// <remarks>优先级：普通（2）</remarks>
     public const string DirectMessageRequested = "DirectMessageRequested";
 
+    /// <summary>内容作者收到一笔固定金额赞赏。</summary>
+    public const string ContentRewardReceived = "ContentRewardReceived";
+
+    /// <summary>提问者的问题收到新回答。</summary>
+    public const string QuestionAnswered = "QuestionAnswered";
+
+    /// <summary>回答被提问者采纳。</summary>
+    public const string AnswerAccepted = "AnswerAccepted";
+
+    /// <summary>回答的采纳状态被撤销或替换。</summary>
+    public const string AnswerAcceptanceRevoked = "AnswerAcceptanceRevoked";
+
     public const string WikiCollaboratorInvited = "WikiCollaboratorInvited";
 
     public const string WikiReviewUpdated = "WikiReviewUpdated";
@@ -193,4 +205,7 @@ public static class BusinessType
 
     /// <summary>Wiki 文档</summary>
     public const string Wiki = "Wiki";
+
+    /// <summary>论坛内容赞赏。</summary>
+    public const string ContentReward = "ContentReward";
 }

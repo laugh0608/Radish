@@ -8,12 +8,12 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-N-A 论坛内容赞赏权威设计文档修订`
-- **产品下一顺位**：`按已批准裁决更新首版对象、资产事务、审计投影、通知、治理与停止线`
+- **工程第一顺位**：`F4-R R3-F02-B 自服务权威状态（方案待确认）`
+- **产品下一顺位**：`审计并收口 Settings / Profile 的动态规则、权威快照、dirty / CAS / stale 边界，再进入错误与路由边界`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
-- **复核日期**：`2026-07-26`
+- **复核日期**：`2026-08-13`
 - **当前结论**：
-  - 第二开发阶段完成公开 Web、Flutter Android MVP、Tauri + WebOS 验证与多端裁决；2026-07-12 起纯 Web 成为唯一正式主线，Flutter 条件维护，Tauri 冻结实验。
+  - 第二开发阶段完成公开 Web、Flutter Android MVP、Tauri + WebOS 验证与多端裁决；2026-07-30 起当前投入顺位调整为 Web 优先、Flutter 次级，Tauri 暂时弃用并等待未来重新评估。
   - 第三阶段 P3-1 至 P3-11 已完成公开增长基础、PublicId 试点、复访链路、Web-first 信息架构、身份语义、写操作可靠性和发布候选路径验收。
   - P3-12-A-D 已完成正式 Web 主路径迁移、WebOS 收束和 Public / Private / Author / Console 页面族首批实现。
   - P3-12-E1-E7 已完成首批产品成熟度硬化；E8 首日完成正式导航、用户语言、页面滚动、聊天工作区和公开文档口径回拉。
@@ -21,6 +21,7 @@
   - Q1、Q2、Q3 与候选运行态验收均已完成；1201 至 1203 暴露的镜像、PostgreSQL migration、OpenIddict provider / model 与候选 DateTime 参数阻断均已按不可变 tag 逐次前滚收口。
   - PR `#63` 已合并，`master / dev / origin` 已统一到 `53539556`；`v26.7.1.1204-release` 五镜像和固定 tag 生产部署成功，首个管理员已创建，服务运行正常。
   - `P3-12-F` 正式发布执行已经关闭；生产数据库迁移发布现已固定为不可变 release tag、停止写入、六库备份、显式 `apply`、独立 `verify`、应用发布和外部健康检查，迁移开始后的失败不会自动执行破坏性恢复。
+  - 发布后镜像漏洞门禁分层已经完成：`CRITICAL` 与存在修复版本的 `HIGH` 默认阻断，无修复 `HIGH` 形成 Job Summary 与报告工件但不阻断；精确例外按镜像、包、CVE 和到期日自动治理。
   - F1 商城、F2 主题、F3 i18n 与一对一私聊批次 A-D 均已完成；私聊已通过 SQLite / PostgreSQL 定向回归及双账号 `zh / en × PC / mobile` 运行态矩阵并关闭。
   - F4-B-A-D 已完成稳定定义、结构化目标、偏好、分组 / 摘要 revision、正式 Web 通知工作区和三普通账号 `zh / en × PC / mobile` 成组验收；SQLite / PostgreSQL、离线 / 多标签、cursor、目标失效与临时数据清理均通过，通知中心深化专题已关闭。
   - F4-C-A-D 已完成 Chat 权威检索、跨库 migration、正式 Web / WebOS 搜索工作区和双账号 `zh / en × PC / mobile` 成组验收；共同根因修复、临时数据清理、六库完整性与迁移 verify 均通过，专题关闭。
@@ -39,7 +40,9 @@
   - F4-J-D 已完成并关闭：六角色、五类目标、主要申诉状态、五类来源保护恢复、用户状态纠正、Chat 跨库失败重试与双语 PC / mobile 正式路径均已通过；共同根因修复、临时数据清理、六库完整性与严格 migration verify 完成。下一顺位进入 F4-K-A。
   - F4-K 已完成 A-D 批并关闭：Main `UserBlock` 唯一真相、双向交互隔离、关注事务、Direct 历史只读、通知抑制、旧字段迁移、正式 Web 和三账号 Gateway 矩阵均已通过；验收共同根因修复、临时数据清理、六库完整性与严格 verify 完成。
   - F4-L-A-D 已完成并关闭：Main `WikiAttachmentReference`、Wiki 私有默认、动态 ACL、草稿 / Apply 事务同步、令牌先鉴权后消费、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证形成闭环；通用 Document 保持独立边界。下一顺位进入 F4-M-A 单专题候选审计。
-  - F4-M 已完成 A-D 批并关闭：Post / Comment Revision、CAS、完整快照、旧历史兼容、安全恢复、正式 Web、多身份 PC / mobile、临时数据清理及 SQLite / PostgreSQL 验证形成闭环。F4-N-A 现状审计与首批收束方向已获批准，下一步先修订内容赞赏权威设计。
+  - F4-M、F4-N、F4-O 与 F4-P 均已完成 A-D 批并关闭。F4-P 建立帖子私有收藏权威关系、显式幂等状态、个人稳定分页、不可用目标移除和正式 Web 回访闭环；D 批修正完整 `MeRoute` 来源返回并完成代表运行态矩阵、清理和严格数据库复核。
+  - F4-Q 已完成 A-D 批并关闭：统一公开帖子判定，落地数据库侧标签公开计数 / 热门 / 相关聚合、标签首包 head、tags sitemap、正式 Web 相关主题和代表运行态矩阵；D 批修正 sitemap 分片、单一 JSON-LD、不可用标签 `noindex` 与 Console 软删除恢复契约，清理和严格数据库复核完成。
+  - F4-R 已完成 A / B、C-0、C-1A、`R1-F01`、六个 R1、四个 R2，以及 `R3-P04 / P05 / P06`、R3-C04 六批、R3-C05 四批与 `R3-F02-A OIDC 回流信任门禁`；[R3-F02 设计前审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)固定 A OIDC 回流信任、B 自服务权威状态、C 错误与路由边界，下一顺位为方案待确认的 `R3-F02-B`。F4-S 公开排行榜治理已穿插完成并关闭。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -59,10 +62,10 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊及 F4-B 至 F4-M 均已关闭。下一顺位执行 F4-N-A 内容赞赏权威设计文档修订。
+- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q 与 F4-S 均已关闭。F4-R 的六个 R1、四个 R2、三个 Public R3、R3-C04 六批与 R3-C05 四批均已形成代码和阶段性运行态闭环；`R3-F02-A OIDC 回流信任门禁` 已完成代码与静态门禁，下一步确认 `R3-F02-B 自服务权威状态` 方案。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
-- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊及 F4-B 至 F4-M 已关闭，功能完成线当前进入 F4-N-A。
-- Q4、公开 head、WebOS 和 Flutter 继续按触达范围或真实问题维护，不与正式 Web 功能主线争夺顺位。
+- 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊、F4-B 至 F4-Q 与 F4-S 已关闭，功能完成线继续推进 F4-R C / D 的 R3 分批继承实现。
+- Q4、公开 head 和 WebOS 继续按触达范围或真实问题维护；Flutter 作为次级移动原生产品线按明确移动价值推进，不与 Web 优先主线并行复制功能。
 - 主动生产使用数据采集只在计划内功能全部完成、没有其他明确任务、产品进入最终完成体复核且用户确认后重启；不得因旧记录、观察周期或新会话频繁重新排期。
 
 ## 已确认的多端方向
@@ -72,14 +75,14 @@ Radish V1 固定为：
    - 根路径 `/` 进入内容优先发现页；`/workbench` 承接低频能力与历史兼容入口。
    - 本次正式发布矩阵包含 Gateway、API、Auth、DbMigrate、client 和 Console。
 2. **Flutter**
-   - Android MVP 与既有高价值路径只做阻断、安全和认证兼容维护，不默认新增页面或追平 Web。
-   - 只有受控试用证明系统推送、后台任务、商店分发或原生生命周期具有明确价值后，才重新立项；iOS 不主动扩展。
+   - 作为次级移动原生产品线继续承接明确高价值移动路径，功能边界先在 Web 成立。
+   - 不机械追平 Web；系统推送、后台任务、商店分发、原生生命周期与 iOS 产品化仍需独立价值判断。
 3. **WebOS `/desktop`**
    - 只作为历史兼容入口，不承接新增功能。
    - 只处理阻断级问题和迁移所需缺口。
 4. **Tauri / PC**
-   - 冻结为实验资产，不进入日常开发、候选 CI 必需矩阵、签名或分发。
-   - 只有托盘、文件系统、协议唤起、自动启动等明确桌面原生需求成立时才单独评估解冻；解冻后也只增强纯 Web，不绑定 WebOS。
+   - 暂时弃用，保留历史验证资产，不进入日常开发、UI、候选 CI 必需矩阵、签名或分发。
+   - 未来只有桌面原生价值、目标用户和维护预算明确时才重新评估；若重新启动，默认增强正式 Web，不绑定 WebOS。
 5. **Console**
    - Console 是桌面优先的社区治理后台。
    - 移动端只承接队列查看、搜索、证据回看和低风险处理，不要求桌面能力完整复制。
@@ -126,7 +129,12 @@ Radish V1 固定为：
 10. [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design) 已完成 A-D 批并关闭；独立申诉、部分支持、五类恢复、用户状态纠正、正式页面和六角色成组验收均已通过。
 11. [F4-K 用户屏蔽与关系交互隔离](/features/user-block-relationship-isolation-design) 已完成 A-D 批并关闭；Main 唯一真相、关系策略、关注事务、Direct 迁移兼容、通知抑制、正式 Web 和成组验收均已通过。
 12. [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成 A-D 批并关闭；Main 权威引用、私有默认、动态 ACL、事务同步、令牌、正式 Web、六身份运行态、清理和 SQLite / PostgreSQL 验证均通过。
-13. [F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 已完成 A-D 批并关闭；`F4-N-A` 已完成[论坛内容赞赏](/features/forum-content-reward)的现状审计并获批首批收束方向，下一步完整修订权威设计，不提前进入代码。
+13. [F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 与 [F4-N 论坛内容赞赏](/features/forum-content-reward)均已完成 A-D 批并关闭。
+14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
+15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
+16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A / B、family-ui `v26.7.3` 基线补充、C-0、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)、`R1-F01`、六个 R1、四个 R2、`R3-P04 / P05 / P06`、R3-C04 六批、R3-C05 四批与 [R3-F02-A OIDC 回流信任门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)均已关闭。Settings / Profile 与身份 / 错误边界继续继承既有代表、不修改 Pencil；下一批为方案待确认的 `R3-F02-B 自服务权威状态`。
+18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层
 
@@ -151,14 +159,15 @@ Radish V1 固定为：
 
 - 公开 head、动态 sitemap、head snapshot 和生产公开域名配置。
 - `validate:baseline / validate:baseline:host / validate:ci / Identity Guard`。
+- `SystemConfigStorageCoordinator.cs` 的 `3` 处既有 `DateTime.Now` 与时间语义 baseline 预算不一致，需在下一次 `PR -> master` 前独立治理，不与 R3-F02 实现混批。
 - WebOS `/desktop` 阻断级兼容。
-- Flutter analyze / test 与已落地主路径回归。
+- Flutter analyze / test、已落地主路径回归和经裁决的次级移动原生能力。
 - Q4 大文件、共享前端边界、全量卫生和文档归档按触达范围持续下降。
 
 ## 明确后置
 
 - 在 `dev -> master` PR、正式发布记录、required checks 或镜像供应链门禁未通过时创建 tag 或生产部署。
-- WebOS 新功能、Tauri 分发、完整 Flutter 套件和独立移动 Console。
+- WebOS 新功能、Tauri 恢复 / 分发、Flutter 机械追平 Web 和独立移动 Console。
 - 推荐算法、ActivityPub / WebFinger、完整 PublicId / 主键迁移。
 - 宠物经济扩展、完整移动商城、完整钱包 / 售后与资产风控平台。
 - 完整 PWA、完整 E2E、完整可观测性、Redis 平台化、开放平台和 BFF 深化。
@@ -182,6 +191,8 @@ Radish V1 固定为：
 - [F4-J 内容治理申诉与处置纠正](/features/content-moderation-appeal-relief-design)
 - [F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design)
 - [F4-N 论坛内容赞赏储备方案](/features/forum-content-reward)
+- [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)
+- [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)
 
 ## 文档规则
 

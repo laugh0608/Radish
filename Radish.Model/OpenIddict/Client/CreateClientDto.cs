@@ -40,14 +40,16 @@ public class CreateClientDto
     public string? DeveloperEmail { get; set; }
 
     /// <summary>
-    /// 客户端类型（confidential/public）
+    /// OpenIddict 客户端类型（confidential/public）
     /// </summary>
-    public string? Type { get; set; }
+    [RegularExpression("^(public|confidential)$", ErrorMessage = "客户端类型只允许 public 或 confidential")]
+    public string? ClientType { get; set; }
 
     /// <summary>
     /// 授权类型（authorization_code, client_credentials, refresh_token 等）
     /// </summary>
     [Required(ErrorMessage = "授权类型不能为空")]
+    [MinLength(1, ErrorMessage = "至少需要一个授权类型")]
     public List<string> GrantTypes { get; set; } = new();
 
     /// <summary>
@@ -64,6 +66,7 @@ public class CreateClientDto
     /// 授权范围
     /// </summary>
     [Required(ErrorMessage = "授权范围不能为空")]
+    [MinLength(1, ErrorMessage = "至少需要一个授权范围")]
     public List<string> Scopes { get; set; } = new();
 
     /// <summary>
@@ -77,7 +80,7 @@ public class CreateClientDto
     public bool RequirePkce { get; set; }
 
     /// <summary>
-    /// 是否需要 Client Secret（机密客户端）
+    /// 是否需要 Client Secret（旧版请求兼容字段；新请求使用 ClientType）
     /// </summary>
     public bool RequireClientSecret { get; set; }
 }

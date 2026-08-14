@@ -15,6 +15,12 @@ public class AdminAdjustBalanceDto
     public long UserId { get; set; }
 
     /// <summary>
+    /// 查询余额时取得的乐观锁版本号
+    /// </summary>
+    [Range(0, int.MaxValue, ErrorMessage = "余额版本号无效")]
+    public int ExpectedVersion { get; set; }
+
+    /// <summary>
     /// 变动金额（胡萝卜）
     /// </summary>
     /// <remarks>正数表示增加，负数表示减少</remarks>
@@ -27,6 +33,13 @@ public class AdminAdjustBalanceDto
     [Required(ErrorMessage = "调整原因不能为空")]
     [StringLength(200, ErrorMessage = "调整原因不能超过200个字符")]
     public string Reason { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 本次调账的幂等键
+    /// </summary>
+    [Required(ErrorMessage = "幂等键不能为空")]
+    [StringLength(80, ErrorMessage = "幂等键不能超过80个字符")]
+    public string IdempotencyKey { get; set; } = string.Empty;
 }
 
 /// <summary>

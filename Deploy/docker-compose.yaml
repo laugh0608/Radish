@@ -81,6 +81,7 @@ services:
 
   frontend:
     image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-frontend:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
+    restart: unless-stopped
     environment:
       RADISH_PUBLIC_URL: "${RADISH_PUBLIC_URL:?RADISH_PUBLIC_URL is required}"
     expose:
@@ -88,6 +89,7 @@ services:
 
   api:
     image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-api:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
+    restart: unless-stopped
     environment:
       <<: [*radish-postgres-databases, *radish-redis]
       ASPNETCORE_ENVIRONMENT: Production
@@ -115,6 +117,7 @@ services:
 
   auth:
     image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-auth:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
+    restart: unless-stopped
     environment:
       <<: [*radish-postgres-databases, *radish-redis]
       ASPNETCORE_ENVIRONMENT: Production
@@ -147,6 +150,7 @@ services:
 
   gateway:
     image: "${RADISH_IMAGE_REGISTRY:-ghcr.io/laugh0608}/radish-gateway:${RADISH_IMAGE_TAG:-${RADISH_IMAGE_TRACK:-test}-latest}"
+    restart: unless-stopped
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       ASPNETCORE_URLS: http://+:5000

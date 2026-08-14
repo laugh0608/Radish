@@ -1,7 +1,7 @@
 # Console 权限治理 V1
 
-> 最后更新：2026-07-02
-> 状态：V1 已完成当前收口，进入稳定维护
+> 最后更新：2026-08-09
+> 状态：权限映射、种子、角色聚合写入安全、权限矩阵和 R2-C03 PC / mobile 代表实现及运行态验收已收口
 
 本文档用于统一 Console 权限治理的设计口径、当前完成范围、剩余清单与退出条件。
 
@@ -14,7 +14,7 @@ Console 权限治理 V1 只解决以下问题：
 - 非默认角色可通过 `ApiModule + RoleModulePermission` 派生出稳定的 Console 权限快照
 - 未落地能力不再以按钮、入口、权限常量等形式继续暴露
 
-V1 **不追求**完整的后台 RBAC 平台，也不在本阶段展开权限配置 UI、权限树编辑器、批量授权面板等扩张项。
+V1 **不追求**完整的后台 RBAC 平台。现有角色授权矩阵只分配已注册资源，不在本阶段展开权限定义 / 种类编辑器、任意资源树编辑或批量授权面板等扩张项。
 
 ## 2. 当前实现链路
 
@@ -84,6 +84,18 @@ Route Meta / RouteGuard / usePermission
 - 保存 payload 中的资源 ID 应在前端归一、去重并稳定排序，避免同一组授权因顺序差异产生误判。
 - 授权树祖先补选、接口预览去重和保存请求都继续使用字符串 ID；不得把资源 ID 集合写成 `number[]` 或通过 `.map(Number)` 批量转换。
 
+### 2.5 R2-C03 聚合安全收口
+
+`2026-08-09` 已按 [R2-C03 readiness 记录](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)关闭角色与授权聚合写入门禁：
+
+- `/roles/:roleId/permissions` 按 `roles.view` 放行读取；保存接口与 handler 继续要求 `roles.edit`，Mobile 保持只读。
+- `System / Admin` 由服务端固定为内建角色；保留名、活动角色名和角色—资源关联唯一性由领域服务与迁移共同约束。
+- 角色 CRUD 改用明确命令 DTO，只更新业务字段与修改审计，不再回写请求未承载的实体状态。
+- 授权版本归属 Role 聚合；保存先以 `ModifyTime` 做条件更新，再在同一事务中软删除、恢复或新增关联，因此增加、纯删除与清空都会推进版本。
+- 旧版本、内建角色写入和非法资源分别返回稳定结构化 `409 / 400`；前端保留本地草稿并要求人工重新读取。
+
+R2-C03 已按确认设计落地既有权限矩阵、内建角色、确认与冲突表面：PC 保留原子 CAS 写入，Mobile 只读角色与权限且展示 key 含义；没有扩张新的权限种类、审批流或批量授权。
+
 ## 3. 已完成范围
 
 截至 2026-03-24，以下事项已完成：
@@ -147,7 +159,7 @@ Route Meta / RouteGuard / usePermission
 
 以下事项不纳入本阶段：
 
-- 权限配置 UI / 权限树编辑器
+- 权限定义 / 种类编辑器、任意资源树编辑器和批量授权面板
 - 共享上传能力的完整权限平台化
 - 审计日志查询、系统监控、日志检索等新模块扩张
 - 未在 Console 页面真实调用的后端接口资源补齐
@@ -162,7 +174,7 @@ Route Meta / RouteGuard / usePermission
 - 审核队列
 - 审核联动禁言 / 封禁
 - 治理动作日志
-- `Post / Comment / PostQuickReply / ChatMessage / Product` 五类目标
+- `Post / Comment / PostAnswer / PostQuickReply / ChatMessage / Product / ProductReview` 七类目标
 - 聊天消息定位、帖子评论 / 轻回应回看与失效降级
 - 举报创建时快照与当前可回看状态的并列展示
 

@@ -1,5 +1,12 @@
 export type ModerationLongId = string;
-export type ContentModerationTargetType = 'Post' | 'Comment' | 'PostQuickReply' | 'ChatMessage' | 'Product';
+export type ContentModerationTargetType =
+  | 'Post'
+  | 'Comment'
+  | 'PostAnswer'
+  | 'PostQuickReply'
+  | 'ChatMessage'
+  | 'Product'
+  | 'ProductReview';
 export type ContentModerationCaseStatus = 'Open' | 'Reviewing' | 'Resolved';
 export type ContentModerationDecision = 'None' | 'NoViolation' | 'Violation' | 'InsufficientEvidence';
 export type ContentModerationTargetDisposition =
@@ -18,6 +25,7 @@ export interface ContentReportReceiptVo {
   voTargetCommentId?: ModerationLongId | null;
   voTargetChannelId?: ModerationLongId | null;
   voTargetMessageId?: ModerationLongId | null;
+  voTargetProductId?: ModerationLongId | null;
   voTargetNavigationStatus: 'Ready' | 'Fallback' | 'Unavailable' | 'Unsupported';
   voTargetNavigationMessage?: string | null;
   voTargetSnapshotTitle?: string | null;

@@ -11,6 +11,7 @@ public static class AttachmentBusinessTypes
     public const string General = "General";
     public const string Post = "Post";
     public const string Comment = "Comment";
+    public const string PostAnswer = "PostAnswer";
     public const string Avatar = "Avatar";
     public const string Document = "Document";
     public const string Wiki = "Wiki";
@@ -29,6 +30,7 @@ public static class AttachmentBusinessTypes
             [General] = General,
             [Post] = Post,
             [Comment] = Comment,
+            [PostAnswer] = PostAnswer,
             [Avatar] = Avatar,
             [Document] = Document,
             [Wiki] = Wiki,

@@ -9,6 +9,7 @@ public class RoleAuthorizationSnapshotVo
     public string VoRoleName { get; set; } = string.Empty;
     public string VoRoleDescription { get; set; } = string.Empty;
     public bool VoRoleIsEnabled { get; set; }
+    public bool VoRoleIsBuiltIn { get; set; }
     public DateTime? VoLastModifyTime { get; set; }
     public List<long> VoGrantedResourceIds { get; set; } = new();
     public List<string> VoGrantedPermissionKeys { get; set; } = new();

@@ -267,6 +267,24 @@
   <data name="error.product.operation_rejected" xml:space="preserve">
     <value>The product operation could not be completed. Refresh and try again.</value>
   </data>
+  <data name="error.product_review.authentication_required" xml:space="preserve">
+    <value>Sign in before reviewing this product.</value>
+  </data>
+  <data name="error.product_review.product_not_found" xml:space="preserve">
+    <value>The product was not found or cannot be reviewed.</value>
+  </data>
+  <data name="error.product_review.not_found" xml:space="preserve">
+    <value>The product review was not found.</value>
+  </data>
+  <data name="error.product_review.purchase_required" xml:space="preserve">
+    <value>Only customers with a completed order can review this product.</value>
+  </data>
+  <data name="error.product_review.version_conflict" xml:space="preserve">
+    <value>The review changed. Refresh and try again.</value>
+  </data>
+  <data name="error.product_review.moderated" xml:space="preserve">
+    <value>The review was restricted by moderation and cannot be changed.</value>
+  </data>
   <data name="error.moderation.validation_failed" xml:space="preserve">
     <value>The moderation request is invalid. Check the submitted values and try again.</value>
   </data>
@@ -531,8 +549,26 @@
   <data name="error.coin.balance_query_rejected" xml:space="preserve">
     <value>The user balance could not be loaded. Verify the account and try again.</value>
   </data>
+  <data name="error.coin.transaction_query_rejected" xml:space="preserve">
+    <value>The asset transactions could not be loaded. Verify the account and filters.</value>
+  </data>
   <data name="error.coin.admin_adjust_rejected" xml:space="preserve">
     <value>The balance adjustment could not be completed. Verify the balance and submitted details.</value>
+  </data>
+  <data name="error.coin.admin_adjust_version_conflict" xml:space="preserve">
+    <value>The balance changed. Refresh the target account and confirm the adjustment again.</value>
+  </data>
+  <data name="error.coin.admin_adjust_processing" xml:space="preserve">
+    <value>The same adjustment is still processing. Refresh the balance and transactions before continuing.</value>
+  </data>
+  <data name="error.coin.admin_adjust_idempotency_conflict" xml:space="preserve">
+    <value>This request identifier was already used for different adjustment details.</value>
+  </data>
+  <data name="error.coin.admin_adjust_idempotency_invalid" xml:space="preserve">
+    <value>The adjustment request identifier is invalid.</value>
+  </data>
+  <data name="error.coin.admin_adjust_replay_unavailable" xml:space="preserve">
+    <value>The previous adjustment result is unavailable. Refresh the target balance and transactions.</value>
   </data>
   <data name="error.experience.admin_adjust_rejected" xml:space="preserve">
     <value>The experience adjustment could not be completed. Verify the account and submitted details.</value>
@@ -549,6 +585,21 @@
   <data name="error.experience.review_rejected" xml:space="preserve">
     <value>The governance review result could not be recorded. Verify the submitted details.</value>
   </data>
+  <data name="error.experience.target_unavailable" xml:space="preserve"><value>The experience governance target is unavailable.</value></data>
+  <data name="error.experience.version_conflict" xml:space="preserve"><value>The experience state changed. Refresh the target and confirm again.</value></data>
+  <data name="error.experience.adjustment_no_changes" xml:space="preserve"><value>This adjustment would not change the target state.</value></data>
+  <data name="error.experience.adjustment_processing" xml:space="preserve"><value>The same adjustment is still processing. Refresh experience and transactions before continuing.</value></data>
+  <data name="error.experience.adjustment_idempotency_conflict" xml:space="preserve"><value>This request identifier was already used for different adjustment details.</value></data>
+  <data name="error.experience.adjustment_idempotency_invalid" xml:space="preserve"><value>The experience adjustment request identifier is invalid.</value></data>
+  <data name="error.experience.adjustment_replay_unavailable" xml:space="preserve"><value>The previous adjustment result is unavailable. Refresh the target experience and transactions.</value></data>
+  <data name="error.experience.review_result_invalid" xml:space="preserve"><value>The experience governance review result is invalid.</value></data>
+  <data name="error.experience.review_processing" xml:space="preserve"><value>The same review is still processing. Refresh governance history before continuing.</value></data>
+  <data name="error.experience.review_idempotency_conflict" xml:space="preserve"><value>This request identifier was already used for different review details.</value></data>
+  <data name="error.experience.review_idempotency_invalid" xml:space="preserve"><value>The review request identifier is invalid.</value></data>
+  <data name="error.experience.review_replay_unavailable" xml:space="preserve"><value>The previous review result is unavailable. Refresh experience and governance history.</value></data>
+  <data name="error.experience.governance_no_changes" xml:space="preserve"><value>The target governance state did not change.</value></data>
+  <data name="error.experience.level_preview_conflict" xml:space="preserve"><value>The level configuration or formula changed. Generate a new preview and confirm again.</value></data>
+  <data name="error.experience.level_no_changes" xml:space="preserve"><value>The level configuration already matches the formula.</value></data>
   <data name="error.chat.channel_unavailable" xml:space="preserve">
     <value>The conversation does not exist or this account cannot access it.</value>
   </data>
@@ -737,5 +788,17 @@
   </data>
   <data name="error.forum.revision_restore_key_conflict" xml:space="preserve">
     <value>This restore operation key was already used for another request. Refresh and try again.</value>
+  </data>
+  <data name="error.forum.tag_discovery_top_count_invalid" xml:space="preserve">
+    <value>The requested tag count must be between 1 and 20.</value>
+  </data>
+  <data name="error.forum.tag_discovery_tag_unavailable" xml:space="preserve">
+    <value>The tag does not exist or is unavailable.</value>
+  </data>
+  <data name="error.leaderboard.type_unavailable" xml:space="preserve">
+    <value>This leaderboard type is not available for public access.</value>
+  </data>
+  <data name="error.leaderboard.user_rank_unavailable" xml:space="preserve">
+    <value>This leaderboard type does not support personal user ranking.</value>
   </data>
 </root>

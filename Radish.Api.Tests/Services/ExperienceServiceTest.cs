@@ -12,14 +12,17 @@ using Moq;
 using Radish.Common.CacheTool;
 using Radish.Common;
 using Radish.Api.Tests.TestCollections;
+using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
 using Radish.Common.TimeTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Service;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Shouldly;
 using SqlSugar;
@@ -689,42 +692,33 @@ public class ExperienceServiceTest
     }
 
     [Fact]
-    public async Task RecordGovernanceReviewAsync_Should_Persist_Review_Action_With_Evidence_Snapshot()
+    public async Task RecordGovernanceReviewAsync_Should_Advance_Version_And_Persist_Evidence()
     {
         const long userId = 51001;
         UserExperienceGovernanceAction? capturedAction = null;
 
-        var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
-        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
-        var governanceActionRepository = new Mock<IBaseRepository<UserExperienceGovernanceAction>>(MockBehavior.Strict);
+        var userExpRepository = ExperienceTargetRepository(userId, 22, 0);
+        var userRepository = ExperienceUserRepository(userId, 22, "review-user");
+        var governanceRepository = new Mock<IExperienceGovernanceRepository>(MockBehavior.Strict);
 
-        userExpRepository
-            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>?>()))
-            .ReturnsAsync(new UserExperience
+        governanceRepository
+            .Setup(repository => repository.ApplyGovernanceActionAsync(It.IsAny<ExperienceGovernanceMutationCommand>()))
+            .ReturnsAsync((ExperienceGovernanceMutationCommand command) =>
             {
-                Id = 91001,
-                UserId = userId,
-                TenantId = 22,
-                IsDeleted = false
+                capturedAction = command.Action;
+                command.Action.ExpectedVersion = command.ExpectedVersion;
+                command.Action.ResultVersion = command.ExpectedVersion + 1;
+                return new ExperienceGovernanceMutationResult(
+                    new UserExperience { Id = 91001, UserId = userId, TenantId = 22, Version = 1 },
+                    command.Action);
             });
-        userRepository
-            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
-            .ReturnsAsync(new User
-            {
-                Id = userId,
-                UserName = "review-user",
-                TenantId = 22,
-                IsDeleted = false
-            });
-        governanceActionRepository
-            .Setup(repository => repository.AddAsync(It.IsAny<UserExperienceGovernanceAction>()))
-            .Callback<UserExperienceGovernanceAction>(action => capturedAction = action)
-            .ReturnsAsync(92001);
 
         var service = CreateService(
             userExpRepository: userExpRepository,
             userRepository: userRepository,
-            governanceActionRepository: governanceActionRepository);
+            experienceGovernanceRepository: governanceRepository,
+            operationIdempotencyService: CreateStartedIdempotencyService(82001),
+            configValues: new Dictionary<string, string?> { ["ExperienceCalculator:EnableCache"] = "false" });
 
         var success = await service.RecordGovernanceReviewAsync(
             new AdminRecordExperienceGovernanceReviewDto
@@ -737,12 +731,14 @@ public class ExperienceServiceTest
                 RuleCodes = ["LIKE_SHARE_HEAVY"],
                 RuleLabels = ["点赞占比偏高"],
                 RecommendationLevel = "review",
-                RecommendationReason = "最近 7 天同一规则重复命中"
+                RecommendationReason = "最近 7 天同一规则重复命中",
+                ExpectedVersion = 0,
+                IdempotencyKey = "review-51001-v0"
             },
             9001,
             "Auditor");
 
-        success.ShouldBeTrue();
+        success.VoExperience.VoVersion.ShouldBe(1);
         capturedAction.ShouldNotBeNull();
         capturedAction.TargetUserId.ShouldBe(userId);
         capturedAction.TargetUserName.ShouldBe("review-user");
@@ -762,19 +758,21 @@ public class ExperienceServiceTest
         capturedAction.RecommendationReason.ShouldBe("最近 7 天同一规则重复命中");
         capturedAction.CreateBy.ShouldBe("Auditor");
         capturedAction.CreateId.ShouldBe(9001);
+        capturedAction.ExpectedVersion.ShouldBe(0);
+        capturedAction.ResultVersion.ShouldBe(1);
     }
 
     [Fact]
-    public async Task FreezeExperienceAsync_Should_Record_Governance_Action()
+    public async Task FreezeExperienceAsync_Should_Write_Versioned_Governance_Action()
     {
         const long userId = 51002;
         var nowUtc = new DateTimeOffset(2026, 5, 10, 4, 0, 0, TimeSpan.Zero);
         var frozenUntil = nowUtc.UtcDateTime.AddDays(7);
         UserExperienceGovernanceAction? capturedAction = null;
 
-        var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
-        var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
-        var governanceActionRepository = new Mock<IBaseRepository<UserExperienceGovernanceAction>>(MockBehavior.Strict);
+        var userExpRepository = ExperienceTargetRepository(userId, 33, 4);
+        var userRepository = ExperienceUserRepository(userId, 33, "freeze-user");
+        var governanceRepository = new Mock<IExperienceGovernanceRepository>(MockBehavior.Strict);
 
         userExpRepository
             .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>?>()))
@@ -800,20 +798,43 @@ public class ExperienceServiceTest
                 TenantId = 33,
                 IsDeleted = false
             });
-        governanceActionRepository
-            .Setup(repository => repository.AddAsync(It.IsAny<UserExperienceGovernanceAction>()))
-            .Callback<UserExperienceGovernanceAction>(action => capturedAction = action)
-            .ReturnsAsync(92002);
+        governanceRepository
+            .Setup(repository => repository.ApplyGovernanceActionAsync(It.IsAny<ExperienceGovernanceMutationCommand>()))
+            .ReturnsAsync((ExperienceGovernanceMutationCommand command) =>
+            {
+                capturedAction = command.Action;
+                command.Action.ExpectedVersion = 4;
+                command.Action.ResultVersion = 5;
+                return new ExperienceGovernanceMutationResult(
+                    new UserExperience
+                    {
+                        Id = 91002,
+                        UserId = userId,
+                        TenantId = 33,
+                        Version = 5,
+                        ExpFrozen = true,
+                        FrozenUntil = frozenUntil,
+                        FrozenReason = command.FrozenReason
+                    },
+                    command.Action);
+            });
 
         var service = CreateService(
             userExpRepository: userExpRepository,
             userRepository: userRepository,
-            governanceActionRepository: governanceActionRepository,
+            experienceGovernanceRepository: governanceRepository,
+            configValues: new Dictionary<string, string?> { ["ExperienceCalculator:EnableCache"] = "false" },
             utcNow: nowUtc);
 
-        var success = await service.FreezeExperienceAsync(userId, frozenUntil, "经验异常待复核", 9001, "Auditor");
+        var success = await service.FreezeExperienceAsync(
+            userId,
+            frozenUntil,
+            "经验异常待复核",
+            9001,
+            "Auditor",
+            4);
 
-        success.ShouldBeTrue();
+        success.VoExperience.VoVersion.ShouldBe(5);
         capturedAction.ShouldNotBeNull();
         capturedAction.TargetUserId.ShouldBe(userId);
         capturedAction.TargetUserName.ShouldBe("freeze-user");
@@ -825,6 +846,71 @@ public class ExperienceServiceTest
         capturedAction.CreateTime.ShouldBe(nowUtc.UtcDateTime);
         capturedAction.CreateBy.ShouldBe("Auditor");
         capturedAction.CreateId.ShouldBe(9001);
+        capturedAction.ExpectedVersion.ShouldBe(4);
+        capturedAction.ResultVersion.ShouldBe(5);
+    }
+
+    [Fact]
+    public async Task GetUserExperienceAsync_Should_Append_AutoUnfreeze_Action_For_Expired_Freeze()
+    {
+        const long userId = 51004;
+        var nowUtc = new DateTimeOffset(2026, 5, 20, 4, 0, 0, TimeSpan.Zero);
+        var expired = new UserExperience
+        {
+            Id = 91004,
+            UserId = userId,
+            TenantId = 44,
+            Version = 7,
+            ExpFrozen = true,
+            FrozenUntil = nowUtc.UtcDateTime.AddMinutes(-1),
+            FrozenReason = "临时复核冻结",
+            IsDeleted = false
+        };
+        var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
+        userExpRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>?>()))
+            .ReturnsAsync(expired);
+        var userRepository = ExperienceUserRepository(userId, 44, "expired-user");
+        var governanceRepository = new Mock<IExperienceGovernanceRepository>(MockBehavior.Strict);
+        UserExperienceGovernanceAction? capturedAction = null;
+        governanceRepository
+            .Setup(repository => repository.ApplyGovernanceActionAsync(It.IsAny<ExperienceGovernanceMutationCommand>()))
+            .ReturnsAsync((ExperienceGovernanceMutationCommand command) =>
+            {
+                capturedAction = command.Action;
+                command.Action.ExpectedVersion = 7;
+                command.Action.ResultVersion = 8;
+                return new ExperienceGovernanceMutationResult(
+                    new UserExperience
+                    {
+                        Id = expired.Id,
+                        UserId = userId,
+                        TenantId = 44,
+                        Version = 8,
+                        ExpFrozen = false
+                    },
+                    command.Action);
+            });
+        var service = CreateService(
+            userExpRepository: userExpRepository,
+            userRepository: userRepository,
+            experienceGovernanceRepository: governanceRepository,
+            configValues: new Dictionary<string, string?> { ["ExperienceCalculator:EnableCache"] = "false" },
+            utcNow: nowUtc);
+
+        var result = await service.GetUserExperienceAsync(userId);
+
+        result.ShouldNotBeNull();
+        result.VoExpFrozen.ShouldBeFalse();
+        result.VoVersion.ShouldBe(8);
+        capturedAction.ShouldNotBeNull();
+        capturedAction.ActionType.ShouldBe((int)ExperienceGovernanceActionTypeEnum.AutoUnfreeze);
+        capturedAction.Remark.ShouldContain("临时经验冻结到期");
+        capturedAction.Remark.ShouldContain("临时复核冻结");
+        capturedAction.CreateBy.ShouldBe("System");
+        capturedAction.CreateId.ShouldBe(0);
+        capturedAction.ExpectedVersion.ShouldBe(7);
+        capturedAction.ResultVersion.ShouldBe(8);
     }
 
     [Fact]
@@ -865,36 +951,34 @@ public class ExperienceServiceTest
             }
         };
 
-        var governanceActionRepository = new Mock<IBaseRepository<UserExperienceGovernanceAction>>(MockBehavior.Strict);
-        governanceActionRepository
-            .Setup(repository => repository.QueryPageAsync(
-                It.IsAny<Expression<Func<UserExperienceGovernanceAction, bool>>>(),
-                1,
-                20,
-                It.IsAny<Expression<Func<UserExperienceGovernanceAction, object>>>(),
-                OrderByType.Desc))
+        var governanceRepository = new Mock<IExperienceGovernanceRepository>(MockBehavior.Strict);
+        governanceRepository
+            .Setup(repository => repository.QueryActionsPageAsync(
+                It.IsAny<ExperienceGovernanceActionPageQuery>()))
             .ReturnsAsync((actions, actions.Count));
 
-        var service = CreateService(governanceActionRepository: governanceActionRepository);
+        var service = CreateService(
+            userExpRepository: ExperienceTargetRepository(userId, 12, 4),
+            experienceGovernanceRepository: governanceRepository);
 
-        var result = await service.GetGovernanceActionsAsync(userId, 20);
+        var result = await service.GetGovernanceActionsAsync(userId, 1, 20);
 
-        result.Count.ShouldBe(2);
-        result[0].VoActionId.ShouldBe(93001);
-        result[0].VoActionType.ShouldBe("Review");
-        result[0].VoActionTypeDisplay.ShouldBe("人工复核");
-        result[0].VoReviewResult.ShouldBe("Observe");
-        result[0].VoReviewResultDisplay.ShouldBe("已复核，继续观察");
-        result[0].VoRuleCodes.ShouldBe(["LIKE_SHARE_HEAVY"]);
-        result[0].VoRuleLabels.ShouldBe(["点赞占比偏高"]);
-        result[0].VoStatDate.ShouldBe(new DateOnly(2026, 5, 10));
-        var evidenceSummary = result[0].VoEvidenceSummary;
+        result.DataCount.ShouldBe(2);
+        result.Data[0].VoActionId.ShouldBe(93001);
+        result.Data[0].VoActionType.ShouldBe("Review");
+        result.Data[0].VoActionTypeDisplay.ShouldBe("人工复核");
+        result.Data[0].VoReviewResult.ShouldBe("Observe");
+        result.Data[0].VoReviewResultDisplay.ShouldBe("已复核，继续观察");
+        result.Data[0].VoRuleCodes.ShouldBe(["LIKE_SHARE_HEAVY"]);
+        result.Data[0].VoRuleLabels.ShouldBe(["点赞占比偏高"]);
+        result.Data[0].VoStatDate.ShouldBe(new DateOnly(2026, 5, 10));
+        var evidenceSummary = result.Data[0].VoEvidenceSummary;
         evidenceSummary.ShouldNotBeNull();
         evidenceSummary!.ShouldContain("窗口 7 天");
         evidenceSummary.ShouldContain("规则 点赞占比偏高");
-        result[1].VoActionId.ShouldBe(93002);
-        result[1].VoActionType.ShouldBe("Freeze");
-        result[1].VoFrozenUntil.ShouldBe(new DateTime(2026, 5, 20, 12, 0, 0));
+        result.Data[1].VoActionId.ShouldBe(93002);
+        result.Data[1].VoActionType.ShouldBe("Freeze");
+        result.Data[1].VoFrozenUntil.ShouldBe(new DateTime(2026, 5, 20, 12, 0, 0));
     }
 
     [Fact]
@@ -907,6 +991,7 @@ public class ExperienceServiceTest
         var userExpRepository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
         var expTransactionRepository = new Mock<IBaseRepository<ExpTransaction>>(MockBehavior.Strict);
         var levelConfigRepository = new Mock<IBaseRepository<LevelConfig>>(MockBehavior.Strict);
+        var governanceRepository = new Mock<IExperienceGovernanceRepository>(MockBehavior.Strict);
 
         userExpRepository
             .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>?>()))
@@ -948,24 +1033,46 @@ public class ExperienceServiceTest
                     IsEnabled = true
                 }
             });
-        expTransactionRepository
-            .Setup(repository => repository.AddAsync(It.IsAny<ExpTransaction>()))
-            .Callback<ExpTransaction>(transaction => capturedTransaction = transaction)
-            .ReturnsAsync(90001);
+        governanceRepository
+            .Setup(repository => repository.ApplyAdjustmentAsync(It.IsAny<ExperienceAdjustmentMutationCommand>()))
+            .ReturnsAsync((ExperienceAdjustmentMutationCommand command) =>
+            {
+                capturedTransaction = command.Transaction;
+                return new ExperienceAdjustmentMutationResult(
+                    new UserExperience
+                    {
+                        Id = 8101,
+                        UserId = userId,
+                        CurrentLevel = command.CurrentLevel,
+                        CurrentExp = command.CurrentExp,
+                        TotalExp = command.TotalExp,
+                        Version = 4
+                    },
+                    command.Transaction);
+            });
 
         var service = CreateService(
             userExpRepository: userExpRepository,
             expTransactionRepository: expTransactionRepository,
             levelConfigRepository: levelConfigRepository,
+            experienceGovernanceRepository: governanceRepository,
+            operationIdempotencyService: CreateStartedIdempotencyService(82002),
             configValues: new Dictionary<string, string?>
             {
                 ["ExperienceCalculator:EnableCache"] = "false"
             },
             utcNow: nowUtc);
 
-        var success = await service.AdminAdjustExperienceAsync(userId, -120, "回收异常经验", 9001, "Auditor");
+        var success = await service.AdminAdjustExperienceAsync(
+            userId,
+            -120,
+            "回收异常经验",
+            9001,
+            "Auditor",
+            3,
+            "adjust-41001-v3");
 
-        success.ShouldBeTrue();
+        success.VoExperience.VoVersion.ShouldBe(4);
         capturedTransaction.ShouldNotBeNull();
         capturedTransaction.ExpType.ShouldBe("PENALTY");
         capturedTransaction.ExpAmount.ShouldBe(-80);
@@ -979,17 +1086,199 @@ public class ExperienceServiceTest
         capturedTransaction.CreateId.ShouldBe(9001);
     }
 
+    [Fact]
+    public async Task AdminAdjustExperienceAsync_Should_Replay_Before_Rejecting_Advanced_Version()
+    {
+        const long userId = 41002;
+        var governanceRepository = new Mock<IExperienceGovernanceRepository>(MockBehavior.Strict);
+        var idempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Strict);
+        var replay = new AdminExperienceAdjustmentResultVo
+        {
+            VoExperience = new UserExperienceVo
+            {
+                VoUserId = userId,
+                VoTotalExp = 125,
+                VoVersion = 4
+            },
+            VoTransaction = new ExpTransactionVo
+            {
+                VoId = 82003,
+                VoUserId = userId,
+                VoExpAmount = 5
+            }
+        };
+        idempotencyService.Setup(service => service.NormalizeKey("adjust-41002-v3"))
+            .Returns("adjust-41002-v3");
+        idempotencyService.Setup(service => service.CreateRequestSnapshot(
+                It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash",
+                RequestSummary = "summary"
+            });
+        idempotencyService.Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Succeeded,
+                ResponsePayload = "replay"
+            });
+        idempotencyService.Setup(service =>
+                service.DeserializeResponse<AdminExperienceAdjustmentResultVo>("replay"))
+            .Returns(replay);
+
+        var service = CreateService(
+            userExpRepository: ExperienceTargetRepository(userId, 12, 4, totalExp: 125),
+            experienceGovernanceRepository: governanceRepository,
+            operationIdempotencyService: idempotencyService,
+            configValues: new Dictionary<string, string?> { ["ExperienceCalculator:EnableCache"] = "false" });
+
+        var result = await service.AdminAdjustExperienceAsync(
+            userId,
+            5,
+            "补发活动经验",
+            9001,
+            "Auditor",
+            3,
+            "adjust-41002-v3");
+
+        result.ShouldBeSameAs(replay);
+        result.VoReplayed.ShouldBeTrue();
+        governanceRepository.VerifyNoOtherCalls();
+        idempotencyService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task AdminAdjustExperienceAsync_Should_Reject_Idempotency_Payload_Conflict()
+    {
+        const long userId = 41003;
+        var governanceRepository = new Mock<IExperienceGovernanceRepository>(MockBehavior.Strict);
+        var idempotencyService = new Mock<IOperationIdempotencyService>(MockBehavior.Strict);
+        idempotencyService.Setup(service => service.NormalizeKey("adjust-41003-v3"))
+            .Returns("adjust-41003-v3");
+        idempotencyService.Setup(service => service.CreateRequestSnapshot(
+                It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash-b",
+                RequestSummary = "summary"
+            });
+        idempotencyService.Setup(service => service.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Conflict,
+                Message = "幂等键已用于其他经验调整内容"
+            });
+        var service = CreateService(
+            userExpRepository: ExperienceTargetRepository(userId, 12, 3, totalExp: 120),
+            experienceGovernanceRepository: governanceRepository,
+            operationIdempotencyService: idempotencyService,
+            configValues: new Dictionary<string, string?> { ["ExperienceCalculator:EnableCache"] = "false" });
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.AdminAdjustExperienceAsync(
+                userId,
+                5,
+                "不同的补发原因",
+                9001,
+                "Auditor",
+                3,
+                "adjust-41003-v3"));
+
+        exception.StatusCode.ShouldBe(409);
+        exception.ErrorCode.ShouldBe(ExperienceGovernanceErrorCodes.AdjustmentIdempotencyConflict);
+        governanceRepository.VerifyNoOtherCalls();
+        idempotencyService.VerifyAll();
+    }
+
+    private static Mock<IBaseRepository<UserExperience>> ExperienceTargetRepository(
+        long userId,
+        long tenantId,
+        int version,
+        int currentLevel = 0,
+        long currentExp = 0,
+        long totalExp = 0)
+    {
+        var repository = new Mock<IBaseRepository<UserExperience>>(MockBehavior.Strict);
+        repository
+            .Setup(instance => instance.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>?>()))
+            .ReturnsAsync(new UserExperience
+            {
+                Id = 90000 + userId,
+                UserId = userId,
+                TenantId = tenantId,
+                Version = version,
+                CurrentLevel = currentLevel,
+                CurrentExp = currentExp,
+                TotalExp = totalExp,
+                IsDeleted = false
+            });
+        return repository;
+    }
+
+    private static Mock<IBaseRepository<User>> ExperienceUserRepository(
+        long userId,
+        long tenantId,
+        string userName)
+    {
+        var user = new User
+        {
+            Id = userId,
+            TenantId = tenantId,
+            UserName = userName,
+            IsDeleted = false
+        };
+        var repository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
+        repository
+            .Setup(instance => instance.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(user);
+        repository
+            .Setup(instance => instance.QueryAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync([user]);
+        return repository;
+    }
+
+    private static Mock<IOperationIdempotencyService> CreateStartedIdempotencyService(long recordId)
+    {
+        var service = new Mock<IOperationIdempotencyService>(MockBehavior.Strict);
+        service.Setup(instance => instance.NormalizeKey(It.IsAny<string?>()))
+            .Returns((string? value) => value?.Trim());
+        service.Setup(instance => instance.CreateRequestSnapshot(
+                It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "hash",
+                RequestSummary = "summary"
+            });
+        service.Setup(instance => instance.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>()))
+            .ReturnsAsync(new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Started,
+                RecordId = recordId
+            });
+        service.Setup(instance => instance.SerializeResponse(
+                It.IsAny<AdminExperienceAdjustmentResultVo>()))
+            .Returns("{}");
+        service.Setup(instance => instance.SerializeResponse(
+                It.IsAny<AdminExperienceGovernanceResultVo>()))
+            .Returns("{}");
+        service.Setup(instance => instance.CompleteSuccessAsync(
+                It.IsAny<OperationIdempotencyCompletionRequest>()))
+            .Returns(Task.CompletedTask);
+        return service;
+    }
+
     private static ExperienceService CreateService(
         Mock<IBaseRepository<UserExperience>>? userExpRepository = null,
         Mock<IBaseRepository<ExpTransaction>>? expTransactionRepository = null,
         Mock<IBaseRepository<LevelConfig>>? levelConfigRepository = null,
         Mock<IBaseRepository<UserExpDailyStats>>? dailyStatsRepository = null,
         Mock<IBaseRepository<User>>? userRepository = null,
-        Mock<IBaseRepository<UserExperienceGovernanceAction>>? governanceActionRepository = null,
+        Mock<IExperienceGovernanceRepository>? experienceGovernanceRepository = null,
         Mock<IExperienceCalculator>? experienceCalculator = null,
         Mock<ICoinService>? coinService = null,
         Mock<IAttachmentUrlResolver>? attachmentUrlResolver = null,
         Mock<INotificationService>? notificationService = null,
+        Mock<IOperationIdempotencyService>? operationIdempotencyService = null,
         ICaching? caching = null,
         Dictionary<string, string?>? configValues = null,
         DateTimeOffset? utcNow = null,
@@ -1003,22 +1292,40 @@ public class ExperienceServiceTest
         var businessCalendar = new BusinessCalendar(
             timeProvider,
             Options.Create(new TimeOptions { DefaultTimeZoneId = timeZoneId }));
+        var resolvedLevelConfigRepository = levelConfigRepository
+            ?? new Mock<IBaseRepository<LevelConfig>>(MockBehavior.Loose);
+        if (levelConfigRepository == null)
+        {
+            resolvedLevelConfigRepository
+                .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<LevelConfig, bool>>?>()))
+                .ReturnsAsync([]);
+        }
+
+        var resolvedUserRepository = userRepository
+            ?? new Mock<IBaseRepository<User>>(MockBehavior.Loose);
+        if (userRepository == null)
+        {
+            resolvedUserRepository
+                .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+                .ReturnsAsync([]);
+        }
 
         return new ExperienceService(
             CreateMapper(),
             (userExpRepository ?? new Mock<IBaseRepository<UserExperience>>(MockBehavior.Loose)).Object,
             (expTransactionRepository ?? new Mock<IBaseRepository<ExpTransaction>>(MockBehavior.Loose)).Object,
-            (levelConfigRepository ?? new Mock<IBaseRepository<LevelConfig>>(MockBehavior.Loose)).Object,
+            resolvedLevelConfigRepository.Object,
             (dailyStatsRepository ?? new Mock<IBaseRepository<UserExpDailyStats>>(MockBehavior.Loose)).Object,
-            (userRepository ?? new Mock<IBaseRepository<User>>(MockBehavior.Loose)).Object,
-            (governanceActionRepository ?? new Mock<IBaseRepository<UserExperienceGovernanceAction>>(MockBehavior.Loose)).Object,
+            resolvedUserRepository.Object,
+            (experienceGovernanceRepository ?? new Mock<IExperienceGovernanceRepository>(MockBehavior.Loose)).Object,
             (experienceCalculator ?? new Mock<IExperienceCalculator>(MockBehavior.Loose)).Object,
             (coinService ?? new Mock<ICoinService>(MockBehavior.Loose)).Object,
             (attachmentUrlResolver ?? new Mock<IAttachmentUrlResolver>(MockBehavior.Loose)).Object,
             (notificationService ?? new Mock<INotificationService>(MockBehavior.Loose)).Object,
             caching ?? new Caching(distributedCache),
             timeProvider,
-            businessCalendar);
+            businessCalendar,
+            operationIdempotencyService: operationIdempotencyService?.Object);
     }
 
     private static IMapper CreateMapper()
@@ -1048,6 +1355,27 @@ public class ExperienceServiceTest
         mapper
             .Setup(service => service.Map<LevelConfigVo>(It.IsAny<object>()))
             .Returns((object source) => MapLevelConfig((LevelConfig)source));
+        mapper
+            .Setup(service => service.Map<UserExperienceVo>(It.IsAny<object>()))
+            .Returns((object source) =>
+            {
+                var item = (UserExperience)source;
+                return new UserExperienceVo
+                {
+                    VoUserId = item.UserId,
+                    VoCurrentLevel = item.CurrentLevel,
+                    VoCurrentExp = item.CurrentExp,
+                    VoTotalExp = item.TotalExp,
+                    VoLevelUpAt = item.LevelUpAt,
+                    VoExpFrozen = item.ExpFrozen,
+                    VoFrozenUntil = item.FrozenUntil,
+                    VoFrozenReason = item.FrozenReason,
+                    VoVersion = item.Version
+                };
+            });
+        mapper
+            .Setup(service => service.Map<ExpTransactionVo>(It.IsAny<object>()))
+            .Returns((object source) => MapExpTransaction((ExpTransaction)source));
         return mapper.Object;
     }
 

@@ -207,6 +207,27 @@ export async function getTagBySlug(tagSlug: string, t: TFunction): Promise<Tag> 
 }
 
 /**
+ * 获取公开标签的相关标签
+ */
+export async function getRelatedTags(
+  tagSlug: string,
+  t: TFunction,
+  topCount: number = 8,
+  signal?: AbortSignal
+): Promise<Tag[]> {
+  const response = await apiGet<Tag[]>(
+    `/api/v1/Tag/GetRelated/${encodeURIComponent(tagSlug)}?topCount=${topCount}`,
+    { timeout: FORUM_READ_TIMEOUT_MS, signal }
+  );
+
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, t('forum.public.tagRelatedLoadFailed'));
+  }
+
+  return response.data;
+}
+
+/**
  * 获取顶级分类列表
  */
 export async function getTopCategories(t: TFunction): Promise<Category[]> {
@@ -998,20 +1019,4 @@ export async function toggleReaction(
   }
 
   return response.data || [];
-}
-
-/**
- * 生成 OIDC 登录 URL
- */
-export function getOidcLoginUrl(): string {
-  if (typeof window === 'undefined') return '';
-  const currentOrigin = window.location.origin;
-  const redirectUri = `${currentOrigin}/oidc/callback`;
-  const apiBaseUrl = getApiBaseUrl();
-  const authorizeUrl = new URL(`${apiBaseUrl}/connect/authorize`);
-  authorizeUrl.searchParams.set('client_id', 'radish-client');
-  authorizeUrl.searchParams.set('response_type', 'code');
-  authorizeUrl.searchParams.set('redirect_uri', redirectUri);
-  authorizeUrl.searchParams.set('scope', 'openid profile offline_access radish-api');
-  return authorizeUrl.toString();
 }

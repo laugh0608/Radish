@@ -40,7 +40,8 @@
     "./area-chart": "./src/components/Charts/AreaChart.tsx",
     "./notification-list": "./src/components/Notification/NotificationList.tsx",
     "./toast": "./src/components/Toast/index.ts",
-    "./notification": "./src/components/Notification/Notification.tsx"
+    "./notification": "./src/components/Notification/Notification.tsx",
+    "./family-ui-tokens.css": "./src/theme/family-ui-tokens.css"
   },
   "scripts": {
     "test": "node --test --test-isolation=none ./tests/*.test.ts",

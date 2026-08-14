@@ -12,7 +12,7 @@ import {
 import type { PublicContentRouteDescriptor } from './publicRouteNavigation.ts';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '../utils/userIdentityDisplay.ts';
 
-export const publicStructuredDataScriptId = 'radish-public-structured-data';
+export const publicStructuredDataScriptId = 'radish-public-jsonld';
 
 type JsonLdValue = string | number | boolean | null | JsonLdObject | JsonLdValue[];
 

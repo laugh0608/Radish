@@ -1,7 +1,7 @@
 import { apiGet, apiPost, apiPut, apiDelete, createApiResponseError } from '@radish/http';
 
 export interface TagVo {
-  voId: number;
+  voId: string;
   voName: string;
   voSlug: string;
   voDescription?: string | null;
@@ -70,8 +70,8 @@ export async function getTagPage(params: {
   return response.data;
 }
 
-export async function createTag(request: TagUpsertRequest): Promise<number> {
-  const response = await apiPost<number>('/api/v1/Tag/Create', request, { withAuth: true });
+export async function createTag(request: TagUpsertRequest): Promise<string> {
+  const response = await apiPost<string>('/api/v1/Tag/Create', request, { withAuth: true });
 
   if (!response.ok || response.data === undefined) {
     throw createApiResponseError(response, '创建标签失败');
@@ -80,7 +80,7 @@ export async function createTag(request: TagUpsertRequest): Promise<number> {
   return response.data;
 }
 
-export async function updateTag(id: number, request: TagUpsertRequest): Promise<void> {
+export async function updateTag(id: string, request: TagUpsertRequest): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Tag/Update/${id}`, request, { withAuth: true });
 
   if (!response.ok) {
@@ -88,7 +88,7 @@ export async function updateTag(id: number, request: TagUpsertRequest): Promise<
   }
 }
 
-export async function toggleTagStatus(id: number, enabled: boolean): Promise<void> {
+export async function toggleTagStatus(id: string, enabled: boolean): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Tag/ToggleStatus/${id}/status?enabled=${enabled}`, {}, { withAuth: true });
 
   if (!response.ok) {
@@ -96,7 +96,7 @@ export async function toggleTagStatus(id: number, enabled: boolean): Promise<voi
   }
 }
 
-export async function updateTagSort(id: number, sortOrder: number): Promise<void> {
+export async function updateTagSort(id: string, sortOrder: number): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Tag/UpdateSort/${id}/sort?sortOrder=${sortOrder}`, {}, { withAuth: true });
 
   if (!response.ok) {
@@ -104,7 +104,7 @@ export async function updateTagSort(id: number, sortOrder: number): Promise<void
   }
 }
 
-export async function deleteTag(id: number): Promise<void> {
+export async function deleteTag(id: string): Promise<void> {
   const response = await apiDelete<boolean>(`/api/v1/Tag/Delete/${id}`, { withAuth: true });
 
   if (!response.ok) {
@@ -112,7 +112,7 @@ export async function deleteTag(id: number): Promise<void> {
   }
 }
 
-export async function restoreTag(id: number): Promise<void> {
+export async function restoreTag(id: string): Promise<void> {
   const response = await apiPut<boolean>(`/api/v1/Tag/Restore/${id}/restore`, {}, { withAuth: true });
 
   if (!response.ok) {

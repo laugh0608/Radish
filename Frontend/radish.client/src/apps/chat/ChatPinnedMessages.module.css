@@ -39,6 +39,8 @@
 }
 
 .bar {
+  position: relative;
+  z-index: 6;
   display: flex;
   align-items: stretch;
   min-width: 0;
@@ -126,12 +128,18 @@
 }
 
 .backdrop {
-  display: none;
+  position: fixed;
+  z-index: 11;
+  inset: 0;
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
 }
 
 .panel {
   position: absolute;
-  z-index: 12;
+  z-index: 30;
   top: calc(100% + 8px);
   right: 16px;
   display: flex;
@@ -270,12 +278,29 @@
   font-size: 9px;
 }
 
-.panelFooter span:first-child {
-  color: var(--theme-accent-jade);
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+.mobileSheet {
+  border: 1px solid var(--theme-border-strong);
+  background: var(--theme-bg-surface);
+  color: var(--theme-text-primary);
 }
 
-@media (max-width: 680px) {
+.mobileSheetBody {
+  padding: 0;
+}
+
+.mobilePanel {
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.mobileCapacity {
+  padding: 10px 14px 0;
+  color: var(--theme-text-muted);
+  font-size: 10px;
+}
+
+@media (max-width: 720px) {
   .loadError,
   .bar {
     margin: 8px 10px 0;
@@ -295,42 +320,6 @@
 
   .countButton {
     padding: 0 8px;
-  }
-
-  .backdrop {
-    position: fixed;
-    z-index: 28;
-    inset: 0;
-    display: block;
-    width: 100%;
-    border: 0;
-    background: color-mix(in srgb, var(--theme-text-primary) 42%, transparent 58%);
-  }
-
-  .panel {
-    position: fixed;
-    z-index: 29;
-    inset: auto 0 0;
-    width: 100%;
-    max-height: min(72vh, 620px);
-    border-right: 0;
-    border-bottom: 0;
-    border-left: 0;
-    border-radius: 16px 16px 0 0;
-    padding-bottom: env(safe-area-inset-bottom);
-  }
-
-  .sheetHandle {
-    display: block;
-    width: 40px;
-    height: 4px;
-    margin: 9px auto 0;
-    border-radius: 999px;
-    background: var(--theme-border-strong);
-  }
-
-  .panelHeader {
-    padding-top: 10px;
   }
 
   .itemFooter {

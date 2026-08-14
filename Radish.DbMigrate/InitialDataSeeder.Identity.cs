@@ -728,6 +728,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50083L,
+                ApiModuleName = "Update sticker group status",
+                LinkUrl = "/api/v1/Sticker/UpdateGroupStatus/.+",
+                ControllerName = "Sticker",
+                ActionName = "UpdateGroupStatus",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50073L,
                 ApiModuleName = "Delete sticker group",
                 LinkUrl = "/api/v1/Sticker/DeleteGroup/.+",
@@ -1142,6 +1151,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50178L,
+                ApiModuleName = "Admin get wiki governance history",
+                LinkUrl = "/api/v1/Wiki/AdminGetGovernanceHistory/\\d+",
+                ControllerName = "Wiki",
+                ActionName = "AdminGetGovernanceHistory",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50153L,
                 ApiModuleName = "Get wiki revision list",
                 LinkUrl = "/api/v1/Wiki/GetRevisionList/\\d+",
@@ -1264,6 +1282,42 @@ internal static partial class InitialDataSeeder
                 LinkUrl = "/api/v1/Wiki/AdminReviewDraft/\\d+",
                 ControllerName = "Wiki",
                 ActionName = "AdminReviewDraft",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50174L,
+                ApiModuleName = "Get channel discoverability page",
+                LinkUrl = "/api/v1/ChannelDiscoverability/GetPage",
+                ControllerName = "ChannelDiscoverability",
+                ActionName = "GetPage",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50175L,
+                ApiModuleName = "Get channel discoverability history",
+                LinkUrl = "/api/v1/ChannelDiscoverability/GetHistory",
+                ControllerName = "ChannelDiscoverability",
+                ActionName = "GetHistory",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50177L,
+                ApiModuleName = "Get channel discoverability target",
+                LinkUrl = "/api/v1/ChannelDiscoverability/GetById",
+                ControllerName = "ChannelDiscoverability",
+                ActionName = "GetById",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 50176L,
+                ApiModuleName = "Update channel discoverability",
+                LinkUrl = "/api/v1/ChannelDiscoverability/UpdateVisibility/.+",
+                ControllerName = "ChannelDiscoverability",
+                ActionName = "UpdateVisibility",
                 Roles = new[] { 10000L, 10001L }
             }
         };

@@ -1,8 +1,8 @@
 # 系统设置治理专题
 
-> 状态：低 / 中风险首轮治理已阶段收束，进入维护观察与后续独立评审池
+> 状态：低 / 中风险设置范围、写入一致性和 R2-C03 PC / mobile 正式页面及运行态验收已收束
 >
-> 最后更新：2026-07-15（Asia/Shanghai）
+> 最后更新：2026-08-09（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -26,6 +26,10 @@ Radish 需要一个长期的系统设置中心，但它不应只是把 `appsetti
 当前项目已将 `SystemConfig` 首批收敛为代码级设置定义注册表 + JSON 覆盖值存储：Console 默认只展示已注册设置，历史未注册 key-value 记录不作为运营设置暴露。`Site.Branding.FaviconUrl` 作为第一个低风险可编辑示例；第二批已补系统设置专用变更审计、修改原因 / 确认参数基础和 Console 历史查看入口；第三批已新增 `ISystemSettingProvider`，并开放内容 / 评论长度设置；第四批已将数值范围、整数约束和影响范围摘要从设置定义暴露到 Console，并让数字控件按规则约束输入；第五批继续沿内容发布边界补齐标题 / 正文 / 评论最大长度和自动摘要长度设置；第六批将轻回应长度纳入评论互动同族设置；第七批将账号身份展示名长度接入设置；第八批继续治理轻回应剩余运营参数，开放默认返回条数、最大返回条数、单帖冷却秒数和重复内容窗口秒数；第九批开放神评 / 沙发稳定窗口和替换阈值；`P3-12-B6-3` 已将展示名改名冷却、滚动窗口和窗口内最大次数纳入账号身份设置；`P3-12-B6-5` 已移除登录名长度设置。`ForumQuickReply.Enable` 仍作为宿主功能开关保留在 `appsettings`，不进入 Console 系统设置。
 
 第九批后，低 / 中风险系统设置首轮治理阶段收束。当前不继续默认开放第十批设置；后续设置扩面只在真实运营缺口、发布候选回归或独立专题评审确认边界后回拉。
+
+`2026-08-09` 已按 R2-C03 readiness 关闭写入一致性门禁：值校验、确认缺失与风险拒绝保留结构化 `400`，版本冲突返回稳定 `409 SystemConfig.VersionConflict`；JSON 覆盖值与审计由仓储协调器在跨进程锁内执行 CAS，并通过恢复日志共同提交。Console 的 Medium 确认值改为用户显式输入，提交前展示旧值、新值、影响范围和生效方式；恢复默认复用同一版本与审计边界。详见 [能力门禁实现记录](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)。该收口不扩面第十批设置，也不开放 High / Critical。
+
+同日正式页面已按确认设计落地并通过 Gateway 复核：PC 的 Low 使用旧值 / 新值轻量确认，Medium 要求风险等级和完整 key；Mobile 列表只允许 Low 进入共享 `BottomSheet`，Medium 在列表和提交 handler 双重保持 PC-only。dirty、离开确认、`ExpectedVersion` 与结构化 `409` 草稿保留在两端保持同一语义。详见 [R2-C03 正式实现记录](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)。
 
 `2026-06-24` 身份语义补充：注册页 `DisplayName` 慎重设置提示本身不属于系统设置；展示名改名冷却 / 滚动窗口 / 窗口内最大次数已完成代码级定义、服务端消费和审计记录，进入当前已注册设置。`PublicIndex` 靓号保留列表 / 靓号规则已完成代码级定义、服务端消费和配置错误暴露，进入当前已注册设置；人工指定保留号仍需后续权限动作与审计专题承接。
 
@@ -138,7 +142,7 @@ Console 前端也必须按同一权限边界执行：普通设置编辑、favico
 
 敏感值应脱敏入库或只记录摘要，不保存明文。审计日志不可由普通设置页删除。
 
-当前实现先使用 `DataBases/SystemConfigs/system-config-change-logs.json` 记录系统设置专用历史，字段覆盖设置键、旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间。该历史只按已注册设置定义查询；普通设置页不提供删除历史能力。
+当前实现使用 `DataBases/SystemConfigs/system-config-change-logs.json` 记录系统设置专用历史，字段覆盖设置键、旧值、新值、默认值、原因、风险等级、生效方式、操作者、IP、User-Agent 和时间。覆盖值与审计写入由同一个仓储协调器持有进程内信号量和跨进程文件锁，并先写完整恢复日志，再原子替换两个 JSON 文件；中断后的下一次读取会按恢复日志重放，损坏或空存储文件按配置错误关闭。该历史只按已注册设置定义查询；普通设置页不提供删除历史能力。
 
 ## 7. 读取与生效
 
@@ -226,8 +230,8 @@ Console 的界面动作、状态、风险等级、生效方式、筛选和校验
 - `GetConfigById` 使用设置定义 ID 查询，兼容旧覆盖记录 ID 回查已注册定义。
 - 设置列表 / 详情返回 `MinNumberValue`、`MaxNumberValue`、`RequiresInteger` 与 `ImpactSummary`，供 Console 展示校验规则与影响范围。
 - 设置列表 / 详情返回 `VoVersion`：没有覆盖值时为 `0`，已有覆盖值时为持久化记录版本号。
-- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级、确认设置键和 `ExpectedVersion`，成功变更后写入系统设置专用审计历史并递增覆盖记录版本。
-- `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数和 `ExpectedVersion`，版本不匹配时返回“系统设置已被其他管理员修改，请刷新后重试”。
+- `UpdateConfig` 只允许写入 `Low` / `Medium`、可编辑的注册设置覆盖值；`Medium` 必须接收修改原因、确认风险等级、确认设置键和 `ExpectedVersion`。版本检查发生在持久化锁内，覆盖值与审计共同成功后才返回，并递增覆盖记录版本。
+- `RestoreConfigDefault` 删除覆盖值并回到代码默认值，同样接收原因 / 确认参数和 `ExpectedVersion`；版本不匹配时返回结构化 `409 SystemConfig.VersionConflict`，不写配置或审计。
 - `GetConfigChangeLogs` 查询已注册设置的最近变更历史。
 - `ISystemSettingProvider` 面向业务服务提供统一读取入口，覆盖值非法时直接暴露配置错误。
 - 旧 `CreateConfig` 路由保留兼容但拒绝 Console 新增未知设置。

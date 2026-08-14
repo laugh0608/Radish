@@ -2,14 +2,22 @@ using Radish.IService.Base;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.CustomEnum;
 
 namespace Radish.IService;
 
 /// <summary>Wiki 文档服务接口</summary>
 public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentVo>
 {
-    Task<PageModel<WikiAuthorDocumentVo>> AuthorGetListAsync(long userId, int pageIndex, int pageSize);
+    Task<PageModel<WikiAuthorDocumentVo>> AuthorGetListAsync(
+        long userId,
+        WikiAuthorDocumentScope scope,
+        WikiAuthorDraftStage draftStage,
+        int pageIndex,
+        int pageSize);
     Task<WikiAuthorDraftDetailVo?> AuthorGetByIdAsync(long documentId, long userId, bool isSystemOrAdmin = false);
+    Task<WikiAuthorRevisionHistoryVo?> AuthorGetRevisionHistoryAsync(long documentId, long userId, bool isSystemOrAdmin = false);
+    Task<WikiAuthorRevisionDetailVo?> AuthorGetRevisionDetailAsync(long revisionId, long userId, bool isSystemOrAdmin = false);
     Task<WikiAuthorDraftDetailVo> AuthorCreateAsync(CreateWikiAuthorDraftDto dto, long userId, string userName, long tenantId);
     Task<WikiAuthorDraftDetailVo> AuthorStartDraftAsync(long documentId, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
     Task<WikiAuthorDraftDetailVo> AuthorSaveDraftAsync(long draftId, SaveWikiAuthorDraftDto dto, long userId, string userName, long tenantId, bool isSystemOrAdmin = false);
@@ -79,27 +87,63 @@ public interface IWikiDocumentService : IBaseService<WikiDocument, WikiDocumentV
 
     Task<WikiDocumentDetailVo?> GetGovernanceDetailAsync(long id, bool includeDeleted = true);
 
+    Task<PageModel<WikiDocumentGovernanceEventVo>> GetGovernanceHistoryAsync(
+        long documentId,
+        int pageIndex = 1,
+        int pageSize = 20);
+
     Task<long> CreateDocumentAsync(CreateWikiDocumentDto createDto, long operatorId, string operatorName, long tenantId);
 
     Task<bool> UpdateDocumentAsync(long id, UpdateWikiDocumentDto updateDto, long operatorId, string operatorName);
 
-    Task<bool> UpdateAccessPolicyAsync(long id, UpdateWikiDocumentAccessPolicyDto updateDto, long operatorId, string operatorName);
+    Task<WikiDocumentGovernanceMutationVo> UpdateAccessPolicyAsync(
+        long id,
+        UpdateWikiDocumentAccessPolicyDto updateDto,
+        long operatorId,
+        string operatorName);
 
-    Task<bool> DeleteDocumentAsync(long id, long operatorId, string operatorName);
+    Task<WikiDocumentGovernanceMutationVo> DeleteDocumentAsync(
+        long id,
+        WikiDocumentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName);
 
-    Task<bool> RestoreDocumentAsync(long id, long operatorId, string operatorName);
+    Task<WikiDocumentGovernanceMutationVo> RestoreDocumentAsync(
+        long id,
+        WikiDocumentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName);
 
-    Task<bool> PublishAsync(long id, long operatorId, string operatorName);
+    Task<WikiDocumentGovernanceMutationVo> PublishAsync(
+        long id,
+        WikiDocumentContentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName);
 
-    Task<bool> UnpublishAsync(long id, long operatorId, string operatorName);
+    Task<WikiDocumentGovernanceMutationVo> UnpublishAsync(
+        long id,
+        WikiDocumentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName);
 
-    Task<bool> ArchiveAsync(long id, long operatorId, string operatorName);
+    Task<WikiDocumentGovernanceMutationVo> ArchiveAsync(
+        long id,
+        WikiDocumentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName);
 
-    Task<List<WikiDocumentRevisionItemVo>> GetRevisionListAsync(long documentId);
+    Task<PageModel<WikiDocumentRevisionItemVo>> GetRevisionListAsync(
+        long documentId,
+        int pageIndex = 1,
+        int pageSize = 20);
 
     Task<WikiDocumentRevisionDetailVo?> GetRevisionDetailAsync(long revisionId);
 
-    Task<bool> RollbackAsync(long revisionId, long operatorId, string operatorName);
+    Task<WikiDocumentGovernanceMutationVo> RollbackAsync(
+        long revisionId,
+        WikiDocumentContentGovernanceActionDto actionDto,
+        long operatorId,
+        string operatorName);
 
     Task<long> ImportMarkdownAsync(WikiMarkdownImportDto importDto, long operatorId, string operatorName, long tenantId);
 

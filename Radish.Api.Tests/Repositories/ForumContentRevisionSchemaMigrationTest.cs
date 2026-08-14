@@ -60,6 +60,55 @@ public sealed class ForumContentRevisionSchemaMigrationTest
     }
 
     [Fact]
+    public void Verify_ShouldSupportLegacyPostAnswerSchemaBeforeAnswerLifecycleMigration()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            $"radish-forum-content-revision-legacy-answer-{Guid.NewGuid():N}.db");
+        using var db = CreateSqlite(path);
+        using var services = new ServiceCollection().AddSingleton<ISqlSugarClient>(db).BuildServiceProvider();
+        try
+        {
+            Seed(db);
+            db.Ado.ExecuteCommand(
+                """
+                CREATE TABLE "PostAnswer" (
+                    "Id" INTEGER NOT NULL PRIMARY KEY,
+                    "PostId" INTEGER NOT NULL,
+                    "AuthorId" INTEGER NOT NULL,
+                    "AuthorName" TEXT NOT NULL,
+                    "Content" TEXT NOT NULL,
+                    "IsAccepted" INTEGER NOT NULL,
+                    "TenantId" INTEGER NOT NULL,
+                    "IsDeleted" INTEGER NOT NULL
+                )
+                """);
+            db.Ado.ExecuteCommand(
+                """
+                INSERT INTO "PostAnswer"
+                    ("Id", "PostId", "AuthorId", "AuthorName", "Content", "IsAccepted", "TenantId", "IsDeleted")
+                VALUES
+                    (50, 30, 1003, 'LegacyAnswerer', '历史回答', 0, 9, 0)
+                """);
+
+            ForumContentRevisionSchemaMigration.Instance.Apply(db, services);
+
+            Assert.Null(DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                nameof(PostAnswer),
+                nameof(PostAnswer.PublicId)));
+            Assert.Empty(ForumContentRevisionSchemaMigration.Instance.Verify(db, services));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     public void Migration_ShouldMarkLegacySnapshotIncompleteWithoutInventingAttachmentRelations()
     {
         var path = Path.Combine(
@@ -118,7 +167,7 @@ public sealed class ForumContentRevisionSchemaMigrationTest
         {
             var connectionString =
                 $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
-            using var db = new SqlSugarScope(new ConnectionConfig
+            using var db = PostgreSqlIntegrationSqlSugarFactory.CreateScope(new ConnectionConfig
             {
                 ConfigId = "main",
                 ConnectionString = connectionString,

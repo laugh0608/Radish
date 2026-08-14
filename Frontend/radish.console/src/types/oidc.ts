@@ -10,14 +10,16 @@ export interface OidcClient {
   logo?: string;
   developerName?: string;
   developerEmail?: string;
-  redirectUris?: string[];
-  postLogoutRedirectUris?: string[];
-  permissions?: string[];
-  requirements?: string[];
+  redirectUris: string[];
+  postLogoutRedirectUris: string[];
+  grantTypes: string[];
+  scopes: string[];
+  consentType?: string;
+  requirePkce: boolean;
+  clientType: 'public' | 'confidential';
   status?: 'Active' | 'Disabled';
   type?: 'Internal' | 'ThirdParty';
   createdAt?: string;
-  createdBy?: number;
 }
 
 /**
@@ -32,7 +34,11 @@ export interface CreateClientRequest {
   developerEmail?: string;
   redirectUris: string[];
   postLogoutRedirectUris?: string[];
-  permissions?: string[];
+  grantTypes: string[];
+  scopes: string[];
+  consentType: string;
+  requirePkce: boolean;
+  clientType: 'public' | 'confidential';
 }
 
 /**
@@ -52,13 +58,8 @@ export interface UpdateClientRequest {
   requirePkce?: boolean;
 }
 
-/**
- * 分页响应
- */
-export interface PagedResponse<T> {
-  page: number;
-  pageSize: number;
-  dataCount: number;
-  pageCount: number;
-  data: T[];
+export interface ClientSecretResult {
+  clientId: string;
+  clientSecret: string | null;
+  message: string;
 }

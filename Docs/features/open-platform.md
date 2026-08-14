@@ -1,455 +1,211 @@
-# 开放平台设计文档
+# 开放平台设计
 
-本文档描述 Radish 开放平台的设计目标、架构和实现计划，支持内部应用统一认证和第三方应用接入。
+本文档冻结 Radish 当前 OIDC 客户端治理边界，并区分已落地能力与未来第三方开放平台规划。当前阶段只治理管理员创建和维护的 OpenIddict 客户端，不开放自助注册、审核、配额或开发者门户。
 
-## 1. 设计目标
+## 1. 当前目标与停止线
 
-### 1.1 核心需求
+当前目标：
 
-1. **单点登录（SSO）**：用户登录一次即可访问所有内部应用
-2. **统一认证**：所有应用通过 OIDC 协议进行身份认证
-3. **动态管理**：后台可动态配置客户端应用
-4. **第三方接入**：未来支持第三方应用接入 Radish 生态
+1. 为正式 Web、Console 与 API 文档等内部产品提供统一 OIDC 认证。
+2. 允许具备 Console 权限的管理员动态创建、查询、编辑、软删除和轮换客户端密钥。
+3. 让客户端类型、Grant、Scope、回调地址、Consent 与 PKCE 配置保持为 OpenIddict 单一真相源。
+4. 对分页、搜索、权限和一次性密钥展示提供可验证的管理契约。
 
-### 1.2 应用矩阵
+当前停止线：
 
-| 应用 | ClientId | 类型 | 说明 |
-|------|----------|------|------|
-| WebOS 前端 | `radish-client` | Internal | 社区主站与 WebOS 入口 |
-| API 文档 | `radish-scalar` | Internal | Scalar API 文档 |
-| 后台控制台 | `radish-console` | Internal | 管理控制台 |
-| 第三方应用 | `{custom}` | ThirdParty | 动态注册 |
+- 不提供第三方开发者自助注册、应用审核、状态流转、配额、调用统计、SDK 或 Webhook。
+- 不引入独立 `RadishApplication` 业务实体；客户端事实直接存储于 OpenIddict application 表。
+- 不提供独立启用 / 禁用状态操作；需要撤销客户端时使用软删除，恢复与审核状态待未来专题设计。
+- 不展示或回读已保存的 Client Secret；Secret 只在创建 confidential 客户端或重置密钥成功后返回一次。
 
-**说明**：
-- `radish-client` 负责社区主站与 WebOS 入口
-- `radish-console` 当前作为独立 OIDC 客户端接入，用于管理后台的独立登录、回调和登出链路
-- `radish-scalar` 作为独立 OIDC 客户端承接 API 文档调试授权
-- `radish-shop` 遗留内置客户端种子已移除，商城能力不再单独占用官方 OIDC 客户端
+## 2. 系统归属
 
-## 2. 系统架构
+| 能力 | 当前归属 | 说明 |
+| --- | --- | --- |
+| OIDC Server | `Radish.Auth` | 承载 `/connect/authorize`、`/connect/token`、`/connect/endsession` 与 `/connect/userinfo` |
+| OpenIddict application 存储 | `Radish.Auth.OpenIddict` 数据库 | 是 ClientId、客户端类型、URI、权限和 properties 的权威真相源 |
+| 客户端管理 API | `Radish.Api` | 通过 `IOpenIddictApplicationManager` 写入，通过 EF Core 权威查询服务分页读取 |
+| 管理界面 | `Frontend/radish.console` `/applications` | PC 连续表格、mobile 卡片与 Bottom Sheet 工作流 |
+| API 客户端 | `Frontend/radish.console/src/api/clients.ts` | 复用 `@radish/http` 统一请求与错误契约 |
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│                      Radish 开放平台                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  ┌─────────────────────────────────────────────────────┐   │
-│  │                 Radish.Auth                          │   │
-│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │   │
-│  │  │ OIDC Server │  │ 用户管理    │  │ 客户端管理  │  │   │
-│  │  │ /connect/*  │  │ /api/users  │  │ /api/clients│  │   │
-│  │  └─────────────┘  └─────────────┘  └─────────────┘  │   │
-│  └─────────────────────────────────────────────────────┘   │
-│                            │                                │
-│         ┌──────────────────┼──────────────────┐            │
-│         ▼                  ▼                  ▼            │
-│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐       │
-│  │radish-client│   │ radish-     │   │ 第三方应用   │       │
-│  │ (WebOS)     │   │ scalar等    │   │ (动态注册)  │       │
-│  │  ├─论坛     │   │             │   │             │       │
-│  │  ├─聊天室   │   │             │   │             │       │
-│  │  ├─商城     │   │             │   │             │       │
-│  │  └─后台管理 │   │             │   │             │       │
-│  └─────────────┘   └─────────────┘   └─────────────┘       │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+当前预置内部客户端：
 
-## 3. 客户端类型
+| ClientId | 用途 |
+| --- | --- |
+| `radish-client` | 社区主站与 WebOS 正式入口 |
+| `radish-console` | Console 独立登录、回调和登出 |
+| `radish-scalar` | Scalar API 文档调试授权 |
 
-### 3.1 内部应用（Internal）
+`radish-shop` 遗留种子已经移除，商城能力不再单独占用官方 OIDC 客户端。
 
-- 由 Radish 团队开发和维护
-- 通过 DbSeed 预置
-- 默认启用，无需审核
-- 可访问所有 Scope
-- 是否展示授权确认页由 `Radish.Auth:AuthorizationConsent` 配置控制
+## 3. 当前数据契约
 
-### 3.2 第三方应用（ThirdParty）
+### 3.1 列表与详情
 
-- 由外部开发者创建
-- 需要审核后才能使用
-- 限制可访问的 Scope
-- 需要遵守开放平台协议
-- 默认需要经过授权确认页后才会继续授权流程
+`ClientVo` 对 Console 暴露以下稳定字段：
 
-### 3.3 授权确认策略
+| 字段 | 类型 | 说明 |
+| --- | --- | --- |
+| `id` | `string` | OpenIddict application 主键 |
+| `clientId` | `string` | 唯一 ClientId |
+| `displayName` | `string?` | 显示名称 |
+| `description` | `string?` | 应用描述 |
+| `developerName` / `developerEmail` | `string?` | 管理员登记的开发者信息 |
+| `clientType` | `public \| confidential` | OpenIddict 客户端类型 |
+| `grantTypes` | `string[]` | 授权类型数组 |
+| `redirectUris` | `string[]` | 回调地址数组 |
+| `postLogoutRedirectUris` | `string[]` | 登出回调地址数组 |
+| `scopes` | `string[]` | Scope 数组 |
+| `consentType` | `string?` | `explicit / implicit / external / systematic` |
+| `requirePkce` | `boolean` | 是否要求 PKCE |
+| `createdAt` | `datetime?` | 从 application properties 映射的创建时间 |
 
-当前授权确认策略已改为配置驱动，由 `Radish.Auth/appsettings.json` 中的 `AuthorizationConsent` 节点控制：
+数组字段在空值时也返回空数组，不再以逗号字符串或 nullable 集合制造前后端分支。
 
-- `RequireConsentForInternalClients`：控制官方内部应用是否默认显示确认页
-- `ConsentRequiredClientIds`：强制显示确认页的客户端白名单
-- `ConsentBypassClientIds`：强制跳过确认页的客户端白名单
+### 3.2 创建与编辑
 
-当前测试配置下：
+创建请求使用 `clientType` 明确区分 `public` 与 `confidential`；`requireClientSecret` 仅保留为旧调用方兼容字段，新代码不得继续依赖它表达客户端类型。
 
-- `radish-client` 默认跳过确认页
-- `radish-console` 显示确认页
-- `radish-scalar` 显示确认页
-- 第三方应用默认显示确认页
+支持的 Grant：
 
-## 4. 数据模型
+- `authorization_code`
+- `client_credentials`
+- `refresh_token`
+- `password`
 
-### 4.1 应用实体
+核心一致性规则：
 
-```csharp
-public class RadishApplication
-{
-    // 基础信息
-    public string Id { get; set; }
-    public string ClientId { get; set; }
-    public string? ClientSecret { get; set; }
-    public string DisplayName { get; set; }
-    public string? Description { get; set; }
-    public string? Logo { get; set; }
+- `public` 客户端不得使用 `client_credentials`。
+- 使用 `authorization_code` 时必须至少提供一个 `redirectUri`。
+- Grant、Scope、Redirect URI 与 Post Logout Redirect URI 会去空、去重并写回 OpenIddict descriptor。
+- 更新时由当前完整 descriptor 重建受管理的 endpoint、grant、response type 与 scope permissions，避免增量修改遗留失效权限。
+- 编辑不允许改变 `clientId` 或 `clientType`；如需改变安全身份，应新建客户端并迁移调用方。
 
-    // 分类
-    public ApplicationType AppType { get; set; }
-    public ApplicationStatus Status { get; set; }
+## 4. API 契约
 
-    // 开发者信息
-    public string? DeveloperName { get; set; }
-    public string? DeveloperEmail { get; set; }
-    public string? DeveloperWebsite { get; set; }
+客户端 API 使用版本化 action 路由：
 
-    // 配置
-    public List<string> RedirectUris { get; set; }
-    public List<string> PostLogoutRedirectUris { get; set; }
-    public List<string> Permissions { get; set; }
-    public bool RequirePkce { get; set; }
-    public string? ConsentType { get; set; }
+| 操作 | 路由 | Console 权限 |
+| --- | --- | --- |
+| 列表 | `GET /api/v1/Client/GetClients` | `console.applications.view` |
+| 详情 | `GET /api/v1/Client/GetClient/{id}` | `view` 或 `edit` |
+| 创建 | `POST /api/v1/Client/CreateClient` | `console.applications.create` |
+| 编辑 | `PUT /api/v1/Client/UpdateClient/{id}` | `console.applications.edit` |
+| 软删除 | `DELETE /api/v1/Client/DeleteClient/{id}` | `console.applications.delete` |
+| 重置 Secret | `POST /api/v1/Client/ResetClientSecret/{id}` | `console.applications.reset-secret` |
 
-    // 统计
-    public long AuthorizationCount { get; set; }
-    public DateTime? LastUsedAt { get; set; }
+所有接口同时要求 `AuthorizationPolicies.Client`。按钮显隐只是体验层，Controller 权限是最终边界。
 
-    // 审计
-    public DateTime CreatedAt { get; set; }
-    public long? CreatedBy { get; set; }
-    public DateTime? UpdatedAt { get; set; }
-    public long? UpdatedBy { get; set; }
-}
-```
+### 4.1 权威分页与搜索
 
-### 4.2 枚举定义
-
-```csharp
-public enum ApplicationType
-{
-    Internal = 0,    // 内部应用
-    ThirdParty = 1   // 第三方应用
-}
-
-public enum ApplicationStatus
-{
-    Active = 0,        // 正常
-    Disabled = 1,      // 已禁用
-    PendingReview = 2, // 待审核
-    Rejected = 3       // 已拒绝
-}
-```
-
-## 5. API 设计
-
-### 5.1 客户端管理
-
-#### 列表查询
+列表参数：
 
 ```http
-GET /api/clients?page=1&pageSize=20&appType=Internal&status=Active
-Authorization: Bearer {admin_token}
+GET /api/v1/Client/GetClients?page=1&pageSize=20&keyword=console
 ```
 
-响应：
-```json
-{
-  "items": [
-    {
-      "id": "abc123",
-      "clientId": "radish-client",
-      "displayName": "Radish Web Client",
-      "appType": "Internal",
-      "status": "Active",
-      "authorizationCount": 1234,
-      "lastUsedAt": "2025-11-24T10:00:00Z"
-    }
-  ],
-  "total": 3,
-  "page": 1,
-  "pageSize": 20
-}
-```
+- `page >= 1`
+- `1 <= pageSize <= 100`
+- `keyword` 去除首尾空白后最长 100 字符
+- 搜索范围为 `ClientId` 与 `DisplayName`
+- 排序固定为 `ClientId ASC, Id ASC`
+- 软删除项在计数和数据页中都被排除
 
-#### 创建应用
+响应使用统一 `MessageModel<PageModel<ClientVo>>`，其中 `dataCount` 与 `pageCount` 均来自数据库权威查询。Console 不得通过请求大页后在内存中假分页。
 
-```http
-POST /api/clients
-Authorization: Bearer {admin_token}
-Content-Type: application/json
+### 4.2 一次性 Secret
 
-{
-  "clientId": "my-app",
-  "displayName": "我的应用",
-  "description": "应用描述",
-  "appType": "ThirdParty",
-  "redirectUris": ["https://my-app.com/callback"],
-  "postLogoutRedirectUris": ["https://my-app.com"],
-  "permissions": {
-    "grantTypes": ["authorization_code", "refresh_token"],
-    "scopes": ["openid", "profile"]
-  },
-  "requirePkce": true,
-  "developerName": "开发者名称",
-  "developerEmail": "dev@example.com"
-}
-```
+创建 confidential 客户端和重置 Secret 成功时，响应中的 `clientSecret` 只展示一次。public 客户端创建成功时该字段为 `null`，并且重置接口会拒绝 public 客户端。
 
-#### 重置 Secret
+Console 必须：
 
-```http
-POST /api/clients/{id}/reset-secret
-Authorization: Bearer {admin_token}
-```
+1. 在离开结果层前要求管理员确认已经保存 Secret。
+2. 结果层关闭后清空前端内存中的 Secret。
+3. 不把 Secret 写入 URL、日志、持久化状态或列表 / 详情模型。
+4. 重置前明确提示旧 Secret 会立即失效。
 
-响应：
-```json
-{
-  "clientSecret": "new-generated-secret"
-}
-```
+## 5. Console 应用管理
 
-#### 启用/禁用
+### 5.1 列表状态
 
-```http
-POST /api/clients/{id}/toggle-status
-Authorization: Bearer {admin_token}
-```
+`/applications` 的 `page`、`pageSize` 与 `keyword` 以 URL query 为唯一列表状态源。PC 使用连续 Table，mobile 重排为卡片；两端共享同一请求代次、分页和权限状态机。
 
-### 5.2 权限要求
+页面区分：
 
-| 操作 | 所需角色 |
-|------|---------|
-| 查看列表 | Admin |
-| 查看详情 | Admin |
-| 创建应用 | Admin |
-| 编辑应用 | Admin |
-| 删除应用 | System |
-| 重置 Secret | Admin |
-| 启用/禁用 | Admin |
+- `ready`：当前 URL 快照已经成功加载，允许执行写操作。
+- `stale`：新请求进行中但旧数据仍可见，冻结当前写操作，避免对错误快照操作。
+- `unavailable`：当前查询不可用，展示错误恢复入口并冻结写操作。
 
-## 6. 后台管理界面
+搜索提交会回到第 1 页；改变 pageSize 也回到第 1 页。翻页、前进 / 后退与刷新都必须从 URL 恢复同一查询。
 
-### 6.1 应用管理模块
+### 5.2 创建与编辑
 
-```
-后台管理 → 开放平台 → 应用管理
-├── 应用列表
-│   ├── 筛选：类型（内部/第三方）、状态
-│   ├── 搜索：ClientId、名称
-│   └── 操作：查看、编辑、禁用
-├── 创建应用
-│   ├── 基础信息（名称、描述、Logo）
-│   ├── 应用类型
-│   ├── 回调配置（RedirectUris）
-│   ├── 权限配置（GrantTypes、Scopes）
-│   └── 开发者信息
-├── 应用详情
-│   ├── 凭证信息（ClientId、Secret）
-│   ├── 使用统计
-│   └── 操作日志
-└── 应用设置
-    ├── 编辑配置
-    ├── 重置 Secret
-    └── 启用/禁用
-```
+PC 使用 Modal，mobile 使用 Bottom Sheet。表单覆盖显示信息、客户端类型、Grant、Scope、Consent、PKCE 与回调地址；编辑打开前必须读取详情。
 
-### 6.2 界面原型
+- 提交期间锁定重复提交与关闭。
+- 表单变脏后，关闭或浏览器离开都需要确认。
+- 所有入口与最终 handler 都复核对应 Console 权限。
+- 删除使用明确确认，并在成功后重新读取当前权威页。
 
-#### 应用列表页
+### 5.3 视觉继承
 
-| ClientId | 名称 | 类型 | 状态 | 授权次数 | 最后使用 | 操作 |
-|----------|------|------|------|---------|---------|------|
-| radish-client | Radish Web | 内部 | 正常 | 12,345 | 2分钟前 | 查看 \| 编辑 |
-| radish-admin | Radish Admin | 内部 | 正常 | 567 | 1小时前 | 查看 \| 编辑 |
-| third-party-1 | 游戏社区 | 第三方 | 正常 | 89 | 3天前 | 查看 \| 编辑 \| 禁用 |
+Applications 属于 `R3-C04` 普通资源页，继承 `R1-C01` Console 表格 / 明细工作台的结构、筛选、状态和移动端重排规则。本批不新增或修改 Pencil 代表画板。
 
-#### 创建应用表单
+## 6. Scope 与授权确认
 
-```
-┌─────────────────────────────────────────┐
-│ 创建应用                                 │
-├─────────────────────────────────────────┤
-│ 基础信息                                 │
-│ ┌─────────────────────────────────────┐ │
-│ │ 应用名称 *    [________________]    │ │
-│ │ 应用描述      [________________]    │ │
-│ │ 应用 Logo     [上传]                │ │
-│ │ 应用类型 *    ○ 内部  ● 第三方      │ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│ 回调配置                                 │
-│ ┌─────────────────────────────────────┐ │
-│ │ 回调地址 *    [________________] [+]│ │
-│ │ 登出回调      [________________] [+]│ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│ 权限配置                                 │
-│ ┌─────────────────────────────────────┐ │
-│ │ 授权类型      ☑ Authorization Code  │ │
-│ │               ☑ Refresh Token       │ │
-│ │               ☐ Client Credentials  │ │
-│ │ 作用域        ☑ openid ☑ profile   │ │
-│ │               ☐ email  ☑ radish-api│ │
-│ │ 强制 PKCE     ☑                     │ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│ 开发者信息                               │
-│ ┌─────────────────────────────────────┐ │
-│ │ 开发者名称    [________________]    │ │
-│ │ 联系邮箱      [________________]    │ │
-│ │ 官方网站      [________________]    │ │
-│ └─────────────────────────────────────┘ │
-│                                         │
-│              [取消]  [创建]              │
-└─────────────────────────────────────────┘
-```
+`Radish.Auth` 当前注册：
 
-## 7. Scope 设计
-
-### 7.1 标准 Scope
-
-| Scope | 说明 | 返回的 Claims |
-|-------|------|--------------|
-| `openid` | OIDC 必需 | `sub` |
-| `profile` | 用户基本信息 | `name`, `nickname`, `picture` |
-| `email` | 邮箱 | `email`, `email_verified` |
-| `phone` | 手机号 | `phone_number`, `phone_number_verified` |
-| `offline_access` | 允许 refresh_token | - |
-
-### 7.2 自定义 Scope
-
-| Scope | 说明 | 权限 |
-|-------|------|------|
-| `radish-api` | 访问业务 API | 所有业务接口 |
-| `radish-admin` | 访问管理 API | 管理接口（需要 Admin 角色） |
-| `radish-profile:write` | 修改个人信息 | 更新昵称、头像等 |
-
-### 7.3 第三方应用限制
-
-第三方应用默认只能申请：
 - `openid`
 - `profile`
-- `radish-api`（受限，不含敏感操作）
-
-敏感 Scope 需要额外审核：
 - `email`
-- `phone`
-- `radish-profile:write`
+- `offline_access`
+- `radish-api`
 
-## 8. 安全策略
+Scope permission 表达客户端可请求的范围，业务 API 的最终权限仍由 token、角色和服务端授权策略共同裁决；不得把 `radish-api` 解释为自动取得全部业务权限。
 
-### 8.1 客户端安全
+授权确认由客户端 `ConsentType` 与 Auth 授权流程共同决定。预置客户端可由 seed 固定差异化策略；动态客户端默认使用 `explicit`。具体运行时行为以 [鉴权与授权指南](/guide/authentication) 为准。
 
-- **Secret 管理**：
-  - 使用加密存储（不明文保存）
-  - 创建时生成高强度随机 Secret
-  - 重置后旧 Secret 立即失效
+## 7. 安全与审计
 
-- **PKCE 要求**：
-  - 第三方应用强制启用 PKCE
-  - 内部 Web 应用建议启用
+- OpenIddict 负责 Secret 哈希与凭证校验，管理 API 不回读原始 Secret。
+- Redirect URI 严格匹配；生产客户端应使用 HTTPS 回调。
+- public + authorization code 场景应启用 PKCE。
+- 创建、编辑、软删除和重置 Secret 写入 application properties 中的审计元数据。
+- 软删除客户端不会进入 Console 列表，也不能通过详情或写接口继续操作。
+- API 与前端日志禁止记录 Secret、Bearer token 或完整敏感请求体。
 
-- **RedirectUri 验证**：
-  - 严格匹配，不支持通配符
-  - 必须使用 HTTPS（生产环境）
+## 8. 未来第三方开放平台
 
-### 8.2 访问控制
+以下能力尚未进入当前开发范围，需要独立专题设计后才能实施：
 
-- **第三方应用审核**：
-  - 创建后默认为 `PendingReview` 状态
-  - 管理员审核通过后变为 `Active`
+1. 开发者身份、组织与自助应用注册。
+2. 草稿、待审核、通过、驳回、停用与恢复状态机。
+3. 第三方可申请 Scope 白名单与敏感 Scope 审核。
+4. 配额、调用统计、异常授权审计和告警。
+5. 开发者文档、SDK、Webhook 与密钥轮换协作流程。
 
-- **配额限制**（未来）：
-  - 每日授权次数限制
-  - API 调用频率限制
+未来设计不得复用当前软删除字段冒充审核状态，也不得在缺少产品状态机时给现有 Console 增加“第三方审核”占位入口。
 
-### 8.3 审计日志
+## 9. 验证入口
 
-记录以下操作：
-- 应用创建/编辑/删除
-- Secret 重置
-- 状态变更
-- 异常授权行为
+日常代码侧验证：
 
-## 9. 实现计划
-
-### 阶段一：M3（OIDC 基础）
-
-- [x] OpenIddict 配置
-- [ ] 客户端数据库存储
-- [x] DbSeed 预置官方内部应用（`radish-client` / `radish-console` / `radish-scalar`）
-- [ ] 客户端管理 API
-- [ ] Scalar OAuth 集成
-
-### 阶段二：M4（后台管理）
-
-- [ ] 后台应用管理界面
-- [ ] 创建/编辑/删除功能
-- [ ] Secret 重置功能
-- [ ] 启用/禁用功能
-
-### 阶段三：M9+（开放平台）
-
-- [ ] 第三方开发者注册
-- [ ] 应用审核流程
-- [ ] Scope 精细化控制
-- [ ] 使用统计/配额
-- [ ] 开发者文档/SDK
-- [ ] Webhook 通知
-
-## 10. 第三方接入指南（规划）
-
-### 10.1 接入流程
-
-```
-1. 开发者注册
-   ↓
-2. 创建应用（填写信息、配置回调）
-   ↓
-3. 提交审核
-   ↓
-4. 审核通过，获取凭证
-   ↓
-5. 集成 SDK / 实现 OIDC 流程
-   ↓
-6. 测试验证
-   ↓
-7. 上线运营
+```bash
+dotnet test Radish.Api.Tests
+npm run test --workspace=radish.console
+npm run type-check:strict --workspace=radish.console
+npm run lint --workspace=radish.console
+npm run build --workspace=radish.console
 ```
 
-### 10.2 SDK 规划
+分页、过滤和稳定排序由 `ClientApplicationQueryServiceTest` 覆盖；Controller 契约与 public / confidential Secret 边界由 `ClientControllerTest` 覆盖；Console URL、权限和一次性 Secret 契约由 `r3C04ApplicationsContract.test.ts` 覆盖。
 
-- JavaScript/TypeScript SDK
-- .NET SDK
-- 示例代码和文档
+真实 Gateway PC / mobile smoke 只在 Applications 专题准备成组验收时执行，并遵循[浏览器联调指南](/guide/browser-smoke)的启动授权要求。
 
-### 10.3 文档内容
+## 10. 关联文档
 
-- 快速开始
-- 认证流程详解
-- API 参考
-- 最佳实践
-- 常见问题
-
----
-
-## 11. 与其他模块的关系
-
-- [鉴权与授权指南](/guide/authentication)：OIDC 技术实现细节
-- [开发计划](/development-plan)：开发计划和里程碑
-- [前端设计文档](/frontend/design)：后台管理界面设计规范
-- [Gateway 服务网关](/guide/gateway)：统一服务入口与路由转发
-
----
-
-> 本文档随开放平台功能开发持续更新，如有变更请同步修改 [更新日志](/changelog/)。
+- [鉴权与授权指南](/guide/authentication)
+- [Console 模块说明](/guide/console-modules)
+- [R3-C04 普通资源风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)
+- [R3-C04-C Applications 实现记录](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)
+- [当前规划](/planning/current)

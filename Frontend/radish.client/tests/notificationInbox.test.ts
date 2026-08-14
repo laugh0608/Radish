@@ -2,8 +2,8 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import type { NotificationInboxGroupVo } from '@radish/http';
-import { enCommunity } from '../src/locales/en/community.ts';
-import { zhCommunity } from '../src/locales/zh/community.ts';
+import { enNotification } from '../src/locales/en/notification.ts';
+import { zhNotification } from '../src/locales/zh/notification.ts';
 import {
   buildNotificationPreferenceUpdates,
   canApplyNotificationInboxPage,
@@ -98,10 +98,10 @@ test('目标失效原因与所有分类均具备中英文展示', () => {
   assert.equal(getNotificationTargetUnavailableKey(invalid), 'notification.targetUnavailable.deleted');
 
   for (const definition of notificationCategoryDefinitions) {
-    assert.equal(typeof zhCommunity[definition.labelKey as keyof typeof zhCommunity], 'string');
-    assert.equal(typeof enCommunity[definition.labelKey as keyof typeof enCommunity], 'string');
-    assert.equal(typeof zhCommunity[definition.descriptionKey as keyof typeof zhCommunity], 'string');
-    assert.equal(typeof enCommunity[definition.descriptionKey as keyof typeof enCommunity], 'string');
+    assert.equal(typeof zhNotification[definition.labelKey as keyof typeof zhNotification], 'string');
+    assert.equal(typeof enNotification[definition.labelKey as keyof typeof enNotification], 'string');
+    assert.equal(typeof zhNotification[definition.descriptionKey as keyof typeof zhNotification], 'string');
+    assert.equal(typeof enNotification[definition.descriptionKey as keyof typeof enNotification], 'string');
   }
 });
 

@@ -480,7 +480,6 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
             await EnsureValidProductConfigurationAsync(
                 dto.ProductType,
                 dto.BenefitType,
@@ -494,11 +493,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             product.CreateId = operatorId;
             product.CreateBy = operatorName;
             product.CreateTime = DateTime.Now;
-
-            if (dto.IsOnSale)
-            {
-                product.OnSaleTime = DateTime.Now;
-            }
+            product.IsOnSale = false;
+            product.OnSaleTime = null;
+            product.OffSaleTime = null;
 
             var productId = await _productRepository.AddAsync(product);
             Log.Information("创建商品成功：{ProductId}, 名称={Name}, 操作员={Operator}",
@@ -518,14 +515,6 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     {
         try
         {
-            EnsureSupportedOnSaleProduct(dto.ProductType, dto.BenefitType, dto.ConsumableType, dto.IsOnSale);
-            await EnsureValidProductConfigurationAsync(
-                dto.ProductType,
-                dto.BenefitType,
-                dto.ConsumableType,
-                dto.BenefitValue,
-                dto.IconAttachmentId);
-
             var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
             if (product == null)
             {
@@ -533,6 +522,17 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             }
 
             EnsureExpectedProductVersion(product, dto.ExpectedVersion);
+            EnsureSupportedOnSaleProduct(
+                dto.ProductType,
+                dto.BenefitType,
+                dto.ConsumableType,
+                product.IsOnSale);
+            await EnsureValidProductConfigurationAsync(
+                dto.ProductType,
+                dto.BenefitType,
+                dto.ConsumableType,
+                dto.BenefitValue,
+                dto.IconAttachmentId);
 
             Mapper.Map(dto, product);
             product.ModifyId = operatorId;
@@ -561,7 +561,6 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                     DurationDays = product.DurationDays,
                     ExpiresAt = product.ExpiresAt,
                     SortOrder = product.SortOrder,
-                    IsOnSale = product.IsOnSale,
                     Version = product.Version,
                     ModifyId = product.ModifyId,
                     ModifyBy = product.ModifyBy,
@@ -856,7 +855,9 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 pageIndex: pageIndex,
                 pageSize: pageSize,
                 orderByExpression: p => p.CreateTime,
-                orderByType: OrderByType.Desc);
+                orderByType: OrderByType.Desc,
+                thenByExpression: p => p.Id,
+                thenByType: OrderByType.Desc);
 
             var productVos = Mapper.Map<List<ProductVo>>(products);
             await FillProductCategoryNamesAsync(productVos);

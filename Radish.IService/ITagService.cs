@@ -37,6 +37,14 @@ public interface ITagService : IBaseService<Tag, TagVo>
     Task<TagVo?> GetPublicTagBySlugAsync(string slug);
 
     /// <summary>
+    /// 获取与公开标签共同出现在帖子中的相关标签。
+    /// </summary>
+    /// <param name="slug">来源标签 slug</param>
+    /// <param name="topCount">返回数量</param>
+    /// <returns>相关标签；来源标签不存在或不可公开访问时返回 null</returns>
+    Task<List<TagVo>?> GetRelatedTagsAsync(string slug, int topCount = 8);
+
+    /// <summary>
     /// 分页查询标签（后台管理）
     /// </summary>
     /// <param name="pageIndex">页码（从1开始）</param>

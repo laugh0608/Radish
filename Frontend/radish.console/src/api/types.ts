@@ -283,7 +283,6 @@ export interface CreateProductDto {
   durationDays?: number;
   expiresAt?: string;
   sortOrder: number;
-  isOnSale: boolean;
 }
 
 /**

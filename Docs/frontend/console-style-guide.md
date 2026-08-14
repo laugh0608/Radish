@@ -1,9 +1,11 @@
 # Console 样式与 Token 使用说明
 
 > 入口页：[前端设计文档](/frontend/design)  
-> 最后更新：2026-07-07
+> 最后更新：2026-08-03
 
-本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 视觉方向以 `Docs/frontend/design-sources/console-governance-workbench.pen` 的 `P00-P18` Console 治理工作台画板和 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design) 为当前设计基准。
+本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 使用 family-ui Workbench Profile，Radish 差异见 [UI 差异附录](/frontend/ui-addendum)；当前代表设计进入 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen` 的 `R1-C01 / R1-C02` 与 `R2-C03`，布局和功能边界同时服从 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)。旧 `console-governance-workbench.pen` 只读留档。
+
+`P00-P18` 是既有阶段形成的代表类型与历史资产，不要求后续路由逐页复制画板。新增或改动页面按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)裁决 R1 / R2 / R3；普通表格、设置、详情和治理派生页优先继承已有类型并在真实代码中复核。
 
 表格、操作列、分页和弹窗 / 抽屉内表格的细化规则见 [Console 表格布局说明](/frontend/console-table-layout-guide)。
 
@@ -11,7 +13,7 @@
 
 - Console 仍是独立后台入口，不嵌入 WebOS 窗口。
 - `@radish/ui` 已提供按钮、表格、表单、弹窗、确认框、骨架屏、图标、Toast 等基础能力；新增页面不应再创建重复的本地基础控件。
-- Console 局部样式先以 `index.css` 中的 `--console-*` CSS 变量承接主题 token，再由 `AdminLayout.css` 与 `adminFeature.css` 消费。
+- Console 局部样式先以 `index.css` 中的 `--console-*` L2 变量承接 family-ui `--rd-*`，再由 `AdminLayout.css` 与 `adminFeature.css` 消费。
 - 新增 / 明显改动页面优先按 Console 治理工作台风格收敛；历史页面不要求一次性改写，但进入重做或大幅调整时应对齐该方向。
 - `AdminLayout` 在窄屏下保持独立后台形态：`<= 768px` 时使用底部高频导航 `总览 / 治理 / 交易 / 权限 / 更多`，内容区预留底部安全距离；`更多` 面板按当前账号权限展示完整 Console 页面组，不把 PC 侧栏覆盖到主内容上。
 - Console token 生命周期由 `services/tokenService.ts` 统一维护，页面和 API 层不应各自实现独立刷新计时；刷新前置窗口使用 `refresh_at` 和动态缓冲。
@@ -71,7 +73,7 @@ E7-A 后的后台首页和移动入口口径：
 |----------|----------|----------|
 | 高频对象管理 | 指标条、工具条、表格、右侧摘要 | `admin-feature-metrics`、`admin-feature-toolbar`、`admin-feature-main` |
 | 设置 / 个人资料 / 策略 | 左侧分组导航、中间设置列、右侧影响范围 | `admin-settings-layout`、`admin-setting-section`、`admin-settings-aside` |
-| 调度总览 | 总览指标、快捷操作、最近事项、右侧入口 | `admin-overview-*`、`admin-dispatch-*` |
+| 调度总览 | 高频任务路径、独立指标快照、最近资源、完整功能面板 | `ConsolePageHeader`、`ConsoleMetricGrid`、页面局部调度区 |
 | 详情页 | 标题卡、指标、详情分区、右侧摘要 | `admin-detail-*` |
 | 工具型页面 | 查询工具条、主操作区、说明摘要 | `admin-tool-*` 或页面局部类 |
 | 治理工作台 | 队列、证据详情、动作留痕 | `governance-workbench-*` |
@@ -116,7 +118,7 @@ Console 表格优先保证中宽 PC 和移动窄屏下“能读、能操作、�
 | 工作台 / 治理页 | 窄队列 + 主详情 + 决策面板 | 内容治理、经验治理、人工复核 |
 | 表格 CRUD 页 | 指标条 + 筛选工具栏 + 表格 + 对象摘要侧栏 | 用户、订单、商品、角色 |
 | 设置 / 权限页 | 分组导航 + 居中设置列 + 影响范围侧栏 | 系统配置、权限策略、告警策略 |
-| 仪表盘页 | 关键指标 + 待处理事项 + 趋势或排行 | 总览、运营监控 |
+| 仪表盘页 | 高频任务路径 + 权威指标 + 最近资源 + 完整功能入口 | 调度总览、运营上下文 |
 
 不要把所有页面都做成卡片堆叠，也不要把某一个优秀页面当作全站模板逐页复刻；表格页仍应是表格，设置页仍应是行级设置，治理页才使用案件处理台结构。页面可以共享配色、侧栏节奏、按钮层级和 token，但布局应按具体功能自主组织。
 

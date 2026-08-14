@@ -126,6 +126,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -145,12 +150,33 @@ jobs:
         with:
           scan-type: image
           image-ref: local/${{ matrix.image_name }}:scan
-          format: table
-          exit-code: '1'
+          format: json
+          output: trivy-${{ matrix.image_name }}.json
+          exit-code: '0'
           ignore-unfixed: false
           vuln-type: os,library
           severity: HIGH,CRITICAL
           scanners: vuln
+
+      - name: Evaluate backend image vulnerability policy
+        run: |
+          node Scripts/evaluate-image-vulnerabilities.mjs \
+            --report "trivy-${{ matrix.image_name }}.json" \
+            --image "${{ matrix.image_name }}" \
+            --exceptions .github/image-vulnerability-exceptions.json \
+            --output "trivy-${{ matrix.image_name }}-evaluation.json" \
+            --summary "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload backend image vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-vulnerability-${{ matrix.image_name }}-${{ github.run_attempt }}
+          path: |
+            trivy-${{ matrix.image_name }}.json
+            trivy-${{ matrix.image_name }}-evaluation.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -228,6 +254,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+
       - name: Setup Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -245,12 +276,33 @@ jobs:
         with:
           scan-type: image
           image-ref: local/radish-frontend:scan
-          format: table
-          exit-code: '1'
+          format: json
+          output: trivy-radish-frontend.json
+          exit-code: '0'
           ignore-unfixed: false
           vuln-type: os,library
           severity: HIGH,CRITICAL
           scanners: vuln
+
+      - name: Evaluate frontend image vulnerability policy
+        run: |
+          node Scripts/evaluate-image-vulnerabilities.mjs \
+            --report trivy-radish-frontend.json \
+            --image radish-frontend \
+            --exceptions .github/image-vulnerability-exceptions.json \
+            --output trivy-radish-frontend-evaluation.json \
+            --summary "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload frontend image vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-vulnerability-radish-frontend-${{ github.run_attempt }}
+          path: |
+            trivy-radish-frontend.json
+            trivy-radish-frontend-evaluation.json
+          if-no-files-found: warn
+          retention-days: 30
 
       - name: Login to GHCR
         uses: docker/login-action@v3

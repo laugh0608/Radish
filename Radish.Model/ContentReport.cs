@@ -46,6 +46,10 @@ public class ContentReport : RootEntityTKey<long>, ITenantEntity, IDeleteFilter
     [SugarColumn(IsNullable = true)]
     public long? TargetSnapshotChannelId { get; set; }
 
+    /// <summary>商品或商品评价目标快照所属商品 ID。</summary>
+    [SugarColumn(IsNullable = true)]
+    public long? TargetSnapshotProductId { get; set; }
+
     /// <summary>举报目标快照标题</summary>
     [SugarColumn(Length = 200, IsNullable = true)]
     public string? TargetSnapshotTitle { get; set; }

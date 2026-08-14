@@ -42,7 +42,7 @@ export interface SystemConfigVo {
  * 系统设置变更审计数据类型
  */
 export interface SystemConfigChangeLogVo {
-  voId: number;
+  voId: string;
   voCategory: string;
   voKey: string;
   voName: string;
@@ -55,7 +55,7 @@ export interface SystemConfigChangeLogVo {
   voEffectiveMode: 'Immediate' | 'RestartRequired' | string;
   voConfirmRiskLevel?: string;
   voConfirmKey?: string;
-  voOperatorUserId?: number;
+  voOperatorUserId?: string;
   voOperatorUserName?: string;
   voRequestIp?: string;
   voUserAgent?: string;

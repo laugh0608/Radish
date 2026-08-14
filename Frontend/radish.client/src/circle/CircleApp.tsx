@@ -1,8 +1,8 @@
-import { useCallback, useEffect, useMemo, useState, type MouseEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { getApiBaseUrl } from '@/config/env';
-import { WebStateSlot } from '@/components/web-shell';
+import { WebStateSlot, WebTaskRailDisclosure } from '@/components/web-shell';
 import {
   getMyFollowers,
   getMyFollowing,
@@ -46,6 +46,7 @@ import { formatCircleDateTime, formatCircleNumber } from './circlePresentation';
 import styles from './CircleApp.module.css';
 
 const PAGE_SIZE = 10;
+type CircleSummaryLoadState = 'idle' | 'loading' | 'ready' | 'unavailable' | 'stale';
 
 const tabIcons: Record<CircleTab, string> = {
   feed: 'mdi:newspaper-variant-outline',
@@ -117,7 +118,9 @@ export const CircleApp = () => {
   const [route, setRoute] = useState<CircleRoute>(() => resolveInitialCircleRoute());
   const [authReady, setAuthReady] = useState(false);
   const [redirecting, setRedirecting] = useState(false);
-  const [summary, setSummary] = useState<UserFollowSummary>({ voFollowerCount: 0, voFollowingCount: 0 });
+  const [summary, setSummary] = useState<UserFollowSummary | null>(null);
+  const summaryRef = useRef<UserFollowSummary | null>(null);
+  const [summaryLoadState, setSummaryLoadState] = useState<CircleSummaryLoadState>('idle');
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [feedItems, setFeedItems] = useState<PostItem[]>([]);
@@ -193,11 +196,17 @@ export const CircleApp = () => {
   const loadCircleData = useCallback(async (nextRoute: CircleRoute) => {
     setLoading(true);
     setErrorMessage(null);
+    setSummaryLoadState('loading');
 
     try {
       const summaryPromise = getMyFollowSummary(t)
-        .then(setSummary)
+        .then((nextSummary) => {
+          summaryRef.current = nextSummary;
+          setSummary(nextSummary);
+          setSummaryLoadState('ready');
+        })
         .catch((error) => {
+          setSummaryLoadState(summaryRef.current ? 'stale' : 'unavailable');
           log.warn('CircleApp', '加载圈子汇总失败', error);
         });
 
@@ -244,6 +253,14 @@ export const CircleApp = () => {
   }), [authReady, loadCircleData, loggedIn]);
 
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const hasAuthoritativeSummary = summary !== null;
+  const summaryStatusKey = summaryLoadState === 'unavailable'
+    ? 'circle.summaryUnavailable'
+    : summaryLoadState === 'stale'
+      ? 'circle.summaryStale'
+      : summaryLoadState === 'ready'
+        ? null
+        : 'circle.summaryLoading';
   const mutualUserCount = userItems.filter(item => item.voIsMutualFollow).length;
   const feedEngagementCount = feedItems.reduce(
     (sum, item) => sum + (item.voCommentCount || 0) + (item.voLikeCount || 0),
@@ -461,6 +478,10 @@ export const CircleApp = () => {
 
     return (
       <aside className={styles.circleRail} aria-label={t('circle.rail.label')}>
+        <WebTaskRailDisclosure
+          label={t('circle.rail.label')}
+          summary={t('circle.rail.routeDescription')}
+        >
         <section className={styles.railCard}>
           <div className={styles.railTitleRow}>
             <span className={styles.railIcon}>
@@ -571,6 +592,7 @@ export const CircleApp = () => {
             </a>
           </div>
         </section>
+        </WebTaskRailDisclosure>
       </aside>
     );
   };
@@ -597,24 +619,33 @@ export const CircleApp = () => {
                 <span className={styles.summaryIcon}>
                   <Icon icon="mdi:account-heart-outline" size={20} />
                 </span>
-                <strong>{formatCircleNumber(summary.voFollowingCount, language)}</strong>
+                <strong>{hasAuthoritativeSummary ? formatCircleNumber(summary.voFollowingCount, language) : '—'}</strong>
                 <span>{t('circle.summary.following')}</span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryIcon}>
                   <Icon icon="mdi:account-group-outline" size={20} />
                 </span>
-                <strong>{formatCircleNumber(summary.voFollowerCount, language)}</strong>
+                <strong>{hasAuthoritativeSummary ? formatCircleNumber(summary.voFollowerCount, language) : '—'}</strong>
                 <span>{t('circle.summary.followers')}</span>
               </div>
               <div className={styles.summaryCard}>
                 <span className={styles.summaryIcon}>
                   <Icon icon={tabIcons[route.tab]} size={20} />
                 </span>
-                <strong>{formatCircleNumber(total, language)}</strong>
+                <strong>{!loggedIn || loading || errorMessage ? '—' : formatCircleNumber(total, language)}</strong>
                 <span>{t(`circle.summary.${route.tab}`)}</span>
               </div>
             </div>
+            {summaryStatusKey ? (
+              <p
+                className={styles.summaryState}
+                data-tone={summaryLoadState === 'unavailable' || summaryLoadState === 'stale' ? 'warning' : 'loading'}
+                role="status"
+              >
+                {t(summaryStatusKey)}
+              </p>
+            ) : null}
           </div>
           <div className={styles.introActions}>
             <a className={styles.forumLink} href="/forum">

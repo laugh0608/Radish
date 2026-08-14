@@ -145,9 +145,13 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// 获取用户最近的经验治理留痕
     /// </summary>
     /// <param name="userId">用户 ID</param>
-    /// <param name="take">返回数量（默认 20，最大 50）</param>
-    /// <returns>治理动作记录列表</returns>
-    Task<List<UserExperienceGovernanceActionVo>> GetGovernanceActionsAsync(long userId, int take = 20);
+    /// <param name="pageIndex">页码</param>
+    /// <param name="pageSize">每页数量</param>
+    /// <returns>治理动作记录分页</returns>
+    Task<PageModel<UserExperienceGovernanceActionVo>> GetGovernanceActionsAsync(
+        long userId,
+        int pageIndex = 1,
+        int pageSize = 20);
 
     /// <summary>
     /// 更新每日统计（内部方法，经验值发放时调用）
@@ -193,13 +197,17 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <param name="reason">调整原因</param>
     /// <param name="operatorId">操作员 ID</param>
     /// <param name="operatorName">操作员名称</param>
-    /// <returns>是否成功</returns>
-    Task<bool> AdminAdjustExperienceAsync(
+    /// <param name="expectedVersion">操作者读取到的经验聚合版本</param>
+    /// <param name="idempotencyKey">客户端幂等键</param>
+    /// <returns>权威经验与流水结果</returns>
+    Task<AdminExperienceAdjustmentResultVo> AdminAdjustExperienceAsync(
         long userId,
         int deltaExp,
         string reason,
         long operatorId,
-        string operatorName);
+        string operatorName,
+        int expectedVersion,
+        string idempotencyKey);
 
     /// <summary>
     /// 冻结用户经验值
@@ -207,15 +215,26 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <param name="userId">用户 ID</param>
     /// <param name="frozenUntil">冻结到期时间（NULL 表示永久冻结）</param>
     /// <param name="reason">冻结原因</param>
-    /// <returns>是否成功</returns>
-    Task<bool> FreezeExperienceAsync(long userId, DateTime? frozenUntil, string reason, long operatorId, string operatorName);
+    /// <returns>权威经验与治理动作</returns>
+    Task<AdminExperienceGovernanceResultVo> FreezeExperienceAsync(
+        long userId,
+        DateTime? frozenUntil,
+        string reason,
+        long operatorId,
+        string operatorName,
+        int expectedVersion);
 
     /// <summary>
     /// 解冻用户经验值
     /// </summary>
     /// <param name="userId">用户 ID</param>
-    /// <returns>是否成功</returns>
-    Task<bool> UnfreezeExperienceAsync(long userId, long operatorId, string operatorName);
+    /// <returns>权威经验与治理动作</returns>
+    Task<AdminExperienceGovernanceResultVo> UnfreezeExperienceAsync(
+        long userId,
+        string reason,
+        long operatorId,
+        string operatorName,
+        int expectedVersion);
 
     /// <summary>
     /// 记录人工复核结论
@@ -223,19 +242,27 @@ public interface IExperienceService : IBaseService<UserExperience, UserExperienc
     /// <param name="request">复核记录请求</param>
     /// <param name="operatorId">操作员 ID</param>
     /// <param name="operatorName">操作员名称</param>
-    /// <returns>是否成功</returns>
-    Task<bool> RecordGovernanceReviewAsync(
+    /// <returns>权威经验与治理动作</returns>
+    Task<AdminExperienceGovernanceResultVo> RecordGovernanceReviewAsync(
         AdminRecordExperienceGovernanceReviewDto request,
         long operatorId,
         string operatorName);
 
     /// <summary>
-    /// 管理员重新计算并更新所有等级配置（根据当前配置文件）
+    /// 预览等级配置整批重算差异。
     /// </summary>
-    /// <param name="operatorId">操作员 ID</param>
-    /// <param name="operatorName">操作员名称</param>
-    /// <returns>更新的等级配置列表</returns>
-    Task<List<LevelConfigVo>> RecalculateLevelConfigsAsync(long operatorId, string operatorName);
+    Task<ExperienceLevelRecalculationPreviewVo> PreviewLevelConfigRecalculationAsync();
+
+    /// <summary>按已确认预览整批重算等级配置。</summary>
+    Task<ExperienceLevelRecalculationResultVo> RecalculateLevelConfigsAsync(
+        RecalculateLevelConfigsDto request,
+        long operatorId,
+        string operatorName);
+
+    /// <summary>查询等级配置重算审计。</summary>
+    Task<PageModel<ExperienceLevelRecalculationAuditVo>> GetLevelRecalculationAuditsAsync(
+        int pageIndex = 1,
+        int pageSize = 20);
 
     #endregion
 }

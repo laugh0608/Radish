@@ -4,7 +4,9 @@
 >
 > **版本**: v26.7.2
 >
-> **最后更新**: 2026.07.20
+> **最后更新**: 2026.08.08
+>
+> `2026-08-08` 的 [R1-W01 设计前能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)确认正式 `/messages` 与 WebOS 继续共用同一 Chat 核心；审计发现的 ChatMessage 举报 ACL / LongId、失败重试幂等和历史错误契约漂移已由同日[能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。既有 A-D 完成事实不改写，撤回证据与频道角色权限仍需另行裁决。
 
 ---
 
@@ -34,7 +36,7 @@
 | [正式 Web 聊天工作区使用说明](/guide/chat-workspace) | 说明用户入口、搜索、回应、置顶、回执、恢复和隐私边界 | 使用 `/messages` 或排查用户可见行为 |
 | [聊天室 App 架构设计](./chat-app-architecture.md) | 定义应用注册、目录结构、分层边界、状态模型 | 新建 `apps/chat` 或做大规模重构前 |
 | [聊天室 App 实时与同步设计](./chat-app-realtime.md) | 定义 ChatHub 连接、事件流、未读同步、异常恢复 | 联调 Hub、排查实时消息问题 |
-| [聊天室 App UI 模块设计](./chat-app-ui-modules.md) | 定义三栏布局、核心组件职责、交互状态 | 实现页面与组件、做体验优化 |
+| [聊天室 App UI 模块设计](./chat-app-ui-modules.md) | 定义连续列表—消息主轴、按需上下文、核心组件职责与交互状态 | 实现页面与组件、做体验优化 |
 | [聊天室 App 实施路线图](./chat-app-roadmap.md) | 定义 P0/P1/P2 交付节奏、验收清单、风险 | 拆解任务、排期与验收 |
 | [正式 Web 一对一私聊与会话管理设计](./chat-direct-conversation-design.md) | 定义私聊用户路径、模型、权限、接口、页面与停止线 | 实现一对一私聊及其安全边界 |
 | [聊天历史搜索与消息定位设计](./chat-message-search-design.md) | 定义检索文本、ACL、cursor、定位、PC / mobile 页面与停止线 | 实现 F4-C 权威消息搜索 |
@@ -69,7 +71,7 @@
 ## 当前状态
 
 - 状态：M12 聊天室 `P1` 核心交互已补齐并完成本轮短回归修复；`2026-03-28` 已补“图片先入草稿、点击发送再统一发出”交互，当前继续按收口观察态维护
-- 正式 Web 聊天：`/messages` 已承接登录后频道列表、一对一会话生命周期、消息搜索与定位、消息 Reaction、消息置顶、轻量阅读回执、通知回流和公开个人页返回“聊天”；私聊与 F4-C / D / E / F 均已完成成组验收并关闭
+- 正式 Web 聊天：`/messages` 已承接登录后频道列表、一对一会话生命周期、消息搜索与定位、消息 Reaction、消息置顶、轻量阅读回执、通知回流和公开个人页返回“聊天”；R1-W01 将 PC 收敛为连续会话列表 / 消息主轴 / 按需成员上下文，将 mobile 收敛为列表—详情单任务流，私聊与 F4-C / D / E / F 及代表页均已完成成组验收并关闭
 - 已完成：
   - 频道列表、历史消息分页、文本发送、撤回、基础未读同步
   - `ChatHub` 事件对齐：`MessageReceived`、`MessageRecalled`、`UserTyping`、`ChannelUnreadChanged`、`ConversationStateChanged`

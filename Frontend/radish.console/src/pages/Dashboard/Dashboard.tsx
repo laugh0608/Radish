@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import {
@@ -15,7 +15,6 @@ import {
   TeamOutlined,
   AppstoreOutlined,
   FileTextOutlined,
-  PlusOutlined,
   EyeOutlined,
   SafetyOutlined,
   TrophyOutlined,
@@ -24,6 +23,7 @@ import {
   SettingOutlined,
   ClockCircleOutlined,
   TagsOutlined,
+  ReloadOutlined,
 } from '@radish/ui';
 import {
   ConsoleMetricCard,
@@ -31,6 +31,7 @@ import {
   ConsolePageHeader,
   ConsoleStatusChip,
   ConsoleToolbar,
+  type ConsoleStatusTone,
 } from '@/components/ConsolePage';
 import { adminGetOrders } from '@/api/shopApi';
 import { getDashboardStats, type DashboardStatsVo } from '@/api/statisticsApi';
@@ -41,9 +42,12 @@ import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
 import { usePermission } from '@/hooks/usePermission';
 import { useUser } from '@/hooks/useUser';
 import { getSidebarRouteGroups, type ConsoleRouteIconKey } from '@/router/routeMeta';
+import { getLocalizedApiErrorMessage } from '@/utils/apiErrorMessage';
 import { log } from '@/utils/logger';
 import '../adminFeature.css';
 import './Dashboard.css';
+
+type DashboardReadState = 'loading' | 'ready' | 'unavailable' | 'stale';
 
 const routeIconMap: Record<ConsoleRouteIconKey, ReactNode> = {
   dashboard: <DashboardOutlined />,
@@ -62,6 +66,12 @@ const routeIconMap: Record<ConsoleRouteIconKey, ReactNode> = {
   task: <ClockCircleOutlined />,
 };
 
+function getReadStateTone(state: DashboardReadState): ConsoleStatusTone {
+  if (state === 'ready') return 'success';
+  if (state === 'stale' || state === 'loading') return 'warning';
+  return 'danger';
+}
+
 export const Dashboard = () => {
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage ?? i18n.language;
@@ -69,26 +79,20 @@ export const Dashboard = () => {
   const navigate = useNavigate();
   const { user } = useUser();
   const canViewOrders = usePermission(CONSOLE_PERMISSIONS.ordersView);
-  const canViewProducts = usePermission(CONSOLE_PERMISSIONS.productsView);
-  const canCreateProduct = usePermission(CONSOLE_PERMISSIONS.productsCreate);
   const canViewUsers = usePermission(CONSOLE_PERMISSIONS.usersView);
-  const canViewApplications = usePermission(CONSOLE_PERMISSIONS.applicationsView);
   const canViewModeration = usePermission(CONSOLE_PERMISSIONS.moderationView);
-  const canViewCoins = usePermission(CONSOLE_PERMISSIONS.coinsView);
   const canViewExperience = usePermission(CONSOLE_PERMISSIONS.experienceView);
   const canViewDocs = usePermission(CONSOLE_PERMISSIONS.docsView);
   const canViewRoles = usePermission(CONSOLE_PERMISSIONS.rolesView);
-  const canViewSystemConfig = usePermission(CONSOLE_PERMISSIONS.systemConfigView);
 
-  const [stats, setStats] = useState<DashboardStatsVo>({
-    voTotalUsers: 0,
-    voTotalOrders: 0,
-    voTotalProducts: 0,
-    voTotalRevenue: 0,
-  });
-  const [recentOrders, setRecentOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [statsLoading, setStatsLoading] = useState(false);
+  const [stats, setStats] = useState<DashboardStatsVo | null>(null);
+  const [statsState, setStatsState] = useState<DashboardReadState>('loading');
+  const [recentOrders, setRecentOrders] = useState<Order[] | null>(null);
+  const [ordersState, setOrdersState] = useState<DashboardReadState>('loading');
+  const statsSnapshot = useRef<DashboardStatsVo | null>(null);
+  const recentOrdersSnapshot = useRef<Order[] | null>(null);
+  const statsRequestGeneration = useRef(0);
+  const ordersRequestGeneration = useRef(0);
 
   const routeGroups = useMemo(
     () => getSidebarRouteGroups(user, t),
@@ -97,31 +101,49 @@ export const Dashboard = () => {
   const visibleRouteCount = routeGroups.reduce((total, group) => total + group.routes.length, 0);
 
   const loadStats = useCallback(async () => {
+    const requestGeneration = statsRequestGeneration.current + 1;
+    const hasCurrentSnapshot = statsSnapshot.current !== null;
+    statsRequestGeneration.current = requestGeneration;
+    setStatsState('loading');
+
     try {
-      setStatsLoading(true);
-      const data = await getDashboardStats();
+      const data = await getDashboardStats(t);
+      if (requestGeneration !== statsRequestGeneration.current) return;
+
+      statsSnapshot.current = data;
       setStats(data);
+      setStatsState('ready');
     } catch (error) {
+      if (requestGeneration !== statsRequestGeneration.current) return;
+
       log.error('Dashboard', '加载统计数据失败:', error);
-      message.error(t('dashboard.loadStatsFailed'));
-    } finally {
-      setStatsLoading(false);
+      setStatsState(hasCurrentSnapshot ? 'stale' : 'unavailable');
+      message.error(getLocalizedApiErrorMessage(error, t, 'dashboard.loadStatsFailed'));
     }
   }, [t]);
 
   const loadRecentOrders = useCallback(async () => {
+    const requestGeneration = ordersRequestGeneration.current + 1;
+    const hasCurrentSnapshot = recentOrdersSnapshot.current !== null;
+    ordersRequestGeneration.current = requestGeneration;
+    setOrdersState('loading');
+
     try {
-      setLoading(true);
       const response = await adminGetOrders({
         pageIndex: 1,
         pageSize: 5,
-      });
+      }, t);
+      if (requestGeneration !== ordersRequestGeneration.current) return;
+
+      recentOrdersSnapshot.current = response.data;
       setRecentOrders(response.data);
+      setOrdersState('ready');
     } catch (error) {
+      if (requestGeneration !== ordersRequestGeneration.current) return;
+
       log.error('Dashboard', '加载最近订单失败:', error);
-      message.error(t('dashboard.loadOrdersFailed'));
-    } finally {
-      setLoading(false);
+      setOrdersState(hasCurrentSnapshot ? 'stale' : 'unavailable');
+      message.error(getLocalizedApiErrorMessage(error, t, 'dashboard.loadOrdersFailed'));
     }
   }, [t]);
 
@@ -131,13 +153,25 @@ export const Dashboard = () => {
 
   useEffect(() => {
     if (!canViewOrders) {
-      setRecentOrders([]);
-      setLoading(false);
+      ordersRequestGeneration.current += 1;
+      recentOrdersSnapshot.current = null;
+      setRecentOrders(null);
+      setOrdersState('ready');
       return;
     }
 
     void loadRecentOrders();
   }, [canViewOrders, loadRecentOrders]);
+
+  useEffect(() => () => {
+    statsRequestGeneration.current += 1;
+    ordersRequestGeneration.current += 1;
+  }, []);
+
+  const handleRefresh = () => {
+    void loadStats();
+    if (canViewOrders) void loadRecentOrders();
+  };
 
   const handleOpenOrderDetail = (order: Order) => {
     navigate(buildOrderDetailPath({
@@ -158,6 +192,7 @@ export const Dashboard = () => {
       dataIndex: 'voUserName',
       key: 'voUserName',
       width: 120,
+      render: (_: unknown, record) => record.voUserName || `#${record.voUserId}`,
     },
     {
       title: t('dashboard.table.product'),
@@ -199,7 +234,7 @@ export const Dashboard = () => {
     },
   ];
 
-  const dispatchItems = [
+  const taskPathItems = [
     {
       title: t('dashboard.dispatch.moderation.title'),
       description: t('dashboard.dispatch.moderation.description'),
@@ -249,41 +284,29 @@ export const Dashboard = () => {
       icon: <SafetyOutlined />,
     },
   ];
-  const enabledDispatchCount = dispatchItems.filter((item) => item.enabled).length;
+  const enabledTaskPathCount = taskPathItems.filter((item) => item.enabled).length;
+  const isRefreshing = statsState === 'loading' || (canViewOrders && ordersState === 'loading');
+  const metricValue = (value: number | undefined) => (
+    value === undefined ? t(statsState === 'loading' ? 'common.loading' : 'dashboard.read.noSnapshot') : formatLocalizedNumber(value, language)
+  );
 
-  const commandItems = [
-    {
-      title: t('dashboard.command.createProduct'),
-      enabled: canCreateProduct,
-      path: '/products',
-      icon: <PlusOutlined />,
-    },
-    {
-      title: t('dashboard.command.products'),
-      enabled: canViewProducts,
-      path: '/products',
-      icon: <ShoppingOutlined />,
-    },
-    {
-      title: t('dashboard.command.coins'),
-      enabled: canViewCoins,
-      path: '/coins',
-      icon: <WalletOutlined />,
-    },
-    {
-      title: t('dashboard.command.applications'),
-      enabled: canViewApplications,
-      path: '/applications',
-      icon: <AppstoreOutlined />,
-    },
-    {
-      title: t('dashboard.command.system'),
-      enabled: canViewSystemConfig,
-      path: '/system-config',
-      icon: <SettingOutlined />,
-    },
-  ];
-  const enabledCommandItems = commandItems.filter((item) => item.enabled);
+  const renderReadNotice = (
+    resource: 'stats' | 'orders',
+    state: DashboardReadState,
+    retry: () => void,
+  ) => {
+    if (state !== 'stale' && state !== 'unavailable') return null;
+
+    return (
+      <div className={`console-resource-list-notice console-resource-list-notice--${state} dashboard-read-notice`} role="alert">
+        <div>
+          <strong>{t(`dashboard.${resource}.${state}Title`)}</strong>
+          <span>{t(`dashboard.${resource}.${state}Description`)}</span>
+        </div>
+        <Button size="small" onClick={retry}>{t('dashboard.retry')}</Button>
+      </div>
+    );
+  };
 
   return (
     <div className="admin-feature-page dashboard-page">
@@ -292,102 +315,152 @@ export const Dashboard = () => {
         icon={<DashboardOutlined />}
         title={t('dashboard.title')}
         description={t('dashboard.description')}
-        status={<ConsoleStatusChip tone={enabledDispatchCount > 0 ? 'success' : 'warning'}>{t('dashboard.highFrequencyCount', { count: enabledDispatchCount })}</ConsoleStatusChip>}
+        status={<ConsoleStatusChip tone={enabledTaskPathCount > 0 ? 'success' : 'warning'}>{t('dashboard.highFrequencyCount', { count: enabledTaskPathCount })}</ConsoleStatusChip>}
         actions={(
-          <>
-            {canViewModeration ? (
-              <Button icon={<SafetyOutlined />} onClick={() => navigate('/moderation')}>
-                {t('dashboard.dispatch.moderation.title')}
-              </Button>
-            ) : null}
-            {canViewOrders ? (
-              <Button icon={<FileTextOutlined />} onClick={() => navigate('/orders')}>
-                {t('dashboard.dispatch.orders.title')}
-              </Button>
-            ) : null}
-          </>
+          <Button icon={<ReloadOutlined />} disabled={isRefreshing} onClick={handleRefresh}>
+            {t(isRefreshing ? 'dashboard.refreshing' : 'dashboard.refresh')}
+          </Button>
         )}
       />
 
-      <ConsoleMetricGrid label={t('dashboard.metrics.label')}>
-        <ConsoleMetricCard
-          label={t('dashboard.metrics.users')}
-          value={statsLoading ? t('common.loading') : formatLocalizedNumber(stats.voTotalUsers, language)}
-          description={t('dashboard.metrics.usersDescription')}
-          tone="info"
-        />
-        <ConsoleMetricCard
-          label={t('dashboard.metrics.orders')}
-          value={statsLoading ? t('common.loading') : formatLocalizedNumber(stats.voTotalOrders, language)}
-          description={t('dashboard.metrics.ordersDescription')}
-          tone="warning"
-        />
-        <ConsoleMetricCard
-          label={t('dashboard.metrics.products')}
-          value={statsLoading ? t('common.loading') : formatLocalizedNumber(stats.voTotalProducts, language)}
-          description={t('dashboard.metrics.productsDescription')}
-        />
-        <ConsoleMetricCard
-          label={t('dashboard.metrics.revenue')}
-          value={statsLoading ? t('common.loading') : `${formatLocalizedNumber(stats.voTotalRevenue, language)} ${t('console.unit.carrot')}`}
-          description={t('dashboard.metrics.revenueDescription')}
-          tone="success"
-        />
-      </ConsoleMetricGrid>
+      <section className="dashboard-dispatch-board">
+        <div className="dashboard-section-header">
+          <div>
+            <h2>{t('dashboard.taskPaths.title')}</h2>
+            <p>{t('dashboard.taskPaths.description')}</p>
+          </div>
+          <Tag>{enabledTaskPathCount > 0 ? t('dashboard.availableCount', { count: enabledTaskPathCount }) : t('dashboard.noPermission')}</Tag>
+        </div>
+        <div className="dashboard-dispatch-grid">
+          {taskPathItems.map((item) => (
+            <button
+              key={item.title}
+              className="dashboard-dispatch-card"
+              type="button"
+              disabled={!item.enabled}
+              onClick={() => navigate(item.path)}
+            >
+              <span className="dashboard-dispatch-card__icon">{item.icon}</span>
+              <span className="dashboard-dispatch-card__copy">
+                <strong>{item.title}</strong>
+                <span>{item.description}</span>
+              </span>
+              <Tag>{item.enabled ? item.status : t('dashboard.noPermission')}</Tag>
+            </button>
+          ))}
+        </div>
+      </section>
 
-      <div className="dashboard-dispatch-layout">
-        <section className="dashboard-dispatch-board">
+      <section className="dashboard-metrics-section" aria-labelledby="dashboard-metrics-title">
+        <div className="dashboard-section-header">
+          <div>
+            <h2 id="dashboard-metrics-title">{t('dashboard.metrics.label')}</h2>
+            <p>{t('dashboard.metrics.description')}</p>
+          </div>
+          <ConsoleStatusChip tone={getReadStateTone(statsState)}>{t(`dashboard.read.${statsState}`)}</ConsoleStatusChip>
+        </div>
+        {renderReadNotice('stats', statsState, () => void loadStats())}
+        <ConsoleMetricGrid label={t('dashboard.metrics.label')}>
+          <ConsoleMetricCard
+            label={t('dashboard.metrics.users')}
+            value={metricValue(stats?.voTotalUsers)}
+            description={t('dashboard.metrics.usersDescription')}
+            tone="info"
+          />
+          <ConsoleMetricCard
+            label={t('dashboard.metrics.orders')}
+            value={metricValue(stats?.voTotalOrders)}
+            description={t('dashboard.metrics.ordersDescription')}
+            tone="warning"
+          />
+          <ConsoleMetricCard
+            label={t('dashboard.metrics.products')}
+            value={metricValue(stats?.voTotalProducts)}
+            description={t('dashboard.metrics.productsDescription')}
+          />
+          <ConsoleMetricCard
+            label={t('dashboard.metrics.revenue')}
+            value={stats ? `${formatLocalizedNumber(stats.voTotalRevenue, language)} ${t('console.unit.carrot')}` : metricValue(undefined)}
+            description={t('dashboard.metrics.revenueDescription')}
+            tone="success"
+          />
+        </ConsoleMetricGrid>
+      </section>
+
+      {canViewOrders ? (
+        <section className="dashboard-orders-panel">
           <div className="dashboard-section-header">
             <div>
-              <h2>{t('dashboard.priority.title')}</h2>
-              <p>{t('dashboard.priority.description')}</p>
+              <h2>{t('dashboard.recentOrders.title')}</h2>
+              <p>{t('dashboard.recentOrders.description')}</p>
             </div>
-            <Tag>{enabledDispatchCount > 0 ? t('dashboard.availableCount', { count: enabledDispatchCount }) : t('dashboard.noPermission')}</Tag>
-          </div>
-          <div className="dashboard-dispatch-grid">
-            {dispatchItems.map((item) => (
-              <button
-                key={item.title}
-                className="dashboard-dispatch-card"
-                type="button"
-                disabled={!item.enabled}
-                onClick={() => navigate(item.path)}
+            <div className="dashboard-section-actions">
+              <ConsoleStatusChip tone={getReadStateTone(ordersState)}>{t(`dashboard.read.${ordersState}`)}</ConsoleStatusChip>
+              <Button
+                variant="ghost"
+                size="small"
+                onClick={() => navigate('/orders')}
               >
-                <span className="dashboard-dispatch-card__icon">{item.icon}</span>
-                <span className="dashboard-dispatch-card__copy">
-                  <strong>{item.title}</strong>
-                  <span>{item.description}</span>
-                </span>
-                <Tag>{item.enabled ? item.status : t('dashboard.noPermission')}</Tag>
-              </button>
-            ))}
+                {t('dashboard.recentOrders.viewAll')}
+              </Button>
+            </div>
+          </div>
+          {renderReadNotice('orders', ordersState, () => void loadRecentOrders())}
+          {recentOrders !== null || ordersState === 'loading' ? (
+            <div className="dashboard-orders-desktop admin-table-scroll-region">
+              <Table
+                columns={orderColumns}
+                dataSource={recentOrders ?? []}
+                rowKey="voId"
+                loading={ordersState === 'loading'}
+                pagination={false}
+                size="small"
+                scroll={{ x: 760 }}
+              />
+            </div>
+          ) : null}
+          <div className="dashboard-orders-mobile" aria-busy={ordersState === 'loading'}>
+            {recentOrders && recentOrders.length > 0 ? recentOrders.map((order) => (
+              <article className="console-resource-mobile-card dashboard-order-mobile-card" key={order.voId}>
+                <div className="console-resource-mobile-card__header">
+                  <div className="console-resource-mobile-card__identity">
+                    <strong>{order.voOrderNo}</strong>
+                    <span>{order.voUserName || `#${order.voUserId}`}</span>
+                  </div>
+                  <Tag color={getOrderStatusColor(order.voStatus)}>{getOrderStatusLabel(order, t)}</Tag>
+                </div>
+                <div className="console-resource-mobile-card__facts">
+                  <div className="console-resource-mobile-card__fact">
+                    <span>{t('dashboard.table.product')}</span>
+                    <strong>{order.voProductName}</strong>
+                  </div>
+                  <div className="console-resource-mobile-card__fact">
+                    <span>{t('dashboard.table.quantity')}</span>
+                    <strong>{formatLocalizedNumber(order.voQuantity, language)}</strong>
+                  </div>
+                  <div className="console-resource-mobile-card__fact">
+                    <span>{t('dashboard.table.amount')}</span>
+                    <strong>{formatLocalizedNumber(order.voTotalPrice, language)} {t('console.unit.carrot')}</strong>
+                  </div>
+                </div>
+                <div className="console-resource-mobile-card__footer">
+                  <span className="dashboard-order-mobile-card__hint">{t('dashboard.recentOrders.sameSnapshot')}</span>
+                  <Button size="small" icon={<EyeOutlined />} onClick={() => handleOpenOrderDetail(order)}>
+                    {t('dashboard.table.view')}
+                  </Button>
+                </div>
+              </article>
+            )) : ordersState === 'loading' ? (
+              <div className="console-resource-mobile-loading">{t('dashboard.recentOrders.loading')}</div>
+            ) : ordersState === 'ready' || ordersState === 'stale' ? (
+              <div className="console-resource-mobile-empty">
+                <strong>{t('dashboard.recentOrders.emptyTitle')}</strong>
+                <span>{t('dashboard.recentOrders.emptyDescription')}</span>
+              </div>
+            ) : null}
           </div>
         </section>
-
-        <aside className="dashboard-command-panel">
-          <div className="dashboard-section-header dashboard-section-header--compact">
-            <div>
-              <h2>{t('dashboard.commands.title')}</h2>
-              <p>{t('dashboard.commands.description')}</p>
-            </div>
-          </div>
-          {enabledCommandItems.length > 0 ? (
-            <div className="dashboard-command-list">
-              {enabledCommandItems.map((item) => (
-                <Button
-                  key={item.title}
-                  icon={item.icon}
-                  onClick={() => navigate(item.path)}
-                >
-                  {item.title}
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <p className="dashboard-empty-copy">{t('dashboard.commands.empty')}</p>
-          )}
-        </aside>
-      </div>
+      ) : null}
 
       <ConsoleToolbar
         title={t('dashboard.functions.title')}
@@ -421,35 +494,6 @@ export const Dashboard = () => {
           <p className="dashboard-empty-copy">{t('dashboard.functions.empty')}</p>
         )}
       </ConsoleToolbar>
-
-      {canViewOrders ? (
-        <section className="dashboard-orders-panel">
-          <div className="dashboard-section-header">
-            <div>
-              <h2>{t('dashboard.recentOrders.title')}</h2>
-              <p>{t('dashboard.recentOrders.description')}</p>
-            </div>
-            <Button
-              variant="ghost"
-              size="small"
-              onClick={() => navigate('/orders')}
-            >
-              {t('dashboard.recentOrders.viewAll')}
-            </Button>
-          </div>
-          <div className="admin-table-scroll-region">
-            <Table
-              columns={orderColumns}
-              dataSource={recentOrders}
-              rowKey="voId"
-              loading={loading}
-              pagination={false}
-              size="small"
-              scroll={{ x: 760 }}
-            />
-          </div>
-        </section>
-      ) : null}
     </div>
   );
 };

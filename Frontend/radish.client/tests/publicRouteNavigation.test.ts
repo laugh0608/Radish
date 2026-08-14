@@ -182,10 +182,14 @@ test('shouldCaptureForumDetailSource 应在从通知中心进入 forum 详情时
   assert.equal(getPublicDetailBackLabelKey(resolveForumDetailBackMode(currentRoute)), 'public.shell.backToNotifications');
 });
 
-test('公开详情应支持从我的状态返回', () => {
+test('公开详情应支持返回我的状态原始分页与标签', () => {
   const meRoute: PublicRouteDescriptor = {
     app: 'me',
-    route: { kind: 'index' }
+    route: {
+      kind: 'content',
+      tab: 'bookmarks',
+      page: 2,
+    }
   };
   const forumDetailRoute: PublicRouteDescriptor = {
     app: 'forum',

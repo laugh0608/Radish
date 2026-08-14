@@ -9,5 +9,4 @@ public interface ISystemConfigChangeLogRepository
 {
     Task<List<SystemConfigChangeLogRecord>> GetByKeyAsync(string key, int take);
 
-    Task<SystemConfigChangeLogRecord> CreateAsync(SystemConfigChangeLogRecord record);
 }

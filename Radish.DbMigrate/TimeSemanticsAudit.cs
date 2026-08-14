@@ -20,6 +20,11 @@ public static class TimeSemanticsAudit
             businessCalendar,
             nameof(ExpTransaction.CreatedDate),
             entity => entity.Id,
+            entity => new ExpTransaction
+            {
+                Id = entity.Id,
+                CreatedDate = entity.CreatedDate
+            },
             entity => entity.Id,
             entity => entity.CreatedDate,
             summaries,
@@ -29,6 +34,11 @@ public static class TimeSemanticsAudit
             businessCalendar,
             nameof(UserExpDailyStats.StatDate),
             entity => entity.Id,
+            entity => new UserExpDailyStats
+            {
+                Id = entity.Id,
+                StatDate = entity.StatDate
+            },
             entity => entity.Id,
             entity => entity.StatDate,
             summaries,
@@ -37,6 +47,11 @@ public static class TimeSemanticsAudit
             db,
             nameof(CommentHighlight.StatDate),
             entity => entity.Id,
+            entity => new CommentHighlight
+            {
+                Id = entity.Id,
+                StatDate = entity.StatDate
+            },
             entity => entity.Id,
             entity => entity.StatDate,
             summaries,
@@ -45,6 +60,11 @@ public static class TimeSemanticsAudit
             db,
             nameof(UserExperienceGovernanceAction.StatDate),
             entity => entity.Id,
+            entity => new UserExperienceGovernanceAction
+            {
+                Id = entity.Id,
+                StatDate = entity.StatDate
+            },
             entity => entity.Id,
             entity => entity.StatDate,
             summaries,
@@ -58,6 +78,7 @@ public static class TimeSemanticsAudit
         BusinessCalendar businessCalendar,
         string columnName,
         Expression<Func<TEntity, object>> orderById,
+        Expression<Func<TEntity, TEntity>> projection,
         Func<TEntity, long> idSelector,
         Func<TEntity, DateTime> valueSelector,
         List<string> summaries,
@@ -94,6 +115,7 @@ public static class TimeSemanticsAudit
         {
             var entities = db.Queryable<TEntity>()
                 .OrderBy(orderById)
+                .Select(projection)
                 .ToPageList(pageIndex, AuditPageSize);
             foreach (var entity in entities)
             {
@@ -136,6 +158,7 @@ public static class TimeSemanticsAudit
         ISqlSugarClient db,
         string columnName,
         Expression<Func<TEntity, object>> orderById,
+        Expression<Func<TEntity, TEntity>> projection,
         Func<TEntity, long> idSelector,
         Func<TEntity, DateTime?> valueSelector,
         List<string> summaries,
@@ -171,6 +194,7 @@ public static class TimeSemanticsAudit
         {
             var entities = db.Queryable<TEntity>()
                 .OrderBy(orderById)
+                .Select(projection)
                 .ToPageList(pageIndex, AuditPageSize);
             foreach (var entity in entities)
             {

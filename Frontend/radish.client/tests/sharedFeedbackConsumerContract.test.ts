@@ -16,7 +16,7 @@ const countMatches = (source: string, pattern: RegExp): number => source.match(p
 
 const markdownConsumerPaths = [
   'src/apps/forum/components/PublishPostForm.tsx',
-  'src/apps/forum/components/PublishPostModal.tsx',
+  'src/apps/forum/components/ForumPostComposer.tsx',
   'src/apps/forum/components/EditPostModal.tsx',
   'src/apps/forum/components/PostDetail.tsx',
   'src/docs/DocsAuthorEditorPage.tsx',
@@ -65,23 +65,21 @@ test('MarkdownEditor 正式消费者在上传中阻止提交和会卸载编辑�
   const docsAuthorSource = `${readSource('src/docs/DocsAuthorApp.tsx')}\n${readSource('src/docs/DocsAuthorEditorPage.tsx')}`;
   const docsAuthorNavigationSource = readSource('src/docs/useDocsAuthorNavigation.ts');
   assert.match(docsAuthorSource, /if \(isEditorUploading\) \{\s*event\.preventDefault\(\);/);
-  assert.match(docsAuthorSource, /onSubmit=\{handleEditorSubmit\}/);
+  assert.match(docsAuthorSource, /onSubmit=\{\(event\) => \{\s*if \(isEditorUploading\) \{\s*event\.preventDefault\(\);/);
   assert.match(docsAuthorSource, /aria-disabled=\{isEditorUploading\}/);
-  assert.match(docsAuthorSource, /disabled=\{readOnly \|\| state\.submitting \|\| isEditorUploading\}/);
+  assert.match(docsAuthorSource, /disabled=\{readOnly \|\| state\.submitting \|\| isEditorUploading[^}]*\}/);
   assert.match(docsAuthorSource, /isEditorUploading=\{isEditorUploading\}/);
   assert.match(docsAuthorSource, /onEditorUploadingChange=\{setIsEditorUploading\}/);
-  assert.match(docsAuthorSource, /useDocsAuthorNavigation\(isEditorUploading\)/);
+  assert.match(docsAuthorSource, /useDocsAuthorNavigation\(\{\s*navigationLocked: isEditorUploading,/);
   assert.match(docsAuthorNavigationSource, /useBrowserNavigationLock\(navigationLocked\)/);
   assert.match(docsAuthorNavigationSource, /window\.addEventListener\('beforeunload', handleBeforeUnload\)/);
   assert.match(docsAuthorNavigationSource, /window\.history\.go\(restoreDelta\)/);
   assert.match(docsAuthorNavigationSource, /window\.history\.pushState\([\s\S]*?lockedHistoryStateRef\.current[\s\S]*?lockedPath/);
   assert.doesNotMatch(docsAuthorNavigationSource, /window\.history\.forward\(\)/);
-  assert.match(docsAuthorSource, /onClick=\{preventEditorNavigationWhileUploading\}/);
+  assert.match(docsAuthorSource, /onClick=\{handleExternalAuthorNavigation\}/);
   assert.match(docsAuthorSource, /navigationLocked=\{isEditorUploading\}/);
-  assert.ok(
-    countMatches(docsAuthorSource, /preventNavigationWhileUploading\(event\)/g) >= 4,
-    'DocsAuthorApp 顶部与 rail 导航必须逐一接入上传离开保护',
-  );
+  assert.match(docsAuthorSource, /const handleRouteLinkClick[\s\S]*if \(isEditorUploading\) \{\s*return;\s*\}/);
+  assert.match(docsAuthorSource, /onNavigate=\{handleRouteLinkClick\}/);
 
   const wikiSource = readSource('src/apps/wiki/WikiApp.tsx');
   assert.match(wikiSource, /const closeEditor = \(\) => \{\s*if \(isEditorUploading\)/);
@@ -110,7 +108,9 @@ test('MarkdownEditor 正式消费者在上传中阻止提交和会卸载编辑�
 
 test('公开论坛回答上传状态覆盖详情退出、浏览器历史与顶层入口切换', () => {
   const postDetailSource = readSource('src/apps/forum/components/PostDetail.tsx');
+  const answerLifecycleSource = readSource('src/apps/forum/components/PostAnswerLifecycleSection.tsx');
   const publicDetailSource = readSource('src/public/forum/PublicForumDetail.tsx');
+  const publicDetailViewSource = readSource('src/public/forum/PublicForumDetailView.tsx');
   const publicDetailNavigationGuardSource = readSource('src/public/forum/usePublicForumDetailNavigationGuard.ts');
   const publicAppSource = readSource('src/public/forum/PublicForumApp.tsx');
   const publicEntrySource = readSource('src/public/PublicEntry.tsx');
@@ -121,19 +121,24 @@ test('公开论坛回答上传状态覆盖详情退出、浏览器历史与顶�
   const webShellStylesSource = readSource('src/components/web-shell/WebShellHeader.module.css');
 
   assert.match(postDetailSource, /onAnswerEditorUploadingChange\?\.\(uploading\)/);
-  assert.match(publicDetailSource, /onAnswerEditorUploadingChange=\{onAnswerEditorUploadingChange\}/);
+  assert.match(
+    answerLifecycleSource,
+    /onUploadingChange\?\.\(composerUploading \|\| editUploading\)/,
+  );
+  assert.match(publicDetailSource, /onUploadingChange=\{onAnswerEditorUploadingChange\}/);
   assert.match(publicDetailSource, /usePublicForumDetailNavigationGuard\(\{/);
   assert.match(publicDetailSource, /navigationLocked: isAnswerEditorUploading/);
   assert.ok(
     countMatches(publicDetailNavigationGuardSource, /if \(!navigationLocked\)/g) >= 6,
     '公开详情的跨目标入口必须统一受回答上传状态保护',
   );
+  assert.match(publicDetailSource, /onBack=\{handleBackWhileEditorIdle\}/);
   assert.ok(
-    countMatches(publicDetailSource, /handlePublicForumLinkClick\(event, handleBackWhileEditorIdle\)/g) >= 2,
-    '公开详情顶部与侧栏返回入口都必须接入回答上传保护',
+    countMatches(publicDetailViewSource, /handlePublicForumLinkClick\(event, onBack\)/g) >= 2,
+    '公开详情顶部与社区返回入口都必须接入回答上传保护',
   );
-  assert.match(publicDetailSource, /onAuthorClick=\{\(userId\) => handleOpenAuthorProfileWhileEditorIdle/);
-  assert.match(publicDetailSource, /onTagClick=\{\(_, tagSlug\) => handleOpenTagWhileEditorIdle/);
+  assert.match(publicDetailSource, /onAuthorClick: \(userId\) => handleOpenAuthorProfileWhileEditorIdle/);
+  assert.match(publicDetailSource, /onTagClick: \(_, tagSlug\) => handleOpenTagWhileEditorIdle/);
   assert.match(publicAppSource, /navigationLocked: boolean/);
   assert.match(publicAppSource, /if \(!navigationLocked\) \{\s*onNavigate\(/);
   assert.match(publicAppSource, /onAnswerEditorUploadingChange=\{onNavigationLockChange\}/);
@@ -190,7 +195,8 @@ test('桌面论坛回答上传状态由详情目标所有者阻止跨帖切换',
 
 test('富文本编辑器与 Markdown 编辑器遵循同一宿主反馈契约', () => {
   const editorSource = readSource('src/apps/forum/components/RichTextMarkdownEditor.tsx');
-  const consumerSource = readSource('src/apps/forum/components/PublishPostModal.tsx');
+  const consumerSource = readSource('src/apps/forum/components/ForumPostComposer.tsx');
+  const sheetWrapperSource = readSource('src/apps/forum/components/PublishPostModal.tsx');
   const labelsSource = readSource('src/i18n/markdownEditorLabels.ts');
 
   assert.match(editorSource, /labels: RichTextMarkdownEditorLabels;/);
@@ -216,8 +222,12 @@ test('富文本编辑器与 Markdown 编辑器遵循同一宿主反馈契约', (
   assert.match(consumerSource, /labels=\{richTextEditorLabels\}/);
   assert.match(consumerSource, /onUploadError=\{handleEditorUploadError\}/);
   assert.match(consumerSource, /onUploadingChange=\{handleEditorUploadingChange\}/);
-  assert.match(consumerSource, /closeOnOverlayClick=\{!isComposerBusy\}/);
-  assert.match(consumerSource, /closeOnEscape=\{!isComposerBusy\}/);
+  assert.match(
+    consumerSource,
+    /const handleCloseAttempt = useCallback\(\(\) => \{\s*if \(isSubmitting \|\| isEditorUploading\) \{\s*return;/,
+  );
+  assert.match(sheetWrapperSource, /closeOnOverlayClick=\{false\}/);
+  assert.match(sheetWrapperSource, /closeOnEscape=\{false\}/);
   assert.match(consumerSource, /disabled=\{isComposerBusy\}/);
   assert.match(consumerSource, /t\('forum\.editor\.watermark'\)/);
 });

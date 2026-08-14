@@ -24,6 +24,8 @@
 >
 > 更新：2026-07-11（Asia/Shanghai）：公开 Docs 服务端契约收口到匿名专用 `PublicGetList / PublicGetTree / PublicGetBySlug`，三类读取统一强制 `Published + Public + 未删除`，不随访问者 Token、角色或权限扩大；公开个人页关注使用 `/u/:id?intent=follow` 受控登录回流，登录完成后仍由用户确认关注动作。
 >
+> 更新：2026-07-26（Asia/Shanghai）：F4-L-C 为支持已授权读者在同一 `/docs` 阅读面消费 Authenticated / Restricted 文档及受保护附件，将客户端切回可选认证的通用 `GetList / GetTree / GetBySlug`。匿名仍只得到 `Published + Public`；登录用户只扩展到服务端 ACL 允许的已发布文档，非 Public 详情不生成公开 SEO head，附件走认证 Blob 契约。此条取代 2026-07-11 的数据源实现口径，不改写当时历史事实。
+>
 > 更新：2026-07-11（Asia/Shanghai）：`E8-B` 七项有限矩阵已完成 PC / mobile CSS 视口成组运行态验收；公开帖子详情已补帖子、快捷回复与评论举报入口，复用既有举报弹窗和 Console 审核链路。
 >
 > 更新：2026-07-19（Asia/Shanghai）：登录态正式 `/messages` 已完成私聊、消息搜索、消息 Reaction、置顶和轻量阅读回执，并与 WebOS 复用同一 Chat App。该完成事实不等于启用 `P15 / P16` 匿名公共聊天室页面族；公开 `/chat` 产品边界继续后置。
@@ -32,13 +34,27 @@
 >
 > 更新：2026-07-25（Asia/Shanghai）：F4-K-C 已新增 `P09B / P14B` 屏蔽确认和 `P09C / P14C` 通用不可互动状态；公开内容保持可见，关注、私信与屏蔽动作只消费服务端能力，目标用户视图不披露屏蔽方向。
 >
-> 状态：设计源 `P01-P16` 已补齐；`P09 / P14` 电子宠物公开名片已完成设计、正式 Web 与 Gateway 成组验收，F4-H 专题关闭；`P15 / P16` 仍仅作为后续公开聊天室参考
+> 更新：2026-07-27（Asia/Shanghai）：F4-N-C 已在 `P04 / P11` 接入 Post / Comment 内容赞赏摘要与入口，并新增 `P04B / P11B` PC / mobile 确认及成功、余额不足、重复、处理中状态；固定 `1 胡萝卜`、预设理由、服务端创建开关与正式 Web / WebOS 共享实现。
+>
+> 更新：2026-07-27（Asia/Shanghai）：F4-N-D 已通过匿名 / 多身份 Gateway 代表矩阵，确认登录回流、资产守恒、审计投影、通知定位与 PC / mobile 响应式路径；专题关闭。
+>
+> 更新：2026-07-28（Asia/Shanghai）：F4-O-C 已更新 `P04 / P11` 回答信息层级，并新增 `P26 / P27` PC / mobile 回答编辑、历史恢复、删除、采纳变更、CAS 冲突与目标不可用状态；正式 Web 已完成代码对齐，F4-O-D 的 PC / mobile Gateway 代表矩阵、回答区唯一所有者修正和清理复核均已通过，专题关闭。
+>
+> 更新：2026-07-29（Asia/Shanghai）：F4-P 已在 `P04 / P11` 对应的正式帖子详情加入私有收藏目标状态、匿名登录回流和权威 `CollectCount`，个人回访由 `/me/content?tab=bookmarks` 承接；F4-Q 已在既有标签聚合布局加入相关主题、统一公开数量、canonical、首包 head、单一 JSON-LD 与不可用态 `noindex`。两项均已完成 PC / mobile 成组验收并关闭，不新增页面族。
+>
+> 更新：2026-08-05（Asia/Shanghai）：`R1-P01` 已完成设计、实现与 Gateway PC / mobile 闭环；[R1-P02 代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)确认公开详情采用连续阅读面、统一帖子操作带、问答 / 轻回应 / 评论讨论进程和非重复线程索引。当前 Public 能力边界以真实代码为准，不因共享组件存在回调而新增评论回复、点赞、reaction、删除、投票或抽奖写入。
+>
+> 更新：2026-08-08（Asia/Shanghai）：`R1-P02` 已完成 PC / mobile 正式代表设计、页面实现与 Gateway 验收；普通登录读者现可执行帖子 / 回帖点赞、reaction 与固定两级回帖，继续复用既有 API、权限和幂等边界。作者删除、投票、抽奖和 Console 治理未进入普通读者代表状态。
+>
+> 状态：旧设计源 `P01-P16` 与专题状态画板只读留档；当前活动源的 `R1-P01 / R1-P02` 均已关闭，`P15 / P16` 仍仅作为后续公开聊天室参考
 
 ## 设计源
 
 ```text
-Docs/frontend/design-sources/public-web-unified-experience.pen
+Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 ```
+
+当前 Public 代表设计使用 `R1-P01 / R1-P02` 与 `R2-P03`。旧 `public-web-unified-experience.pen` 保留为只读历史资产；下表记录其历史画板与现有功能边界，不再作为后续修改入口。
 
 画板：
 
@@ -47,14 +63,14 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 | `P01 - Public App Home` | 公开 App 首页概念层；发布前由 `/discover` 承接，不新增独立 `PublicHomeApp` |
 | `P02 - Discover Content Stream` | `/discover` 社区内容优先流，以帖子、问答和真实互动为主体；Docs、商城、榜单只作为相关内容或“更多”入口，不在首屏并列铺开完整领域列表 |
 | `P03 - Forum Thread List` | `/forum` 公开帖子列表，覆盖左侧标题 / 摘要 / 标签 / 分类 / 神评摘要、右侧作者 / 赞评阅 / 最近互动和登录发帖入口；列表页不展示表情 reaction，首屏按紧凑 5 条列表密度设计 |
-| `P04 - Forum Thread Detail` | `/forum/post/:id` 公开帖子详情，覆盖正文、帖子级轻回应、紧凑评论树、父评论神评、子回复沙发、表情反应和登录评论 |
+| `P04 / P04B / P26 - Forum Thread Detail / Content Reward / Answer Lifecycle` | `/forum/post/:id` 公开帖子详情历史参考，覆盖正文、帖子与评论内容赞赏、问答状态、已采纳回答、其他回答分页、回答作者生命周期、采纳变更、帖子级轻回应、紧凑评论树、表情反应摘要，以及 PC Dialog 主要状态；现行结构由 `R1-P02` 重校准 |
 | `P05 - Docs Index and Search` | `/docs` 文档库、目录、搜索筛选、文档列表和状态槽 |
 | `P06 - Docs Article Reading` | `/docs/:slug` 文档详情、正文阅读、目录、相关文档和作者入口边界 |
 | `P07 - Public Shop and Product` | `/shop` 与 `/shop/product/:id?intent=purchase` 公开商城浏览、商品详情和登录购买回流，首屏采用精选商品 + 多条商品行 + 状态 rail 的浏览密度 |
 | `P08 - Public Leaderboards` | `/leaderboard/:type` 公开榜单、贡献者 / 内容 / 商品排名和实体跳转 |
 | `P09 / P09B / P09C - Public Profile` | `/u/:id` 公开个人主页、可空电子宠物公开名片、公开内容 tab、屏蔽确认、通用不可互动状态、关注登录回流和来源返回 |
 | `P10 - Mobile Discover Forum` | 移动端发现 / 论坛列表任务流 |
-| `P11 - Mobile Post Detail` | 移动端帖子详情、正文、轻回应、父评论神评、子回复沙发和登录评论 |
+| `P11 / P11B / P27 - Mobile Post Detail / Content Reward / Answer Lifecycle` | 移动端帖子详情、正文、帖子与评论内容赞赏、问答回答分页与作者 / 所有者动作、轻回应、评论，以及 Bottom Sheet 赞赏和回答生命周期主要状态 |
 | `P12 - Mobile Docs Reading` | 移动端文档列表 / 详情阅读和目录入口 |
 | `P13 - Mobile Workbench` | 移动端 `/workbench` 功能地图、继续探索队列和公开低频入口承接；商城、榜单和聊天室只作为功能入口，不作为工作台页面主体 |
 | `P14 / P14B / P14C - Mobile Public Profile` | 移动端公开主页、可空电子宠物公开名片、屏蔽确认、通用不可互动状态、公开内容 tab 和关注回流 |
@@ -67,7 +83,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 让新用户先理解 Radish 是一个小而完整的兴趣 / 创作者社区，而不是功能目录、技术演示页或多业务门户。
 - 公开页优先服务内容阅读、真实 URL、分享传播和登录后轻参与，不做营销首页。
 - 公开设计稿必须像真实 App 页面，而不是路由矩阵、字段清单或后台状态说明。
-- 公开社区页必须体现 Radish 的特色互动：赞 / 评 / 阅、轻回应、表情 reaction、神评、沙发、评论头像和最近互动；公开聊天室上下文后置评审。
+- 公开社区页必须体现 Radish 的特色互动：赞 / 评 / 阅、轻回应、既有表情 reaction 摘要、神评、沙发、评论头像和最近互动；具体页面是否允许写入继续服从功能专题和当前代码，公开聊天室上下文后置评审。
 - 公开页面的表情 reaction 仍固定在帖子详情页；登录态 `/messages` 已承接消息级 reaction，后续 `P15 / P16` 公共聊天室不得借此绕过匿名 / 登录、治理和实时协议评审。
 - 保持正式 Web 为默认产品路径，`/desktop` 只作为 WebOS 历史入口维护。
 - 在进入视觉代码前，先固定信息架构、响应式顺序、身份展示和状态槽位。
@@ -77,7 +93,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 ### 壳层与导航
 
 - Public / Private 页面共享同一套产品级主导航，不再维护公开页、私域页和工作台页三套全局入口。
-- PC 头部统一使用 `web-ui-foundation.pen` / `F02` 的纸感横匾：主导航固定为 `发现 / 论坛 / 聊天 / 更多`，右侧固定为 `通知 / 登录注册或头像用户名`。
+- PC 头部统一使用 `radish-web-family-ui-v1.pen` / `R1-F01` 的共享 Header：主导航固定为 `发现 / 论坛 / 聊天 / 更多`，右侧固定为 `通知 / 登录注册或头像用户名`。
 - 移动底栏固定为 `发现 / 论坛 / 聊天 / 更多 / 我的`；`/me`、`/circle`、`/pet` 归属“我的”，`/messages` 归属“聊天”，`/notifications` 作为右上角通知动作，Docs、商城、榜单、规则和 `/desktop` 兼容入口由“更多”进入 `/workbench` 承接。
 - “更多”默认进入 `/workbench` 正式 Web 功能地图，不直接打开 `/desktop`；`/desktop` 只作为 WebOS 历史入口和旧深链承接点。
 - 公开浏览页的主动作是继续阅读、筛选、搜索、分享或登录参与，不承载完整私域工作台。
@@ -88,7 +104,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 用户可见文案使用页面、个人页面、兼容入口、公开文档、表情回应等产品语言；内部实现词、路由迁移词和协议解释不应出现在普通正文。
 - 说明、边界和风险提示必须服务当前任务，不作为首屏主体内容；除错误 / 空态外，集合页首屏优先展示真实列表、商品、目录、榜单或讨论。
 - Docs 默认先展示可阅读文档和搜索入口，完整目录只作为定位工具，不抢首屏主体。
-- 公开文档列表、目录、搜索和详情只展示 `Published + Public` 文档；登录可看、受限、草稿和已删除内容不在公开阅读页显式列出。
+- Docs 列表、目录、搜索和详情按当前身份展示已发布文档：匿名只展示 `Published + Public`，登录用户可继续展示服务端 ACL 允许的 Authenticated / Restricted；草稿和已删除内容不进入该阅读面。
 - Shop 首页和列表优先展示商品名称、分类、价格、库存 / 状态和购买入口，购买边界说明放到辅助 rail。
 - Discover 首屏优先组织帖子、问答和真实互动，让用户先理解社区里正在讨论什么、可以如何参与；Docs、商品和榜单只在与当前内容相关时出现，或由“更多”承接。
 - Forum detail 的正文、帖子级互动、参与入口和讨论区优先于阅读说明；说明区只能作为辅助解释，不插在正文与互动任务之间。
@@ -107,7 +123,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 普通点击可以通过会话状态保留来源返回。
 - 新开标签、复制链接、canonical、OpenGraph、JSON-LD 和 sitemap 不携带来源状态。
 - 公开集合页的 tab、搜索、排序和分页应能恢复到 URL 或明确的 query 状态。
-- 论坛详情工作区动作也属于可导航动作：轻回应、评论、问答回答、作者编辑和历史查看必须使用真实 `intent` 链接，普通点击再拦截为当前页工作区展开或作者态加载。
+- 论坛详情参与 / 作者动作也属于可导航动作：轻回应、评论、问答回答、作者编辑和历史查看必须使用真实 `intent` 链接，普通点击再拦截为当前页展开、聚焦或作者态加载；收藏与赞赏使用受控登录 return path，回流后仍等待用户确认。
 
 ### 身份展示
 
@@ -121,11 +137,14 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 标题、作者 / 来源、更新时间、正文、登录参与和状态反馈保持固定顺序。
 - 论坛详情的阅读说明属于辅助区，应位于正文、帖子级轻回应、评论入口和评论区之后，不插在正文与互动任务之间。
 - 论坛详情的“神评”“沙发”只作为评论树内的 badge / 状态，不作为帖子详情右侧元字段或后台状态块外露；神评属于父评论高亮，沙发属于子回复 / 楼中楼首条回复语境。
-- 帖子详情必须表达帖子级轻回应、评论级轻回应、表情 reaction、回复入口、引用回复和登录评论回流。
-- 登录参与和作者态入口只承接受控 `intent`：`quickReply`、`comment`、`answer`、`edit`、`history`。这些 intent 只用于当前标签页工作区恢复或登录回流，不进入 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
-- 评论树视觉应优先表达父子层级：父评论是完整评论卡，子回复缩进并保留引用 chip、回复、点赞和举报动作。
+- 帖子详情必须表达帖子级轻回应、两级回帖关系、表情 reaction、引用上下文和登录回流。当前 Public 路由已按 R1-P02 接入帖子 / 回帖点赞、reaction 与固定两级回帖；继续复用既有 API、权限和幂等契约，不因共享组件出现其他可选回调而扩张删除、投票或抽奖动作。
+- 帖子收藏是登录用户的私有回访动作：详情只提交显式目标状态，匿名登录返回后不自动写入；收藏计数读取服务端权威投影，不展示收藏者身份，也不把收藏扩散到列表卡片。
+- 内容赞赏位于帖子正文操作区之后，并在评论操作区使用紧凑入口；固定 `1 胡萝卜` 和预设理由，先展示权威余额再确认，不做乐观资产更新。匿名用户通过受控 forum 路径登录回流；创建入口由服务端 `VoCreateEnabled` 决定，累计与公开记录在创建关闭时仍可阅读。
+- 登录参与和作者态入口只承接受控 `intent`：`comment`、`quickReply`、`answer`、`edit`、`history`、`reward`、`bookmark`。这些 intent 只用于当前标签页现场恢复或登录回流，不进入 canonical、分享链接、OpenGraph、JSON-LD 或 sitemap。
+- 回帖树视觉应优先表达父子层级：父回帖是完整条目，子回帖缩进并保留引用上下文；当前 Public 动作包含两级回帖、帖子 / 回帖点赞与 reaction、回帖作者编辑 / 历史、Comment 赞赏与举报，不展示未接入的删除入口或超过两级的嵌套回复。
+- `R1-P02` 将正文、帖子动作、条件回答区、轻回应和评论组织为连续阅读—讨论主轴；桌面从属区只承载章节定位等独占价值，不重复参与按钮或产品语义说明，移动端将线程索引内联而不是堆到页面末尾。
 - forum 作者态入口通过正式 Web 路由承接，文档作者态入口通过正式 Web 作者页承接。
-- 文档公开详情保持只读；编辑、发布、版本治理、权限策略和回滚归作者页或 Console。
+- 文档详情保持只读；非 Public 详情不生成公开 SEO head，编辑、发布、版本治理、权限策略和回滚归作者页或 Console。
 
 ### 公开集合
 
@@ -133,8 +152,8 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 公开阅读说明、经验说明和轻量引导属于辅助内容；移动首屏必须优先展示真实列表、目录、商品、榜单或公开内容，说明区放在主体内容和分页之后。
 - 空结果、错误、加载、权限限制和登录参与必须有明确说明，不出现无解释空白页。
 - 公开文档的列表、搜索和详情加载失败必须提供重试和复制诊断；诊断只包含路由类型、slug / 搜索状态、错误摘要和当前路径，不暴露内部堆栈、token 或未公开正文。
-- 公开文档的列表、目录、搜索结果和详情内容只承载 `Published + Public` 文档；该边界必须由服务端查询和详情读取契约保证，前端隐藏或过滤只能作为展示层补充。作者草稿、登录可看文档、受限文档和回收站状态进入 Docs 作者态或 Console 治理，不在公开阅读页混排。
-- 公开文档客户端固定调用 `Wiki/PublicGetList`、`Wiki/PublicGetTree`、`Wiki/PublicGetBySlug` 且不携带认证信息；通用 `GetList / GetTree / GetBySlug` 继续服务作者态和登录态访问，不作为公开阅读面的数据源。
+- Docs 列表、目录、搜索结果和详情只承载已发布且当前身份可读的文档；服务端查询与详情 ACL 是权威边界，前端隐藏或过滤只能作为展示层补充。匿名只得到 Public；登录用户可得到 Authenticated 或命中角色 / 权限的 Restricted；草稿和回收站状态进入 Docs 作者态或 Console 治理。
+- Docs 客户端固定调用可选认证的 `Wiki/GetList`、`Wiki/GetTree`、`Wiki/GetBySlug`，由统一 HTTP 客户端在存在会话时携带身份；匿名请求仍按服务端 ACL 收敛为 Public。非 Public 正文附件使用认证 Blob，非 Public 详情不提交公开 head / JSON-LD。
 - 公开商城只承载浏览、商品详情和登录购买回流；订单、背包和资产进入正式私域 Web 路由。
 - 商品详情移动端优先展示商品名、类型、价格、库存 / 售出和购买状态，商品图使用紧凑预览，不把关键购买信息推到首屏底栏之后。
 - 商品列表也必须显示明确的状态 / 库存信号；列表可使用既有 `voInStock` 表达“可购买 / 不足”，不伪造库存数量，详情页继续展示真实库存字段。
@@ -170,7 +189,7 @@ Docs/frontend/design-sources/public-web-unified-experience.pen
 - 页面标题控制在产品级层级，公开页 H1 约 `28-32`，分区标题约 `20-24`，内容卡片标题约 `16-18`。
 - 桌面端 lead 区、工具条、筛选行和卡片内边距应服务快速浏览：主要卡片 padding 约 `14-18`，列表 gap 约 `10-14`。
 - 论坛和商城等高频浏览页首屏应优先展示 `5` 条左右真实内容 / 商品记录，避免用大字号、大占位图或大卡片撑满首屏；聊天室密度规则随后续专题承接。
-- 帖子详情评论区应使用紧凑评论流：父评论、子回复、神评 / 沙发 badge、reaction 和回复动作要保留语义，但不得用大卡片让单条评论占据过多首屏。
+- 帖子详情评论区应使用紧凑评论流：父评论、既有子回复、神评 / 沙发 badge、引用上下文和当前已接入动作要保留语义，但不得用大卡片让单条评论占据过多首屏，也不得画出当前 Public 未开放的回复、点赞或 reaction 写入口。
 - 右侧 rail 不用大块空面板撑满高度；优先使用紧凑状态、推荐项、来源返回摘要或登录参与入口。
 - 公开壳层、内容流和集合页首屏应展示多条真实内容项，不能主要由大标题、宽卡片和说明块占据。
 

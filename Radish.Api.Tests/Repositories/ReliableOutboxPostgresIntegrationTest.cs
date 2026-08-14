@@ -205,13 +205,9 @@ public sealed class ReliableOutboxPostgresIntegrationTest
             ],
             nowUtc);
 
-        var notificationTableName = Convert.ToString(await messageDb.Ado.GetScalarAsync(
-            "SELECT table_name FROM information_schema.tables " +
-            "WHERE table_schema = current_schema() AND table_name ~ '^notification_[0-9]{8}$' " +
-            "ORDER BY table_name DESC LIMIT 1"));
-        Assert.False(string.IsNullOrWhiteSpace(notificationTableName));
-        var notificationCount = Convert.ToInt32(await messageDb.Ado.GetScalarAsync(
-            $"SELECT COUNT(*) FROM {QuoteIdentifier(notificationTableName!)}"));
+        var notificationCount = await CountNotificationsByBusinessKeyAsync(
+            messageDb,
+            "notification:postgres:business-key");
         var userNotificationCount = await messageDb.Queryable<UserNotification>().CountAsync();
 
         Assert.True(created.EventCreated);
@@ -220,6 +216,36 @@ public sealed class ReliableOutboxPostgresIntegrationTest
         Assert.Equal(1002, partialReplay.RecipientChanges[0].UserId);
         Assert.Equal(1, notificationCount);
         Assert.Equal(2, userNotificationCount);
+    }
+
+    private static async Task<int> CountNotificationsByBusinessKeyAsync(
+        ISqlSugarClient db,
+        string businessKey)
+    {
+        var notificationTableNames = db.DbMaintenance
+            .GetTableInfoList(false)
+            .Select(table => table.Name)
+            .Where(tableName => tableName.StartsWith($"{nameof(Notification)}_", StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        Assert.NotEmpty(notificationTableNames);
+
+        var count = 0;
+        foreach (var tableName in notificationTableNames)
+        {
+            var businessKeyColumn = db.DbMaintenance
+                .GetColumnInfosByTableName(tableName, false)
+                .Select(column => column.DbColumnName)
+                .Single(columnName => string.Equals(
+                    columnName,
+                    nameof(Notification.BusinessKey),
+                    StringComparison.OrdinalIgnoreCase));
+            count += Convert.ToInt32(await db.Ado.GetScalarAsync(
+                $"SELECT COUNT(*) FROM {QuoteIdentifier(tableName)} " +
+                $"WHERE {QuoteIdentifier(businessKeyColumn)} = @businessKey",
+                new SugarParameter("@businessKey", businessKey)));
+        }
+
+        return count;
     }
 
     private static Notification CreateNotification(long id, string businessKey, DateTime occurredAtUtc)

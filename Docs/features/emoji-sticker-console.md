@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.07.16
+> **最后更新**: 2026.08.12
 >
 > **关联文档**：
 > [系统总览与数据模型](./emoji-sticker-system.md) ·
@@ -22,7 +22,7 @@
 - 管理单个表情（编辑、启用/禁用、排序、软删除）
 - 切换表情的 `AllowInline` 属性（控制是否可内嵌正文）
 
-## 当前实现状态（2026-07-16）
+## 当前实现状态（2026-08-12）
 
 ### 已实现
 
@@ -38,13 +38,17 @@
   - 批量排序保存（`BatchUpdateSort`）
 - 批量上传四步流（文件选择、上传进度、确认表格、冲突修复重提）
 - 分组封面图上传组件（上传 + 预览 + 清空）
-- API 封装：`Frontend/radish.console/src/api/stickerApi.ts`（当前仍自行解析部分响应并抛出普通 `Error`，统一错误迁移见 F3-C9）
+- API 封装：`Frontend/radish.console/src/api/stickerApi.ts` 统一使用 `createApiResponseError` 保留结构化错误字段
+- 分组完整编辑与启停已拆为独立权限、payload 和路由；贴纸写入与排序先验证租户化分组 owner
+- 列表具备请求代际、`ready / stale / unavailable`、非权威写冻结和 URL 筛选回访
+- 排序草稿、单图上传与批量上传具有独立 dirty / busy / 离开确认，未绑定附件沿用 24 小时孤儿清理责任
+- PC 使用连续表格，Mobile 使用媒体卡和单任务 Bottom Sheet
 
 ### 当前设计 / 视觉状态
 
 - 网格模式与拖拽排序（当前为列表模式 + 数字排序）
-- `StickerGroupList` 与 `StickerList` 已保留表格 CRUD 功能闭环，但尚未迁入 `P3-12-D14` 新增的 `ConsolePageHeader / ConsoleMetricGrid / ConsoleToolbar` 语义组件。
-- 下一批视觉迁移前应先判断页面边界：如果只迁移页头、指标和筛选工具条，可按普通表格 CRUD 收尾；如果要调整图片预览、分组详情、批量上传确认表、批量排序或素材状态流，应按媒体资产列表与分组详情拆分。
+- `StickerGroupList` 与 `StickerList` 已接入 `ConsolePageHeader / ConsoleMetricGrid / ConsoleResourceList / ConsoleToolbar`，桌面表格与 Mobile 媒体卡共用同一权威快照。
+- 表单与批量任务在 Mobile 使用单任务 Bottom Sheet；本专题不复制 Pencil 画板，继续继承 Console 普通资源表面和媒体资源边界。
 
 ### 与 Reaction Phase 2 的协作边界（2026-03-01）
 
@@ -262,7 +266,7 @@ interface BatchAddStickersRequest {
 
 | 字段 | 说明 |
 |------|------|
-| 预览图 | 展示当前图片（GIF 播放动图），可重新上传替换 |
+| 预览图 | 必填；展示当前图片（GIF 播放动图），可重新上传替换但不可保存为空附件 |
 | 标识符（Code） | 只读（创建后不可修改）|
 | 显示名（Name） | 可编辑 |
 | 允许内嵌正文（AllowInline） | 开关 |
@@ -275,7 +279,10 @@ interface BatchAddStickersRequest {
 
 **分组内表情排序**：
 
-- 当前列表通过数字输入修改 Sort 草稿，再由“保存排序”调用 `PUT /api/v1/Sticker/BatchUpdateSort`
+- 当前列表通过数字输入修改独立 Sort 草稿，再由“保存排序”调用 `PUT /api/v1/Sticker/BatchUpdateSort`
+- 请求必须同时提交当前 `groupId`；后端先以租户化分组确认 owner，再要求全部 `items[].id` 存在且属于该分组，缺失、重复、跨组或未完整写入均整体回滚
+- 保存失败保留本地草稿；服务端返回 `StickerSortSnapshotStale` 时将当前读取标记为 stale 并冻结后续写入，刷新成功后由管理员重新裁决
+- 刷新、返回或执行其他写操作前必须先保存或显式放弃排序草稿，不允许静默清空
 - 网格与拖拽排序尚未实现，后续若引入需继续保留可审阅的批量保存边界
 
 **分组排序**：当前通过编辑分组的 Sort 数值保存，不提供拖拽。
@@ -290,7 +297,8 @@ interface BatchAddStickersRequest {
 - 页面访问：`console.stickers.view`
 - 分组创建 / 单个表情新增：`console.stickers.create`
 - 分组编辑 / 表情编辑：`console.stickers.edit`
-- 分组启停：复用 `console.stickers.toggle`
+- 分组完整编辑：`console.stickers.edit`，只允许调用 `PUT /api/v1/Sticker/UpdateGroup/{id}`
+- 分组启停：`console.stickers.toggle`，只允许调用窄命令 `PUT /api/v1/Sticker/UpdateGroupStatus/{id}`；该命令不能改写名称、描述、封面、类型或排序
 - 删除：`console.stickers.delete`
 - 排序：`console.stickers.sort`
 - 批量上传：`console.stickers.batch-upload`
@@ -300,11 +308,14 @@ interface BatchAddStickersRequest {
 - `GET /api/v1/Sticker/CheckGroupCode`
 - `GET /api/v1/Sticker/CheckStickerCode`
 - `GET /api/v1/Sticker/NormalizeCode`
+- `PUT /api/v1/Sticker/UpdateGroupStatus/{id}`
 
 说明：
 
 - 上述三项属于 Console 已真实使用的辅助接口，因此已进入 `ConsolePermissions + DbMigrate` 的治理范围。
 - `Attachment/UploadImage` 继续保持共享上传接口定位，但已按方案 B 做最小收口：仅 `Sticker` / `StickerCover` 业务类型在后端复用现有 `console.stickers.*` 权限校验，不扩张为独立上传权限模型。
+- `Sticker` 实体不单独复制 `TenantId`；所有按分组或贴纸 ID 的管理读写必须先通过租户化 `StickerGroup` 确认 owner，再访问组内 `Sticker`。
+- `DeleteGroupAsync` 以公开服务方法上的 `[UseTran(Propagation = Required)]` 包住分组软删除、组内贴纸软删除和引用真值失效；任何子写入异常都向上抛出并整体回滚。
 
 ## BatchAddStickers 接口约束
 
@@ -366,14 +377,17 @@ F3-C9 应补齐稳定 `code`、本地化键、参数与追踪标识，前端不�
 | GET | `/api/v1/Sticker/NormalizeCode?filename=xxx` | 预览文件名清洗结果（返回清洗后的 Code） |
 | GET | `/api/v1/Sticker/GetGroupStickers/{groupId}` | 获取分组内所有表情（含禁用，管理端专用） |
 | GET | `/api/v1/Sticker/GetAdminGroups` | 获取管理端分组（含禁用） |
+| PUT | `/api/v1/Sticker/UpdateGroupStatus/{id}` | 只更新分组启停状态和修改审计字段 |
 | PUT | `/api/v1/Sticker/BatchUpdateSort` | 批量更新表情 Sort 字段 |
 
 ### 管理端联调口径
 
 - 预检接口只提供即时提示，提交时仍以后端最终校验为准。
 - `NormalizeCode` 仅展示清洗结果，不替代前端输入校验。
-- `groupId`、路由 `{id}`、排序请求 `items[].id` 及所有 LongId 响应字段均按字符串传输。
-- `BatchUpdateSort` 失败时回滚本地排序草稿并提示用户。
+- `groupId`、路由 `{id}`、排序请求 `groupId / items[].id` 及所有 LongId 响应字段均按字符串传输。
+- `BatchUpdateSort` 失败时数据库事务整体回滚，前端保留本地排序草稿并提示用户，不伪装保存成功。
+- PC 使用同一权威快照的连续表格，Mobile 使用媒体卡与单任务 Form / Batch Bottom Sheet；`unavailable / stale` 状态均冻结写入。
+- 单图或批量上传取消前必须显式确认。已上传但未绑定的附件不即时删除，保留 24 小时供重试，再由 `cleanup-orphan-attachments` 经引用检查后回收。
 
 ---
 

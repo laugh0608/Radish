@@ -294,6 +294,18 @@ const steps = [
     args: ['run', 'check:production-deploy'],
   },
   {
+    title: '前端静态服务器合约测试',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:frontend-server'],
+  },
+  {
+    title: '镜像漏洞分层策略自测',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:image-vulnerability-policy:self-test'],
+  },
+  {
     title: '前端 TypeScript 类型检查',
     phase: 'baseline',
     command: npmCommand,

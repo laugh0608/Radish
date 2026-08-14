@@ -14,6 +14,13 @@ import type {
   UserInventoryItem
 } from '@/types/shop';
 import * as shopApi from '@/api/shop';
+import {
+  createShopLoadError,
+  createShopResponseError,
+  type ShopLoadError,
+} from '../shopDataError';
+
+export type { ShopLoadError } from '../shopDataError';
 
 export interface ShopDataState {
   // 分类数据
@@ -51,12 +58,6 @@ export interface ShopDataState {
   // 错误状态
   error: string | null;
   loadError: ShopLoadError | null;
-}
-
-export interface ShopLoadError {
-  scope: 'categories' | 'products' | 'featured-products' | 'product-detail' | 'orders' | 'order-detail' | 'inventory';
-  message: string;
-  target?: Record<string, string | number | boolean | null | undefined>;
 }
 
 export const useShopData = (t: TFunction) => {
@@ -113,14 +114,13 @@ export const useShopData = (t: TFunction) => {
           loadError: prev.loadError?.scope === 'categories' ? null : prev.loadError
         }));
       } else {
-        throw new Error(result.message || '获取分类失败');
+        throw createShopResponseError(result, t('shop.error.categoriesLoadFailed'));
       }
     } catch (error) {
       log.error('加载分类失败:', error);
-      const message = error instanceof Error ? error.message : '加载分类失败';
-      setError(message);
-      setState(prev => ({ ...prev, loadError: { scope: 'categories', message } }));
-      setState(prev => ({ ...prev, loadingCategories: false }));
+      const loadError = createShopLoadError('categories', error, t, 'shop.error.categoriesLoadFailed');
+      setError(loadError.message);
+      setState(prev => ({ ...prev, loadError, loadingCategories: false }));
     }
   }, [t, setError]);
 
@@ -149,27 +149,19 @@ export const useShopData = (t: TFunction) => {
           loadError: prev.loadError?.scope === 'products' ? null : prev.loadError
         }));
       } else {
-        throw new Error(result.message || '获取商品列表失败');
+        throw createShopResponseError(result, t('shop.error.productsLoadFailed'));
       }
     } catch (error) {
       log.error('加载商品列表失败:', error);
-      const message = error instanceof Error ? error.message : '加载商品列表失败';
-      setError(message);
-      setState(prev => ({
-        ...prev,
-        loadError: {
-          scope: 'products',
-          message,
-          target: {
-            categoryId: categoryId || 'all',
-            productType: productType || 'all',
-            hasKeyword: Boolean(keyword?.trim()),
-            pageIndex,
-            pageSize,
-          },
-        },
-      }));
-      setState(prev => ({ ...prev, loadingProducts: false }));
+      const loadError = createShopLoadError('products', error, t, 'shop.error.productsLoadFailed', {
+        categoryId: categoryId || 'all',
+        productType: productType || 'all',
+        hasKeyword: Boolean(keyword?.trim()),
+        pageIndex,
+        pageSize,
+      });
+      setError(loadError.message);
+      setState(prev => ({ ...prev, loadError, loadingProducts: false }));
     }
   }, [t, setError]);
 
@@ -191,14 +183,13 @@ export const useShopData = (t: TFunction) => {
           loadError: prev.loadError?.scope === 'featured-products' ? null : prev.loadError
         }));
       } else {
-        throw new Error(result.message || '获取推荐商品失败');
+        throw createShopResponseError(result, t('shop.error.featuredProductsLoadFailed'));
       }
     } catch (error) {
       log.error('加载推荐商品失败:', error);
-      const message = error instanceof Error ? error.message : '加载推荐商品失败';
-      setError(message);
-      setState(prev => ({ ...prev, loadError: { scope: 'featured-products', message } }));
-      setState(prev => ({ ...prev, loadingFeatured: false }));
+      const loadError = createShopLoadError('featured-products', error, t, 'shop.error.featuredProductsLoadFailed');
+      setError(loadError.message);
+      setState(prev => ({ ...prev, loadError, loadingFeatured: false }));
     }
   }, [t, setError]);
 
@@ -220,27 +211,25 @@ export const useShopData = (t: TFunction) => {
           loadError: prev.loadError?.scope === 'product-detail' ? null : prev.loadError
         }));
       } else {
-        throw new Error(result.message || '获取商品详情失败');
+        throw createShopResponseError(result, t('shop.error.productDetailLoadFailed'));
       }
     } catch (error) {
       log.error('加载商品详情失败:', error);
-      const message = error instanceof Error ? error.message : '加载商品详情失败';
-      setError(message);
-      setState(prev => ({
-        ...prev,
-        loadError: {
-          scope: 'product-detail',
-          message,
-          target: { productId },
-        },
-      }));
-      setState(prev => ({ ...prev, loadingProductDetail: false }));
+      const loadError = createShopLoadError('product-detail', error, t, 'shop.error.productDetailLoadFailed', {
+        productId,
+      });
+      setError(loadError.message);
+      setState(prev => ({ ...prev, loadError, loadingProductDetail: false }));
     }
   }, [t, setError]);
 
   // 检查是否可以购买
   const checkCanBuy = useCallback(async (productId: LongId, quantity: number = 1): Promise<ProductBuyCheckResult | null> => {
-    setState(prev => ({ ...prev, checkingCanBuy: true }));
+    setState(prev => ({
+      ...prev,
+      checkingCanBuy: true,
+      loadError: prev.loadError?.scope === 'product-detail' ? null : prev.loadError
+    }));
     try {
       const result = await shopApi.checkCanBuy(productId, quantity, t);
       if (result.ok && result.data) {
@@ -251,12 +240,16 @@ export const useShopData = (t: TFunction) => {
         }));
         return result.data;
       } else {
-        throw new Error(result.message || '检查购买权限失败');
+        throw createShopResponseError(result, t('shop.error.availabilityCheckFailed'));
       }
     } catch (error) {
       log.error('检查购买权限失败:', error);
-      setError(error instanceof Error ? error.message : '检查购买权限失败');
-      setState(prev => ({ ...prev, checkingCanBuy: false }));
+      const loadError = createShopLoadError('product-detail', error, t, 'shop.error.availabilityCheckFailed', {
+        productId,
+        quantity,
+      });
+      setError(loadError.message);
+      setState(prev => ({ ...prev, loadError, checkingCanBuy: false }));
       return null;
     }
   }, [t, setError]);
@@ -284,25 +277,17 @@ export const useShopData = (t: TFunction) => {
           loadError: prev.loadError?.scope === 'orders' ? null : prev.loadError
         }));
       } else {
-        throw new Error(result.message || '获取订单列表失败');
+        throw createShopResponseError(result, t('shop.error.ordersLoadFailed'));
       }
     } catch (error) {
       log.error('加载订单列表失败:', error);
-      const message = error instanceof Error ? error.message : '加载订单列表失败';
-      setError(message);
-      setState(prev => ({
-        ...prev,
-        loadError: {
-          scope: 'orders',
-          message,
-          target: {
-            status: status || 'all',
-            pageIndex,
-            pageSize,
-          },
-        },
-      }));
-      setState(prev => ({ ...prev, loadingOrders: false }));
+      const loadError = createShopLoadError('orders', error, t, 'shop.error.ordersLoadFailed', {
+        status: status || 'all',
+        pageIndex,
+        pageSize,
+      });
+      setError(loadError.message);
+      setState(prev => ({ ...prev, loadError, loadingOrders: false }));
     }
   }, [t, setError]);
 
@@ -324,21 +309,15 @@ export const useShopData = (t: TFunction) => {
           loadError: prev.loadError?.scope === 'order-detail' ? null : prev.loadError
         }));
       } else {
-        throw new Error(result.message || '获取订单详情失败');
+        throw createShopResponseError(result, t('shop.error.orderDetailLoadFailed'));
       }
     } catch (error) {
       log.error('加载订单详情失败:', error);
-      const message = error instanceof Error ? error.message : '加载订单详情失败';
-      setError(message);
-      setState(prev => ({
-        ...prev,
-        loadError: {
-          scope: 'order-detail',
-          message,
-          target: { orderId },
-        },
-      }));
-      setState(prev => ({ ...prev, loadingOrderDetail: false }));
+      const loadError = createShopLoadError('order-detail', error, t, 'shop.error.orderDetailLoadFailed', {
+        orderId,
+      });
+      setError(loadError.message);
+      setState(prev => ({ ...prev, loadError, loadingOrderDetail: false }));
     }
   }, [t, setError]);
 
@@ -356,24 +335,35 @@ export const useShopData = (t: TFunction) => {
         shopApi.getProductCapabilities(t)
       ]);
 
-      if (benefitsResult.ok && inventoryResult.ok && capabilitiesResult.ok) {
+      if (
+        benefitsResult.ok && benefitsResult.data
+        && inventoryResult.ok && inventoryResult.data
+        && capabilitiesResult.ok && capabilitiesResult.data
+      ) {
+        const userBenefits = benefitsResult.data;
+        const userInventory = inventoryResult.data;
+        const productCapabilities = capabilitiesResult.data;
         setState(prev => ({
           ...prev,
-          userBenefits: benefitsResult.data || [],
-          userInventory: inventoryResult.data || [],
-          productCapabilities: capabilitiesResult.data || [],
+          userBenefits,
+          userInventory,
+          productCapabilities,
           loadingInventory: false,
           loadError: prev.loadError?.scope === 'inventory' ? null : prev.loadError
         }));
       } else {
-        throw new Error('获取背包数据失败');
+        const failedResult = [benefitsResult, inventoryResult, capabilitiesResult]
+          .find((result) => !result.ok || result.data === undefined);
+        throw createShopResponseError(
+          failedResult ?? inventoryResult,
+          t('shop.error.inventoryLoadFailed'),
+        );
       }
     } catch (error) {
       log.error('加载背包数据失败:', error);
-      const message = error instanceof Error ? error.message : '加载背包数据失败';
-      setError(message);
-      setState(prev => ({ ...prev, loadError: { scope: 'inventory', message } }));
-      setState(prev => ({ ...prev, loadingInventory: false }));
+      const loadError = createShopLoadError('inventory', error, t, 'shop.error.inventoryLoadFailed');
+      setError(loadError.message);
+      setState(prev => ({ ...prev, loadError, loadingInventory: false }));
     }
   }, [t, setError]);
 

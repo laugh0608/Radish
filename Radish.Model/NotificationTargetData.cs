@@ -8,6 +8,8 @@ public sealed class NotificationTargetData
     public long? PostId { get; set; }
     public string? PostPublicId { get; set; }
     public long? CommentId { get; set; }
+    public long? AnswerId { get; set; }
+    public string? AnswerPublicId { get; set; }
     public long? ChannelId { get; set; }
     public long? MessageId { get; set; }
     public long? UserId { get; set; }
@@ -38,7 +40,8 @@ public sealed class NotificationTargetData
     {
         return targetKind switch
         {
-            NotificationTargetKind.ForumPost => $"post:{PostId}:{PostPublicId}:comment:{CommentId}",
+            NotificationTargetKind.ForumPost =>
+                $"post:{PostId}:{PostPublicId}:comment:{CommentId}:answer:{AnswerId}:{AnswerPublicId}",
             NotificationTargetKind.ChatConversation => $"channel:{ChannelId}:message:{MessageId}",
             NotificationTargetKind.UserProfile => $"user:{UserId}:{UserPublicId}",
             NotificationTargetKind.ShopOrder => $"order:{OrderId}",

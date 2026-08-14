@@ -24,8 +24,8 @@
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 24px;
-  padding: 20px;
+  gap: 18px;
+  padding: 16px 18px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 10px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--theme-bg-surface) 90%, var(--theme-surface-highlight) 10%), color-mix(in srgb, var(--theme-brand-soft) 18%, var(--theme-bg-surface)));
@@ -50,8 +50,8 @@
 }
 
 .summaryHeader h1 {
-  margin: 11px 0 7px;
-  font-size: clamp(22px, 3vw, 28px);
+  margin: 8px 0 5px;
+  font-size: clamp(21px, 3vw, 26px);
   line-height: 1.25;
 }
 
@@ -65,13 +65,29 @@
 
 .summaryCards {
   display: grid;
-  grid-template-columns: repeat(3, minmax(108px, 1fr));
-  gap: 9px;
+  grid-template-columns: repeat(3, minmax(96px, 1fr));
+  gap: 8px;
+}
+
+.summaryState {
+  grid-column: 2;
+  margin: 8px 0 0;
+  color: var(--theme-text-tertiary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.summaryState[data-tone='warning'] {
+  color: var(--theme-state-warning);
 }
 
 .summaryCard {
-  min-width: 108px;
-  padding: 13px;
+  min-width: 96px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  padding: 9px 10px;
   border: 1px solid var(--theme-border-soft);
   border-radius: 9px;
   color: var(--theme-accent-ink);
@@ -84,16 +100,21 @@
 }
 
 .summaryCard strong {
-  margin-top: 8px;
+  margin-top: 0;
   color: var(--theme-text-primary);
   font-size: 20px;
   overflow-wrap: anywhere;
 }
 
 .summaryCard span {
-  margin-top: 3px;
+  grid-column: 2;
+  margin-top: 1px;
   color: var(--theme-text-tertiary);
   font-size: 11px;
+}
+
+.summaryCard > :first-child {
+  grid-row: 1 / span 2;
 }
 
 .notificationWorkspace {
@@ -286,6 +307,10 @@
     grid-template-columns: 1fr;
   }
 
+  .summaryState {
+    grid-column: 1;
+  }
+
   .notificationWorkspace {
     grid-template-columns: 1fr;
   }
@@ -334,19 +359,17 @@
 }
 
 @media (max-width: 420px) {
-  .summaryCards {
-    grid-template-columns: 1fr;
-  }
-
   .summaryCard {
-    display: grid;
-    grid-template-columns: auto auto 1fr;
-    align-items: center;
-    gap: 8px;
+    grid-template-columns: 1fr;
+    padding: 8px;
   }
 
-  .summaryCard strong,
   .summaryCard span {
+    grid-column: 1;
     margin: 0;
+  }
+
+  .summaryCard > :first-child {
+    display: none;
   }
 }

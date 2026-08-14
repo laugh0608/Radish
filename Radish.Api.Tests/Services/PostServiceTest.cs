@@ -8,6 +8,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.Common.OptionTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -261,6 +262,7 @@ public class PostServiceTest
         var dedupService = new Mock<INotificationDedupService>(MockBehavior.Strict);
         var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
         var postEditHistoryRepository = new Mock<IBaseRepository<PostEditHistory>>(MockBehavior.Strict);
+        var bookmarkRepository = new Mock<IUserPostBookmarkRepository>(MockBehavior.Strict);
         var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         var post = new Post(new PostInitializationOptions("问答详情帖", "这个问题应该怎么分析和解决？")
@@ -304,6 +306,15 @@ public class PostServiceTest
         postAnswerRepository
             .Setup(repository => repository.QueryAsync(It.IsAny<Expression<Func<PostAnswer, bool>>?>()))
             .ReturnsAsync(new List<PostAnswer>());
+        bookmarkRepository
+            .Setup(repository => repository.QueryActiveAsync(9, 2001, 1004))
+            .ReturnsAsync(new UserPostBookmark
+            {
+                Id = 8001,
+                TenantId = 9,
+                UserId = 2001,
+                PostId = 1004
+            });
         mapper
             .Setup(m => m.Map<PostVo>(post))
             .Returns(new PostVo
@@ -344,9 +355,10 @@ public class PostServiceTest
             postEditHistoryRepository.Object,
             Mock.Of<IAttachmentService>(),
             Options.Create(new ForumEditHistoryOptions()),
-            CreateDefaultSystemSettingProvider());
+            CreateDefaultSystemSettingProvider(),
+            userPostBookmarkRepository: bookmarkRepository.Object);
 
-        var result = await service.GetPostDetailAsync(1004, viewerUserId: null);
+        var result = await service.GetPostDetailAsync(1004, viewerUserId: 2001);
 
         Assert.NotNull(result);
         Assert.True(result!.VoIsQuestion);
@@ -357,12 +369,14 @@ public class PostServiceTest
         Assert.Equal(3, result.VoQuestion.VoAnswerCount);
         Assert.Empty(result.VoQuestion.VoAnswers);
         Assert.Null(result.VoPoll);
+        Assert.True(result.VoIsBookmarked);
 
         postRepository.VerifyAll();
         postTagRepository.VerifyAll();
         postPollRepository.VerifyAll();
         postQuestionRepository.VerifyAll();
         postAnswerRepository.VerifyAll();
+        bookmarkRepository.VerifyAll();
         mapper.VerifyAll();
     }
 
@@ -737,6 +751,14 @@ public class PostServiceTest
                 IsClosed = false,
                 EndTime = DateTime.UtcNow.AddHours(-1),
                 IsDeleted = false
+            },
+            new()
+            {
+                Id = 2004,
+                PostId = 1004,
+                IsClosed = false,
+                EndTime = DateTime.UtcNow.AddHours(2),
+                IsDeleted = false
             }
         };
 
@@ -762,6 +784,14 @@ public class PostServiceTest
                 IsPublished = true,
                 IsDeleted = false,
                 CreateTime = DateTime.UtcNow.AddMinutes(-30)
+            },
+            new(new PostInitializationOptions("已禁用投票", "正文"))
+            {
+                Id = 1004,
+                IsPublished = true,
+                IsEnabled = false,
+                IsDeleted = false,
+                CreateTime = DateTime.UtcNow.AddMinutes(-40)
             }
         };
 
@@ -2619,6 +2649,49 @@ public class PostServiceTest
         Assert.Equal(400, exception.StatusCode);
         Assert.Equal("Forum.PublishTitleTooLong", exception.ErrorCode);
         Assert.Equal("error.forum.publish_title_too_long", exception.MessageKey);
+    }
+
+    [Fact]
+    public async Task GetPostDetailAsync_Should_Not_Expose_Disabled_Post()
+    {
+        var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
+        postRepository
+            .Setup(repository => repository.QueryByIdAsync(9527))
+            .ReturnsAsync(new Post(new PostInitializationOptions("已禁用帖子", "正文")
+            {
+                IsPublished = true,
+                IsEnabled = false
+            })
+            {
+                Id = 9527,
+                IsDeleted = false
+            });
+        var service = new PostService(
+            Mock.Of<IMapper>(),
+            postRepository.Object,
+            Mock.Of<IBaseRepository<UserPostLike>>(),
+            Mock.Of<IBaseRepository<PostTag>>(),
+            Mock.Of<IBaseRepository<Category>>(),
+            Mock.Of<IBaseRepository<Tag>>(),
+            Mock.Of<IBaseRepository<PostPoll>>(),
+            Mock.Of<IBaseRepository<PostPollOption>>(),
+            Mock.Of<IBaseRepository<PostPollVote>>(),
+            Mock.Of<IBaseRepository<PostQuestion>>(),
+            Mock.Of<IBaseRepository<PostAnswer>>(),
+            Mock.Of<ITagService>(),
+            Mock.Of<ICoinRewardService>(),
+            Mock.Of<INotificationService>(),
+            Mock.Of<INotificationDedupService>(),
+            Mock.Of<IExperienceService>(),
+            Mock.Of<IBaseRepository<PostEditHistory>>(),
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new ForumEditHistoryOptions()),
+            CreateDefaultSystemSettingProvider());
+
+        var result = await service.GetPostDetailAsync(9527);
+
+        Assert.Null(result);
+        postRepository.VerifyAll();
     }
 
     private static ISystemSettingProvider CreateDefaultSystemSettingProvider(

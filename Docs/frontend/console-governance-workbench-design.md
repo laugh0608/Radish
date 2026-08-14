@@ -1,12 +1,14 @@
 # Console 治理工作台设计端点
 
-> 状态：`P00-P18` 设计与 Console 首轮视觉 / 交互治理已收口；`P02 / P07` 已承接内容治理案件与申诉复核工作台，正式页面已完成 Case / Evidence / Appeal / Relief 契约迁移；移动 Console 继续只作为响应式只读管理后台参考
+> 状态：`P00-P18` 是只读历史设计资产；正式 Console 已由 `R1-C01 / R1-C02 / R2-C03` 建立 PC / Mobile 契约，R3-C04 六批与 `R3-C05-A Dashboard` 已完成代码和静态门禁
 >
 > 首次日期：2026-05-24（Asia/Shanghai）
 >
-> 最近更新：2026-07-25（Asia/Shanghai）
+> 最近更新：2026-08-12（Asia/Shanghai）
 >
 > 适用范围：`radish.console` 公共壳层、侧栏、顶栏、工具条、表格 CRUD、治理工作台、设置策略、文档治理、权限矩阵、运维任务和移动端 Console 任务流。后续按设计稿编号和页面类型逐步对齐，不直接重写 Console 全站。
+>
+> `2026-08-12` 更新：`R3-C05-A Dashboard` 继承 `R1-F01 + R2-W02 + Console 壳层`，正式结构收敛为高频任务路径、独立统计快照、最近订单和完整功能面板；静态入口不再冒充实时队列，页头 / 命令组重复入口和伪创建商品动作已删除。统计与订单分别维护权威读取状态，PC 表格与 Mobile 摘要卡共用快照；未新增趋势、排行、跨模块推荐或内部调度 API。
 >
 > `2026-06-28` 更新：移动端 Console 底栏已对齐共享基座的浮动胶囊样式；E7-A 后当前高频项固定为 `总览 / 治理 / 交易 / 权限 / 更多`。内容审核、经验复核、交易复核、文档治理、用户权限和系统工具只改变激活分组或通过“更多”进入，不再分叉为直贴底部的白色横条。复审后 `P13` 已重建为纸色背景的系统配置与任务调度页，避免退化为白底空壳或与其他 Console 页面背景不一致。
 >
@@ -61,6 +63,10 @@
 > `2026-07-21` 更新：F4-I-B 已完成 Case / Evidence / Event / UserModerationState、五类目标处置、Chat 可靠任务、新案件 API 与 `console.moderation.view / review / action` 分权。F4-I-C 随后已更新 `P02 / P07`、迁移 `/moderation` 并在消费者清零后删除旧 `Review / ApplyUserAction` 等 HTTP 入口。
 >
 > `2026-07-25` 更新：F4-J-C 已将 `P02` 扩展为案件与申诉双工作区，加入申诉队列、原决定与证据、复核结论、纠正执行和事件留痕；`P07` 固定移动端为申诉队列与公开摘要只读流，不承接写操作。正式 `/moderation?view=appeals&appeal=...` 已按 `console.moderation.view / appeal / action` 分权落地。
+>
+> `2026-08-09` 更新：F4-O 已把 PostAnswer 补为第六类治理目标；R1-C02 [设计前能力门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)确认服务端 Case / Appeal、权限、版本、幂等与事务能力足够，同日[前端能力批](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)已闭合 PostAnswer 筛选 / 双语 / Revision 前置校验、案件 URL / mobile task、stale / unavailable 和 View-only 写入表面。[正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)固定 PC 队列—证据—决定三段治理桌、Mobile 连续案件队列 / 保留顶部品牌栏且隐藏五项底部导航的单案件全屏任务及必要关键状态，并已由[正式实现与 Gateway 验收](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)关闭；现有队列只承接已落地的状态、目标类型与关键词筛选，不把历史设计稿中的原因、证据可用性或动作结果筛选当成当前 API 承诺。
+>
+> `2026-08-09` 更新：R1-C02 正式实现与 Gateway 验收已经关闭；[R2-C03 readiness](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)确认设置与权限矩阵继续保持 R2，并复用 Console 五项真实入口。Mobile 权限矩阵固定只读，System Config 默认只读且只允许 Low 风险写入，Medium 设置与角色授权写入保持 PC-only；本类型不新增隐藏全局导航的任务壳层。内建角色保护、只读矩阵路由、授权单调版本 / 原子 CAS、系统设置结构化冲突与配置—审计共同提交先进入代码能力门禁，关闭前不修改 Pencil。
 
 ## 目标
 
@@ -76,11 +82,13 @@
 
 ## 设计源文件
 
-目标源文件：
+当前活动设计源：
 
 ```text
-Docs/frontend/design-sources/console-governance-workbench.pen
+Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 ```
+
+Console 代表设计使用 `R1-C01 / R1-C02` 与 `R2-C03`。旧 `console-governance-workbench.pen` 保留为只读历史资产；下表记录其历史画板与既有功能边界，不再作为后续修改入口。
 
 规则：
 

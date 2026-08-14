@@ -211,6 +211,8 @@ export const enShell = {
   'workbench.link.messages': 'Chat',
   'workbench.link.notifications': 'Notifications',
   'workbench.link.openDesktop': 'Open legacy desktop',
+  'privateTaskRail.expand': 'Show',
+  'privateTaskRail.collapse': 'Hide',
   'dock.loginRequired': 'Login is required to access this app.',
   'desktop.accessDenied': 'You do not have access to this app.',
   'dock.openProfile': 'Open profile',

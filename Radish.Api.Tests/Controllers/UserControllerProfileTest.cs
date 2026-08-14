@@ -1,5 +1,5 @@
 using System;
-using System.Linq.Expressions;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -53,6 +53,19 @@ public class UserControllerProfileTest
         petService
             .Setup(service => service.GetPublicCardAsync(1001, 9))
             .ReturnsAsync(petCard);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        experienceService
+            .Setup(service => service.GetUserExperiencesAsync(
+                It.Is<List<long>>(userIds => userIds.Count == 1 && userIds[0] == 1001)))
+            .ReturnsAsync(new Dictionary<long, UserExperienceVo>
+            {
+                [1001] = new()
+                {
+                    VoUserId = 1001,
+                    VoCurrentLevel = 0,
+                    VoCurrentLevelName = "凡人"
+                }
+            });
         var controller = new UserController(
             userService.Object,
             Mock.Of<ICurrentUserAccessor>(),
@@ -63,7 +76,8 @@ public class UserControllerProfileTest
             attachmentService.Object,
             Options.Create(new TimeOptions()),
             adornmentService.Object,
-            petService.Object);
+            petService.Object,
+            experienceService.Object);
 
         var result = await controller.GetPublicProfile(userPublicId);
 
@@ -74,6 +88,75 @@ public class UserControllerProfileTest
         attachmentService.VerifyAll();
         adornmentService.VerifyAll();
         petService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task GetPublicProfile_ShouldExposeOnlySafePublicLevelProjection()
+    {
+        const string userPublicId = "usr_018f6b6f7c7d70008f8f8f8f8f8f8f8f";
+        var userService = new Mock<IUserService>(MockBehavior.Strict);
+        userService
+            .Setup(service => service.GetPublicUserByIdentifierAsync(userPublicId))
+            .ReturnsAsync(new UserVo
+            {
+                Uuid = 1001,
+                VoPublicId = userPublicId,
+                VoUserName = "tester",
+                VoDisplayName = "Tester",
+                VoTenantId = 9
+            });
+        var attachmentService = new Mock<IAttachmentService>(MockBehavior.Strict);
+        attachmentService
+            .Setup(service => service.GetLatestAvatarAssetAsync(1001))
+            .ReturnsAsync((AttachmentAssetDto?)null);
+        var adornmentService = new Mock<IUserAdornmentService>(MockBehavior.Strict);
+        adornmentService
+            .Setup(service => service.GetUserAdornmentAsync(1001))
+            .ReturnsAsync((UserAdornmentVo?)null);
+        var petService = new Mock<IPetService>(MockBehavior.Strict);
+        petService
+            .Setup(service => service.GetPublicCardAsync(1001, 9))
+            .ReturnsAsync((PetPublicCardVo?)null);
+        var experienceService = new Mock<IExperienceService>(MockBehavior.Strict);
+        experienceService
+            .Setup(service => service.GetUserExperiencesAsync(
+                It.Is<List<long>>(userIds => userIds.Count == 1 && userIds[0] == 1001)))
+            .ReturnsAsync(new Dictionary<long, UserExperienceVo>
+            {
+                [1001] = new()
+                {
+                    VoUserId = 1001,
+                    VoCurrentLevel = 6,
+                    VoCurrentLevelName = "化神",
+                    VoTotalExp = 999999,
+                    VoRank = 1,
+                    VoExpFrozen = true
+                }
+            });
+        var controller = new UserController(
+            userService.Object,
+            Mock.Of<ICurrentUserAccessor>(),
+            Mock.Of<IPostService>(),
+            Mock.Of<ICommentService>(),
+            Mock.Of<IUserBrowseHistoryService>(),
+            Mock.Of<IUserTimePreferenceService>(),
+            attachmentService.Object,
+            Options.Create(new TimeOptions()),
+            adornmentService.Object,
+            petService.Object,
+            experienceService.Object);
+
+        var result = await controller.GetPublicProfile(userPublicId);
+
+        var profile = Assert.IsType<UserPublicProfileVo>(result.ResponseData);
+        Assert.Equal(6, profile.VoCurrentLevel);
+        Assert.Equal("化神", profile.VoCurrentLevelName);
+        Assert.DoesNotContain(
+            typeof(UserPublicProfileVo).GetProperties(),
+            property => property.Name.Contains("Exp", StringComparison.Ordinal) ||
+                        property.Name.Contains("Rank", StringComparison.Ordinal) ||
+                        property.Name.Contains("Frozen", StringComparison.Ordinal));
+        experienceService.VerifyAll();
     }
 
     [Fact]
@@ -90,20 +173,15 @@ public class UserControllerProfileTest
                 UserName = "tester"
             });
         userService
-            .Setup(item => item.ChangeDisplayNameAsync(
+            .Setup(item => item.UpdateMyProfileAsync(
                 1001,
-                "NewName",
+                It.Is<UpdateMyProfileDto>(request => request.UserName == " NewName "),
                 It.Is<UserDisplayNameChangeContext>(context =>
                     context.OperatorUserId == 1001 &&
                     context.OperatorUserName == "tester" &&
                     context.Source == UserDisplayNameChangeSources.Profile &&
                     context.Reason == "用户个人资料修改")))
             .ReturnsAsync(true);
-        userService
-            .Setup(item => item.UpdateColumnsAsync(
-                It.IsAny<Expression<Func<User, User>>>(),
-                It.IsAny<Expression<Func<User, bool>>>()))
-            .ReturnsAsync(1);
 
         var controller = new UserController(
             userService.Object,
@@ -115,7 +193,8 @@ public class UserControllerProfileTest
             Mock.Of<IAttachmentService>(),
             Options.Create(new TimeOptions()),
             Mock.Of<IUserAdornmentService>(),
-            Mock.Of<IPetService>());
+            Mock.Of<IPetService>(),
+            Mock.Of<IExperienceService>());
 
         var result = await controller.UpdateMyProfile(new UpdateMyProfileDto
         {
@@ -125,15 +204,10 @@ public class UserControllerProfileTest
         Assert.True(result.IsSuccess);
         Assert.Equal("更新成功", result.MessageInfo);
         userService.Verify(
-            item => item.ChangeDisplayNameAsync(
+            item => item.UpdateMyProfileAsync(
                 1001,
-                "NewName",
+                It.Is<UpdateMyProfileDto>(request => request.UserName == " NewName "),
                 It.IsAny<UserDisplayNameChangeContext>()),
-            Times.Once);
-        userService.Verify(
-            item => item.UpdateColumnsAsync(
-                It.IsAny<Expression<Func<User, User>>>(),
-                It.IsAny<Expression<Func<User, bool>>>()),
             Times.Once);
     }
 
@@ -167,7 +241,8 @@ public class UserControllerProfileTest
             attachmentService.Object,
             Options.Create(new TimeOptions()),
             Mock.Of<IUserAdornmentService>(),
-            Mock.Of<IPetService>());
+            Mock.Of<IPetService>(),
+            Mock.Of<IExperienceService>());
 
         var result = await controller.SetMyAvatar(new SetMyAvatarDto { AttachmentId = attachmentId });
 

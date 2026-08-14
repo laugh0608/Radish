@@ -1,4 +1,3 @@
-using AutoMapper;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -6,124 +5,80 @@ using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
 using Serilog;
-using SqlSugar;
 
 namespace Radish.Service;
 
-/// <summary>排行榜服务实现</summary>
+/// <summary>公开排行榜服务实现。</summary>
 public class LeaderboardService : ILeaderboardService
 {
-    private readonly IBaseRepository<UserExperience> _userExpRepository;
-    private readonly IBaseRepository<UserBalance> _userBalanceRepository;
-    private readonly IBaseRepository<Product> _productRepository;
-    private readonly IBaseRepository<User> _userRepository;
+    private readonly IBaseRepository<UserExperience> _userExperienceRepository;
     private readonly IBaseRepository<LevelConfig> _levelConfigRepository;
     private readonly ILeaderboardRepository _leaderboardRepository;
     private readonly IAttachmentService _attachmentService;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
-    private readonly IMapper _mapper;
 
-    /// <summary>排行榜类型配置</summary>
     private static readonly Dictionary<LeaderboardType, LeaderboardTypeVo> LeaderboardTypeConfigs = new()
     {
         [LeaderboardType.Experience] = new LeaderboardTypeVo
         {
             VoType = LeaderboardType.Experience,
             VoCategory = LeaderboardCategory.User,
-            VoName = "等级排行",
-            VoDescription = "按用户总经验值排序",
+            VoName = "经验排行",
+            VoDescription = "按有效用户累计经验值排序",
             VoIcon = "mdi:trophy",
             VoPrimaryLabel = "总经验值",
             VoSortOrder = 1
         },
-        [LeaderboardType.Balance] = new LeaderboardTypeVo
+        [LeaderboardType.PostCount] = new LeaderboardTypeVo
         {
-            VoType = LeaderboardType.Balance,
+            VoType = LeaderboardType.PostCount,
             VoCategory = LeaderboardCategory.User,
-            VoName = "萝卜余额榜",
-            VoDescription = "按用户当前萝卜币余额排序",
-            VoIcon = "mdi:currency-usd",
-            VoPrimaryLabel = "萝卜余额",
+            VoName = "发帖达人",
+            VoDescription = "按用户公开有效帖子数量排序",
+            VoIcon = "mdi:post",
+            VoPrimaryLabel = "帖子数",
             VoSortOrder = 2
         },
-        [LeaderboardType.TotalSpent] = new LeaderboardTypeVo
+        [LeaderboardType.CommentCount] = new LeaderboardTypeVo
         {
-            VoType = LeaderboardType.TotalSpent,
+            VoType = LeaderboardType.CommentCount,
             VoCategory = LeaderboardCategory.User,
-            VoName = "萝卜花销榜",
-            VoDescription = "按用户累计消费萝卜币排序",
-            VoIcon = "mdi:cart",
-            VoPrimaryLabel = "累计花销",
+            VoName = "评论达人",
+            VoDescription = "按用户公开有效评论数量排序",
+            VoIcon = "mdi:comment",
+            VoPrimaryLabel = "评论数",
             VoSortOrder = 3
         },
-        [LeaderboardType.PurchaseCount] = new LeaderboardTypeVo
+        [LeaderboardType.Popularity] = new LeaderboardTypeVo
         {
-            VoType = LeaderboardType.PurchaseCount,
+            VoType = LeaderboardType.Popularity,
             VoCategory = LeaderboardCategory.User,
-            VoName = "购买达人榜",
-            VoDescription = "按用户购买商品总数量排序",
-            VoIcon = "mdi:shopping",
-            VoPrimaryLabel = "购买数量",
+            VoName = "人气排行",
+            VoDescription = "按公开帖子与评论获得的点赞总数排序",
+            VoIcon = "mdi:heart",
+            VoPrimaryLabel = "被点赞数",
             VoSortOrder = 4
         },
         [LeaderboardType.HotProduct] = new LeaderboardTypeVo
         {
             VoType = LeaderboardType.HotProduct,
             VoCategory = LeaderboardCategory.Product,
-            VoName = "热门商品榜",
-            VoDescription = "按商品销量排序",
+            VoName = "热门商品",
+            VoDescription = "按公开在售商品销量排序",
             VoIcon = "mdi:fire",
             VoPrimaryLabel = "销量",
             VoSortOrder = 5
-        },
-        [LeaderboardType.PostCount] = new LeaderboardTypeVo
-        {
-            VoType = LeaderboardType.PostCount,
-            VoCategory = LeaderboardCategory.User,
-            VoName = "发帖达人榜",
-            VoDescription = "按用户发帖数量排序",
-            VoIcon = "mdi:post",
-            VoPrimaryLabel = "帖子数",
-            VoSortOrder = 6
-        },
-        [LeaderboardType.CommentCount] = new LeaderboardTypeVo
-        {
-            VoType = LeaderboardType.CommentCount,
-            VoCategory = LeaderboardCategory.User,
-            VoName = "评论达人榜",
-            VoDescription = "按用户评论数量排序",
-            VoIcon = "mdi:comment",
-            VoPrimaryLabel = "评论数",
-            VoSortOrder = 7
-        },
-        [LeaderboardType.Popularity] = new LeaderboardTypeVo
-        {
-            VoType = LeaderboardType.Popularity,
-            VoCategory = LeaderboardCategory.User,
-            VoName = "人气排行榜",
-            VoDescription = "按用户获得的总点赞数排序",
-            VoIcon = "mdi:heart",
-            VoPrimaryLabel = "被点赞数",
-            VoSortOrder = 8
         }
     };
 
     public LeaderboardService(
-        IMapper mapper,
-        IBaseRepository<UserExperience> userExpRepository,
-        IBaseRepository<UserBalance> userBalanceRepository,
-        IBaseRepository<Product> productRepository,
-        IBaseRepository<User> userRepository,
+        IBaseRepository<UserExperience> userExperienceRepository,
         IBaseRepository<LevelConfig> levelConfigRepository,
         ILeaderboardRepository leaderboardRepository,
         IAttachmentService attachmentService,
         IAttachmentUrlResolver attachmentUrlResolver)
     {
-        _mapper = mapper;
-        _userExpRepository = userExpRepository;
-        _userBalanceRepository = userBalanceRepository;
-        _productRepository = productRepository;
-        _userRepository = userRepository;
+        _userExperienceRepository = userExperienceRepository;
         _levelConfigRepository = levelConfigRepository;
         _leaderboardRepository = leaderboardRepository;
         _attachmentService = attachmentService;
@@ -137,30 +92,56 @@ public class LeaderboardService : ILeaderboardService
         int pageSize = 50,
         long? currentUserId = null)
     {
-        // 限制每页数量
-        if (pageSize > 100) pageSize = 100;
-        if (pageSize < 1) pageSize = 50;
-        if (pageIndex < 1) pageIndex = 1;
+        if (!LeaderboardPublicPolicy.IsPublicType(type))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(type),
+                type,
+                "该排行榜类型不提供公开访问。");
+        }
+
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = pageSize switch
+        {
+            < 1 => 50,
+            > 100 => 100,
+            _ => pageSize
+        };
 
         try
         {
             return type switch
             {
-                LeaderboardType.Experience => await GetExperienceLeaderboardAsync(pageIndex, pageSize, currentUserId),
-                LeaderboardType.Balance => await GetBalanceLeaderboardAsync(pageIndex, pageSize, currentUserId),
-                LeaderboardType.TotalSpent => await GetTotalSpentLeaderboardAsync(pageIndex, pageSize, currentUserId),
-                LeaderboardType.PurchaseCount => await GetPurchaseCountLeaderboardAsync(pageIndex, pageSize, currentUserId),
-                LeaderboardType.HotProduct => await GetHotProductLeaderboardAsync(pageIndex, pageSize),
-                LeaderboardType.PostCount => await GetPostCountLeaderboardAsync(pageIndex, pageSize, currentUserId),
-                LeaderboardType.CommentCount => await GetCommentCountLeaderboardAsync(pageIndex, pageSize, currentUserId),
-                LeaderboardType.Popularity => await GetPopularityLeaderboardAsync(pageIndex, pageSize, currentUserId),
-                _ => throw new ArgumentException($"不支持的排行榜类型: {type}")
+                LeaderboardType.Experience => await GetExperienceLeaderboardAsync(
+                    safePageIndex,
+                    safePageSize,
+                    currentUserId),
+                LeaderboardType.PostCount => await GetPostCountLeaderboardAsync(
+                    safePageIndex,
+                    safePageSize,
+                    currentUserId),
+                LeaderboardType.CommentCount => await GetCommentCountLeaderboardAsync(
+                    safePageIndex,
+                    safePageSize,
+                    currentUserId),
+                LeaderboardType.Popularity => await GetPopularityLeaderboardAsync(
+                    safePageIndex,
+                    safePageSize,
+                    currentUserId),
+                LeaderboardType.HotProduct => await GetHotProductLeaderboardAsync(
+                    safePageIndex,
+                    safePageSize),
+                _ => throw new InvalidOperationException("公开排行榜类型策略与服务分派不一致。")
             };
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "获取排行榜失败: type={Type}, pageIndex={PageIndex}, pageSize={PageSize}",
-                type, pageIndex, pageSize);
+            Log.Error(
+                ex,
+                "获取公开排行榜失败: type={Type}, pageIndex={PageIndex}, pageSize={PageSize}",
+                type,
+                safePageIndex,
+                safePageSize);
             throw;
         }
     }
@@ -168,27 +149,47 @@ public class LeaderboardService : ILeaderboardService
     /// <inheritdoc />
     public async Task<int> GetUserRankAsync(LeaderboardType type, long userId)
     {
-        if (userId <= 0) return 0;
+        if (!LeaderboardPublicPolicy.IsPublicType(type))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(type),
+                type,
+                "该排行榜类型不提供公开访问。");
+        }
+
+        if (!LeaderboardPublicPolicy.SupportsUserRank(type))
+        {
+            throw new ArgumentOutOfRangeException(
+                nameof(type),
+                type,
+                "该排行榜类型不支持用户个人排名。");
+        }
+
+        if (userId <= 0)
+        {
+            return 0;
+        }
 
         try
         {
+            var now = DateTime.Now;
             return type switch
             {
-                LeaderboardType.Experience => await GetExperienceRankAsync(userId),
-                LeaderboardType.Balance => await GetBalanceRankAsync(userId),
-                LeaderboardType.TotalSpent => await GetTotalSpentRankAsync(userId),
-                LeaderboardType.PurchaseCount => await _leaderboardRepository.GetUserPurchaseCountRankAsync(userId),
-                LeaderboardType.HotProduct => 0, // 商品排行榜不支持用户排名
-                LeaderboardType.PostCount => await _leaderboardRepository.GetUserPostCountRankAsync(userId),
-                LeaderboardType.CommentCount => await _leaderboardRepository.GetUserCommentCountRankAsync(userId),
-                LeaderboardType.Popularity => await _leaderboardRepository.GetUserPopularityRankAsync(userId),
-                _ => 0
+                LeaderboardType.Experience =>
+                    await _leaderboardRepository.GetUserExperienceRankAsync(userId, now),
+                LeaderboardType.PostCount =>
+                    await _leaderboardRepository.GetUserPostCountRankAsync(userId),
+                LeaderboardType.CommentCount =>
+                    await _leaderboardRepository.GetUserCommentCountRankAsync(userId),
+                LeaderboardType.Popularity =>
+                    await _leaderboardRepository.GetUserPopularityRankAsync(userId),
+                _ => throw new InvalidOperationException("用户排名类型策略与服务分派不一致。")
             };
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "获取用户排名失败: type={Type}, userId={UserId}", type, userId);
-            return 0;
+            Log.Error(ex, "获取用户公开排名失败: type={Type}, userId={UserId}", type, userId);
+            throw;
         }
     }
 
@@ -196,377 +197,100 @@ public class LeaderboardService : ILeaderboardService
     public Task<List<LeaderboardTypeVo>> GetLeaderboardTypesAsync()
     {
         var types = LeaderboardTypeConfigs.Values
-            .OrderBy(t => t.VoSortOrder)
+            .Where(type => LeaderboardPublicPolicy.IsPublicType(type.VoType))
+            .OrderBy(type => type.VoSortOrder)
             .ToList();
         return Task.FromResult(types);
     }
 
-    #region 等级排行榜
-
     private async Task<PageModel<UnifiedLeaderboardItemVo>> GetExperienceLeaderboardAsync(
-        int pageIndex, int pageSize, long? currentUserId)
+        int pageIndex,
+        int pageSize,
+        long? currentUserId)
     {
         var now = DateTime.Now;
-        var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
-            whereExpression: e =>
-                (!e.ExpFrozen || (e.FrozenUntil != null && e.FrozenUntil <= now)) &&
-                e.UserId > 0 &&
-                !e.IsDeleted,
-            pageIndex: pageIndex,
-            pageSize: pageSize,
-            orderByExpression: e => e.TotalExp,
-            orderByType: OrderByType.Desc
-        );
-
-        var userIds = pagedData.Select(e => e.UserId).ToList();
-        var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
-        await EnsureLeaderboardUserPublicIdsAsync(users);
-        var userDict = users.ToDictionary(u => u.Id);
-        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
-
-        var levels = pagedData.Select(e => e.CurrentLevel).Distinct().ToList();
-        var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
-        var levelConfigDict = levelConfigs.ToDictionary(l => l.Level);
-
-        var startRank = (pageIndex - 1) * pageSize + 1;
-        var leaderboard = new List<UnifiedLeaderboardItemVo>();
-        var rank = startRank;
-
-        foreach (var exp in pagedData)
-        {
-            if (!userDict.TryGetValue(exp.UserId, out var user))
-            {
-                continue;
-            }
-
-            var item = new UnifiedLeaderboardItemVo
-            {
-                VoLeaderboardType = LeaderboardType.Experience,
-                VoCategory = LeaderboardCategory.User,
-                VoRank = rank,
-                VoUserId = exp.UserId,
-                VoUserPublicId = user.PublicId,
-                VoUserPublicIndex = user.PublicIndex,
-                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(exp.UserId),
-                VoCurrentLevel = exp.CurrentLevel,
-                VoCurrentLevelName = levelConfigDict.TryGetValue(exp.CurrentLevel, out var config)
-                    ? config.LevelName
-                    : $"Lv.{exp.CurrentLevel}",
-                VoThemeColor = levelConfigDict.TryGetValue(exp.CurrentLevel, out var colorConfig)
-                    ? colorConfig.ThemeColor
-                    : "#9E9E9E",
-                VoIsCurrentUser = currentUserId.HasValue && exp.UserId == currentUserId.Value,
-                VoPrimaryValue = exp.TotalExp,
-                VoPrimaryLabel = "总经验值",
-                VoSecondaryValue = exp.CurrentLevel,
-                VoSecondaryLabel = "等级"
-            };
-
-            leaderboard.Add(item);
-            rank++;
-        }
-
-        return CreatePageModel(leaderboard, totalCount, pageIndex, pageSize);
+        var (items, totalCount) = await _leaderboardRepository.GetExperienceRankingAsync(
+            now,
+            pageIndex,
+            pageSize);
+        return await BuildUserLeaderboardAsync(
+            items,
+            totalCount,
+            pageIndex,
+            pageSize,
+            currentUserId,
+            LeaderboardType.Experience,
+            "总经验值");
     }
 
-    private async Task<int> GetExperienceRankAsync(long userId)
+    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetPostCountLeaderboardAsync(
+        int pageIndex,
+        int pageSize,
+        long? currentUserId)
     {
-        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
-        if (userExp == null)
-        {
-            return 0;
-        }
-
-        var now = DateTime.Now;
-        var isFreezeActive = userExp.ExpFrozen && (!userExp.FrozenUntil.HasValue || userExp.FrozenUntil > now);
-        if (isFreezeActive)
-        {
-            return 0;
-        }
-
-        var higherCount = await _userExpRepository.QueryCountAsync(
-            e =>
-                (!e.ExpFrozen || (e.FrozenUntil != null && e.FrozenUntil <= now)) &&
-                e.UserId > 0 &&
-                e.TotalExp > userExp.TotalExp &&
-                !e.IsDeleted
-        );
-
-        return (int)higherCount + 1;
+        var (items, totalCount) = await _leaderboardRepository.GetPostCountRankingAsync(
+            pageIndex,
+            pageSize);
+        return await BuildUserLeaderboardAsync(
+            items,
+            totalCount,
+            pageIndex,
+            pageSize,
+            currentUserId,
+            LeaderboardType.PostCount,
+            "帖子数");
     }
 
-    #endregion
-
-    #region 萝卜余额排行榜
-
-    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetBalanceLeaderboardAsync(
-        int pageIndex, int pageSize, long? currentUserId)
+    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetCommentCountLeaderboardAsync(
+        int pageIndex,
+        int pageSize,
+        long? currentUserId)
     {
-        var (pagedData, totalCount) = await _userBalanceRepository.QueryPageAsync(
-            whereExpression: b => b.UserId > 0 && !b.IsDeleted && b.Balance > 0,
-            pageIndex: pageIndex,
-            pageSize: pageSize,
-            orderByExpression: b => b.Balance,
-            orderByType: OrderByType.Desc
-        );
-
-        var userIds = pagedData.Select(b => b.UserId).ToList();
-        var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
-        await EnsureLeaderboardUserPublicIdsAsync(users);
-        var userDict = users.ToDictionary(u => u.Id);
-        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
-
-        // 获取用户等级信息
-        var userExps = await _userExpRepository.QueryAsync(e => userIds.Contains(e.UserId) && !e.IsDeleted);
-        var userExpDict = userExps.ToDictionary(e => e.UserId);
-
-        var levels = userExps.Select(e => e.CurrentLevel).Distinct().ToList();
-        var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
-        var levelConfigDict = levelConfigs.ToDictionary(l => l.Level);
-
-        var startRank = (pageIndex - 1) * pageSize + 1;
-        var leaderboard = new List<UnifiedLeaderboardItemVo>();
-        var rank = startRank;
-
-        foreach (var balance in pagedData)
-        {
-            if (!userDict.TryGetValue(balance.UserId, out var user))
-            {
-                continue;
-            }
-
-            userExpDict.TryGetValue(balance.UserId, out var userExp);
-            var level = userExp?.CurrentLevel ?? 0;
-
-            var item = new UnifiedLeaderboardItemVo
-            {
-                VoLeaderboardType = LeaderboardType.Balance,
-                VoCategory = LeaderboardCategory.User,
-                VoRank = rank,
-                VoUserId = balance.UserId,
-                VoUserPublicId = user.PublicId,
-                VoUserPublicIndex = user.PublicIndex,
-                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(balance.UserId),
-                VoCurrentLevel = level,
-                VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
-                    ? config.LevelName
-                    : $"Lv.{level}",
-                VoThemeColor = levelConfigDict.TryGetValue(level, out var colorConfig)
-                    ? colorConfig.ThemeColor
-                    : "#9E9E9E",
-                VoIsCurrentUser = currentUserId.HasValue && balance.UserId == currentUserId.Value,
-                VoPrimaryValue = balance.Balance,
-                VoPrimaryLabel = "萝卜余额",
-                VoSecondaryValue = balance.TotalEarned,
-                VoSecondaryLabel = "累计获得"
-            };
-
-            leaderboard.Add(item);
-            rank++;
-        }
-
-        return CreatePageModel(leaderboard, totalCount, pageIndex, pageSize);
+        var (items, totalCount) = await _leaderboardRepository.GetCommentCountRankingAsync(
+            pageIndex,
+            pageSize);
+        return await BuildUserLeaderboardAsync(
+            items,
+            totalCount,
+            pageIndex,
+            pageSize,
+            currentUserId,
+            LeaderboardType.CommentCount,
+            "评论数");
     }
 
-    private async Task<int> GetBalanceRankAsync(long userId)
+    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetPopularityLeaderboardAsync(
+        int pageIndex,
+        int pageSize,
+        long? currentUserId)
     {
-        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
-        if (userBalance == null || userBalance.Balance <= 0) return 0;
-
-        var higherCount = await _userBalanceRepository.QueryCountAsync(
-            b => b.UserId > 0 && b.Balance > userBalance.Balance && !b.IsDeleted
-        );
-
-        return (int)higherCount + 1;
+        var (items, totalCount) = await _leaderboardRepository.GetPopularityRankingAsync(
+            pageIndex,
+            pageSize);
+        return await BuildUserLeaderboardAsync(
+            items,
+            totalCount,
+            pageIndex,
+            pageSize,
+            currentUserId,
+            LeaderboardType.Popularity,
+            "被点赞数");
     }
-
-    #endregion
-
-    #region 萝卜花销排行榜
-
-    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetTotalSpentLeaderboardAsync(
-        int pageIndex, int pageSize, long? currentUserId)
-    {
-        var (pagedData, totalCount) = await _userBalanceRepository.QueryPageAsync(
-            whereExpression: b => b.UserId > 0 && !b.IsDeleted && b.TotalSpent > 0,
-            pageIndex: pageIndex,
-            pageSize: pageSize,
-            orderByExpression: b => b.TotalSpent,
-            orderByType: OrderByType.Desc
-        );
-
-        var userIds = pagedData.Select(b => b.UserId).ToList();
-        var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
-        await EnsureLeaderboardUserPublicIdsAsync(users);
-        var userDict = users.ToDictionary(u => u.Id);
-        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
-
-        // 获取用户等级信息
-        var userExps = await _userExpRepository.QueryAsync(e => userIds.Contains(e.UserId) && !e.IsDeleted);
-        var userExpDict = userExps.ToDictionary(e => e.UserId);
-
-        var levels = userExps.Select(e => e.CurrentLevel).Distinct().ToList();
-        var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
-        var levelConfigDict = levelConfigs.ToDictionary(l => l.Level);
-
-        var startRank = (pageIndex - 1) * pageSize + 1;
-        var leaderboard = new List<UnifiedLeaderboardItemVo>();
-        var rank = startRank;
-
-        foreach (var balance in pagedData)
-        {
-            if (!userDict.TryGetValue(balance.UserId, out var user))
-            {
-                continue;
-            }
-
-            userExpDict.TryGetValue(balance.UserId, out var userExp);
-            var level = userExp?.CurrentLevel ?? 0;
-
-            var item = new UnifiedLeaderboardItemVo
-            {
-                VoLeaderboardType = LeaderboardType.TotalSpent,
-                VoCategory = LeaderboardCategory.User,
-                VoRank = rank,
-                VoUserId = balance.UserId,
-                VoUserPublicId = user.PublicId,
-                VoUserPublicIndex = user.PublicIndex,
-                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(balance.UserId),
-                VoCurrentLevel = level,
-                VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
-                    ? config.LevelName
-                    : $"Lv.{level}",
-                VoThemeColor = levelConfigDict.TryGetValue(level, out var colorConfig)
-                    ? colorConfig.ThemeColor
-                    : "#9E9E9E",
-                VoIsCurrentUser = currentUserId.HasValue && balance.UserId == currentUserId.Value,
-                VoPrimaryValue = balance.TotalSpent,
-                VoPrimaryLabel = "累计花销"
-            };
-
-            leaderboard.Add(item);
-            rank++;
-        }
-
-        return CreatePageModel(leaderboard, totalCount, pageIndex, pageSize);
-    }
-
-    private async Task<int> GetTotalSpentRankAsync(long userId)
-    {
-        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
-        if (userBalance == null || userBalance.TotalSpent <= 0) return 0;
-
-        var higherCount = await _userBalanceRepository.QueryCountAsync(
-            b => b.UserId > 0 && b.TotalSpent > userBalance.TotalSpent && !b.IsDeleted
-        );
-
-        return (int)higherCount + 1;
-    }
-
-    #endregion
-
-    #region 购买数量排行榜
-
-    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetPurchaseCountLeaderboardAsync(
-        int pageIndex, int pageSize, long? currentUserId)
-    {
-        var rankingData = await _leaderboardRepository.GetPurchaseCountRankingAsync(pageIndex, pageSize);
-        var totalCount = await _leaderboardRepository.GetPurchaseCountRankingTotalAsync();
-
-        var userIds = rankingData.Select(r => r.UserId).ToList();
-        var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
-        await EnsureLeaderboardUserPublicIdsAsync(users);
-        var userDict = users.ToDictionary(u => u.Id);
-        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
-
-        // 获取用户等级信息
-        var userExps = await _userExpRepository.QueryAsync(e => userIds.Contains(e.UserId) && !e.IsDeleted);
-        var userExpDict = userExps.ToDictionary(e => e.UserId);
-
-        var levels = userExps.Select(e => e.CurrentLevel).Distinct().ToList();
-        var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
-        var levelConfigDict = levelConfigs.ToDictionary(l => l.Level);
-
-        var startRank = (pageIndex - 1) * pageSize + 1;
-        var leaderboard = new List<UnifiedLeaderboardItemVo>();
-        var rank = startRank;
-
-        foreach (var (userId, totalQuantity) in rankingData)
-        {
-            if (!userDict.TryGetValue(userId, out var user))
-            {
-                continue;
-            }
-
-            userExpDict.TryGetValue(userId, out var userExp);
-            var level = userExp?.CurrentLevel ?? 0;
-
-            var item = new UnifiedLeaderboardItemVo
-            {
-                VoLeaderboardType = LeaderboardType.PurchaseCount,
-                VoCategory = LeaderboardCategory.User,
-                VoRank = rank,
-                VoUserId = userId,
-                VoUserPublicId = user.PublicId,
-                VoUserPublicIndex = user.PublicIndex,
-                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(userId),
-                VoCurrentLevel = level,
-                VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
-                    ? config.LevelName
-                    : $"Lv.{level}",
-                VoThemeColor = levelConfigDict.TryGetValue(level, out var colorConfig)
-                    ? colorConfig.ThemeColor
-                    : "#9E9E9E",
-                VoIsCurrentUser = currentUserId.HasValue && userId == currentUserId.Value,
-                VoPrimaryValue = totalQuantity,
-                VoPrimaryLabel = "购买数量"
-            };
-
-            leaderboard.Add(item);
-            rank++;
-        }
-
-        return CreatePageModel(leaderboard, totalCount, pageIndex, pageSize);
-    }
-
-    #endregion
-
-    #region 热门商品排行榜
 
     private async Task<PageModel<UnifiedLeaderboardItemVo>> GetHotProductLeaderboardAsync(
-        int pageIndex, int pageSize)
+        int pageIndex,
+        int pageSize)
     {
-        var (pagedData, totalCount) = await _productRepository.QueryPageAsync(
-            whereExpression: p => p.IsEnabled && p.IsOnSale && !p.IsDeleted && p.SoldCount > 0,
-            pageIndex: pageIndex,
-            pageSize: pageSize,
-            orderByExpression: p => p.SoldCount,
-            orderByType: OrderByType.Desc
-        );
-
+        var (products, totalCount) = await _leaderboardRepository.GetHotProductRankingAsync(
+            pageIndex,
+            pageSize);
         var startRank = (pageIndex - 1) * pageSize + 1;
-        var leaderboard = new List<UnifiedLeaderboardItemVo>();
-        var rank = startRank;
-
-        foreach (var product in pagedData)
-        {
-            var item = new UnifiedLeaderboardItemVo
+        var items = products
+            .Select((product, index) => new UnifiedLeaderboardItemVo
             {
                 VoLeaderboardType = LeaderboardType.HotProduct,
                 VoCategory = LeaderboardCategory.Product,
-                VoRank = rank,
+                VoRank = startRank + index,
                 VoProductId = product.Id,
                 VoProductName = product.Name,
                 VoProductIcon = ResolveAttachmentUrl(product.IconAttachmentId),
@@ -575,87 +299,13 @@ public class LeaderboardService : ILeaderboardService
                 VoPrimaryLabel = "销量",
                 VoSecondaryValue = product.Price,
                 VoSecondaryLabel = "价格"
-            };
-
-            leaderboard.Add(item);
-            rank++;
-        }
-
-        return CreatePageModel(leaderboard, totalCount, pageIndex, pageSize);
+            })
+            .ToList();
+        return CreatePageModel(items, totalCount, pageIndex, pageSize);
     }
 
-    #endregion
-
-    #region 发帖达人排行榜
-
-    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetPostCountLeaderboardAsync(
-        int pageIndex, int pageSize, long? currentUserId)
-    {
-        var rankingData = await _leaderboardRepository.GetPostCountRankingAsync(pageIndex, pageSize);
-        var totalCount = await _leaderboardRepository.GetPostCountRankingTotalAsync();
-
-        return await BuildUserLeaderboardAsync(
-            rankingData.Select(r => (r.UserId, (long)r.PostCount)).ToList(),
-            totalCount,
-            pageIndex,
-            pageSize,
-            currentUserId,
-            LeaderboardType.PostCount,
-            "帖子数"
-        );
-    }
-
-    #endregion
-
-    #region 评论达人排行榜
-
-    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetCommentCountLeaderboardAsync(
-        int pageIndex, int pageSize, long? currentUserId)
-    {
-        var rankingData = await _leaderboardRepository.GetCommentCountRankingAsync(pageIndex, pageSize);
-        var totalCount = await _leaderboardRepository.GetCommentCountRankingTotalAsync();
-
-        return await BuildUserLeaderboardAsync(
-            rankingData.Select(r => (r.UserId, (long)r.CommentCount)).ToList(),
-            totalCount,
-            pageIndex,
-            pageSize,
-            currentUserId,
-            LeaderboardType.CommentCount,
-            "评论数"
-        );
-    }
-
-    #endregion
-
-    #region 人气排行榜
-
-    private async Task<PageModel<UnifiedLeaderboardItemVo>> GetPopularityLeaderboardAsync(
-        int pageIndex, int pageSize, long? currentUserId)
-    {
-        var rankingData = await _leaderboardRepository.GetPopularityRankingAsync(pageIndex, pageSize);
-        var totalCount = await _leaderboardRepository.GetPopularityRankingTotalAsync();
-
-        return await BuildUserLeaderboardAsync(
-            rankingData.Select(r => (r.UserId, (long)r.TotalLikes)).ToList(),
-            totalCount,
-            pageIndex,
-            pageSize,
-            currentUserId,
-            LeaderboardType.Popularity,
-            "被点赞数"
-        );
-    }
-
-    #endregion
-
-    #region 辅助方法
-
-    /// <summary>
-    /// 构建用户类排行榜（通用方法）
-    /// </summary>
     private async Task<PageModel<UnifiedLeaderboardItemVo>> BuildUserLeaderboardAsync(
-        List<(long UserId, long Value)> rankingData,
+        IReadOnlyList<UserLeaderboardMetric> rankingData,
         int totalCount,
         int pageIndex,
         int pageSize,
@@ -663,148 +313,97 @@ public class LeaderboardService : ILeaderboardService
         LeaderboardType type,
         string primaryLabel)
     {
-        var userIds = rankingData.Select(r => r.UserId).ToList();
-        var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
-        await EnsureLeaderboardUserPublicIdsAsync(users);
-        var userDict = users.ToDictionary(u => u.Id);
-        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(userIds);
+        var rankingUserIds = rankingData.Select(item => item.UserId).ToList();
+        var users = await _leaderboardRepository.GetEligibleUsersAsync(rankingUserIds);
+        var userMap = users.ToDictionary(user => user.UserId);
+        var eligibleUserIds = userMap.Keys.ToList();
+        var avatarUrlMap = await LoadUserAvatarUrlMapAsync(eligibleUserIds);
 
-        // 获取用户等级信息
-        var userExps = await _userExpRepository.QueryAsync(e => userIds.Contains(e.UserId) && !e.IsDeleted);
-        var userExpDict = userExps.ToDictionary(e => e.UserId);
-
-        var levels = userExps.Select(e => e.CurrentLevel).Distinct().ToList();
-        var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
-        var levelConfigDict = levelConfigs.ToDictionary(l => l.Level);
+        var userExperiences = eligibleUserIds.Count == 0
+            ? []
+            : await _userExperienceRepository.QueryAsync(experience =>
+                eligibleUserIds.Contains(experience.UserId) &&
+                !experience.IsDeleted);
+        var userExperienceMap = userExperiences.ToDictionary(experience => experience.UserId);
+        var levels = userExperiences
+            .Select(experience => experience.CurrentLevel)
+            .Distinct()
+            .ToList();
+        var levelConfigs = levels.Count == 0
+            ? []
+            : await _levelConfigRepository.QueryAsync(config => levels.Contains(config.Level));
+        var levelConfigMap = levelConfigs.ToDictionary(config => config.Level);
 
         var startRank = (pageIndex - 1) * pageSize + 1;
-        var leaderboard = new List<UnifiedLeaderboardItemVo>();
-        var rank = startRank;
-
-        foreach (var (userId, value) in rankingData)
+        var leaderboard = new List<UnifiedLeaderboardItemVo>(rankingData.Count);
+        for (var index = 0; index < rankingData.Count; index++)
         {
-            if (!userDict.TryGetValue(userId, out var user))
+            var metric = rankingData[index];
+            if (!userMap.TryGetValue(metric.UserId, out var user))
             {
                 continue;
             }
 
-            userExpDict.TryGetValue(userId, out var userExp);
-            var level = userExp?.CurrentLevel ?? 0;
+            userExperienceMap.TryGetValue(metric.UserId, out var userExperience);
+            var level = userExperience?.CurrentLevel ?? 0;
+            var publicId = User.HasPublicIdFormat(user.PublicId)
+                ? user.PublicId!.Trim().ToLowerInvariant()
+                : null;
+            var publicIndex = User.HasAssignedPublicIndex(user.PublicIndex)
+                ? user.PublicIndex
+                : null;
 
-            var item = new UnifiedLeaderboardItemVo
+            leaderboard.Add(new UnifiedLeaderboardItemVo
             {
                 VoLeaderboardType = type,
                 VoCategory = LeaderboardCategory.User,
-                VoRank = rank,
-                VoUserId = userId,
-                VoUserPublicId = user.PublicId,
-                VoUserPublicIndex = user.PublicIndex,
-                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(userId),
+                VoRank = startRank + index,
+                VoUserId = metric.UserId,
+                VoUserPublicId = publicId,
+                VoUserPublicIndex = publicIndex,
+                VoUserName = User.NormalizeDisplayName(user.UserName, user.UserId),
+                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.UserId),
+                VoUserDisplayHandle = User.BuildDisplayHandle(
+                    user.UserName,
+                    publicIndex,
+                    user.UserId),
+                VoAvatarUrl = avatarUrlMap.GetValueOrDefault(metric.UserId),
                 VoCurrentLevel = level,
-                VoCurrentLevelName = levelConfigDict.TryGetValue(level, out var config)
-                    ? config.LevelName
+                VoCurrentLevelName = levelConfigMap.TryGetValue(level, out var levelConfig)
+                    ? levelConfig.LevelName
                     : $"Lv.{level}",
-                VoThemeColor = levelConfigDict.TryGetValue(level, out var colorConfig)
-                    ? colorConfig.ThemeColor
+                VoThemeColor = levelConfigMap.TryGetValue(level, out var themeConfig)
+                    ? themeConfig.ThemeColor
                     : "#9E9E9E",
-                VoIsCurrentUser = currentUserId.HasValue && userId == currentUserId.Value,
-                VoPrimaryValue = value,
-                VoPrimaryLabel = primaryLabel
-            };
-
-            leaderboard.Add(item);
-            rank++;
+                VoIsCurrentUser = currentUserId.HasValue && metric.UserId == currentUserId.Value,
+                VoPrimaryValue = metric.Value,
+                VoPrimaryLabel = primaryLabel,
+                VoSecondaryValue = type == LeaderboardType.Experience ? level : null,
+                VoSecondaryLabel = type == LeaderboardType.Experience ? "等级" : null
+            });
         }
 
         return CreatePageModel(leaderboard, totalCount, pageIndex, pageSize);
     }
 
-    /// <summary>
-    /// 创建分页模型
-    /// </summary>
     private static PageModel<UnifiedLeaderboardItemVo> CreatePageModel(
         List<UnifiedLeaderboardItemVo> data,
         int totalCount,
         int pageIndex,
         int pageSize)
     {
-        var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
-
         return new PageModel<UnifiedLeaderboardItemVo>
         {
             Page = pageIndex,
             PageSize = pageSize,
             DataCount = totalCount,
-            PageCount = pageCount,
+            PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
             Data = data
         };
     }
 
-    private async Task EnsureLeaderboardUserPublicIdsAsync(List<User> users)
-    {
-        foreach (var user in users)
-        {
-            var missingPublicId = string.IsNullOrWhiteSpace(user.PublicId);
-            var missingPublicIndex = !User.HasAssignedPublicIndex(user.PublicIndex);
-
-            if (!missingPublicId)
-            {
-                user.PublicId = user.PublicId?.Trim();
-            }
-
-            if (!missingPublicId && !missingPublicIndex)
-            {
-                continue;
-            }
-
-            var publicId = missingPublicId ? User.EnsurePublicId(user.PublicId) : user.PublicId;
-            var publicIndex = missingPublicIndex ? await AllocateNextPublicIndexAsync() : user.PublicIndex;
-            var affectedRows = await _userRepository.UpdateColumnsAsync(
-                item => new User
-                {
-                    PublicId = publicId,
-                    PublicIndex = publicIndex,
-                    UpdateTime = DateTime.Now
-                },
-                item => item.Id == user.Id &&
-                        !item.IsDeleted &&
-                        ((missingPublicId && (item.PublicId == null || item.PublicId == string.Empty)) ||
-                         (missingPublicIndex && (item.PublicIndex == null || item.PublicIndex <= 0))));
-
-            if (affectedRows > 0)
-            {
-                user.PublicId = publicId;
-                user.PublicIndex = publicIndex;
-                continue;
-            }
-
-            var refreshedUser = await _userRepository.QueryByIdAsync(user.Id);
-            if (!string.IsNullOrWhiteSpace(refreshedUser?.PublicId))
-            {
-                user.PublicId = refreshedUser.PublicId.Trim();
-            }
-
-            if (User.HasAssignedPublicIndex(refreshedUser?.PublicIndex))
-            {
-                user.PublicIndex = refreshedUser!.PublicIndex;
-            }
-        }
-    }
-
-    private async Task<long> AllocateNextPublicIndexAsync()
-    {
-        var maxPublicIndexTask = _userRepository.QueryMaxAsync<long?>(
-            item => item.PublicIndex,
-            item => item.PublicIndex >= User.PublicIndexStart);
-        var maxPublicIndex = maxPublicIndexTask == null ? null : await maxPublicIndexTask;
-
-        return maxPublicIndex.GetValueOrDefault(User.PublicIndexStart - 1) + 1;
-    }
-
-    private async Task<Dictionary<long, string>> LoadUserAvatarUrlMapAsync(IReadOnlyCollection<long> userIds)
+    private async Task<Dictionary<long, string>> LoadUserAvatarUrlMapAsync(
+        IReadOnlyCollection<long> userIds)
     {
         if (userIds.Count == 0)
         {
@@ -812,7 +411,6 @@ public class LeaderboardService : ILeaderboardService
         }
 
         var avatarMap = await _attachmentService.GetLatestAvatarAssetMapAsync(userIds);
-
         return avatarMap
             .Where(item => !string.IsNullOrWhiteSpace(item.Value.Url))
             .ToDictionary(item => item.Key, item => item.Value.Url);
@@ -820,13 +418,8 @@ public class LeaderboardService : ILeaderboardService
 
     private string? ResolveAttachmentUrl(long? attachmentId)
     {
-        if (!attachmentId.HasValue || attachmentId.Value <= 0)
-        {
-            return null;
-        }
-
-        return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value);
+        return attachmentId is > 0
+            ? _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value)
+            : null;
     }
-
-    #endregion
 }

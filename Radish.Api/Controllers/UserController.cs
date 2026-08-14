@@ -46,6 +46,7 @@ public class UserController : ControllerBase
     private readonly IUserTimePreferenceService _userTimePreferenceService;
     private readonly IUserAdornmentService _userAdornmentService;
     private readonly IPetService _petService;
+    private readonly IExperienceService _experienceService;
     private readonly TimeOptions _timeOptions;
 
     public UserController(
@@ -58,7 +59,8 @@ public class UserController : ControllerBase
         IAttachmentService attachmentService,
         IOptions<TimeOptions> timeOptions,
         IUserAdornmentService userAdornmentService,
-        IPetService petService)
+        IPetService petService,
+        IExperienceService experienceService)
     {
         _userService = userService;
         _currentUserAccessor = currentUserAccessor;
@@ -70,6 +72,7 @@ public class UserController : ControllerBase
         _timeOptions = timeOptions.Value;
         _userAdornmentService = userAdornmentService;
         _petService = petService;
+        _experienceService = experienceService;
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
@@ -77,9 +80,7 @@ public class UserController : ControllerBase
     /// <summary>
     /// 获取全部用户列表
     /// </summary>
-    /// <param name="pageIndex">页码（从1开始）</param>
-    /// <param name="pageSize">每页数量</param>
-    /// <param name="keyword">搜索关键词</param>
+    /// <param name="query">分页、关键词、启用状态与角色筛选。</param>
     /// <returns>包含用户列表的响应对象</returns>
     /// <remarks>
     /// 查询用户信息，支持分页和搜索，不包含已删除的用户。
@@ -96,40 +97,25 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
-    public async Task<MessageModel> GetUserList(int pageIndex = 1, int pageSize = 20, string? keyword = null)
+    public async Task<MessageModel> GetUserList([FromQuery] ConsoleUserListQueryDto query)
     {
-        // 分页查询用户
-        (List<UserVo> data, int totalCount) result;
-
-        if (!string.IsNullOrWhiteSpace(keyword))
-        {
-            // 有搜索关键词时
-            result = await _userService.QueryPageAsync(
-                u => !u.IsDeleted &&
-                     (u.UserName.Contains(keyword) ||
-                      (u.PublicId != null && u.PublicId.Contains(keyword)) ||
-                      (u.UserEmail != null && u.UserEmail.Contains(keyword))),
-                pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
-        }
-        else
-        {
-            // 无搜索关键词时
-            result = await _userService.QueryPageAsync(
-                u => !u.IsDeleted,
-                pageIndex, pageSize, u => u.Id, SqlSugar.OrderByType.Desc);
-        }
-
-        var userVos = result.data;
-        var totalCount = result.totalCount;
+        var safePageIndex = query.PageIndex < 1 ? 1 : query.PageIndex;
+        var safePageSize = query.PageSize <= 0 ? 20 : Math.Min(query.PageSize, 100);
+        query.PageIndex = safePageIndex;
+        query.PageSize = safePageSize;
+        query.Keyword = query.Keyword?.Trim();
+        query.RoleName = query.RoleName?.Trim();
+        var result = await _userService.GetConsoleUserPageAsync(query);
+        var userVos = result.Data;
 
         await FillUserAvatarUrlsAsync(userVos);
 
         var responseResult = new VoPagedResult<UserVo>
         {
             VoItems = userVos,
-            VoTotal = totalCount,
-            VoPageIndex = pageIndex,
-            VoPageSize = pageSize
+            VoTotal = result.Total,
+            VoPageIndex = safePageIndex,
+            VoPageSize = safePageSize
         };
 
         return new MessageModel
@@ -203,7 +189,7 @@ public class UserController : ControllerBase
     {
         var localizer = HttpContext.RequestServices.GetRequiredService<IStringLocalizer<Errors>>();
 
-        var userInfo = await _userService.QueryFirstAsync(d => d.Id == id && d.IsDeleted == false);
+        var userInfo = await _userService.GetConsoleUserDetailAsync(id);
 
         if (userInfo == null)
         {
@@ -226,6 +212,30 @@ public class UserController : ControllerBase
             userInfo,
             "User.GetByIdSuccess",
             "info.user.get_by_id_success");
+    }
+
+    /// <summary>获取指定用户的角色与派生权限快照。</summary>
+    [HttpGet("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.RolesView)]
+    [ProducesResponseType(typeof(MessageModel<ConsoleUserAuthorizationVo>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(MessageModel), StatusCodes.Status404NotFound)]
+    public async Task<MessageModel<ConsoleUserAuthorizationVo>> GetUserAuthorization(long id)
+    {
+        var authorization = await _userService.GetConsoleUserAuthorizationAsync(id);
+        if (authorization == null)
+        {
+            return new MessageModel<ConsoleUserAuthorizationVo>
+            {
+                IsSuccess = false,
+                StatusCode = (int)HttpStatusCodeEnum.NotFound,
+                MessageInfo = "用户不存在",
+                Code = "User.NotFound",
+                MessageKey = "error.user.not_found"
+            };
+        }
+
+        return MessageModel<ConsoleUserAuthorizationVo>.Success("获取成功", authorization);
     }
 
     /// <summary>
@@ -666,6 +676,7 @@ public class UserController : ControllerBase
         var avatar = await _attachmentService.GetLatestAvatarAssetAsync(user.Uuid);
         var adornment = await _userAdornmentService.GetUserAdornmentAsync(user.Uuid);
         var pet = await _petService.GetPublicCardAsync(user.Uuid, user.VoTenantId);
+        var publicLevel = await ResolvePublicLevelAsync(user.Uuid);
 
         var profile = new UserPublicProfileVo
         {
@@ -676,6 +687,8 @@ public class UserController : ControllerBase
             VoDisplayName = user.VoDisplayName,
             VoDisplayHandle = user.VoDisplayHandle,
             VoCreateTime = user.VoCreateTime,
+            VoCurrentLevel = publicLevel.Level,
+            VoCurrentLevelName = publicLevel.LevelName,
             VoAvatarUrl = avatar?.Url,
             VoAvatarThumbnailUrl = avatar?.ThumbnailUrl,
             VoAdornment = adornment,
@@ -689,6 +702,18 @@ public class UserController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = profile
         };
+    }
+
+    private async Task<(int Level, string LevelName)> ResolvePublicLevelAsync(long userId)
+    {
+        var experiences = await _experienceService.GetUserExperiencesAsync([userId]);
+        if (experiences.TryGetValue(userId, out var experience))
+        {
+            return (experience.VoCurrentLevel, experience.VoCurrentLevelName);
+        }
+
+        var initialLevel = await _experienceService.GetLevelConfigAsync(0);
+        return (0, initialLevel?.VoLevelName ?? "凡人");
     }
 
     /// <summary>
@@ -727,138 +752,40 @@ public class UserController : ControllerBase
     public async Task<MessageModel> UpdateMyProfile([FromBody] UpdateMyProfileDto dto)
     {
         var userId = Current.UserId;
-
-        var normalizedUserName = string.IsNullOrWhiteSpace(dto.UserName) ? null : dto.UserName.Trim();
-        var normalizedUserEmail = string.IsNullOrWhiteSpace(dto.UserEmail) ? null : dto.UserEmail.Trim();
-        var normalizedAddress = string.IsNullOrWhiteSpace(dto.Address) ? null : dto.Address.Trim();
-        var sex = dto.Sex;
-        var age = dto.Age;
-        var birth = dto.Birth;
-        var now = DateTime.UtcNow;
-
-        if (normalizedUserEmail != null)
+        bool updated;
+        try
         {
-            if (normalizedUserEmail.Length > 200)
-            {
-                return new MessageModel
+            updated = await _userService.UpdateMyProfileAsync(
+                userId,
+                dto,
+                new UserDisplayNameChangeContext
                 {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "邮箱长度不能超过 200"
-                };
-            }
-
-            try
-            {
-                _ = new System.Net.Mail.MailAddress(normalizedUserEmail);
-            }
-            catch
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "邮箱格式不正确"
-                };
-            }
+                    OperatorUserId = userId,
+                    OperatorUserName = Current.UserName,
+                    Source = UserDisplayNameChangeSources.Profile,
+                    Reason = "用户个人资料修改"
+                });
         }
-
-        if (normalizedAddress != null && normalizedAddress.Length > 2000)
+        catch (ArgumentException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "地址长度不能超过 2000"
+                MessageInfo = ex.Message
             };
         }
-
-        if (sex.HasValue && (sex.Value < (int)UserSexEnum.Unknown || sex.Value > (int)UserSexEnum.Female))
+        catch (InvalidOperationException ex)
         {
             return new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "性别值不合法"
+                MessageInfo = ex.Message
             };
         }
 
-        if (age.HasValue && age.Value < 0)
-        {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "年龄不能为负数"
-            };
-        }
-
-        if (normalizedUserEmail != null)
-        {
-            var emailExists = await _userService.QueryExistsAsync(u =>
-                u.UserEmail == normalizedUserEmail &&
-                !u.IsDeleted &&
-                u.Id != userId);
-
-            if (emailExists)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = "邮箱已被占用"
-                };
-            }
-        }
-
-        if (normalizedUserName != null)
-        {
-            try
-            {
-                await _userService.ChangeDisplayNameAsync(
-                    userId,
-                    normalizedUserName,
-                    new UserDisplayNameChangeContext
-                    {
-                        OperatorUserId = userId,
-                        OperatorUserName = Current.UserName,
-                        Source = UserDisplayNameChangeSources.Profile,
-                        Reason = "用户个人资料修改"
-                    });
-            }
-            catch (ArgumentException ex)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = ex.Message
-                };
-            }
-            catch (InvalidOperationException ex)
-            {
-                return new MessageModel
-                {
-                    IsSuccess = false,
-                    StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                    MessageInfo = ex.Message
-                };
-            }
-        }
-
-        var affectedRows = await _userService.UpdateColumnsAsync(
-            u => new User
-            {
-                UserEmail = normalizedUserEmail ?? u.UserEmail,
-                UserSex = sex ?? u.UserSex,
-                UserAge = age ?? u.UserAge,
-                UserBirth = birth ?? u.UserBirth,
-                UserAddress = normalizedAddress ?? u.UserAddress,
-                UpdateTime = now
-            },
-            u => u.Id == userId && !u.IsDeleted);
-
-        if (affectedRows <= 0)
+        if (!updated)
         {
             return new MessageModel
             {

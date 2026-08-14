@@ -25,6 +25,7 @@ export interface RoleAuthorizationSnapshotVo {
   voRoleName: string;
   voRoleDescription: string;
   voRoleIsEnabled: boolean;
+  voRoleIsBuiltIn: boolean;
   voLastModifyTime?: string;
   voGrantedResourceIds: string[];
   voGrantedPermissionKeys: string[];

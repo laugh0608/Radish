@@ -6,6 +6,7 @@ using Radish.Common.CacheTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
+using Radish.Model.ViewModels;
 using Radish.Service;
 using Radish.Shared.CustomEnum;
 using Xunit;
@@ -95,6 +96,56 @@ public class PublicHeadSnapshotServiceTest
         var service = CreateService(cache, postRepository: postRepository);
 
         var snapshot = await service.GetForumPostSnapshotAsync("draft", "https://example.test");
+
+        Assert.Null(snapshot);
+    }
+
+    [Fact]
+    public async Task GetForumTagSnapshotAsync_Should_Build_Indexable_Tag_Head_Snapshot()
+    {
+        var cache = CreateCacheMock();
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        tagService
+            .Setup(service => service.GetPublicTagBySlugAsync("csharp"))
+            .ReturnsAsync(new TagVo
+            {
+                VoId = 5001,
+                VoName = "C#",
+                VoSlug = "csharp",
+                VoDescription = "C# 技术讨论",
+                VoPostCount = 3,
+                VoCreateTime = new DateTime(2026, 5, 1, 8, 0, 0, DateTimeKind.Utc),
+                VoModifyTime = new DateTime(2026, 5, 5, 8, 0, 0, DateTimeKind.Utc)
+            });
+        var service = CreateService(cache, tagService: tagService);
+
+        var snapshot = await service.GetForumTagSnapshotAsync("csharp", "https://example.test/");
+
+        Assert.NotNull(snapshot);
+        Assert.Equal("C# - Radish 论坛", snapshot.VoTitle);
+        Assert.Equal("https://example.test/forum/tag/csharp", snapshot.VoCanonicalUrl);
+        Assert.Equal("website", snapshot.VoOpenGraphType);
+        Assert.Contains("\"@type\":\"CollectionPage\"", snapshot.VoJsonLd);
+        Assert.Contains("\"dateModified\":\"2026-05-05T08:00:00Z\"", snapshot.VoJsonLd);
+    }
+
+    [Fact]
+    public async Task GetForumTagSnapshotAsync_Should_Not_Index_Tag_Without_Public_Post()
+    {
+        var cache = CreateCacheMock();
+        var tagService = new Mock<ITagService>(MockBehavior.Strict);
+        tagService
+            .Setup(service => service.GetPublicTagBySlugAsync("empty"))
+            .ReturnsAsync(new TagVo
+            {
+                VoId = 5002,
+                VoName = "空标签",
+                VoSlug = "empty",
+                VoPostCount = 0
+            });
+        var service = CreateService(cache, tagService: tagService);
+
+        var snapshot = await service.GetForumTagSnapshotAsync("empty", "https://example.test/");
 
         Assert.Null(snapshot);
     }
@@ -201,13 +252,15 @@ public class PublicHeadSnapshotServiceTest
         Mock<IBaseRepository<Post>>? postRepository = null,
         Mock<IBaseRepository<WikiDocument>>? wikiDocumentRepository = null,
         Mock<IBaseRepository<Product>>? productRepository = null,
-        Mock<IAttachmentUrlResolver>? attachmentUrlResolver = null)
+        Mock<IAttachmentUrlResolver>? attachmentUrlResolver = null,
+        Mock<ITagService>? tagService = null)
     {
         return new PublicHeadSnapshotService(
             cache.Object,
             (postRepository ?? new Mock<IBaseRepository<Post>>(MockBehavior.Strict)).Object,
             (wikiDocumentRepository ?? new Mock<IBaseRepository<WikiDocument>>(MockBehavior.Strict)).Object,
             (productRepository ?? new Mock<IBaseRepository<Product>>(MockBehavior.Strict)).Object,
-            (attachmentUrlResolver ?? new Mock<IAttachmentUrlResolver>(MockBehavior.Strict)).Object);
+            (attachmentUrlResolver ?? new Mock<IAttachmentUrlResolver>(MockBehavior.Strict)).Object,
+            (tagService ?? new Mock<ITagService>(MockBehavior.Strict)).Object);
     }
 }

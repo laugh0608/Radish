@@ -84,6 +84,33 @@ export function isSameLongId(left: LongId | null | undefined, right: LongId | nu
   return String(left) === String(right);
 }
 
+export function normalizeForumTagNames(tagNames: string[]): string[] {
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+  for (const tagName of tagNames) {
+    const trimmed = tagName.trim();
+    const normalizedKey = trimmed.toLowerCase();
+    if (!trimmed || seen.has(normalizedKey)) {
+      continue;
+    }
+    seen.add(normalizedKey);
+    normalized.push(trimmed);
+  }
+  return normalized;
+}
+
+export function collectForumCommentIds(rootComments: CommentNode[]): LongId[] {
+  const ids: LongId[] = [];
+  const visit = (items: CommentNode[]) => {
+    for (const item of items) {
+      ids.push(item.voId);
+      visit(item.voChildren ?? []);
+    }
+  };
+  visit(rootComments);
+  return ids;
+}
+
 export function getForumPostRouteIdentifier(
   post: Pick<PostItem, 'voId' | 'voPublicId'> | Pick<PostDetail, 'voId' | 'voPublicId'>
 ): string {

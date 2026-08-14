@@ -405,8 +405,12 @@ public sealed partial class ContentModerationCaseRepository
                 await RestoreCommentAsync(moderationCase, sourceAction, command),
             ContentReportTargetTypeEnum.PostQuickReply =>
                 await RestoreQuickReplyAsync(moderationCase, sourceAction, command),
+            ContentReportTargetTypeEnum.PostAnswer =>
+                await RestoreAnswerAsync(moderationCase, sourceAction, command),
             ContentReportTargetTypeEnum.Product =>
                 await RestoreProductAsync(moderationCase, sourceAction, command),
+            ContentReportTargetTypeEnum.ProductReview =>
+                await RestoreProductReviewAsync(moderationCase, sourceAction, command),
             _ => throw new ContentModerationTargetActionException("Unsupported")
         };
     }
@@ -534,6 +538,76 @@ public sealed partial class ContentModerationCaseRepository
         return affected == 1 ? ("Restored", true, null) : ("TargetChanged", false, null);
     }
 
+    private async Task<(string, bool, int?)> RestoreAnswerAsync(
+        ContentModerationCase moderationCase,
+        ContentModerationTargetAction sourceAction,
+        ContentModerationAppealReliefCommand command)
+    {
+        var answer = await DbProtectedClient.Queryable<PostAnswer>()
+            .Where(item => item.Id == moderationCase.TargetContentId && item.TenantId == command.TenantId)
+            .FirstAsync();
+        if (answer == null ||
+            answer.IsEnabled ||
+            answer.ModerationTargetActionId != sourceAction.Id ||
+            answer.IsDeleted)
+        {
+            return ("TargetChanged", false, answer?.ContentRevision);
+        }
+
+        var parentAvailable = await DbProtectedClient.Queryable<Post>()
+            .AnyAsync(item =>
+                item.Id == answer.PostId &&
+                item.TenantId == command.TenantId &&
+                item.IsPublished &&
+                item.IsEnabled &&
+                !item.IsDeleted);
+        if (!parentAvailable)
+        {
+            return ("ParentUnavailable", false, answer.ContentRevision);
+        }
+
+        var affected = await DbProtectedClient.Updateable<PostAnswer>()
+            .SetColumns(item => new PostAnswer
+            {
+                IsEnabled = true,
+                IsAccepted = false,
+                ModerationTargetActionId = null,
+                ModifyTime = command.NowUtc,
+                ModifyBy = command.OperatorName,
+                ModifyId = command.OperatorUserId
+            })
+            .Where(item =>
+                item.Id == answer.Id &&
+                item.TenantId == command.TenantId &&
+                !item.IsEnabled &&
+                !item.IsDeleted &&
+                item.ModerationTargetActionId == sourceAction.Id)
+            .ExecuteCommandAsync();
+        if (affected == 1)
+        {
+            var questionAffected = await DbProtectedClient.Updateable<PostQuestion>()
+                .SetColumns(item => new PostQuestion
+                {
+                    AnswerCount = item.AnswerCount + 1,
+                    ModifyTime = command.NowUtc,
+                    ModifyBy = command.OperatorName,
+                    ModifyId = command.OperatorUserId
+                })
+                .Where(item =>
+                    item.TenantId == command.TenantId &&
+                    item.PostId == answer.PostId &&
+                    !item.IsDeleted)
+                .ExecuteCommandAsync();
+            if (questionAffected != 1)
+            {
+                throw new ContentModerationTargetActionException("ParentUnavailable");
+            }
+        }
+        return affected == 1
+            ? ("Restored", true, answer.ContentRevision)
+            : ("TargetChanged", false, answer.ContentRevision);
+    }
+
     private async Task<(string, bool, int?)> RestoreProductAsync(
         ContentModerationCase moderationCase,
         ContentModerationTargetAction sourceAction,
@@ -577,6 +651,58 @@ public sealed partial class ContentModerationCaseRepository
         return affected == 1
             ? ("Restored", true, product.Version + 1)
             : ("TargetChanged", false, product.Version);
+    }
+
+    private async Task<(string, bool, int?)> RestoreProductReviewAsync(
+        ContentModerationCase moderationCase,
+        ContentModerationTargetAction sourceAction,
+        ContentModerationAppealReliefCommand command)
+    {
+        var review = await DbProtectedClient.Queryable<ProductReview>()
+            .Where(item => item.Id == moderationCase.TargetContentId && item.TenantId == command.TenantId)
+            .FirstAsync();
+        if (review == null ||
+            !review.IsDeleted ||
+            review.ModerationTargetActionId != sourceAction.Id ||
+            !sourceAction.ResultTargetVersion.HasValue ||
+            review.Version != sourceAction.ResultTargetVersion.Value)
+        {
+            return ("TargetChanged", false, review?.Version);
+        }
+
+        var productAvailable = await DbProtectedClient.Queryable<Product>()
+            .AnyAsync(item =>
+                item.Id == review.ProductId &&
+                (item.TenantId == command.TenantId || item.TenantId == 0) &&
+                item.IsEnabled &&
+                !item.IsDeleted);
+        if (!productAvailable)
+        {
+            return ("ParentUnavailable", false, review.Version);
+        }
+
+        var affected = await DbProtectedClient.Updateable<ProductReview>()
+            .SetColumns(item => new ProductReview
+            {
+                IsDeleted = false,
+                ModerationTargetActionId = null,
+                DeletedAt = null,
+                DeletedBy = null,
+                Version = item.Version + 1,
+                ModifyTime = command.NowUtc,
+                ModifyBy = command.OperatorName,
+                ModifyId = command.OperatorUserId
+            })
+            .Where(item =>
+                item.Id == review.Id &&
+                item.TenantId == command.TenantId &&
+                item.IsDeleted &&
+                item.ModerationTargetActionId == sourceAction.Id &&
+                item.Version == sourceAction.ResultTargetVersion.Value)
+            .ExecuteCommandAsync();
+        return affected == 1
+            ? ("Restored", true, review.Version + 1)
+            : ("TargetChanged", false, review.Version);
     }
 
     private async Task<UserModerationAction?> RestoreUserPolicyAsync(

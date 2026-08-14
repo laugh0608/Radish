@@ -38,8 +38,89 @@
   gap: 10px;
 }
 
+.user-detail-source-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-detail-source-status > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--console-text-secondary);
+}
+
+.user-detail-metric-notices:empty {
+  display: none;
+}
+
+.user-detail-read-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: 10px;
+  background: var(--console-bg-muted);
+  color: var(--console-text-secondary);
+}
+
+.user-detail-read-notice--stale {
+  border-color: var(--console-warning-border);
+  color: var(--console-warning-text);
+}
+
+.user-detail-permission-summary {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--console-border-subtle);
+  color: var(--console-text-secondary);
+}
+
+.user-detail-permission-summary > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.user-detail-permission-summary code {
+  max-width: 100%;
+  padding: 3px 6px;
+  border-radius: 6px;
+  background: var(--console-bg-muted);
+  overflow-wrap: anywhere;
+}
+
 @media (max-width: 768px) {
   .user-detail-page .admin-feature-header {
     align-items: flex-start;
+  }
+
+  .user-detail-page .admin-table-layout {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .user-detail-page .admin-table-main {
+    order: 1;
+  }
+
+  .user-detail-page .admin-table-aside {
+    order: 2;
+  }
+
+  .user-detail-page .ant-descriptions-view table,
+  .user-detail-page .ant-descriptions-row {
+    display: block;
+  }
+
+  .user-detail-page .ant-descriptions-item {
+    display: block;
+    padding-bottom: 10px;
   }
 }

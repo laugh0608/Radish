@@ -64,6 +64,7 @@ public class ShopProfile : Profile
             .ForMember(dest => dest.ModifyTime, opt => opt.Ignore())
             .ForMember(dest => dest.ModifyBy, opt => opt.Ignore())
             .ForMember(dest => dest.ModifyId, opt => opt.Ignore())
+            .ForMember(dest => dest.IsOnSale, opt => opt.Ignore())
             .ForMember(dest => dest.OnSaleTime, opt => opt.Ignore())
             .ForMember(dest => dest.OffSaleTime, opt => opt.Ignore());
 
@@ -78,6 +79,7 @@ public class ShopProfile : Profile
             .ForMember(dest => dest.ModifyTime, opt => opt.Ignore())
             .ForMember(dest => dest.ModifyBy, opt => opt.Ignore())
             .ForMember(dest => dest.ModifyId, opt => opt.Ignore())
+            .ForMember(dest => dest.IsOnSale, opt => opt.Ignore())
             .ForMember(dest => dest.OnSaleTime, opt => opt.Ignore())
             .ForMember(dest => dest.OffSaleTime, opt => opt.Ignore());
     }

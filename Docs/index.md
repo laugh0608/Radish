@@ -25,7 +25,7 @@ features:
     details: 聊天、关注和通知连接发现、参与、关系与再次访问，Docs 负责沉淀长期可读知识。
   - icon: 🌐
     title: Web-first 正式产品
-    details: PC 与 mobile 浏览器共享正式主路径；Flutter 维持移动原生承接，WebOS 只保留历史兼容。
+    details: PC 与 mobile 浏览器共享正式优先主路径；Flutter 作为次级移动原生产品线，WebOS 只保留历史兼容。
   - icon: 🧱
     title: 可持续工程治理
     details: 分层架构、统一契约、风险分级验证和有限阶段门禁共同支撑长期维护。
@@ -38,7 +38,10 @@ features:
 - [架构总览](/architecture/overview) - 系统拓扑、项目职责与关键约定
 - [开发规范](/architecture/specifications) - 分层约束、编码规范与协作规则
 - [用户身份语义与公开索引](/architecture/user-identity-semantics) - 登录名、邮箱、展示名、PublicId 与公开索引的长期契约
-- [前端设计](/frontend/design) - 纯 Web、Flutter、WebOS 保留入口与应用集成方式
+- [前端设计](/frontend/design) - Web、Flutter、WebOS 保留入口与应用集成方式
+- [Radish UI 差异附录](/frontend/ui-addendum) - family-ui 版本、Profile、四主题与多端差异
+- [Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow) - 主要页面定义、R1 / R2 / R3 分级、派生页继承与真实页面复核
+- [F4-R C-1 代表页代码事实审计](/frontend/f4-r-representative-page-audit) - 正式路由与页面结构盘点、代表类型评分和继承表
 - [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和 Pencil 协作约束
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 - [Client 与 Console 跨应用导航契约](/frontend/client-console-navigation-contract) - 产品端、治理端与原生壳层的跳转、返回和认证边界

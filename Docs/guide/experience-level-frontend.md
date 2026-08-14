@@ -13,6 +13,7 @@
 | WebOS `/desktop` | `Frontend/radish.client/src/desktop/AppRegistry.tsx` | 历史兼容窗口入口，复用同一个 `ExperienceDetailApp` |
 | 桌面状态展示 | `Frontend/radish.client/src/desktop/components/ExperienceDisplay.tsx` | 只读经验状态与共享经验条 |
 | 共享经验条 | `Frontend/radish.ui/src/components/ExperienceBar/ExperienceBar.tsx` | 纯展示组件，由宿主注入 labels 与 formatter |
+| 公开主页 | `Frontend/radish.client/src/apps/public-profile/PublicProfileApp.tsx` | 只读展示服务端安全投影的当前等级与等级名，不加载私有经验对象 |
 | 组件展示页 | `Frontend/radish.client/src/apps/showcase/ShowcaseApp.tsx` | 开发态组件示例，不属于正式业务入口 |
 
 纯 Web 是正式产品主线。WebOS 入口只做阻断级兼容，不再独立演进经验业务；Console 的经验配置和人工治理属于管理域，不从 client 展示实现反推。
@@ -24,6 +25,8 @@ client 经验 API 位于 `Frontend/radish.client/src/api/experience.ts`，统一
 - `getMyExperience(t)`：读取当前用户经验摘要；
 - `getTransactions(params, t)`：读取当前用户分页经验流水；
 - `getLeaderboard(...)`、`getMyRank()`：保留既有排行调用能力，公开排行榜不属于 F3-C6 的返工范围。
+
+公开主页不调用上述本人或管理经验 API，而是只消费 `User/GetPublicProfile` 返回的 `voCurrentLevel / voCurrentLevelName`。该投影不包含总经验、升级进度、排名、冻结状态或冻结原因；没有经验记录时由服务端返回权威初始等级。
 
 当前真实消费的经验摘要与流水 API 必须遵守以下约束：
 

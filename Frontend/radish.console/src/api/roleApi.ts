@@ -16,6 +16,7 @@ export interface RoleVo {
   voDepartmentIds: string;
   voAuthorityScope: number;
   voIsEnabled: boolean;
+  voIsBuiltIn: boolean;
   voIsDeleted: boolean;
   voCreateId: string;
   voCreateBy: string;

@@ -11,6 +11,11 @@ public class UserBalanceVo
     public long VoUserId { get; set; }
 
     /// <summary>
+    /// 用户权威显示名
+    /// </summary>
+    public string VoUserName { get; set; } = string.Empty;
+
+    /// <summary>
     /// 可用余额（胡萝卜）
     /// </summary>
     public long VoBalance { get; set; }
@@ -50,6 +55,11 @@ public class UserBalanceVo
     /// 累计转出（胡萝卜）
     /// </summary>
     public long VoTotalTransferredOut { get; set; }
+
+    /// <summary>
+    /// 乐观锁版本号
+    /// </summary>
+    public int VoVersion { get; set; }
 
     /// <summary>
     /// 创建时间

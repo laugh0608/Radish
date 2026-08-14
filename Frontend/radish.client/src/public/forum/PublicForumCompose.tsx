@@ -21,7 +21,7 @@ import {
   type ClientSubmissionState,
 } from '@/utils/clientSubmission';
 import { log } from '@/utils/logger';
-import { PublishPostModal } from '@/apps/forum/components/PublishPostModal';
+import { ForumPostComposer } from '@/apps/forum/components/ForumPostComposer';
 import { buildPostSubmissionFingerprint } from '@/apps/forum/utils/forumSubmissionFingerprint';
 import {
   buildPublicForumPath,
@@ -36,6 +36,7 @@ interface PublicForumComposeProps {
   categoryId?: string | null;
   fallbackBrowseRoute: PublicForumBrowseRoute;
   onBack: () => void;
+  onNavigationLockChange: (locked: boolean) => void;
   onNavigate: (route: PublicForumRoute, options?: { replace?: boolean }) => void;
 }
 
@@ -43,6 +44,7 @@ export function PublicForumCompose({
   categoryId,
   fallbackBrowseRoute,
   onBack,
+  onNavigationLockChange,
   onNavigate
 }: PublicForumComposeProps) {
   const { t } = useTranslation();
@@ -118,9 +120,9 @@ export function PublicForumCompose({
         return;
       }
 
-      const message = error instanceof Error ? error.message : String(error);
+      log.warn('PublicForumCompose', '公开论坛分类加载失败', error);
       setCategories([]);
-      setCategoriesError(message);
+      setCategoriesError(t('forum.public.composeCategoriesErrorDescription'));
     } finally {
       if (requestId === categoryRequestRef.current) {
         setCategoriesLoading(false);
@@ -161,26 +163,20 @@ export function PublicForumCompose({
     );
     publishSubmissionRef.current = submissionState;
 
-    try {
-      const postId = await publishPost({
-        title,
-        content,
-        clientSubmissionId: submissionState.clientSubmissionId,
-        categoryId: nextCategoryId,
-        tagNames,
-        isQuestion: Boolean(isQuestion),
-        poll: poll ?? undefined,
-        lottery: lottery ?? undefined
-      }, t);
+    const postId = await publishPost({
+      title,
+      content,
+      clientSubmissionId: submissionState.clientSubmissionId,
+      categoryId: nextCategoryId,
+      tagNames,
+      isQuestion: Boolean(isQuestion),
+      poll: poll ?? undefined,
+      lottery: lottery ?? undefined
+    }, t);
 
-      publishSubmissionRef.current = null;
-      publishedPostIdRef.current = String(postId);
-      toast.success(t('forum.public.composePublished'));
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      toast.error(message);
-      throw error;
-    }
+    publishSubmissionRef.current = null;
+    publishedPostIdRef.current = String(postId);
+    toast.success(t('forum.public.composePublished'));
   }, [t]);
 
   const handleCloseComposer = useCallback(() => {
@@ -205,30 +201,6 @@ export function PublicForumCompose({
           <p className={styles.pageIntro}>{t('forum.public.composeDescription')}</p>
         </div>
       </header>
-
-      <div className={styles.composeSummaryGrid} aria-label={t('forum.public.composeSummaryLabel')}>
-        <div className={styles.composeSummaryCard}>
-          <span className={styles.composeSummaryIcon}>
-            <Icon icon={isAuthenticated ? 'mdi:account-check-outline' : 'mdi:account-clock-outline'} size={20} />
-          </span>
-          <strong>{t(isAuthenticated ? 'forum.public.composeMetricAuthReady' : 'forum.public.composeMetricAuthPending')}</strong>
-          <span>{t('forum.public.composeMetricAuth')}</span>
-        </div>
-        <div className={styles.composeSummaryCard}>
-          <span className={styles.composeSummaryIcon}>
-            <Icon icon={categoriesError ? 'mdi:alert-circle-outline' : categoriesLoading ? 'mdi:progress-clock' : 'mdi:shape-outline'} size={20} />
-          </span>
-          <strong>{categoriesError ? t('forum.public.composeMetricCategoriesError') : categories.length}</strong>
-          <span>{t('forum.public.composeMetricCategories')}</span>
-        </div>
-        <div className={styles.composeSummaryCard}>
-          <span className={styles.composeSummaryIcon}>
-            <Icon icon="mdi:fingerprint" size={20} />
-          </span>
-          <strong>{t('forum.public.composeMetricSubmissionReady')}</strong>
-          <span>{t('forum.public.composeMetricSubmission')}</span>
-        </div>
-      </div>
 
       <div className={styles.composeWorkspace}>
         <div className={styles.composePanel}>
@@ -285,6 +257,32 @@ export function PublicForumCompose({
               }}
             />
           )}
+
+          {canOpenComposer && (
+            <section className={`${styles.sidePanel} ${styles.composeContextPanel}`}>
+              <p className={styles.sidePanelKicker}>{t('forum.public.composeRailRoutesTitle')}</p>
+              <h2 className={styles.composeContextTitle}>{t('forum.public.composeTitle')}</h2>
+              <p className={styles.sidePanelText}>{t('forum.public.composeRailRoutesDescription')}</p>
+              <div className={styles.railActionList}>
+                <a href={browseHref} className={styles.railActionLink} onClick={(event) => handlePublicForumLinkClick(event, onBack)}>
+                  <Icon icon="mdi:format-list-bulleted" size={18} />
+                  <span>{t('forum.public.composeRailForumHome')}</span>
+                </a>
+                <a href={questionHref} className={styles.railActionLink} onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'question', sortBy: 'newest', page: 1 }))}>
+                  <Icon icon="mdi:comment-question-outline" size={18} />
+                  <span>{t('forum.public.composeRailQuestionFeed')}</span>
+                </a>
+                <a href={pollHref} className={styles.railActionLink} onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'poll', sortBy: 'newest', page: 1 }))}>
+                  <Icon icon="mdi:poll" size={18} />
+                  <span>{t('forum.public.composeRailPollFeed')}</span>
+                </a>
+                <a href={lotteryHref} className={styles.railActionLink} onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'lottery', sortBy: 'newest', page: 1 }))}>
+                  <Icon icon="mdi:gift-outline" size={18} />
+                  <span>{t('forum.public.composeRailLotteryFeed')}</span>
+                </a>
+              </div>
+            </section>
+          )}
         </div>
 
         <aside className={styles.composeRail} aria-label={t('forum.public.composeRailLabel')}>
@@ -312,56 +310,23 @@ export function PublicForumCompose({
             </ul>
           </section>
 
-          <section className={styles.sidePanel}>
-            <p className={styles.sidePanelKicker}>{t('forum.public.composeRailRoutesTitle')}</p>
-            <p className={styles.sidePanelText}>{t('forum.public.composeRailRoutesDescription')}</p>
-            <div className={styles.railActionList}>
-              <a
-                href={browseHref}
-                className={styles.railActionLink}
-                onClick={(event) => handlePublicForumLinkClick(event, onBack)}
-              >
-                <Icon icon="mdi:format-list-bulleted" size={18} />
-                <span>{t('forum.public.composeRailForumHome')}</span>
-              </a>
-              <a
-                href={questionHref}
-                className={styles.railActionLink}
-                onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'question', sortBy: 'newest', page: 1 }))}
-              >
-                <Icon icon="mdi:comment-question-outline" size={18} />
-                <span>{t('forum.public.composeRailQuestionFeed')}</span>
-              </a>
-              <a
-                href={pollHref}
-                className={styles.railActionLink}
-                onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'poll', sortBy: 'newest', page: 1 }))}
-              >
-                <Icon icon="mdi:poll" size={18} />
-                <span>{t('forum.public.composeRailPollFeed')}</span>
-              </a>
-              <a
-                href={lotteryHref}
-                className={styles.railActionLink}
-                onClick={(event) => handlePublicForumLinkClick(event, () => onNavigate({ kind: 'lottery', sortBy: 'newest', page: 1 }))}
-              >
-                <Icon icon="mdi:gift-outline" size={18} />
-                <span>{t('forum.public.composeRailLotteryFeed')}</span>
-              </a>
-            </div>
-          </section>
         </aside>
       </div>
 
-      <PublishPostModal
-        isOpen={canOpenComposer}
-        isAuthenticated={isAuthenticated}
-        categories={categories}
-        selectedCategoryId={selectedCategoryId}
-        loginReturnPath={loginReturnPath}
-        onClose={handleCloseComposer}
-        onPublish={handlePublish}
-      />
+      {canOpenComposer ? (
+        <ForumPostComposer
+          isOpen={true}
+          surface="page"
+          isAuthenticated={isAuthenticated}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          loginReturnPath={loginReturnPath}
+          onClose={handleCloseComposer}
+          onBusyChange={onNavigationLockChange}
+          onPublish={handlePublish}
+        />
+      ) : null}
+
     </section>
   );
 }

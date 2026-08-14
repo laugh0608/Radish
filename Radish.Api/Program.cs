@@ -327,6 +327,9 @@ builder.Services.AddScoped<INotificationPushService, Radish.Api.Services.Notific
 builder.Services.AddScoped<IUserInteractionRealtimeNotifier, Radish.Api.Services.UserInteractionRealtimeNotifier>();
 builder.Services.AddScoped<IContentModerationRealtimeNotifier, Radish.Api.Services.ContentModerationRealtimeNotifier>();
 builder.Services.AddScoped<CommentRealtimePushService>();
+builder.Services.AddScoped<
+    Radish.Api.Services.IClientApplicationQueryService,
+    Radish.Api.Services.ClientApplicationQueryService>();
 
 // 注册 SqlSugar 服务
 builder.Services.AddSqlSugarSetup();

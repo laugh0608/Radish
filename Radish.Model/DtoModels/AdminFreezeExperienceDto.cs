@@ -20,4 +20,8 @@ public class AdminFreezeExperienceDto
     [Required(ErrorMessage = "冻结原因不能为空")]
     [MaxLength(500, ErrorMessage = "冻结原因不能超过500个字符")]
     public string Reason { get; set; } = string.Empty;
+
+    /// <summary>操作者读取到的经验聚合版本。</summary>
+    [Range(0, int.MaxValue, ErrorMessage = "经验版本不能小于0")]
+    public int ExpectedVersion { get; set; }
 }

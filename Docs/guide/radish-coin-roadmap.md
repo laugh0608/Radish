@@ -23,7 +23,7 @@
 
 ### Phase 3: 消费场景
 - [ ] 帖子置顶
-- [ ] 内容赞赏（“胡萝卜 +1”专题设计已完成，尚未实现）
+- [x] 内容赞赏（“胡萝卜 +1”已完成设计、服务端、正式 Web 与 Gateway 成组验收）
 - [ ] 评论高亮
 - [ ] 付费内容解锁
 
@@ -135,8 +135,9 @@
    - 规则：校验限额、手续费、余额充足；写交易与分录。
 
 4. `POST /api/v1/Coin/AdminAdjust`（管理员）
-   - 入参：userId、deltaAmount（可正可负）、reason、idempotencyKey
-   - 必须写审计日志与分录。
+   - 当前正式路由：`POST /api/v1/Coin/AdminAdjustBalance`
+   - 入参：userId、expectedVersion、deltaAmount（可正可负）、reason、idempotencyKey
+   - 必须绑定刚读取的目标余额版本；余额、Main 交易流水与幂等结果共同提交，Log 审计分录继续使用稳定来源键。
 
 ### 14.4 与论坛/神评沙发的对接点（建议明确触发时机）
 

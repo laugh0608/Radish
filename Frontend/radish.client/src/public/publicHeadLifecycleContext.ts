@@ -54,6 +54,18 @@ export function resolveActivePublicHeadSnapshot(
   return registration?.routeKey === routeKey ? registration.snapshot : null;
 }
 
+export function resolvePublicStructuredData(
+  resolvedHead: PublicHeadDescriptor,
+  activeSnapshot: PublicHeadSnapshot | null,
+  routeStructuredData: JsonLdObject,
+): JsonLdObject | null {
+  if (resolvedHead.indexable === false) {
+    return null;
+  }
+
+  return activeSnapshot?.structuredData ?? routeStructuredData;
+}
+
 /**
  * 详情页只提交 head + JSON-LD 快照，不直接写 DOM；离开或数据失效后自动回到路由基线。
  */

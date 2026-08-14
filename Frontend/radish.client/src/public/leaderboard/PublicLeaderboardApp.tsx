@@ -12,6 +12,7 @@ import { useUserStore } from '@/stores/userStore';
 import {
   createDefaultPublicLeaderboardRoute,
   buildPublicLeaderboardPath,
+  filterPublicLeaderboardTypes,
   getPublicLeaderboardRouteDefinitionBySlug,
   getPublicLeaderboardRouteDefinitionByType,
   publicLeaderboardTypeRouteDefinitions,
@@ -69,13 +70,8 @@ interface LightweightGuideDefinition {
 }
 
 interface PublicLeaderboardRailProps {
-  types: LeaderboardTypeData[];
-  activeTypeSlug: PublicLeaderboardTypeSlug;
   activeTypeConfig: LeaderboardTypeData;
-  isLoggedIn: boolean;
-  myRank: number | null;
   guide: LightweightGuideDefinition;
-  onTypeChange: (typeSlug: PublicLeaderboardTypeSlug) => void;
 }
 
 const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLeaderboardFallbackTypeDefinition> = {
@@ -84,24 +80,6 @@ const publicLeaderboardFallbackTypes: Record<PublicLeaderboardTypeSlug, PublicLe
     nameKey: 'leaderboard.public.types.experience.name',
     descriptionKey: 'leaderboard.public.types.experience.description',
     primaryLabelKey: 'leaderboard.public.types.experience.primaryLabel',
-  },
-  balance: {
-    icon: 'mdi:carrot',
-    nameKey: 'leaderboard.public.types.balance.name',
-    descriptionKey: 'leaderboard.public.types.balance.description',
-    primaryLabelKey: 'leaderboard.public.types.balance.primaryLabel',
-  },
-  'total-spent': {
-    icon: 'mdi:cash-multiple',
-    nameKey: 'leaderboard.public.types.totalSpent.name',
-    descriptionKey: 'leaderboard.public.types.totalSpent.description',
-    primaryLabelKey: 'leaderboard.public.types.totalSpent.primaryLabel',
-  },
-  'purchase-count': {
-    icon: 'mdi:shopping',
-    nameKey: 'leaderboard.public.types.purchaseCount.name',
-    descriptionKey: 'leaderboard.public.types.purchaseCount.description',
-    primaryLabelKey: 'leaderboard.public.types.purchaseCount.primaryLabel',
   },
   'hot-product': {
     icon: 'mdi:gift-outline',
@@ -220,6 +198,24 @@ function createFallbackLeaderboardTypes(t: (key: string) => string): Leaderboard
   });
 }
 
+function localizePublicLeaderboardType(
+  type: LeaderboardTypeData,
+  fallbackTypes: LeaderboardTypeData[],
+): LeaderboardTypeData {
+  const localizedType = fallbackTypes.find((fallbackType) => fallbackType.voType === type.voType);
+  if (!localizedType) {
+    return type;
+  }
+
+  return {
+    ...type,
+    voName: localizedType.voName,
+    voDescription: localizedType.voDescription,
+    voPrimaryLabel: localizedType.voPrimaryLabel,
+    voIcon: type.voIcon?.trim() || localizedType.voIcon,
+  };
+}
+
 function buildVisiblePages(currentPage: number, totalPages: number, maxVisible: number): number[] {
   if (totalPages <= maxVisible) {
     return Array.from({ length: totalPages }, (_, index) => index + 1);
@@ -272,75 +268,14 @@ function handlePublicLeaderboardLinkClick(event: MouseEvent<HTMLAnchorElement>, 
 }
 
 function PublicLeaderboardRail({
-  types,
-  activeTypeSlug,
   activeTypeConfig,
-  isLoggedIn,
-  myRank,
   guide,
-  onTypeChange,
 }: PublicLeaderboardRailProps) {
   const { t } = useTranslation();
   const activeRouteDefinition = getPublicLeaderboardRouteDefinitionByType(activeTypeConfig.voType);
 
   return (
     <aside className={styles.leaderboardRail} aria-label={t('leaderboard.public.railLabel')}>
-      <section className={styles.railPanel}>
-        <h2 className={styles.railTitle}>{t('leaderboard.public.railJumpTitle')}</h2>
-        <div className={styles.railLinkList}>
-          {types.map((type) => {
-            const typeSlug = getPublicLeaderboardRouteDefinitionByType(type.voType).slug;
-            const route = {
-              ...createDefaultPublicLeaderboardRoute(),
-              typeSlug,
-            };
-
-            return (
-              <a
-                key={type.voType}
-                className={`${styles.railLinkRow} ${typeSlug === activeTypeSlug ? styles.railLinkRowActive : ''}`}
-                href={buildPublicLeaderboardPath(route)}
-                aria-current={typeSlug === activeTypeSlug ? 'page' : undefined}
-                onClick={(event) => handlePublicLeaderboardLinkClick(event, () => onTypeChange(typeSlug))}
-              >
-                <Icon icon={type.voIcon} size={16} />
-                <span className={styles.railLinkBody}>
-                  <span className={styles.railLinkTitle}>{type.voName}</span>
-                  <span className={styles.railLinkMeta}>{type.voPrimaryLabel}</span>
-                </span>
-              </a>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className={styles.railPanel}>
-        <h2 className={styles.railTitle}>{t('leaderboard.public.railRouteTitle')}</h2>
-        <div className={styles.railInfoList}>
-          <div className={styles.railInfoRow}>
-            <Icon icon="mdi:account-circle-outline" size={16} />
-            <span className={styles.railLinkBody}>
-              <span className={styles.railLinkTitle}>{t('leaderboard.public.railUserJumpTitle')}</span>
-              <span className={styles.railLinkMeta}>{t('leaderboard.public.railUserJumpMeta')}</span>
-            </span>
-          </div>
-          <div className={styles.railInfoRow}>
-            <Icon icon="mdi:gift-outline" size={16} />
-            <span className={styles.railLinkBody}>
-              <span className={styles.railLinkTitle}>{t('leaderboard.public.railProductJumpTitle')}</span>
-              <span className={styles.railLinkMeta}>{t('leaderboard.public.railProductJumpMeta')}</span>
-            </span>
-          </div>
-          <div className={styles.railInfoRow}>
-            <Icon icon="mdi:arrow-u-left-top" size={16} />
-            <span className={styles.railLinkBody}>
-              <span className={styles.railLinkTitle}>{t('leaderboard.public.railSourceTitle')}</span>
-              <span className={styles.railLinkMeta}>{t('leaderboard.public.railSourceMeta')}</span>
-            </span>
-          </div>
-        </div>
-      </section>
-
       <section className={styles.railPanel}>
         <h2 className={styles.railTitle}>{t('leaderboard.public.railStateTitle')}</h2>
         <div className={styles.railStatGrid}>
@@ -351,10 +286,6 @@ function PublicLeaderboardRail({
           <span className={styles.railStat}>
             <strong>{activeRouteDefinition.category === LeaderboardCategory.User ? t('leaderboard.public.railUserType') : t('leaderboard.public.railProductType')}</strong>
             <span>{t('leaderboard.public.railTypeLabel')}</span>
-          </span>
-          <span className={styles.railStat}>
-            <strong>{isLoggedIn && myRank !== null ? `#${myRank}` : t('leaderboard.public.railGuestRank')}</strong>
-            <span>{t('leaderboard.public.railMyRankLabel')}</span>
           </span>
         </div>
       </section>
@@ -388,6 +319,7 @@ export const PublicLeaderboardApp = ({
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingTypes, setLoadingTypes] = useState(true);
+  const [hasAuthoritativeTypes, setHasAuthoritativeTypes] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [typesError, setTypesError] = useState<string | null>(null);
   const [myRank, setMyRank] = useState<number | null>(null);
@@ -408,9 +340,11 @@ export const PublicLeaderboardApp = ({
     [route.typeSlug]
   );
   const activeTypeConfig = useMemo(() => {
-    return types.find((item) => item.voType === activeRouteDefinition.type)
+    const activeType = types.find((item) => item.voType === activeRouteDefinition.type)
       ?? fallbackTypes.find((item) => item.voType === activeRouteDefinition.type)
       ?? fallbackTypes[0];
+
+    return localizePublicLeaderboardType(activeType, fallbackTypes);
   }, [activeRouteDefinition.type, fallbackTypes, types]);
   const publicHeadSnapshot = useMemo(() => {
     const routeHead = buildLocalizedPublicRouteHead({ app: 'leaderboard', route }, t);
@@ -453,12 +387,17 @@ export const PublicLeaderboardApp = ({
 
       try {
         const result = await leaderboardApi.getTypes();
-        if (!cancelled && result?.length) {
-          setTypes(result);
+        if (cancelled) {
+          return;
         }
+
+        const publicTypes = filterPublicLeaderboardTypes(result ?? []);
+        setTypes(publicTypes);
+        setHasAuthoritativeTypes(true);
       } catch (loadTypesError) {
         if (!cancelled) {
           setTypes(fallbackTypes);
+          setHasAuthoritativeTypes(false);
           setTypesError(loadTypesError instanceof Error ? loadTypesError.message : String(loadTypesError));
         }
       } finally {
@@ -472,9 +411,54 @@ export const PublicLeaderboardApp = ({
     return () => {
       cancelled = true;
     };
-  }, [fallbackTypes, reloadToken]);
+  }, [fallbackTypes, reloadToken, t]);
 
   useEffect(() => {
+    if (loadingTypes || !hasAuthoritativeTypes) {
+      return;
+    }
+
+    if (
+      types.length === 0 ||
+      types.some((type) => type.voType === activeRouteDefinition.type)
+    ) {
+      return;
+    }
+
+    const fallbackDefinition = getPublicLeaderboardRouteDefinitionByType(types[0].voType);
+    onNavigate({
+      ...createDefaultPublicLeaderboardRoute(),
+      typeSlug: fallbackDefinition.slug,
+    }, { replace: true });
+  }, [
+    activeRouteDefinition.type,
+    hasAuthoritativeTypes,
+    loadingTypes,
+    onNavigate,
+    types,
+  ]);
+
+  useEffect(() => {
+    if (loadingTypes) {
+      return;
+    }
+
+    if (hasAuthoritativeTypes && types.length === 0) {
+      requestIdRef.current += 1;
+      setItems([]);
+      setTotalPages(1);
+      setLoading(false);
+      setError(t('leaderboard.public.loadFailedDescription'));
+      return;
+    }
+
+    if (
+      hasAuthoritativeTypes &&
+      !types.some((type) => type.voType === activeRouteDefinition.type)
+    ) {
+      return;
+    }
+
     const requestId = ++requestIdRef.current;
 
     const loadLeaderboard = async () => {
@@ -518,13 +502,30 @@ export const PublicLeaderboardApp = ({
     };
 
     void loadLeaderboard();
-  }, [activeRouteDefinition.type, onNavigate, reloadToken, route.page, route.typeSlug, t]);
+  }, [
+    activeRouteDefinition.type,
+    hasAuthoritativeTypes,
+    loadingTypes,
+    onNavigate,
+    reloadToken,
+    route.page,
+    route.typeSlug,
+    t,
+    types,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
 
     const loadMyRank = async () => {
-      if (!isLoggedIn || activeTypeConfig.voCategory !== LeaderboardCategory.User) {
+      if (
+        !isLoggedIn ||
+        activeTypeConfig.voCategory !== LeaderboardCategory.User ||
+        (
+          hasAuthoritativeTypes &&
+          !types.some((type) => type.voType === activeRouteDefinition.type)
+        )
+      ) {
         setMyRank(null);
         return;
       }
@@ -545,7 +546,13 @@ export const PublicLeaderboardApp = ({
     return () => {
       cancelled = true;
     };
-  }, [activeRouteDefinition.type, activeTypeConfig.voCategory, isLoggedIn]);
+  }, [
+    activeRouteDefinition.type,
+    activeTypeConfig.voCategory,
+    hasAuthoritativeTypes,
+    isLoggedIn,
+    types,
+  ]);
 
   const visiblePages = useMemo(
     () => buildVisiblePages(route.page, totalPages, isCompactViewport ? 5 : 7),
@@ -644,6 +651,7 @@ export const PublicLeaderboardApp = ({
             <div className={styles.toolbar}>
               <div className={styles.tabRail}>
                 {types.map((type) => {
+                  const localizedType = localizePublicLeaderboardType(type, fallbackTypes);
                   const typeSlug = getPublicLeaderboardRouteDefinitionByType(type.voType).slug;
                   const typeRoute = {
                     ...createDefaultPublicLeaderboardRoute(),
@@ -657,8 +665,8 @@ export const PublicLeaderboardApp = ({
                       aria-current={route.typeSlug === typeSlug ? 'page' : undefined}
                       onClick={(event) => handlePublicLeaderboardLinkClick(event, () => handleTypeChange(typeSlug))}
                     >
-                      <Icon icon={type.voIcon} size={18} />
-                      <span>{type.voName}</span>
+                      <Icon icon={localizedType.voIcon} size={18} />
+                      <span>{localizedType.voName}</span>
                     </a>
                   );
                 })}
@@ -759,7 +767,7 @@ export const PublicLeaderboardApp = ({
                             {item.voCurrentLevelName?.trim() || t('leaderboard.public.levelFallback')}
                           </span>
                           <span className={`${styles.userStatChip} ${styles.userMetricChip}`}>
-                            {formatLocalizedNumber(Number(item.voPrimaryValue || 0), i18n.resolvedLanguage ?? i18n.language)} {item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}
+                            {formatLocalizedNumber(Number(item.voPrimaryValue || 0), i18n.resolvedLanguage ?? i18n.language)} {activeTypeConfig.voPrimaryLabel}
                           </span>
                           <span className={styles.itemOpenAction}>{t('leaderboard.public.openTarget')}</span>
                         </div>
@@ -829,7 +837,7 @@ export const PublicLeaderboardApp = ({
                       </div>
                       <div className={styles.itemMetric}>
                         <span className={styles.metricValue}>{formatLocalizedNumber(Number(item.voPrimaryValue || 0), i18n.resolvedLanguage ?? i18n.language)}</span>
-                        <span className={styles.metricLabel}>{item.voPrimaryLabel || activeTypeConfig.voPrimaryLabel}</span>
+                        <span className={styles.metricLabel}>{activeTypeConfig.voPrimaryLabel}</span>
                         <span className={styles.itemOpenAction}>{t('leaderboard.public.openTarget')}</span>
                       </div>
                     </>
@@ -906,13 +914,8 @@ export const PublicLeaderboardApp = ({
 
           {lightweightGuide && (
             <PublicLeaderboardRail
-              types={types}
-              activeTypeSlug={route.typeSlug}
               activeTypeConfig={activeTypeConfig}
-              isLoggedIn={isLoggedIn}
-              myRank={myRank}
               guide={lightweightGuide}
-              onTypeChange={handleTypeChange}
             />
           )}
         </div>

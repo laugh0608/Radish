@@ -8,7 +8,7 @@ import {
   getFallbackUserName,
   resolveMediaUrl,
 } from './chatApp.helpers';
-import styles from './ChatApp.module.css';
+import styles from './ChatComposer.module.css';
 
 interface ChatMentionMenuProps {
   keyword: string;

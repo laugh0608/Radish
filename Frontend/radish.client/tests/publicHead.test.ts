@@ -17,9 +17,11 @@ import {
   resolvePublicProfileUserId,
 } from '../src/public/forum/publicForumUtils.ts';
 import { buildPublicDocsHeadSnapshot } from '../src/public/docs/publicDocsHead.ts';
+import { buildPublicLegalPath, parsePublicLegalRoute } from '../src/public/legalRouteState.ts';
 import type { PublicRouteDescriptor } from '../src/public/publicRouteNavigation.ts';
 import {
   resolveActivePublicHeadSnapshot,
+  resolvePublicStructuredData,
   updatePublicHeadRegistration,
   type PublicHeadSnapshot,
 } from '../src/public/publicHeadLifecycleContext.ts';
@@ -74,6 +76,22 @@ test('buildPublicCanonicalUrl 应使用默认公开域名并移除锚点', () =>
     buildPublicCanonicalUrl('/docs/Guide#intro'),
     `${publicDefaultOrigin}/docs/Guide`
   );
+});
+
+test('Legal 路由应保留受控章节锚点并拒绝非法 fragment', () => {
+  const route = parsePublicLegalRoute('/legal', '#privacy');
+
+  assert.deepEqual(route, { kind: 'index', anchor: 'privacy' });
+  assert.equal(buildPublicLegalPath(route!), '/legal#privacy');
+  assert.deepEqual(parsePublicLegalRoute('/legal/', '#virtual-assets'), {
+    kind: 'index',
+    anchor: 'virtual-assets',
+  });
+  assert.deepEqual(parsePublicLegalRoute('/legal', '#%E0%A4%A'), {
+    kind: 'index',
+    anchor: undefined,
+  });
+  assert.equal(parsePublicLegalRoute('/docs', '#privacy'), null);
 });
 
 test('resolvePublicProfileUserId 应优先使用 User PublicId 并兼容 LongId', () => {
@@ -202,6 +220,22 @@ test('buildPublicRouteHead 应优先使用论坛帖子 PublicId 生成 canonical
   });
 });
 
+test('论坛标签 canonical 应忽略排序与分页查询', () => {
+  const route: PublicRouteDescriptor = {
+    app: 'forum',
+    route: {
+      kind: 'tag',
+      tagSlug: 'csharp',
+      sortBy: 'hottest',
+      page: 3,
+    },
+  };
+
+  const head = buildPublicRouteHead(route);
+
+  assert.equal(head.canonicalPath, '/forum/tag/csharp');
+});
+
 test('buildForumPostPublicHead 应在详情加载后用 PublicId 刷新 canonical 与分享预览文案', () => {
   const head = buildForumPostPublicHead(
     {
@@ -258,6 +292,8 @@ test('Docs 详情快照应复用中英文路由基线并保留默认中文契约
   const defaultSnapshot = buildPublicDocsHeadSnapshot(document, undefined);
 
   assert.equal(enSnapshot.head.title, '运行时文档原题 · Docs');
+  assert.equal(enRouteHead.indexable, false);
+  assert.equal(enSnapshot.head.indexable, true);
   assert.equal(
     enSnapshot.head.description,
     'Document detail reading focuses on the body, metadata, internal links, and stable return to the original public source. Editing and publishing stay in the author workspace.',
@@ -307,12 +343,12 @@ test('Forum 详情 head 应复用中英文路由基线、应用名与空内容 f
   assert.equal(enHead.title, '运行时帖子原题 · Forum');
   assert.equal(
     enHead.description,
-    'This public entry keeps reading first. Signed-in users can add quick replies and root discussion comments from the post detail page.',
+    'This public entry keeps reading first. Signed-in users can add quick replies and root replies from the post detail page.',
   );
   assert.equal(zhHead.title, '运行时帖子原题 · 论坛');
   assert.equal(
     zhHead.description,
-    '这个公开页面优先承载阅读；登录用户可在帖子详情页直接发布轻回应和根评论。',
+    '这个公开页面优先承载阅读；登录用户可在帖子详情页直接发布轻回应和根回帖。',
   );
   assert.equal(enUntitledHead.title, 'Post details · Forum');
   assert.equal(defaultHead.title, '论坛帖子 - Radish 论坛');
@@ -539,6 +575,32 @@ test('head 快照应兼容 StrictMode 重放、按 route key 隔离且阻止旧 
   assert.equal(updatePublicHeadRegistration(registration, secondToken, '/forum/post/second', null), null);
 });
 
+test('不可索引的公开 head 应抑制当前路由与详情快照的结构化数据', () => {
+  const routeStructuredData = { '@type': 'CollectionPage', name: '路由基线' };
+  const detailSnapshot: PublicHeadSnapshot = {
+    head: {
+      title: '不可用标签 · Forum',
+      description: '标签不可用',
+      canonicalPath: '/forum/tag/deleted-tag',
+      indexable: false,
+    },
+    structuredData: { '@type': 'CollectionPage', name: '旧标签快照' },
+  };
+
+  assert.equal(
+    resolvePublicStructuredData(detailSnapshot.head, detailSnapshot, routeStructuredData),
+    null,
+  );
+  assert.equal(
+    resolvePublicStructuredData(
+      { ...detailSnapshot.head, indexable: true },
+      null,
+      routeStructuredData,
+    ),
+    routeStructuredData,
+  );
+});
+
 class FakeHeadNode {
   readonly attributes = new Map<string, string>();
   readonly tagName: string;
@@ -629,12 +691,33 @@ test('applyPublicHead 应统一更新分享元信息并在离开时清理公开�
     assert.equal(head.querySelector('meta[name="twitter:image"]'), null);
     assert.equal(head.querySelector('meta[name="twitter:card"]')?.getAttribute('content'), 'summary');
 
+    applyPublicHead({
+      title: '不可用标签 · Forum',
+      description: '标签不可用',
+      canonicalPath: '/forum/tag/deleted-tag',
+      indexable: false,
+    });
+
+    assert.equal(head.querySelector('meta[name="robots"]')?.getAttribute('content'), 'noindex, nofollow');
+    assert.equal(head.querySelector('link[rel="canonical"]'), null);
+    assert.equal(head.querySelector('meta[property="og:url"]'), null);
+
+    applyPublicHead({
+      title: '恢复标签 · Forum',
+      description: '标签已恢复',
+      canonicalPath: '/forum/tag/restored-tag',
+    });
+
+    assert.equal(head.querySelector('meta[name="robots"]'), null);
+    assert.equal(head.querySelector('link[rel="canonical"]')?.getAttribute('href'), `${publicDefaultOrigin}/forum/tag/restored-tag`);
+
     resetPublicHead();
 
     assert.equal(fakeDocument.title, 'Radish');
     assert.equal(head.querySelector('link[rel="canonical"]'), null);
     assert.equal(head.querySelector('meta[property="og:url"]'), null);
     assert.equal(head.querySelector('meta[name="twitter:card"]'), null);
+    assert.equal(head.querySelector('meta[name="robots"]'), null);
   } finally {
     Reflect.deleteProperty(globalThis, 'document');
   }

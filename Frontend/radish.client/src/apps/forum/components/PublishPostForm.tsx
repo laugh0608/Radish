@@ -13,8 +13,14 @@ import { uploadImage, uploadDocument } from '@/api/attachment';
 import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import { redirectToLogin } from '@/services/auth';
 import { buildDesktopForumReturnPath } from '@/services/authReturnPath';
+import { useUserStore } from '@/stores/userStore';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { useStickerCatalog } from '../hooks/useStickerCatalog';
+import {
+  loadForumPostDraft,
+  removeForumPostDraft,
+  saveForumPostDraft,
+} from '../utils/forumPostDraftStorage';
 import styles from './PublishPostForm.module.css';
 
 interface PublishPostFormProps {
@@ -24,7 +30,6 @@ interface PublishPostFormProps {
   disabled?: boolean;
 }
 
-const DRAFT_STORAGE_KEY = 'forum_post_draft';
 const IMAGE_SCALE_OPTIONS = [30, 50, 70, 75, 100] as const;
 
 export const PublishPostForm = ({
@@ -39,6 +44,8 @@ export const PublishPostForm = ({
   const [generateMultipleSizes, setGenerateMultipleSizes] = useState(false);
   const [imageScalePercent, setImageScalePercent] = useState<number>(75);
   const [editorUploading, setEditorUploading] = useState(false);
+  const [draftOwnerUserId, setDraftOwnerUserId] = useState('');
+  const userId = useUserStore((state) => state.userId);
   const { t, i18n } = useTranslation();
   const { stickerGroups, stickerMap, handleStickerSelect } = useStickerCatalog();
   const markdownEditorLabels = useMemo(
@@ -62,48 +69,57 @@ export const PublishPostForm = ({
     }
   }, [t]);
 
-  // 组件加载时恢复草稿
   useEffect(() => {
-    try {
-      const savedDraft = localStorage.getItem(DRAFT_STORAGE_KEY);
-      if (savedDraft) {
-        const draft = JSON.parse(savedDraft);
-        if (draft.title || draft.content) {
-          setTitle(draft.title || '');
-          setContent(draft.content || '');
-        }
-      }
-    } catch (err) {
-      log.error('Failed to load draft:', err);
+    setDraftOwnerUserId('');
+    setTitle('');
+    setContent('');
+    const normalizedUserId = userId.trim();
+    if (!isAuthenticated || !normalizedUserId) {
+      return;
     }
-  }, []);
 
-  // 自动保存草稿（标题或内容变化时）
-  useEffect(() => {
-    if (title || content) {
-      try {
-        localStorage.setItem(
-          DRAFT_STORAGE_KEY,
-          JSON.stringify({ title, content, savedAt: Date.now() })
-        );
-      } catch (err) {
-        log.error('Failed to save draft:', err);
+    try {
+      const draft = loadForumPostDraft(normalizedUserId);
+      if (draft?.title || draft?.content) {
+        setTitle(draft.title || '');
+        setContent(draft.content || '');
       }
+      setDraftOwnerUserId(normalizedUserId);
+    } catch (err) {
+      log.error('PublishPostForm', 'Failed to load account-scoped draft:', err);
+      setDraftOwnerUserId(normalizedUserId);
     }
-  }, [title, content]);
+  }, [isAuthenticated, userId]);
+
+  useEffect(() => {
+    const normalizedUserId = userId.trim();
+    if (!isAuthenticated || !normalizedUserId || draftOwnerUserId !== normalizedUserId) {
+      return;
+    }
+
+    try {
+      if (!title && !content) {
+        removeForumPostDraft(normalizedUserId);
+        return;
+      }
+      const existing = loadForumPostDraft(normalizedUserId);
+      saveForumPostDraft(normalizedUserId, { ...(existing ?? {}), title, content });
+    } catch (err) {
+      log.error('PublishPostForm', 'Failed to save account-scoped draft:', err);
+    }
+  }, [content, draftOwnerUserId, isAuthenticated, title, userId]);
 
   const handleSubmit = () => {
     if (editorUploading || !title.trim() || !content.trim()) {
       return;
     }
     onPublish(title, content);
-    // 发布成功后清空表单和草稿
     setTitle('');
     setContent('');
     try {
-      localStorage.removeItem(DRAFT_STORAGE_KEY);
+      removeForumPostDraft(userId);
     } catch (err) {
-      log.error('Failed to clear draft:', err);
+      log.error('PublishPostForm', 'Failed to clear account-scoped draft:', err);
     }
   };
 
@@ -111,7 +127,6 @@ export const PublishPostForm = ({
     redirectToLogin({ returnPath: buildDesktopForumReturnPath() });
   };
 
-  // 处理图片上传
   const handleImageUpload = async (
     file: File,
     reportProgress: (progress: number) => void,
@@ -135,7 +150,6 @@ export const PublishPostForm = ({
     };
   };
 
-  // 处理文档上传
   const handleDocumentUpload = async (
     file: File,
     reportProgress: (progress: number) => void,
@@ -164,16 +178,16 @@ export const PublishPostForm = ({
     <div className={styles.container}>
       {!isAuthenticated && (
         <div className={styles.loginPrompt}>
-          当前未登录，无法发帖。
+          {t('forum.composer.loginRequired')}
           <button type="button" onClick={handleLoginClick} className={styles.loginButton}>
-            去登录
+            {t('forum.composer.goToLogin')}
           </button>
         </div>
       )}
 
       <input
         type="text"
-        placeholder="帖子标题"
+        placeholder={t('forum.composer.titlePlaceholder')}
         value={title}
         onChange={e => setTitle(e.target.value)}
         className={styles.input}
@@ -256,7 +270,7 @@ export const PublishPostForm = ({
         disabled={!isAuthenticated || disabled || editorUploading || !title.trim() || !content.trim()}
         className={styles.submitButton}
       >
-        发布帖子
+        {t('forum.composer.publish')}
       </button>
     </div>
   );

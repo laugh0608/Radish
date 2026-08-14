@@ -7,10 +7,13 @@ namespace Radish.Model.DtoModels;
 /// </summary>
 public class CreateAnswerDto
 {
-    /// <summary>帖子 ID</summary>
-    [Required(ErrorMessage = "帖子ID不能为空")]
+    /// <summary>帖子公开标识；新客户端必须使用该字段</summary>
+    [StringLength(80, ErrorMessage = "帖子标识长度不能超过80个字符")]
+    public string? PostIdentifier { get; set; }
+
+    /// <summary>兼容旧客户端的帖子 LongId；新客户端不得继续生成</summary>
     [Range(1, long.MaxValue, ErrorMessage = "帖子ID必须大于0")]
-    public long PostId { get; set; }
+    public long? PostId { get; set; }
 
     /// <summary>回答内容</summary>
     [Required(ErrorMessage = "回答内容不能为空")]

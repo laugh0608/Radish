@@ -16,6 +16,7 @@ public static class ReliableTaskTypes
     public const string ContentModerationChatRecall = "ContentModerationChatRecall";
     public const string ContentModerationChatRestore = "ContentModerationChatRestore";
     public const string UserBlockRelationshipChanged = "UserBlockRelationshipChanged";
+    public const string ContentRewardAuditProjection = "ContentRewardAuditProjectionRequested";
 }
 
 public sealed record PostPublishedTaskPayload(long PostId, long AuthorId);
@@ -109,3 +110,22 @@ public sealed record UserBlockRelationshipChangedTaskPayload(
     long BlockedUserId,
     long RelationshipVersion,
     DateTime OccurredAtUtc);
+
+public sealed record ContentRewardAuditProjectionEntryPayload(
+    long UserId,
+    long ChangeAmount,
+    long BalanceBefore,
+    long BalanceAfter,
+    string ChangeType,
+    string SourceEventKey);
+
+public sealed record ContentRewardAuditProjectionTaskPayload(
+    long TenantId,
+    long ContentRewardId,
+    long IdempotencyRecordId,
+    long CoinTransactionId,
+    DateTime OccurredAtUtc,
+    string OperatorName,
+    long OperatorId,
+    ContentRewardAuditProjectionEntryPayload SenderEntry,
+    ContentRewardAuditProjectionEntryPayload RecipientEntry);

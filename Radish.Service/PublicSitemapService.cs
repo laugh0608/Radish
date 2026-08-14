@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
 using Radish.Common.CacheTool;
+using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -42,6 +43,7 @@ public class PublicSitemapService : IPublicSitemapService
     private readonly IBaseRepository<Post> _postRepository;
     private readonly IBaseRepository<WikiDocument> _wikiDocumentRepository;
     private readonly IBaseRepository<Product> _productRepository;
+    private readonly ITagDiscoveryRepository _tagDiscoveryRepository;
 
 #pragma warning disable CS0618
     private static readonly Expression<Func<Product, bool>> PublicVisibleProductExpression = p =>
@@ -68,12 +70,14 @@ public class PublicSitemapService : IPublicSitemapService
         ICaching cache,
         IBaseRepository<Post> postRepository,
         IBaseRepository<WikiDocument> wikiDocumentRepository,
-        IBaseRepository<Product> productRepository)
+        IBaseRepository<Product> productRepository,
+        ITagDiscoveryRepository tagDiscoveryRepository)
     {
         _cache = cache;
         _postRepository = postRepository;
         _wikiDocumentRepository = wikiDocumentRepository;
         _productRepository = productRepository;
+        _tagDiscoveryRepository = tagDiscoveryRepository;
     }
 
     public Task<string> GetIndexXmlAsync(string publicBaseUrl)
@@ -162,6 +166,7 @@ public class PublicSitemapService : IPublicSitemapService
         };
 
         await AddSectionIndexEntriesAsync(entries, "forum", publicBaseUrl, now, () => _postRepository.QueryCountAsync(IsPublicPost));
+        await AddSectionIndexEntriesAsync(entries, "tags", publicBaseUrl, now, _tagDiscoveryRepository.QueryIndexableTagCountAsync);
         await AddSectionIndexEntriesAsync(entries, "docs", publicBaseUrl, now, () => _wikiDocumentRepository.QueryCountAsync(IsPublicWikiDocument));
         await AddSectionIndexEntriesAsync(entries, "shop", publicBaseUrl, now, () => _productRepository.QueryCountAsync(PublicVisibleProductExpression));
 
@@ -202,6 +207,7 @@ public class PublicSitemapService : IPublicSitemapService
         {
             "static" => BuildStaticEntries(publicBaseUrl, DateTime.UtcNow),
             "forum" => await BuildForumEntriesAsync(pageIndex, publicBaseUrl),
+            "tags" => await BuildTagEntriesAsync(pageIndex, publicBaseUrl),
             "docs" => await BuildDocsEntriesAsync(pageIndex, publicBaseUrl),
             "shop" => await BuildShopEntriesAsync(pageIndex, publicBaseUrl),
             _ => []
@@ -250,6 +256,21 @@ public class PublicSitemapService : IPublicSitemapService
             .Select(document => new UrlEntry(
                 CombineUrl(publicBaseUrl, BuildDocsPath(document.Slug, document.Id)),
                 ResolveLastModifiedUtc(document.ModifyTime, document.PublishedAt, document.CreateTime)))
+            .ToList();
+    }
+
+    private async Task<List<UrlEntry>> BuildTagEntriesAsync(int pageIndex, string publicBaseUrl)
+    {
+        var tags = await _tagDiscoveryRepository.QueryIndexableTagPageAsync(
+            pageIndex,
+            SectionPageSize);
+
+        return tags
+            .Select(tag => new UrlEntry(
+                CombineUrl(
+                    publicBaseUrl,
+                    $"/forum/tag/{Uri.EscapeDataString(TagSlugHelper.BuildCanonicalSlug(tag.Name, tag.Slug))}"),
+                ResolveLastModifiedUtc(tag.ModifyTime, null, tag.CreateTime)))
             .ToList();
     }
 
@@ -324,7 +345,7 @@ public class PublicSitemapService : IPublicSitemapService
     private static string NormalizeSection(string section)
     {
         var normalized = section.Trim().ToLowerInvariant();
-        return normalized is "static" or "forum" or "docs" or "shop"
+        return normalized is "static" or "forum" or "tags" or "docs" or "shop"
             ? normalized
             : string.Empty;
     }

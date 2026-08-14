@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   AntModal as Modal,
+  BottomSheet,
   Form,
   AntInput as Input,
   InputNumber,
@@ -13,7 +14,7 @@ import {
   attachmentImageAccept,
   isSupportedAttachmentImageFile,
 } from '@radish/ui';
-import { Upload } from 'antd';
+import { Grid, Upload } from 'antd';
 import type { UploadProps } from 'antd';
 import { PlusOutlined } from '@radish/ui';
 import { uploadAttachmentImage } from '@/api/attachmentApi';
@@ -32,16 +33,20 @@ interface StickerGroupFormProps {
   visible: boolean;
   mode: 'create' | 'edit';
   group?: StickerGroupVo;
+  canSubmit: boolean;
   onCancel: () => void;
   onSuccess: () => void;
 }
 
-export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: StickerGroupFormProps) => {
+export const StickerGroupForm = ({ visible, mode, group, canSubmit, onCancel, onSuccess }: StickerGroupFormProps) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [codeChecking, setCodeChecking] = useState(false);
   const [coverUploading, setCoverUploading] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
   const coverAttachmentId = Form.useWatch('coverAttachmentId', form);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | undefined>(undefined);
 
@@ -54,6 +59,13 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   };
 
   const handleCoverUpload: UploadProps['customRequest'] = async (options) => {
+    if (!canSubmit) {
+      const error = new Error(t('stickers.common.permissionDenied'));
+      message.error(error.message);
+      options.onError?.(error);
+      return;
+    }
+
     const file = options.file;
     if (!(file instanceof File)) {
       options.onError?.(new Error(t('stickers.common.invalidFile')));
@@ -83,6 +95,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       });
       form.setFieldValue('coverAttachmentId', uploaded.attachmentId);
       setCoverPreviewUrl(getAvatarUrl(uploaded.thumbnailUrl || uploaded.url));
+      setIsDirty(true);
       options.onSuccess?.(uploaded);
       message.success(t('stickers.groupForm.coverUploaded'));
     } catch (error) {
@@ -96,7 +109,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   };
 
   const handleCodeBlur = async () => {
-    if (mode !== 'create') {
+    if (mode !== 'create' || !canSubmit) {
       return;
     }
 
@@ -121,13 +134,24 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
   };
 
   const handleSubmit = async () => {
+    if (loading) return;
+    if (!canSubmit) {
+      message.error(t('stickers.common.permissionDenied'));
+      return;
+    }
     if (coverUploading) {
       message.warning(t('stickers.groupForm.coverUploading'));
       return;
     }
 
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    try {
       setLoading(true);
 
       const request: StickerGroupUpsertRequest = {
@@ -154,6 +178,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
         message.success(t('stickers.groupForm.feedback.updated'));
       }
 
+      setIsDirty(false);
       onSuccess();
     } catch (error) {
       log.error('StickerGroupForm', '提交表情包分组失败:', error);
@@ -167,6 +192,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
     if (!visible) {
       form.resetFields();
       setCoverPreviewUrl(undefined);
+      setIsDirty(false);
       return;
     }
 
@@ -181,6 +207,7 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
         sort: group.voSort,
       });
       setCoverPreviewUrl(getAvatarUrl(group.voCoverImageUrl));
+      setIsDirty(false);
       return;
     }
 
@@ -194,22 +221,47 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
       sort: 0,
     });
     setCoverPreviewUrl(undefined);
+    setIsDirty(false);
   }, [visible, mode, group, form]);
 
-  return (
-    <Modal
-      title={t(mode === 'create' ? 'stickers.groupForm.createTitle' : 'stickers.groupForm.editTitle')}
-      open={visible}
-      onOk={() => {
-        void handleSubmit();
-      }}
-      onCancel={onCancel}
-      confirmLoading={loading || coverUploading}
-      width={680}
-      destroyOnHidden
-      forceRender
-    >
-      <Form form={form} layout="vertical">
+  useEffect(() => {
+    if (!visible || !isDirty) return;
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty, visible]);
+
+  const closeForm = () => {
+    setIsDirty(false);
+    form.resetFields();
+    onCancel();
+  };
+
+  const handleRequestCancel = () => {
+    if (loading || coverUploading) {
+      message.warning(t('stickers.common.closeBusy'));
+      return;
+    }
+    if (!isDirty) {
+      closeForm();
+      return;
+    }
+    Modal.confirm({
+      title: t('stickers.common.discardTitle'),
+      content: t('stickers.common.discardAttachmentDescription'),
+      okText: t('stickers.common.discardConfirm'),
+      cancelText: t('stickers.common.continueEditing'),
+      okButtonProps: { danger: true },
+      onOk: closeForm,
+    });
+  };
+
+  const formContent = (
+    <Form form={form} layout="vertical" onValuesChange={() => setIsDirty(true)}>
+
         <Form.Item
           name="name"
           label={t('stickers.groupForm.name')}
@@ -275,17 +327,18 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
                 accept={attachmentImageAccept}
                 showUploadList={false}
                 customRequest={handleCoverUpload}
-                disabled={coverUploading || loading}
+                disabled={!canSubmit || coverUploading || loading}
               >
-                <Button icon={<PlusOutlined />} disabled={coverUploading || loading}>
+                <Button icon={<PlusOutlined />} disabled={!canSubmit || coverUploading || loading}>
                   {t(coverUploading ? 'stickers.common.uploading' : 'stickers.groupForm.uploadCover')}
                 </Button>
               </Upload>
               <Button
-                disabled={!coverAttachmentId || coverUploading || loading}
+                disabled={!canSubmit || !coverAttachmentId || coverUploading || loading}
                 onClick={() => {
                   form.setFieldValue('coverAttachmentId', undefined);
                   setCoverPreviewUrl(undefined);
+                  setIsDirty(true);
                 }}
               >
                 {t('stickers.groupForm.clearCover')}
@@ -328,6 +381,47 @@ export const StickerGroupForm = ({ visible, mode, group, onCancel, onSuccess }: 
           <Switch checkedChildren={t('stickers.common.enabled')} unCheckedChildren={t('stickers.common.disabled')} />
         </Form.Item>
       </Form>
+  );
+
+  const title = t(mode === 'create' ? 'stickers.groupForm.createTitle' : 'stickers.groupForm.editTitle');
+  if (isMobile) {
+    return (
+      <BottomSheet
+        isOpen={visible}
+        onClose={handleRequestCancel}
+        closeLabel={t('stickers.common.cancel')}
+        title={title}
+        height="92%"
+        closeOnOverlayClick={false}
+        closeOnEscape={!loading && !coverUploading}
+        className="sticker-form-sheet"
+        footer={(
+          <div className="admin-form-mobile-actions">
+            <Button disabled={loading || coverUploading} onClick={handleRequestCancel}>{t('stickers.common.cancel')}</Button>
+            <Button variant="primary" disabled={!canSubmit || loading || coverUploading} onClick={() => void handleSubmit()}>{t('stickers.common.confirm')}</Button>
+          </div>
+        )}
+      >
+        {formContent}
+      </BottomSheet>
+    );
+  }
+
+  return (
+    <Modal
+      title={title}
+      open={visible}
+      onOk={() => void handleSubmit()}
+      onCancel={handleRequestCancel}
+      confirmLoading={loading || coverUploading}
+      okButtonProps={{ disabled: !canSubmit }}
+      width={680}
+      maskClosable={false}
+      keyboard={false}
+      destroyOnHidden
+      forceRender
+    >
+      {formContent}
     </Modal>
   );
 };

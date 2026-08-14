@@ -2,11 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Threading.Tasks;
 using AutoMapper;
 using JetBrains.Annotations;
 using Moq;
 using Radish.Common.Exceptions;
+using Radish.Common.AttributeTool;
 using Radish.Infrastructure;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -548,13 +550,17 @@ public class CoinServiceTest
                 1,
                 20,
                 It.IsAny<Expression<Func<CoinTransaction, object>>>(),
+                OrderByType.Desc,
+                It.IsAny<Expression<Func<CoinTransaction, object>>>(),
                 OrderByType.Desc))
             .ReturnsAsync((
                 Expression<Func<CoinTransaction, bool>> whereExpression,
                 int pageIndex,
                 int pageSize,
                 Expression<Func<CoinTransaction, object>>? orderByExpression,
-                OrderByType orderByType) =>
+                OrderByType orderByType,
+                Expression<Func<CoinTransaction, object>>? thenByExpression,
+                OrderByType thenByType) =>
             {
                 var predicate = NormalizeCoinTransactionExpression(whereExpression).Compile();
                 var filtered = transactions.Where(predicate).ToList();
@@ -598,6 +604,17 @@ public class CoinServiceTest
 
     #region 管理员调账测试
 
+    [Fact]
+    public void AdminAdjustBalanceAsync_ShouldDeclarePublicTransactionBoundary()
+    {
+        var method = typeof(CoinService).GetMethod(
+            nameof(CoinService.AdminAdjustBalanceAsync),
+            BindingFlags.Instance | BindingFlags.Public);
+
+        Assert.NotNull(method);
+        Assert.NotNull(method!.GetCustomAttribute<UseTranAttribute>());
+    }
+
     /// <summary>
     /// 测试管理员调账 - 参数验证
     /// </summary>
@@ -619,7 +636,13 @@ public class CoinServiceTest
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
             async () => await service.AdminAdjustBalanceAsync(
-                userId, deltaAmount, reason!, operatorId, operatorName)
+                userId,
+                deltaAmount,
+                reason!,
+                operatorId,
+                operatorName,
+                0,
+                "coin-admin-adjust:validation")
         );
 
         Assert.Contains(expectedErrorMessage, exception.Message, StringComparison.OrdinalIgnoreCase);
@@ -634,10 +657,210 @@ public class CoinServiceTest
         var service = CreateCoinService();
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.AdminAdjustBalanceAsync(userId, 500, "测试调账", operatorId, operatorName));
+            service.AdminAdjustBalanceAsync(
+                userId,
+                500,
+                "测试调账",
+                operatorId,
+                operatorName,
+                0,
+                "coin-admin-adjust:missing-user"));
 
         Assert.Contains("用户不存在或已删除", exception.Message, StringComparison.OrdinalIgnoreCase);
         _userBalanceRepositoryMock.Verify(r => r.AddAsync(It.IsAny<UserBalance>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task AdminAdjustBalanceAsync_ShouldReplaySucceededRequestWithoutAssetWrite()
+    {
+        const long userId = 123456;
+        const long operatorId = 1;
+        const string key = "coin-admin-adjust:replay";
+        const string transactionNo = "TXN_ADMIN_REPLAY";
+        var idempotencyService = CreateAdminAdjustmentIdempotencyMock(
+            key,
+            new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Succeeded,
+                ResponsePayload = "replay"
+            });
+        idempotencyService
+            .Setup(service => service.DeserializeResponse<TransactionResultVo>("replay"))
+            .Returns(new TransactionResultVo { VoTransactionNo = transactionNo });
+
+        var service = CreateCoinService(operationIdempotencyService: idempotencyService.Object);
+        var result = await service.AdminAdjustBalanceAsync(
+            userId,
+            100,
+            "补发",
+            operatorId,
+            "admin",
+            3,
+            key);
+
+        Assert.Equal(transactionNo, result);
+        _coinTransactionRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<CoinTransaction>()),
+            Times.Never);
+        _userBalanceRepositoryMock.Verify(
+            repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserBalance, UserBalance>>>(),
+                It.IsAny<Expression<Func<UserBalance, bool>>>()),
+            Times.Never);
+        idempotencyService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task AdminAdjustBalanceAsync_ShouldRejectIdempotencyPayloadConflict()
+    {
+        const string key = "coin-admin-adjust:conflict";
+        var idempotencyService = CreateAdminAdjustmentIdempotencyMock(
+            key,
+            new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Conflict,
+                Message = "幂等键已被不同请求使用"
+            });
+        var service = CreateCoinService(operationIdempotencyService: idempotencyService.Object);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.AdminAdjustBalanceAsync(
+                123456,
+                100,
+                "补发",
+                1,
+                "admin",
+                3,
+                key));
+
+        Assert.Equal(409, exception.StatusCode);
+        Assert.Equal(CoinErrorCodes.AdminAdjustIdempotencyConflict, exception.ErrorCode);
+        _coinTransactionRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<CoinTransaction>()),
+            Times.Never);
+        idempotencyService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task AdminAdjustBalanceAsync_ShouldRejectStaleBalanceVersionBeforeWrites()
+    {
+        const string key = "coin-admin-adjust:stale";
+        _userBalanceRepositoryMock
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>() ))
+            .ReturnsAsync(new UserBalance
+            {
+                UserId = 123456,
+                Balance = 1000,
+                Version = 5,
+                TenantId = 0
+            });
+        var idempotencyService = CreateAdminAdjustmentIdempotencyMock(
+            key,
+            new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Started,
+                RecordId = 901
+            });
+        var service = CreateCoinService(operationIdempotencyService: idempotencyService.Object);
+
+        var exception = await Assert.ThrowsAsync<BusinessException>(() =>
+            service.AdminAdjustBalanceAsync(
+                123456,
+                -100,
+                "回收",
+                1,
+                "admin",
+                4,
+                key));
+
+        Assert.Equal(CoinErrorCodes.AdminAdjustVersionConflict, exception.ErrorCode);
+        _coinTransactionRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<CoinTransaction>()),
+            Times.Never);
+        _balanceChangeLogRepositoryMock.Verify(
+            repository => repository.AddAsync(It.IsAny<BalanceChangeLog>()),
+            Times.Never);
+        idempotencyService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task AdminAdjustBalanceAsync_ShouldCommitBalanceLedgerAndIdempotencyResult()
+    {
+        const long userId = 123456;
+        const long operatorId = 1;
+        const string key = "coin-admin-adjust:success";
+        var balance = new UserBalance
+        {
+            UserId = userId,
+            Balance = 1000,
+            TotalEarned = 1000,
+            Version = 3,
+            TenantId = 0
+        };
+        CoinTransaction? createdTransaction = null;
+        BalanceChangeLog? createdChangeLog = null;
+        OperationIdempotencyCompletionRequest? completion = null;
+
+        _userBalanceRepositoryMock
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>() ))
+            .ReturnsAsync(balance);
+        _coinTransactionRepositoryMock
+            .Setup(repository => repository.AddAsync(It.IsAny<CoinTransaction>()))
+            .Callback<CoinTransaction>(transaction => createdTransaction = transaction)
+            .ReturnsAsync((CoinTransaction transaction) => transaction.Id);
+        _userBalanceRepositoryMock
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<UserBalance, UserBalance>>>(),
+                It.IsAny<Expression<Func<UserBalance, bool>>>() ))
+            .ReturnsAsync(1);
+        _balanceChangeLogRepositoryMock
+            .Setup(repository => repository.AddAsync(It.IsAny<BalanceChangeLog>()))
+            .Callback<BalanceChangeLog>(changeLog => createdChangeLog = changeLog)
+            .ReturnsAsync(801);
+        _coinTransactionRepositoryMock
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<CoinTransaction, CoinTransaction>>>(),
+                It.IsAny<Expression<Func<CoinTransaction, bool>>>() ))
+            .ReturnsAsync(1);
+
+        var idempotencyService = CreateAdminAdjustmentIdempotencyMock(
+            key,
+            new OperationIdempotencyBeginResult
+            {
+                Status = OperationIdempotencyBeginStatus.Started,
+                RecordId = 901
+            });
+        idempotencyService
+            .Setup(service => service.SerializeResponse(It.IsAny<TransactionResultVo>()))
+            .Returns("success");
+        idempotencyService
+            .Setup(service => service.CompleteSuccessAsync(It.IsAny<OperationIdempotencyCompletionRequest>()))
+            .Callback<OperationIdempotencyCompletionRequest>(request => completion = request)
+            .Returns(Task.CompletedTask);
+
+        var service = CreateCoinService(operationIdempotencyService: idempotencyService.Object);
+        var transactionNo = await service.AdminAdjustBalanceAsync(
+            userId,
+            250,
+            "运营补发",
+            operatorId,
+            "admin",
+            3,
+            key);
+
+        Assert.NotNull(createdTransaction);
+        Assert.Equal(transactionNo, createdTransaction!.TransactionNo);
+        Assert.Equal("ADMIN_ADJUST", createdTransaction.TransactionType);
+        Assert.Equal(250, createdTransaction.Amount);
+        Assert.NotNull(createdChangeLog);
+        Assert.Equal(250, createdChangeLog!.ChangeAmount);
+        Assert.Equal(1000, createdChangeLog.BalanceBefore);
+        Assert.Equal(1250, createdChangeLog.BalanceAfter);
+        Assert.Equal($"coin-admin-adjust:{createdTransaction.Id}:{userId}", createdChangeLog.SourceEventKey);
+        Assert.NotNull(completion);
+        Assert.Equal(createdTransaction.Id, completion!.ResourceId);
+        Assert.Equal(transactionNo, completion.ResourceNo);
+        idempotencyService.VerifyAll();
     }
 
     [Fact]
@@ -1004,6 +1227,33 @@ public class CoinServiceTest
     #endregion
 
     #region 辅助方法
+
+    private static Mock<IOperationIdempotencyService> CreateAdminAdjustmentIdempotencyMock(
+        string key,
+        OperationIdempotencyBeginResult beginResult)
+    {
+        var service = new Mock<IOperationIdempotencyService>(MockBehavior.Strict);
+        service
+            .Setup(item => item.NormalizeKey(key))
+            .Returns(key);
+        service
+            .Setup(item => item.CreateRequestSnapshot(
+                It.IsAny<IReadOnlyDictionary<string, object?>>()))
+            .Returns(new OperationIdempotencyRequestSnapshot
+            {
+                RequestHash = "request-hash",
+                RequestSummary = "request-summary"
+            });
+        service
+            .Setup(item => item.BeginAsync(It.Is<OperationIdempotencyBeginRequest>(request =>
+                request.OperationType == OperationIdempotencyOperationTypes.CoinAdminAdjustment &&
+                request.IdempotencyKey == key &&
+                request.RequestHash == "request-hash" &&
+                request.RequestSummary == "request-summary" &&
+                !request.AllowExpiredProcessingReset)))
+            .ReturnsAsync(beginResult);
+        return service;
+    }
 
     /// <summary>
     /// 创建 CoinService 实例（用于测试）

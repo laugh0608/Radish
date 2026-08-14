@@ -5,6 +5,7 @@ using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 
 namespace Radish.Api.Controllers.v1;
@@ -44,13 +45,24 @@ public class LeaderboardController : ControllerBase
     [HttpGet]
     [AllowAnonymous]
     public async Task<MessageModel<PageModel<UnifiedLeaderboardItemVo>>> GetLeaderboard(
-        [FromQuery] LeaderboardType type = LeaderboardType.Experience,
+        [FromQuery] int type = (int)LeaderboardType.Experience,
         [FromQuery] int pageIndex = 1,
         [FromQuery] int pageSize = 50)
     {
+        var leaderboardType = (LeaderboardType)type;
+        if (!LeaderboardPublicPolicy.IsPublicType(leaderboardType))
+        {
+            return MessageModel<PageModel<UnifiedLeaderboardItemVo>>.Message(
+                false,
+                "该排行榜类型不提供公开访问",
+                default,
+                LeaderboardErrorCodes.TypeUnavailable,
+                LeaderboardErrorCodes.ResolveMessageKey(LeaderboardErrorCodes.TypeUnavailable));
+        }
+
         var currentUserId = GetCurrentUserId();
         var result = await _leaderboardService.GetLeaderboardAsync(
-            type,
+            leaderboardType,
             pageIndex,
             pageSize,
             currentUserId > 0 ? currentUserId : null);
@@ -64,15 +76,37 @@ public class LeaderboardController : ControllerBase
     /// <param name="type">排行榜类型</param>
     /// <returns>用户排名（0 表示未上榜）</returns>
     [HttpGet]
-    public async Task<MessageModel<int>> GetMyRank([FromQuery] LeaderboardType type = LeaderboardType.Experience)
+    public async Task<MessageModel<int>> GetMyRank(
+        [FromQuery] int type = (int)LeaderboardType.Experience)
     {
+        var leaderboardType = (LeaderboardType)type;
+        if (!LeaderboardPublicPolicy.IsPublicType(leaderboardType))
+        {
+            return MessageModel<int>.Message(
+                false,
+                "该排行榜类型不提供公开访问",
+                0,
+                LeaderboardErrorCodes.TypeUnavailable,
+                LeaderboardErrorCodes.ResolveMessageKey(LeaderboardErrorCodes.TypeUnavailable));
+        }
+
+        if (!LeaderboardPublicPolicy.SupportsUserRank(leaderboardType))
+        {
+            return MessageModel<int>.Message(
+                false,
+                "该排行榜类型不支持用户个人排名",
+                0,
+                LeaderboardErrorCodes.UserRankUnavailable,
+                LeaderboardErrorCodes.ResolveMessageKey(LeaderboardErrorCodes.UserRankUnavailable));
+        }
+
         var userId = GetCurrentUserId();
         if (userId <= 0)
         {
             return MessageModel<int>.Message(false, "未登录", 0);
         }
 
-        var rank = await _leaderboardService.GetUserRankAsync(type, userId);
+        var rank = await _leaderboardService.GetUserRankAsync(leaderboardType, userId);
         return MessageModel<int>.Success("查询成功", rank);
     }
 

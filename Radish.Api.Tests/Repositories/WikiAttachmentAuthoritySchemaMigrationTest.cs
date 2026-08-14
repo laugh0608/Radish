@@ -18,6 +18,32 @@ public sealed class WikiAttachmentAuthoritySchemaMigrationTest
         "RADISH_TEST_POSTGRES_CONNECTION_STRING";
 
     [Fact]
+    public void Verify_ShouldIgnoreColumnsOwnedByPendingLaterMigration()
+    {
+        var path = Path.Combine(
+            Path.GetTempPath(),
+            $"radish-wiki-attachment-legacy-schema-{Guid.NewGuid():N}.db");
+        using var db = CreateSqlite(path);
+        using var services = CreateServices(db);
+        try
+        {
+            Seed(db);
+            var migration = WikiAttachmentAuthoritySchemaMigration.Instance;
+            migration.Apply(db, services);
+            db.Ado.ExecuteCommand("ALTER TABLE \"WikiDocument\" DROP COLUMN \"GovernanceVersion\"");
+
+            Assert.Empty(migration.Verify(db, services));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     public void Migration_ShouldBackfillOnlyWikiAndProvenLegacyDocumentOnSqlite()
     {
         var path = Path.Combine(

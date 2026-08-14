@@ -1,9 +1,12 @@
 #nullable enable
 
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Moq;
 using Radish.Api.Controllers;
@@ -19,6 +22,21 @@ namespace Radish.Api.Tests.Controllers;
 [TestSubject(typeof(ChannelMessageController))]
 public class ChannelMessageControllerTest
 {
+    [Theory]
+    [InlineData(nameof(ChannelMessageController.GetHistory))]
+    [InlineData(nameof(ChannelMessageController.GetMessageWindow))]
+    public void HistoryReadActions_ShouldDeclareNotFoundResponse(string actionName)
+    {
+        var method = typeof(ChannelMessageController).GetMethod(actionName);
+
+        Assert.NotNull(method);
+        var statusCodes = method
+            .GetCustomAttributes(typeof(ProducesResponseTypeAttribute), false)
+            .Cast<ProducesResponseTypeAttribute>()
+            .Select(attribute => attribute.StatusCode);
+        Assert.Contains(StatusCodes.Status404NotFound, statusCodes);
+    }
+
     [Fact]
     public async Task GetHistory_Should_Return_BadRequest_When_ChannelId_Invalid()
     {
@@ -70,6 +88,23 @@ public class ChannelMessageControllerTest
         var payload = Assert.IsType<List<ChannelMessageVo>>(result.ResponseData);
         Assert.Single(payload);
         Assert.Equal(90001, payload[0].VoId);
+    }
+
+    [Fact]
+    public async Task GetHistory_Should_Return_Empty_List_When_Readable_Channel_Has_No_Messages()
+    {
+        var serviceMock = CreateChatServiceMock();
+        serviceMock
+            .Setup(service => service.GetHistoryAsync(0, 10001, 1, null, null, 50))
+            .ReturnsAsync([]);
+        var controller = CreateController(serviceMock.Object);
+
+        var result = await controller.GetHistory(1, null, null, 50);
+
+        Assert.True(result.IsSuccess);
+        Assert.Equal(200, result.StatusCode);
+        var payload = Assert.IsType<List<ChannelMessageVo>>(result.ResponseData);
+        Assert.Empty(payload);
     }
 
     [Fact]

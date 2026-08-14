@@ -63,6 +63,38 @@ function isMobileSidebarLayout(): boolean {
   return window.matchMedia(MOBILE_SIDEBAR_MEDIA_QUERY).matches;
 }
 
+function isOrderDetailTask(search: string, activeMenuKey: string): boolean {
+  if (activeMenuKey !== 'orders') {
+    return false;
+  }
+
+  const searchParams = new URLSearchParams(search);
+  const openDetail = searchParams.get('openDetail');
+  const orderId = searchParams.get('orderId')?.trim() ?? '';
+  const orderNo = searchParams.get('orderNo')?.trim() ?? '';
+  return (openDetail === '1' || openDetail === 'true')
+    && (/^[1-9]\d*$/u.test(orderId) || orderNo.length > 0);
+}
+
+function isModerationDetailTask(search: string, activeMenuKey: string): boolean {
+  if (activeMenuKey !== 'moderation') {
+    return false;
+  }
+
+  const searchParams = new URLSearchParams(search);
+  const view = searchParams.get('view');
+  const casePublicId = searchParams.get('case')?.trim() ?? '';
+  const appealPublicId = searchParams.get('appeal')?.trim() ?? '';
+  return view === 'appeals'
+    ? /^apl_[a-zA-Z0-9_-]{1,156}$/u.test(appealPublicId)
+    : /^mod_[a-zA-Z0-9_-]{1,156}$/u.test(casePublicId);
+}
+
+function isConsoleMobileTask(search: string, activeMenuKey: string): boolean {
+  return isOrderDetailTask(search, activeMenuKey)
+    || isModerationDetailTask(search, activeMenuKey);
+}
+
 const menuIconMap: Record<ConsoleRouteIconKey, ReactNode> = {
   dashboard: <DashboardOutlined />,
   application: <AppstoreOutlined />,
@@ -107,6 +139,10 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   );
   const sidebarRoutes = useMemo(() => sidebarGroups.flatMap((group) => group.routes), [sidebarGroups]);
   const activeMenuKey = getActiveMenuKey(location.pathname);
+  const mobileTaskActive = isMobileLayout && isConsoleMobileTask(location.search, activeMenuKey);
+  const mobileModerationHeader = isMobileLayout && activeMenuKey === 'moderation';
+  const mobileTaskKeepsHeader = mobileModerationHeader
+    && isModerationDetailTask(location.search, activeMenuKey);
   const menuItems = useMemo<NonNullable<MenuProps['items']>>(
     () => sidebarGroups.map((group) => ({
       key: `group:${group.key}`,
@@ -293,7 +329,13 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   };
 
   return (
-    <Layout className="admin-layout">
+    <Layout
+      className={[
+        'admin-layout',
+        mobileTaskActive ? 'admin-layout--mobile-task' : '',
+        mobileTaskKeepsHeader ? 'admin-layout--mobile-task-with-header' : '',
+      ].filter(Boolean).join(' ')}
+    >
       <Sider
         trigger={null}
         collapsible
@@ -320,61 +362,84 @@ export function AdminLayout({ children }: AdminLayoutProps) {
         />
       </Sider>
       <Layout className={collapsed ? 'collapsed' : ''}>
-        <Header className="admin-header">
-          <div className="admin-header-left">
-            {isMobileLayout ? (
-              <AppstoreOutlined
-                className="admin-trigger"
-                onClick={handleToggle}
-              />
-            ) : (
-              collapsed ? (
-                <MenuUnfoldOutlined
+        {!mobileTaskActive || mobileTaskKeepsHeader ? (
+          <Header
+            className={[
+              'admin-header',
+              mobileModerationHeader ? 'admin-header--mobile-brand' : '',
+              mobileTaskKeepsHeader ? 'admin-header--mobile-task' : '',
+            ].filter(Boolean).join(' ')}
+          >
+            <div className="admin-header-left">
+              {mobileModerationHeader ? (
+                <span className="admin-mobile-task-brand" aria-label="Radish Console">
+                  <span className="admin-mobile-task-brand__mark" aria-hidden="true">萝</span>
+                  <strong>Radish Console</strong>
+                </span>
+              ) : isMobileLayout ? (
+                <AppstoreOutlined
                   className="admin-trigger"
                   onClick={handleToggle}
                 />
               ) : (
-                <MenuFoldOutlined
-                  className="admin-trigger"
-                  onClick={handleToggle}
+                collapsed ? (
+                  <MenuUnfoldOutlined
+                    className="admin-trigger"
+                    onClick={handleToggle}
+                  />
+                ) : (
+                  <MenuFoldOutlined
+                    className="admin-trigger"
+                    onClick={handleToggle}
+                  />
+                )
+              )}
+              {!mobileModerationHeader ? <ClientBackLink /> : null}
+            </div>
+            <div className="admin-header-right">
+              {!mobileModerationHeader ? <LanguageSwitcher /> : null}
+              {!mobileModerationHeader ? (
+                <SearchOutlined
+                  className="admin-search-icon"
+                  onClick={() => setSearchVisible(true)}
                 />
-              )
-            )}
-            <ClientBackLink />
-          </div>
-          <div className="admin-header-right">
-            <LanguageSwitcher />
-            <SearchOutlined
-              className="admin-search-icon"
-              onClick={() => setSearchVisible(true)}
-            />
-            <Dropdown
-              menu={{
-                items: userMenuItems,
-                onClick: handleUserMenuClick,
-              }}
-              placement="bottomRight"
-            >
-              <div className="admin-user">
-                <Avatar
-                  size="small"
-                  icon={<UserOutlined />}
-                  src={getAvatarUrl(user?.voAvatarUrl)}
-                />
-                <span className="admin-username">
-                  {loading ? t('common.loading') : displayUserName}
-                </span>
-              </div>
-            </Dropdown>
-          </div>
-        </Header>
-        <Content className="admin-content">
-          <AppBreadcrumb />
+              ) : null}
+              <Dropdown
+                menu={{
+                  items: userMenuItems,
+                  onClick: handleUserMenuClick,
+                }}
+                placement="bottomRight"
+              >
+                <div className="admin-user">
+                  <Avatar
+                    size="small"
+                    icon={<UserOutlined />}
+                    src={getAvatarUrl(user?.voAvatarUrl)}
+                  />
+                  {!mobileModerationHeader ? (
+                    <span className="admin-username">
+                      {loading ? t('common.loading') : displayUserName}
+                    </span>
+                  ) : null}
+                </div>
+              </Dropdown>
+            </div>
+          </Header>
+        ) : null}
+        <Content
+          className={[
+            'admin-content',
+            mobileTaskActive ? 'admin-content--mobile-task' : '',
+            mobileTaskKeepsHeader ? 'admin-content--mobile-task-with-header' : '',
+          ].filter(Boolean).join(' ')}
+        >
+          {!mobileTaskActive && !mobileModerationHeader ? <AppBreadcrumb /> : null}
           {children}
         </Content>
       </Layout>
 
-      {isMobileLayout ? (
+      {isMobileLayout && !mobileTaskActive ? (
         <nav className="admin-mobile-nav" aria-label={t('console.mobile.navLabel')}>
           {mobileNavItems.map((item) => (
             <button

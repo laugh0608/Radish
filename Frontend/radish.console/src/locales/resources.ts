@@ -1,6 +1,7 @@
 import { enCore } from './en/core';
 import { enApplications } from './en/applications';
 import { enCoins } from './en/coins';
+import { enChannelDiscoverability } from './en/channelDiscoverability';
 import { enDashboard } from './en/dashboard';
 import { enDocuments } from './en/documents';
 import { enExperience } from './en/experience';
@@ -18,6 +19,7 @@ import { enUsers } from './en/users';
 import { zhCore } from './zh/core';
 import { zhApplications } from './zh/applications';
 import { zhCoins } from './zh/coins';
+import { zhChannelDiscoverability } from './zh/channelDiscoverability';
 import { zhDashboard } from './zh/dashboard';
 import { zhDocuments } from './zh/documents';
 import { zhExperience } from './zh/experience';
@@ -34,11 +36,11 @@ import { zhTaxonomy } from './zh/taxonomy';
 import { zhUsers } from './zh/users';
 
 export const consoleTranslationDomains = {
-  en: [enCore, enShell, enDashboard, enApplications, enProfile, enSystemTools, enUsers, enModeration, enOrders, enProducts, enSettings, enDocuments, enRoles, enTaxonomy, enStickers, enCoins, enExperience],
-  zh: [zhCore, zhShell, zhDashboard, zhApplications, zhProfile, zhSystemTools, zhUsers, zhModeration, zhOrders, zhProducts, zhSettings, zhDocuments, zhRoles, zhTaxonomy, zhStickers, zhCoins, zhExperience],
+  en: [enCore, enShell, enDashboard, enApplications, enProfile, enSystemTools, enUsers, enChannelDiscoverability, enModeration, enOrders, enProducts, enSettings, enDocuments, enRoles, enTaxonomy, enStickers, enCoins, enExperience],
+  zh: [zhCore, zhShell, zhDashboard, zhApplications, zhProfile, zhSystemTools, zhUsers, zhChannelDiscoverability, zhModeration, zhOrders, zhProducts, zhSettings, zhDocuments, zhRoles, zhTaxonomy, zhStickers, zhCoins, zhExperience],
 } as const;
 
 export const resources = {
-  en: { translation: { ...enCore, ...enShell, ...enDashboard, ...enApplications, ...enProfile, ...enSystemTools, ...enUsers, ...enModeration, ...enOrders, ...enProducts, ...enSettings, ...enDocuments, ...enRoles, ...enTaxonomy, ...enStickers, ...enCoins, ...enExperience } },
-  zh: { translation: { ...zhCore, ...zhShell, ...zhDashboard, ...zhApplications, ...zhProfile, ...zhSystemTools, ...zhUsers, ...zhModeration, ...zhOrders, ...zhProducts, ...zhSettings, ...zhDocuments, ...zhRoles, ...zhTaxonomy, ...zhStickers, ...zhCoins, ...zhExperience } },
+  en: { translation: { ...enCore, ...enShell, ...enDashboard, ...enApplications, ...enProfile, ...enSystemTools, ...enUsers, ...enChannelDiscoverability, ...enModeration, ...enOrders, ...enProducts, ...enSettings, ...enDocuments, ...enRoles, ...enTaxonomy, ...enStickers, ...enCoins, ...enExperience } },
+  zh: { translation: { ...zhCore, ...zhShell, ...zhDashboard, ...zhApplications, ...zhProfile, ...zhSystemTools, ...zhUsers, ...zhChannelDiscoverability, ...zhModeration, ...zhOrders, ...zhProducts, ...zhSettings, ...zhDocuments, ...zhRoles, ...zhTaxonomy, ...zhStickers, ...zhCoins, ...zhExperience } },
 } as const;

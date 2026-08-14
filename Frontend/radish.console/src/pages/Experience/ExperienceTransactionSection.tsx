@@ -5,6 +5,7 @@ import type { ExpTransactionVo } from '@/api/experienceAdminApi';
 import { createTransactionColumns } from './experienceAdminColumns';
 import { EXPERIENCE_TRANSACTION_TYPES } from './experienceAdminHelpers';
 import { useTranslation } from 'react-i18next';
+import { formatConsoleDateTime, formatConsoleSignedInteger } from '@/utils/localeFormatters';
 
 type ExperienceTransactionSectionProps = {
   transactionSectionRef: RefObject<HTMLElement | null>;
@@ -104,7 +105,7 @@ export const ExperienceTransactionSection = ({
             dataSource={transactions}
             loading={loadingTransactions}
             scroll={{ x: 1120 }}
-            className="experience-table-spaced"
+            className="experience-responsive-table experience-table-spaced"
             pagination={{
               current: transactionPageIndex,
               pageSize: transactionPageSize,
@@ -118,6 +119,20 @@ export const ExperienceTransactionSection = ({
               emptyText: loadingTransactions ? t('experience.transactions.loading') : t('experience.transactions.empty'),
             }}
           />
+          <div className="experience-mobile-list experience-section-gap-sm">
+            {transactions.map((transaction) => (
+              <article key={transaction.voId} className="experience-mobile-card">
+                <strong>{transaction.voExpTypeDisplay}</strong>
+                <span className={transaction.voExpAmount >= 0
+                  ? 'experience-transaction-amount experience-transaction-amount--positive'
+                  : 'experience-transaction-amount experience-transaction-amount--negative'}>
+                  {formatConsoleSignedInteger(transaction.voExpAmount, i18n.resolvedLanguage)}
+                </span>
+                <span>{transaction.voRemark || t('experience.common.none')}</span>
+                <span>{transaction.voOperatorName || `#${transaction.voOperatorId}`} · {formatConsoleDateTime(transaction.voCreateTime, i18n.resolvedLanguage)}</span>
+              </article>
+            ))}
+          </div>
         </>
       ) : (
         <div className="experience-empty-hint">

@@ -18,8 +18,17 @@ public interface IUserService : IBaseService<User, UserVo>
     /// 根据邮箱获取可登录用户
     /// </summary>
     /// <param name="email">电子邮箱</param>
-    /// <returns>单个用户视图模型，不存在则返回 null</returns>
-    Task<UserVo?> GetEnabledUserByEmailAsync(string email);
+    /// <returns>仅供认证链路使用的凭据快照，不存在则返回 null</returns>
+    Task<UserCredentialSnapshot?> GetEnabledUserCredentialByEmailAsync(string email);
+
+    /// <summary>获取 Console 用户权威分页并批量回填角色。</summary>
+    Task<(List<UserVo> Data, int Total)> GetConsoleUserPageAsync(ConsoleUserListQueryDto query);
+
+    /// <summary>获取 Console 用户主资料并回填角色。</summary>
+    Task<UserVo?> GetConsoleUserDetailAsync(long userId);
+
+    /// <summary>获取 Console 用户角色与派生权限快照。</summary>
+    Task<ConsoleUserAuthorizationVo?> GetConsoleUserAuthorizationAsync(long userId);
 
     /// <summary>
     /// 根据公开主页标识获取可公开访问的用户。
@@ -65,6 +74,11 @@ public interface IUserService : IBaseService<User, UserVo>
     /// <param name="context">变更上下文</param>
     /// <returns>展示名是否实际发生变化</returns>
     Task<bool> ChangeDisplayNameAsync(long userId, string displayName, UserDisplayNameChangeContext context);
+
+    /// <summary>
+    /// 在单一事务中更新当前用户资料与展示名审计。
+    /// </summary>
+    Task<bool> UpdateMyProfileAsync(long userId, UpdateMyProfileDto request, UserDisplayNameChangeContext context);
 
     /// <summary>
     /// 搜索用户（用于@提及功能）

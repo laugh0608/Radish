@@ -17,7 +17,9 @@ import {
 } from '../src/public/shopRouteState.ts';
 import {
   buildPublicLeaderboardPath,
+  filterPublicLeaderboardTypes,
   parsePublicLeaderboardRoute,
+  publicLeaderboardTypeRouteDefinitions,
 } from '../src/public/leaderboardRouteState.ts';
 import {
   buildPublicForumPath,
@@ -222,11 +224,16 @@ test('parsePublicShopRoute 应保留商品详情的大整数字符串 ID', () =>
   });
 });
 
-test('parsePublicShopRoute 应保留正式 Web 购买意图并拒绝其他意图', () => {
+test('parsePublicShopRoute 应保留正式 Web 购买与评价意图并拒绝其他意图', () => {
   assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=purchase'), {
     kind: 'detail',
     productId: '2042219067430928384',
     intent: 'purchase',
+  });
+  assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=review'), {
+    kind: 'detail',
+    productId: '2042219067430928384',
+    intent: 'review',
   });
   assert.deepEqual(parsePublicShopRoute('/shop/product/2042219067430928384', '?intent=read'), {
     kind: 'detail',
@@ -265,6 +272,14 @@ test('buildPublicShopPath 应回写公开商城列表和详情路径', () => {
     }),
     '/shop/product/2042219067430928384?intent=purchase'
   );
+  assert.equal(
+    buildPublicShopPath({
+      kind: 'detail',
+      productId: '2042219067430928384',
+      intent: 'review',
+    }),
+    '/shop/product/2042219067430928384?intent=review'
+  );
 });
 
 test('isPublicShopPathname 应只识别公开商城浏览路径', () => {
@@ -295,6 +310,47 @@ test('parsePublicLeaderboardRoute 应把非法榜单类型与页码回落到默�
     typeSlug: 'experience',
     page: 1,
   });
+});
+
+test('公开排行榜路由应只登记五类非敏感榜单', () => {
+  assert.deepEqual(
+    publicLeaderboardTypeRouteDefinitions.map((definition) => definition.slug),
+    ['experience', 'post-count', 'comment-count', 'popularity', 'hot-product']
+  );
+  assert.deepEqual(
+    publicLeaderboardTypeRouteDefinitions.map((definition) => definition.type),
+    [1, 6, 7, 8, 5]
+  );
+});
+
+test('公开排行榜路由应把历史资产与消费榜单安全回落到经验榜', () => {
+  for (const slug of ['balance', 'total-spent', 'purchase-count']) {
+    assert.deepEqual(parsePublicLeaderboardRoute(`/leaderboard/${slug}`, '?page=2'), {
+      kind: 'list',
+      typeSlug: 'experience',
+      page: 2,
+    });
+  }
+});
+
+test('filterPublicLeaderboardTypes 应拒绝敏感、未知和重复服务端类型', () => {
+  const filtered = filterPublicLeaderboardTypes([
+    { voType: 1, voCategory: 1, name: 'experience' },
+    { voType: 2, voCategory: 1, name: 'balance' },
+    { voType: 6, voCategory: 1, name: 'post-count' },
+    { voType: 6, voCategory: 1, name: 'post-count-duplicate' },
+    { voType: 3, voCategory: 1, name: 'total-spent' },
+    { voType: 4, voCategory: 1, name: 'purchase-count' },
+    { voType: 999, voCategory: 1, name: 'unknown' },
+    { voType: 5, voCategory: 1, name: 'hot-product-wrong-category' },
+    { voType: 5, voCategory: 2, name: 'hot-product' },
+  ]);
+
+  assert.deepEqual(filtered, [
+    { voType: 1, voCategory: 1, name: 'experience' },
+    { voType: 6, voCategory: 1, name: 'post-count' },
+    { voType: 5, voCategory: 2, name: 'hot-product' },
+  ]);
 });
 
 test('buildPublicLeaderboardPath 应稳定回写默认与非默认榜单路径', () => {
@@ -328,6 +384,22 @@ test('parsePublicForumRoute 应解析公开帖子详情评论定位与参与意�
   });
 });
 
+test('parsePublicForumRoute 应保留回答 PublicId、分页与排序状态', () => {
+  const route = parsePublicForumRoute(
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    '?answer=ANS_0123456789ABCDEF0123456789ABCDEF&answerPage=3&answerSort=latest',
+  );
+
+  assert.deepEqual(route, {
+    kind: 'detail',
+    postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    postPublicId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+    answerPublicId: 'ans_0123456789abcdef0123456789abcdef',
+    answerPage: 3,
+    answerSort: 'latest',
+  });
+});
+
 test('parsePublicForumRoute 应解析公开论坛发帖入口与受控作者态意图', () => {
   assert.deepEqual(parsePublicForumRoute('/forum/compose', '?category=2042219067430928384'), {
     kind: 'compose',
@@ -352,6 +424,18 @@ test('parsePublicForumRoute 应解析公开论坛发帖入口与受控作者态�
     postId: '2042219067430928384',
     intent: 'history',
   });
+  assert.deepEqual(
+    parsePublicForumRoute(
+      '/forum/post/2042219067430928384',
+      '?commentId=2042219067430928385&intent=reward',
+    ),
+    {
+      kind: 'detail',
+      postId: '2042219067430928384',
+      commentId: '2042219067430928385',
+      intent: 'reward',
+    },
+  );
 });
 
 test('buildPublicForumPath 应稳定回写公开帖子详情 intent 参数', () => {
@@ -369,10 +453,29 @@ test('buildPublicForumPath 应稳定回写公开帖子详情 intent 参数', () 
   assert.equal(
     buildPublicForumPath({
       kind: 'detail',
+      postId: 'pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f',
+      answerPublicId: 'ans_0123456789abcdef0123456789abcdef',
+      answerPage: 3,
+      answerSort: 'latest',
+    }),
+    '/forum/post/pst_018f6b6f7c7d70008f8f8f8f8f8f8f8f?answer=ans_0123456789abcdef0123456789abcdef&answerPage=3&answerSort=latest',
+  );
+  assert.equal(
+    buildPublicForumPath({
+      kind: 'detail',
       postId: '2042219067430928384',
       intent: 'history',
     }),
     '/forum/post/2042219067430928384?intent=history'
+  );
+  assert.equal(
+    buildPublicForumPath({
+      kind: 'detail',
+      postId: '2042219067430928384',
+      commentId: '2042219067430928385',
+      intent: 'reward',
+    }),
+    '/forum/post/2042219067430928384?commentId=2042219067430928385&intent=reward'
   );
   assert.equal(
     buildPublicForumPath({

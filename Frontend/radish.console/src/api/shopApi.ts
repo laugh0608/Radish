@@ -206,7 +206,7 @@ export async function adminGetOrders(params: {
   userId?: string;
   productId?: string;
   orderNo?: string;
-}): Promise<PagedResponse<Order>> {
+}, t?: TFunction): Promise<PagedResponse<Order>> {
   const searchParams = new URLSearchParams();
 
   if (params.status !== undefined) searchParams.append('status', params.status.toString());
@@ -222,7 +222,10 @@ export async function adminGetOrders(params: {
   );
 
   if (!response.ok || !response.data) {
-    throw createApiResponseError(response, '获取订单列表失败');
+    throw createApiResponseError(
+      response,
+      translateFallback(t, 'orders.list.loadFailed', '获取订单列表失败'),
+    );
   }
 
   return response.data;
@@ -310,7 +313,7 @@ export async function adminRevokeBenefit(
 }
 
 /**
- * 重试发放权益
+ * 重试订单履约发放（兼容既有 RetryGrantBenefit 接口名）
  */
 export async function retryGrantBenefit(orderId: string): Promise<void> {
   const response = await apiPost<null>(
@@ -320,7 +323,7 @@ export async function retryGrantBenefit(orderId: string): Promise<void> {
   );
 
   if (!response.ok) {
-    throw createApiResponseError(response, '重试发放权益失败');
+    throw createApiResponseError(response, '重试发放失败');
   }
 }
 

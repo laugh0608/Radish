@@ -1,6 +1,7 @@
 using System.Linq.Expressions;
 using Radish.IRepository.Base;
 using Radish.Model;
+using Radish.Shared.CustomEnum;
 using SqlSugar;
 
 namespace Radish.IRepository;
@@ -8,6 +9,9 @@ namespace Radish.IRepository;
 /// <summary>Wiki 文档仓储接口</summary>
 public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
 {
+    Task<(List<WikiDocument> data, int totalCount)> QueryAuthorPageAsync(WikiAuthorDocumentPageQuery query);
+    Task<WikiDocumentDraft?> QueryLatestTerminalDraftAsync(long documentId);
+    Task<List<WikiTerminalDraftEvidence>> QueryLatestTerminalDraftEvidenceAsync(IReadOnlyCollection<long> documentIds);
     Task<int> SaveDraftAsync(WikiDraftSaveCommand command);
     Task<int> TransitionDraftAsync(WikiDraftTransitionCommand command);
     Task<bool> TryAddCollaboratorAsync(WikiDocumentCollaborator collaborator);
@@ -15,6 +19,10 @@ public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
     Task<int> SetActiveDraftAsync(long documentId, long tenantId, long? expectedDraftId, long? targetDraftId, long operatorId, string operatorName, DateTime nowUtc);
     Task<int> ApplyDraftToDocumentAsync(WikiDraftApplyCommand command);
     Task<int> PurgeTerminalDraftPayloadsAsync(DateTime cutoffUtc, int batchSize, DateTime nowUtc);
+    Task<(IReadOnlyList<WikiDocumentGovernanceEvent> Items, int Total)> QueryGovernanceHistoryAsync(
+        WikiDocumentGovernanceHistoryQuery query);
+    Task<WikiDocumentGovernanceWriteResult> ApplyGovernanceMutationAsync(
+        WikiDocumentGovernanceMutationCommand command);
     /// <summary>根据 ID 查询文档（包含已删除数据）</summary>
     Task<WikiDocument?> QueryByIdIncludingDeletedAsync(long id);
 
@@ -33,6 +41,26 @@ public interface IWikiDocumentRepository : IBaseRepository<WikiDocument>
         Expression<Func<WikiDocument, bool>>? whereExpression,
         Expression<Func<WikiDocument, object>>? orderByExpression,
         OrderByType orderByType);
+}
+
+public sealed record WikiAuthorDocumentPageQuery(
+    long UserId,
+    WikiAuthorDocumentScope Scope,
+    WikiAuthorDraftStage DraftStage,
+    int PageIndex,
+    int PageSize);
+
+public sealed class WikiTerminalDraftEvidence
+{
+    public long DraftId { get; set; }
+    public long DocumentId { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string Slug { get; set; } = string.Empty;
+    public string? Summary { get; set; }
+    public int DraftVersion { get; set; }
+    public int ReviewState { get; set; }
+    public DateTime? PayloadPurgedAt { get; set; }
+    public DateTime? ModifyTime { get; set; }
 }
 
 public sealed record WikiDraftSaveCommand(
@@ -65,7 +93,6 @@ public sealed record WikiDraftTransitionCommand(
 public sealed record WikiDraftApplyCommand(
     long DocumentId,
     long TenantId,
-    int ExpectedDocumentVersion,
     WikiDocumentDraft Draft,
     long? FinalParentId,
     long OperatorId,
@@ -80,3 +107,45 @@ public sealed record WikiCollaboratorTransitionCommand(
     long OperatorId,
     string OperatorName,
     DateTime NowUtc);
+
+public sealed record WikiDocumentGovernanceHistoryQuery(
+    long TenantId,
+    long DocumentId,
+    int PageIndex,
+    int PageSize);
+
+public sealed record WikiDocumentGovernanceContentMutation(
+    string Title,
+    string MarkdownContent,
+    int ResultDocumentVersion);
+
+public sealed record WikiDocumentGovernanceMutationCommand(
+    long TenantId,
+    long DocumentId,
+    string Action,
+    int ExpectedGovernanceVersion,
+    int? ExpectedDocumentVersion,
+    int TargetStatus,
+    DateTime? TargetPublishedAt,
+    int TargetVisibility,
+    string? TargetAllowedRoles,
+    string? TargetAllowedPermissions,
+    bool TargetIsDeleted,
+    DateTime? TargetDeletedAt,
+    string? TargetDeletedBy,
+    WikiDocumentGovernanceContentMutation? ContentMutation,
+    long? SourceRevisionId,
+    string Reason,
+    long ActorUserId,
+    string ActorName,
+    DateTime NowUtc);
+
+public sealed record WikiDocumentGovernanceWriteResult(
+    WikiDocument Document,
+    WikiDocumentGovernanceEvent GovernanceEvent);
+
+public sealed class WikiDocumentGovernanceTargetUnavailableException : Exception;
+
+public sealed class WikiDocumentGovernanceVersionConflictException : Exception;
+
+public sealed class WikiDocumentContentVersionConflictException : Exception;

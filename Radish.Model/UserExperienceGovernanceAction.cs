@@ -72,6 +72,14 @@ public class UserExperienceGovernanceAction : RootEntityTKey<long>, ITenantEntit
     [DisplayFormat(DataFormatString = "{0:yyyy-MM-dd HH:mm:ss}", ApplyFormatInEditMode = true)]
     public DateTime? FrozenUntil { get; set; }
 
+    /// <summary>动作提交时看到的经验聚合版本；历史记录为空。</summary>
+    [SugarColumn(IsNullable = true)]
+    public int? ExpectedVersion { get; set; }
+
+    /// <summary>动作完成后的经验聚合版本；历史记录为空。</summary>
+    [SugarColumn(IsNullable = true)]
+    public int? ResultVersion { get; set; }
+
     /// <summary>是否删除</summary>
     [SugarColumn(IsNullable = false)]
     public bool IsDeleted { get; set; } = false;

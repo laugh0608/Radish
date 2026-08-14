@@ -7,6 +7,8 @@ export const zhProfile = {
   'profile.loading.tag': '加载中',
   'profile.empty.message': '无法获取用户信息，请重新登录。',
   'profile.empty.refresh': '刷新页面',
+  'profile.unavailable.title': '个人资料当前不可用',
+  'profile.unavailable.retry': '重试加载',
   'profile.action.edit': '编辑信息',
   'profile.action.cancel': '取消',
   'profile.action.save': '保存',

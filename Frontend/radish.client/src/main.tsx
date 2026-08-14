@@ -17,6 +17,7 @@ import {
   rewriteDesktopOidcReturnToBrowserPath,
 } from '@/platform/tauriBridge';
 import { resolveInitialEntryPath } from '@/bootstrap/entryRoute';
+import '@radish/ui/family-ui-tokens.css';
 import './theme/theme-tokens.css';
 import './index.css';
 import 'highlight.js/styles/github-dark.css';

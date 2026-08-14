@@ -5,6 +5,7 @@ using System.Linq.Expressions;
 using System.Threading.Tasks;
 using AutoMapper;
 using Moq;
+using Radish.Common.AttributeTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -156,7 +157,7 @@ public class UserIdentitySemanticsServiceTest
     }
 
     [Fact]
-    public async Task GetEnabledUserByEmailAsync_ShouldMatchNormalizedEmailOnly()
+    public async Task GetEnabledUserCredentialByEmailAsync_ShouldMatchNormalizedEmailOnly()
     {
         var harness = CreateHarness();
         var capturedWheres = new List<Expression<Func<User, bool>>?>();
@@ -175,7 +176,7 @@ public class UserIdentitySemanticsServiceTest
             .Callback<Expression<Func<User, bool>>?>(where => capturedWheres.Add(where))
             .ReturnsAsync(user);
 
-        var emailResult = await harness.Service.GetEnabledUserByEmailAsync("ALICE@EXAMPLE.TEST");
+        var emailResult = await harness.Service.GetEnabledUserCredentialByEmailAsync("ALICE@EXAMPLE.TEST");
 
         Assert.NotNull(emailResult);
         Assert.Single(capturedWheres);
@@ -323,6 +324,123 @@ public class UserIdentitySemanticsServiceTest
         Assert.Equal("OldName", capturedRecord.OldDisplayName);
         Assert.Equal("NewName", capturedRecord.NewDisplayName);
         Assert.Equal(UserDisplayNameChangeSources.Profile, capturedRecord.ChangeSource);
+    }
+
+    [Fact]
+    public async Task UpdateMyProfileAsync_ShouldUpdateProfileAndDisplayNameAuditUnderOneTransactionCommand()
+    {
+        var harness = CreateHarness();
+        SetupDisplayNameSettings(harness);
+        var user = new User
+        {
+            Id = 1001,
+            UserName = "OldName",
+            UserEmail = "old@example.test",
+            UserAge = 20,
+            TenantId = 7,
+            IsEnable = true,
+            IsDeleted = false
+        };
+        harness.BaseRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(user);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.QueryWithOrderAsync(
+                It.IsAny<Expression<Func<UserDisplayNameChangeRecord, bool>>?>(),
+                It.IsAny<Expression<Func<UserDisplayNameChangeRecord, object>>>(),
+                OrderByType.Desc,
+                1))
+            .ReturnsAsync([]);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<UserDisplayNameChangeRecord, bool>>?>()))
+            .ReturnsAsync(0);
+        harness.BaseRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<UserDisplayNameChangeRecord>()))
+            .ReturnsAsync(9001);
+
+        var updated = await harness.Service.UpdateMyProfileAsync(
+            user.Id,
+            new UpdateMyProfileDto
+            {
+                UserName = "NewName",
+                Age = 21
+            },
+            new UserDisplayNameChangeContext
+            {
+                OperatorUserId = user.Id,
+                OperatorUserName = user.UserName,
+                Source = UserDisplayNameChangeSources.Profile,
+                Reason = "用户个人资料修改"
+            });
+
+        Assert.True(updated);
+        harness.BaseRepository.Verify(
+            repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()),
+            Times.Exactly(2));
+        harness.DisplayNameChangeRecordRepository.Verify(
+            repository => repository.AddAsync(It.IsAny<UserDisplayNameChangeRecord>()),
+            Times.Once);
+        var method = typeof(UserService).GetMethod(nameof(UserService.UpdateMyProfileAsync));
+        Assert.NotNull(method?.GetCustomAttributes(typeof(UseTranAttribute), false).SingleOrDefault());
+    }
+
+    [Fact]
+    public async Task UpdateMyProfileAsync_ShouldThrowSoTransactionCanRollbackWhenProfileWriteLosesTarget()
+    {
+        var harness = CreateHarness();
+        SetupDisplayNameSettings(harness);
+        var user = new User
+        {
+            Id = 1001,
+            UserName = "OldName",
+            UserEmail = "old@example.test",
+            TenantId = 7,
+            IsEnable = true,
+            IsDeleted = false
+        };
+        harness.BaseRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(user);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.QueryWithOrderAsync(
+                It.IsAny<Expression<Func<UserDisplayNameChangeRecord, bool>>?>(),
+                It.IsAny<Expression<Func<UserDisplayNameChangeRecord, object>>>(),
+                OrderByType.Desc,
+                1))
+            .ReturnsAsync([]);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.QueryCountAsync(It.IsAny<Expression<Func<UserDisplayNameChangeRecord, bool>>?>()))
+            .ReturnsAsync(0);
+        harness.BaseRepository
+            .SetupSequence(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync(1)
+            .ReturnsAsync(0);
+        harness.DisplayNameChangeRecordRepository
+            .Setup(repository => repository.AddAsync(It.IsAny<UserDisplayNameChangeRecord>()))
+            .ReturnsAsync(9001);
+
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.Service.UpdateMyProfileAsync(
+                user.Id,
+                new UpdateMyProfileDto { UserName = "NewName" },
+                new UserDisplayNameChangeContext
+                {
+                    OperatorUserId = user.Id,
+                    OperatorUserName = user.UserName,
+                    Source = UserDisplayNameChangeSources.Profile,
+                    Reason = "用户个人资料修改"
+                }));
+
+        Assert.Contains("并发变化", exception.Message);
     }
 
     [Fact]
@@ -474,7 +592,6 @@ public class UserIdentitySemanticsServiceTest
                 VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
                 VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
                 VoUserEmail = user.UserEmail,
-                VoLoginPassword = user.LoginPassword,
                 VoTenantId = user.TenantId,
                 VoIsEnable = user.IsEnable,
                 VoIsDeleted = user.IsDeleted
@@ -505,8 +622,6 @@ public class UserIdentitySemanticsServiceTest
 
         var baseRepository = new Mock<IBaseRepository<User>>();
         var userRepository = new Mock<IUserRepository>();
-        var roleRepository = new Mock<IBaseRepository<Role>>();
-        var userRoleRepository = new Mock<IBaseRepository<UserRole>>();
         var displayNameChangeRecordRepository = new Mock<IBaseRepository<UserDisplayNameChangeRecord>>();
         var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
         var systemSettingProvider = new Mock<ISystemSettingProvider>();
@@ -515,8 +630,6 @@ public class UserIdentitySemanticsServiceTest
             mapper.Object,
             baseRepository.Object,
             userRepository.Object,
-            roleRepository.Object,
-            userRoleRepository.Object,
             displayNameChangeRecordRepository.Object,
             consoleAuthorizationService.Object,
             systemSettingProvider.Object);

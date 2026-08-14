@@ -2,22 +2,20 @@
   min-width: 0;
 }
 
-.coin-admin-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
 .coin-admin-query-input {
-  width: 220px;
+  width: min(100%, 320px);
 }
 
-.coin-admin-section-title {
+.coin-admin-section-title,
+.coin-admin-adjustment-actions {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 20px;
+}
+
+.coin-admin-section-title {
+  margin-bottom: 16px;
 }
 
 .coin-admin-section-title h3 {
@@ -28,14 +26,61 @@
   width: 100%;
 }
 
-.coin-admin-transaction-filters {
+.coin-admin-authoritative-target {
   display: grid;
-  grid-template-columns: minmax(150px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) minmax(130px, 1fr) auto auto;
-  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  min-width: 0;
+  margin-bottom: 18px;
+  padding: 14px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
+  background: var(--console-bg-muted);
+}
+
+.coin-admin-authoritative-target span,
+.coin-admin-authoritative-target small {
+  color: var(--console-text-secondary);
+}
+
+.coin-admin-authoritative-target strong,
+.coin-admin-authoritative-target small {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.coin-admin-authoritative-target small {
+  grid-column: 2;
+}
+
+.coin-admin-adjustment-form {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) minmax(0, 1fr);
+  gap: 0 16px;
+}
+
+.coin-admin-adjustment-actions {
+  grid-column: 1 / -1;
+  align-items: center;
+}
+
+.coin-admin-adjustment-actions span {
+  min-width: 0;
+  color: var(--console-text-secondary);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.coin-admin-transaction-filters {
+  grid-template-columns: repeat(2, minmax(150px, 1fr)) repeat(2, minmax(130px, 1fr));
+}
+
+.coin-admin-transaction-filters .console-resource-filter-controls__actions {
+  grid-column: 1 / -1;
 }
 
 .coin-admin-signed-amount {
-  font-weight: 700;
+  font-weight: 750;
   font-variant-numeric: tabular-nums;
 }
 
@@ -48,16 +93,63 @@
 }
 
 .coin-admin-transaction-table {
-  margin-top: 20px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.coin-admin-transaction-table .admin-feature-notice {
+  margin: 14px;
+}
+
+.coin-admin-confirmation {
+  display: grid;
+  gap: 8px;
+}
+
+.coin-admin-confirmation p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.coin-admin-mobile-transaction__number {
+  min-width: 0;
+  color: var(--console-text-secondary);
+  font-size: 10px;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 768px) {
-  .coin-admin-page .admin-feature-header,
-  .coin-admin-section-title {
-    align-items: flex-start;
+  .coin-admin-section-title,
+  .coin-admin-adjustment-actions {
+    align-items: stretch;
+    flex-direction: column;
   }
 
+  .coin-admin-adjustment-task {
+    padding: 14px;
+  }
+
+  .coin-admin-authoritative-target {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .coin-admin-authoritative-target small {
+    grid-column: 1;
+  }
+
+  .coin-admin-adjustment-form,
   .coin-admin-transaction-filters {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .coin-admin-adjustment-actions,
+  .coin-admin-adjustment-actions .ant-btn,
+  .coin-admin-transaction-filters .console-resource-filter-controls__actions,
+  .coin-admin-transaction-filters .console-resource-filter-controls__actions > * {
+    width: 100%;
+  }
+
+  .coin-admin-transaction-filters .console-resource-filter-controls__actions {
+    grid-column: 1;
   }
 }

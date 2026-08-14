@@ -56,7 +56,7 @@ public sealed class WikiAttachmentAccessServiceTest
     }
 
     [Fact]
-    public async Task CanReadAsync_ShouldUseCurrentCollaboratorAndReviewerPermissionsForDraft()
+    public async Task CanReadAsync_ShouldAllowPendingOrAcceptedCollaboratorForDraftOnly()
     {
         var draftReference = Reference(WikiAttachmentReferenceKind.DraftContent);
         draftReference.ReferenceSourceId = 301;
@@ -79,9 +79,23 @@ public sealed class WikiAttachmentAccessServiceTest
             TenantId = 9,
             DocumentId = 201,
             UserId = 2002,
-            InviteState = (int)WikiDocumentCollaboratorState.Accepted
+            InviteState = (int)WikiDocumentCollaboratorState.Pending
         });
         Assert.True(await fixture.Service.CanReadAsync(
+            WikiAttachment(),
+            9,
+            2002,
+            []));
+
+        fixture.Collaborators[0].InviteState = (int)WikiDocumentCollaboratorState.Accepted;
+        Assert.True(await fixture.Service.CanReadAsync(
+            WikiAttachment(),
+            9,
+            2002,
+            []));
+
+        fixture.Collaborators[0].InviteState = (int)WikiDocumentCollaboratorState.Declined;
+        Assert.False(await fixture.Service.CanReadAsync(
             WikiAttachment(),
             9,
             2002,
@@ -100,6 +114,35 @@ public sealed class WikiAttachmentAccessServiceTest
             9,
             3003,
             ["Reviewer"]));
+    }
+
+    [Fact]
+    public async Task CanReadAsync_ShouldRequireAcceptedCollaboratorForCurrentDocumentReference()
+    {
+        var fixture = CreateFixture(
+            Reference(WikiAttachmentReferenceKind.DocumentContent),
+            Document(WikiDocumentStatusEnum.Draft, WikiDocumentVisibilityEnum.Authenticated));
+        fixture.Collaborators.Add(new WikiDocumentCollaborator
+        {
+            Id = 401,
+            TenantId = 9,
+            DocumentId = 201,
+            UserId = 2002,
+            InviteState = (int)WikiDocumentCollaboratorState.Pending
+        });
+
+        Assert.False(await fixture.Service.CanReadAsync(
+            WikiAttachment(),
+            9,
+            2002,
+            []));
+
+        fixture.Collaborators[0].InviteState = (int)WikiDocumentCollaboratorState.Accepted;
+        Assert.True(await fixture.Service.CanReadAsync(
+            WikiAttachment(),
+            9,
+            2002,
+            []));
     }
 
     [Fact]
@@ -178,6 +221,34 @@ public sealed class WikiAttachmentAccessServiceTest
             WikiAttachment(),
             9,
             1001,
+            []));
+
+        fixture.Collaborators.Add(new WikiDocumentCollaborator
+        {
+            Id = 401,
+            TenantId = 9,
+            DocumentId = 201,
+            UserId = 2002,
+            InviteState = (int)WikiDocumentCollaboratorState.Pending
+        });
+        Assert.True(await fixture.Service.CanReadAsync(
+            WikiAttachment(),
+            9,
+            2002,
+            []));
+
+        fixture.Collaborators[0].InviteState = (int)WikiDocumentCollaboratorState.Declined;
+        Assert.False(await fixture.Service.CanReadAsync(
+            WikiAttachment(),
+            9,
+            2002,
+            []));
+
+        fixture.Collaborators[0].InviteState = (int)WikiDocumentCollaboratorState.Revoked;
+        Assert.False(await fixture.Service.CanReadAsync(
+            WikiAttachment(),
+            9,
+            2002,
             []));
 
         fixture.Document.IsDeleted = true;

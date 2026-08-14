@@ -35,6 +35,13 @@ public class PublicHeadSnapshotController : ControllerBase
         return snapshot is null ? NotFound() : Ok(snapshot);
     }
 
+    [HttpGet("/api/public-head/forum/tag/{slug}")]
+    public async Task<IActionResult> GetForumTag(string slug)
+    {
+        var snapshot = await _publicHeadSnapshotService.GetForumTagSnapshotAsync(slug, ResolvePublicBaseUrl());
+        return snapshot is null ? NotFound() : Ok(snapshot);
+    }
+
     [HttpGet("/api/public-head/docs/{slug}")]
     public async Task<IActionResult> GetDocs(string slug)
     {

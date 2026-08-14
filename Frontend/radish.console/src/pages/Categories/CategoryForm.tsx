@@ -35,11 +35,26 @@ interface CategoryFormProps {
   visible: boolean;
   mode: 'create' | 'edit';
   category?: CategoryVo;
+  canSubmit: boolean;
   onCancel: () => void;
   onSuccess: () => void;
 }
 
-export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: CategoryFormProps) => {
+const CATEGORY_OPTION_PAGE_SIZE = 100;
+
+const loadAllCategoryOptions = async (): Promise<CategoryVo[]> => {
+  const firstPage = await getCategoryPage({ pageIndex: 1, pageSize: CATEGORY_OPTION_PAGE_SIZE });
+  const categories = [...firstPage.data];
+
+  for (let pageIndex = 2; pageIndex <= firstPage.pageCount; pageIndex += 1) {
+    const page = await getCategoryPage({ pageIndex, pageSize: CATEGORY_OPTION_PAGE_SIZE });
+    categories.push(...page.data);
+  }
+
+  return categories;
+};
+
+export const CategoryForm = ({ visible, mode, category, canSubmit, onCancel, onSuccess }: CategoryFormProps) => {
   const { t } = useTranslation();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
@@ -48,6 +63,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
   const [coverUploading, setCoverUploading] = useState(false);
   const [iconPreviewUrl, setIconPreviewUrl] = useState<string | undefined>(undefined);
   const [coverPreviewUrl, setCoverPreviewUrl] = useState<string | undefined>(undefined);
+  const [isDirty, setIsDirty] = useState(false);
   const iconAttachmentId = Form.useWatch('iconAttachmentId', form);
   const coverAttachmentId = Form.useWatch('coverAttachmentId', form);
 
@@ -86,6 +102,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       });
 
       form.setFieldValue(fieldName, uploaded.attachmentId);
+      setIsDirty(true);
       setPreview(getAvatarUrl(uploaded.thumbnailUrl || uploaded.url));
       options.onSuccess?.(uploaded);
       message.success(t('taxonomy.common.imageUploaded'));
@@ -104,16 +121,22 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       return;
     }
 
+    let cancelled = false;
     const loadParentOptions = async () => {
       try {
-        const page = await getCategoryPage({ pageIndex: 1, pageSize: 200 });
-        setParentOptions(page.data.filter((item) => !category || item.voId !== category.voId));
+        const options = await loadAllCategoryOptions();
+        if (!cancelled) {
+          setParentOptions(options.filter((item) => !category || item.voId !== category.voId));
+        }
       } catch (error) {
         log.error('CategoryForm', '加载分类父级选项失败:', error);
       }
     };
 
     void loadParentOptions();
+    return () => {
+      cancelled = true;
+    };
   }, [category, visible]);
 
   useEffect(() => {
@@ -121,6 +144,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       form.resetFields();
       setIconPreviewUrl(undefined);
       setCoverPreviewUrl(undefined);
+      setIsDirty(false);
       return;
     }
 
@@ -137,6 +161,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       });
       setIconPreviewUrl(getAvatarUrl(category.voIcon));
       setCoverPreviewUrl(getAvatarUrl(category.voCoverImage));
+      setIsDirty(false);
       return;
     }
 
@@ -152,16 +177,65 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
     });
     setIconPreviewUrl(undefined);
     setCoverPreviewUrl(undefined);
+    setIsDirty(false);
   }, [visible, mode, category, form]);
 
+  useEffect(() => {
+    if (!visible || !isDirty) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty, visible]);
+
+  const handleRequestCancel = () => {
+    if (loading || iconUploading || coverUploading) {
+      message.warning(t('taxonomy.common.closeBusy'));
+      return;
+    }
+
+    if (!isDirty) {
+      onCancel();
+      return;
+    }
+
+    Modal.confirm({
+      title: t('taxonomy.common.discardTitle'),
+      content: t('taxonomy.common.discardDescription'),
+      okText: t('taxonomy.common.discardConfirm'),
+      cancelText: t('taxonomy.common.continueEditing'),
+      okButtonProps: { danger: true },
+      onOk: () => {
+        setIsDirty(false);
+        onCancel();
+      },
+    });
+  };
+
   const handleSubmit = async () => {
+    if (!canSubmit) {
+      message.error(t('taxonomy.common.permissionDenied'));
+      return;
+    }
+
     if (iconUploading || coverUploading) {
       message.warning(t('taxonomy.common.uploadInProgress'));
       return;
     }
 
+    let values;
     try {
-      const values = await form.validateFields();
+      values = await form.validateFields();
+    } catch {
+      return;
+    }
+
+    try {
       setLoading(true);
 
       const request: CategoryUpsertRequest = {
@@ -181,8 +255,11 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       } else if (mode === 'edit' && category) {
         await updateCategory(category.voId, request);
         message.success(t('categories.feedback.updated'));
+      } else {
+        return;
       }
 
+      setIsDirty(false);
       onSuccess();
     } catch (error) {
       log.error('CategoryForm', '提交分类表单失败:', error);
@@ -197,13 +274,17 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
       title={t(mode === 'create' ? 'categories.form.createTitle' : 'categories.form.editTitle')}
       open={visible}
       onOk={handleSubmit}
-      onCancel={onCancel}
+      onCancel={handleRequestCancel}
       confirmLoading={loading || iconUploading || coverUploading}
+      okButtonProps={{ disabled: !canSubmit }}
       width={720}
+      className="taxonomy-form-modal"
+      maskClosable={false}
+      keyboard={false}
       destroyOnHidden
       forceRender
     >
-      <Form form={form} layout="vertical">
+      <Form form={form} layout="vertical" onValuesChange={() => setIsDirty(true)}>
         <Form.Item
           name="name"
           label={t('categories.form.name')}
@@ -268,6 +349,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
                 onClick={() => {
                   form.setFieldValue('iconAttachmentId', undefined);
                   setIconPreviewUrl(undefined);
+                  setIsDirty(true);
                 }}
               >
                 {t('categories.form.clearIcon')}
@@ -319,6 +401,7 @@ export const CategoryForm = ({ visible, mode, category, onCancel, onSuccess }: C
                 onClick={() => {
                   form.setFieldValue('coverAttachmentId', undefined);
                   setCoverPreviewUrl(undefined);
+                  setIsDirty(true);
                 }}
               >
                 {t('categories.form.clearCover')}

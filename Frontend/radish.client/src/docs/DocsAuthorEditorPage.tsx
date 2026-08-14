@@ -1,16 +1,17 @@
-import { useCallback, useMemo, useState, type FormEvent, type MouseEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useState,
+  type FormEvent,
+  type MouseEvent,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
+import { BottomSheet } from '@radish/ui/bottom-sheet';
 import { Icon } from '@radish/ui/icon';
 import { MarkdownEditor } from '@radish/ui/markdown-editor';
-import { toast } from '@radish/ui/toast';
-import {
-  MarkdownRenderer,
-  buildAttachmentMarkdownUrl,
-  type MarkdownDocumentUploadResult,
-  type MarkdownImageUploadResult,
-  type ProtectedMarkdownAttachmentOptions,
-} from '@radish/ui';
 import {
   WikiCollaboratorState,
   WikiDraftReviewState,
@@ -20,7 +21,6 @@ import type { LongId } from '@/api/user';
 import {
   collectDescendantIds,
   flattenTreeOptions,
-  formatWikiTime,
   type EditorDraft,
   type ParentOption,
 } from '@/apps/wiki/wikiApp.helpers';
@@ -29,13 +29,27 @@ import { WebStateSlot } from '@/components/web-shell';
 import { createMarkdownEditorLabels } from '@/i18n/markdownEditorLabels';
 import { buildPublicDocsPath } from '@/public/docsRouteState';
 import { log } from '@/utils/logger';
-import { formatDocsAuthorNumber, getDocsAuthorSummaryPreview } from './docsAuthorPresentation';
+import {
+  countDocsAuthorMarkdownCharacters,
+  getDocsAuthorRoleText,
+  getDocsAuthorInitial,
+  getDocsAuthorOutline,
+} from './docsAuthorEditorPresentation';
+import { DocsAuthorEditorContext } from './DocsAuthorEditorContext';
+import { resolveDocsAuthorPublicReadSlug } from './docsAuthorPresentation';
 import { buildDocsAuthorPath, type DocsAuthorRoute } from './docsAuthorRouteState';
-import { shouldHandleAuthorLinkClick } from './useDocsAuthorNavigation';
-import styles from './DocsAuthorApp.module.css';
+import type {
+  MarkdownDocumentUploadResult,
+  MarkdownImageUploadResult,
+  ProtectedMarkdownAttachmentOptions,
+} from '@radish/ui';
+import styles from './DocsAuthorEditorPage.module.css';
+
+const MOBILE_AUTHOR_QUERY = '(max-width: 760px)';
 
 export interface DocsAuthorEditorState {
   draft: EditorDraft;
+  baselineDraft: EditorDraft;
   document: WikiAuthorDraftDetailVo | null;
   loading: boolean;
   submitting: boolean;
@@ -54,9 +68,11 @@ interface DocsAuthorEditorPageProps {
   route: DocsAuthorRoute & ({ kind: 'compose' } | { kind: 'edit' });
   tree: WikiDocumentTreeNodeVo[];
   state: DocsAuthorEditorState;
+  isDirty: boolean;
   isEditorUploading: boolean;
   onBack: (event: MouseEvent<HTMLAnchorElement>) => void;
   onNavigate: (event: MouseEvent<HTMLAnchorElement>, route: DocsAuthorRoute) => void;
+  onExternalNavigate: (event: MouseEvent<HTMLAnchorElement>) => void;
   onParentChange: (parentId: string) => void;
   onSetDraft: (updater: (current: EditorDraft) => EditorDraft) => void;
   onSave: (event: FormEvent<HTMLFormElement>) => void;
@@ -103,41 +119,31 @@ function getDraftReviewStateText(state: number | null | undefined, t: TFunction)
   }
 }
 
-function getCollaboratorStateText(state: number, t: TFunction): string {
-  switch (state) {
-    case WikiCollaboratorState.Accepted:
-      return t('wiki.author.collaboration.state.accepted');
-    case WikiCollaboratorState.Declined:
-      return t('wiki.author.collaboration.state.declined');
-    case WikiCollaboratorState.Revoked:
-      return t('wiki.author.collaboration.state.revoked');
-    default:
-      return t('wiki.author.collaboration.state.pending');
-  }
-}
-
-interface EditorRailMetricProps {
-  label: string;
-  value: number | string;
-  language?: string;
-}
-
-function EditorRailMetric({ label, value, language }: EditorRailMetricProps) {
-  return (
-    <div className={styles.railMetric}>
-      <span>{label}</span>
-      <strong>{typeof value === 'number' ? formatDocsAuthorNumber(value, language) : value}</strong>
-    </div>
+function useMobileAuthorLayout(): boolean {
+  const [isMobile, setIsMobile] = useState(
+    typeof window !== 'undefined' && window.matchMedia(MOBILE_AUTHOR_QUERY).matches,
   );
+
+  useEffect(() => {
+    const media = window.matchMedia(MOBILE_AUTHOR_QUERY);
+    const handleChange = (event: MediaQueryListEvent) => setIsMobile(event.matches);
+    setIsMobile(media.matches);
+    media.addEventListener('change', handleChange);
+    return () => media.removeEventListener('change', handleChange);
+  }, []);
+
+  return isMobile;
 }
 
 export function DocsAuthorEditorPage({
   route,
   tree,
   state,
+  isDirty,
   isEditorUploading,
   onBack,
   onNavigate,
+  onExternalNavigate,
   onParentChange,
   onSetDraft,
   onSave,
@@ -156,59 +162,68 @@ export function DocsAuthorEditorPage({
   protectedAttachments,
 }: DocsAuthorEditorPageProps) {
   const { t, i18n } = useTranslation();
-  const [invitePublicId, setInvitePublicId] = useState('');
-  const [collaborationBusy, setCollaborationBusy] = useState(false);
+  const editorFormId = useId();
+  const isMobile = useMobileAuthorLayout();
+  const [mobileContextOpen, setMobileContextOpen] = useState(false);
   const markdownEditorLabels = useMemo(
     () => createMarkdownEditorLabels(t, i18n.resolvedLanguage ?? i18n.language),
     [i18n.language, i18n.resolvedLanguage, t],
   );
+  const parentOptions = useMemo(
+    () => buildParentOptions(tree, route.kind === 'edit' ? route.documentId : null),
+    [route, tree],
+  );
+  const outline = useMemo(
+    () => getDocsAuthorOutline(state.draft.markdownContent),
+    [state.draft.markdownContent],
+  );
+  const readOnly = route.kind === 'edit' && state.document?.voCanEdit !== true;
+  const reviewSubmitted = state.document?.voReviewState === WikiDraftReviewState.Submitted;
+  const reviewChangesRequested = state.document?.voReviewState === WikiDraftReviewState.ChangesRequested;
+  const reviewStateText = getDraftReviewStateText(state.document?.voReviewState, t);
+  const authorRoleText = state.document
+    ? getDocsAuthorRoleText(state.document.voAuthorRole, t)
+    : t('wiki.author.editor.modeCreate');
+  const pageTitle = route.kind === 'compose'
+    ? t('wiki.author.editor.createTitle')
+    : state.document?.voTitle || t('wiki.author.editor.editTitle');
+  const parentLabel = parentOptions.find((option) => String(option.id) === state.draft.parentId)?.label
+    ?? t('wiki.author.form.root');
+  const publicReadSlug = state.document
+    ? resolveDocsAuthorPublicReadSlug({
+        status: state.document.voDocumentStatus,
+        documentVersion: state.document.voDocumentVersion,
+        documentSlug: state.document.voDocumentSlug,
+      })
+    : null;
+  const publicReadHref = publicReadSlug
+    ? buildPublicDocsPath({ kind: 'detail', slug: publicReadSlug })
+    : null;
+  const acceptedCollaborators = state.document?.voCollaborators.filter(
+    (collaborator) => collaborator.voInviteState === WikiCollaboratorState.Accepted,
+  ) ?? [];
+  const readOnlyNotice = state.document?.voHasDraftPayload === false
+    ? t('wiki.author.editor.payloadPurgedNotice')
+    : state.document?.voReadOnlyReason || t('wiki.author.editor.authorReadOnlyNotice');
+  const saveStateText = state.submitting
+    ? t('wiki.author.actions.saving')
+    : isEditorUploading
+      ? t('wiki.author.editor.uploading')
+      : isDirty
+        ? t('wiki.author.editor.unsaved')
+        : route.kind === 'compose'
+          ? t('wiki.author.editor.notCreated')
+          : t('wiki.author.editor.saved');
+  const canSubmit = state.document?.voCanSubmit === true && !isDirty && !isEditorUploading;
   const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
     log.error('DocsAuthorEditorPage', `Markdown ${kind} upload failed:`, error);
   }, []);
-  const parentOptions = useMemo(
-    () => buildParentOptions(tree, route.kind === 'edit' ? route.documentId : null),
-    [route, tree]
-  );
-  const readOnly = route.kind === 'edit' && state.document?.voCanEdit !== true;
-  const pageTitle = route.kind === 'compose' ? t('wiki.author.editor.createTitle') : state.document?.voTitle || t('wiki.author.editor.editTitle');
-  const pageIntro = route.kind === 'compose'
-    ? t('wiki.author.editor.createIntro')
-    : t('wiki.author.editor.editIntro');
-  const publicReadHref = state.document && state.document.voDocumentVersion > 0 && state.document.voSlug.trim()
-    ? buildPublicDocsPath({ kind: 'detail', slug: state.document.voSlug })
-    : null;
-  const ownInvitation = state.document?.voCollaborators.find((collaborator) =>
-    collaborator.voUserPublicId === currentUserPublicId
-      && collaborator.voInviteState === WikiCollaboratorState.Pending
-  ) ?? null;
-  const reviewSubmitted = state.document?.voReviewState === WikiDraftReviewState.Submitted;
-  const runCollaborationAction = async (action: () => Promise<void>) => {
-    setCollaborationBusy(true);
-    try {
-      await action();
-    } catch (error) {
-      log.error('DocsAuthorEditorPage', '文档协作动作失败:', error);
-      const message = error instanceof Error && error.message.trim()
-        ? error.message
-        : t('wiki.author.feedback.collaborationActionFailed');
-      toast.error(message);
-    } finally {
-      setCollaborationBusy(false);
-    }
-  };
-  const handleEditorSubmit = (event: FormEvent<HTMLFormElement>) => {
-    if (isEditorUploading) {
-      event.preventDefault();
-      return;
-    }
 
-    onSave(event);
-  };
-  const preventNavigationWhileUploading = (event: MouseEvent<HTMLAnchorElement>) => {
-    if (isEditorUploading && shouldHandleAuthorLinkClick(event)) {
-      event.preventDefault();
+  useEffect(() => {
+    if (!isMobile) {
+      setMobileContextOpen(false);
     }
-  };
+  }, [isMobile]);
 
   if (state.loading || state.error) {
     return (
@@ -223,266 +238,224 @@ export function DocsAuthorEditorPage({
     );
   }
 
+  const editorContext = (
+    <DocsAuthorEditorContext
+      route={route}
+      draft={state.draft}
+      document={state.document}
+      outline={outline}
+      parentOptions={parentOptions}
+      reviewStateText={reviewStateText}
+      readOnly={readOnly}
+      submitting={state.submitting}
+      currentUserPublicId={currentUserPublicId}
+      onNavigate={onNavigate}
+      onParentChange={onParentChange}
+      onSetDraft={onSetDraft}
+      onInviteCollaborator={onInviteCollaborator}
+      onRemoveCollaborator={onRemoveCollaborator}
+      onRespondInvitation={onRespondInvitation}
+      protectedAttachments={protectedAttachments}
+    />
+  );
+
   return (
-    <div className={styles.authorWorkspace}>
-      <section className={styles.panel}>
-        <div className={styles.panelHeader}>
-          <div>
-            <p className={styles.kicker}>Document Draft</p>
-            <h1 className={styles.pageTitle}>{pageTitle}</h1>
-            <p className={styles.pageIntro}>{pageIntro}</p>
-          </div>
-          <div className={styles.headerActions}>
-            <a
-              className={styles.secondaryButton}
-              href={buildDocsAuthorPath({ kind: 'mine' })}
-              onClick={(event) => {
-                preventNavigationWhileUploading(event);
-                if (!event.defaultPrevented) onBack(event);
-              }}
-              aria-disabled={isEditorUploading}
-            >
-              <Icon icon="mdi:arrow-left" size={18} />
-              <span>{t('wiki.author.actions.backToList')}</span>
+    <div className={styles.authorEditorPage}>
+      <header className={styles.editorTaskCard}>
+        <div className={styles.editorTaskMetaRow}>
+          <nav className={styles.editorBreadcrumb} aria-label={t('wiki.author.editor.breadcrumbAriaLabel')}>
+            <a href={buildDocsAuthorPath({ kind: 'mine' })} onClick={onBack}>
+              <Icon icon="mdi:arrow-left" size={16} />
+              <span>{t('wiki.author.actions.myDocuments')}</span>
             </a>
-            {route.kind === 'edit' ? (
-              <a
-                className={styles.secondaryButton}
-                href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })}
-                onClick={(event) => {
-                  preventNavigationWhileUploading(event);
-                  if (!event.defaultPrevented) onNavigate(event, { kind: 'revisions', documentId: route.documentId });
-                }}
-                aria-disabled={isEditorUploading}
-              >
-                <Icon icon="mdi:history" size={18} />
-                <span>{t('wiki.author.actions.revisions')}</span>
-              </a>
-            ) : null}
-            {publicReadHref ? (
-              <a className={styles.secondaryButton} href={publicReadHref} onClick={preventNavigationWhileUploading} aria-disabled={isEditorUploading}>
-                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                <span>{t('wiki.author.actions.publicReading')}</span>
-              </a>
-            ) : null}
-          </div>
+            <span>/</span>
+            <span>{parentLabel}</span>
+          </nav>
+          {publicReadHref ? (
+            <a className={styles.editorPublishedLink} href={publicReadHref} onClick={onExternalNavigate}>
+              <Icon icon="mdi:open-in-new" size={16} />
+              <span>{t('wiki.author.document.documentVersion', { version: state.document?.voDocumentVersion ?? 0 })}</span>
+            </a>
+          ) : null}
         </div>
 
-        {readOnly && state.document ? (
-          <div className={styles.inlineNotice}>
-            <Icon icon="mdi:lock-outline" size={20} />
-            <span>{state.document.voReadOnlyReason || t('wiki.author.editor.authorReadOnlyNotice')}</span>
-          </div>
-        ) : null}
-
-        <form className={styles.editorForm} onSubmit={handleEditorSubmit}>
-          <div className={styles.formGrid}>
-            <label className={styles.field}>
-              <span>{t('wiki.author.form.title')}</span>
-              <input className={styles.input} value={state.draft.title} disabled={readOnly || state.submitting} onChange={(event) => onSetDraft((current) => ({ ...current, title: event.target.value }))} placeholder={t('wiki.author.form.titlePlaceholder')} />
-            </label>
-            <label className={styles.field}>
-              <span>Slug</span>
-              <input className={styles.input} value={state.draft.slug} disabled={readOnly || state.submitting} onChange={(event) => onSetDraft((current) => ({ ...current, slug: event.target.value }))} placeholder={t('wiki.author.form.slugPlaceholder')} />
-            </label>
-            <label className={styles.field}>
-              <span>{t('wiki.author.form.parent')}</span>
-              <select className={styles.select} value={state.draft.parentId} disabled={readOnly || state.submitting} onChange={(event) => onParentChange(event.target.value)}>
-                <option value="">{t('wiki.author.form.root')}</option>
-                {parentOptions.map((option) => <option key={option.id} value={String(option.id)}>{option.label}</option>)}
-              </select>
-            </label>
-            <label className={styles.field}>
-              <span>{t('wiki.author.form.coverAttachmentId')}</span>
-              <input className={styles.input} value={state.draft.coverAttachmentId} disabled={readOnly || state.submitting} onChange={(event) => onSetDraft((current) => ({ ...current, coverAttachmentId: event.target.value }))} placeholder={t('wiki.author.form.optional')} />
-            </label>
-            {/^[1-9]\d*$/.test(state.draft.coverAttachmentId.trim()) ? (
-              <div className={`${styles.field} ${styles.fieldFull}`}>
-                <span>{t('wiki.author.form.coverPreview')}</span>
-                <MarkdownRenderer
-                  content={`![${t('wiki.author.form.coverPreview')}](${buildAttachmentMarkdownUrl(state.draft.coverAttachmentId.trim())})`}
-                  protectedAttachments={protectedAttachments}
-                />
-              </div>
-            ) : null}
-            {route.kind === 'edit' ? (
-              <label className={styles.field}>
-                <span>{t('wiki.author.form.changeSummary')}</span>
-                <input className={styles.input} value={state.draft.changeSummary} disabled={readOnly || state.submitting} onChange={(event) => onSetDraft((current) => ({ ...current, changeSummary: event.target.value }))} placeholder={t('wiki.author.form.changeSummaryPlaceholder')} />
-              </label>
-            ) : null}
-            <label className={`${styles.field} ${styles.fieldFull}`}>
-              <span>{t('wiki.author.form.summary')}</span>
-              <textarea className={styles.textarea} value={state.draft.summary} disabled={readOnly || state.submitting} onChange={(event) => onSetDraft((current) => ({ ...current, summary: event.target.value }))} placeholder={t('wiki.author.form.summaryPlaceholder')} />
-            </label>
-          </div>
-
-          <MarkdownEditor
-            value={state.draft.markdownContent}
-            onChange={(value) => onSetDraft((current) => ({ ...current, markdownContent: value }))}
-            labels={markdownEditorLabels}
-            minHeight={420}
-            disabled={readOnly || state.submitting}
-            placeholder={t('wiki.author.form.markdownPlaceholder')}
-            onImageUpload={onImageUpload}
-            onDocumentUpload={onDocumentUpload}
-            onUploadError={handleEditorUploadError}
-            onUploadingChange={onEditorUploadingChange}
-            protectedAttachments={protectedAttachments}
-          />
-
-          {state.conflict ? (
-            <section className={styles.conflictPanel} aria-live="assertive">
-              <div>
-                <strong>{t('wiki.author.conflict.title')}</strong>
-                <p>{t('wiki.author.conflict.description', { draft: state.conflict.serverDraftVersion ?? '-', document: state.conflict.serverDocumentVersion ?? '-' })}</p>
-              </div>
-              <div className={styles.conflictActions}>
-                <button type="button" className={styles.secondaryButton} onClick={onCopyConflictContent}>{t('wiki.author.conflict.copy')}</button>
-                <button type="button" className={styles.secondaryButton} onClick={onDownloadConflictContent}>{t('wiki.author.conflict.download')}</button>
-                <button type="button" className={styles.primaryButton} onClick={onReloadServerDraft}>{t('wiki.author.conflict.reload')}</button>
-              </div>
-            </section>
-          ) : null}
-
-          <div className={styles.editorActions}>
-            <span className={styles.editorHint}>
-              {state.document
-                ? t('wiki.author.editor.versionEvidence', { document: state.document.voDocumentVersion, draft: state.document.voDraftVersion, role: state.document.voAuthorRole })
-                : t('wiki.author.editor.newDraftEvidence')}
+        <div className={styles.editorTaskTitleRow}>
+          <h1>{pageTitle}</h1>
+          <div className={styles.editorPrimaryActions}>
+            <span className={`${styles.editorSaveState} ${isDirty ? styles.editorSaveStateDirty : ''}`}>
+              <Icon icon={isDirty ? 'mdi:circle-edit-outline' : 'mdi:cloud-check-outline'} size={16} />
+              {saveStateText}
             </span>
-            <button type="submit" className={styles.primaryButton} disabled={readOnly || state.submitting || isEditorUploading}>
-              <Icon icon={state.submitting ? 'mdi:progress-clock' : 'mdi:content-save-outline'} size={18} />
-              <span>{state.submitting ? t('wiki.author.actions.saving') : t('wiki.author.actions.save')}</span>
+            <button
+              type="submit"
+              form={editorFormId}
+              className={styles.editorSaveButton}
+              disabled={readOnly || state.submitting || isEditorUploading || !isDirty}
+            >
+              <Icon icon="mdi:content-save-outline" size={17} />
+              <span>{t('wiki.author.actions.save')}</span>
             </button>
             {state.document?.voCanSubmit ? (
-              <button type="button" className={styles.primaryButton} disabled={state.submitting || isEditorUploading} onClick={onSubmitDraft}>
-                <Icon icon="mdi:send-check-outline" size={18} />
+              <button
+                type="button"
+                className={styles.editorSubmitButton}
+                disabled={!canSubmit || state.submitting}
+                onClick={onSubmitDraft}
+                title={isDirty ? t('wiki.author.editor.saveBeforeSubmit') : undefined}
+              >
+                <Icon icon="mdi:send-check-outline" size={17} />
                 <span>{t('wiki.author.actions.submitReview')}</span>
               </button>
             ) : null}
             {reviewSubmitted && state.document?.voAuthorRole.toLowerCase() === 'owner' ? (
-              <button type="button" className={styles.secondaryButton} disabled={state.submitting} onClick={onWithdrawDraft}>
-                <Icon icon="mdi:undo-variant" size={18} />
+              <button type="button" className={styles.editorSaveButton} disabled={state.submitting} onClick={onWithdrawDraft}>
+                <Icon icon="mdi:undo-variant" size={17} />
                 <span>{t('wiki.author.actions.withdrawReview')}</span>
               </button>
             ) : null}
           </div>
-        </form>
-      </section>
+        </div>
 
-      <aside className={styles.authorRail} aria-label={t('wiki.author.editor.contextAriaLabel')}>
-        <section className={styles.railCard}>
-          <p className={styles.railKicker}>{t('wiki.author.editor.context')}</p>
-          <div className={styles.railMetricGrid}>
-            <EditorRailMetric label={t('wiki.author.editor.mode')} value={route.kind === 'compose' ? t('wiki.author.editor.modeCreate') : t('wiki.author.editor.modeEdit')} />
-            <EditorRailMetric label={t('wiki.author.editor.documentVersion')} value={state.document?.voDocumentVersion ?? 0} language={i18n.resolvedLanguage} />
-            <EditorRailMetric label={t('wiki.author.editor.draftVersion')} value={state.document?.voDraftVersion ?? 0} language={i18n.resolvedLanguage} />
+        <div className={styles.editorStatusBand}>
+          <span className={styles.editorStatusDot} aria-hidden="true" />
+          <div className={styles.editorStatusCopy}>
+            <strong>{reviewStateText}</strong>
+            <span>{t('wiki.author.editor.versionEvidence', {
+              document: state.document?.voDocumentVersion ?? 0,
+              draft: state.document?.voDraftVersion ?? 0,
+              role: authorRoleText,
+            })}</span>
           </div>
-          <div className={styles.railChipList}>
-            <span className={styles.railChip}>{state.document?.voAuthorRole || t('wiki.author.editor.modeCreate')}</span>
-            <span className={styles.railChip}>{readOnly ? t('wiki.author.access.readOnly') : t('wiki.author.access.savable')}</span>
-          </div>
-        </section>
-
-        {state.document ? (
-          <section className={styles.railCard}>
-            <p className={styles.railKicker}>{t('wiki.author.editor.evidence')}</p>
-            <h2 className={styles.railTitle}>{state.document.voTitle}</h2>
-            <p className={styles.railText}>{getDocsAuthorSummaryPreview(state.document.voSummary, t)}</p>
-            <div className={styles.railChipList}>
-              <span className={styles.railChip}>{getDraftReviewStateText(state.document.voReviewState, t)}</span>
-              <span className={styles.railChip}>{t('wiki.author.document.documentVersion', { version: state.document.voDocumentVersion })}</span>
-              <span className={styles.railChip}>{t('wiki.author.document.draftVersion', { version: state.document.voDraftVersion })}</span>
+          {state.document ? (
+            <div className={styles.editorPeopleSummary} aria-label={t('wiki.author.editor.collaboratorSummary', { count: acceptedCollaborators.length + 1 })}>
+              <span>{getDocsAuthorInitial(state.document.voOwnerUserName, 'O')}</span>
+              {acceptedCollaborators[0] ? <span>{getDocsAuthorInitial(acceptedCollaborators[0].voUserName, 'E')}</span> : null}
+              <strong>{acceptedCollaborators.length + 1}</strong>
             </div>
-            {state.document.voReviewComment ? <p className={styles.railText}>{state.document.voReviewComment}</p> : null}
-          </section>
-        ) : null}
+          ) : null}
+        </div>
+      </header>
 
-        {state.document ? (
-          <details className={styles.railCard} open>
-            <summary className={styles.railKicker}>{t('wiki.author.collaboration.title')}</summary>
-            <p className={styles.railText}>{t('wiki.author.collaboration.owner', { name: state.document.voOwnerUserName })}</p>
-            <div className={styles.collaboratorList}>
-              {state.document.voCollaborators.map((collaborator) => (
-                <div key={collaborator.voId} className={styles.collaboratorRow}>
-                  <div>
-                    <strong>{collaborator.voUserName}</strong>
-                    <span>{collaborator.voUserPublicId} · {getCollaboratorStateText(collaborator.voInviteState, t)}</span>
-                  </div>
-                  {state.document?.voCanManageCollaborators && collaborator.voInviteState !== WikiCollaboratorState.Revoked ? (
-                    <button type="button" disabled={collaborationBusy} onClick={() => void runCollaborationAction(() => onRemoveCollaborator(collaborator.voId))}>{t('wiki.author.collaboration.remove')}</button>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-            {state.document.voCanManageCollaborators ? (
-              <form className={styles.inviteForm} onSubmit={(event) => {
-                event.preventDefault();
-                const publicId = invitePublicId.trim();
-                if (!publicId) return;
-                void runCollaborationAction(async () => {
-                  await onInviteCollaborator(publicId);
-                  setInvitePublicId('');
-                });
-              }}>
-                <input value={invitePublicId} onChange={(event) => setInvitePublicId(event.target.value)} placeholder={t('wiki.author.collaboration.publicIdPlaceholder')} />
-                <button type="submit" disabled={collaborationBusy || !invitePublicId.trim()}>{t('wiki.author.collaboration.invite')}</button>
-              </form>
-            ) : null}
-            {ownInvitation ? (
-              <div className={styles.conflictActions}>
-                <button type="button" disabled={collaborationBusy} onClick={() => void runCollaborationAction(() => onRespondInvitation(ownInvitation.voId, true))}>{t('wiki.author.collaboration.accept')}</button>
-                <button type="button" disabled={collaborationBusy} onClick={() => void runCollaborationAction(() => onRespondInvitation(ownInvitation.voId, false))}>{t('wiki.author.collaboration.decline')}</button>
+      <div className={styles.editorMobileViewSwitch}>
+        <button type="button" className={styles.editorMobileViewActive}>
+          <Icon icon="mdi:file-document-edit-outline" size={17} />
+          <span>{t('wiki.author.editor.bodyView')}</span>
+        </button>
+        <button type="button" onClick={() => setMobileContextOpen(true)}>
+          <Icon icon="mdi:view-split-vertical" size={17} />
+          <span>{t('wiki.author.editor.infoView')}</span>
+        </button>
+      </div>
+
+      <div className={styles.editorWorkspaceGrid}>
+        <form id={editorFormId} className={styles.authorEditorForm} onSubmit={(event) => {
+          if (isEditorUploading) {
+            event.preventDefault();
+            return;
+          }
+          onSave(event);
+        }}>
+          <section className={styles.authorEditorSurface}>
+            {readOnly && state.document ? (
+              <div className={styles.editorReadOnlyNotice}>
+                <Icon icon="mdi:lock-outline" size={18} />
+                <span>{readOnlyNotice}</span>
               </div>
             ) : null}
-          </details>
-        ) : null}
-
-        {state.document?.voReviewEvents.length ? (
-          <details className={styles.railCard}>
-            <summary className={styles.railKicker}>{t('wiki.author.timeline.title')}</summary>
-            <ol className={styles.timelineList}>
-              {state.document.voReviewEvents.map((event) => (
-                <li key={event.voId}>
-                  <strong>{event.voAction}</strong>
-                  <span>{event.voActorName} · {formatWikiTime(event.voCreateTime, i18n.resolvedLanguage)}</span>
-                  {event.voComment ? <p>{event.voComment}</p> : null}
-                </li>
-              ))}
-            </ol>
-          </details>
-        ) : null}
-
-        <section className={styles.railCard}>
-          <p className={styles.railKicker}>{t('wiki.author.editor.flowActions')}</p>
-          <div className={styles.railActionList}>
-            <a className={styles.railLink} href={buildDocsAuthorPath({ kind: 'mine' })} onClick={(event) => {
-              preventNavigationWhileUploading(event);
-              if (!event.defaultPrevented) onBack(event);
-            }} aria-disabled={isEditorUploading}>
-              <Icon icon="mdi:arrow-left" size={18} />
-              <span>{t('wiki.author.actions.backToList')}</span>
-            </a>
-            {route.kind === 'edit' ? (
-              <a className={styles.railLink} href={buildDocsAuthorPath({ kind: 'revisions', documentId: route.documentId })} onClick={(event) => {
-                preventNavigationWhileUploading(event);
-                if (!event.defaultPrevented) onNavigate(event, { kind: 'revisions', documentId: route.documentId });
-              }} aria-disabled={isEditorUploading}>
-                <Icon icon="mdi:history" size={18} />
-                <span>{t('wiki.author.actions.revisions')}</span>
-              </a>
+            {reviewChangesRequested && state.document?.voReviewComment ? (
+              <div className={styles.editorReviewNotice}>
+                <Icon icon="mdi:message-alert-outline" size={18} />
+                <div>
+                  <strong>{t('wiki.author.reviewState.changesRequested')}</strong>
+                  <span>{state.document.voReviewComment}</span>
+                </div>
+              </div>
             ) : null}
-            {publicReadHref ? (
-              <a className={styles.railLink} href={publicReadHref} onClick={preventNavigationWhileUploading} aria-disabled={isEditorUploading}>
-                <Icon icon="mdi:book-open-page-variant-outline" size={18} />
-                <span>{t('wiki.author.actions.publicReading')}</span>
-              </a>
+
+            <label className={styles.editorTitleField}>
+              <span>{t('wiki.author.form.title')} <em>{t('wiki.author.form.required')}</em></span>
+              <input
+                value={state.draft.title}
+                required
+                disabled={readOnly || state.submitting}
+                onChange={(event) => onSetDraft((current) => ({ ...current, title: event.target.value }))}
+                placeholder={t('wiki.author.form.titlePlaceholder')}
+              />
+            </label>
+
+            <MarkdownEditor
+              value={state.draft.markdownContent}
+              onChange={(value) => onSetDraft((current) => ({ ...current, markdownContent: value }))}
+              labels={markdownEditorLabels}
+              minHeight={isMobile ? 520 : 610}
+              disabled={readOnly || state.submitting}
+              placeholder={t('wiki.author.form.markdownPlaceholder')}
+              defaultMode="edit"
+              allowSplit={false}
+              theme="light"
+              className={styles.authorMarkdownEditor}
+              toolbarLead={(
+                <span className={styles.editorMarkdownLabel}>
+                  <Icon icon="mdi:file-document-outline" size={16} />
+                  {t('wiki.author.editor.markdownBody')}
+                </span>
+              )}
+              onImageUpload={onImageUpload}
+              onDocumentUpload={onDocumentUpload}
+              onUploadError={handleEditorUploadError}
+              onUploadingChange={onEditorUploadingChange}
+              protectedAttachments={protectedAttachments}
+            />
+
+            {state.conflict ? (
+              <section className={styles.editorConflictPanel} aria-live="assertive">
+                <div className={styles.editorConflictHeading}>
+                  <span><Icon icon="mdi:shield-check-outline" size={20} /></span>
+                  <div>
+                    <strong>{t('wiki.author.conflict.localPreserved')}</strong>
+                    <p>{t('wiki.author.conflict.description', {
+                      draft: state.conflict.serverDraftVersion ?? '-',
+                      document: state.conflict.serverDocumentVersion ?? '-',
+                    })}</p>
+                  </div>
+                </div>
+                <div className={styles.editorConflictActions}>
+                  <button type="button" onClick={onCopyConflictContent}><Icon icon="mdi:content-copy" size={16} />{t('wiki.author.conflict.copy')}</button>
+                  <button type="button" onClick={onDownloadConflictContent}><Icon icon="mdi:download-outline" size={16} />{t('wiki.author.conflict.download')}</button>
+                  <button type="button" className={styles.editorConflictPrimary} onClick={onReloadServerDraft}><Icon icon="mdi:refresh" size={16} />{t('wiki.author.conflict.reload')}</button>
+                </div>
+              </section>
             ) : null}
-          </div>
-          <p className={styles.railText}>{t('wiki.author.editor.boundary')}</p>
-        </section>
-      </aside>
+
+            <footer className={styles.editorSourceStatus}>
+              <span>Markdown · {t('wiki.author.editor.characterCount', { count: countDocsAuthorMarkdownCharacters(state.draft.markdownContent) })}</span>
+              <span>{t('wiki.author.editor.draftStatus', {
+                version: state.document?.voDraftVersion ?? 0,
+                role: authorRoleText,
+              })}</span>
+            </footer>
+          </section>
+        </form>
+
+        {!isMobile ? (
+          <aside className={styles.editorDesktopContext} aria-label={t('wiki.author.editor.contextAriaLabel')}>
+            {editorContext}
+          </aside>
+        ) : null}
+      </div>
+
+      {isMobile ? (
+        <BottomSheet
+          isOpen={mobileContextOpen}
+          onClose={() => setMobileContextOpen(false)}
+          closeLabel={t('wiki.author.editor.closeInfo')}
+          title={t('wiki.author.editor.infoView')}
+          height="88%"
+          bodyClassName={styles.editorContextSheetBody}
+        >
+          {editorContext}
+        </BottomSheet>
+      ) : null}
     </div>
   );
 }

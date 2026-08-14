@@ -13,6 +13,50 @@ namespace Radish.Api.Tests.Repositories;
 public sealed class TimeSemanticsAuditTest
 {
     [Fact]
+    public void Inspect_ShouldReadOnlyRequiredColumnsWhenPendingMigrationAddsEntityColumns()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"radish-time-audit-legacy-{Guid.NewGuid():N}.db");
+        var db = new SqlSugarScope(new ConnectionConfig
+        {
+            ConfigId = "main",
+            ConnectionString = $"Data Source={path}",
+            DbType = DbType.Sqlite,
+            IsAutoCloseConnection = true,
+            InitKeyType = InitKeyType.Attribute
+        });
+
+        try
+        {
+            db.CodeFirst.InitTables<ExpTransaction, UserExpDailyStats, CommentHighlight>();
+            db.Ado.ExecuteCommand(
+                "CREATE TABLE \"UserExperienceGovernanceAction\" " +
+                "(\"Id\" INTEGER NOT NULL PRIMARY KEY, \"StatDate\" TEXT NULL)");
+            db.Ado.ExecuteCommand(
+                "INSERT INTO \"UserExperienceGovernanceAction\" (\"Id\", \"StatDate\") " +
+                "VALUES (5, '2026-07-12')");
+            var auditAtUtc = new DateTimeOffset(2026, 7, 12, 8, 0, 0, TimeSpan.Zero);
+            var timeProvider = new FixedTimeProvider(auditAtUtc);
+            var calendar = new BusinessCalendar(
+                timeProvider,
+                Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" }));
+
+            var result = TimeSemanticsAudit.Inspect(db, calendar);
+
+            Assert.Contains(result.Summaries, summary =>
+                summary.Contains("UserExperienceGovernanceAction.StatDate", StringComparison.Ordinal) &&
+                summary.Contains("1 行", StringComparison.Ordinal));
+        }
+        finally
+        {
+            db.Dispose();
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     public void Inspect_ShouldReportOnlyMisalignedNaturalDates()
     {
         var path = Path.Combine(Path.GetTempPath(), $"radish-time-audit-{Guid.NewGuid():N}.db");

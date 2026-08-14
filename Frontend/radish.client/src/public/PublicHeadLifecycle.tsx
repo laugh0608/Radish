@@ -21,6 +21,7 @@ import {
   PublicHeadLifecycleContext,
   type PublicHeadLifecycleContextValue,
   resolveActivePublicHeadSnapshot,
+  resolvePublicStructuredData,
   type PublicHeadRegistration,
   type UpdatePublicHeadRegistration,
   updatePublicHeadRegistration,
@@ -57,11 +58,19 @@ export function PublicHeadLifecycleOwner({ route, routeKey, children }: PublicHe
     () => buildPublicRouteStructuredData(route, { head: resolvedHead }),
     [route, resolvedHead],
   );
-  const resolvedStructuredData = activeSnapshot?.structuredData ?? routeStructuredData;
+  const resolvedStructuredData = resolvePublicStructuredData(
+    resolvedHead,
+    activeSnapshot,
+    routeStructuredData,
+  );
 
   useEffect(() => {
     applyPublicHead(resolvedHead);
-    applyPublicStructuredData(resolvedStructuredData);
+    if (resolvedStructuredData) {
+      applyPublicStructuredData(resolvedStructuredData);
+    } else {
+      removePublicStructuredData();
+    }
   }, [resolvedHead, resolvedStructuredData]);
 
   useEffect(() => () => {

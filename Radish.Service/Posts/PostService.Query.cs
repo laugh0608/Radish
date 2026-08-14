@@ -49,7 +49,7 @@ public partial class PostService
     public async Task<PostVo?> GetPostDetailAsync(long postId, long? viewerUserId = null, string answerSort = "default")
     {
         var post = await _postRepository.QueryByIdAsync(postId);
-        if (post == null || post.IsDeleted)
+        if (post == null || !post.IsPublished || !post.IsEnabled || post.IsDeleted)
         {
             return null;
         }
@@ -57,6 +57,13 @@ public partial class PostService
         await EnsurePostPublicIdBackfilledAsync(post);
 
         var postVo = Mapper.Map<PostVo>(post);
+        if (viewerUserId is > 0 && _userPostBookmarkRepository != null)
+        {
+            postVo.VoIsBookmarked = await _userPostBookmarkRepository.QueryActiveAsync(
+                post.TenantId,
+                viewerUserId.Value,
+                post.Id) != null;
+        }
 
         if (post.CategoryId > 0)
         {
@@ -144,7 +151,11 @@ public partial class PostService
             return null;
         }
 
-        var post = await _postRepository.QueryFirstAsync(item => item.PublicId == normalizedPublicId && !item.IsDeleted);
+        var post = await _postRepository.QueryFirstAsync(item =>
+            item.PublicId == normalizedPublicId &&
+            item.IsPublished &&
+            item.IsEnabled &&
+            !item.IsDeleted);
         return post == null
             ? null
             : await GetPostDetailAsync(post.Id, viewerUserId, answerSort);
@@ -254,6 +265,7 @@ public partial class PostService
         Expression<Func<Post, bool>> baseCondition = post =>
             pollPostIds.Contains(post.Id) &&
             post.IsPublished &&
+            post.IsEnabled &&
             !post.IsDeleted &&
             (!hasCategory || post.CategoryId == categoryValue) &&
             (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
@@ -338,6 +350,7 @@ public partial class PostService
         Expression<Func<Post, bool>> baseCondition = post =>
             lotteryPostIds.Contains(post.Id) &&
             post.IsPublished &&
+            post.IsEnabled &&
             !post.IsDeleted &&
             (!hasCategory || post.CategoryId == categoryValue) &&
             (!hasKeyword || post.Title.Contains(normalizedKeyword) || post.Content.Contains(normalizedKeyword)) &&
@@ -881,8 +894,11 @@ public partial class PostService
         }
 
         var questionVo = Mapper.Map<PostQuestionVo>(question);
-        var answers = await _postAnswerRepository.QueryAsync(answer => answer.PostId == postId && !answer.IsDeleted);
         var normalizedAnswerSort = answerSort?.Trim().ToLowerInvariant() ?? "default";
+        var answers = await _postAnswerRepository.QueryAsync(answer =>
+            answer.PostId == postId &&
+            !answer.IsDeleted &&
+            answer.IsEnabled);
         var orderedAnswers = normalizedAnswerSort switch
         {
             "latest" => answers
@@ -895,8 +911,12 @@ public partial class PostService
         };
 
         questionVo.VoAnswers = orderedAnswers
+            .Take(20)
             .Select(answer => Mapper.Map<PostAnswerVo>(answer))
             .ToList();
+        questionVo.VoAcceptedAnswerPublicId = questionVo.VoAnswers
+            .FirstOrDefault(answer => answer.VoAnswerId == question.AcceptedAnswerId)
+            ?.VoPublicId;
 
         return questionVo;
     }

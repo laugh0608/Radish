@@ -23,7 +23,19 @@ export function RouteGuard({ children, route }: RouteGuardProps) {
   }
 
   if (!user) {
-    return <Navigate to="/login?auto=1" replace />;
+    return (
+      <Navigate
+        to="/login?auto=1"
+        replace
+        state={{
+          returnLocation: {
+            pathname: location.pathname,
+            search: location.search,
+            hash: location.hash,
+          },
+        }}
+      />
+    );
   }
 
   if (!canAccessConsoleRoute(route, user)) {

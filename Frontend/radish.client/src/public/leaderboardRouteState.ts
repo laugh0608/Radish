@@ -7,13 +7,10 @@ import {
 
 export type PublicLeaderboardTypeSlug =
   | 'experience'
-  | 'balance'
-  | 'total-spent'
-  | 'purchase-count'
-  | 'hot-product'
   | 'post-count'
   | 'comment-count'
-  | 'popularity';
+  | 'popularity'
+  | 'hot-product';
 
 export interface PublicLeaderboardTypeRouteDefinition {
   slug: PublicLeaderboardTypeSlug;
@@ -29,13 +26,10 @@ export interface PublicLeaderboardRoute {
 
 export const publicLeaderboardTypeRouteDefinitions: PublicLeaderboardTypeRouteDefinition[] = [
   { slug: 'experience', type: LeaderboardType.Experience, category: LeaderboardCategory.User },
-  { slug: 'balance', type: LeaderboardType.Balance, category: LeaderboardCategory.User },
-  { slug: 'total-spent', type: LeaderboardType.TotalSpent, category: LeaderboardCategory.User },
-  { slug: 'purchase-count', type: LeaderboardType.PurchaseCount, category: LeaderboardCategory.User },
-  { slug: 'hot-product', type: LeaderboardType.HotProduct, category: LeaderboardCategory.Product },
   { slug: 'post-count', type: LeaderboardType.PostCount, category: LeaderboardCategory.User },
   { slug: 'comment-count', type: LeaderboardType.CommentCount, category: LeaderboardCategory.User },
   { slug: 'popularity', type: LeaderboardType.Popularity, category: LeaderboardCategory.User },
+  { slug: 'hot-product', type: LeaderboardType.HotProduct, category: LeaderboardCategory.Product },
 ];
 
 const defaultLeaderboardRouteDefinition = publicLeaderboardTypeRouteDefinitions[0];
@@ -70,6 +64,29 @@ function normalizeTypeSlug(value: string | undefined): PublicLeaderboardTypeSlug
   return publicLeaderboardTypeRouteDefinitions.some((item) => item.slug === normalized)
     ? normalized
     : undefined;
+}
+
+export function isPublicLeaderboardTypeValue(type: number): type is LeaderboardTypeValue {
+  return publicLeaderboardTypeRouteDefinitions.some((item) => item.type === type);
+}
+
+export function filterPublicLeaderboardTypes<T extends { voType: number; voCategory: number }>(
+  types: readonly T[]
+): T[] {
+  const seenTypes = new Set<number>();
+  return types.filter((item) => {
+    if (!isPublicLeaderboardTypeValue(item.voType) || seenTypes.has(item.voType)) {
+      return false;
+    }
+
+    const routeDefinition = getPublicLeaderboardRouteDefinitionByType(item.voType);
+    if (item.voCategory !== routeDefinition.category) {
+      return false;
+    }
+
+    seenTypes.add(item.voType);
+    return true;
+  });
 }
 
 export function parsePublicLeaderboardRoute(pathname: string, search: string): PublicLeaderboardRoute {

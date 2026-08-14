@@ -226,13 +226,50 @@ public class WikiController : ControllerBase
         return MessageModel<WikiDocumentDetailVo>.Success("查询成功", result);
     }
 
-    [HttpGet]
+    [HttpGet("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
-    public async Task<MessageModel<PageModel<WikiAuthorDocumentVo>>> AuthorGetList(
+    [RequireConsolePermission(ConsolePermissions.DocsView)]
+    public async Task<MessageModel<PageModel<WikiDocumentGovernanceEventVo>>> AdminGetGovernanceHistory(
+        long id,
         int pageIndex = 1,
         int pageSize = 20)
     {
-        var result = await _wikiDocumentService.AuthorGetListAsync(Current.UserId, pageIndex, pageSize);
+        try
+        {
+            var result = await _wikiDocumentService.GetGovernanceHistoryAsync(id, pageIndex, pageSize);
+            return MessageModel<PageModel<WikiDocumentGovernanceEventVo>>.Success("查询成功", result);
+        }
+        catch (Exception exception) when (exception is ArgumentException or BusinessException)
+        {
+            return BuildFailure(exception, default(PageModel<WikiDocumentGovernanceEventVo>)!);
+        }
+    }
+
+    [HttpGet]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<PageModel<WikiAuthorDocumentVo>>> AuthorGetList(
+        string scope = "all",
+        string draftStage = "all",
+        int pageIndex = 1,
+        int pageSize = 20)
+    {
+        if (!TryParseAuthorScope(scope, out var parsedScope) ||
+            !TryParseAuthorDraftStage(draftStage, out var parsedDraftStage))
+        {
+            return BuildFailure(
+                StatusCodes.Status400BadRequest,
+                "作者列表查询参数无效",
+                default(PageModel<WikiAuthorDocumentVo>)!,
+                "Wiki.AuthorListQueryInvalid",
+                "error.wiki.author_list_query_invalid");
+        }
+
+        var result = await _wikiDocumentService.AuthorGetListAsync(
+            Current.UserId,
+            parsedScope,
+            parsedDraftStage,
+            pageIndex,
+            pageSize);
         return MessageModel<PageModel<WikiAuthorDocumentVo>>.Success("查询成功", result);
     }
 
@@ -246,6 +283,30 @@ public class WikiController : ControllerBase
             ? BuildFailure(StatusCodes.Status404NotFound, "文档或草稿不存在", default(WikiAuthorDraftDetailVo)!,
                 "Wiki.DraftNotFound", "error.wiki.draft_not_found")
             : MessageModel<WikiAuthorDraftDetailVo>.Success("查询成功", result);
+    }
+
+    [HttpGet("{documentId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<WikiAuthorRevisionHistoryVo>> AuthorGetRevisionHistory(long documentId)
+    {
+        var result = await _wikiDocumentService.AuthorGetRevisionHistoryAsync(
+            documentId, Current.UserId, Current.IsSystemOrAdmin());
+        return result == null
+            ? BuildFailure(StatusCodes.Status404NotFound, "文档或版本不存在", default(WikiAuthorRevisionHistoryVo)!,
+                "Wiki.RevisionNotFound", "error.wiki.revision_not_found")
+            : MessageModel<WikiAuthorRevisionHistoryVo>.Success("查询成功", result);
+    }
+
+    [HttpGet("{revisionId:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    public async Task<MessageModel<WikiAuthorRevisionDetailVo>> AuthorGetRevisionDetail(long revisionId)
+    {
+        var result = await _wikiDocumentService.AuthorGetRevisionDetailAsync(
+            revisionId, Current.UserId, Current.IsSystemOrAdmin());
+        return result == null
+            ? BuildFailure(StatusCodes.Status404NotFound, "版本不存在", default(WikiAuthorRevisionDetailVo)!,
+                "Wiki.RevisionNotFound", "error.wiki.revision_not_found")
+            : MessageModel<WikiAuthorRevisionDetailVo>.Success("查询成功", result);
     }
 
     [HttpPost]
@@ -375,123 +436,114 @@ public class WikiController : ControllerBase
     [HttpPost("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsDelete)]
-    public async Task<MessageModel<bool>> Delete(long id)
+    public Task<MessageModel<WikiDocumentGovernanceMutationVo>> Delete(
+        long id,
+        [FromBody] WikiDocumentGovernanceActionDto actionDto)
     {
-        try
-        {
-            var deleted = await _wikiDocumentService.DeleteDocumentAsync(id, Current.UserId, Current.UserName);
-            return deleted
-                ? MessageModel<bool>.Success("删除成功", true)
-                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure(ex, false);
-        }
+        return ExecuteWikiActionAsync(
+            () => _wikiDocumentService.DeleteDocumentAsync(
+                id, actionDto, Current.UserId, Current.UserName),
+            "删除成功",
+            default(WikiDocumentGovernanceMutationVo)!);
     }
 
     [HttpPost("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsRestore)]
-    public async Task<MessageModel<bool>> Restore(long id)
+    public Task<MessageModel<WikiDocumentGovernanceMutationVo>> Restore(
+        long id,
+        [FromBody] WikiDocumentGovernanceActionDto actionDto)
     {
-        try
-        {
-            var restored = await _wikiDocumentService.RestoreDocumentAsync(id, Current.UserId, Current.UserName);
-            return restored
-                ? MessageModel<bool>.Success("恢复成功", true)
-                : BuildFailure(StatusCodes.Status409Conflict, "文档不存在或无法恢复", false, "Wiki.RestoreRejected", "error.wiki.restore_rejected");
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure(ex, false);
-        }
+        return ExecuteWikiActionAsync(
+            () => _wikiDocumentService.RestoreDocumentAsync(
+                id, actionDto, Current.UserId, Current.UserName),
+            "恢复成功",
+            default(WikiDocumentGovernanceMutationVo)!);
     }
 
     [HttpPost("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsPublish)]
-    public async Task<MessageModel<bool>> Publish(long id)
+    public Task<MessageModel<WikiDocumentGovernanceMutationVo>> Publish(
+        long id,
+        [FromBody] WikiDocumentContentGovernanceActionDto actionDto)
     {
-        try
-        {
-            var result = await _wikiDocumentService.PublishAsync(id, Current.UserId, Current.UserName);
-            return result
-                ? MessageModel<bool>.Success("发布成功", true)
-                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure(ex, false);
-        }
+        return ExecuteWikiActionAsync(
+            () => _wikiDocumentService.PublishAsync(
+                id, actionDto, Current.UserId, Current.UserName),
+            "发布成功",
+            default(WikiDocumentGovernanceMutationVo)!);
     }
 
     [HttpPost("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsPublish)]
-    public async Task<MessageModel<bool>> Unpublish(long id)
+    public Task<MessageModel<WikiDocumentGovernanceMutationVo>> Unpublish(
+        long id,
+        [FromBody] WikiDocumentGovernanceActionDto actionDto)
     {
-        try
-        {
-            var result = await _wikiDocumentService.UnpublishAsync(id, Current.UserId, Current.UserName);
-            return result
-                ? MessageModel<bool>.Success("已转为草稿", true)
-                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure(ex, false);
-        }
+        return ExecuteWikiActionAsync(
+            () => _wikiDocumentService.UnpublishAsync(
+                id, actionDto, Current.UserId, Current.UserName),
+            "已转为草稿",
+            default(WikiDocumentGovernanceMutationVo)!);
     }
 
     [HttpPost("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsArchive)]
-    public async Task<MessageModel<bool>> Archive(long id)
+    public Task<MessageModel<WikiDocumentGovernanceMutationVo>> Archive(
+        long id,
+        [FromBody] WikiDocumentGovernanceActionDto actionDto)
     {
-        try
-        {
-            var result = await _wikiDocumentService.ArchiveAsync(id, Current.UserId, Current.UserName);
-            return result
-                ? MessageModel<bool>.Success("归档成功", true)
-                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure(ex, false);
-        }
+        return ExecuteWikiActionAsync(
+            () => _wikiDocumentService.ArchiveAsync(
+                id, actionDto, Current.UserId, Current.UserName),
+            "归档成功",
+            default(WikiDocumentGovernanceMutationVo)!);
     }
 
     [HttpPut("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsPermissions)]
-    public async Task<MessageModel<bool>> UpdateAccessPolicy(long id, [FromBody] UpdateWikiDocumentAccessPolicyDto updateDto)
+    public Task<MessageModel<WikiDocumentGovernanceMutationVo>> UpdateAccessPolicy(
+        long id,
+        [FromBody] UpdateWikiDocumentAccessPolicyDto updateDto)
     {
         if (!ModelState.IsValid)
         {
-            return BuildFailure(StatusCodes.Status400BadRequest, "请求参数验证失败", false, "Wiki.ValidationFailed", "error.wiki.validation_failed");
+            return Task.FromResult(BuildFailure(
+                StatusCodes.Status400BadRequest,
+                "请求参数验证失败",
+                default(WikiDocumentGovernanceMutationVo)!,
+                "Wiki.ValidationFailed",
+                "error.wiki.validation_failed"));
         }
 
-        try
-        {
-            var updated = await _wikiDocumentService.UpdateAccessPolicyAsync(id, updateDto, Current.UserId, Current.UserName);
-            return updated
-                ? MessageModel<bool>.Success("访问策略已更新", true)
-                : BuildFailure(StatusCodes.Status404NotFound, "文档不存在", false, "Wiki.DocumentNotFound", "error.wiki.document_not_found");
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure(ex, false);
-        }
+        return ExecuteWikiActionAsync(
+            () => _wikiDocumentService.UpdateAccessPolicyAsync(
+                id, updateDto, Current.UserId, Current.UserName),
+            "访问策略已更新",
+            default(WikiDocumentGovernanceMutationVo)!);
     }
 
     [HttpGet("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsView)]
-    public async Task<MessageModel<List<WikiDocumentRevisionItemVo>>> GetRevisionList(long id)
+    public async Task<MessageModel<PageModel<WikiDocumentRevisionItemVo>>> GetRevisionList(
+        long id,
+        int pageIndex = 1,
+        int pageSize = 20)
     {
-        var result = await _wikiDocumentService.GetRevisionListAsync(id);
-        return MessageModel<List<WikiDocumentRevisionItemVo>>.Success("查询成功", result);
+        try
+        {
+            var result = await _wikiDocumentService.GetRevisionListAsync(id, pageIndex, pageSize);
+            return MessageModel<PageModel<WikiDocumentRevisionItemVo>>.Success("查询成功", result);
+        }
+        catch (Exception exception) when (exception is ArgumentException or BusinessException)
+        {
+            return BuildFailure(exception, default(PageModel<WikiDocumentRevisionItemVo>)!);
+        }
     }
 
     [HttpGet("{revisionId:long}")]
@@ -511,19 +563,15 @@ public class WikiController : ControllerBase
     [HttpPost("{revisionId:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]
     [RequireConsolePermission(ConsolePermissions.DocsRollback)]
-    public async Task<MessageModel<bool>> Rollback(long revisionId)
+    public Task<MessageModel<WikiDocumentGovernanceMutationVo>> Rollback(
+        long revisionId,
+        [FromBody] WikiDocumentContentGovernanceActionDto actionDto)
     {
-        try
-        {
-            var result = await _wikiDocumentService.RollbackAsync(revisionId, Current.UserId, Current.UserName);
-            return result
-                ? MessageModel<bool>.Success("回滚成功", true)
-                : BuildFailure(StatusCodes.Status409Conflict, "版本不存在或文档已删除", false, "Wiki.RollbackRejected", "error.wiki.rollback_rejected");
-        }
-        catch (Exception ex) when (ex is ArgumentException or BusinessException)
-        {
-            return BuildFailure(ex, false);
-        }
+        return ExecuteWikiActionAsync(
+            () => _wikiDocumentService.RollbackAsync(
+                revisionId, actionDto, Current.UserId, Current.UserName),
+            "回滚成功",
+            default(WikiDocumentGovernanceMutationVo)!);
     }
 
     [HttpPost]
@@ -557,6 +605,32 @@ public class WikiController : ControllerBase
             responseData,
             businessException?.ErrorCode ?? "Wiki.ValidationFailed",
             businessException?.MessageKey ?? "error.wiki.validation_failed");
+    }
+
+    private static bool TryParseAuthorScope(string value, out WikiAuthorDocumentScope scope)
+    {
+        scope = value.Trim().ToLowerInvariant() switch
+        {
+            "all" => WikiAuthorDocumentScope.All,
+            "owned" => WikiAuthorDocumentScope.Owned,
+            "collaborating" => WikiAuthorDocumentScope.Collaborating,
+            _ => (WikiAuthorDocumentScope)(-1)
+        };
+        return Enum.IsDefined(scope);
+    }
+
+    private static bool TryParseAuthorDraftStage(string value, out WikiAuthorDraftStage draftStage)
+    {
+        draftStage = value.Trim().ToLowerInvariant() switch
+        {
+            "all" => WikiAuthorDraftStage.All,
+            "editable" => WikiAuthorDraftStage.Editable,
+            "submitted" => WikiAuthorDraftStage.Submitted,
+            "terminal" => WikiAuthorDraftStage.Terminal,
+            "none" => WikiAuthorDraftStage.None,
+            _ => (WikiAuthorDraftStage)(-1)
+        };
+        return Enum.IsDefined(draftStage);
     }
 
     private static MessageModel<T> BuildFailure<T>(

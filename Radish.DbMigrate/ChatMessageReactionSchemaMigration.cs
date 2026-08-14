@@ -35,6 +35,7 @@ internal sealed class ChatMessageReactionSchemaMigration : ISchemaMigration
     {
         _ = services;
         db.CodeFirst.InitTables<ChannelMessage, ChatMessageReaction, ChatMessageReactionOperation>();
+        EnsureIndexes(db);
     }
 
     public IReadOnlyList<string> Diagnose(ISqlSugarClient db, IServiceProvider services)
@@ -95,13 +96,92 @@ internal sealed class ChatMessageReactionSchemaMigration : ISchemaMigration
 
         foreach (var indexName in RequiredIndexes)
         {
-            if (!db.DbMaintenance.IsAnyIndex(indexName))
+            if (!IndexExists(db, indexName))
             {
                 issues.Add($"缺少索引 {indexName}。");
             }
         }
 
         return issues;
+    }
+
+    private static void EnsureIndexes(ISqlSugarClient db)
+    {
+        EnsureIndex(
+            db,
+            ReactionTable,
+            "idx_chat_reaction_message",
+            false,
+            nameof(ChatMessageReaction.TenantId),
+            nameof(ChatMessageReaction.MessageId),
+            nameof(ChatMessageReaction.IsDeleted));
+        EnsureIndex(
+            db,
+            ReactionTable,
+            "idx_chat_reaction_channel_message",
+            false,
+            nameof(ChatMessageReaction.TenantId),
+            nameof(ChatMessageReaction.ChannelId),
+            nameof(ChatMessageReaction.MessageId));
+        EnsureIndex(
+            db,
+            ReactionTable,
+            "idx_chat_reaction_unique",
+            true,
+            nameof(ChatMessageReaction.TenantId),
+            nameof(ChatMessageReaction.MessageId),
+            nameof(ChatMessageReaction.UserId),
+            nameof(ChatMessageReaction.EmojiType),
+            nameof(ChatMessageReaction.EmojiValue));
+        EnsureIndex(
+            db,
+            OperationTable,
+            "idx_chat_reaction_operation_unique",
+            true,
+            nameof(ChatMessageReactionOperation.TenantId),
+            nameof(ChatMessageReactionOperation.UserId),
+            nameof(ChatMessageReactionOperation.ClientOperationId));
+        EnsureIndex(
+            db,
+            OperationTable,
+            "idx_chat_reaction_operation_expiry",
+            false,
+            nameof(ChatMessageReactionOperation.ExpiresAtUtc),
+            nameof(ChatMessageReactionOperation.Id));
+    }
+
+    private static void EnsureIndex(
+        ISqlSugarClient db,
+        string configuredTableName,
+        string indexName,
+        bool isUnique,
+        params string[] columns)
+    {
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, configuredTableName)
+                                ?? throw new InvalidOperationException(
+                                    $"{configuredTableName} 不存在，无法创建索引 {indexName}。");
+        var physicalColumns = columns.Select(column =>
+            DatabaseIdentifierResolver.ResolveColumn(db, physicalTableName, column)
+            ?? throw new InvalidOperationException(
+                $"{configuredTableName}.{column} 不存在，无法创建索引 {indexName}。"));
+        db.Ado.ExecuteCommand(
+            $"CREATE {(isUnique ? "UNIQUE " : string.Empty)}INDEX IF NOT EXISTS " +
+            $"{QuoteIdentifier(indexName)} ON {QuoteIdentifier(physicalTableName)} " +
+            $"({string.Join(", ", physicalColumns.Select(column => QuoteIdentifier(column.ColumnName)))})");
+    }
+
+    private static bool IndexExists(ISqlSugarClient db, string indexName)
+    {
+        if (db.CurrentConnectionConfig.DbType != DbType.PostgreSQL)
+        {
+            return db.DbMaintenance.IsAnyIndex(indexName);
+        }
+
+        return new[] { ReactionTable, OperationTable }
+            .Select(table => DatabaseIdentifierResolver.ResolveTable(db, table))
+            .Where(table => table != null)
+            .Any(table => db.DbMaintenance.GetIndexList(table!)
+                .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase)));
     }
 
     private static string QuoteIdentifier(string identifier)

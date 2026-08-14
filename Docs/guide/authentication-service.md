@@ -114,15 +114,19 @@ redirectToLogin({
 ```
 
 **工作流程**:
-1. 构建 OIDC 授权 URL (`/connect/authorize`)
-2. 如传入 `returnPath`，先写入 sessionStorage 中的一次性认证返回路径
-3. 设置参数:
+1. 由 `@radish/http` 使用 Web Crypto 生成密码学随机 `state` 与 `code_verifier`，派生 PKCE S256 `code_challenge`
+2. 将本次授权尝试按 client id 写入 sessionStorage，绑定回调 URI 与五分钟有效期
+3. 构建 OIDC 授权 URL (`/connect/authorize`)；如传入 `returnPath`，另外写入一次性认证返回路径
+4. 设置参数:
    - `client_id`: radish-client
    - `response_type`: code
    - `redirect_uri`: {origin}/oidc/callback
-   - `scope`: radish-api
+   - `scope`: openid profile offline_access radish-api
+   - `state`: 本次随机状态
+   - `code_challenge`: 本次 verifier 的 SHA-256 摘要
+   - `code_challenge_method`: S256
    - `culture`: 当前语言设置
-4. 跳转到认证服务器
+5. 跳转到认证服务器；调用方不能通过附加参数覆盖 client、redirect、scope、state 或 PKCE 参数
 
 认证返回路径约束：
 
@@ -485,12 +489,16 @@ Web 侧 OIDC 回调由 `Frontend/radish.client/src/auth/OidcCallbackPage.tsx` �
 当前实现要点：
 
 - 回调地址固定为 `${window.location.origin}/oidc/callback`
-- 回调页调用 `@radish/http` 的 `redeemOidcAuthorizationCode()` 完成授权码换 Token
+- Client 与 Console 共用 `@radish/http` 的授权 / 回调 owner；授权尝试按 client id 保存随机 `state`、`code_verifier`、redirect URI 和开始时间，五分钟后失效
+- callback 先从地址栏移除 code、state、issuer、session 与授权错误参数，再一次性消费对应授权尝试；state 缺失 / 失配、尝试缺失 / 过期和重复消费均失败关闭
+- 回调页调用 `redeemOidcAuthorizationCode()` 并提交同次 `code_verifier` 完成授权码换 Token；React Strict Mode 同一轮重复 effect 只复用进行中的请求
+- 授权取消、Token 网络 / 非 2xx / 无效响应使用稳定的本地化错误；原始 `error_description` 与 Token 响应正文不直接展示
 - Token 写入统一的 `tokenService`
 - 写入 Token 后调用 `hydrateAuthUser()` 预热当前用户资料
 - 成功后优先消费一次性认证返回路径；若不存在有效返回路径，则执行 `window.location.replace('/')` 回到根入口
-- 普通浏览器根入口 `/` 会进入 `/discover` 纯 Web 公开分发页；Tauri 当前仍保留进入 `/desktop`
+- 普通浏览器根入口 `/` 会进入 `/discover` Web 公开分发页；暂时弃用的 Tauri 历史资产仍保留进入 `/desktop` 的兼容行为
 - 当前认证返回路径使用严格白名单：`/desktop` 用于工作台上下文，`/circle` 用于我的圈子登录回流，`/notifications`、`/me`、`/messages` 和 `/pet` 用于纯 Web 登录态私域复访，`/forum/post/:postId?intent=comment|quickReply` 用于公开详情轻参与回流
+- Console 只恢复同一 Console base 内的安全来源，拒绝外部地址、登录 / callback 循环、反斜杠、控制字符及 query / fragment 中的凭据参数，并按当前标签页一次性消费
 
 回调页只负责协议闭环和用户资料预热，不承载登录测试 UI、天气示例或其他 demo 行为。
 

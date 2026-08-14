@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useNavigate, useSearchParams } from 'react-router';
 import {
   ApiResponseError,
+  isApiResponseNotFoundError,
   type ContentModerationCaseDetailVo,
   type ContentModerationCaseQueueItemVo,
   type ContentModerationCaseUserActionRequest,
@@ -10,12 +11,14 @@ import {
 import {
   AntInput as Input,
   AntSelect as Select,
+  BottomSheet,
   Button,
+  CheckOutlined,
   InputNumber,
   Space,
   message,
 } from '@radish/ui';
-import { ReloadOutlined, SafetyOutlined } from '@radish/ui';
+import { LeftOutlined, ReloadOutlined } from '@radish/ui';
 import {
   applyModerationCorrectiveAction,
   captureModerationEvidence,
@@ -24,9 +27,6 @@ import {
   reviewModerationCase,
 } from '@/api/moderationApi';
 import {
-  ConsoleMetricCard,
-  ConsoleMetricGrid,
-  ConsolePageHeader,
   ConsoleStatusChip,
 } from '@/components/ConsolePage';
 import { CONSOLE_PERMISSIONS } from '@/constants/permissions';
@@ -35,13 +35,26 @@ import { usePermission } from '@/hooks/usePermission';
 import { log } from '@/utils/logger';
 import { normalizeConsoleReturnTo } from '@/utils/returnTo';
 import { ModerationAppealsWorkspace } from './ModerationAppealsWorkspace';
-import { buildModerationPath } from './moderationPageUrlState';
+import {
+  buildModerationPath,
+  buildModerationSearchParams,
+  DEFAULT_MODERATION_PAGE_INDEX,
+  DEFAULT_MODERATION_PAGE_SIZE,
+  MODERATION_TARGET_TYPES,
+  parseModerationCasePublicId,
+  parseModerationCaseStatusQuery,
+  parseModerationPageIndexQuery,
+  parseModerationPageSizeQuery,
+  parseModerationTargetTypeQuery,
+} from './moderationPageUrlState';
 import './index.css';
 import '../adminFeature.css';
 
 type DecisionValue = 1 | 2 | 3;
 type TargetDispositionValue = 1 | 2 | 3;
 type UserActionValue = 1 | 2 | 3 | 4;
+type QueueReadState = 'loading' | 'ready' | 'stale';
+type DetailReadState = 'idle' | 'loading' | 'ready' | 'stale' | 'unavailable';
 
 interface DecisionDraft {
   decision: DecisionValue;
@@ -115,6 +128,14 @@ const isConflictError = (error: unknown) => (
   && [409].includes(error.httpStatus ?? error.statusCode ?? 0)
 );
 
+const isUnavailableError = (error: unknown) => (
+  isApiResponseNotFoundError(error)
+  || (
+    error instanceof ApiResponseError
+    && (error.httpStatus ?? error.statusCode ?? 0) === 403
+  )
+);
+
 const resolveLatestTargetRevision = (detail: ContentModerationCaseDetailVo | null): number | null => {
   if (!detail) {
     return null;
@@ -137,31 +158,36 @@ const resolveUserStateVersion = (
 const ModerationCasesWorkspace = () => {
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const language = i18n.resolvedLanguage ?? i18n.language;
-  const linkedKeyword = searchParams.get('keyword')?.trim() ?? '';
+  const selectedCaseId = parseModerationCasePublicId(searchParams.get('case')) ?? null;
+  const statusFilter = parseModerationCaseStatusQuery(searchParams.get('status')) ?? -1;
+  const targetTypeFilter = parseModerationTargetTypeQuery(searchParams.get('targetType'));
+  const keyword = searchParams.get('keyword')?.trim() ?? '';
+  const queuePageIndex = parseModerationPageIndexQuery(searchParams.get('pageIndex'))
+    ?? DEFAULT_MODERATION_PAGE_INDEX;
+  const queuePageSize = parseModerationPageSizeQuery(searchParams.get('pageSize'))
+    ?? DEFAULT_MODERATION_PAGE_SIZE;
   const returnTo = normalizeConsoleReturnTo(searchParams.get('returnTo'));
   useDocumentTitle(t('moderation.case.title'));
   const canReview = usePermission(CONSOLE_PERMISSIONS.moderationReview);
   const canAction = usePermission(CONSOLE_PERMISSIONS.moderationAction);
   const [queueItems, setQueueItems] = useState<ContentModerationCaseQueueItemVo[]>([]);
   const [queueTotal, setQueueTotal] = useState(0);
-  const [queuePageIndex, setQueuePageIndex] = useState(1);
-  const [queuePageSize, setQueuePageSize] = useState(20);
-  const [statusFilter, setStatusFilter] = useState<number>(-1);
-  const [targetTypeFilter, setTargetTypeFilter] = useState<string>();
-  const [keywordInput, setKeywordInput] = useState(linkedKeyword);
-  const [keyword, setKeyword] = useState(linkedKeyword);
-  const [selectedCaseId, setSelectedCaseId] = useState<string | null>(null);
+  const [keywordInput, setKeywordInput] = useState(keyword);
   const [detail, setDetail] = useState<ContentModerationCaseDetailVo | null>(null);
   const [loadingQueue, setLoadingQueue] = useState(false);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [queueReadState, setQueueReadState] = useState<QueueReadState>('loading');
+  const [detailReadState, setDetailReadState] = useState<DetailReadState>('idle');
   const [submitting, setSubmitting] = useState(false);
   const [capturing, setCapturing] = useState(false);
+  const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [conflictNotice, setConflictNotice] = useState(false);
   const [decisionDraft, setDecisionDraft] = useState<DecisionDraft>(createDecisionDraft);
   const [correctiveDraft, setCorrectiveDraft] = useState<CorrectiveDraft>(createCorrectiveDraft);
   const draftCaseIdRef = useRef<string | null>(null);
+  const caseLoadSequenceRef = useRef(0);
 
   const formatDateTime = useCallback((value?: string | null) => {
     if (!value) {
@@ -173,12 +199,50 @@ const ModerationCasesWorkspace = () => {
     }).format(new Date(value));
   }, [language]);
 
+  const updateCaseSearch = useCallback((
+    changes: Partial<Parameters<typeof buildModerationSearchParams>[0]>,
+    replace = false,
+  ) => {
+    setSearchParams(buildModerationSearchParams({
+      casePublicId: selectedCaseId,
+      status: statusFilter,
+      targetType: targetTypeFilter,
+      keyword,
+      pageIndex: queuePageIndex,
+      pageSize: queuePageSize,
+      returnTo,
+      ...changes,
+    }), { replace });
+  }, [
+    keyword,
+    queuePageIndex,
+    queuePageSize,
+    returnTo,
+    selectedCaseId,
+    setSearchParams,
+    statusFilter,
+    targetTypeFilter,
+  ]);
+
+  useEffect(() => {
+    setKeywordInput(keyword);
+  }, [keyword]);
+
   const loadCase = useCallback(async (casePublicId: string, initializeDraft = true) => {
+    const loadSequence = caseLoadSequenceRef.current + 1;
+    caseLoadSequenceRef.current = loadSequence;
     setLoadingDetail(true);
+    setDetailReadState('loading');
+    setDetail((current) => (
+      current?.voCase.voCasePublicId === casePublicId ? current : null
+    ));
     try {
       const nextDetail = await getModerationCase(casePublicId);
+      if (caseLoadSequenceRef.current !== loadSequence) {
+        return;
+      }
       setDetail(nextDetail);
-      setSelectedCaseId(casePublicId);
+      setDetailReadState('ready');
       if (initializeDraft && draftCaseIdRef.current !== casePublicId) {
         draftCaseIdRef.current = casePublicId;
         setDecisionDraft({
@@ -189,15 +253,28 @@ const ModerationCasesWorkspace = () => {
         setConflictNotice(false);
       }
     } catch (error) {
+      if (caseLoadSequenceRef.current !== loadSequence) {
+        return;
+      }
       log.error('ModerationPage', 'Failed to load moderation case detail:', error);
-      message.error(t('moderation.case.loadDetailFailed'));
+      if (isUnavailableError(error)) {
+        setDetail(null);
+        setDetailReadState('unavailable');
+        message.warning(t('moderation.case.detailUnavailableTitle'));
+      } else {
+        setDetailReadState('stale');
+        message.error(t('moderation.case.loadDetailFailed'));
+      }
     } finally {
-      setLoadingDetail(false);
+      if (caseLoadSequenceRef.current === loadSequence) {
+        setLoadingDetail(false);
+      }
     }
   }, [t]);
 
   const loadQueue = useCallback(async (requestedPage = queuePageIndex) => {
     setLoadingQueue(true);
+    setQueueReadState((current) => current === 'ready' ? 'ready' : 'loading');
     try {
       const page = await getCaseQueue({
         status: statusFilter >= 0 ? statusFilter : undefined,
@@ -208,46 +285,47 @@ const ModerationCasesWorkspace = () => {
       });
       setQueueItems(page.voItems);
       setQueueTotal(page.voTotal);
-      setQueuePageIndex(page.voPageIndex);
-      setQueuePageSize(page.voPageSize);
-
-      const selectedStillVisible = selectedCaseId
-        && page.voItems.some((item) => item.voCasePublicId === selectedCaseId);
-      const nextCaseId = selectedStillVisible ? selectedCaseId : page.voItems[0]?.voCasePublicId;
-      if (nextCaseId && nextCaseId !== selectedCaseId) {
-        await loadCase(nextCaseId);
-      }
-      if (!nextCaseId) {
-        setSelectedCaseId(null);
-        setDetail(null);
-      }
+      setQueueReadState('ready');
     } catch (error) {
       log.error('ModerationPage', 'Failed to load moderation case queue:', error);
+      setQueueReadState('stale');
       message.error(t('moderation.case.loadQueueFailed'));
     } finally {
       setLoadingQueue(false);
     }
   }, [
     keyword,
-    loadCase,
     queuePageIndex,
     queuePageSize,
-    selectedCaseId,
     statusFilter,
     t,
     targetTypeFilter,
   ]);
 
   useEffect(() => {
-    void loadQueue(1);
-    // The callback owns the current filter snapshot and intentionally resets pagination.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [statusFilter, targetTypeFilter, keyword, queuePageSize]);
+    void loadQueue(queuePageIndex);
+  }, [loadQueue, queuePageIndex]);
+
+  useEffect(() => {
+    if (!selectedCaseId) {
+      caseLoadSequenceRef.current += 1;
+      draftCaseIdRef.current = null;
+      setDetail(null);
+      setDetailReadState('idle');
+      setConflictNotice(false);
+      return;
+    }
+
+    void loadCase(selectedCaseId);
+  }, [loadCase, selectedCaseId]);
 
   const latestTargetRevision = useMemo(() => resolveLatestTargetRevision(detail), [detail]);
   const latestEvidence = detail?.voEvidence.at(-1) ?? null;
   const actionFailedCount = queueItems.filter((item) => item.voTargetDisposition === 'ActionFailed').length;
   const reviewingCount = queueItems.filter((item) => item.voStatus === 'Reviewing').length;
+  const activeFilterCount = [statusFilter >= 0, Boolean(targetTypeFilter), Boolean(keyword)]
+    .filter(Boolean).length;
+  const actionsAreAuthoritative = queueReadState === 'ready' && detailReadState === 'ready';
 
   const updateDecision = (decision: DecisionValue) => {
     setDecisionDraft((current) => ({
@@ -289,7 +367,7 @@ const ModerationCasesWorkspace = () => {
   };
 
   const submitDecision = async () => {
-    if (!detail || !canReview) {
+    if (!detail || !canReview || !actionsAreAuthoritative) {
       return;
     }
     if (!decisionDraft.internalRemark.trim()) {
@@ -313,7 +391,8 @@ const ModerationCasesWorkspace = () => {
       return;
     }
 
-    const requiresTargetRevision = ['Post', 'Comment', 'Product'].includes(detail.voCase.voTargetType);
+    const requiresTargetRevision = ['Post', 'Comment', 'PostAnswer', 'Product', 'ProductReview']
+      .includes(detail.voCase.voTargetType);
     if (
       decisionDraft.targetDisposition === 2
       && requiresTargetRevision
@@ -355,7 +434,7 @@ const ModerationCasesWorkspace = () => {
   };
 
   const captureCurrentEvidence = async () => {
-    if (!detail || !canReview) {
+    if (!detail || !canReview || !actionsAreAuthoritative) {
       return;
     }
 
@@ -384,7 +463,7 @@ const ModerationCasesWorkspace = () => {
   };
 
   const submitCorrectiveAction = async () => {
-    if (!detail || !canAction || !correctiveDraft.reason.trim()) {
+    if (!detail || !canAction || !actionsAreAuthoritative || !correctiveDraft.reason.trim()) {
       message.error(t('moderation.case.userActionReasonRequired'));
       return;
     }
@@ -424,95 +503,177 @@ const ModerationCasesWorkspace = () => {
     }
   };
 
-  return (
-    <div className="admin-feature-page moderation-case-page">
-      <ConsolePageHeader
-        eyebrow={t('moderation.title')}
-        title={t('moderation.case.title')}
-        description={t('moderation.case.description')}
-        icon={<SafetyOutlined />}
-        status={(
-          <Space wrap>
-            <ConsoleStatusChip tone={canReview ? 'success' : 'neutral'}>
-              {t(canReview ? 'moderation.case.canReview' : 'moderation.readOnly')}
-            </ConsoleStatusChip>
-            <ConsoleStatusChip tone={canAction ? 'warning' : 'neutral'}>
-              {t(canAction ? 'moderation.case.canAction' : 'moderation.case.noActionPermission')}
-            </ConsoleStatusChip>
-          </Space>
-        )}
-        actions={(
-          <Space wrap>
-            {returnTo ? (
-              <Button onClick={() => navigate(returnTo)}>
-                {t('moderation.backToSource')}
-              </Button>
-            ) : null}
-            <Button onClick={() => navigate(buildModerationPath({ view: 'appeals', returnTo }))}>
-              {t('moderation.case.openAppeals')}
-            </Button>
-            <Button
-              icon={<ReloadOutlined />}
-              disabled={loadingQueue || loadingDetail}
-              onClick={() => void loadQueue(queuePageIndex)}
-            >
-              {loadingQueue || loadingDetail ? t('moderation.loading') : t('moderation.refresh')}
-            </Button>
-          </Space>
-        )}
+  const applyKeyword = () => {
+    updateCaseSearch({
+      casePublicId: null,
+      keyword: keywordInput.trim(),
+      pageIndex: DEFAULT_MODERATION_PAGE_INDEX,
+    });
+    setFilterSheetOpen(false);
+  };
+
+  const resetFilters = () => {
+    setKeywordInput('');
+    updateCaseSearch({
+      casePublicId: null,
+      status: undefined,
+      targetType: undefined,
+      keyword: undefined,
+      pageIndex: DEFAULT_MODERATION_PAGE_INDEX,
+      pageSize: DEFAULT_MODERATION_PAGE_SIZE,
+    });
+    setFilterSheetOpen(false);
+  };
+
+  const selectCase = (casePublicId: string) => {
+    updateCaseSearch({ casePublicId });
+  };
+
+  const closeCase = () => {
+    updateCaseSearch({ casePublicId: null }, true);
+  };
+
+  const refreshWorkspace = async () => {
+    const reads: Promise<void>[] = [loadQueue(queuePageIndex)];
+    if (selectedCaseId) {
+      reads.push(loadCase(selectedCaseId, false));
+    }
+    await Promise.all(reads);
+  };
+
+  const filterControls = (
+    <div className="moderation-filter-controls">
+      <Select
+        value={statusFilter}
+        aria-label={t('moderation.case.filter.allStatuses')}
+        className="moderation-filter-control moderation-filter-control--md"
+        options={[
+          { value: -1, label: t('moderation.case.filter.allStatuses') },
+          { value: 0, label: t('moderation.case.status.Open') },
+          { value: 1, label: t('moderation.case.status.Reviewing') },
+          { value: 2, label: t('moderation.case.status.Resolved') },
+        ]}
+        onChange={(status) => updateCaseSearch({
+          casePublicId: null,
+          status,
+          pageIndex: DEFAULT_MODERATION_PAGE_INDEX,
+        })}
       />
-
-      <ConsoleMetricGrid label={t('moderation.case.metricsLabel')}>
-        <ConsoleMetricCard label={t('moderation.case.metric.total')} value={queueTotal} tone="info" />
-        <ConsoleMetricCard label={t('moderation.case.metric.reviewing')} value={reviewingCount} tone="warning" />
-        <ConsoleMetricCard label={t('moderation.case.metric.actionFailed')} value={actionFailedCount} tone={actionFailedCount ? 'danger' : 'neutral'} />
-        <ConsoleMetricCard label={t('moderation.case.metric.visible')} value={queueItems.length} />
-      </ConsoleMetricGrid>
-
-      <section className="admin-feature-card moderation-case-filters">
-        <Select
-          value={statusFilter}
-          aria-label={t('moderation.case.filter.allStatuses')}
-          className="moderation-filter-control moderation-filter-control--md"
-          options={[
-            { value: -1, label: t('moderation.case.filter.allStatuses') },
-            { value: 0, label: t('moderation.case.status.Open') },
-            { value: 1, label: t('moderation.case.status.Reviewing') },
-            { value: 2, label: t('moderation.case.status.Resolved') },
-          ]}
-          onChange={setStatusFilter}
-        />
-        <Select
-          allowClear
-          value={targetTypeFilter}
-          aria-label={t('moderation.case.filter.targetType')}
-          placeholder={t('moderation.case.filter.targetType')}
-          className="moderation-filter-control moderation-filter-control--md"
-          options={['Post', 'Comment', 'PostQuickReply', 'ChatMessage', 'Product'].map((value) => ({
-            value,
-            label: t(`moderation.targetType.${value}`),
-          }))}
-          onChange={setTargetTypeFilter}
-        />
-        <Input
-          value={keywordInput}
-          aria-label={t('moderation.case.filter.keyword')}
-          className="moderation-filter-control moderation-filter-control--xl"
-          placeholder={t('moderation.case.filter.keyword')}
-          onChange={(event) => setKeywordInput(event.target.value)}
-          onPressEnter={() => setKeyword(keywordInput.trim())}
-        />
-        <Button variant="primary" onClick={() => setKeyword(keywordInput.trim())}>
+      <Select
+        allowClear
+        value={targetTypeFilter}
+        aria-label={t('moderation.case.filter.targetType')}
+        placeholder={t('moderation.case.filter.targetType')}
+        className="moderation-filter-control moderation-filter-control--md"
+        options={MODERATION_TARGET_TYPES.map((value) => ({
+          value,
+          label: t(`moderation.targetType.${value}`),
+        }))}
+        onChange={(targetType) => updateCaseSearch({
+          casePublicId: null,
+          targetType,
+          pageIndex: DEFAULT_MODERATION_PAGE_INDEX,
+        })}
+      />
+      <Input
+        value={keywordInput}
+        aria-label={t('moderation.case.filter.keyword')}
+        className="moderation-filter-control moderation-filter-control--xl"
+        placeholder={t('moderation.case.filter.keyword')}
+        onChange={(event) => setKeywordInput(event.target.value)}
+        onPressEnter={applyKeyword}
+      />
+      <div className="moderation-filter-actions">
+        <Button variant="primary" onClick={applyKeyword}>
           {t('moderation.query')}
         </Button>
-        <Button onClick={() => {
-          setStatusFilter(-1);
-          setTargetTypeFilter(undefined);
-          setKeywordInput('');
-          setKeyword('');
-        }}>
+        <Button onClick={resetFilters}>
           {t('moderation.reset')}
         </Button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      className="admin-feature-page moderation-case-page"
+      data-task-active={selectedCaseId ? 'true' : 'false'}
+    >
+      <header className="moderation-workspace-header">
+        <div className="moderation-workspace-header__copy">
+          <h1>{t('moderation.case.title')}</h1>
+          <span>{t('moderation.case.resultSummary', { total: queueTotal, visible: queueItems.length })}</span>
+        </div>
+        <div className="moderation-workspace-header__actions">
+          <ConsoleStatusChip tone={canReview ? 'success' : 'neutral'}>
+            {t(canReview
+              ? 'moderation.case.canReview'
+              : canAction
+                ? 'moderation.case.noReviewPermission'
+                : 'moderation.readOnly')}
+          </ConsoleStatusChip>
+          <ConsoleStatusChip tone={canAction ? 'warning' : 'neutral'}>
+            {t(canAction ? 'moderation.case.canAction' : 'moderation.case.noActionPermission')}
+          </ConsoleStatusChip>
+          {returnTo ? (
+            <Button size="small" onClick={() => navigate(returnTo)}>
+              {t('moderation.backToSource')}
+            </Button>
+          ) : null}
+          <Button
+            size="small"
+            icon={<ReloadOutlined />}
+            disabled={loadingQueue || loadingDetail}
+            onClick={() => void refreshWorkspace()}
+          >
+            {loadingQueue || loadingDetail ? t('moderation.loading') : t('moderation.refresh')}
+          </Button>
+        </div>
+      </header>
+
+      <nav className="moderation-workspace-switch" aria-label={t('moderation.workspaceSwitch')}>
+        <button type="button" data-active="true">{t('moderation.workspaceCases')}</button>
+        <button
+          type="button"
+          onClick={() => navigate(buildModerationPath({ view: 'appeals', returnTo }))}
+        >
+          {t('moderation.workspaceAppeals')}
+        </button>
+      </nav>
+
+      <section className="moderation-metric-strip" aria-label={t('moderation.case.metricsLabel')}>
+        <div><span>{t('moderation.case.metric.total')}</span><strong>{queueTotal}</strong></div>
+        <div><span>{t('moderation.case.metric.reviewing')}</span><strong>{reviewingCount}</strong></div>
+        <div data-tone={actionFailedCount ? 'danger' : 'neutral'}><span>{t('moderation.case.metric.actionFailed')}</span><strong>{actionFailedCount}</strong></div>
+        <div><span>{t('moderation.case.metric.visible')}</span><strong>{queueItems.length}</strong></div>
+      </section>
+
+      <section className="moderation-desktop-filter-bar">
+        <div>
+          <strong>{t('moderation.filtersTitle')}</strong>
+          <span>{t('moderation.activeFilterCount', { count: activeFilterCount })}</span>
+        </div>
+        {filterControls}
+      </section>
+
+      <section className="moderation-mobile-toolbar">
+        <div>
+          <strong>{t('moderation.case.mobileResults', { count: queueTotal })}</strong>
+          <span>{t('moderation.activeFilterCount', { count: activeFilterCount })}</span>
+        </div>
+        <div>
+          <Button size="small" onClick={() => setFilterSheetOpen(true)}>
+            {t('moderation.filterAction')}
+          </Button>
+          <Button
+            size="small"
+            icon={<ReloadOutlined />}
+            children={null}
+            aria-label={t('moderation.refresh')}
+            disabled={loadingQueue || loadingDetail}
+            onClick={() => void refreshWorkspace()}
+          />
+        </div>
       </section>
 
       <section className="moderation-case-workbench">
@@ -524,6 +685,12 @@ const ModerationCasesWorkspace = () => {
             </div>
             <ConsoleStatusChip tone="info">{queueTotal}</ConsoleStatusChip>
           </div>
+          {queueReadState === 'stale' ? (
+            <div className="moderation-case-read-state moderation-case-read-state--stale" role="alert">
+              <strong>{t('moderation.case.queueStaleTitle')}</strong>
+              <span>{t('moderation.case.queueStaleDescription')}</span>
+            </div>
+          ) : null}
           <div className="moderation-case-queue-list">
             {queueItems.map((item) => (
               <button
@@ -531,52 +698,147 @@ const ModerationCasesWorkspace = () => {
                 type="button"
                 className="moderation-case-queue-item"
                 data-active={item.voCasePublicId === selectedCaseId}
-                onClick={() => void loadCase(item.voCasePublicId)}
+                onClick={() => selectCase(item.voCasePublicId)}
               >
-                <span className="moderation-case-queue-item__topline">
+                <span className="moderation-case-queue-item__identity">
                   <strong>{item.voCasePublicId}</strong>
+                  <span>{t(`moderation.targetType.${item.voTargetType}`)}</span>
+                </span>
+                <span className="moderation-case-queue-item__evidence">
+                  <strong>#{item.voTargetContentId}</strong>
+                  <span>{t('moderation.case.reportCount', { count: item.voReportCount })}</span>
+                  <span>{t(`moderation.case.disposition.${item.voTargetDisposition}`)}</span>
+                </span>
+                <span className="moderation-case-queue-item__result">
                   <ConsoleStatusChip tone={statusTone(item.voStatus)}>
                     {t(`moderation.case.status.${item.voStatus}`)}
                   </ConsoleStatusChip>
-                </span>
-                <span>{t(`moderation.targetType.${item.voTargetType}`)} · #{item.voTargetContentId}</span>
-                <span>{t('moderation.case.reportCount', { count: item.voReportCount })}</span>
-                <span className="moderation-case-queue-item__bottomline">
                   <small>{formatDateTime(item.voModifiedAt ?? item.voOpenedAt)}</small>
-                  <ConsoleStatusChip tone={dispositionTone(item.voTargetDisposition)}>
-                    {t(`moderation.case.disposition.${item.voTargetDisposition}`)}
-                  </ConsoleStatusChip>
+                  <span aria-hidden="true">›</span>
                 </span>
               </button>
             ))}
             {!loadingQueue && queueItems.length === 0 ? (
-              <p className="admin-feature-rail__empty">{t('moderation.case.queueEmpty')}</p>
+              <div className="moderation-case-queue-empty">
+                <strong>{t('moderation.case.queueEmpty')}</strong>
+                {activeFilterCount > 0 ? (
+                  <Button size="small" onClick={resetFilters}>{t('moderation.reset')}</Button>
+                ) : null}
+              </div>
             ) : null}
           </div>
           <div className="moderation-case-pagination">
             <Button
               disabled={queuePageIndex <= 1}
-              onClick={() => void loadQueue(queuePageIndex - 1)}
+              onClick={() => updateCaseSearch({
+                casePublicId: null,
+                pageIndex: queuePageIndex - 1,
+              })}
             >
               {t('moderation.case.previous')}
             </Button>
             <span>{queuePageIndex}</span>
             <Button
               disabled={queuePageIndex * queuePageSize >= queueTotal}
-              onClick={() => void loadQueue(queuePageIndex + 1)}
+              onClick={() => updateCaseSearch({
+                casePublicId: null,
+                pageIndex: queuePageIndex + 1,
+              })}
             >
               {t('moderation.case.next')}
             </Button>
           </div>
         </aside>
 
-        <main className="moderation-case-detail">
-          {!detail ? (
-            <div className="admin-feature-card">
-              <p className="admin-feature-rail__empty">{t('moderation.case.selectCase')}</p>
-            </div>
+        <main
+          className="moderation-case-detail"
+          data-console-fullscreen-task={selectedCaseId ? 'moderation-case' : undefined}
+        >
+          {selectedCaseId ? (
+            <header className="moderation-case-task-header">
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<LeftOutlined />}
+                children={null}
+                aria-label={t('moderation.case.backToQueue')}
+                onClick={closeCase}
+              />
+              <div className="moderation-case-task-header__identity">
+                <span className="moderation-case-task-header__title">
+                  <strong>{detail
+                    ? t('moderation.case.taskTitle', {
+                        targetType: t(`moderation.targetType.${detail.voCase.voTargetType}`),
+                      })
+                    : t('moderation.case.taskTitleFallback')}</strong>
+                  {detail ? (
+                    <ConsoleStatusChip tone={statusTone(detail.voCase.voStatus)}>
+                      {t(`moderation.case.status.${detail.voCase.voStatus}`)}
+                    </ConsoleStatusChip>
+                  ) : null}
+                </span>
+                <small>{selectedCaseId}{detail ? ` · v${detail.voCase.voVersion}` : ''}</small>
+              </div>
+              <Button
+                variant="ghost"
+                size="small"
+                icon={<ReloadOutlined />}
+                children={null}
+                aria-label={t('moderation.case.retryDetail')}
+                disabled={loadingDetail}
+                onClick={() => void loadCase(selectedCaseId, false)}
+              />
+            </header>
+          ) : null}
+
+          {detailReadState === 'unavailable' ? (
+            <section className="admin-feature-card moderation-case-empty-state" role="alert">
+              <strong>{t('moderation.case.detailUnavailableTitle')}</strong>
+              <span>{t('moderation.case.detailUnavailableDescription')}</span>
+              <Space wrap>
+                <Button onClick={closeCase}>{t('moderation.case.backToQueue')}</Button>
+                {selectedCaseId ? (
+                  <Button icon={<ReloadOutlined />} onClick={() => void loadCase(selectedCaseId, false)}>
+                    {t('moderation.case.retryDetail')}
+                  </Button>
+                ) : null}
+              </Space>
+            </section>
+          ) : detailReadState === 'stale' && !detail ? (
+            <section className="admin-feature-card moderation-case-empty-state" role="alert">
+              <strong>{t('moderation.case.detailReadFailedTitle')}</strong>
+              <span>{t('moderation.case.detailReadFailedDescription')}</span>
+              <Space wrap>
+                <Button onClick={closeCase}>{t('moderation.case.backToQueue')}</Button>
+                {selectedCaseId ? (
+                  <Button icon={<ReloadOutlined />} onClick={() => void loadCase(selectedCaseId, false)}>
+                    {t('moderation.case.retryDetail')}
+                  </Button>
+                ) : null}
+              </Space>
+            </section>
+          ) : !detail ? (
+            <section className="admin-feature-card moderation-case-empty-state">
+              <span>{t(selectedCaseId
+                ? 'moderation.case.loadingDetail'
+                : 'moderation.case.selectCase')}</span>
+            </section>
           ) : (
-            <>
+            <div className="moderation-case-detail-grid">
+              <section className="moderation-case-evidence-pane">
+              {detailReadState === 'loading' || detailReadState === 'stale' ? (
+                <div
+                  className={`moderation-case-read-state moderation-case-read-state--${detailReadState}`}
+                  role={detailReadState === 'stale' ? 'alert' : 'status'}
+                >
+                  <strong>{t(detailReadState === 'stale'
+                    ? 'moderation.case.detailStaleTitle'
+                    : 'moderation.case.detailVerifyingTitle')}</strong>
+                  <span>{t(detailReadState === 'stale'
+                    ? 'moderation.case.detailStaleDescription'
+                    : 'moderation.case.detailVerifyingDescription')}</span>
+                </div>
+              ) : null}
               <section className="admin-feature-card moderation-case-summary">
                 <div className="moderation-case-section-heading">
                   <div>
@@ -608,14 +870,25 @@ const ModerationCasesWorkspace = () => {
                 </div>
               ) : null}
 
+              {!canReview && !canAction ? (
+                <div className="moderation-case-read-state moderation-case-read-state--readonly" role="note">
+                  <strong>{t('moderation.case.readOnlyTitle')}</strong>
+                  <span>{t('moderation.case.readOnlyDescription')}</span>
+                </div>
+              ) : null}
+
               <section className="admin-feature-card">
                 <div className="moderation-case-section-heading">
                   <div>
                     <h3>{t('moderation.case.evidenceTitle')}</h3>
                     <p>{t('moderation.case.evidenceDescription')}</p>
                   </div>
-                  {canReview && detail.voCase.voStatus !== 'Resolved' ? (
-                    <Button disabled={capturing} onClick={() => void captureCurrentEvidence()}>
+                  {canReview && actionsAreAuthoritative && detail.voCase.voStatus !== 'Resolved' ? (
+                    <Button
+                      className="moderation-case-desktop-action"
+                      disabled={capturing}
+                      onClick={() => void captureCurrentEvidence()}
+                    >
                       {capturing ? t('moderation.loading') : t('moderation.case.captureCurrent')}
                     </Button>
                   ) : null}
@@ -659,7 +932,10 @@ const ModerationCasesWorkspace = () => {
                 </div>
               </section>
 
-              {detail.voCase.voStatus !== 'Resolved' ? (
+              </section>
+              <aside className="moderation-case-decision-pane">
+
+              {canReview && actionsAreAuthoritative && detail.voCase.voStatus !== 'Resolved' ? (
                 <section className="admin-feature-card moderation-case-decision">
                   <div className="moderation-case-section-heading">
                     <div>
@@ -785,8 +1061,9 @@ const ModerationCasesWorkspace = () => {
                     </div>
                   ) : null}
                   <Button
+                    className="moderation-case-desktop-action"
                     variant="primary"
-                    disabled={!canReview || submitting}
+                    disabled={submitting}
                     onClick={() => void submitDecision()}
                   >
                     {submitting ? t('moderation.loading') : t('moderation.case.submitDecision')}
@@ -794,7 +1071,7 @@ const ModerationCasesWorkspace = () => {
                 </section>
               ) : null}
 
-              {detail.voCase.voStatus === 'Resolved' && canAction ? (
+              {detail.voCase.voStatus === 'Resolved' && canAction && actionsAreAuthoritative ? (
                 <section className="admin-feature-card moderation-case-decision">
                   <div className="moderation-case-section-heading">
                     <div>
@@ -844,6 +1121,7 @@ const ModerationCasesWorkspace = () => {
                     />
                   </label>
                   <Button
+                    className="moderation-case-desktop-action"
                     variant="danger"
                     disabled={submitting}
                     onClick={() => void submitCorrectiveAction()}
@@ -873,10 +1151,51 @@ const ModerationCasesWorkspace = () => {
                   ))}
                 </div>
               </section>
-            </>
+              </aside>
+
+              {canReview && actionsAreAuthoritative && detail.voCase.voStatus !== 'Resolved' ? (
+                <div className="moderation-case-mobile-actions">
+                  <Button
+                    disabled={capturing}
+                    onClick={() => void captureCurrentEvidence()}
+                  >
+                    {capturing ? t('moderation.loading') : t('moderation.case.captureCurrent')}
+                  </Button>
+                  <Button
+                    variant="primary"
+                    icon={<CheckOutlined />}
+                    disabled={submitting}
+                    onClick={() => void submitDecision()}
+                  >
+                    {submitting ? t('moderation.loading') : t('moderation.case.submitDecision')}
+                  </Button>
+                </div>
+              ) : detail.voCase.voStatus === 'Resolved' && canAction && actionsAreAuthoritative ? (
+                <div className="moderation-case-mobile-actions moderation-case-mobile-actions--single">
+                  <Button
+                    variant="danger"
+                    disabled={submitting}
+                    onClick={() => void submitCorrectiveAction()}
+                  >
+                    {submitting ? t('moderation.loading') : t('moderation.case.submitCorrective')}
+                  </Button>
+                </div>
+              ) : null}
+            </div>
           )}
         </main>
       </section>
+
+      <BottomSheet
+        isOpen={filterSheetOpen}
+        onClose={() => setFilterSheetOpen(false)}
+        closeLabel={t('moderation.closeFilters')}
+        title={t('moderation.filterAction')}
+        height="auto"
+        className="moderation-filter-sheet"
+      >
+        {filterControls}
+      </BottomSheet>
     </div>
   );
 };

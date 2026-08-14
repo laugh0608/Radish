@@ -55,7 +55,7 @@
 - 例外必须精确到 CVE，记录基础镜像、可达性判断、接受原因和复核期限；禁止全局关闭扫描或长期笼统忽略。
 - 门禁实现应保留最终运行镜像扫描、SBOM、provenance 和固定 tag，不回退本次已完成的运行镜像精简。
 
-该治理在 `v26.7.1.1204-release` 完成部署后进入维护批次，不反向修改已发布工作流结果。
+该治理已于 `2026-07-30` 完成：Docker Images workflow 先生成 Trivy JSON，再由仓库内策略评估器区分默认阻断、无修复 `HIGH` 报告和限期精确例外；原始报告与裁决报告作为 artifact 保留，过期或陈旧例外自动阻断。详细规则见[镜像漏洞门禁分层](/guide/image-vulnerability-gate)。本批不反向修改已发布 tag 和工作流结果。
 
 ## 四、功能完成线顺位
 
@@ -128,7 +128,15 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 
 [F4-L Wiki 附件隐私与生命周期权威闭环](/features/wiki-attachment-privacy-lifecycle-design) 已完成 A-D 批并关闭：Main 权威引用、Wiki 私有默认、动态 ACL、事务同步、令牌、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证均通过。
 
-[F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 已完成 A-D 批并关闭：Post / Comment Revision、CAS、完整快照、旧历史兼容、安全恢复、正式 Web、多身份 Gateway 矩阵、清理与 SQLite / PostgreSQL 验证形成闭环。F4-N-A 已完成[论坛内容赞赏](/features/forum-content-reward)现状审计并获批首批收束方向，下一步先修订权威设计，不提前进入代码。
+[F4-M 论坛内容版本完整性与作者恢复](/features/forum-content-version-recovery-design) 与 [F4-N 论坛内容赞赏](/features/forum-content-reward)均已完成 A-D 批并关闭。F4-N 的 Main 原子资产事务、过期幂等恢复、Log 幂等审计投影、逐笔屏蔽抑制通知、migration、Pencil、正式 Web、多身份 Gateway 矩阵与清理形成闭环。
+
+[F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭：回答 PublicId、服务端分页、独立 Revision、附件归属、CAS、采纳事件、治理申诉、可靠通知、strict migration、正式 Web 与 Gateway 代表矩阵形成闭环。
+
+[F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭：Main `UserPostBookmark` 私有权威关系、`Post.CollectCount` 可重建投影、显式状态事务、稳定个人分页、不可用目标移除、正式 Web 与代表身份 PC / mobile 成组验收形成闭环；收藏夹、推荐、公开收藏主页和跨对象收藏继续保持停止线。
+
+[F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭：复用 `Tag / PostTag / Post`，统一公开帖子判定，落地数据库侧公开计数 / 热门 / 相关聚合、标签 Gateway 首包 head、tags sitemap、正式 Web 和代表运行态矩阵；不可用标签 `noindex`、单一 JSON-LD 与 Console 软删除恢复契约均已收口。
+
+[F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已完成 A / B、family-ui `v26.7.3` 破坏性基线补充批、C-0 与 C-1A；C-1B 已建立单一版本化设计源并完成 `R1-F01`，下一步为 `R1-P01`。期间已完成并关闭 [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)，余额、累计消费和购买数量退出公开榜单，五类公开类型统一资格、排序、身份只读边界与未知类型错误契约，Gateway PC / mobile 成组验收通过。
 
 ### 最终收尾：生产使用证据采集（冻结）
 
@@ -154,7 +162,7 @@ F4-C 聊天历史搜索与消息定位、F4-D 聊天消息 Reaction 均已完成
 ## 六、停止线
 
 - 产品仍有明确功能、维护或设计任务时，不主动建议、排期或执行生产使用数据采集，也不以缺少生产证据阻断功能开发。
-- 不解冻 Tauri，不恢复 Flutter 与 Web 并行追赶。
+- 不重新启用暂时弃用的 Tauri，不让 Flutter 与 Web 并行追赶或机械复制。
 - 不把完整 E2E、全仓 strict、大文件全量拆分或历史样式清零设为普通功能前置。
 - 不在没有用户价值证据时启动推荐、ActivityPub、开放平台或大而全可观测性。
 - 不因发布后进入维护期而跳过资产、权限、迁移和安全边界。

@@ -121,9 +121,12 @@ export const PublicForumApp = ({
       <main className={styles.main}>
         {route.kind === 'detail' ? (
           <PublicForumDetail
-            key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.intent ?? 'read'}`}
+            key={`detail-${route.postId}-${route.commentId ?? 'none'}-${route.answerPublicId ?? 'none'}-${route.intent ?? 'read'}`}
             postId={route.postId}
             commentId={route.commentId}
+            answerPublicId={route.answerPublicId}
+            answerPage={route.answerPage}
+            answerSort={route.answerSort}
             intent={route.intent}
             sourceState={routeSourceState}
             displayTimeZone={displayTimeZone}
@@ -132,6 +135,13 @@ export const PublicForumApp = ({
             onBack={handleForumDetailBack}
             isAnswerEditorUploading={navigationLocked}
             onAnswerEditorUploadingChange={onNavigationLockChange}
+            onAnswerStateChange={(answerPage, answerSort, replace = false) => {
+              onNavigate({
+                ...route,
+                answerPage,
+                answerSort,
+              }, { replace });
+            }}
             onOpenAuthorProfile={onNavigateToProfile}
             onOpenTag={onNavigateToTag}
             onOpenQuestion={onNavigateToQuestion}
@@ -144,6 +154,7 @@ export const PublicForumApp = ({
             categoryId={route.categoryId}
             fallbackBrowseRoute={fallbackBrowseRoute}
             onBack={() => onNavigate(fallbackBrowseRoute)}
+            onNavigationLockChange={onNavigationLockChange}
             onNavigate={onNavigate}
           />
         ) : route.kind === 'search' ? (

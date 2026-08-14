@@ -83,7 +83,13 @@ export type {
   WikiDraftReviewStateValue,
   WikiCollaboratorStateValue,
   WikiReviewActionValue,
+  WikiAuthorDocumentScope,
+  WikiAuthorDraftStage,
+  WikiAuthorListQuery,
   WikiAuthorDocumentVo,
+  WikiAuthorRevisionItemVo,
+  WikiAuthorRevisionDetailVo,
+  WikiAuthorRevisionHistoryVo,
   WikiDocumentCollaboratorVo,
   WikiDocumentReviewEventVo,
   WikiAuthorDraftDetailVo,
@@ -156,6 +162,111 @@ export type {
 } from './forum-content-revision-contract';
 export { ForumContentRevisionErrorCode } from './forum-content-revision-contract';
 
+export type {
+  ForumQuestionErrorCodeValue,
+  PostAnswerSort,
+  PostAnswerVo,
+  GetPostAnswerPageRequest,
+  CreatePostAnswerRequest,
+  PostAnswerPageVo,
+  UpdatePostAnswerRequest,
+  DeletePostAnswerRequest,
+  RestorePostAnswerRevisionRequest,
+  ChangePostAnswerAcceptanceRequest,
+  RevokePostAnswerAcceptanceRequest,
+  PostAnswerMutationVo,
+  PostAnswerAcceptanceMutationVo,
+  PostAnswerRevisionSummaryVo,
+  PostAnswerRevisionListVo,
+  PostAnswerRevisionDetailVo,
+} from './forum-question-contract';
+export { ForumQuestionErrorCode } from './forum-question-contract';
+export {
+  getPostAnswerPage,
+  createPostAnswer,
+  updatePostAnswer,
+  deletePostAnswer,
+  getPostAnswerRevisions,
+  getPostAnswerRevision,
+  restorePostAnswerRevision,
+  acceptPostAnswer,
+  revokePostAnswerAcceptance,
+} from './forum-question-client';
+
+export type {
+  PostBookmarkErrorCodeValue,
+  PostBookmarkTargetStatus,
+  SetPostBookmarkStateRequest,
+  RemovePostBookmarkRequest,
+  GetMyPostBookmarksRequest,
+  PostBookmarkStateVo,
+  PostBookmarkRemoveVo,
+  UserPostBookmarkTagVo,
+  UserPostBookmarkVo,
+  UserPostBookmarkPageVo,
+} from './post-bookmark-contract';
+export { PostBookmarkErrorCode } from './post-bookmark-contract';
+export {
+  setPostBookmarkState,
+  getMyPostBookmarks,
+  removePostBookmark,
+} from './post-bookmark-client';
+
+export type {
+  ProductReviewLongId,
+  ProductReviewErrorCodeValue,
+  ProductReviewVo,
+  ProductReviewSummaryVo,
+  ProductReviewPageVo,
+  MyProductReviewVo,
+  UpsertProductReviewRequest,
+} from './product-review-contract';
+export { ProductReviewErrorCode } from './product-review-contract';
+export {
+  getProductReviews,
+  getMyProductReview,
+  upsertProductReview,
+  deleteProductReview,
+} from './product-review-client';
+
+export type {
+  PublicDiscoverItemKind,
+  PublicDiscoverTargetKind,
+  PublicDiscoverMetricKind,
+  PublicDiscoverActorVo,
+  PublicDiscoverTargetVo,
+  PublicDiscoverMetricVo,
+  PublicDiscoverItemVo,
+  PublicDiscoverPulseVo,
+  PublicDiscoverFeedVo,
+  GetPublicDiscoverFeedRequest,
+} from './public-discover-contract';
+export {
+  PublicDiscoverItemKinds,
+  PublicDiscoverTargetKinds,
+  PublicDiscoverMetricKinds,
+} from './public-discover-contract';
+export { getPublicDiscoverFeed } from './public-discover-client';
+
+export type {
+  ContentRewardLongId,
+  ContentRewardTargetType,
+  ContentRewardReasonCode,
+  ContentRewardErrorCodeValue,
+  CreateContentRewardRequest,
+  ContentRewardTargetRequest,
+  GetContentRewardTargetStatesRequest,
+  ContentRewardMutationVo,
+  ContentRewardTargetStateVo,
+  ContentRewardRecordVo,
+  ContentRewardTargetPageVo,
+} from './content-reward-contract';
+export {
+  ContentRewardTargetTypes,
+  ContentRewardReasonCodes,
+  ContentRewardErrorCode,
+} from './content-reward-contract';
+
 export type { ApiClientConfig } from './client';
 export {
   ApiResponseError,
@@ -197,11 +308,14 @@ export {
 } from './token-refresh';
 
 export {
+  createOidcAuthorizationUrl,
   redeemOidcAuthorizationCode,
   OidcCallbackError,
 } from './oidc-callback';
 
 export type {
+  CreateOidcAuthorizationUrlOptions,
+  OidcAuthorizationErrorDetails,
   OidcTokenResponse,
   OidcTokenRequestFailureDetails,
   RedeemOidcAuthorizationCodeOptions,

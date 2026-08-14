@@ -2,6 +2,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { Grid } from 'antd';
 import {
   Table,
   Button,
@@ -42,6 +43,7 @@ export const RoleList = () => {
   const navigate = useNavigate();
   const [roles, setRoles] = useState<RoleVo[]>([]);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string>();
   const [formVisible, setFormVisible] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [editingRoleId, setEditingRoleId] = useState<string>();
@@ -50,18 +52,26 @@ export const RoleList = () => {
   const canEditRole = usePermission(CONSOLE_PERMISSIONS.rolesEdit);
   const canToggleRole = usePermission(CONSOLE_PERMISSIONS.rolesToggle);
   const canDeleteRole = usePermission(CONSOLE_PERMISSIONS.rolesDelete);
+  const screens = Grid.useBreakpoint();
+  const isMobile = !screens.md;
   const enabledRoles = roles.filter((role) => role.voIsEnabled).length;
   const customScopeRoles = roles.filter((role) => role.voAuthorityScope === 1).length;
+  const builtInRoles = roles.filter((role) => role.voIsBuiltIn).length;
+  const customRoles = roles.length - builtInRoles;
 
   // 加载角色列表
   const loadRoles = useCallback(async () => {
     try {
       setLoading(true);
+      setLoadError(undefined);
       const data = await getRoleList();
       setRoles(data);
     } catch (error) {
       log.error('RoleList', '加载角色列表失败:', error);
-      message.error(t('roles.feedback.loadFailed'));
+      const errorMessage = error instanceof Error ? error.message : t('roles.feedback.loadFailed');
+      setRoles([]);
+      setLoadError(errorMessage);
+      message.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -77,6 +87,10 @@ export const RoleList = () => {
 
   // 新增角色
   const handleCreate = () => {
+    if (!canCreateRole || isMobile) {
+      return;
+    }
+
     setFormMode('create');
     setEditingRoleId(undefined);
     setFormVisible(true);
@@ -84,6 +98,10 @@ export const RoleList = () => {
 
   // 编辑角色
   const handleEdit = (record: RoleVo) => {
+    if (!canEditRole || isMobile || record.voIsBuiltIn) {
+      return;
+    }
+
     setFormMode('edit');
     setEditingRoleId(record.voId);
     setFormVisible(true);
@@ -91,6 +109,11 @@ export const RoleList = () => {
 
   // 删除角色
   const handleDelete = async (voId: string) => {
+    const role = roles.find((item) => item.voId === voId);
+    if (!canDeleteRole || isMobile || role?.voIsBuiltIn) {
+      return;
+    }
+
     try {
       await deleteRole(voId);
       message.success(t('roles.feedback.deleted'));
@@ -103,6 +126,11 @@ export const RoleList = () => {
 
   // 启用/禁用角色
   const handleToggleStatus = async (voId: string, enabled: boolean) => {
+    const role = roles.find((item) => item.voId === voId);
+    if (!canToggleRole || isMobile || role?.voIsBuiltIn) {
+      return;
+    }
+
     try {
       await toggleRoleStatus(voId, enabled);
       message.success(t(enabled ? 'roles.feedback.enabled' : 'roles.feedback.disabled'));
@@ -195,7 +223,7 @@ export const RoleList = () => {
       fixed: 'right',
       render: (_, record) => (
         <Space size="small" wrap>
-          {canEditRole ? (
+          {canViewRoles ? (
             <Button
               variant="ghost"
               size="small"
@@ -205,7 +233,7 @@ export const RoleList = () => {
               {t('roles.actions.permissions')}
             </Button>
           ) : null}
-          {canEditRole ? (
+          {canEditRole && !isMobile && !record.voIsBuiltIn ? (
             <Button
               variant="ghost"
               size="small"
@@ -215,17 +243,24 @@ export const RoleList = () => {
               {t('roles.actions.edit')}
             </Button>
           ) : null}
-          {canToggleRole ? (
-            <Button
-              variant={record.voIsEnabled ? 'danger' : 'primary'}
-              size="small"
-              icon={record.voIsEnabled ? <CloseOutlined /> : <CheckOutlined />}
-              onClick={() => handleToggleStatus(record.voId, !record.voIsEnabled)}
+          {canToggleRole && !isMobile && !record.voIsBuiltIn ? (
+            <Popconfirm
+              title={t(record.voIsEnabled ? 'roles.toggle.disableTitle' : 'roles.toggle.enableTitle')}
+              description={t('roles.toggle.description', { role: record.voRoleName })}
+              onConfirm={() => handleToggleStatus(record.voId, !record.voIsEnabled)}
+              okText={t('roles.common.confirm')}
+              cancelText={t('roles.common.cancel')}
             >
-              {t(record.voIsEnabled ? 'roles.actions.disable' : 'roles.actions.enable')}
-            </Button>
+              <Button
+                variant={record.voIsEnabled ? 'danger' : 'primary'}
+                size="small"
+                icon={record.voIsEnabled ? <CloseOutlined /> : <CheckOutlined />}
+              >
+                {t(record.voIsEnabled ? 'roles.actions.disable' : 'roles.actions.enable')}
+              </Button>
+            </Popconfirm>
           ) : null}
-          {canDeleteRole ? (
+          {canDeleteRole && !isMobile && !record.voIsBuiltIn ? (
             <Popconfirm
               title={t('roles.delete.title')}
               description={t('roles.delete.description')}
@@ -242,10 +277,124 @@ export const RoleList = () => {
               </Button>
             </Popconfirm>
           ) : null}
+          {record.voIsBuiltIn ? <Tag color="gold">{t('roles.status.builtIn')}</Tag> : null}
         </Space>
       ),
     },
   ];
+  if (isMobile) {
+    return (
+      <div className="admin-feature-page role-list-page role-list-page--mobile">
+        <ConsolePageHeader
+          title={t('roles.page.title')}
+          status={(
+            <ConsoleStatusChip tone="neutral">
+              {t('roles.mobile.readOnly')}
+            </ConsoleStatusChip>
+          )}
+          actions={(
+            <Button
+              icon={<ReloadOutlined />}
+              disabled={loading}
+              onClick={loadRoles}
+            >
+              {t('roles.actions.refresh')}
+            </Button>
+          )}
+        />
+
+        {loadError ? (
+          <section className="admin-feature-card" role="alert">
+            <strong>{t('roles.unavailable.title')}</strong>
+            <p>{loadError}</p>
+            <Button icon={<ReloadOutlined />} onClick={() => void loadRoles()}>
+              {t('roles.actions.retry')}
+            </Button>
+          </section>
+        ) : null}
+
+        <section className="role-list-mobile-metrics" aria-label={t('roles.metrics.ariaLabel')}>
+          <div>
+            <strong>{roles.length}</strong>
+            <span>{t('roles.mobile.metrics.total')}</span>
+          </div>
+          <div>
+            <strong>{customRoles}</strong>
+            <span>{t('roles.mobile.metrics.custom')}</span>
+          </div>
+          <div>
+            <strong>{builtInRoles}</strong>
+            <span>{t('roles.mobile.metrics.builtIn')}</span>
+          </div>
+        </section>
+
+        <section className="role-list-mobile-directory" aria-labelledby="mobile-role-directory-title">
+          <div className="role-list-mobile-directory__header">
+            <div>
+              <h2 id="mobile-role-directory-title">{t('roles.mobile.directoryTitle')}</h2>
+              <p>{t('roles.mobile.directoryDescription')}</p>
+            </div>
+            <ConsoleStatusChip tone={loading ? 'info' : 'neutral'}>
+              {t(loading ? 'roles.status.loading' : 'roles.count.roles', { count: roles.length })}
+            </ConsoleStatusChip>
+          </div>
+
+          {!loading && !loadError && roles.length === 0 ? (
+            <div className="role-list-mobile-empty">
+              <strong>{t('roles.mobile.emptyTitle')}</strong>
+              <span>{t('roles.mobile.emptyDescription')}</span>
+            </div>
+          ) : null}
+
+          <div className="role-list-mobile-directory__list">
+            {roles.map((role) => (
+              <article className="role-list-mobile-card" key={role.voId}>
+                <div className="role-list-mobile-card__header">
+                  <div>
+                    <strong>{role.voRoleName}</strong>
+                    <span>{getAuthorityScopeText(role.voAuthorityScope)}</span>
+                  </div>
+                  <Space size={6} wrap>
+                    <Tag color={role.voIsEnabled ? 'success' : 'error'}>
+                      {t(role.voIsEnabled ? 'roles.status.enabled' : 'roles.status.disabled')}
+                    </Tag>
+                    {role.voIsBuiltIn ? <Tag color="gold">{t('roles.status.builtIn')}</Tag> : null}
+                  </Space>
+                </div>
+                <p>{role.voRoleDescription || t('roles.mobile.noDescription')}</p>
+                {role.voIsBuiltIn ? (
+                  <div className="role-list-mobile-card__protection">
+                    <SafetyOutlined />
+                    <span>{t('roles.mobile.builtInProtection')}</span>
+                  </div>
+                ) : null}
+                <div className="role-list-mobile-card__footer">
+                  <code>{role.voId}</code>
+                  <Button
+                    variant="ghost"
+                    size="small"
+                    icon={<SafetyOutlined />}
+                    onClick={() => navigate(`/roles/${role.voId}/permissions`)}
+                  >
+                    {t('roles.actions.viewPermissions')}
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="role-list-mobile-boundary">
+          <SafetyOutlined />
+          <div>
+            <strong>{t('roles.mobile.boundaryTitle')}</strong>
+            <span>{t('roles.mobile.boundaryDescription')}</span>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="admin-feature-page role-list-page">
       <ConsolePageHeader
@@ -266,7 +415,7 @@ export const RoleList = () => {
             >
               {t('roles.actions.refresh')}
             </Button>
-            {canCreateRole ? (
+            {canCreateRole && !isMobile ? (
               <Button
                 variant="primary"
                 icon={<PlusOutlined />}
@@ -278,6 +427,16 @@ export const RoleList = () => {
           </div>
         )}
       />
+
+      {loadError ? (
+        <section className="admin-feature-card" role="alert">
+          <strong>{t('roles.unavailable.title')}</strong>
+          <p>{loadError}</p>
+          <Button icon={<ReloadOutlined />} onClick={() => void loadRoles()}>
+            {t('roles.actions.retry')}
+          </Button>
+        </section>
+      ) : null}
 
       <ConsoleMetricGrid label={t('roles.metrics.ariaLabel')}>
         <ConsoleMetricCard label={t('roles.metrics.total')} value={roles.length} description={t('roles.metrics.totalDescription')} tone="info" />
@@ -309,7 +468,7 @@ export const RoleList = () => {
                 showQuickJumper: true,
                 showTotal: (total) => t('roles.count.roles', { count: total }),
               }}
-              scroll={{ x: 1200 }}
+              scroll={isMobile ? undefined : { x: 1200 }}
             />
           </section>
         </main>

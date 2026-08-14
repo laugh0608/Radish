@@ -14,6 +14,7 @@ using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
+using Radish.Model.ViewModels;
 using Radish.Service;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
@@ -44,7 +45,15 @@ public class WikiDocumentManagementServiceTests
 
         var service = CreateService(repository);
 
-        var exception = await Should.ThrowAsync<BusinessException>(() => service.DeleteDocumentAsync(10, 1, "Tester"));
+        var exception = await Should.ThrowAsync<BusinessException>(() => service.DeleteDocumentAsync(
+            10,
+            new WikiDocumentGovernanceActionDto
+            {
+                ExpectedGovernanceVersion = 0,
+                Reason = "清理父文档"
+            },
+            1,
+            "Tester"));
         exception.Message.ShouldBe("请先处理子文档后再删除当前文档");
     }
 
@@ -64,7 +73,15 @@ public class WikiDocumentManagementServiceTests
 
         var service = CreateService(repository);
 
-        var exception = await Should.ThrowAsync<BusinessException>(() => service.RestoreDocumentAsync(11, 1, "Tester"));
+        var exception = await Should.ThrowAsync<BusinessException>(() => service.RestoreDocumentAsync(
+            11,
+            new WikiDocumentGovernanceActionDto
+            {
+                ExpectedGovernanceVersion = 0,
+                Reason = "恢复文档"
+            },
+            1,
+            "Tester"));
         exception.Message.ShouldBe("固定文档为只读内容，请修改 Docs 目录中的源文件");
     }
 
@@ -139,32 +156,40 @@ public class WikiDocumentManagementServiceTests
             Status = (int)WikiDocumentStatusEnum.Published,
             Visibility = (int)WikiDocumentVisibilityEnum.Authenticated,
             Version = 5,
+            GovernanceVersion = 2,
             IsDeleted = false
         };
 
         var repository = new Mock<IWikiDocumentRepository>();
         repository.Setup(r => r.QueryByIdAsync(12)).ReturnsAsync(document);
-        repository.Setup(r => r.UpdateAsync(It.IsAny<WikiDocument>())).ReturnsAsync(true);
+        WikiDocumentGovernanceMutationCommand? capturedCommand = null;
+        repository
+            .Setup(r => r.ApplyGovernanceMutationAsync(It.IsAny<WikiDocumentGovernanceMutationCommand>()))
+            .Callback<WikiDocumentGovernanceMutationCommand>(command => capturedCommand = command)
+            .ReturnsAsync((WikiDocumentGovernanceMutationCommand command) => CreateGovernanceWriteResult(document, command));
 
         var service = CreateService(repository);
         var dto = new UpdateWikiDocumentAccessPolicyDto
         {
             Visibility = (int)WikiDocumentVisibilityEnum.Restricted,
             AllowedRoles = ["Admin", "editor"],
-            AllowedPermissions = ["console.docs.view"]
+            AllowedPermissions = ["console.docs.view"],
+            ExpectedGovernanceVersion = 2,
+            Reason = "仅允许维护角色访问"
         };
 
         var result = await service.UpdateAccessPolicyAsync(12, dto, 9, "Governance");
 
-        result.ShouldBeTrue();
-        document.Title.ShouldBe("治理文档");
-        document.MarkdownContent.ShouldBe("# old");
-        document.Version.ShouldBe(5);
-        document.Visibility.ShouldBe((int)WikiDocumentVisibilityEnum.Restricted);
-        document.AllowedRoles.ShouldBe("|admin|editor|");
-        document.AllowedPermissions.ShouldBe("|console.docs.view|");
-        document.ModifyId.ShouldBe(9);
-        document.ModifyBy.ShouldBe("Governance");
+        capturedCommand.ShouldNotBeNull();
+        capturedCommand.Action.ShouldBe(WikiDocumentGovernanceActions.UpdateAccessPolicy);
+        capturedCommand.ExpectedGovernanceVersion.ShouldBe(2);
+        capturedCommand.ExpectedDocumentVersion.ShouldBeNull();
+        capturedCommand.TargetVisibility.ShouldBe((int)WikiDocumentVisibilityEnum.Restricted);
+        capturedCommand.TargetAllowedRoles.ShouldBe("|admin|editor|");
+        capturedCommand.TargetAllowedPermissions.ShouldBe("|console.docs.view|");
+        capturedCommand.ContentMutation.ShouldBeNull();
+        capturedCommand.Reason.ShouldBe("仅允许维护角色访问");
+        result.VoEvent.VoResultGovernanceVersion.ShouldBe(3);
     }
 
     [Fact(DisplayName = "更新固定文档访问策略应被拒绝")]
@@ -185,7 +210,9 @@ public class WikiDocumentManagementServiceTests
         var service = CreateService(repository);
         var dto = new UpdateWikiDocumentAccessPolicyDto
         {
-            Visibility = (int)WikiDocumentVisibilityEnum.Authenticated
+            Visibility = (int)WikiDocumentVisibilityEnum.Authenticated,
+            ExpectedGovernanceVersion = 0,
+            Reason = "更新访问策略"
         };
 
         var exception = await Should.ThrowAsync<BusinessException>(() => service.UpdateAccessPolicyAsync(13, dto, 1, "Tester"));
@@ -276,12 +303,104 @@ public class WikiDocumentManagementServiceTests
             attachmentRepository);
 
         var exception = await Should.ThrowAsync<BusinessException>(() =>
-            service.RollbackAsync(30001, 1001, "Editor"));
+            service.RollbackAsync(
+                30001,
+                new WikiDocumentContentGovernanceActionDto
+                {
+                    ExpectedGovernanceVersion = 0,
+                    ExpectedDocumentVersion = 2,
+                    Reason = "恢复上一版本"
+                },
+                1001,
+                "Editor"));
 
         exception.ErrorCode.ShouldBe(WikiAttachmentErrorCodes.InvalidReference);
         documentRepository.Verify(
-            repository => repository.UpdateAsync(It.IsAny<WikiDocument>()),
+            repository => repository.ApplyGovernanceMutationAsync(
+                It.IsAny<WikiDocumentGovernanceMutationCommand>()),
             Times.Never);
+    }
+
+    [Fact(DisplayName = "发布竞争写入应映射为稳定治理版本冲突")]
+    public async Task PublishAsync_ShouldMapRepositoryGovernanceVersionConflict()
+    {
+        var repository = new Mock<IWikiDocumentRepository>();
+        repository.Setup(candidate => candidate.QueryByIdAsync(20001)).ReturnsAsync(new WikiDocument
+        {
+            Id = 20001,
+            TenantId = 0,
+            Title = "Draft",
+            Slug = "draft",
+            MarkdownContent = "body",
+            SourceType = "Custom",
+            Status = (int)WikiDocumentStatusEnum.Draft,
+            Visibility = (int)WikiDocumentVisibilityEnum.Authenticated,
+            Version = 3,
+            GovernanceVersion = 4
+        });
+        repository
+            .Setup(candidate => candidate.ApplyGovernanceMutationAsync(
+                It.IsAny<WikiDocumentGovernanceMutationCommand>()))
+            .ThrowsAsync(new WikiDocumentGovernanceVersionConflictException());
+        var service = CreateService(repository);
+
+        var exception = await Should.ThrowAsync<BusinessException>(() => service.PublishAsync(
+            20001,
+            new WikiDocumentContentGovernanceActionDto
+            {
+                ExpectedGovernanceVersion = 4,
+                ExpectedDocumentVersion = 3,
+                Reason = "准备发布"
+            },
+            1001,
+            "Editor"));
+
+        exception.StatusCode.ShouldBe(409);
+        exception.ErrorCode.ShouldBe("Wiki.GovernanceVersionConflict");
+        exception.MessageKey.ShouldBe("error.wiki.governance_version_conflict");
+    }
+
+    [Fact(DisplayName = "治理历史应限制分页并映射追加式事件")]
+    public async Task GetGovernanceHistoryAsync_ShouldClampPagingAndMapEvents()
+    {
+        var repository = new Mock<IWikiDocumentRepository>();
+        repository.Setup(candidate => candidate.QueryByIdIncludingDeletedAsync(20001))
+            .ReturnsAsync(new WikiDocument { Id = 20001, TenantId = 9 });
+        WikiDocumentGovernanceHistoryQuery? capturedQuery = null;
+        repository
+            .Setup(candidate => candidate.QueryGovernanceHistoryAsync(
+                It.IsAny<WikiDocumentGovernanceHistoryQuery>()))
+            .Callback<WikiDocumentGovernanceHistoryQuery>(query => capturedQuery = query)
+            .ReturnsAsync((
+                (IReadOnlyList<WikiDocumentGovernanceEvent>)
+                [new WikiDocumentGovernanceEvent
+                {
+                    Id = 30001,
+                    TenantId = 9,
+                    DocumentId = 20001,
+                    Action = WikiDocumentGovernanceActions.Archive,
+                    FromDocumentVersion = 3,
+                    ToDocumentVersion = 3,
+                    ExpectedGovernanceVersion = 4,
+                    ResultGovernanceVersion = 5,
+                    Reason = "阶段归档",
+                    ActorUserId = 1001,
+                    ActorName = "Editor"
+                }],
+                121));
+        var service = CreateService(repository);
+
+        var result = await service.GetGovernanceHistoryAsync(20001, 0, 999);
+
+        capturedQuery.ShouldNotBeNull();
+        capturedQuery.TenantId.ShouldBe(9);
+        capturedQuery.PageIndex.ShouldBe(1);
+        capturedQuery.PageSize.ShouldBe(100);
+        result.Page.ShouldBe(1);
+        result.PageSize.ShouldBe(100);
+        result.DataCount.ShouldBe(121);
+        result.PageCount.ShouldBe(2);
+        Assert.Single(result.Data).VoResultGovernanceVersion.ShouldBe(5);
     }
 
     private static WikiDocumentService CreateService(Mock<IWikiDocumentRepository> wikiDocumentRepository)
@@ -299,6 +418,16 @@ public class WikiDocumentManagementServiceTests
         Mock<IBaseRepository<Attachment>>? attachmentRepository = null)
     {
         var mapper = new Mock<IMapper>();
+        mapper
+            .Setup(candidate => candidate.Map<WikiDocumentDetailVo>(It.IsAny<WikiDocument>()))
+            .Returns((WikiDocument document) => new WikiDocumentDetailVo
+            {
+                VoId = document.Id,
+                VoTitle = document.Title,
+                VoMarkdownContent = document.MarkdownContent,
+                VoVersion = document.Version,
+                VoGovernanceVersion = document.GovernanceVersion
+            });
         var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
         consoleAuthorizationService
             .Setup(service => service.GetPermissionKeysByRolesAsync(It.IsAny<IReadOnlyCollection<string>>()))
@@ -311,5 +440,48 @@ public class WikiDocumentManagementServiceTests
             attachmentReferences.Object,
             consoleAuthorizationService.Object,
             Options.Create(new DocumentOptions()));
+    }
+
+    private static WikiDocumentGovernanceWriteResult CreateGovernanceWriteResult(
+        WikiDocument document,
+        WikiDocumentGovernanceMutationCommand command)
+    {
+        var resultVersion = command.ExpectedGovernanceVersion + 1;
+        var resultDocument = new WikiDocument
+        {
+            Id = document.Id,
+            TenantId = document.TenantId,
+            Title = command.ContentMutation?.Title ?? document.Title,
+            MarkdownContent = command.ContentMutation?.MarkdownContent ?? document.MarkdownContent,
+            Version = command.ContentMutation?.ResultDocumentVersion ?? document.Version,
+            GovernanceVersion = resultVersion,
+            Status = command.TargetStatus,
+            Visibility = command.TargetVisibility,
+            AllowedRoles = command.TargetAllowedRoles,
+            AllowedPermissions = command.TargetAllowedPermissions,
+            IsDeleted = command.TargetIsDeleted,
+            SourceType = document.SourceType
+        };
+        return new WikiDocumentGovernanceWriteResult(
+            resultDocument,
+            new WikiDocumentGovernanceEvent
+            {
+                Id = 90001,
+                TenantId = document.TenantId,
+                DocumentId = document.Id,
+                Action = command.Action,
+                FromStatus = document.Status,
+                ToStatus = command.TargetStatus,
+                FromVisibility = document.Visibility,
+                ToVisibility = command.TargetVisibility,
+                FromDocumentVersion = document.Version,
+                ToDocumentVersion = resultDocument.Version,
+                ExpectedGovernanceVersion = command.ExpectedGovernanceVersion,
+                ResultGovernanceVersion = resultVersion,
+                Reason = command.Reason,
+                ActorUserId = command.ActorUserId,
+                ActorName = command.ActorName,
+                CreateTime = command.NowUtc
+            });
     }
 }

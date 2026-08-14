@@ -1,12 +1,10 @@
-import type { MouseEvent } from 'react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import type { WikiDocumentDetailVo, WikiDocumentVo } from '@/apps/wiki/types/wiki';
-import { formatDateTimeByTimeZone } from '@/utils/dateTime';
 import { buildPublicDocsPath } from '../docsRouteState';
 import { PublicReadingGuide } from '../components/PublicReadingGuide';
-import { toSourceText, toStatusText, toVisibilityText } from './publicDocsFormat';
+import { handlePublicDocsLinkClick } from './publicDocsViewSupport';
 import styles from './PublicDocsApp.module.css';
 
 const searchGuideItems = [
@@ -44,47 +42,19 @@ interface PublicDocsListRailProps {
   totalDocuments: number;
   canUseDocsAuthorTools: boolean;
   authorHref: string;
-  searchHref: string;
-  onOpenSearch: () => void;
 }
 
 interface PublicDocsSearchRailProps {
-  browseDirectoryHref: string;
   hasKeyword: boolean;
   resultCount: number;
   currentPage: number;
   totalPages: number;
-  onBrowseDirectory: () => void;
 }
 
 interface PublicDocsDetailRailProps {
   document: WikiDocumentDetailVo;
   relatedDocuments: WikiDocumentVo[];
-  displayTimeZone: string;
-  backLabel: string;
-  backHref: string;
-  canEditDocument: boolean;
-  editHref: string;
-  onBack: () => void;
   onOpenDocument: (slug: string) => void;
-}
-
-function shouldHandlePublicDocsLink(event: MouseEvent<HTMLAnchorElement>): boolean {
-  return !event.defaultPrevented
-    && event.button === 0
-    && !event.metaKey
-    && !event.ctrlKey
-    && !event.shiftKey
-    && !event.altKey;
-}
-
-function handlePublicDocsLinkClick(event: MouseEvent<HTMLAnchorElement>, action: () => void) {
-  if (!shouldHandlePublicDocsLink(event)) {
-    return;
-  }
-
-  event.preventDefault();
-  action();
 }
 
 function toGuideItems(
@@ -101,34 +71,12 @@ export function PublicDocsListRail({
   directoryCount,
   totalDocuments,
   canUseDocsAuthorTools,
-  authorHref,
-  searchHref,
-  onOpenSearch
+  authorHref
 }: PublicDocsListRailProps) {
   const { t } = useTranslation();
 
   return (
     <aside className={styles.sideRail} aria-label={t('wiki.public.indexRailLabel')}>
-      <section className={styles.railPanel}>
-        <div className={styles.railPanelHeader}>
-          <span className={styles.railIcon}>
-            <Icon icon="mdi:magnify" size={18} />
-          </span>
-          <div>
-            <h2 className={styles.railTitle}>{t('wiki.public.indexRailSearchTitle')}</h2>
-            <p className={styles.railText}>{t('wiki.public.indexRailSearchDescription')}</p>
-          </div>
-        </div>
-        <a
-          className={`${styles.secondaryButton} ${styles.railAction}`}
-          href={searchHref}
-          onClick={(event) => handlePublicDocsLinkClick(event, onOpenSearch)}
-        >
-          <Icon icon="mdi:magnify" size={18} />
-          <span>{t('wiki.public.searchAction')}</span>
-        </a>
-      </section>
-
       <section className={styles.railPanel}>
         <div className={styles.railPanelHeader}>
           <span className={styles.railIcon}>
@@ -177,12 +125,10 @@ export function PublicDocsListRail({
 }
 
 export function PublicDocsSearchRail({
-  browseDirectoryHref,
   hasKeyword,
   resultCount,
   currentPage,
-  totalPages,
-  onBrowseDirectory
+  totalPages
 }: PublicDocsSearchRailProps) {
   const { t } = useTranslation();
 
@@ -194,26 +140,6 @@ export function PublicDocsSearchRail({
         description={t('wiki.public.searchGuideDescription')}
         items={toGuideItems(t, searchGuideItems)}
       />
-
-      <section className={styles.railPanel}>
-        <div className={styles.railPanelHeader}>
-          <span className={styles.railIcon}>
-            <Icon icon="mdi:file-tree-outline" size={18} />
-          </span>
-          <div>
-            <h2 className={styles.railTitle}>{t('wiki.public.searchRailDirectoryTitle')}</h2>
-            <p className={styles.railText}>{t('wiki.public.searchRailDirectoryDescription')}</p>
-          </div>
-        </div>
-        <a
-          className={`${styles.secondaryButton} ${styles.railAction}`}
-          href={browseDirectoryHref}
-          onClick={(event) => handlePublicDocsLinkClick(event, onBrowseDirectory)}
-        >
-          <Icon icon="mdi:arrow-left" size={18} />
-          <span>{t('wiki.public.backToList')}</span>
-        </a>
-      </section>
 
       <section className={styles.railPanel}>
         <div className={styles.railPanelHeader}>
@@ -243,12 +169,6 @@ export function PublicDocsSearchRail({
 export function PublicDocsDetailRail({
   document,
   relatedDocuments,
-  displayTimeZone,
-  backLabel,
-  backHref,
-  canEditDocument,
-  editHref,
-  onBack,
   onOpenDocument
 }: PublicDocsDetailRailProps) {
   const { t } = useTranslation();
@@ -256,76 +176,15 @@ export function PublicDocsDetailRail({
     () => relatedDocuments.filter((item) => item.voSlug !== document.voSlug).slice(0, 4),
     [document.voSlug, relatedDocuments]
   );
-  const updatedAt = formatDateTimeByTimeZone(document.voModifyTime || document.voCreateTime, displayTimeZone);
 
   return (
     <aside className={styles.sideRail} aria-label={t('wiki.public.detailRailLabel')}>
-      <section className={styles.railPanel}>
-        <div className={styles.railPanelHeader}>
-          <span className={styles.railIcon}>
-            <Icon icon="mdi:arrow-u-left-top" size={18} />
-          </span>
-          <div>
-            <h2 className={styles.railTitle}>{t('wiki.public.detailRailSourceTitle')}</h2>
-            <p className={styles.railText}>{t('wiki.public.detailRailSourceDescription')}</p>
-          </div>
-        </div>
-        <a
-          className={`${styles.secondaryButton} ${styles.railAction}`}
-          href={backHref}
-          onClick={(event) => handlePublicDocsLinkClick(event, onBack)}
-        >
-          <Icon icon="mdi:arrow-left" size={18} />
-          <span>{backLabel}</span>
-        </a>
-      </section>
-
       <PublicReadingGuide
         label={t('wiki.public.detailGuideKicker')}
         title={t('wiki.public.detailGuideTitle')}
         description={t('wiki.public.detailGuideDescription')}
         items={toGuideItems(t, detailGuideItems)}
       />
-
-      <section className={styles.railPanel}>
-        <div className={styles.railPanelHeader}>
-          <span className={styles.railIcon}>
-            <Icon icon="mdi:information-outline" size={18} />
-          </span>
-          <div>
-            <h2 className={styles.railTitle}>{t('wiki.public.detailRailMetaTitle')}</h2>
-            <p className={styles.railText}>{t('wiki.public.detailRailMetaDescription')}</p>
-          </div>
-        </div>
-        <div className={styles.railChipRow}>
-          <span className={styles.metaChip}>{toVisibilityText(t, document.voVisibility)}</span>
-          <span className={styles.metaChip}>{toStatusText(t, document.voStatus)}</span>
-          <span className={styles.metaChip}>{t('wiki.meta.source', { value: toSourceText(t, document.voSourceType) })}</span>
-          <span className={styles.metaChip}>{t('wiki.meta.updated', { value: updatedAt })}</span>
-        </div>
-      </section>
-
-      <section className={styles.railPanel}>
-        <div className={styles.railPanelHeader}>
-          <span className={styles.railIcon}>
-            <Icon icon={canEditDocument ? 'mdi:pencil-outline' : 'mdi:book-open-variant'} size={18} />
-          </span>
-          <div>
-            <h2 className={styles.railTitle}>{t('wiki.public.detailRailAuthorTitle')}</h2>
-            <p className={styles.railText}>
-              {canEditDocument
-                ? t('wiki.public.detailRailAuthorDescription')
-                : t('wiki.public.detailRailReaderDescription')}
-            </p>
-          </div>
-        </div>
-        {canEditDocument ? (
-          <a className={`${styles.primaryButton} ${styles.railAction}`} href={editHref}>
-            <Icon icon="mdi:pencil-outline" size={18} />
-            <span>{t('wiki.public.detailRailAuthorAction')}</span>
-          </a>
-        ) : null}
-      </section>
 
       <section className={styles.railPanel}>
         <div className={styles.railPanelHeader}>

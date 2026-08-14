@@ -15,6 +15,8 @@ function target(kind: NotificationTargetKind, fields: Partial<NotificationTarget
     voPostId: null,
     voPostPublicId: null,
     voCommentId: null,
+    voAnswerId: null,
+    voAnswerPublicId: null,
     voChannelId: null,
     voMessageId: null,
     voUserId: null,
@@ -40,6 +42,21 @@ test('结构化论坛 target 优先使用公开 ID，并保留评论锚点来源
     {
       surface: 'web',
       href: `/forum/post/${postPublicId}?commentId=2042219067430928385`,
+      sourceState: { forumDetailSourceRoute: notificationsSourceState },
+    },
+  );
+});
+
+test('结构化回答通知只使用 answer PublicId 精确定位正式页面', () => {
+  assert.deepEqual(
+    resolveWebNotificationNavigation(target('ForumPost', {
+      voPostPublicId: postPublicId,
+      voAnswerId: '2042219067430928386',
+      voAnswerPublicId: 'ans_0123456789abcdef0123456789abcdef',
+    })),
+    {
+      surface: 'web',
+      href: `/forum/post/${postPublicId}?answer=ans_0123456789abcdef0123456789abcdef`,
       sourceState: { forumDetailSourceRoute: notificationsSourceState },
     },
   );

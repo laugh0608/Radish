@@ -305,7 +305,7 @@ apps/chat/useChatMessageNavigation.ts
 
 ## 九、Pencil 与页面交互
 
-F4-C-C 进入代码前更新 `Docs/frontend/design-sources/private-web-workflows.pen`：
+同类消息检索视觉变更进入代码前，在 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen` 的 `R1-W01` 或命中的 R2 区块维护必要差异；旧 `private-web-workflows.pen` 只读留档：
 
 - `P13C - Messages Search / Desktop`：当前 / 全部范围、时间筛选、结果、继续加载；
 - `P13D - Messages Search States / Desktop`：空态、加载、错误、cursor 失效、结果目标失效和长文本；

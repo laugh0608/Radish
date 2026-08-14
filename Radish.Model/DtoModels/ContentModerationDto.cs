@@ -53,7 +53,7 @@ public class ContentReportQueueQueryDto
     /// <summary>处理状态（0=Pending,1=Approved,2=Rejected；为空表示全部）</summary>
     public int? Status { get; set; }
 
-    /// <summary>举报目标类型（Post/Comment/PostQuickReply/ChatMessage/Product）</summary>
+    /// <summary>举报目标类型（Post/Comment/PostAnswer/PostQuickReply/ChatMessage/Product）</summary>
     [StringLength(30, ErrorMessage = "targetType 长度不能超过30个字符")]
     public string? TargetType { get; set; }
 

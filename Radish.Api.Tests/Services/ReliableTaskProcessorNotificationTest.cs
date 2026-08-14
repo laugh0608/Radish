@@ -36,6 +36,42 @@ public sealed class ReliableTaskProcessorNotificationTest
     }
 
     [Fact]
+    public async Task ProcessAsync_ShouldAcceptWebJsonPayloadCasing()
+    {
+        var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
+        notificationService
+            .Setup(service => service.CreateNotificationAsync(It.Is<CreateNotificationDto>(dto =>
+                dto.TenantId == 9 &&
+                dto.OccurredAtUtc == OccurredAtUtc &&
+                dto.NotificationId == 7001)))
+            .ReturnsAsync(7001);
+        var processor = CreateProcessor(notificationService.Object);
+
+        await processor.ProcessAsync(
+            CreateSnapshot(
+                CreateDto(),
+                new JsonSerializerOptions(JsonSerializerDefaults.Web)),
+            TestContext.Current.CancellationToken);
+
+        notificationService.VerifyAll();
+    }
+
+    [Fact]
+    public async Task ProcessAsync_ShouldRejectMissingNotificationPayload()
+    {
+        var processor = CreateProcessor(Mock.Of<INotificationService>());
+        var snapshot = CreateSnapshot(CreateDto()) with
+        {
+            PayloadJson = """{"notification":null}"""
+        };
+
+        var exception = await Assert.ThrowsAsync<PermanentReliableTaskException>(() =>
+            processor.ProcessAsync(snapshot, TestContext.Current.CancellationToken));
+
+        Assert.Contains("缺少通知载荷", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ProcessAsync_ShouldConvertInvalidNotificationContractToPermanentFailure()
     {
         var notificationService = new Mock<INotificationService>(MockBehavior.Strict);
@@ -83,8 +119,11 @@ public sealed class ReliableTaskProcessorNotificationTest
             Mock.Of<IBaseRepository<Comment>>());
     }
 
-    private static ReliableOutboxSnapshot CreateSnapshot(CreateNotificationDto notification)
+    private static ReliableOutboxSnapshot CreateSnapshot(
+        CreateNotificationDto notification,
+        JsonSerializerOptions? jsonOptions = null)
     {
+        var payload = new NotificationRequestedTaskPayload(notification);
         return new ReliableOutboxSnapshot(
             ReliableOutboxSources.Main,
             10,
@@ -94,7 +133,9 @@ public sealed class ReliableTaskProcessorNotificationTest
             "task:notification:test:7001",
             "Notification",
             "7001",
-            JsonSerializer.Serialize(new NotificationRequestedTaskPayload(notification)),
+            jsonOptions == null
+                ? JsonSerializer.Serialize(payload)
+                : JsonSerializer.Serialize(payload, jsonOptions),
             ReliableOutboxStatuses.Processing,
             1,
             6,
