@@ -8,6 +8,13 @@ namespace Radish.Repository;
 /// </summary>
 public class SystemConfigRepository : ISystemConfigRepository
 {
+    private readonly TimeProvider _timeProvider;
+
+    public SystemConfigRepository(TimeProvider timeProvider)
+    {
+        _timeProvider = timeProvider;
+    }
+
     public Task<List<SystemConfigRecord>> GetAllAsync()
     {
         return SystemConfigStorageCoordinator.ReadAsync(state =>
@@ -37,6 +44,8 @@ public class SystemConfigRepository : ISystemConfigRepository
 
     public Task<SystemConfigMutationResult> ApplyMutationAsync(SystemConfigMutation mutation)
     {
-        return SystemConfigStorageCoordinator.ApplyMutationAsync(mutation);
+        return SystemConfigStorageCoordinator.ApplyMutationAsync(
+            mutation,
+            _timeProvider.GetLocalNow().DateTime);
     }
 }

@@ -35,7 +35,9 @@ internal static class SystemConfigStorageCoordinator
         }
     }
 
-    public static async Task<SystemConfigMutationResult> ApplyMutationAsync(SystemConfigMutation mutation)
+    public static async Task<SystemConfigMutationResult> ApplyMutationAsync(
+        SystemConfigMutation mutation,
+        DateTime mutationTime)
     {
         ArgumentNullException.ThrowIfNull(mutation);
 
@@ -84,8 +86,8 @@ internal static class SystemConfigStorageCoordinator
                 nextRecord.Id = currentRecord?.Id ?? NextId(state.Configs.Select(item => item.Id));
                 nextRecord.Key = mutation.Key;
                 nextRecord.Version = currentVersion + 1;
-                nextRecord.CreateTime = currentRecord?.CreateTime ?? (nextRecord.CreateTime == default ? DateTime.Now : nextRecord.CreateTime);
-                nextRecord.ModifyTime ??= DateTime.Now;
+                nextRecord.CreateTime = currentRecord?.CreateTime ?? (nextRecord.CreateTime == default ? mutationTime : nextRecord.CreateTime);
+                nextRecord.ModifyTime ??= mutationTime;
                 state.Configs.Add(nextRecord);
             }
 
@@ -93,7 +95,7 @@ internal static class SystemConfigStorageCoordinator
             {
                 var changeLog = CloneChangeLog(mutation.ChangeLog);
                 changeLog.Id = NextId(state.ChangeLogs.Select(item => item.Id));
-                changeLog.CreateTime = changeLog.CreateTime == default ? DateTime.Now : changeLog.CreateTime;
+                changeLog.CreateTime = changeLog.CreateTime == default ? mutationTime : changeLog.CreateTime;
                 state.ChangeLogs.Add(changeLog);
             }
 

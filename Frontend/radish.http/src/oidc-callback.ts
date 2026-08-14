@@ -160,8 +160,8 @@ function encodeBase64Url(bytes: Uint8Array): string {
   });
 
   return btoa(binary)
-    .replaceAll('+', '-')
-    .replaceAll('/', '_')
+    .replace(/\+/gu, '-')
+    .replace(/\//gu, '_')
     .replace(/=+$/u, '');
 }
 
