@@ -39,26 +39,54 @@ internal sealed class ForumAnswerLifecycleStrictSchemaMigration : ISchemaMigrati
         EnsureIndex(
             db,
             nameof(PostAnswer),
-            [
-                nameof(PostAnswer.TenantId),
-                nameof(PostAnswer.PostId),
-                nameof(PostAnswer.IsDeleted),
-                nameof(PostAnswer.IsEnabled),
-                nameof(PostAnswer.IsAccepted),
-                nameof(PostAnswer.CreateTime),
-                nameof(PostAnswer.Id)
-            ],
-            AnswerPageIndex);
+            AnswerPublicIdIndex,
+            true,
+            (nameof(PostAnswer.PublicId), false));
         EnsureIndex(
             db,
             nameof(PostAnswer),
-            [
-                nameof(PostAnswer.TenantId),
-                nameof(PostAnswer.AuthorId),
-                nameof(PostAnswer.IsDeleted),
-                nameof(PostAnswer.CreateTime)
-            ],
-            AnswerAuthorIndex);
+            AnswerPageIndex,
+            false,
+            (nameof(PostAnswer.TenantId), false),
+            (nameof(PostAnswer.PostId), false),
+            (nameof(PostAnswer.IsDeleted), false),
+            (nameof(PostAnswer.IsEnabled), false),
+            (nameof(PostAnswer.IsAccepted), false),
+            (nameof(PostAnswer.CreateTime), false),
+            (nameof(PostAnswer.Id), false));
+        EnsureIndex(
+            db,
+            nameof(PostAnswer),
+            AnswerAuthorIndex,
+            false,
+            (nameof(PostAnswer.TenantId), false),
+            (nameof(PostAnswer.AuthorId), false),
+            (nameof(PostAnswer.IsDeleted), false),
+            (nameof(PostAnswer.CreateTime), false));
+        EnsureIndex(
+            db,
+            nameof(PostAnswerContentRevision),
+            "idx_postanswerrevision_tenant_answer_revision",
+            true,
+            (nameof(PostAnswerContentRevision.TenantId), false),
+            (nameof(PostAnswerContentRevision.AnswerId), false),
+            (nameof(PostAnswerContentRevision.RevisionNumber), true));
+        EnsureIndex(
+            db,
+            nameof(PostAnswerContentRevision),
+            "idx_postanswerrevision_tenant_restore_source",
+            false,
+            (nameof(PostAnswerContentRevision.TenantId), false),
+            (nameof(PostAnswerContentRevision.RestoredFromRevisionId), false));
+        EnsureIndex(
+            db,
+            nameof(PostAnswerAcceptanceEvent),
+            "idx_answeracceptanceevent_question_revision",
+            true,
+            (nameof(PostAnswerAcceptanceEvent.TenantId), false),
+            (nameof(PostAnswerAcceptanceEvent.PostQuestionId), false),
+            (nameof(PostAnswerAcceptanceEvent.AcceptanceRevision), false));
+        ForumContentRevisionSchemaMigration.EnsureRevisionAttachmentIndexes(db);
     }
 
     public IReadOnlyList<string> Verify(ISqlSugarClient db, IServiceProvider services)
@@ -431,20 +459,28 @@ internal sealed class ForumAnswerLifecycleStrictSchemaMigration : ISchemaMigrati
 
     private static void EnsureIndex(
         ISqlSugarClient db,
-        string tableName,
-        string[] columns,
-        string indexName)
+        string configuredTableName,
+        string indexName,
+        bool isUnique,
+        params (string ColumnName, bool Descending)[] columns)
     {
-        if (IndexExists(db, tableName, indexName))
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, configuredTableName)
+                                ?? throw new InvalidOperationException(
+                                    $"{configuredTableName} 不存在，无法创建索引 {indexName}。");
+        var physicalColumns = columns.Select(column =>
         {
-            return;
-        }
-
-        bool created = db.DbMaintenance.CreateIndex(tableName, columns, indexName, false);
-        if (!created && !IndexExists(db, tableName, indexName))
-        {
-            throw new InvalidOperationException($"创建索引 {indexName} 失败。");
-        }
+            var physicalColumn = DatabaseIdentifierResolver.ResolveColumn(
+                db,
+                physicalTableName,
+                column.ColumnName)
+                ?? throw new InvalidOperationException(
+                    $"{configuredTableName}.{column.ColumnName} 不存在，无法创建索引 {indexName}。");
+            return $"{QuoteIdentifier(physicalColumn.ColumnName)}{(column.Descending ? " DESC" : string.Empty)}";
+        });
+        db.Ado.ExecuteCommand(
+            $"CREATE {(isUnique ? "UNIQUE " : string.Empty)}INDEX IF NOT EXISTS " +
+            $"{QuoteIdentifier(indexName)} ON {QuoteIdentifier(physicalTableName)} " +
+            $"({string.Join(", ", physicalColumns)})");
     }
 
     private static bool IndexExists(ISqlSugarClient db, string tableName, string indexName)
@@ -454,13 +490,13 @@ internal sealed class ForumAnswerLifecycleStrictSchemaMigration : ISchemaMigrati
             return db.DbMaintenance.IsAnyIndex(indexName);
         }
 
-        string physicalTableName = DatabaseIdentifierResolver.ResolveColumn(
-                                       db,
-                                       tableName,
-                                       nameof(PostAnswer.Id))
-                                   ?.TableName
-                                   ?? tableName;
-        return db.DbMaintenance.GetIndexList(physicalTableName)
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, tableName);
+        return physicalTableName != null && db.DbMaintenance.GetIndexList(physicalTableName)
             .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 }

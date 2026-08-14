@@ -9,6 +9,7 @@ internal sealed class ChatDirectConversationSchemaMigration : ISchemaMigration
     private const string DirectConversationTable = "DirectConversation";
     private const string ChannelMemberTable = "ChannelMember";
     private const string ChannelMessageTable = "ChannelMessage";
+    private const string ClientRequestIndex = "idx_channel_message_client_request";
 
     public static ChatDirectConversationSchemaMigration Instance { get; } = new();
 
@@ -29,6 +30,7 @@ internal sealed class ChatDirectConversationSchemaMigration : ISchemaMigration
         db.CodeFirst.InitTables<DirectConversation>();
         db.CodeFirst.InitTables<ChannelMember>();
         db.CodeFirst.InitTables<ChannelMessage>();
+        EnsureClientRequestIndex(db);
     }
 
     public IReadOnlyList<string> Diagnose(ISqlSugarClient db, IServiceProvider services)
@@ -78,10 +80,13 @@ internal sealed class ChatDirectConversationSchemaMigration : ISchemaMigration
                  {
                      "idx_direct_conversation_tenant_pair",
                      "idx_direct_conversation_tenant_channel",
-                     "idx_channel_message_client_request"
+                     ClientRequestIndex
                  })
         {
-            if (!db.DbMaintenance.IsAnyIndex(indexName))
+            var tableName = indexName == ClientRequestIndex
+                ? ChannelMessageTable
+                : DirectConversationTable;
+            if (!IndexExists(db, tableName, indexName))
             {
                 issues.Add($"缺少索引 {indexName}。");
             }
@@ -165,5 +170,42 @@ internal sealed class ChatDirectConversationSchemaMigration : ISchemaMigration
         }
 
         return issues;
+    }
+
+    private static void EnsureClientRequestIndex(ISqlSugarClient db)
+    {
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, ChannelMessageTable)
+                                ?? throw new InvalidOperationException(
+                                    $"{ChannelMessageTable} 不存在，无法创建索引 {ClientRequestIndex}。");
+        var physicalColumns = new[]
+            {
+                nameof(ChannelMessage.TenantId),
+                nameof(ChannelMessage.UserId),
+                nameof(ChannelMessage.ClientRequestId)
+            }
+            .Select(columnName => DatabaseIdentifierResolver.ResolveColumn(db, physicalTableName, columnName)
+                                  ?? throw new InvalidOperationException(
+                                      $"{ChannelMessageTable}.{columnName} 不存在，无法创建索引 {ClientRequestIndex}。"))
+            .Select(column => QuoteIdentifier(column.ColumnName));
+        db.Ado.ExecuteCommand(
+            $"CREATE UNIQUE INDEX IF NOT EXISTS {QuoteIdentifier(ClientRequestIndex)} " +
+            $"ON {QuoteIdentifier(physicalTableName)} ({string.Join(", ", physicalColumns)})");
+    }
+
+    private static bool IndexExists(ISqlSugarClient db, string tableName, string indexName)
+    {
+        if (db.CurrentConnectionConfig.DbType != DbType.PostgreSQL)
+        {
+            return db.DbMaintenance.IsAnyIndex(indexName);
+        }
+
+        var physicalTableName = DatabaseIdentifierResolver.ResolveTable(db, tableName);
+        return physicalTableName != null && db.DbMaintenance.GetIndexList(physicalTableName)
+            .Any(index => string.Equals(index, indexName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static string QuoteIdentifier(string identifier)
+    {
+        return $"\"{identifier.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 }
