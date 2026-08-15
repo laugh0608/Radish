@@ -6,11 +6,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Radish.DbMigrate;
 using Radish.Model;
 using Radish.Shared.Constants;
+using Radish.Api.Tests.TestCollections;
 using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Repositories;
 
+[Collection(PostgreSqlIntegrationCollection.CollectionName)]
 public sealed class ForumAnswerLifecycleSchemaMigrationTest
 {
     private const string PostgreSqlConnectionStringEnvironmentVariable =

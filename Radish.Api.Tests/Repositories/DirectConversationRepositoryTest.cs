@@ -5,11 +5,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Radish.Model;
 using Radish.Repository;
 using Radish.Repository.UnitOfWorks;
+using Radish.Api.Tests.TestCollections;
 using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Repositories;
 
+[Collection(PostgreSqlIntegrationCollection.CollectionName)]
 public sealed class DirectConversationRepositoryTest
 {
     private const string PostgreSqlConnectionStringEnvironmentVariable = "RADISH_TEST_POSTGRES_CONNECTION_STRING";

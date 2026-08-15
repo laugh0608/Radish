@@ -5,11 +5,13 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.DbMigrate;
 using Radish.Model;
+using Radish.Api.Tests.TestCollections;
 using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Repositories;
 
+[Collection(PostgreSqlIntegrationCollection.CollectionName)]
 public sealed class ShopEntitlementOperationSchemaMigrationTest
 {
     private const string PostgreSqlConnectionStringEnvironmentVariable = "RADISH_TEST_POSTGRES_CONNECTION_STRING";

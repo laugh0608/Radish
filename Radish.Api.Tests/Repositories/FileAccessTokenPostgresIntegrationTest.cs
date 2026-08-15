@@ -6,11 +6,13 @@ using Radish.Common.Security;
 using Radish.Model.Models;
 using Radish.Repository;
 using Radish.Repository.UnitOfWorks;
+using Radish.Api.Tests.TestCollections;
 using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Repositories;
 
+[Collection(PostgreSqlIntegrationCollection.CollectionName)]
 public sealed class FileAccessTokenPostgresIntegrationTest
 {
     private const string ConnectionStringEnvironmentVariable = "RADISH_TEST_POSTGRES_CONNECTION_STRING";

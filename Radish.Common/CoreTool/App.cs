@@ -77,13 +77,24 @@ public class App
             return RootServices;
         }
 
+        IServiceCollection? internalServices = InternalApp.InternalServices;
+        if (internalServices == null)
+        {
+            if (mustBuild && throwException)
+            {
+                throw new ApplicationException("当前不可用，必须要等到 WebApplication Build后");
+            }
+
+            return default!;
+        }
+
         //单例
-        if (InternalApp.InternalServices
+        if (internalServices
             .Where(u => u.ServiceType ==
                         (serviceType.IsGenericType ? serviceType.GetGenericTypeDefinition() : serviceType))
             .Any(u => u.Lifetime == ServiceLifetime.Singleton))
         {
-            return RootServices ?? InternalApp.InternalServices.BuildServiceProvider();
+            return RootServices ?? internalServices.BuildServiceProvider();
         }
 
         if (mustBuild)
@@ -96,7 +107,7 @@ public class App
             return default!;
         }
 
-        ServiceProvider serviceProvider = InternalApp.InternalServices.BuildServiceProvider();
+        ServiceProvider serviceProvider = internalServices.BuildServiceProvider();
         return serviceProvider;
     }
 

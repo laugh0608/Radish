@@ -6,15 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`v26.8.1 Release Candidate PR 前收口`
-- **产品下一顺位**：`候选合并与发布完成后进入 Flutter Native P1 全页面事实审计`
+- **工程第一顺位**：`v26.8.1 生产部署决策与发布后置留痕（保持独立授权）`
+- **产品下一顺位**：`进入 Flutter Native P1 全页面事实审计`
 - **复核日期**：`2026-08-15`
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
-- **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
+- **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布，生产尚未部署）。
 
 ## 最近结论
 
-- `2026-08-15` 已完成 [v26.8.1 Release Candidate PR 前本地收口](/records/v26.8.1-release-candidate-regression-record-2026-08-15)：产品版本已由单一真值同步到 .NET、npm、Rust、Flutter 与冻结的 Tauri 历史资产，正式发布记录已预置“尚未部署”状态；tag 契约、Baseline Full、Repo Quality Local、后端 / 身份专题、LongId、依赖安全与卫生门禁均通过。CI 同规格 PostgreSQL 17 Candidate Quality 首次发现聊天已读游标并发收敛竞争，完成有界二次推进修复与 `8` 目标回归增强后最终 `1320 passed / 0 skipped / 0 failed`；当前达到 PR-ready，推送、PR、合并、回灌、tag、镜像和部署仍为独立动作。
+- `2026-08-15` 已完成 [v26.8.1 Web 阶段收口发布](/records/m15-release-record-v26.8.1-2026-08-15)：本地按 CI 同规格 PostgreSQL 17 完成 `1320 passed / 0 skipped / 0 failed`，PR #68 的八项 required checks 全部通过后以 merge commit `e518a306` 合入 `master`，最新 `origin/master` 已 fast-forward 回灌并推送至 `dev`。`v26.8.1-release` tag 与 DbMigrate、API、Auth、Gateway、Frontend 五镜像发布成功，镜像 workflow 的 Candidate Quality 和 Trivy 策略评估均通过；生产固定 tag 前滚与部署后复核仍是独立授权动作，不阻断 Flutter Native P1 事实审计。
 - `2026-08-15` 已完成 [F4-R-T03 Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)：Gateway 覆盖 `default / guofeng / theme-dark-night / theme-sakura`、中英文、PC `1920 × 1080`、Mobile `390 × 844`、Public `/discover`、Private `/messages`、Author `/docs/mine`、Console `/console/` 与 WebOS `/desktop` 兼容入口；键盘焦点、reduced-motion、实底前景和 Console 独立 Workbench 均通过。种子 Admin 的暗夜激活、樱花切换、默认停用共产生 `3` 条权威操作流水，验收后临时权益、活动指针、流水和本轮 OIDC 会话均精确清零，六库 integrity 均为 `ok`。没有运行时代码缺陷，Web 主题退出门禁关闭。随后完成 Flutter readiness 审计并确认 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)：当前业务链路可保留，主题与页面呈现需系统重建；下一顺位进入不改代码的 P1 全页面事实审计。
 - `2026-08-15` 已完成 [F4-R-T02 reduced-motion 与静态退出门禁实现](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)：Client `theme-tokens.css` 与 Console `index.css` 已建立同构宿主规则，标准 token 继续归零，硬编码 transition / animation 压缩到 `0.01ms`、延迟归零、无限迭代收敛为一次、smooth scroll 回退 `auto`；加载、进度、反馈和状态元素保持静态可见。定向契约 `9 / 9`、HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `138 / 138`，三端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器，未修改 family-ui 固定副本、Pencil、依赖或数据。下一顺位进入 T03，但须重新取得服务启动与临时 Theme 权益数据授权。
 - `2026-08-15` 已完成 [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)：`guofeng` 品牌、悬停、柔底与品牌实底前景正式切换为灰玉语义，L2 hover 直接追溯显式 L1；主题预览、WebOS 弱装饰和 Dock 激活面不再固定旧胭脂。四主题 Ant Design 主操作 / 链接统一映射 action，`@radish/ui` 公开 brand 对齐共享灰玉基线，状态色、权益、主题状态机、family-ui 固定副本与 Pencil 均未改变。HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `137 / 137`，三端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器。下一顺位进入 T02 宿主 reduced-motion。
