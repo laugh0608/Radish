@@ -6,11 +6,13 @@ using Radish.DbMigrate;
 using Radish.Model;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
+using Radish.Api.Tests.TestCollections;
 using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Repositories;
 
+[Collection(PostgreSqlIntegrationCollection.CollectionName)]
 public sealed class WikiDocumentGovernanceSchemaMigrationTest
 {
     private const string PostgreSqlConnectionStringEnvironmentVariable =

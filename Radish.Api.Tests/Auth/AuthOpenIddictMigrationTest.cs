@@ -9,10 +9,12 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Radish.Auth.OpenIddict;
 using Radish.Common.DbTool;
+using Radish.Api.Tests.TestCollections;
 using Xunit;
 
 namespace Radish.Api.Tests.Auth;
 
+[Collection(PostgreSqlIntegrationCollection.CollectionName)]
 public sealed class AuthOpenIddictMigrationTest
 {
     private const string PostgreSqlConnectionStringEnvironmentVariable = "RADISH_TEST_POSTGRES_CONNECTION_STRING";

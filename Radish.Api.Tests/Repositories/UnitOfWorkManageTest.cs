@@ -4,11 +4,13 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Radish.Repository.UnitOfWorks;
+using Radish.Api.Tests.TestCollections;
 using SqlSugar;
 using Xunit;
 
 namespace Radish.Api.Tests.Repositories;
 
+[Collection(PostgreSqlIntegrationCollection.CollectionName)]
 public class UnitOfWorkManageTest
 {
     private const string PostgresConnectionStringEnvironmentVariable = "RADISH_TEST_POSTGRES_CONNECTION_STRING";
