@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R-T03 Web 四主题成组运行态验收（待当轮启动与临时权益数据授权）`
-- **产品下一顺位**：`关闭 T03 四主题运行态，再进入 Flutter 语义映射`
+- **工程第一顺位**：`F4-R Flutter 语义映射 readiness 审计（方案待确认）`
+- **产品下一顺位**：`审计 Dart 主题 owner、四主题承接范围与高价值移动路径，再决定实现拆批`
 - **复核日期**：`2026-08-15`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-15` 已完成 [F4-R-T03 Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)：Gateway 覆盖 `default / guofeng / theme-dark-night / theme-sakura`、中英文、PC `1920 × 1080`、Mobile `390 × 844`、Public `/discover`、Private `/messages`、Author `/docs/mine`、Console `/console/` 与 WebOS `/desktop` 兼容入口；键盘焦点、reduced-motion、实底前景和 Console 独立 Workbench 均通过。种子 Admin 的暗夜激活、樱花切换、默认停用共产生 `3` 条权威操作流水，验收后临时权益、活动指针、流水和本轮 OIDC 会话均精确清零，六库 integrity 均为 `ok`。没有运行时代码缺陷，Web 主题退出门禁关闭；下一顺位先做 Flutter 语义映射 readiness 审计。
 - `2026-08-15` 已完成 [F4-R-T02 reduced-motion 与静态退出门禁实现](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)：Client `theme-tokens.css` 与 Console `index.css` 已建立同构宿主规则，标准 token 继续归零，硬编码 transition / animation 压缩到 `0.01ms`、延迟归零、无限迭代收敛为一次、smooth scroll 回退 `auto`；加载、进度、反馈和状态元素保持静态可见。定向契约 `9 / 9`、HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `138 / 138`，三端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器，未修改 family-ui 固定副本、Pencil、依赖或数据。下一顺位进入 T03，但须重新取得服务启动与临时 Theme 权益数据授权。
 - `2026-08-15` 已完成 [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)：`guofeng` 品牌、悬停、柔底与品牌实底前景正式切换为灰玉语义，L2 hover 直接追溯显式 L1；主题预览、WebOS 弱装饰和 Dock 激活面不再固定旧胭脂。四主题 Ant Design 主操作 / 链接统一映射 action，`@radish/ui` 公开 brand 对齐共享灰玉基线，状态色、权益、主题状态机、family-ui 固定副本与 Pencil 均未改变。HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `137 / 137`，三端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器。下一顺位进入 T02 宿主 reduced-motion。
 - `2026-08-15` 已完成 [F4-R Web 主题基线与专题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)：确认 family-ui `v26.7.3`、四主题身份 / 权益状态机、两类实底前景、Console Workbench 与新共享样式颜色边界可继承；同时定位 `guofeng` CSS / Ant / 测试仍固定旧胭脂、L2 hover 绕过显式 L1、Client Ant 主操作仍混用品牌，以及宿主 reduced-motion 无法覆盖硬编码动效。后续固定为 T01 主题语义、T02 reduced-motion、T03 四主题成组运行态三批；不修改 Pencil、不机械替换页面品牌引用，方案确认后才改运行时代码。

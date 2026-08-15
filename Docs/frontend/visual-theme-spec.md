@@ -15,7 +15,7 @@
 > - [前端设计](/frontend/design)
 > - [首版 dev 边界](/planning/dev-first-scope)
 >
-> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。六个 R1、四个 R2、六组 Web R3、[T01 主题语义](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)与 [T02 reduced-motion](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)均已关闭；下一顺位为 T03 四主题运行态，Web 基线稳定后再进入 Flutter 语义映射。
+> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。六个 R1、四个 R2、六组 Web R3、[T01 主题语义](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)、[T02 reduced-motion](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)与 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)均已关闭；下一顺位先做 Flutter 语义映射 readiness 审计，再确认高价值移动路径的实现拆批。
 
 ## 1. 设计目标
 

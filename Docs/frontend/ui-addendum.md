@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：Web 页面族、[T01 主题语义](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)与 [T02 reduced-motion](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)已关闭；下一顺位为 T03 四主题成组运行态，随后进入 Flutter 语义映射。
+> 状态：Web 页面族、[T01 主题语义](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)、[T02 reduced-motion](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)与 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)已关闭；下一顺位为 Flutter 语义映射 readiness 审计。
 
 ## 1. 真相源与优先级
 
@@ -85,7 +85,7 @@ Radish 四主题取值与 Profile 覆盖
 
 family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的四主题取值与品牌前景继续在 Client 项目主题层显式覆盖，避免依赖上游参考默认值形成隐式产品契约。
 
-`R1-P01` 颜色校准把 `guofeng` 品牌从旧胭脂调整为低饱和灰玉：品牌 `#5d6c57`、悬停 `#6e736d`、设计柔底 `#e2e6de`、实底前景 `#fffdf8`；常规操作仍使用墨蓝 `#435c74`。该配色先随 `R1-P01 / 社区发现 / PC 1440` 通过设计审核，并已在 [F4-R-T01](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)进入 Client 四主题 CSS、Ant Design 宿主、共享公开 brand、主题预览与 WebOS 边缘消费。T01 不机械替换页面品牌引用，具体视觉误用继续由 T03 代表路径复核。
+`R1-P01` 颜色校准把 `guofeng` 品牌从旧胭脂调整为低饱和灰玉：品牌 `#5d6c57`、悬停 `#6e736d`、设计柔底 `#e2e6de`、实底前景 `#fffdf8`；常规操作仍使用墨蓝 `#435c74`。该配色先随 `R1-P01 / 社区发现 / PC 1440` 通过设计审核，并已在 [F4-R-T01](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)进入 Client 四主题 CSS、Ant Design 宿主、共享公开 brand、主题预览与 WebOS 边缘消费；[T03](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)进一步确认四主题代表路径没有页面级品牌语义误用。
 
 迁移期间允许组件继续消费 `--theme-*`、`--console-*` 和 `--rx-*`，但这些变量必须能追溯到 `--rd-*` 或在本附录登记为项目领域 token。不得继续新增没有语义归属的硬编码颜色。
 
@@ -103,7 +103,7 @@ family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的�
 
 | family-ui 条款 | 当前偏离 | 原因 | 处理 |
 | --- | --- | --- | --- |
-| 通用参考默认与已确认的 `R1-P01` 颜色目标均使用灰玉品牌 | T01 已关闭旧胭脂运行时偏离 | 共享 owner 已具备成组治理条件 | 品牌、悬停、柔底和品牌前景已显式更新；页面品牌引用、状态色和其他主题身份保持原边界，待 T03 代表路径复核 |
+| 通用参考默认与已确认的 `R1-P01` 颜色目标均使用灰玉品牌 | T01 已关闭旧胭脂运行时偏离 | 共享 owner 已具备成组治理条件 | 品牌、悬停、柔底和品牌前景已显式更新；T03 代表路径已确认页面品牌引用、状态色和其他主题身份边界成立 |
 | 通用 light / dark | Radish 有四套注册主题 | 已发布产品与权益契约 | 保留主题 ID，统一映射到 `--rd-*` |
 | 通用规范列出 Tauri 平台映射 | Tauri 暂时弃用 | 当前多端路线已调整 | 平台示例不构成 Radish 投入要求；继续冻结 Tauri |
 | Public 为 Brand | Radish Public 是内容优先社区 | 阅读和互动密度优先 | Brand 用于气质层，不引入营销首页 |
