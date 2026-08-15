@@ -124,40 +124,39 @@ public sealed class ChatReadReceiptRepository : BaseRepository<ChannelMember>, I
         DbProtectedClient.Ado.BeginTran();
         try
         {
-            var affected = await DbProtectedClient.Updateable<ChannelMember>()
-                .SetColumns(member => new ChannelMember
-                {
-                    LastReadMessageId = command.ReadThroughMessageId,
-                    ModifyTime = command.NowUtc,
-                    ModifyBy = command.OperatorName,
-                    ModifyId = command.UserId
-                })
-                .Where(member =>
-                    member.ChannelId == command.ChannelId &&
-                    member.UserId == command.UserId &&
-                    !member.IsDeleted &&
-                    (member.LastReadMessageId == null ||
-                     member.LastReadMessageId.Value < command.ReadThroughMessageId))
-                .ExecuteCommandAsync();
+            var affected = await TryAdvanceExistingMemberAsync(command);
             if (affected == 1)
             {
                 DbProtectedClient.Ado.CommitTran();
                 return new AdvanceChatReadStateResult(command.ReadThroughMessageId, true);
             }
 
-            var existing = await DbProtectedClient.Queryable<ChannelMember>()
-                .Where(member =>
-                    member.ChannelId == command.ChannelId &&
-                    member.UserId == command.UserId)
-                .Select(member => new ChannelMember
-                {
-                    LastReadMessageId = member.LastReadMessageId,
-                    IsDeleted = member.IsDeleted
-                })
-                .FirstAsync();
+            var existing = await GetMemberStateAsync(command);
             if (existing is { IsDeleted: false })
             {
                 var current = existing.LastReadMessageId.GetValueOrDefault();
+                if (current < command.ReadThroughMessageId)
+                {
+                    affected = await TryAdvanceExistingMemberAsync(command);
+                    if (affected == 1)
+                    {
+                        DbProtectedClient.Ado.CommitTran();
+                        return new AdvanceChatReadStateResult(command.ReadThroughMessageId, true);
+                    }
+
+                    existing = await GetMemberStateAsync(command);
+                    if (existing is not { IsDeleted: false })
+                    {
+                        throw new ChatReadMemberUnavailableException();
+                    }
+
+                    current = existing.LastReadMessageId.GetValueOrDefault();
+                    if (current < command.ReadThroughMessageId)
+                    {
+                        throw new InvalidOperationException("聊天已读游标并发推进未收敛到目标值。");
+                    }
+                }
+
                 DbProtectedClient.Ado.CommitTran();
                 return new AdvanceChatReadStateResult(current, false);
             }
@@ -189,6 +188,39 @@ public sealed class ChatReadReceiptRepository : BaseRepository<ChannelMember>, I
             DbProtectedClient.Ado.RollbackTran();
             throw;
         }
+    }
+
+    private Task<int> TryAdvanceExistingMemberAsync(AdvanceChatReadStateCommand command)
+    {
+        return DbProtectedClient.Updateable<ChannelMember>()
+            .SetColumns(member => new ChannelMember
+            {
+                LastReadMessageId = command.ReadThroughMessageId,
+                ModifyTime = command.NowUtc,
+                ModifyBy = command.OperatorName,
+                ModifyId = command.UserId
+            })
+            .Where(member =>
+                member.ChannelId == command.ChannelId &&
+                member.UserId == command.UserId &&
+                !member.IsDeleted &&
+                (member.LastReadMessageId == null ||
+                 member.LastReadMessageId.Value < command.ReadThroughMessageId))
+            .ExecuteCommandAsync();
+    }
+
+    private async Task<ChannelMember?> GetMemberStateAsync(AdvanceChatReadStateCommand command)
+    {
+        return await DbProtectedClient.Queryable<ChannelMember>()
+            .Where(member =>
+                member.ChannelId == command.ChannelId &&
+                member.UserId == command.UserId)
+            .Select(member => new ChannelMember
+            {
+                LastReadMessageId = member.LastReadMessageId,
+                IsDeleted = member.IsDeleted
+            })
+            .FirstAsync();
     }
 
     private static bool IsUniqueConstraintConflict(Exception exception)

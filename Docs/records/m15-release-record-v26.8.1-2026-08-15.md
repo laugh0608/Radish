@@ -34,8 +34,8 @@ imageTag: v26.8.1-release
 
 - 批次回归记录：[v26.8.1 Release Candidate 回归记录](/records/v26.8.1-release-candidate-regression-record-2026-08-15)
 - 本地门禁：版本 tag 契约、Baseline Full、Repo Quality Local、Candidate Quality、后端 / 身份专题、LongId、依赖安全、repo hygiene 与 `git diff --check` 均通过。
-- 测试摘要：前端 HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `138 / 138`；后端 `1279 passed / 41 skipped / 0 failed`，身份定向 `35 / 35`，warnings-as-errors 构建 `0 warning / 0 error`。
-- 环境边界：本地没有注入 PostgreSQL 集成环境，`41` 项数据库专项按既有条件跳过；远程 Candidate Quality 必需检查仍需在 PostgreSQL 17 服务下通过。
+- 测试摘要：前端 HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `138 / 138`；后端在 CI 同规格 PostgreSQL 17 下 `1320 passed / 0 skipped / 0 failed`，身份定向 `35 / 35`，warnings-as-errors 构建 `0 warning / 0 error`。
+- PostgreSQL 候选：首次全量执行发现聊天已读游标并发创建后的单调推进竞争，修复为有界二次推进与权威状态复读，并将专项加强为 `8` 目标并发；定向测试 `4 / 4`、增强用例连续 `10` 轮及最终 Candidate Quality 均通过。临时数据库容器已清理，远程 required checks 仍须独立通过。
 - 运行态证据：复用 [R3-F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)与 [Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)；本次版本与文档收口不重启服务、浏览器或主动生产证据采集。
 
 ## 测试部署结论
