@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-15 更新（Asia/Shanghai）
 >
-> 状态：A / B、v26.7.3 基线补充、C-0、C-1A、六个 R1、四个 R2 与六组 Web R3 实现 / 运行态均已关闭；下一顺位为 Web 主题基线与专题退出门禁审计，随后才进入 Flutter 语义映射
+> 状态：A / B、v26.7.3 基线补充、C-0、C-1A、六个 R1、四个 R2 与六组 Web R3 实现 / 运行态均已关闭；[Web 主题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)已固定 T01 / T02 / T03 三批，随后才进入 Flutter 语义映射
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
@@ -206,7 +206,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
-同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次形成闭环。三个 Public R3、R3-C04 六批、R3-C05 四批与 `R3-F02-A / B / C` 也已完成；[R3-F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)确认 Settings / Profile、身份、OIDC 与错误边界的继承成立，没有新增 Pencil 页面范式。正式 Web 页面族至此完成；下一步先审计已确认灰玉目标与旧胭脂运行时偏离、四主题和 reduced-motion 证据，再进入 Flutter Dart 语义映射。
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次形成闭环。三个 Public R3、R3-C04 六批、R3-C05 四批与 `R3-F02-A / B / C` 也已完成；[R3-F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)确认 Settings / Profile、身份、OIDC 与错误边界的继承成立，没有新增 Pencil 页面范式。正式 Web 页面族至此完成；[Web 主题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)已把剩余工作拆为 T01 主题语义、T02 reduced-motion 和 T03 四主题运行态，三批关闭后再进入 Flutter Dart 语义映射。
 
 ### 9.2 设计源
 
