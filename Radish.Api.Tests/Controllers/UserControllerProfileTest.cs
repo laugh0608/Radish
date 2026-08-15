@@ -10,6 +10,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
+using Radish.Shared.Constants;
 using Xunit;
 
 namespace Radish.Api.Tests.Controllers;
@@ -209,6 +210,123 @@ public class UserControllerProfileTest
                 It.Is<UpdateMyProfileDto>(request => request.UserName == " NewName "),
                 It.IsAny<UserDisplayNameChangeContext>()),
             Times.Once);
+    }
+
+    [Fact]
+    public async Task UpdateMyProfile_ShouldExposeStableConcurrentChangeContract()
+    {
+        var userService = new Mock<IUserService>(MockBehavior.Strict);
+        var currentUserAccessor = new Mock<ICurrentUserAccessor>(MockBehavior.Strict);
+        currentUserAccessor
+            .SetupGet(item => item.Current)
+            .Returns(new CurrentUser
+            {
+                IsAuthenticated = true,
+                UserId = 1001,
+                UserName = "tester"
+            });
+        userService
+            .Setup(item => item.UpdateMyProfileAsync(
+                1001,
+                It.IsAny<UpdateMyProfileDto>(),
+                It.IsAny<UserDisplayNameChangeContext>()))
+            .ThrowsAsync(new InvalidOperationException("个人资料已发生并发变化，请重新加载后重试"));
+
+        var controller = new UserController(
+            userService.Object,
+            currentUserAccessor.Object,
+            Mock.Of<IPostService>(),
+            Mock.Of<ICommentService>(),
+            Mock.Of<IUserBrowseHistoryService>(),
+            Mock.Of<IUserTimePreferenceService>(),
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new TimeOptions()),
+            Mock.Of<IUserAdornmentService>(),
+            Mock.Of<IPetService>(),
+            Mock.Of<IExperienceService>());
+
+        var result = await controller.UpdateMyProfile(new UpdateMyProfileDto { UserName = "NewName" });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(409, result.StatusCode);
+        Assert.Equal(UserSelfServiceErrorCodes.ProfileConcurrentChange, result.Code);
+        Assert.Equal(
+            UserSelfServiceErrorCodes.ResolveMessageKey(UserSelfServiceErrorCodes.ProfileConcurrentChange),
+            result.MessageKey);
+    }
+
+    [Fact]
+    public async Task ChangeMyLoginPassword_ShouldExposeStableCurrentPasswordContract()
+    {
+        var userService = new Mock<IUserService>(MockBehavior.Strict);
+        var currentUserAccessor = new Mock<ICurrentUserAccessor>(MockBehavior.Strict);
+        currentUserAccessor
+            .SetupGet(item => item.Current)
+            .Returns(new CurrentUser
+            {
+                IsAuthenticated = true,
+                UserId = 1001,
+                UserName = "tester"
+            });
+        userService
+            .Setup(item => item.ChangeMyLoginPasswordAsync(1001, "wrong", "NewPassword1", "NewPassword1"))
+            .ThrowsAsync(new InvalidOperationException("当前密码不正确"));
+
+        var controller = new UserController(
+            userService.Object,
+            currentUserAccessor.Object,
+            Mock.Of<IPostService>(),
+            Mock.Of<ICommentService>(),
+            Mock.Of<IUserBrowseHistoryService>(),
+            Mock.Of<IUserTimePreferenceService>(),
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new TimeOptions()),
+            Mock.Of<IUserAdornmentService>(),
+            Mock.Of<IPetService>(),
+            Mock.Of<IExperienceService>());
+
+        var result = await controller.ChangeMyLoginPassword(new ChangeMyLoginPasswordDto
+        {
+            CurrentPassword = "wrong",
+            NewPassword = "NewPassword1",
+            ConfirmPassword = "NewPassword1"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(UserSelfServiceErrorCodes.CurrentPasswordIncorrect, result.Code);
+        Assert.Equal(
+            UserSelfServiceErrorCodes.ResolveMessageKey(UserSelfServiceErrorCodes.CurrentPasswordIncorrect),
+            result.MessageKey);
+    }
+
+    [Fact]
+    public async Task UpdateMyTimePreference_ShouldExposeStableInvalidTimeZoneContract()
+    {
+        var controller = new UserController(
+            Mock.Of<IUserService>(),
+            Mock.Of<ICurrentUserAccessor>(),
+            Mock.Of<IPostService>(),
+            Mock.Of<ICommentService>(),
+            Mock.Of<IUserBrowseHistoryService>(),
+            Mock.Of<IUserTimePreferenceService>(),
+            Mock.Of<IAttachmentService>(),
+            Options.Create(new TimeOptions()),
+            Mock.Of<IUserAdornmentService>(),
+            Mock.Of<IPetService>(),
+            Mock.Of<IExperienceService>());
+
+        var result = await controller.UpdateMyTimePreference(new UpdateMyTimePreferenceDto
+        {
+            TimeZoneId = "Not A Time Zone"
+        });
+
+        Assert.False(result.IsSuccess);
+        Assert.Equal(400, result.StatusCode);
+        Assert.Equal(UserSelfServiceErrorCodes.TimeZoneInvalid, result.Code);
+        Assert.Equal(
+            UserSelfServiceErrorCodes.ResolveMessageKey(UserSelfServiceErrorCodes.TimeZoneInvalid),
+            result.MessageKey);
     }
 
     [Theory]

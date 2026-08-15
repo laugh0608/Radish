@@ -1,0 +1,47 @@
+.console-error-boundary {
+  width: min(720px, 100%);
+  min-height: 60vh;
+  margin: 0 auto;
+  padding: 48px 24px;
+  color: var(--console-text-primary);
+}
+
+.console-error-boundary__details {
+  margin-top: 24px;
+  white-space: pre-wrap;
+}
+
+.console-error-boundary__summary {
+  margin-bottom: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.console-error-boundary__diagnostic {
+  padding: 16px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
+  background: var(--console-bg-muted);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.console-error-boundary__diagnostic-section {
+  margin-bottom: 12px;
+}
+
+.console-error-boundary__error-message {
+  color: var(--console-danger);
+}
+
+.console-error-boundary__component-stack {
+  color: var(--console-text-secondary);
+}
+
+@media (max-width: 720px) {
+  .console-error-boundary {
+    min-height: 52vh;
+    padding: 32px 16px;
+  }
+}

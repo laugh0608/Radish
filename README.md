@@ -6,18 +6,18 @@
 
 Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以帖子、评论和问答承载内容生产与讨论，以聊天、关注和通知形成复访闭环，以 Docs 沉淀可长期阅读的知识；宠物、经验、资产和商城是可选激励层，不取代社区主轴。
 
-正式产品采用 Web-first：PC 与 mobile 浏览器共享公开浏览、登录参与和私域复访主路径；Flutter 作为次级移动原生产品线承接明确移动价值，WebOS 只保留历史兼容，Tauri 暂时弃用并等待未来重新评估。技术实现基于 ASP.NET Core 10 + SQLSugar + PostgreSQL，以及 React 19 + Vite + TypeScript。
+正式产品只保留 Web / Flutter Native 两条产品线：Web-first 覆盖 PC 与 mobile 浏览器的公开浏览、登录参与和私域复访；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS 只保留历史兼容，Tauri 正式弃用。技术实现基于 ASP.NET Core 10 + SQLSugar + PostgreSQL、React 19 + Vite + TypeScript，以及 Flutter。
 
 ## 当前状态
 
 - **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`F4-R 家族 UI 统一接入与产品视觉重构`
-- **复核日期**：`2026-08-03`
+- **当前主线**：`Flutter Native 产品化与 UI 重构 P1 全页面事实审计`
+- **复核日期**：`2026-08-15`
 - **当前结论**：
   - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
-  - F4-R 已将家族视觉基线升级到 RadishX `family-ui v26.7.3`，建立单一版本化 Pencil 设计源并完成 `R1-F01`；`R1-P01` 两轮评审未通过，下一步先重做多元社区发现结构校准
-  - Web 为正式优先主线，Flutter 为次级移动原生产品线；WebOS 仅保留兼容入口
-  - Tauri 暂时弃用，保留历史验证资产但不进入当前开发、UI、CI 或发布门禁
+  - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
+  - Flutter readiness 与 P0 路线裁决已完成，下一步盘点全页面 owner、窗口结构和代表类型，不直接修改代码或依赖
+  - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
   - 合并 `master`、创建 tag 与部署仍是三个独立决策
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
 - **当前验证基线**：

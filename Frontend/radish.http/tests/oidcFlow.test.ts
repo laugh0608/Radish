@@ -190,6 +190,23 @@ test('OIDC 授权拒绝保留稳定错误类型并清理回调参数', async () 
   assert.equal(sanitizedUrl.searchParams.has('error'), false);
   assert.equal(sanitizedUrl.searchParams.has('error_description'), false);
   assert.equal(sanitizedUrl.searchParams.has('state'), false);
+
+  await assert.rejects(
+    redeemOidcAuthorizationCode({
+      ...baseOptions,
+      locationHref: sanitizedUrl.toString(),
+      sessionStorage: storage,
+      history: historyRecorder.history,
+      buildAuthorizationErrorMessage: ({ error }) => `second-pass:${error}`,
+    }),
+    (error: unknown) => (
+      error instanceof OidcCallbackError
+      && error.code === 'authorization_error'
+      && error.message === 'mapped:access_denied'
+    ),
+  );
+
+  assert.equal(storage.length, 0);
 });
 
 test('OIDC callback 缺少 code 时消费当前尝试并拒绝后续重放', async () => {

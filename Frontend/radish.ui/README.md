@@ -327,20 +327,22 @@ function DarkApp() {
 ```typescript
 import { radishColors } from '@radish/ui';
 
-console.log(radishColors.primary);  // #FF6B35 (萝卜橙)
-console.log(radishColors.success);  // #52c41a
-console.log(radishColors.warning);  // #faad14
-console.log(radishColors.error);    // #ff4d4f
-console.log(radishColors.info);     // #1890ff
+console.log(radishColors.brand);   // #5d6c57（共享灰玉品牌）
+console.log(radishColors.primary); // #435c74（Workbench 操作）
+console.log(radishColors.success); // #4f9c83
+console.log(radishColors.warning); // #b5826d
+console.log(radishColors.error);   // #c3564d
+console.log(radishColors.info);    // #435c74
 ```
 
 ### 自定义主题
 
-修改 `Frontend/ui/src/theme/antd-theme.ts` 文件：
+修改 `Frontend/radish.ui/src/theme/antd-theme.ts` 文件：
 
 ```typescript
 export const radishColors = {
-  primary: '#FF6B35',  // 修改主色调
+  brand: '#5d6c57',
+  primary: '#435c74',
   // ...
 };
 

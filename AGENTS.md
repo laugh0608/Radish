@@ -66,7 +66,7 @@
 
 - 技术栈：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite） / React 19 + Vite（Rolldown） + TypeScript
 - 前端结构：npm workspaces 管理 `radish.http`、`radish.client`、`radish.console`、`radish.ui`
-- 多端口径：Web 是正式优先主线；Flutter 是次级移动原生产品线，按明确移动价值推进；Tauri 暂时弃用并保留历史验证资产，未来等待重新评估
+- 多端口径：只保留 Web / Flutter Native 两条正式产品线；Web 优先覆盖 PC / mobile 浏览器，Flutter 次级覆盖原生 PC / mobile 安装包并按 mobile-first、desktop stage-gated 推进；Tauri 正式弃用并只保留历史资产
 - 桌面形态：`radish.client` 的 `/desktop` 保留 WebOS 历史入口；`Clients/radish-tauri` 不进入当前开发、UI、CI 与发布门禁
 - 共享组件：`radish.ui` 为源码直连的共享 UI 组件库，无需单独构建
 - HTTP 客户端：`radish.http` 为统一 API 客户端 workspace
@@ -126,8 +126,8 @@
 
 ### 客户端项目
 
-- `Clients/radish.flutter`：Flutter Android / iOS 移动原生安装包路线
-- `Clients/radish-tauri`：暂时弃用的 Tauri 桌面验证资产，未来重新评估时默认复用正式 Web
+- `Clients/radish.flutter`：Flutter Native 原生安装包路线，长期覆盖 Android / iOS / Windows / macOS / Linux；当前只有 Android 平台工程，Flutter Web 不进入路线
+- `Clients/radish-tauri`：正式弃用的 Tauri 桌面验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁
 
 ## 环境与命令
 

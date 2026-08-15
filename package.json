@@ -1,7 +1,7 @@
 {
   "name": "radish-root",
   "private": true,
-  "version": "26.7.1",
+  "version": "26.8.1",
   "workspaces": [
     "Frontend/radish.http",
     "Frontend/radish.client",

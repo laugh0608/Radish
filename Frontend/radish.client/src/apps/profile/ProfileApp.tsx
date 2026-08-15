@@ -1,14 +1,16 @@
-import { lazy, Suspense, useState, useEffect, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useState, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@radish/ui/icon';
 import { log } from '@/utils/logger';
 import { useUserStore } from '@/stores/userStore';
 import { useWindowStore } from '@/stores/windowStore';
 import { useCurrentWindow } from '@/desktop/useCurrentWindow';
+import { useWindowCloseGuard } from '@/desktop/useWindowCloseGuard';
+import { useBrowserNavigationLock } from '@/bootstrap/browserNavigationLock';
 import { UserInfoCard } from './components/UserInfoCard';
-import { getPublicProfile, type LongId, type PublicUserProfile, type UserBrowseHistoryItem } from '@/api/user';
+import { getPublicProfile, getUserStats, type LongId, type PublicUserProfile, type UserBrowseHistoryItem } from '@/api/user';
 import { followUser, getFollowStatus, unfollowUser, type UserFollowStatus } from '@/api/userFollow';
-import { getMyTimePreference, getTimeSettings, updateMyTimePreference } from '@/api/time';
+import { getMyTimePreference, updateMyTimePreference } from '@/api/time';
 import { getApiBaseUrl } from '@/config/env';
 import {
   DEFAULT_TIME_FORMAT,
@@ -25,6 +27,11 @@ import {
 import { resolveMediaUrl } from '@/utils/media';
 import { resolveVisibleUserDisplayName, resolveVisibleUserHandle } from '@/utils/userIdentityDisplay';
 import { reuseInFlightRequest } from './requestDedup';
+import {
+  resolveFailedSnapshotState,
+  type ProfileAuthorityState,
+  type ProfileStats,
+} from './profileAuthority';
 import styles from './ProfileApp.module.css';
 
 const UserPostList = lazy(() =>
@@ -45,14 +52,6 @@ const UserBrowseHistoryList = lazy(() =>
 const UserQuickReplyList = lazy(() =>
   import('./components/UserQuickReplyList').then((module) => ({ default: module.UserQuickReplyList }))
 );
-
-interface UserStats {
-  voPostCount: number;
-  voCommentCount: number;
-  voTotalLikeCount: number;
-  voPostLikeCount: number;
-  voCommentLikeCount: number;
-}
 
 interface ProfileWindowParams {
   userId?: LongId;
@@ -120,75 +119,18 @@ function buildAvatarStyle(seed: string) {
   };
 }
 
-async function fetchProfileStats(apiBaseUrl: string, viewingUserId: LongId): Promise<UserStats | null> {
-  const response = await fetch(
-    `${apiBaseUrl}/api/v1/User/GetUserStats?userId=${encodeURIComponent(String(viewingUserId))}`
-  );
-  const json = await response.json() as { isSuccess?: boolean; responseData?: UserStats | null };
-
-  if (json.isSuccess && json.responseData) {
-    return json.responseData;
-  }
-
-  return null;
-}
-
 async function fetchProfileTimeState(): Promise<ProfileTimeState> {
-  let fallbackSystemTimeZone = DEFAULT_TIME_ZONE;
-  let fallbackDisplayTimeFormat = DEFAULT_TIME_FORMAT;
+  const preference = await getMyTimePreference();
+  const systemTimeZone = resolveTimeZoneId(preference.voSystemDefaultTimeZoneId, DEFAULT_TIME_ZONE);
+  const browserTimeZone = getBrowserTimeZoneId(systemTimeZone);
 
-  try {
-    const settings = await getTimeSettings();
-    fallbackSystemTimeZone = resolveTimeZoneId(settings.voDefaultTimeZoneId, DEFAULT_TIME_ZONE);
-    fallbackDisplayTimeFormat = settings.voDisplayFormat?.trim() || DEFAULT_TIME_FORMAT;
-  } catch (error) {
-    log.warn('ProfileApp', '加载系统时间配置失败，已回退默认配置');
-    log.error('ProfileApp', '加载系统时间配置失败：', error);
-  }
-
-  try {
-    const preference = await getMyTimePreference();
-    const resolvedSystemTimeZone = resolveTimeZoneId(
-      preference.voSystemDefaultTimeZoneId,
-      fallbackSystemTimeZone
-    );
-    const resolvedDisplayTimeFormat = preference.voDisplayFormat?.trim() || fallbackDisplayTimeFormat;
-    const browserTimeZone = getBrowserTimeZoneId(resolvedSystemTimeZone);
-    const initialDisplayTimeZone = preference.voIsCustomized
+  return {
+    systemTimeZone,
+    displayTimeZone: preference.voIsCustomized
       ? resolveTimeZoneId(preference.voTimeZoneId, browserTimeZone)
-      : browserTimeZone;
-
-    let resolvedDisplayTimeZone = initialDisplayTimeZone;
-    if (!preference.voIsCustomized) {
-      try {
-        const updatedPreference = await updateMyTimePreference(initialDisplayTimeZone);
-        resolvedDisplayTimeZone = resolveTimeZoneId(
-          updatedPreference.voTimeZoneId,
-          initialDisplayTimeZone
-        );
-      } catch (error) {
-        log.warn('ProfileApp', '初始化用户时区偏好失败，已使用浏览器时区展示');
-        log.error('ProfileApp', '初始化用户时区偏好失败：', error);
-      }
-    }
-
-    return {
-      systemTimeZone: resolvedSystemTimeZone,
-      displayTimeZone: resolvedDisplayTimeZone,
-      displayTimeFormat: resolvedDisplayTimeFormat,
-    };
-  } catch (error) {
-    const browserTimeZone = getBrowserTimeZoneId(fallbackSystemTimeZone);
-
-    log.warn('ProfileApp', '加载用户时区偏好失败，已回退浏览器时区');
-    log.error('ProfileApp', '加载用户时区偏好失败：', error);
-
-    return {
-      systemTimeZone: fallbackSystemTimeZone,
-      displayTimeZone: browserTimeZone,
-      displayTimeFormat: fallbackDisplayTimeFormat,
-    };
-  }
+      : browserTimeZone,
+    displayTimeFormat: preference.voDisplayFormat?.trim() || DEFAULT_TIME_FORMAT,
+  };
 }
 
 export const ProfileApp = () => {
@@ -204,16 +146,46 @@ export const ProfileApp = () => {
   const isOwnProfile = viewingUserIdKey !== '' && viewingUserIdKey === authenticatedUserIdKey;
   const loggedIn = isAuthenticated();
   const [activeTab, setActiveTab] = useState<'posts' | 'comments' | 'quick-replies' | 'browse-history' | 'attachments' | 'social'>('posts');
-  const [stats, setStats] = useState<UserStats | null>(null);
-  const [loadingStats, setLoadingStats] = useState(true);
+  const statsRef = useRef<ProfileStats | null>(null);
+  const statsSnapshotKeyRef = useRef('');
+  const statsRequestIdRef = useRef(0);
+  const timeSnapshotRef = useRef<ProfileTimeState | null>(null);
+  const timeSnapshotKeyRef = useRef('');
+  const timeRequestIdRef = useRef(0);
+  const [stats, setStats] = useState<ProfileStats | null>(null);
+  const [statsState, setStatsState] = useState<ProfileAuthorityState>('loading');
+  const [statsError, setStatsError] = useState<string>();
   const [systemTimeZone, setSystemTimeZone] = useState(DEFAULT_TIME_ZONE);
   const [displayTimeZone, setDisplayTimeZone] = useState(DEFAULT_TIME_ZONE);
   const [displayTimeFormat, setDisplayTimeFormat] = useState(DEFAULT_TIME_FORMAT);
+  const [timeState, setTimeState] = useState<ProfileAuthorityState>('loading');
+  const [timeError, setTimeError] = useState<string>();
   const [savingTimeZone, setSavingTimeZone] = useState(false);
+  const [profileDirty, setProfileDirty] = useState(false);
+  const [profileBusy, setProfileBusy] = useState(false);
   const [publicProfile, setPublicProfile] = useState<PublicUserProfile | null>(null);
   const [loadingPublicProfile, setLoadingPublicProfile] = useState(false);
   const [followStatus, setFollowStatus] = useState<UserFollowStatus | null>(null);
   const [followLoading, setFollowLoading] = useState(false);
+
+  const selfServiceLocked = profileDirty || profileBusy;
+  useBrowserNavigationLock(selfServiceLocked);
+  useWindowCloseGuard(selfServiceLocked
+    ? t(profileBusy ? 'profile.navigation.busyConfirm' : 'profile.navigation.dirtyConfirm')
+    : null);
+
+  useEffect(() => {
+    if (!selfServiceLocked) {
+      return;
+    }
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [selfServiceLocked]);
 
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const viewingDisplayName = publicProfile
@@ -332,56 +304,109 @@ export const ProfileApp = () => {
     });
   };
 
-  useEffect(() => {
-    if (!loggedIn || !viewingUserId || !authenticatedUserId) {
+  const loadStats = useCallback(async () => {
+    if (!loggedIn || !viewingUserId) {
+      statsRef.current = null;
+      statsSnapshotKeyRef.current = '';
       setStats(null);
-      setLoadingStats(false);
+      setStatsState('unavailable');
       return;
     }
 
-    let cancelled = false;
-    const loadProfileContext = async () => {
-      setLoadingStats(true);
+    const snapshotKey = viewingUserIdKey;
+    const sameTarget = statsSnapshotKeyRef.current === snapshotKey;
+    const hadSnapshot = sameTarget && statsRef.current !== null;
+    const requestId = ++statsRequestIdRef.current;
+    if (!hadSnapshot) {
+      statsRef.current = null;
+      setStats(null);
+      setStatsState('loading');
+    }
+    setStatsError(undefined);
 
-      const [statsResult, timeStateResult] = await Promise.allSettled([
-        reuseInFlightRequest(
-          buildProfileRequestKey('profile-stats', apiBaseUrl, viewingUserIdKey),
-          () => fetchProfileStats(apiBaseUrl, viewingUserId)
-        ),
-        reuseInFlightRequest(
-          buildProfileRequestKey('profile-time-state', apiBaseUrl, authenticatedUserId),
-          () => fetchProfileTimeState()
-        )
-      ]);
-
-      if (cancelled) {
+    try {
+      const nextStats = await reuseInFlightRequest(
+        buildProfileRequestKey('profile-stats', apiBaseUrl, snapshotKey),
+        () => getUserStats(viewingUserId, t),
+      );
+      if (requestId !== statsRequestIdRef.current) {
         return;
       }
 
-      if (statsResult.status === 'fulfilled') {
-        setStats(statsResult.value);
-      } else {
-        setStats(null);
-        log.error('ProfileApp', '加载统计信息失败：', statsResult.reason);
+      statsSnapshotKeyRef.current = snapshotKey;
+      statsRef.current = nextStats;
+      setStats(nextStats);
+      setStatsState('ready');
+    } catch (error) {
+      if (requestId !== statsRequestIdRef.current) {
+        return;
       }
 
-      if (timeStateResult.status === 'fulfilled') {
-        setSystemTimeZone(timeStateResult.value.systemTimeZone);
-        setDisplayTimeZone(timeStateResult.value.displayTimeZone);
-        setDisplayTimeFormat(timeStateResult.value.displayTimeFormat);
-      } else {
-        log.error('ProfileApp', '加载时间配置失败：', timeStateResult.reason);
+      const errorMessage = error instanceof Error ? error.message : t('profile.authority.statsLoadFailed');
+      log.error('ProfileApp', '加载统计信息失败：', error);
+      setStatsError(errorMessage);
+      setStatsState(resolveFailedSnapshotState(hadSnapshot));
+    }
+  }, [apiBaseUrl, loggedIn, t, viewingUserId, viewingUserIdKey]);
+
+  const loadTimeState = useCallback(async () => {
+    if (!loggedIn || !authenticatedUserId) {
+      timeSnapshotRef.current = null;
+      timeSnapshotKeyRef.current = '';
+      setTimeState('unavailable');
+      return;
+    }
+
+    const snapshotKey = String(authenticatedUserId);
+    const sameTarget = timeSnapshotKeyRef.current === snapshotKey;
+    const hadSnapshot = sameTarget && timeSnapshotRef.current !== null;
+    const requestId = ++timeRequestIdRef.current;
+    if (!hadSnapshot) {
+      timeSnapshotRef.current = null;
+      setTimeState('loading');
+    }
+    setTimeError(undefined);
+
+    try {
+      const nextTimeState = await reuseInFlightRequest(
+        buildProfileRequestKey('profile-time-state', apiBaseUrl, snapshotKey),
+        fetchProfileTimeState,
+      );
+      if (requestId !== timeRequestIdRef.current) {
+        return;
       }
 
-      setLoadingStats(false);
-    };
+      timeSnapshotKeyRef.current = snapshotKey;
+      timeSnapshotRef.current = nextTimeState;
+      setSystemTimeZone(nextTimeState.systemTimeZone);
+      setDisplayTimeZone(nextTimeState.displayTimeZone);
+      setDisplayTimeFormat(nextTimeState.displayTimeFormat);
+      setTimeState('ready');
+    } catch (error) {
+      if (requestId !== timeRequestIdRef.current) {
+        return;
+      }
 
-    void loadProfileContext();
+      const errorMessage = error instanceof Error ? error.message : t('profile.authority.timeLoadFailed');
+      log.error('ProfileApp', '加载时间配置失败：', error);
+      setTimeError(errorMessage);
+      setTimeState(resolveFailedSnapshotState(hadSnapshot));
+    }
+  }, [apiBaseUrl, authenticatedUserId, loggedIn, t]);
 
+  useEffect(() => {
+    void loadStats();
     return () => {
-      cancelled = true;
+      statsRequestIdRef.current += 1;
     };
-  }, [apiBaseUrl, authenticatedUserId, loggedIn, viewingUserId, viewingUserIdKey]);
+  }, [loadStats]);
+
+  useEffect(() => {
+    void loadTimeState();
+    return () => {
+      timeRequestIdRef.current += 1;
+    };
+  }, [loadTimeState]);
 
   const handleTimeZoneChange = async (timeZoneId: string) => {
     const resolvedTimeZone = resolveTimeZoneId(timeZoneId, systemTimeZone);
@@ -392,9 +417,18 @@ export const ProfileApp = () => {
     setSavingTimeZone(true);
     try {
       const updatedPreference = await updateMyTimePreference(resolvedTimeZone);
-      const updatedDisplayTimeZone = resolveTimeZoneId(updatedPreference.voTimeZoneId, resolvedTimeZone);
-      setDisplayTimeZone(updatedDisplayTimeZone);
-      log.info('ProfileApp', `用户时区已切换为 ${updatedDisplayTimeZone}`);
+      const nextTimeState: ProfileTimeState = {
+        systemTimeZone: resolveTimeZoneId(updatedPreference.voSystemDefaultTimeZoneId, systemTimeZone),
+        displayTimeZone: resolveTimeZoneId(updatedPreference.voTimeZoneId, resolvedTimeZone),
+        displayTimeFormat: updatedPreference.voDisplayFormat?.trim() || displayTimeFormat,
+      };
+      timeSnapshotRef.current = nextTimeState;
+      setSystemTimeZone(nextTimeState.systemTimeZone);
+      setDisplayTimeZone(nextTimeState.displayTimeZone);
+      setDisplayTimeFormat(nextTimeState.displayTimeFormat);
+      setTimeState('ready');
+      setTimeError(undefined);
+      log.info('ProfileApp', `用户时区已切换为 ${nextTimeState.displayTimeZone}`);
     } catch (error) {
       log.error('ProfileApp', '保存用户时区偏好失败：', error);
       throw error;
@@ -402,6 +436,14 @@ export const ProfileApp = () => {
       setSavingTimeZone(false);
     }
   };
+
+  const handleProfileDirtyChange = useCallback((dirty: boolean) => {
+    setProfileDirty(dirty);
+  }, []);
+
+  const handleProfileBusyChange = useCallback((busy: boolean) => {
+    setProfileBusy(busy);
+  }, []);
 
   const handleToggleFollow = async () => {
     if (!loggedIn || isOwnProfile || !viewingUserId || followLoading) {
@@ -445,13 +487,20 @@ export const ProfileApp = () => {
             userId={authenticatedUserId!}
             userName={viewingDisplayName}
             stats={stats || undefined}
-            loading={loadingStats}
+            statsState={statsState}
+            statsError={statsError}
+            onRetryStats={() => void loadStats()}
+            timeState={timeState}
+            timeError={timeError}
+            onRetryTime={() => void loadTimeState()}
             apiBaseUrl={apiBaseUrl}
             displayTimeZone={displayTimeZone}
             systemTimeZone={systemTimeZone}
             displayTimeFormat={displayTimeFormat}
             savingTimeZone={savingTimeZone}
             onTimeZoneChange={handleTimeZoneChange}
+            onDirtyChange={handleProfileDirtyChange}
+            onBusyChange={handleProfileBusyChange}
           />
         ) : (
           <section className={styles.externalProfileCard}>
@@ -508,23 +557,23 @@ export const ProfileApp = () => {
             <div className={styles.externalStats}>
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:file-document-outline" size={18} />
-                <span>{t('profile.stats.postsLabel')} {loadingStats ? '--' : stats?.voPostCount ?? 0}</span>
+                <span>{t('profile.stats.postsLabel')} {statsState === 'ready' && stats ? stats.voPostCount : '--'}</span>
               </div>
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:comment-text-outline" size={18} />
-                <span>{t('profile.stats.commentsLabel')} {loadingStats ? '--' : stats?.voCommentCount ?? 0}</span>
+                <span>{t('profile.stats.commentsLabel')} {statsState === 'ready' && stats ? stats.voCommentCount : '--'}</span>
               </div>
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:heart-outline" size={18} />
-                <span>{t('profile.stats.likesLabel')} {loadingStats ? '--' : stats?.voTotalLikeCount ?? 0}</span>
+                <span>{t('profile.stats.likesLabel')} {statsState === 'ready' && stats ? stats.voTotalLikeCount : '--'}</span>
               </div>
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:account-heart-outline" size={18} />
-                <span>{t('profile.social.summary.followers')} {loadingPublicProfile ? '--' : followStatus?.voFollowerCount ?? 0}</span>
+                <span>{t('profile.social.summary.followers')} {loadingPublicProfile || !followStatus ? '--' : followStatus.voFollowerCount}</span>
               </div>
               <div className={styles.externalStatItem}>
                 <Icon icon="mdi:account-arrow-right-outline" size={18} />
-                <span>{t('profile.social.summary.following')} {loadingPublicProfile ? '--' : followStatus?.voFollowingCount ?? 0}</span>
+                <span>{t('profile.social.summary.following')} {loadingPublicProfile || !followStatus ? '--' : followStatus.voFollowingCount}</span>
               </div>
             </div>
           </section>

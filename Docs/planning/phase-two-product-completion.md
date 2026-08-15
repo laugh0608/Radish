@@ -4,7 +4,7 @@
 >
 > 最后更新：2026-05-25（Asia/Shanghai）
 >
-> 本页承载第二阶段从“多端路线验证”回到“产品功能补全”后的历史优先级、端侧分工和近期批次建议，不作为当前多端路线依据。当前投入顺位为 Web 优先、Flutter 次级，Tauri 暂时弃用；详见 [前端多壳层策略](/frontend/shell-strategy) 与 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)。
+> 本页承载第二阶段从“多端路线验证”回到“产品功能补全”后的历史优先级、端侧分工和近期批次建议，不作为当前多端路线依据。当前正式路线为 Web / Flutter Native 两条产品线，Tauri 已弃用；详见 [前端多壳层策略](/frontend/shell-strategy) 与 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation)。
 
 ## 背景判断
 

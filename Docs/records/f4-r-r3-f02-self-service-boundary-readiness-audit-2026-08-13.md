@@ -2,7 +2,7 @@
 
 > 日期：2026-08-13（Asia/Shanghai）
 >
-> 状态：代码事实审计、代表继承裁决与风险拆批已完成；`R3-F02-A OIDC 回流信任门禁` 已完成代码与静态门禁，下一步为 `R3-F02-B`
+> 状态：代码事实审计、A / B / C 实现与 [F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)均已完成，专题关闭
 >
 > 范围：Console Settings / Profile，Client / Console 登录与 OIDC 回流，Auth 登录回跳，Client / Console Not Found 与运行时错误边界；Flutter 只纳入共享 OIDC 协议兼容，不纳入本批视觉重构
 
@@ -198,4 +198,4 @@ Console 顶层 access denied 已有独立身份边界，但受权限保护的子
 - 不改写 idle 与 logout 的既有安全语义，不借回流修复增加隐式 end-session；
 - `SystemConfigStorageCoordinator.cs` 的三处既有 `DateTime.Now` 继续留在独立维护线。
 
-`R3-F02-A` 已按确认方案完成实现与静态测试，详见[实现记录](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)；Flutter `crypto 3.0.7` 依赖变更已单独授权。下一步等待确认 `R3-F02-B 自服务权威状态` 精确方案；最终真实 OIDC 与错误路由矩阵仍在 A / B / C 全部关闭后成组验收。
+`R3-F02-A` 已按确认方案完成实现与静态测试，详见[A 批实现记录](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)；Flutter `crypto 3.0.7` 依赖变更已单独授权。`R3-F02-B` 已关闭 Settings / Profile 权威状态，详见[B 批实现记录](/records/f4-r-r3-f02-b-self-service-authoritative-state-implementation-2026-08-15)。`R3-F02-C` 也已关闭两端错误与路由边界，详见[C 批实现记录](/records/f4-r-r3-f02-c-error-route-boundary-implementation-2026-08-15)。最终真实 OIDC、自服务和错误路由矩阵见[成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)；下一顺位进入 Web 主题基线与专题退出门禁审计。

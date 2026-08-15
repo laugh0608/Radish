@@ -15,7 +15,7 @@
 > - [前端设计](/frontend/design)
 > - [首版 dev 边界](/planning/dev-first-scope)
 >
-> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。`R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01` 的 PC / mobile、实现与运行态复核均已关闭；下一任务从 `R1-C02` 设计前门禁开始。全局灰玉 token 仍由共享主题批单独治理。
+> 当前阶段约束：Web 优先、Flutter Native 次级；WebOS `/desktop` 只兼容，Tauri 正式弃用。六个 R1、四个 R2、六组 Web R3、[T01 主题语义](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)、[T02 reduced-motion](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)与 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)均已关闭；Flutter readiness 与 P0 路线裁决已完成，后续按 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)独立建立 Dart 语义、代表设计和 compact / medium / expanded 页面族。
 
 ## 1. 设计目标
 
@@ -278,7 +278,7 @@ F4-R 已完成 A / B、C-0 与 C-1A。C-1B 已在 `radish-web-family-ui-v1.pen` 
 - 代表结构和共享契约确认后，先完成正式 Web 的共享基座，再按已复核页面族成组实现和真实截图验收。
 - Flutter 等 Web 基线稳定后，只承接有明确移动原生价值的路径，不机械复制 Web。
 - WebOS `/desktop` 只保持阻断级兼容，不作为新视觉组件或页面模板来源。
-- Tauri 暂时弃用，不进入视觉设计、实现、构建或验收范围。
+- Tauri 正式弃用，不进入视觉设计、实现、构建或验收范围。
 
 ## 8. 主题机制规范
 

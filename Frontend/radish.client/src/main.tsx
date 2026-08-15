@@ -8,6 +8,7 @@ import { applySiteBranding } from '@/services/siteBranding';
 import { ThemeProvider } from '@/theme/ThemeProvider';
 import { initializeTheme } from '@/theme/theme';
 import { BrowserAppRouter } from '@/bootstrap/BrowserAppRouter';
+import { ClientErrorBoundary } from '@/boundary/ClientErrorBoundary';
 import { LanguageProvider } from '@/i18n/LanguageProvider';
 import { getIntlLocale } from '@/locales/language';
 import i18n from './i18n';
@@ -74,10 +75,12 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <LanguageProvider>
       <ThemeProvider>
-        <Suspense fallback={<div className="appLoading">{i18n.t('desktop.appLoading')}</div>}>
-          <BrowserAppRouter />
-        </Suspense>
-        <ToastContainer />
+        <ClientErrorBoundary>
+          <Suspense fallback={<div className="appLoading">{i18n.t('desktop.appLoading')}</div>}>
+            <BrowserAppRouter />
+          </Suspense>
+          <ToastContainer />
+        </ClientErrorBoundary>
       </ThemeProvider>
     </LanguageProvider>
   </StrictMode>

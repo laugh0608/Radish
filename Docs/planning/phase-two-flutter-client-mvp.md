@@ -1,6 +1,6 @@
 # Phase 2-3 Flutter 客户端 MVP
 
-> 状态：Android MVP 第一轮已完成，第二阶段已归档；当前 Flutter 为次级移动原生产品线
+> 状态：Android MVP 第一轮已完成，第二阶段已归档；当前 Flutter Native 为次级原生安装包产品线
 >
 > 最后更新：2026-05-25（Asia/Shanghai）
 >
@@ -12,7 +12,7 @@
 > - [前端多壳层策略](/frontend/shell-strategy)
 > - [前端设计文档](/frontend/design)
 
-> 说明：本页保留 Flutter Android MVP 第一轮完成前后的历史批次口径，不作为当前多端路线依据。当前投入顺位为 Web 优先、Flutter 次级；Tauri 暂时弃用且不再绑定 WebOS。详见 [前端多壳层策略](/frontend/shell-strategy) 和 [当前进行中](/planning/current)。
+> 说明：本页保留 Flutter Android MVP 第一轮完成前后的历史批次口径，不作为当前多端路线依据。当前正式路线为 Web / Flutter Native 两条产品线，Tauri 已弃用；详见 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)、[前端多壳层策略](/frontend/shell-strategy)和[当前进行中](/planning/current)。
 
 ## 1. 目标
 
@@ -78,7 +78,7 @@ Flutter 客户端第一批固定遵循以下约束：
 1. 优先复用现有 API、认证契约与公开内容路由语义
 2. 不复刻 WebOS 窗口交互，不把桌面工作台直接搬进原生端
 3. 主题语义复用 Radish 品牌口径，但不强求与 Web 结构完全同形
-4. Android 跑通后，iOS 作为移动端单独评估；Windows / macOS / Linux 不作为 Flutter 默认扩平台目标，PC/Tauri 后续如重启应增强纯 Web，不再绑定 WebOS
+4. 本历史阶段只验证 Android，未生成 iOS / Windows / macOS / Linux 工程；现行路线在共享 UI 门禁后由 Flutter Native 分平台承接，Tauri 已弃用
 
 ## 6. 本批交付物
 
@@ -161,7 +161,7 @@ Flutter 客户端第一批固定遵循以下约束：
 2. 冻结新的低增益体验微调，不再默认继续追加第 `24` 批及以后 Flutter 小闭环
 3. 下一步先评估 Android 内测产品化深化、分发反馈闭环，或按 [多端客户端路线评估方案](/planning/multiplatform-client-route-evaluation) 评估纯 Web / Flutter 下一批主路径缺口
 4. 若后续暴露 `P0 / P1` 阻断，则只做定点修复，不回头扩完整通知中心、系统推送、发帖、完整评论提交、点赞、投票、编辑治理或 Flutter 专属 BFF
-5. Windows / macOS / Linux 不再作为 Flutter 默认扩平台方向；Tauri 当前暂时弃用，只有桌面原生价值、目标用户与维护预算同时明确后才重新评估，并单独定义批次
+5. 历史批次不生成 Windows / macOS / Linux 平台工程；现行路线由 Flutter Native 在共享 UI 与平台门禁后分平台承接桌面安装包，Tauri 正式弃用
 
 若 `Phase 2-3` 后续重新进入连续执行批次，且出现“同类展示组件持续在多个页面重复维护”或“除主应用外出现第二个明确 Flutter 消费方”这两类信号之一，则可把 **Flutter UI 组件库治理** 纳入候选，但当前不提升为默认下一事项：
 

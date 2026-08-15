@@ -26,6 +26,9 @@
   border-radius: 12px;
   cursor: pointer;
   transition: all 0.3s ease;
+  border: 0;
+  color: inherit;
+  font: inherit;
 }
 
 .avatarSection:hover {
@@ -36,6 +39,12 @@
   );
   transform: translateY(-2px);
   box-shadow: var(--theme-shadow-soft);
+}
+
+.avatarSection:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  transform: none;
 }
 
 .avatar {
@@ -105,6 +114,48 @@
   color: var(--theme-state-danger);
 }
 
+.authorityState {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid var(--theme-border-soft);
+  border-radius: 10px;
+  background: var(--theme-bg-surface-muted);
+  color: var(--theme-text-secondary);
+}
+
+.authorityState > div {
+  min-width: 0;
+}
+
+.authorityState strong,
+.authorityState span {
+  display: block;
+}
+
+.authorityState strong {
+  color: var(--theme-text-primary);
+}
+
+.authorityState span {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.authorityState_stale {
+  border-color: color-mix(in srgb, var(--theme-state-warning) 40%, var(--theme-border-soft) 60%);
+  background: color-mix(in srgb, var(--theme-state-warning) 8%, var(--theme-bg-surface) 92%);
+}
+
+.authorityState_unavailable {
+  border-color: color-mix(in srgb, var(--theme-state-danger) 36%, var(--theme-border-soft) 64%);
+}
+
 .profileMeta {
   margin-top: 8px;
   display: grid;
@@ -142,6 +193,15 @@
   color: var(--theme-state-danger);
   font-size: 14px;
   margin-top: 4px;
+}
+
+.dirtyNote {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--theme-state-warning) 35%, var(--theme-border-soft) 65%);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--theme-state-warning) 8%, var(--theme-bg-surface) 92%);
+  color: var(--theme-text-primary);
+  font-size: 13px;
 }
 
 .info {
@@ -226,5 +286,10 @@
 
   .stats {
     grid-template-columns: 1fr;
+  }
+
+  .authorityState {
+    align-items: stretch;
+    flex-direction: column;
   }
 }

@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Primitives;
 using OpenIddict.Abstractions;
 using OpenIddict.Server.AspNetCore;
 using Radish.Auth.Models;
@@ -106,7 +107,8 @@ public class AuthorizationController : Controller
                 ResponseType = request.ResponseType ?? string.Empty,
                 RedirectUri = request.RedirectUri ?? string.Empty,
                 RedirectHost = GetRedirectHost(request.RedirectUri),
-                State = request.State ?? string.Empty
+                State = request.State ?? string.Empty,
+                RequestParameters = CreateConsentRequestParameters(request)
             };
 
             return View("Consent", vm);
@@ -159,6 +161,34 @@ public class AuthorizationController : Controller
 
         // 由 OpenIddict 生成授权码等票据
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    }
+
+    private static IReadOnlyList<ConsentRequestParameter> CreateConsentRequestParameters(
+        OpenIddictRequest request)
+    {
+        var parameters = new List<ConsentRequestParameter>();
+
+        foreach (var (name, parameter) in request.GetParameters())
+        {
+            if (string.Equals(name, "decision", StringComparison.Ordinal) ||
+                string.Equals(name, "__RequestVerificationToken", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var values = (StringValues?)parameter;
+            if (values is not { } stringValues)
+            {
+                continue;
+            }
+
+            foreach (var value in stringValues)
+            {
+                parameters.Add(new ConsentRequestParameter(name, value ?? string.Empty));
+            }
+        }
+
+        return parameters;
     }
 
     /// <summary>

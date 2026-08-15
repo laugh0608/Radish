@@ -23,6 +23,13 @@ test('主题注册表应同时包含内建主题与正式权益资源', () => {
   assert.deepEqual(entitlementThemeIds, ['theme-dark-night', 'theme-sakura']);
   assert.equal(themeDefinitions['theme-dark-night'].colorScheme, 'dark');
   assert.equal(themeDefinitions['theme-sakura'].access, 'entitlement');
+  assert.equal(themeDefinitions.default.themeConfig.token.colorPrimary, '#435c74');
+  assert.equal(themeDefinitions.guofeng.themeConfig.token.colorPrimary, '#435c74');
+  assert.equal(themeDefinitions.guofeng.themeConfig.token.colorPrimaryHover, '#55738f');
+  assert.equal(themeDefinitions.guofeng.themeConfig.token.colorLink, '#435c74');
+  assert.equal(themeDefinitions['theme-dark-night'].themeConfig.token.colorPrimary, '#8bb9ca');
+  assert.equal(themeDefinitions['theme-sakura'].themeConfig.token.colorPrimary, '#596f88');
+  assert.equal(themeDefinitions['theme-sakura'].themeConfig.token.colorLinkHover, '#6c839d');
   assert.equal(themeDefinitions.guofeng.themeConfig.token.colorWarning, '#b5826d');
   assert.equal(themeDefinitions.guofeng.themeConfig.token.colorError, '#c3564d');
   assert.equal(themeDefinitions['theme-dark-night'].themeConfig.token.colorInfo, '#8bb9ca');
@@ -92,13 +99,38 @@ test('family-ui token 副本与 Client L2 应保持可追溯关系', () => {
   assert.match(clientTokens, /--theme-text-on-brand:\s*var\(--rd-text-on-brand\)/);
   assert.match(clientTokens, /--theme-text-on-accent:\s*var\(--rd-text-on-accent\)/);
   assert.match(clientTokens, /--theme-text-inverse:\s*var\(--theme-text-on-accent\)/);
+  assert.match(clientTokens, /--theme-brand-hover:\s*var\(--rd-brand-hover\)/);
+  assert.match(clientTokens, /--theme-action-hover:\s*var\(--rd-action-hover\)/);
+  assert.match(clientTokens, /--theme-link-primary:\s*var\(--theme-action-primary\)/);
+  assert.match(clientTokens, /--theme-link-hover:\s*var\(--theme-action-hover\)/);
   assert.match(clientTokens, /--theme-state-danger:\s*var\(--rd-state-danger\)/);
+  assert.match(clientTokens, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(clientTokens, /--theme-transition-standard:\s*0ms/);
+  assert.match(clientTokens, /animation-delay:\s*0ms !important/);
+  assert.match(clientTokens, /animation-duration:\s*0\.01ms !important/);
+  assert.match(clientTokens, /animation-iteration-count:\s*1 !important/);
+  assert.match(clientTokens, /scroll-behavior:\s*auto !important/);
+  assert.match(clientTokens, /transition-delay:\s*0ms !important/);
+  assert.match(clientTokens, /transition-duration:\s*0\.01ms !important/);
+  assert.doesNotMatch(clientTokens, /display:\s*none !important/);
+  assert.doesNotMatch(clientTokens, /visibility:\s*hidden !important/);
   assert.match(
     clientTokens,
-    /:root,\s*:root\[data-theme='guofeng'\]\s*\{[\s\S]*?--rd-text-on-brand:\s*#fffdf8;[\s\S]*?--rd-brand-primary:\s*#b24057;/,
+    /:root,\s*:root\[data-theme='guofeng'\]\s*\{[\s\S]*?--rd-text-on-brand:\s*#fffdf8;[\s\S]*?--rd-brand-primary:\s*#5d6c57;[\s\S]*?--rd-brand-hover:\s*#6e736d;[\s\S]*?--rd-brand-soft:\s*#e2e6de;/,
   );
   assert.match(
     clientTokens,
     /:root\[data-theme='theme-dark-night'\]\s*\{[\s\S]*?--rd-text-on-brand:\s*#0f171d;/,
   );
+
+  const themeSwitcher = readFileSync(
+    resolve(clientRoot, 'src/theme/ThemeSwitcher.module.css'),
+    'utf8',
+  );
+  assert.match(
+    themeSwitcher,
+    /\.swatch\[data-theme-preview='guofeng'\][\s\S]*?linear-gradient\(135deg, #5d6c57/,
+  );
+  assert.doesNotMatch(clientTokens, /#b24057|#cd5076|rgba\(178, 64, 87/);
+  assert.doesNotMatch(themeSwitcher, /#b24057/);
 });

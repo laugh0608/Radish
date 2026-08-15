@@ -6,10 +6,10 @@
 
 - 根目录 `version.json` 是唯一允许人工决定产品版本的位置。
 - .NET、npm workspaces、Rust 扩展、Tauri 与 Flutter 均跟随同一个 Radish 日历版本。
-- Flutter 的商店构建号独立递增，但展示版本仍跟随产品版本，例如 `26.7.1+1`。
+- Flutter 的商店构建号独立递增，但展示版本仍跟随产品版本，例如 `26.8.1+1`。
 - Git tag 的环境后缀只表示发布轨道，不改变产品版本。
 - `Version Contract` 会阻止源码、lockfile、tag、镜像和正式发布记录不一致。
-- 当前产品版本为 `26.7.1`；最近生产部署使用固定扩展 tag `v26.7.1.1204-release`。扩展 tag 不改变源码产品版本。
+- 当前源码产品版本为 `26.8.1`；最近生产部署仍使用固定扩展 tag `v26.7.1.1204-release`。候选版本不代表已经创建 tag 或完成部署。
 
 ## 单一真值
 
@@ -18,7 +18,7 @@
 ```json
 {
   "schemaVersion": 1,
-  "productVersion": "26.7.1",
+  "productVersion": "26.8.1",
   "flutterBuildNumber": 1
 }
 ```

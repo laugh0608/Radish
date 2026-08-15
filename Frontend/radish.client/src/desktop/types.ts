@@ -65,6 +65,8 @@ export interface WindowState {
   prevPosition?: { x: number; y: number };
   /** 最大化前的窗口大小（用于恢复） */
   prevSize?: { width: number; height: number };
+  /** 关闭窗口前需要展示的未保存变更提示 */
+  closeConfirmMessage?: string;
 }
 
 /**

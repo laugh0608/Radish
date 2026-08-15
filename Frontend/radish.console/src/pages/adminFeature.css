@@ -46,6 +46,49 @@
   line-height: 1.6;
 }
 
+.self-service-authority {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-panel);
+  background: var(--console-bg-muted);
+  color: var(--console-text-secondary);
+}
+
+.self-service-authority > div {
+  min-width: 0;
+}
+
+.self-service-authority strong,
+.self-service-authority span {
+  display: block;
+}
+
+.self-service-authority strong {
+  color: var(--console-text-primary);
+}
+
+.self-service-authority span {
+  margin-top: 4px;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.self-service-authority--stale,
+.self-service-authority--dirty {
+  border-color: var(--console-warning-border);
+  background: var(--console-warning-bg);
+  color: var(--console-warning-text);
+}
+
+.self-service-authority--unavailable {
+  border-color: var(--console-danger-border);
+}
+
 .governance-task-flow {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -701,6 +744,11 @@
 
   .admin-feature-header {
     align-items: flex-start;
+  }
+
+  .self-service-authority {
+    align-items: stretch;
+    flex-direction: column;
   }
 
   .admin-feature-header > .ant-space {

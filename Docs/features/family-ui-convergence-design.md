@@ -1,8 +1,8 @@
 # F4-R 家族 UI 统一接入与产品视觉重构
 
-> 日期：2026-07-30；2026-08-13 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-15 更新（Asia/Shanghai）
 >
-> 状态：A / B、v26.7.3 基线补充、C-0、C-1A、六个 R1、四个 R2、三个 Public R3、R3-C04 六批、R3-C05 四批与 R3-F02-A 均已关闭；下一顺位为 `R3-F02-B 自服务权威状态`
+> 状态：Web 页面族与主题退出门禁均已关闭；Flutter readiness 审计和 [Native 产品化 / UI 专题](/features/flutter-native-product-ui-design) P0 已完成，下一顺位为 Flutter P1 全页面事实审计
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
@@ -20,7 +20,7 @@ F4-R 将 Radish 现有 `--theme-*`、`--rx-*`、`--console-*`、共享 Ant Desig
 4. 通过 Pencil 确认共享基座和主要页面，由相似页面继承后直接实现；
 5. 最后成组实现和验收 Public、Private / Author、Console 与 Flutter 代表路径。
 
-Web 是正式优先主线，Flutter 是次级移动原生产品线；WebOS `/desktop` 只兼容，Tauri 暂时弃用并等待未来重新评估。
+Web 是正式优先主线，Flutter Native 是次级原生安装包产品线，mobile-first、desktop stage-gated；WebOS `/desktop` 只兼容，Tauri 正式弃用。
 
 ## 1. 背景与问题
 
@@ -38,20 +38,20 @@ family-ui 与 Radish 现有纸币色板高度同源，适合成为通用语义�
 ### 2.1 多端顺位
 
 1. Web 覆盖 PC / mobile 浏览器，是功能、视觉和验收的第一顺位。
-2. Flutter 作为次级移动原生产品线继续发展；新能力先确认 Web 产品边界，再判断原生价值和 Flutter 承接范围。
+2. Flutter Native 作为次级原生安装包产品线继续发展，目标覆盖 Android / iOS / Windows / macOS / Linux；新能力先确认 Web 产品边界，再判断原生价值，移动优先、桌面分阶段产品化。
 3. WebOS `/desktop` 只保留历史兼容和旧深链，不承接本轮视觉重构。
-4. Tauri 暂时弃用：
+4. Tauri 正式弃用：
    - 保留仓库中的历史验证资产；
    - 不继续功能、UI、签名、更新、分发和专属兼容开发；
    - 不进入日常 CI、发布或 family-ui 验收矩阵；
-   - 未来只有明确桌面原生价值、目标用户和维护预算同时成立时，才重新评估，而不是自动解冻。
+   - 不在当前路线中设置自动解冻或重新评估节点；桌面原生安装包由 Flutter Native 承接。
 
 ### 2.2 产品形态
 
 - Public 继续是内容优先社区，不建立营销式首页。
 - Private / Author 继续使用正式 Web 工作流，不回退到 WebOS 窗口心智。
 - Console 继续是治理工作台，不把所有页面统一成卡片 Dashboard。
-- Flutter 共享任务归属、命名、状态语义和视觉气质，但采用移动原生布局与组件。
+- Flutter 共享任务归属、命名、状态语义和视觉气质，但采用 compact / medium / expanded 原生布局与组件；不提供 Flutter Web。
 
 ## 3. 目标
 
@@ -173,8 +173,8 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 ### 8.4 Flutter
 
 - 共享配色语义、状态语义、字体层级和图标方向。
-- 保留原生导航、触控目标、安全区、Android Back 和系统生命周期。
-- Web 页面族完成并稳定后，再为 Flutter 建立 Dart 语义映射；不直接解析 CSS。
+- 保留原生导航、触控目标、安全区、Android Back、桌面键鼠 / 焦点 / 窗口和系统生命周期。
+- readiness 审计已确认现有固定亮色 `ThemeData` 缺少四主题状态、持久化与 `ThemeExtension`；后续以 [Flutter Native 专题](/features/flutter-native-product-ui-design)为实施真相源，不直接解析 CSS，也不建立第二套主题权益状态机。
 
 ## 9. 参考素材与设计源
 
@@ -206,7 +206,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
-同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次形成闭环。三个 Public R3、R3-C04 六批与 R3-C05 四批也已完成；[R3-F02 设计前审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)确认 Settings / Profile 继续继承 `R1-C01 + R2-C03`，身份与错误边界继续继承 `R1-F01`，不需要修改 Pencil。[R3-F02-A OIDC 回流信任门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)已完成代码与静态门禁，下一步收口自服务权威状态。
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次形成闭环。三个 Public R3、R3-C04 六批、R3-C05 四批与 `R3-F02-A / B / C` 也已完成；[R3-F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)确认 Settings / Profile、身份、OIDC 与错误边界的继承成立，没有新增 Pencil 页面范式。正式 Web 页面族至此完成；[Web 主题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)拆出的 T01 主题语义、T02 reduced-motion 与 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)均已关闭；Flutter readiness 审计与 P0 路线裁决随后完成，下一步进入全页面事实审计与代表类型分级。
 
 ### 9.2 设计源
 
@@ -228,7 +228,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 ### F4-R-A：设计与治理基线
 
-- 更新多端路线：Web 优先、Flutter 次级、Tauri 暂时弃用。
+- 更新多端路线：Web 优先、Flutter Native 次级、Tauri 正式弃用。
 - 建立本专题与 UI 差异附录。
 - 固定 Profile、四主题、Token 分层和停止线。
 - 盘点上游接入表与当前代码差异。
@@ -262,8 +262,8 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 - Public 页面族。
 - Private / Author 页面族。
 - Console 页面族。
-- R3 页面按代表画板继承说明成组实现；[当前正式路由分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定六组顺位。前五组已关闭，[R3-F02 审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)拆出的 A OIDC 回流信任也已关闭，下一步为 B 自服务权威状态、C 错误与路由边界；不新增 Pencil，若实施暴露新结构或响应式模型再升级为 R1 / R2。
-- Web 基线稳定后建立 Flutter 语义映射和高价值代表页。
+- R3 页面按代表画板继承说明成组实现；[正式路由分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定的六组顺位及后续 Gateway 验收已经全部关闭，没有新增 Pencil 页面范式。
+- Web 基线已经稳定；Flutter readiness 与 P0 路线裁决已完成，下一批按 [Flutter Native 专题](/features/flutter-native-product-ui-design)执行 P1 全页面事实审计和代表类型分级。
 - WebOS 只做兼容回归；Tauri 不进入矩阵。
 
 退出条件：四主题、双语、PC / mobile、reduced-motion、构建与专题运行态矩阵通过。
@@ -307,7 +307,7 @@ F4-R 负责建立并落地 Radish 新的家族 UI 基线。此后视觉重构默
 | Public 被改成营销页 | 内容首屏和现有信息架构列入停止线 |
 | Console 与 Client 再次分叉 | 状态语义和 Ant Design 配置从共享层治理 |
 | Flutter 机械复制 Web | 共享语义，布局和组件保持原生自治 |
-| WebOS / Tauri 消耗主线 | WebOS 只兼容；Tauri 暂时弃用且不进入门禁 |
+| WebOS / Tauri 消耗主线 | WebOS 只兼容；Tauri 正式弃用且不进入门禁 |
 | 上游规范与当前代码事实错位 | 上游只提供通用规则，迁移表按当前代码重新审计 |
 | Pencil 页面镜像过大且快速过期 | 只维护代表视觉契约；功能与文案服从文档和代码，派生页用真实截图复核 |
 
@@ -320,5 +320,5 @@ F4-R 只有同时满足以下条件才关闭：
 3. 新共享样式不再新增无归属硬编码颜色。
 4. Public、Private / Author、Console 的代表类型完成必要 Pencil 与代码收敛，派生页继承关系和真实截图复核可追溯。
 5. Flutter 建立可维护的语义映射，不要求 Web 像素复制。
-6. WebOS 不回归，Tauri 没有被重新引入开发或门禁。
+6. WebOS 不回归，Tauri 保持正式弃用且没有进入开发或门禁。
 7. PC / mobile、双语、四主题、可访问性和 reduced-motion 验收通过。

@@ -68,7 +68,7 @@
 - 网关：`Radish.Gateway`，统一门户与 API 网关
 - 认证：`Radish.Auth`，基于 OpenIddict 的 OIDC 认证服务器
 - 前端：React 19 + Vite（Rolldown） + TypeScript，Web 为正式优先主线，WebOS 仅保留 `/desktop` 历史入口
-- 多端口径：Flutter 是次级移动原生产品线，按明确移动价值推进；`Clients/radish-tauri` 暂时弃用并保留历史验证资产，未来等待重新评估
+- 多端口径：只保留 Web / Flutter Native 两条正式产品线；Web 优先覆盖 PC / mobile 浏览器，Flutter 次级覆盖原生 PC / mobile 安装包并按 mobile-first、desktop stage-gated 推进；Tauri 正式弃用并只保留历史资产
 - UI 组件库：`@radish/ui`，基于 npm workspaces 的共享组件库
 - HTTP 客户端：`@radish/http`，统一 API 客户端与相关类型封装
 - Rust 扩展：`Lib/radish.lib/`
@@ -127,8 +127,8 @@
 
 ### 客户端
 
-- `Clients/radish.flutter`：Flutter Android / iOS 移动原生安装包路线
-- `Clients/radish-tauri`：暂时弃用的 Tauri 桌面验证资产，未来重新评估时默认复用正式 Web
+- `Clients/radish.flutter`：Flutter Native 原生安装包路线，长期覆盖 Android / iOS / Windows / macOS / Linux；当前只有 Android 平台工程，Flutter Web 不进入路线
+- `Clients/radish-tauri`：正式弃用的 Tauri 桌面验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁
 
 ## 环境与命令
 

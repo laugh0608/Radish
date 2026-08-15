@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from 'react';
+import { Result } from '@radish/ui';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import { AdminLayout } from '../components/AdminLayout';
 import { ClientBackLink } from '../components/ClientBackLink';
@@ -10,15 +11,18 @@ import './routerComponents.css';
 import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 
-function ConsoleAccessDenied() {
+export function ConsoleAccessDenied() {
   const { t } = useTranslation();
   useDocumentTitle(t('console.auth.deniedTitle'));
 
   return (
-    <div className="console-route-state console-route-state--permission">
-      <h2>{t('console.auth.deniedTitle')}</h2>
-      <p>{t('console.auth.deniedDescription')}</p>
-      <ClientBackLink />
+    <div className="console-route-state console-route-state--result console-route-state--permission">
+      <Result
+        status="403"
+        title={t('console.auth.deniedTitle')}
+        subTitle={t('console.auth.deniedDescription')}
+        extra={<ClientBackLink />}
+      />
     </div>
   );
 }

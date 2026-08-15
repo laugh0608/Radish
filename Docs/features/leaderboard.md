@@ -194,7 +194,7 @@ PrimaryValue DESC, StableEntityId ASC
 
 - WebOS `/desktop` 榜单应用只消费服务端公开类型，不保留敏感类型静态入口；
 - WebOS 不在本专题增加新功能或新布局；
-- Tauri 暂时弃用，不进入开发、CI、发布或验收门禁。
+- Tauri 正式弃用，不进入开发、CI、发布或验收门禁。
 
 ## 9. 实现边界
 

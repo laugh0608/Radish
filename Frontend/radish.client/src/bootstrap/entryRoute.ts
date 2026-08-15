@@ -26,7 +26,8 @@ export type BrowserEntryKind =
   | 'docs-author'
   | 'workbench'
   | 'public'
-  | 'root';
+  | 'desktop'
+  | 'not-found';
 
 export type RadishUiProfile = 'brand' | 'workbench';
 
@@ -67,6 +68,10 @@ export function isPublicContentPathname(pathname: string): boolean {
     || pathname === '/__documents__'
     || pathname.startsWith('/__documents__/')
   );
+}
+
+export function isDesktopPathname(pathname: string): boolean {
+  return pathname === TAURI_DESKTOP_ENTRY_PATH || pathname === `${TAURI_DESKTOP_ENTRY_PATH}/`;
 }
 
 export function resolveBrowserEntryKind(pathname: string): BrowserEntryKind {
@@ -110,11 +115,17 @@ export function resolveBrowserEntryKind(pathname: string): BrowserEntryKind {
     return 'public';
   }
 
-  return 'root';
+  if (isDesktopPathname(pathname)) {
+    return 'desktop';
+  }
+
+  return 'not-found';
 }
 
 export function resolveBrowserEntryProfile(entryKind: BrowserEntryKind): RadishUiProfile {
-  return entryKind === 'public' || entryKind === 'root' ? 'brand' : 'workbench';
+  return entryKind === 'public' || entryKind === 'desktop' || entryKind === 'not-found'
+    ? 'brand'
+    : 'workbench';
 }
 
 export { isCirclePathname, isMessagesPathname, isNotificationsPathname };

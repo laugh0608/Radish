@@ -629,13 +629,13 @@ Android MVP 本地 release APK 发布候选当前已完成首轮收口。涉及 
 - 真实 `android/key.properties`、`.jks` 与 `.keystore` 不进入版本库
 - 真机通过 `adb reverse tcp:5000 tcp:5000` 访问本机 Gateway 时，登录、基础读取与关键样式显示正常
 
-## Tauri 暂时弃用资产验证边界
+## Tauri 正式弃用资产验证边界
 
-Tauri 当前暂时弃用，不进入开发、UI、候选 CI 必需矩阵、签名、分发或验收门禁，也不再默认绑定 WebOS。历史 Tauri + WebOS 桌面壳验证已经成立，但只作为验证资产保留；只有桌面原生价值、目标用户和维护预算同时明确后才重新评估，并以 Tauri 增强正式 Web 体验重新定义默认入口、验收范围和分发材料。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
+Tauri 已正式弃用，不进入开发、UI、候选 CI 必需矩阵、构建、签名、分发或验收门禁，也不再绑定 WebOS。历史 Tauri + WebOS 桌面壳验证只作为验证资产保留，不构成重启条件；长期桌面安装包由 Flutter Native 在共享 UI 与平台门禁后承接。`/desktop` 仅作为 WebOS 保留入口，`/docs` 只作为公开内容壳层和早期 spike 样例。
 
-只有改动实际触达 `Clients/radish-tauri`、Tauri 配置、`Frontend/radish.client/src/platform/tauriBridge.ts`、桌面 OIDC 回跳、deep link 或历史 Tauri + WebOS 验证路径时，才补 `npm run type-check --workspace=radish.client`、`npm run test --workspace=radish.client`、`npm run build --workspace=radish.client` 与 `cargo build`；涉及 release exe 时补 `cargo build --release`，涉及 installer bundle 时补 `cargo tauri build`。单纯修改纯 Web 或 WebOS `/desktop` 不要求追加 Tauri 构建。
+Tauri 历史目录和专属桥接默认不再修改。若因安全或仓库卫生需要明确维护历史资产，验证范围由该任务单独裁决；既有 `radish.client` type-check / test / build、`cargo build`、release 与 installer 命令只作历史参考，不恢复为日常或候选门禁。单纯修改纯 Web、Flutter 或 WebOS `/desktop` 不要求追加 Tauri 构建。
 
-历史 Tauri + WebOS 验证已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 loopback 回跳、Windows NSIS installer 构建、安装、启动、卸载与覆盖安装人工验收；release 命令行窗口问题也已修复。候选身份、安装权限差异、SmartScreen、签名、自动更新、托盘、菜单、协议注册和正式分发体积等细节只作为历史验证事实保留；若 Tauri 未来解冻，再按纯 Web 增强壳重新补验，不把历史结果当作现行发布结论。
+历史 Tauri + WebOS 验证已通过 GUI 启动、WebOS 桌面布局、窗口生命周期观察、系统浏览器登录 / 登出 loopback 回跳、Windows NSIS installer 构建、安装、启动、卸载与覆盖安装人工验收；release 命令行窗口问题也已修复。候选身份、安装权限差异、SmartScreen、签名、自动更新、托盘、菜单、协议注册和正式分发体积等细节只作为历史验证事实保留，不把历史结果当作现行发布结论。
 
 ## 受限环境说明
 

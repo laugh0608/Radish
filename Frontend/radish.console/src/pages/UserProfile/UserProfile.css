@@ -51,6 +51,14 @@
 }
 
 @media (max-width: 768px) {
+  .user-profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .user-profile-primary-task {
+    order: -1;
+  }
+
   .profile-heading {
     flex-direction: column;
     align-items: flex-start;

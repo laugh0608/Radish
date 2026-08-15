@@ -1,6 +1,9 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigate, useLocation } from 'react-router';
+import { AntButton, Result } from '@radish/ui';
+import { Navigate, useLocation, useNavigate } from 'react-router';
+import { ClientBackLink } from '@/components/ClientBackLink';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { useUser } from '@/hooks/useUser';
 import {
   canAccessConsoleRoute,
@@ -13,13 +16,48 @@ interface RouteGuardProps {
   route: ConsoleRouteMeta;
 }
 
+interface RoutePermissionDeniedProps {
+  fallbackPath: string;
+  routeTitle: string;
+}
+
+function RoutePermissionDenied({ fallbackPath, routeTitle }: RoutePermissionDeniedProps) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  useDocumentTitle(t('console.guard.deniedDocumentTitle'));
+
+  return (
+    <div className="console-route-state console-route-state--result console-route-state--permission">
+      <Result
+        status="403"
+        title={t('console.guard.deniedTitle', { title: routeTitle })}
+        subTitle={t('console.guard.deniedDescription')}
+        extra={[
+          <AntButton
+            key="available"
+            type="primary"
+            onClick={() => navigate(fallbackPath, { replace: true })}
+          >
+            {t('console.guard.openAvailable')}
+          </AntButton>,
+          <ClientBackLink key="client" />,
+        ]}
+      />
+    </div>
+  );
+}
+
 export function RouteGuard({ children, route }: RouteGuardProps) {
   const { t } = useTranslation();
   const location = useLocation();
   const { user, loading } = useUser();
 
   if (loading) {
-    return <div style={{ padding: '24px' }}>{t('console.guard.checking')}</div>;
+    return (
+      <div className="console-route-state console-route-state--loading" role="status">
+        {t('console.guard.checking')}
+      </div>
+    );
   }
 
   if (!user) {
@@ -40,13 +78,8 @@ export function RouteGuard({ children, route }: RouteGuardProps) {
 
   if (!canAccessConsoleRoute(route, user)) {
     const fallbackPath = getDefaultAuthorizedPath(user);
-
-    if (fallbackPath !== location.pathname) {
-      return <Navigate to={fallbackPath} replace />;
-    }
-
     const routeTitle = t(`console.route.${route.key}`, { defaultValue: route.title });
-    return <div style={{ padding: '24px' }}>{t('console.guard.denied', { title: routeTitle })}</div>;
+    return <RoutePermissionDenied fallbackPath={fallbackPath} routeTitle={routeTitle} />;
   }
 
   return <>{children}</>;

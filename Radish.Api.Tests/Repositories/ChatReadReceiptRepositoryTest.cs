@@ -185,8 +185,6 @@ public sealed class ChatReadReceiptRepositoryTest
         {
             var connectionString = $"{adminConnectionString!.Trim().TrimEnd(';')};Search Path={schema};Pooling=false";
             using var setupDb = CreatePostgreSqlScope(connectionString);
-            using var firstDb = CreatePostgreSqlScope(connectionString);
-            using var secondDb = CreatePostgreSqlScope(connectionString);
             var chatDb = setupDb.GetConnectionScope("chat");
             chatDb.CodeFirst.InitTables<ChannelMember>();
             using var services = new ServiceCollection().BuildServiceProvider();
@@ -195,14 +193,28 @@ public sealed class ChatReadReceiptRepositoryTest
                 "SELECT indexname FROM pg_indexes WHERE schemaname = current_schema()");
             Assert.Contains("idx_channel_member_channel_user", indexNames);
 
-            var results = await Task.WhenAll(
-                CreateRepository(firstDb).AdvanceAsync(CreateCommand(20001, 100, true)),
-                CreateRepository(secondDb).AdvanceAsync(CreateCommand(20001, 200, true)));
+            var targets = Enumerable.Range(1, 8).Select(index => index * 100L).ToList();
+            var concurrentScopes = targets
+                .Select(_ => CreatePostgreSqlScope(connectionString))
+                .ToList();
+            try
+            {
+                var results = await Task.WhenAll(targets.Select((target, index) =>
+                    CreateRepository(concurrentScopes[index])
+                        .AdvanceAsync(CreateCommand(20001, target, true))));
 
-            Assert.All(results, result => Assert.True(result.LastReadMessageId is 100 or 200));
-            var members = chatDb.Queryable<ChannelMember>().ToList();
-            Assert.Single(members);
-            Assert.Equal(200, members[0].LastReadMessageId);
+                Assert.All(results, result => Assert.Contains(result.LastReadMessageId, targets));
+                var members = chatDb.Queryable<ChannelMember>().ToList();
+                Assert.Single(members);
+                Assert.Equal(targets[^1], members[0].LastReadMessageId);
+            }
+            finally
+            {
+                foreach (var concurrentScope in concurrentScopes)
+                {
+                    concurrentScope.Dispose();
+                }
+            }
         }
         finally
         {

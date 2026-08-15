@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：`2026-08-03` 完成 v26.7.3 破坏性基线升级补充批与 `R1-F01`；`2026-08-04` 已确认 `R1-P01 / 社区发现 / PC 1440`，下一步独立设计 mobile 与统一公开读模型，暂不进入共享主题色与 `/discover` 实现。
+> 状态：Web 页面族与主题退出门禁已关闭；Flutter readiness 审计和 [Native 产品化 / UI 专题](/features/flutter-native-product-ui-design) P0 已完成，下一顺位为 Flutter P1 全页面事实审计。
 
 ## 1. 真相源与优先级
 
@@ -21,11 +21,11 @@ Radish 采用“家族通用规范 + 项目差异附录”的分层方式：
 | 端 | 当前定位 | UI 投入 |
 | --- | --- | --- |
 | Web | 正式产品优先主线，覆盖 PC / mobile 浏览器、Public、Private、Author 与 Console | family-ui 首要接入与验收对象 |
-| Flutter | 次级移动原生产品线，复用同一语义、任务归属和视觉气质；不要求与 Web 像素级一致 | Web 基线稳定后按高价值移动路径推进 |
+| Flutter Native | 次级原生安装包产品线，目标覆盖 Android / iOS / Windows / macOS / Linux；mobile-first、desktop stage-gated | 共享语义和产品气质，按 compact / medium / expanded 独立设计，不与 Web 像素级一致 |
 | WebOS `/desktop` | 历史兼容入口 | 只保持阻断级兼容，不进入视觉重构范围 |
-| Tauri | 暂时弃用，保留历史验证资产，未来等待重新评估 | 不开发、不发布、不进入 UI、CI 或验收门禁 |
+| Tauri | 正式弃用，只保留历史代码与验证资产 | 不开发、不发布、不进入 UI、CI、构建或验收门禁 |
 
-“Flutter 次级产品线”不等于机械追平 Web。新能力先在 Web 建立完整产品边界；具备明确移动价值时，Flutter再按原生导航、触控、生命周期和系统能力独立设计。
+“Flutter 次级产品线”不等于机械追平 Web。新能力先在 Web 建立完整产品边界；具备明确原生价值时，Flutter 再按移动触控或桌面键鼠 / 窗口模型独立设计。Flutter Web、Console、SEO 与完整 Author 不进入默认承接范围。
 
 ## 3. Profile 分配
 
@@ -35,7 +35,7 @@ Radish 采用“家族通用规范 + 项目差异附录”的分层方式：
 | Public 欢迎、空态、About、轻量引导 | Brand | 可使用较完整的纸感、Mascot、轻纹样和较大留白 |
 | Private、Author、`/workbench` | Workbench | 保持任务密度、来源返回、状态槽和移动单列工作流 |
 | Console | Workbench | 高密度表格、治理队列、证据和权限语义优先 |
-| Flutter | Workbench 的移动原生变体 | 共享 L1 语义和状态规则；组件形态由 Flutter 原生端自治 |
+| Flutter Native | Workbench 的自适应原生变体 | 共享 L1 语义和状态规则；compact / medium / expanded 的导航、布局和组件形态由 Flutter 自治 |
 | WebOS `/desktop` | 兼容资产 | 不要求重新接入 family-ui，只阻止新视觉体系继续分叉 |
 
 Radish 全部产品表面的标题只表达真实页面、对象或任务名称。标题上方禁止出现装饰性眉题，包括英文大写栏目名、中文分类词、路由 / 阶段 / 编号标签和主标题的同义复述；标题下方禁止出现仅用于解释标题、同义复述或营造氛围的描述性副标题。允许一行不可被标题替代的真实任务或内容范围说明，但必须直接帮助用户判断“这里有什么 / 下一步做什么”。标题旁只保留真实状态、数量、时间、来源、权限和可执行动作。
@@ -47,7 +47,7 @@ Radish 已发布的四主题是产品与商城权益契约，继续保留：
 | 主题 ID | 类型 | family-ui 映射 |
 | --- | --- | --- |
 | `default` | 内建 light | 使用 `--rd-*` 语义的中性青灰项目取值 |
-| `guofeng` | 内建 light | `R1-P01` 目标改为低饱和灰玉品牌；纸色、墨色和状态语义沿用 family-ui 亮色基线，当前运行时旧胭脂值待实现批替换 |
+| `guofeng` | 内建 light | 使用低饱和灰玉品牌；纸色、墨色和状态语义沿用 family-ui 亮色基线，常规操作继续使用墨蓝 action |
 | `theme-dark-night` | 权益 dark | 使用 `--rd-*` 暗色语义并保留暗夜主题身份 |
 | `theme-sakura` | 权益 light | 使用 `--rd-*` 语义的樱花项目取值 |
 
@@ -81,11 +81,11 @@ Radish 四主题取值与 Profile 覆盖
 - 主题注册表与运行时：`Frontend/radish.client/src/theme/theme.ts`
 - 共享 Ant Design 语义：`Frontend/radish.ui/src/theme/antd-theme.ts`
 - Console Workbench L2：`Frontend/radish.console/src/index.css`
-- Flutter 映射：后续 Web 基线稳定后，在 Flutter 专题内确定 `ThemeExtension` 位置
+- Flutter 映射：当前只有 `lib/core/theme/radish_theme.dart` 固定亮色 `ThemeData`；目标 owner、四主题状态、`ThemeExtension` 和实施拆批见 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 
 family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的四主题取值与品牌前景继续在 Client 项目主题层显式覆盖，避免依赖上游参考默认值形成隐式产品契约。
 
-`R1-P01` 颜色校准已把 `guofeng` 品牌目标从旧胭脂调整为低饱和灰玉：品牌 `#5d6c57`、悬停 `#6e736d`、设计柔底 `#e2e6de`、实底前景 `#fffdf8`；常规操作仍使用墨蓝 `#435c74`。该配色已随 `R1-P01 / 社区发现 / PC 1440` 通过设计审核，但当前 `theme-tokens.css` 仍是旧胭脂运行时值；必须等 mobile 与实现边界共同确认后再成组实现，不能把设计目标误写成已上线事实。
+`R1-P01` 颜色校准把 `guofeng` 品牌从旧胭脂调整为低饱和灰玉：品牌 `#5d6c57`、悬停 `#6e736d`、设计柔底 `#e2e6de`、实底前景 `#fffdf8`；常规操作仍使用墨蓝 `#435c74`。该配色先随 `R1-P01 / 社区发现 / PC 1440` 通过设计审核，并已在 [F4-R-T01](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)进入 Client 四主题 CSS、Ant Design 宿主、共享公开 brand、主题预览与 WebOS 边缘消费；[T03](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)进一步确认四主题代表路径没有页面级品牌语义误用。
 
 迁移期间允许组件继续消费 `--theme-*`、`--console-*` 和 `--rx-*`，但这些变量必须能追溯到 `--rd-*` 或在本附录登记为项目领域 token。不得继续新增没有语义归属的硬编码颜色。
 
@@ -95,7 +95,7 @@ family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的�
 | --- | --- | --- |
 | 正式 Web 壳层 | 内容宽度、Header、移动底栏、来源返回和状态槽 | 继续使用 `--rx-*`；视觉基础映射到 `--rd-*` |
 | Console | 表格密度、治理工作台、证据区、权限与审计表达 | 使用 Workbench Profile；状态语义不得自建另一套红黄绿 |
-| Flutter | 原生导航、触控、系统返回、安全区和平台控件 | 共享语义，不照搬 Web DOM / CSS |
+| Flutter Native | compact / medium / expanded 导航、触控、键鼠、焦点、系统返回、安全区、窗口和平台控件 | 共享语义，不照搬 Web DOM / CSS，不建立第二套权益状态机 |
 | 四主题权益 | 主题身份、购买、激活、回退和跨设备同步 | 不因 family-ui 接入改变业务契约 |
 | WebOS | Dock、窗口与历史桌面交互 | 只维护兼容，不作为新 family-ui 组件来源 |
 
@@ -103,9 +103,9 @@ family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的�
 
 | family-ui 条款 | 当前偏离 | 原因 | 处理 |
 | --- | --- | --- | --- |
-| 通用参考默认与已确认的 `R1-P01` 颜色目标均使用灰玉品牌 | 当前 `guofeng` 运行时仍是旧胭脂值 | PC 设计已通过，但 mobile、统一公开读模型和页面实现批尚未收口 | 实现批显式更新品牌、悬停、柔底和品牌前景映射；不机械替换状态色或其他主题 |
+| 通用参考默认与已确认的 `R1-P01` 颜色目标均使用灰玉品牌 | T01 已关闭旧胭脂运行时偏离 | 共享 owner 已具备成组治理条件 | 品牌、悬停、柔底和品牌前景已显式更新；T03 代表路径已确认页面品牌引用、状态色和其他主题身份边界成立 |
 | 通用 light / dark | Radish 有四套注册主题 | 已发布产品与权益契约 | 保留主题 ID，统一映射到 `--rd-*` |
-| 通用规范列出 Tauri 平台映射 | Tauri 暂时弃用 | 当前多端路线已调整 | 平台示例不构成 Radish 投入要求；继续冻结 Tauri |
+| 通用规范列出 Tauri 平台映射 | Tauri 正式弃用 | 当前已收束为 Web / Flutter Native 两条产品线 | 平台示例不构成 Radish 投入要求；历史资产不进入开发或门禁 |
 | Public 为 Brand | Radish Public 是内容优先社区 | 阅读和互动密度优先 | Brand 用于气质层，不引入营销首页 |
 | 项目撤掉整套 UI 专题 | Radish 文档含大量产品与运行时契约 | 不能丢失领域边界 | 先拆通用与项目差异，再逐步收缩 |
 | 单一暗色映射 | `theme-dark-night` 有独立暗夜取值 | 权益主题需要稳定身份 | 保持语义一致，视觉收敛单独验收 |
@@ -114,7 +114,7 @@ family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的�
 
 - family-ui 非破坏性更新先评估，再更新本页遵循版本。
 - 破坏性更新必须单独建立迁移窗口，不在业务功能批次里顺手跟进。
-- `v26.7.3` 的破坏性窗口已于 `2026-08-03` 完成：新增 `text-on-brand`，当时显式固定 Radish 四主题品牌前景并保留 `guofeng` 胭脂身份；随后 `R1-P01` 颜色校准把国风品牌目标改为灰玉并随 PC 代表页获确认，运行时实现仍须等待 mobile 与页面实现批收口后单独提交。
+- `v26.7.3` 的破坏性窗口已于 `2026-08-03` 完成：新增 `text-on-brand`，当时显式固定 Radish 四主题品牌前景并保留 `guofeng` 胭脂身份；随后 `R1-P01` 颜色校准把国风品牌目标改为灰玉并随 PC 代表页获确认，mobile 与页面实现批收口后，运行时改色已由 [T01 共享主题批](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)关闭。
 - Public 内容流新页面默认参考 `R1-P01 / 社区发现 / PC 1440` 的现代自然紧凑语法：继承表面、密度、排版、用色、动作和数据表达，但不复制其信息架构；具体继承卡见[视觉主题规范](/frontend/visual-theme-spec#610-r1-p01-现代自然紧凑基准)。
 - 通用语义优先回到 family-ui；Radish 产品差异维护在本页及对应专题。
 - 页面级视觉工作必须先完整阅读 family-ui `references.md`、逐张查看其索引的参考图，并在 [F4-R 专题](/features/family-ui-convergence-design)中维护 Radish 页面类型的吸收 / 排除映射；只复制 token 不能视为完成视觉迁移。

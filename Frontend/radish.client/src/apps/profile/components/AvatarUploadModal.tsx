@@ -12,12 +12,14 @@ interface AvatarUploadModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
+  onBusyChange?: (busy: boolean) => void;
 }
 
 export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
   isOpen,
   onClose,
   onSuccess,
+  onBusyChange,
 }) => {
   const { t } = useTranslation();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -64,6 +66,14 @@ export const AvatarUploadModal: React.FC<AvatarUploadModalProps> = ({
   }, [invalidateActiveOperation, isOpen]);
 
   const interactionLocked = uploading || cropperProcessing;
+
+  React.useEffect(() => {
+    onBusyChange?.(interactionLocked);
+  }, [interactionLocked, onBusyChange]);
+
+  React.useEffect(() => () => {
+    onBusyChange?.(false);
+  }, [onBusyChange]);
 
   const isOperationCurrent = (operationGeneration: number): boolean => (
     mountedRef.current && operationGeneration === operationGenerationRef.current

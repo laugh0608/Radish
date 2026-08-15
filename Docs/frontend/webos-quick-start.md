@@ -26,7 +26,7 @@ http://localhost:3000/
 - 继续维护 Dock、窗口系统与桌面内应用打开体验
 - 与纯 Web 壳层、Flutter 客户端壳层分工协作
 - 不再作为新增功能默认承载层
-- 不再作为 PC/Tauri 的默认 UI；未来 PC 客户端若重启，应以 Tauri 增强纯 Web 体验为主
+- 不作为原生 PC 客户端默认 UI；Tauri 已弃用，长期桌面安装包由 Flutter Native 分阶段承接
 
 更完整的壳层分工见 [前端设计](/frontend/design) 与 [前端多壳层策略](/frontend/shell-strategy)。
 

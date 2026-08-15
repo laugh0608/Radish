@@ -8,7 +8,7 @@
 
 ## 阶段判断
 
-第二开发阶段已经完成公开内容壳层、Flutter Android MVP、Tauri + WebOS 桌面壳验证、多端分工和产品治理收口。`2026-07-30` 最新路线裁决将当前投入顺位调整为 Web 优先、Flutter 次级：根路径 `/` 与默认浏览器入口使用正式 Web，`/desktop` 仅保留为 WebOS 历史入口，Flutter 按明确移动价值推进，Tauri 暂时弃用且不再绑定 WebOS。当前不应继续把第二阶段低收益尾项、WebOS 扩张、Flutter 机械追平 Web 或 PC 分发材料当成默认主线，也不应在缺少边界定义时直接开大功能。
+第二开发阶段已经完成公开内容壳层、Flutter Android MVP、Tauri + WebOS 桌面壳验证、多端分工和产品治理收口。`2026-08-15` 路线裁决将正式产品收束为 Web / Flutter Native 两条线：根路径 `/` 与默认浏览器入口使用正式 Web，`/desktop` 仅保留为 WebOS 历史入口；Flutter mobile-first、desktop stage-gated；Tauri 正式弃用。当前不应继续把第二阶段低收益尾项、WebOS 扩张、Flutter 机械追平 Web 或平台分发材料当成默认主线，也不应在缺少边界定义时直接开大功能。
 
 第三开发阶段的核心问题不再是“某个入口能不能做出来”，而是：
 

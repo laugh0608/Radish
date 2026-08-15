@@ -2,6 +2,7 @@ import { Component, type ReactNode, type ErrorInfo } from 'react';
 import { log } from '@/utils/logger';
 import { AntButton, Result } from '@radish/ui';
 import i18n from '@/i18n';
+import './ErrorBoundary.css';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -86,6 +87,7 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       error,
       errorInfo,
     });
+    document.title = `${i18n.t('console.errorBoundary.title')} · Radish Console`;
 
     this.setState({
       error,
@@ -126,15 +128,15 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     const { hasError, error, errorInfo, diagnosticId, diagnosticCopied } = this.state;
     const { children, fallback } = this.props;
 
-    if (hasError && error && errorInfo) {
+    if (hasError && error) {
       // 如果提供了自定义 fallback，使用自定义 UI
-      if (fallback) {
+      if (fallback && errorInfo) {
         return fallback(error, errorInfo, this.handleReset);
       }
 
       // 默认错误 UI
       return (
-        <div style={{ padding: '48px', maxWidth: '600px', margin: '0 auto' }}>
+        <main className="console-error-boundary" role="alert">
           <Result
             status="error"
             title={i18n.t('console.errorBoundary.title')}
@@ -160,30 +162,24 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
           />
 
           {/* 开发环境显示错误详情 */}
-          {import.meta.env.DEV && (
-            <details style={{ marginTop: '24px', whiteSpace: 'pre-wrap' }}>
-              <summary style={{ cursor: 'pointer', fontWeight: 'bold', marginBottom: '8px' }}>
+          {import.meta.env.DEV && errorInfo && (
+            <details className="console-error-boundary__details">
+              <summary className="console-error-boundary__summary">
                 {i18n.t('console.errorBoundary.devDetails')}
               </summary>
-              <div style={{
-                background: '#f5f5f5',
-                padding: '16px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                fontFamily: 'monospace',
-              }}>
-                <div style={{ marginBottom: '12px' }}>
+              <div className="console-error-boundary__diagnostic">
+                <div className="console-error-boundary__diagnostic-section">
                   <strong>{i18n.t('console.errorBoundary.errorMessage')}</strong>
-                  <div style={{ color: '#ff4d4f' }}>{error.toString()}</div>
+                  <div className="console-error-boundary__error-message">{error.toString()}</div>
                 </div>
                 <div>
                   <strong>{i18n.t('console.errorBoundary.componentStack')}</strong>
-                  <div style={{ color: '#666' }}>{errorInfo.componentStack}</div>
+                  <div className="console-error-boundary__component-stack">{errorInfo.componentStack}</div>
                 </div>
               </div>
             </details>
           )}
-        </div>
+        </main>
       );
     }
 

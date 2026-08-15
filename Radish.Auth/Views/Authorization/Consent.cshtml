@@ -765,11 +765,10 @@
                 </details>
 
                 <form class="decision-form" method="post">
-                    <input type="hidden" name="client_id" value="@Model.ClientId" />
-                    <input type="hidden" name="redirect_uri" value="@Model.RedirectUri" />
-                    <input type="hidden" name="response_type" value="@Model.ResponseType" />
-                    <input type="hidden" name="scope" value="@Model.Scope" />
-                    <input type="hidden" name="state" value="@Model.State" />
+                    @foreach (var parameter in Model.RequestParameters)
+                    {
+                        <input type="hidden" name="@parameter.Name" value="@parameter.Value" />
+                    }
 
                     <p class="decision-copy">@decisionHint</p>
 
