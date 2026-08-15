@@ -26,12 +26,15 @@ test('R3-F02-B Console Profile 保留旧快照、精确 dirty 并移除伪最近
   const styles = readConsoleSource('src/pages/UserProfile/UserProfile.css');
 
   assert.match(source, /loadRequestIdRef/);
+  assert.match(source, /pendingProfileFormRef/);
+  assert.match(source, /pendingProfileFormRef\.current !== profileData/);
   assert.match(source, /setAuthorityState\(hadSnapshot \? 'stale' : 'unavailable'\)/);
   assert.match(source, /isProfileDraftDirty\(values, profileRef\.current\)/);
   assert.match(source, /useUnsavedChangesGuard\(dirty/);
   assert.match(source, /disabled=\{!writesAreAuthoritative \|\| profileBusy\}/);
   assert.match(source, /profile\.account\.unavailable/);
   assert.doesNotMatch(source, /profile\.account\.noLoginRecord/);
+  assert.match(styles, /@media \(max-width: 768px\)[\s\S]*\.user-profile-layout[\s\S]*grid-template-columns: minmax\(0, 1fr\)/);
   assert.match(styles, /\.user-profile-primary-task[\s\S]*order: -1/);
 });
 

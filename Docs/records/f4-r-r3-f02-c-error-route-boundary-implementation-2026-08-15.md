@@ -2,7 +2,7 @@
 
 > 日期：2026-08-15
 >
-> 状态：代码实现与静态门禁已完成；下一步为 `R3-F02` Gateway PC / Mobile 成组运行态验收
+> 状态：代码实现、静态门禁与后续 [Gateway 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)均已完成，`R3-F02` 已关闭
 >
 > 依据：[R3-F02 自服务与边界页设计前代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)
 
@@ -53,4 +53,4 @@
 
 ## 6. 下一步
 
-`R3-F02-A / B / C` 的代码与静态门禁现已全部关闭。下一步需要在新一轮明确授权后启动当前任务服务，按审计矩阵经 Gateway 完成 PC `1920 × 1080`、Mobile `390 × 844`、中英文、匿名 / Admin / 非 Console 用户 / 受限 operator、OIDC、自服务和错误路由成组验收；验收通过后关闭 `R3-F02`，再从总体规划选择下一专题。
+`R3-F02-A / B / C` 的代码、静态门禁与 [Gateway 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)现已全部关闭。运行态发现的 OIDC Consent 参数、StrictMode 回调错误复用和 Profile mobile / Form 挂载问题已在各自 owner 内修正并复验。下一顺位进入 `F4-R Web 主题基线与专题退出门禁审计`。

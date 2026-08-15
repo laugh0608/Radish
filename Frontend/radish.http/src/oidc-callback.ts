@@ -12,6 +12,7 @@ const SENSITIVE_QUERY_PARAMS = [
 ] as const;
 
 const inFlightOidcRedemptions = new Map<string, Promise<OidcTokenResponse>>();
+const pendingOidcCallbackFailures = new Map<string, PendingOidcCallbackFailure>();
 
 interface PendingOidcRedemption {
   code: string;
@@ -24,6 +25,11 @@ interface PendingOidcAuthorization {
   state: string;
   codeVerifier: string;
   redirectUri: string;
+  startedAt: number;
+}
+
+interface PendingOidcCallbackFailure {
+  error: OidcCallbackError;
   startedAt: number;
 }
 
@@ -116,6 +122,10 @@ function buildAuthorizationStorageKey(clientId: string): string {
 
 function buildRedemptionStorageKey(clientId: string): string {
   return `${OIDC_CALLBACK_SESSION_PREFIX}${clientId}`;
+}
+
+function buildCallbackFailureKey(clientId: string, redirectUri: string): string {
+  return `${encodeURIComponent(clientId)}|${encodeURIComponent(redirectUri)}`;
 }
 
 function buildRequestKey(clientId: string, redirectUri: string, code: string): string {
@@ -254,6 +264,47 @@ function clearPendingOidcAuthorization(storage: Storage | null, clientId: string
   }
 }
 
+function clearPendingOidcCallbackFailure(clientId: string, redirectUri: string): void {
+  pendingOidcCallbackFailures.delete(buildCallbackFailureKey(clientId, redirectUri));
+}
+
+function writePendingOidcCallbackFailure(
+  clientId: string,
+  redirectUri: string,
+  error: OidcCallbackError,
+): void {
+  pendingOidcCallbackFailures.set(buildCallbackFailureKey(clientId, redirectUri), {
+    error,
+    startedAt: Date.now(),
+  });
+}
+
+function consumePendingOidcCallbackFailure(
+  clientId: string,
+  redirectUri: string,
+): OidcCallbackError | null {
+  const failureKey = buildCallbackFailureKey(clientId, redirectUri);
+  const pending = pendingOidcCallbackFailures.get(failureKey);
+  pendingOidcCallbackFailures.delete(failureKey);
+  if (!pending) {
+    return null;
+  }
+
+  if (Date.now() - pending.startedAt > OIDC_CALLBACK_SESSION_TTL_MS) {
+    return null;
+  }
+
+  return pending.error;
+}
+
+function rememberOidcCallbackFailure(
+  options: RedeemOidcAuthorizationCodeOptions,
+  error: OidcCallbackError,
+): OidcCallbackError {
+  writePendingOidcCallbackFailure(options.clientId, options.redirectUri, error);
+  return error;
+}
+
 export async function createOidcAuthorizationUrl(
   options: CreateOidcAuthorizationUrlOptions,
 ): Promise<string> {
@@ -263,6 +314,7 @@ export async function createOidcAuthorizationUrl(
   const codeVerifier = createRandomBase64Url(cryptoImpl);
   const codeChallenge = await createCodeChallenge(cryptoImpl, codeVerifier);
 
+  clearPendingOidcCallbackFailure(options.clientId, options.redirectUri);
   writePendingOidcAuthorization(storage, options.clientId, {
     state,
     codeVerifier,
@@ -421,16 +473,22 @@ function resolvePendingOidcRedemption(
     clearPendingOidcAuthorization(storage, options.clientId);
 
     if (!attempt) {
-      throw new OidcCallbackError(
-        'attempt_missing_or_expired',
-        options.attemptMissingOrExpiredMessage ?? 'OIDC sign-in attempt is missing or has expired.',
+      throw rememberOidcCallbackFailure(
+        options,
+        new OidcCallbackError(
+          'attempt_missing_or_expired',
+          options.attemptMissingOrExpiredMessage ?? 'OIDC sign-in attempt is missing or has expired.',
+        ),
       );
     }
 
     if (!stateFromUrl || stateFromUrl !== attempt.state) {
-      throw new OidcCallbackError(
-        'state_mismatch',
-        options.stateMismatchMessage ?? 'OIDC callback state validation failed.',
+      throw rememberOidcCallbackFailure(
+        options,
+        new OidcCallbackError(
+          'state_mismatch',
+          options.stateMismatchMessage ?? 'OIDC callback state validation failed.',
+        ),
       );
     }
 
@@ -442,13 +500,19 @@ function resolvePendingOidcRedemption(
       };
       const message = options.buildAuthorizationErrorMessage?.(details)
         ?? `Authorization failed: ${details.error}`;
-      throw new OidcCallbackError('authorization_error', message, details);
+      throw rememberOidcCallbackFailure(
+        options,
+        new OidcCallbackError('authorization_error', message, details),
+      );
     }
 
     if (!codeFromUrl) {
-      throw new OidcCallbackError(
-        'missing_code',
-        options.missingCodeMessage ?? 'Missing authorization code.',
+      throw rememberOidcCallbackFailure(
+        options,
+        new OidcCallbackError(
+          'missing_code',
+          options.missingCodeMessage ?? 'Missing authorization code.',
+        ),
       );
     }
 
@@ -461,6 +525,14 @@ function resolvePendingOidcRedemption(
 
     writePendingOidcRedemption(storage, options.clientId, pending);
     return pending;
+  }
+
+  const callbackFailure = consumePendingOidcCallbackFailure(
+    options.clientId,
+    options.redirectUri,
+  );
+  if (callbackFailure) {
+    throw callbackFailure;
   }
 
   const pending = readPendingOidcRedemption(storage, options.clientId, options.redirectUri);

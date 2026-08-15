@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-F02 成组运行态验收（需当轮服务启动授权）`
-- **产品下一顺位**：`经 Gateway 验收 OIDC、自服务与错误路由矩阵，关闭 F02 后再选择下一专题`
+- **工程第一顺位**：`F4-R Web 主题基线与专题退出门禁审计`
+- **产品下一顺位**：`先收口 guofeng 已确认灰玉目标、四主题与 reduced-motion 证据，再进入 Flutter 语义映射`
 - **复核日期**：`2026-08-15`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-15` 已完成 [R3-F02 自服务与边界页成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)：Gateway 覆盖匿名、种子 Admin 与非 Console `test`、PC `1920 × 1080`、Mobile `390 × 844` CSS viewport、中英文、OIDC 允许 / 取消 / 深链回流、自服务 ready、未知路由、`/desktop` 与两端错误恢复。运行态成组修正 Consent 丢失 PKCE、StrictMode 覆盖授权取消错误、Profile mobile 三列挤压与 Form 挂载 warning；后端 `1279 passed / 41 skipped`、HTTP `48 / 48`、Client `557 / 557`、Console `137 / 137`，类型、Lint、production build 与宿主健康检查通过。受限 operator 因无既有种子身份由权限契约覆盖，未修改权限或业务数据；移动工具只能提供 DPR `1`。`R3-F02` 关闭，下一顺位先审计 Web 主题基线与 F4-R 退出门禁。
 - `2026-08-15` 已完成 [R3-F02-C 错误与路由边界实现及静态门禁](/records/f4-r-r3-f02-c-error-route-boundary-implementation-2026-08-15)：Client 只有明确 `/desktop` 进入历史 WebOS，未知顶层地址进入独立 Not Found；根级 ErrorBoundary 覆盖路由、懒加载与 Toast。Console 子路由缺权保留目标理由并提供默认授权入口，Not Found 区分匿名、非 Console 用户与已授权用户，React Router `errorElement` 和应用根边界分别承接路由及 Provider 异常。Client `557 / 557`、Console `137 / 137`、两端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器或修改 Pencil。下一顺位进入 F02 成组运行态验收。
 - `2026-08-15` 已完成 [R3-F02-B 自服务权威状态实现与静态门禁](/records/f4-r-r3-f02-b-self-service-authoritative-state-implementation-2026-08-15)：Console Settings 只开放时区、浏览器本地语言与密码真实能力，后置设置不再伪装可写；Client / Console Profile 以独立请求代际维护资料、余额、统计和时间偏好，首次失败 unavailable、刷新失败 stale 并冻结写入，dirty / busy 与离开保护覆盖导航、浏览器和 WebOS 窗口。未提供的最近登录不再伪装空值，触达错误具备稳定 `Code / MessageKey`。后端 `1278 passed / 41 skipped`、Client `553 / 553`、Console `133 / 133`、两端 Lint / production build 与后端构建通过；未启动服务 / 浏览器或修改 Pencil。下一顺位进入 `R3-F02-C 错误与路由边界` 方案确认。
 - `2026-08-13` 已完成 [R3-F02 自服务与边界页设计前代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)：Settings / Profile 继续继承 `R1-C01 + R2-C03`，Login / OIDC / Not Found / Error 继续继承 `R1-F01`，没有新壳层或响应式模型，不修改 Pencil。审计同时确认 Web / Console / Flutter 尚未形成 `state + PKCE` 闭环，Auth 登录 POST 未限制本地 `returnUrl`，callback 丢失授权错误，Console 登录丢失内部来源；因此 F02 拆为 A OIDC 回流信任、B 自服务权威状态、C 错误与路由边界三批，先实施 A。当前只完成文档审计，运行时代码方案等待确认，未启动服务 / 浏览器或变更依赖。
@@ -177,18 +178,20 @@
 66. 按确认方案关闭 R3-F02-A：Web / Console / Flutter 的 state + PKCE、Auth 本地回跳、稳定授权错误、Console 深链返回与 OpenIddict requirement 均已落地；后端、HTTP、Client、Console、Flutter、Android 原生、构建、Lint、类型、身份与卫生门禁通过。
 67. 按确认方案关闭 R3-F02-B：Settings / Profile 的真实能力、独立权威快照、unavailable / stale、dirty / busy、Mobile 主任务顺序和稳定自服务错误均已落地；后端、Client、Console、Lint 与生产构建通过。
 68. 按确认方案关闭 R3-F02-C：Client 未知路径与 `/desktop` 已明确分离，两端根级运行时边界完整；Console 未登录、非 Console 用户、页面缺权、Not Found 与路由异常保持不同理由。Client、Console、类型、Lint、生产构建与 Baseline Quick 通过。
+69. 获授权后完成 R3-F02 Gateway 成组运行态验收；匿名、Admin 与非 Console `test` 的 OIDC、自服务、错误 / 路由和 PC / mobile 双语矩阵通过，运行态发现的三类共同根因已成组修正并全量回归，登录会话清理完成，专题关闭。
 
 ## 下一步事项
 
-1. 新会话先读取本页、[R3-F02 审计记录](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)与[A](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13) / [B](/records/f4-r-r3-f02-b-self-service-authoritative-state-implementation-2026-08-15) / [C](/records/f4-r-r3-f02-c-error-route-boundary-implementation-2026-08-15) 三批实现记录。
-2. 获得当轮服务启动授权后，经 Gateway 执行 F02 PC `1920 × 1080`、Mobile `390 × 844`、双语与代表身份成组运行态验收。
-3. 运行态覆盖 OIDC 回流、自服务 ready / unavailable / stale / dirty / busy、Client 未知路由与 `/desktop`、Console permission denied / Not Found 以及两端错误恢复。
-4. 验收通过后关闭 `R3-F02`，再依据总体规划选择下一专题；若发现同类问题，按链路矩阵成组修正后一次复验。
-5. 三处既有 `DateTime.Now` 继续留在独立维护线，不与 R3-F02 混批。
+1. 新会话先读取本页、[F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)、[Radish UI 差异附录](/frontend/ui-addendum)、[视觉主题规范](/frontend/visual-theme-spec)与 [R3-F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)。
+2. 先审计已获设计确认的 `guofeng` 灰玉目标与 `theme-tokens.css` 旧胭脂运行时偏离，固定只修改品牌、悬停、柔底和品牌前景的边界，不机械替换状态色或其他主题。
+3. 汇总 `default / guofeng / theme-dark-night / theme-sakura`、中英文、PC / mobile、keyboard focus、reduced-motion 与 WebOS 阻断级兼容的现有证据和缺口，提出 Web 最终收口方案。
+4. Web 主题基线与退出门禁关闭后，再审计 Flutter Dart 语义映射和高价值移动路径；不为关闭 F4-R 机械追平 Web 功能。
+5. 三处既有 `DateTime.Now` 继续留在独立维护线，在下一次 `PR -> master` 前单独治理，不与主题或 Flutter 映射混批。
 
 ## 当前执行入口
 
 - [2026-08-13 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-13)
+- [R3-F02 自服务与边界页成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)
 - [R3-F02 自服务与边界页设计前代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)
 - [R3-F02-C 错误与路由边界实现及静态门禁](/records/f4-r-r3-f02-c-error-route-boundary-implementation-2026-08-15)
 - [R3-F02-B 自服务权威状态实现与静态门禁](/records/f4-r-r3-f02-b-self-service-authoritative-state-implementation-2026-08-15)
@@ -257,21 +260,6 @@
 - [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)
 - [F4-S-D 公开排行榜治理成组验收](/records/f4-s-d-leaderboard-public-governance-stage-acceptance-2026-07-30)
 - [F4-S 公开排行榜治理代码侧验收](/records/f4-s-leaderboard-public-governance-code-acceptance-2026-07-30)
-- [发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)
-- [F4-N 论坛内容赞赏](/features/forum-content-reward)
-- [F4-N-D 论坛内容赞赏成组验收](/records/f4-n-d-forum-content-reward-stage-acceptance-2026-07-27)
-- [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)
-- [F4-O-D 论坛回答生命周期成组验收](/records/f4-o-d-forum-answer-lifecycle-stage-acceptance-2026-07-28)
-- [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)
-- [F4-P-D 论坛帖子收藏成组验收](/records/f4-p-d-forum-post-bookmark-stage-acceptance-2026-07-29)
-- [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)
-- [F4-Q-D 论坛标签公开发现成组验收](/records/f4-q-d-forum-tag-public-discovery-stage-acceptance-2026-07-29)
-- [2026-07-29 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-29)
-- [2026-07-28 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-28)
-- [2026-07-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-27)
-- [F4-M-D 论坛内容版本成组验收](/records/f4-m-d-forum-content-revision-stage-acceptance-2026-07-26)
-- [F4-L-D Wiki 附件成组验收](/records/f4-l-d-wiki-attachment-stage-acceptance-2026-07-26)
-- [2026-07-26 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-26)
 - [验证基线说明](/guide/validation-baseline)
 - [镜像漏洞门禁分层](/guide/image-vulnerability-gate)
 
@@ -280,14 +268,14 @@
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护，不与 F4-R 候选审计并行扩张。
 - WebOS 只处理阻断级兼容；Flutter 按 Web 优先顺位承接明确高价值移动原生路径，不机械追平 Web。
-- `Radish.Repository/SystemConfigStorageCoordinator.cs` 仍有 `3` 处既有 `DateTime.Now` 与时间语义 baseline 预算不一致；该独立治理项不混入 R3-F02，但在 `PR -> master` 前必须关闭或重新形成经过审计的基线结论。
+- `Radish.Repository/SystemConfigStorageCoordinator.cs` 仍有 `3` 处既有 `DateTime.Now` 与时间语义 baseline 预算不一致；该独立治理项不混入主题 / Flutter 收口，但在 `PR -> master` 前必须关闭或重新形成经过审计的基线结论。
 - 主动生产使用数据采集继续冻结到计划内功能完成、没有明确维护任务且用户确认的最终收尾阶段。
 
 ## 当前不做
 
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
-- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；R2-P03 已冻结的商品评价 / 公开等级边界不扩入媒体、回复、评价有用、独立评价中心或公开经验详情；R3-F02 只按 A / B / C 审计批次推进，不新增认证、自服务或权限能力。
+- F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；R2-P03 已冻结的商品评价 / 公开等级边界不扩入媒体、回复、评价有用、独立评价中心或公开经验详情；R3-F02 已关闭，不借主题收口新增认证、自服务或权限能力。
 - 不恢复 Tauri，不扩展 WebOS 新功能，不把 Flutter 做成 Web 的机械复制，也不重启主动生产证据采集。
 - 不继续修改历史 `.pen` 留档，不为路由、主题、文案或等价状态复制完整画板；任何后续 `.pen` 修改仍需当前任务的明确授权。
 - 不为日常单个文档或小提交频繁创建 `dev -> master` PR；完整功能批次形成后再统一集成。

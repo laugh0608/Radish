@@ -52,6 +52,7 @@ export const UserProfile = () => {
   const { user, loading: userLoading, refreshUser } = useUser();
   const [form] = Form.useForm();
   const profileRef = useRef<UserProfileData | null>(null);
+  const pendingProfileFormRef = useRef<UserProfileData | null>(null);
   const editingRef = useRef(false);
   const loadRequestIdRef = useRef(0);
   const [authorityState, setAuthorityState] = useState<AuthorityState>('loading');
@@ -84,10 +85,19 @@ export const UserProfile = () => {
     setAuthorityState('ready');
     setLoadError(undefined);
     if (replaceDraft || !editingRef.current) {
-      setProfileFormValues(profile);
+      pendingProfileFormRef.current = profile;
       setDirty(false);
     }
-  }, [setProfileFormValues]);
+  }, []);
+
+  useEffect(() => {
+    if (!profileData || pendingProfileFormRef.current !== profileData) {
+      return;
+    }
+
+    setProfileFormValues(profileData);
+    pendingProfileFormRef.current = null;
+  }, [profileData, setProfileFormValues]);
 
   const loadProfile = useCallback(async (replaceDraft = true) => {
     if (!user) {

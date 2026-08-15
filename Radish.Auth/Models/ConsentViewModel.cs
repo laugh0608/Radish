@@ -59,4 +59,15 @@ public class ConsentViewModel
     /// 授权请求状态（state），用于防 CSRF。
     /// </summary>
     public string State { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 授权确认后必须原样回传给 OpenIddict 的请求参数。
+    /// </summary>
+    public IReadOnlyList<ConsentRequestParameter> RequestParameters { get; set; } =
+        Array.Empty<ConsentRequestParameter>();
 }
+
+/// <summary>
+/// 授权确认表单中的单个 OIDC 请求参数。
+/// </summary>
+public sealed record ConsentRequestParameter(string Name, string Value);

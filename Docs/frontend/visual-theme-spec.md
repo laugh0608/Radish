@@ -15,7 +15,7 @@
 > - [前端设计](/frontend/design)
 > - [首版 dev 边界](/planning/dev-first-scope)
 >
-> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。`R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01` 的 PC / mobile、实现与运行态复核均已关闭；下一任务从 `R1-C02` 设计前门禁开始。全局灰玉 token 仍由共享主题批单独治理。
+> 当前阶段约束：Web 优先、Flutter 次级；WebOS `/desktop` 只兼容，Tauri 暂时弃用。通用 Token 先等价接入，再按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)推进视觉重构。六个 R1、四个 R2 与六组 Web R3 的实现 / 运行态均已关闭；下一任务先审计并收口全局灰玉 token、四主题与 reduced-motion 退出证据，Web 基线稳定后再进入 Flutter 语义映射。
 
 ## 1. 设计目标
 
