@@ -49,7 +49,7 @@
 - [m15-release-record-2026-07-12](/records/m15-release-record-2026-07-12)
 - [m15-release-record-v26.7.1.1201-2026-07-12](/records/m15-release-record-v26.7.1.1201-2026-07-12) / [1202](/records/m15-release-record-v26.7.1.1202-2026-07-12)
 - [m15-release-record-v26.7.1.1203-2026-07-12](/records/m15-release-record-v26.7.1.1203-2026-07-12)
-- [m15-release-record-v26.7.1.1204-2026-07-12](/records/m15-release-record-v26.7.1.1204-2026-07-12)
+- [m15-release-record-v26.7.1.1204-2026-07-12](/records/m15-release-record-v26.7.1.1204-2026-07-12) · [v26.8.1 Release Candidate 回归记录](/records/v26.8.1-release-candidate-regression-record-2026-08-15) · [M15 v26.8.1 发布记录](/records/m15-release-record-v26.8.1-2026-08-15)
 - [production-database-migration-deployment-orchestration-2026-07-25](/records/production-database-migration-deployment-orchestration-2026-07-25)
 - [m15-test-rollback-rehearsal-2026-04-06](/records/m15-test-rollback-rehearsal-2026-04-06)
 - [m15-prod-rollback-playbook-2026-04-06](/records/m15-prod-rollback-playbook-2026-04-06)

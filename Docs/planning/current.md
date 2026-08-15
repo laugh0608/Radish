@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P1 全页面事实审计与代表类型分级`
-- **产品下一顺位**：`建立 compact / medium / expanded 页面族矩阵，裁决首个 UI 技术基座 spike`
+- **工程第一顺位**：`v26.8.1 Release Candidate PR 前收口`
+- **产品下一顺位**：`候选合并与发布完成后进入 Flutter Native P1 全页面事实审计`
 - **复核日期**：`2026-08-15`
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-15` 已完成 [v26.8.1 Release Candidate PR 前本地收口](/records/v26.8.1-release-candidate-regression-record-2026-08-15)：产品版本已由单一真值同步到 .NET、npm、Rust、Flutter 与冻结的 Tauri 历史资产，正式发布记录已预置“尚未部署”状态；tag 契约、Baseline Full、Repo Quality Local、Candidate Quality、后端 / 身份专题、LongId、依赖安全与卫生门禁均通过。`SystemConfigStorageCoordinator.cs` 的历史 `DateTime.Now` 已确认清零；本地 PostgreSQL 环境未注入而跳过的 `41` 项继续由远程 Candidate Quality 必需检查承接。当前达到 PR-ready，推送、PR、合并、回灌、tag、镜像和部署仍为独立动作。
 - `2026-08-15` 已完成 [F4-R-T03 Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)：Gateway 覆盖 `default / guofeng / theme-dark-night / theme-sakura`、中英文、PC `1920 × 1080`、Mobile `390 × 844`、Public `/discover`、Private `/messages`、Author `/docs/mine`、Console `/console/` 与 WebOS `/desktop` 兼容入口；键盘焦点、reduced-motion、实底前景和 Console 独立 Workbench 均通过。种子 Admin 的暗夜激活、樱花切换、默认停用共产生 `3` 条权威操作流水，验收后临时权益、活动指针、流水和本轮 OIDC 会话均精确清零，六库 integrity 均为 `ok`。没有运行时代码缺陷，Web 主题退出门禁关闭。随后完成 Flutter readiness 审计并确认 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)：当前业务链路可保留，主题与页面呈现需系统重建；下一顺位进入不改代码的 P1 全页面事实审计。
 - `2026-08-15` 已完成 [F4-R-T02 reduced-motion 与静态退出门禁实现](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)：Client `theme-tokens.css` 与 Console `index.css` 已建立同构宿主规则，标准 token 继续归零，硬编码 transition / animation 压缩到 `0.01ms`、延迟归零、无限迭代收敛为一次、smooth scroll 回退 `auto`；加载、进度、反馈和状态元素保持静态可见。定向契约 `9 / 9`、HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `138 / 138`，三端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器，未修改 family-ui 固定副本、Pencil、依赖或数据。下一顺位进入 T03，但须重新取得服务启动与临时 Theme 权益数据授权。
 - `2026-08-15` 已完成 [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)：`guofeng` 品牌、悬停、柔底与品牌实底前景正式切换为灰玉语义，L2 hover 直接追溯显式 L1；主题预览、WebOS 弱装饰和 Dock 激活面不再固定旧胭脂。四主题 Ant Design 主操作 / 链接统一映射 action，`@radish/ui` 公开 brand 对齐共享灰玉基线，状态色、权益、主题状态机、family-ui 固定副本与 Pencil 均未改变。HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `137 / 137`，三端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器。下一顺位进入 T02 宿主 reduced-motion。
@@ -188,9 +189,9 @@
 
 1. 新会话先读取本页与 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)；涉及多端归属或视觉语义时再读[前端多壳层策略](/frontend/shell-strategy)、[F4-R 专题](/features/family-ui-convergence-design)和 [UI 差异附录](/frontend/ui-addendum)。
 2. `P0` 已确认 Web / Flutter 两条产品线、Tauri 正式弃用、Flutter mobile-first / desktop stage-gated，以及 Material 3 + FlexColorScheme 候选 + Radish ThemeExtension + 薄组件层方向。
-3. 下一批只做 `P1`：逐页盘点 owner、状态、调用链、窗口结构和测试，建立 compact / medium / expanded 与 R1 / R2 / R3 矩阵，不修改 Dart、依赖、Pencil 或平台工程。
-4. `P1` 完成后先汇报页面族与首个 spike 裁决；依赖安装、UI 设计和代码实现分别等待确认，不启动服务或浏览器。
-5. 三处既有 `DateTime.Now` 继续留在独立维护线，在下一次 `PR -> master` 前单独治理，不与 Flutter UI 专题混批。
+3. 当前先完成 `v26.8.1` 版本同步、候选回归记录与 `PR -> master` 静态门禁；推送、PR、合并、tag、镜像和部署保持独立授权边界。
+4. 候选合并与发布动作完成后进入 `P1`：逐页盘点 owner、状态、调用链、窗口结构和测试，建立 compact / medium / expanded 与 R1 / R2 / R3 矩阵，不修改 Dart、依赖、Pencil 或平台工程。
+5. `P1` 完成后先汇报页面族与首个 spike 裁决；依赖安装、UI 设计和代码实现分别等待确认，不启动服务或浏览器。
 
 ## 当前执行入口
 
@@ -276,7 +277,7 @@
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护，不与 F4-R 候选审计并行扩张。
 - WebOS 只处理阻断级兼容；Flutter Native 按 Web 优先顺位承接高价值原生 PC / mobile 路径，mobile-first、desktop stage-gated，不机械追平 Web。
-- `Radish.Repository/SystemConfigStorageCoordinator.cs` 仍有 `3` 处既有 `DateTime.Now` 与时间语义 baseline 预算不一致；该独立治理项不混入主题 / Flutter 收口，但在 `PR -> master` 前必须关闭或重新形成经过审计的基线结论。
+- `Radish.Repository/SystemConfigStorageCoordinator.cs` 的既有 `DateTime.Now` 已在历史候选修复中清零；2026-08-15 PR 前复核确认该文件无增量时间语义债务，仓库时间语义继续由 baseline 门禁约束。
 - 主动生产使用数据采集继续冻结到计划内功能完成、没有明确维护任务且用户确认的最终收尾阶段。
 
 ## 当前不做
