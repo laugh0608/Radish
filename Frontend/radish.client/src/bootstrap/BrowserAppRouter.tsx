@@ -18,6 +18,7 @@ const DocsAuthorEntry = lazy(() => import('@/docs/DocsAuthorEntry').then((module
 const WorkbenchEntry = lazy(() => import('@/workbench/WorkbenchEntry').then((module) => ({ default: module.WorkbenchEntry })));
 const RootEntry = lazy(() => import('@/desktop/RootEntry').then((module) => ({ default: module.RootEntry })));
 const PublicEntry = lazy(() => import('@/public/PublicEntry').then((module) => ({ default: module.PublicEntry })));
+const NotFoundEntry = lazy(() => import('@/boundary/NotFoundEntry').then((module) => ({ default: module.NotFoundEntry })));
 
 function getCurrentEntryKind(): BrowserEntryKind {
   return resolveBrowserEntryKind(window.location.pathname);
@@ -45,8 +46,10 @@ function resolveEntryComponent(entryKind: BrowserEntryKind): ElementType {
       return WorkbenchEntry;
     case 'public':
       return PublicEntry;
-    default:
+    case 'desktop':
       return RootEntry;
+    case 'not-found':
+      return NotFoundEntry;
   }
 }
 

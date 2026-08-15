@@ -59,7 +59,12 @@ export function WebStateSlot({
   const resolvedIcon = icon ?? resolveIcon(tone);
 
   return (
-    <section className={rootClassName} data-tone={tone} aria-live={tone === 'loading' ? 'polite' : undefined}>
+    <section
+      className={rootClassName}
+      data-tone={tone}
+      aria-live={tone === 'loading' ? 'polite' : undefined}
+      role={tone === 'error' ? 'alert' : undefined}
+    >
       <div className={styles.iconWrap}>
         <Icon icon={resolvedIcon} size={compact ? 18 : 22} className={tone === 'loading' ? styles.spin : undefined} />
       </div>

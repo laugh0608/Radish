@@ -1,0 +1,26 @@
+.page {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: clamp(24px, 5vw, 72px);
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--theme-brand-primary) 9%, transparent), transparent 38%),
+    var(--theme-bg-app);
+}
+
+.panel {
+  width: min(720px, 100%);
+}
+
+.path {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+  .page {
+    place-items: start stretch;
+    padding: 20px 16px;
+  }
+}

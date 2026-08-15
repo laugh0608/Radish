@@ -5,6 +5,7 @@ import {
   CAPACITOR_PUBLIC_ENTRY_PATH,
   OIDC_CALLBACK_PATH,
   isCirclePathname,
+  isDesktopPathname,
   isDocsAuthorPathname,
   isMePathname,
   isMessagesPathname,
@@ -96,16 +97,27 @@ test('resolveBrowserEntryKind 应为运行时 Web 壳层选择入口', () => {
   assert.equal(resolveBrowserEntryKind('/discover'), 'public');
   assert.equal(resolveBrowserEntryKind('/forum'), 'public');
   assert.equal(resolveBrowserEntryKind('/docs/Guide'), 'public');
-  assert.equal(resolveBrowserEntryKind('/unknown'), 'root');
+  assert.equal(resolveBrowserEntryKind('/desktop'), 'desktop');
+  assert.equal(resolveBrowserEntryKind('/desktop/'), 'desktop');
+  assert.equal(resolveBrowserEntryKind('/desktop/unknown'), 'not-found');
+  assert.equal(resolveBrowserEntryKind('/unknown'), 'not-found');
 });
 
 test('resolveBrowserEntryProfile 应区分内容 Brand 与登录态 Workbench', () => {
   assert.equal(resolveBrowserEntryProfile('public'), 'brand');
-  assert.equal(resolveBrowserEntryProfile('root'), 'brand');
+  assert.equal(resolveBrowserEntryProfile('desktop'), 'brand');
+  assert.equal(resolveBrowserEntryProfile('not-found'), 'brand');
   assert.equal(resolveBrowserEntryProfile('workbench'), 'workbench');
   assert.equal(resolveBrowserEntryProfile('docs-author'), 'workbench');
   assert.equal(resolveBrowserEntryProfile('messages'), 'workbench');
   assert.equal(resolveBrowserEntryProfile('oidc'), 'workbench');
+});
+
+test('isDesktopPathname 仅识别明确的历史桌面入口', () => {
+  assert.equal(isDesktopPathname('/desktop'), true);
+  assert.equal(isDesktopPathname('/desktop/'), true);
+  assert.equal(isDesktopPathname('/desktop/unknown'), false);
+  assert.equal(isDesktopPathname('/unknown'), false);
 });
 
 test('isWorkbenchPathname 应单独识别正式 Web 功能总入口', () => {

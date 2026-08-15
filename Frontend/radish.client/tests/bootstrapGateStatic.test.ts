@@ -25,6 +25,7 @@ test('入口组件不应重复承担初始化门禁', () => {
     'src/me/MeEntry.tsx',
     'src/messages/MessagesEntry.tsx',
     'src/notifications/NotificationsEntry.tsx',
+    'src/boundary/NotFoundEntry.tsx',
     'src/pet/PetEntry.tsx',
     'src/public/PublicEntry.tsx',
     'src/shop/ShopEntry.tsx',

@@ -5,6 +5,7 @@ import {
   GuardedRoute,
   SuspenseRoute,
 } from './routerComponents';
+import { RouteRuntimeError } from '../components/RouteRuntimeError';
 import { HangfirePage } from '../pages/SystemTools/HangfirePage';
 
 const applicationsPage = lazy(() => import('../pages/Applications').then(module => ({ default: module.Applications })));
@@ -45,14 +46,17 @@ const router = createBrowserRouter(
     {
       path: '/login',
       element: withSuspense(createElement(loginPage)),
+      errorElement: createElement(RouteRuntimeError),
     },
     {
       path: '/callback',
       element: withSuspense(createElement(oidcCallbackPage)),
+      errorElement: createElement(RouteRuntimeError),
     },
     {
       path: '/',
       element: createElement(AuthenticatedLayout),
+      errorElement: createElement(RouteRuntimeError),
       children: [
         {
           index: true,
@@ -147,6 +151,7 @@ const router = createBrowserRouter(
     {
       path: '*',
       element: withSuspense(createElement(notFoundPage)),
+      errorElement: createElement(RouteRuntimeError),
     },
   ],
   {

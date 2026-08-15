@@ -7,19 +7,23 @@
   color: var(--console-text-secondary);
 }
 
-.console-route-state--permission {
-  max-width: 720px;
+.console-route-state--result {
+  width: min(720px, 100%);
   margin: 0 auto;
   padding: 48px 24px;
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.console-route-state--permission h2 {
-  margin: 0 0 12px;
-  color: var(--console-text-primary);
+.console-route-state--result .ant-result {
+  width: 100%;
 }
 
-.console-route-state--permission p {
-  margin: 0 0 20px;
-  color: var(--console-text-secondary);
-  line-height: 1.6;
+@media (max-width: 720px) {
+  .console-route-state--result {
+    min-height: 52vh;
+    padding: 32px 16px;
+  }
 }
