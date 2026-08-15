@@ -29,6 +29,9 @@ interface WindowStore {
   /** 关闭窗口 */
   closeWindow: (windowId: string) => void;
 
+  /** 注册或清理窗口关闭前的确认提示 */
+  setWindowCloseConfirmMessage: (windowId: string, message: string | null) => void;
+
   /** 最小化窗口 */
   minimizeWindow: (windowId: string) => void;
 
@@ -179,6 +182,10 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
 
   closeWindow: (windowId: string) => {
     const targetWindow = get().openWindows.find(w => w.id === windowId);
+    if (targetWindow?.closeConfirmMessage && !window.confirm(targetWindow.closeConfirmMessage)) {
+      return;
+    }
+
     const geometry = targetWindow ? resolveWindowGeometryForPersistence(targetWindow) : null;
     if (targetWindow && geometry) {
       savePersistedWindowGeometry(targetWindow.persistenceKey || targetWindow.appId, geometry);
@@ -186,6 +193,16 @@ export const useWindowStore = create<WindowStore>((set, get) => ({
 
     set(state => ({
       openWindows: state.openWindows.filter(w => w.id !== windowId)
+    }));
+  },
+
+  setWindowCloseConfirmMessage: (windowId: string, message: string | null) => {
+    set(state => ({
+      openWindows: state.openWindows.map(windowState => (
+        windowState.id === windowId
+          ? { ...windowState, closeConfirmMessage: message || undefined }
+          : windowState
+      ))
     }));
   },
 

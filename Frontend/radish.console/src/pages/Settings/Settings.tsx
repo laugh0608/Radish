@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useDocumentTitle } from '@/hooks/useDocumentTitle';
+import { useUnsavedChangesGuard } from '@/hooks/useUnsavedChangesGuard';
 import {
   AntInput as Input,
-  Switch,
   AntSelect as Select,
   message,
   Space,
@@ -17,35 +18,18 @@ import {
   LockOutlined,
   EyeOutlined,
 } from '@radish/ui';
-import { SaveOutlined, BellOutlined } from '@ant-design/icons';
+import { SaveOutlined, BellOutlined, ReloadOutlined } from '@ant-design/icons';
 import { userApi, type UserTimePreferenceVo } from '@/api/user';
+import { normalizeLanguage, type SupportedLanguage } from '@/locales/language';
 import { log } from '@/utils/logger';
 import '../adminFeature.css';
 import './Settings.css';
-import { useTranslation } from 'react-i18next';
-import { normalizeLanguage, type SupportedLanguage } from '@/locales/language';
+
+type AuthorityState = 'loading' | 'ready' | 'unavailable' | 'stale';
 
 interface SettingsData {
-  timeZoneId: string;
-  emailNotifications: boolean;
-  browserNotifications: boolean;
-  systemNotifications: boolean;
-  theme: 'light';
-  pageSize: number;
-  twoFactorAuth: boolean;
-  sessionTimeout: number;
+  timeZoneId?: string;
 }
-
-const DEFAULT_SETTINGS: SettingsData = {
-  timeZoneId: 'Asia/Shanghai',
-  emailNotifications: true,
-  browserNotifications: true,
-  systemNotifications: false,
-  theme: 'light',
-  pageSize: 20,
-  twoFactorAuth: false,
-  sessionTimeout: 30,
-};
 
 const TIME_ZONE_OPTIONS = [
   { label: 'Asia/Shanghai', value: 'Asia/Shanghai' },
@@ -57,78 +41,131 @@ const TIME_ZONE_OPTIONS = [
   { label: 'America/New_York', value: 'America/New_York' },
 ];
 
-function buildSettings(preference?: UserTimePreferenceVo | null): SettingsData {
-  return {
-    ...DEFAULT_SETTINGS,
-    timeZoneId: preference?.voTimeZoneId || preference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId,
-  };
-}
-
 export const Settings = () => {
   const { t, i18n } = useTranslation();
   const language = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) ?? 'zh';
   useDocumentTitle(t('console.route.settings'));
-  const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
-  const [initializing, setInitializing] = useState(false);
-  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+
+  const [form] = Form.useForm<SettingsData>();
   const [passwordForm] = Form.useForm();
-  const [passwordLoading, setPasswordLoading] = useState(false);
+  const preferenceRef = useRef<UserTimePreferenceVo | null>(null);
+  const loadRequestIdRef = useRef(0);
+  const [authorityState, setAuthorityState] = useState<AuthorityState>('loading');
+  const [loadError, setLoadError] = useState<string>();
+  const [reading, setReading] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [timeZoneDirty, setTimeZoneDirty] = useState(false);
+  const [passwordModalVisible, setPasswordModalVisible] = useState(false);
+  const [passwordBusy, setPasswordBusy] = useState(false);
+  const [passwordDirty, setPasswordDirty] = useState(false);
   const [timePreference, setTimePreference] = useState<UserTimePreferenceVo | null>(null);
-  const [settings, setSettings] = useState<SettingsData>(DEFAULT_SETTINGS);
+
+  const hasUnsavedChanges = timeZoneDirty || passwordDirty;
+  useUnsavedChangesGuard(hasUnsavedChanges, t('settings.personal.dirty.leaveConfirm'));
+
+  const applyPreference = useCallback((preference: UserTimePreferenceVo) => {
+    preferenceRef.current = preference;
+    setTimePreference(preference);
+    form.setFieldsValue({ timeZoneId: preference.voTimeZoneId });
+    setTimeZoneDirty(false);
+    setAuthorityState('ready');
+    setLoadError(undefined);
+  }, [form]);
 
   const loadSettings = useCallback(async () => {
+    const requestId = ++loadRequestIdRef.current;
+    const hadSnapshot = preferenceRef.current !== null;
+    setReading(true);
+    setLoadError(undefined);
+    if (!hadSnapshot) {
+      setAuthorityState('loading');
+    }
+
     try {
-      setInitializing(true);
       const response = await userApi.getMyTimePreference();
       if (!response.ok || !response.data) {
-        throw new Error(t('settings.personal.feedback.loadFailed'));
+        throw new Error(response.message || t('settings.personal.feedback.loadFailed'));
       }
 
-      const nextSettings = buildSettings(response.data);
-      setTimePreference(response.data);
-      setSettings(nextSettings);
-      form.setFieldsValue(nextSettings);
+      if (requestId !== loadRequestIdRef.current) {
+        return;
+      }
+
+      applyPreference(response.data);
     } catch (error) {
+      if (requestId !== loadRequestIdRef.current) {
+        return;
+      }
+
       log.error('Settings', '加载设置失败:', error);
-      message.error(error instanceof Error ? error.message : t('settings.personal.feedback.loadFailed'));
+      const errorMessage = error instanceof Error ? error.message : t('settings.personal.feedback.loadFailed');
+      setLoadError(errorMessage);
+      setAuthorityState(hadSnapshot ? 'stale' : 'unavailable');
+      message.error(errorMessage);
     } finally {
-      setInitializing(false);
+      if (requestId === loadRequestIdRef.current) {
+        setReading(false);
+      }
     }
-  }, [form, t]);
+  }, [applyPreference, t]);
 
   useEffect(() => {
     void loadSettings();
+    return () => {
+      loadRequestIdRef.current += 1;
+    };
   }, [loadSettings]);
 
+  const handleReload = () => {
+    if (!timeZoneDirty) {
+      void loadSettings();
+      return;
+    }
+
+    Modal.confirm({
+      title: t('settings.personal.dirty.reloadTitle'),
+      content: t('settings.personal.dirty.reloadDescription'),
+      okText: t('settings.personal.dirty.discard'),
+      cancelText: t('settings.personal.dirty.continue'),
+      onOk: () => {
+        setTimeZoneDirty(false);
+        void loadSettings();
+      },
+    });
+  };
+
   const handleSave = async () => {
+    if (authorityState !== 'ready' || saving || resetting || !timeZoneDirty) {
+      return;
+    }
+
     try {
       const values = await form.validateFields();
-      setLoading(true);
-
-      const response = await userApi.updateMyTimePreference(values.timeZoneId);
+      setSaving(true);
+      const response = await userApi.updateMyTimePreference(values.timeZoneId!);
       if (!response.ok || !response.data) {
-        throw new Error(t('settings.personal.feedback.saveFailed'));
+        throw new Error(response.message || t('settings.personal.feedback.saveFailed'));
       }
 
-      const nextSettings = buildSettings(response.data);
-      setTimePreference(response.data);
-      setSettings(nextSettings);
-      form.setFieldsValue(nextSettings);
+      applyPreference(response.data);
       message.success(t('settings.personal.feedback.saveSuccess'));
     } catch (error) {
       log.error('Settings', '保存设置失败:', error);
       message.error(error instanceof Error ? error.message : t('settings.personal.feedback.saveFailed'));
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
   const handleChangePassword = async () => {
+    if (passwordBusy) {
+      return;
+    }
+
     try {
       const values = await passwordForm.validateFields();
-      setPasswordLoading(true);
-
+      setPasswordBusy(true);
       const response = await userApi.changeMyLoginPassword({
         currentPassword: values.currentPassword,
         newPassword: values.newPassword,
@@ -136,47 +173,76 @@ export const Settings = () => {
       });
 
       if (!response.ok) {
-        throw new Error(t('settings.personal.feedback.passwordFailed'));
+        throw new Error(response.message || t('settings.personal.feedback.passwordFailed'));
       }
 
       message.success(t('settings.personal.feedback.passwordSuccess'));
       setPasswordModalVisible(false);
+      setPasswordDirty(false);
       passwordForm.resetFields();
     } catch (error) {
       log.error('Settings', '修改密码失败:', error);
       message.error(error instanceof Error ? error.message : t('settings.personal.feedback.passwordFailed'));
     } finally {
-      setPasswordLoading(false);
+      setPasswordBusy(false);
     }
   };
 
+  const closePasswordModal = () => {
+    if (passwordBusy) {
+      return;
+    }
+
+    const close = () => {
+      setPasswordModalVisible(false);
+      setPasswordDirty(false);
+      passwordForm.resetFields();
+    };
+
+    if (!passwordDirty) {
+      close();
+      return;
+    }
+
+    Modal.confirm({
+      title: t('settings.personal.password.discardTitle'),
+      content: t('settings.personal.password.discardDescription'),
+      okText: t('settings.personal.dirty.discard'),
+      cancelText: t('settings.personal.dirty.continue'),
+      onOk: close,
+    });
+  };
+
   const handleReset = () => {
+    if (authorityState !== 'ready' || !timePreference || saving || resetting) {
+      return;
+    }
+
     Modal.confirm({
       title: t('settings.personal.feedback.resetTitle'),
       content: t('settings.personal.feedback.resetContent'),
       onOk: async () => {
-        const fallbackTimeZone = timePreference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId;
         try {
-          setLoading(true);
-          const response = await userApi.updateMyTimePreference(fallbackTimeZone);
+          setResetting(true);
+          const response = await userApi.updateMyTimePreference(timePreference.voSystemDefaultTimeZoneId);
           if (!response.ok || !response.data) {
-            throw new Error(t('settings.personal.feedback.resetFailed'));
+            throw new Error(response.message || t('settings.personal.feedback.resetFailed'));
           }
 
-          const nextSettings = buildSettings(response.data);
-          setTimePreference(response.data);
-          setSettings(nextSettings);
-          form.setFieldsValue(nextSettings);
+          applyPreference(response.data);
           message.success(t('settings.personal.feedback.resetSuccess'));
         } catch (error) {
           log.error('Settings', '重置设置失败:', error);
           message.error(error instanceof Error ? error.message : t('settings.personal.feedback.resetFailed'));
         } finally {
-          setLoading(false);
+          setResetting(false);
         }
       },
     });
   };
+
+  const writesAreAuthoritative = authorityState === 'ready';
+  const preferenceBusy = reading || saving || resetting;
 
   return (
     <div className="admin-feature-page settings-page">
@@ -188,16 +254,19 @@ export const Settings = () => {
             </h2>
             <p className="admin-feature-subtle">{t('settings.personal.description')}</p>
           </div>
-          <Space>
-            <Button onClick={handleReset} disabled={initializing || loading}>
+          <Space wrap>
+            <Button icon={<ReloadOutlined />} onClick={handleReload} loading={reading} disabled={saving || resetting}>
+              {t('settings.personal.reload')}
+            </Button>
+            <Button onClick={handleReset} loading={resetting} disabled={!writesAreAuthoritative || saving}>
               {t('settings.personal.resetDefault')}
             </Button>
             <Button
               type="primary"
               icon={<SaveOutlined />}
-              loading={loading}
-              disabled={initializing}
-              onClick={handleSave}
+              loading={saving}
+              disabled={!writesAreAuthoritative || resetting || !timeZoneDirty}
+              onClick={() => void handleSave()}
             >
               {t('settings.personal.save')}
             </Button>
@@ -205,19 +274,50 @@ export const Settings = () => {
         </div>
       </section>
 
+      {authorityState === 'loading' ? (
+        <div className="self-service-authority self-service-authority--loading" role="status">
+          <strong>{t('settings.personal.authority.loadingTitle')}</strong>
+          <span>{t('settings.personal.authority.loadingDescription')}</span>
+        </div>
+      ) : null}
+      {authorityState === 'unavailable' ? (
+        <div className="self-service-authority self-service-authority--unavailable" role="alert">
+          <div>
+            <strong>{t('settings.personal.authority.unavailableTitle')}</strong>
+            <span>{loadError || t('settings.personal.feedback.loadFailed')}</span>
+          </div>
+          <Button onClick={() => void loadSettings()} loading={reading}>{t('settings.personal.authority.retry')}</Button>
+        </div>
+      ) : null}
+      {authorityState === 'stale' ? (
+        <div className="self-service-authority self-service-authority--stale" role="alert">
+          <div>
+            <strong>{t('settings.personal.authority.staleTitle')}</strong>
+            <span>{t('settings.personal.authority.staleDescription')}</span>
+          </div>
+          <Button onClick={handleReload} loading={reading}>{t('settings.personal.authority.reload')}</Button>
+        </div>
+      ) : null}
+      {timeZoneDirty ? (
+        <div className="self-service-authority self-service-authority--dirty" role="status">
+          <strong>{t('settings.personal.dirty.title')}</strong>
+          <span>{t('settings.personal.dirty.description')}</span>
+        </div>
+      ) : null}
+
       <div className="admin-settings-layout">
         <aside className="admin-settings-nav" aria-label={t('settings.personal.navLabel')}>
           <h3>{t('settings.personal.navTitle')}</h3>
           <p className="admin-feature-subtle">{t('settings.personal.navDescription')}</p>
           <nav className="admin-settings-nav__list">
-            <a className="admin-settings-nav__item" href="#settings-notifications">
-              <BellOutlined /> {t('settings.personal.notifications.title')}
-            </a>
             <a className="admin-settings-nav__item" href="#settings-interface">
               <EyeOutlined /> {t('settings.personal.interface.title')}
             </a>
             <a className="admin-settings-nav__item" href="#settings-security">
               <LockOutlined /> {t('settings.personal.security.title')}
+            </a>
+            <a className="admin-settings-nav__item" href="#settings-deferred">
+              <BellOutlined /> {t('settings.personal.deferred.title')}
             </a>
           </nav>
         </aside>
@@ -225,33 +325,17 @@ export const Settings = () => {
         <Form
           form={form}
           layout="vertical"
-          initialValues={settings}
           className="admin-settings-main"
+          onValuesChange={(_, values) => {
+            const authoritativeTimeZone = preferenceRef.current?.voTimeZoneId;
+            setTimeZoneDirty(
+              authorityState === 'ready' &&
+              typeof values.timeZoneId === 'string' &&
+              values.timeZoneId !== authoritativeTimeZone,
+            );
+          }}
         >
-          <section id="settings-notifications" className="admin-setting-section">
-            <div className="admin-setting-section__title">
-              <div>
-                <div className="admin-setting-section__title-main">
-                  <BellOutlined />
-                  <h3>{t('settings.personal.notifications.title')}</h3>
-                </div>
-                <p className="admin-feature-subtle">{t('settings.personal.notifications.description')}</p>
-              </div>
-              <Tag>{t('settings.personal.notifications.deferred')}</Tag>
-            </div>
-
-            <Form.Item name="emailNotifications" label={t('settings.personal.notifications.email')} valuePropName="checked">
-              <Switch checkedChildren={t('settings.personal.state.on')} unCheckedChildren={t('settings.personal.state.off')} disabled />
-            </Form.Item>
-            <Form.Item name="browserNotifications" label={t('settings.personal.notifications.browser')} valuePropName="checked">
-              <Switch checkedChildren={t('settings.personal.state.on')} unCheckedChildren={t('settings.personal.state.off')} disabled />
-            </Form.Item>
-            <Form.Item name="systemNotifications" label={t('settings.personal.notifications.system')} valuePropName="checked">
-              <Switch checkedChildren={t('settings.personal.state.on')} unCheckedChildren={t('settings.personal.state.off')} disabled />
-            </Form.Item>
-          </section>
-
-          <section id="settings-interface" className="admin-setting-section">
+          <section id="settings-interface" className="admin-setting-section settings-primary-task">
             <div className="admin-setting-section__title">
               <div>
                 <div className="admin-setting-section__title-main">
@@ -260,6 +344,9 @@ export const Settings = () => {
                 </div>
                 <p className="admin-feature-subtle">{t('settings.personal.interface.description')}</p>
               </div>
+              <Tag color={authorityState === 'ready' ? 'success' : authorityState === 'stale' ? 'warning' : 'default'}>
+                {t(`settings.personal.authority.state.${authorityState}`)}
+              </Tag>
             </div>
 
             <Form.Item
@@ -267,21 +354,15 @@ export const Settings = () => {
               label={t('settings.personal.interface.timeZone')}
               rules={[{ required: true, message: t('settings.personal.interface.timeZoneRequired') }]}
             >
-              <Select options={TIME_ZONE_OPTIONS} />
+              <Select options={TIME_ZONE_OPTIONS} disabled={!writesAreAuthoritative || preferenceBusy} />
             </Form.Item>
             <div className="settings-meta">
-              <span>{t('settings.personal.interface.systemDefault', { value: timePreference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId })}</span>
-              <span>{t('settings.personal.interface.displayFormat', { value: timePreference?.voDisplayFormat || 'yyyy-MM-dd HH:mm:ss' })}</span>
+              <span>{t('settings.personal.interface.systemDefault', { value: timePreference?.voSystemDefaultTimeZoneId || '--' })}</span>
+              <span>{t('settings.personal.interface.displayFormat', { value: timePreference?.voDisplayFormat || '--' })}</span>
             </div>
 
             <Divider />
 
-            <Form.Item name="theme" label={t('settings.personal.interface.theme')}>
-              <Select
-                disabled
-                options={[{ label: t('settings.personal.interface.lightTheme'), value: 'light' }]}
-              />
-            </Form.Item>
             <Form.Item label={t('settings.language.label')}>
               <Select
                 value={language}
@@ -292,12 +373,7 @@ export const Settings = () => {
                 onChange={(value: SupportedLanguage) => void i18n.changeLanguage(value)}
               />
             </Form.Item>
-            <Form.Item name="pageSize" label={t('settings.personal.interface.pageSize')}>
-              <Select
-                disabled
-                options={[{ label: t('settings.personal.interface.pageSizeValue', { count: 20 }), value: 20 }]}
-              />
-            </Form.Item>
+            <p className="settings-local-authority-note">{t('settings.personal.interface.languageAuthority')}</p>
           </section>
 
           <section id="settings-security" className="admin-setting-section">
@@ -311,27 +387,33 @@ export const Settings = () => {
               </div>
             </div>
 
-            <Form.Item name="twoFactorAuth" label={t('settings.personal.security.twoFactor')} valuePropName="checked">
-              <Switch checkedChildren={t('settings.personal.state.on')} unCheckedChildren={t('settings.personal.state.off')} disabled />
-            </Form.Item>
-            <Form.Item name="sessionTimeout" label={t('settings.personal.security.sessionTimeout')}>
-              <Select
-                disabled
-                options={[{ label: t('settings.personal.security.sessionTimeoutValue', { count: 30 }), value: 30 }]}
-              />
-            </Form.Item>
-
-            <Divider />
-
             <div className="password-section">
               <h4>{t('settings.personal.security.passwordTitle')}</h4>
               <p>{t('settings.personal.security.passwordDescription')}</p>
-              <Button
-                icon={<LockOutlined />}
-                onClick={() => setPasswordModalVisible(true)}
-              >
+              <Button icon={<LockOutlined />} onClick={() => setPasswordModalVisible(true)} disabled={passwordBusy}>
                 {t('settings.personal.security.changePassword')}
               </Button>
+            </div>
+          </section>
+
+          <section id="settings-deferred" className="admin-setting-section">
+            <div className="admin-setting-section__title">
+              <div>
+                <div className="admin-setting-section__title-main">
+                  <BellOutlined />
+                  <h3>{t('settings.personal.deferred.title')}</h3>
+                </div>
+                <p className="admin-feature-subtle">{t('settings.personal.deferred.description')}</p>
+              </div>
+              <Tag>{t('settings.personal.notifications.deferred')}</Tag>
+            </div>
+            <div className="settings-deferred-list">
+              {(['notifications', 'theme', 'pageSize', 'twoFactor', 'session'] as const).map((capability) => (
+                <div className="settings-deferred-item" key={capability}>
+                  <strong>{t(`settings.personal.deferred.${capability}.title`)}</strong>
+                  <span>{t(`settings.personal.deferred.${capability}.description`)}</span>
+                </div>
+              ))}
             </div>
           </section>
         </Form>
@@ -341,20 +423,20 @@ export const Settings = () => {
           <p className="admin-feature-subtle">{t('settings.personal.scope.description')}</p>
           <div className="admin-settings-aside__list">
             <div className="admin-settings-aside__item">
+              <span className="admin-settings-aside__label">{t('settings.personal.scope.authority')}</span>
+              <span className="admin-settings-aside__value">{t(`settings.personal.authority.state.${authorityState}`)}</span>
+            </div>
+            <div className="admin-settings-aside__item">
               <span className="admin-settings-aside__label">{t('settings.personal.scope.currentTimeZone')}</span>
-              <span className="admin-settings-aside__value">{settings.timeZoneId}</span>
+              <span className="admin-settings-aside__value">{timePreference?.voTimeZoneId || '--'}</span>
             </div>
             <div className="admin-settings-aside__item">
               <span className="admin-settings-aside__label">{t('settings.personal.scope.systemDefault')}</span>
-              <span className="admin-settings-aside__value">
-                {timePreference?.voSystemDefaultTimeZoneId || DEFAULT_SETTINGS.timeZoneId}
-              </span>
+              <span className="admin-settings-aside__value">{timePreference?.voSystemDefaultTimeZoneId || '--'}</span>
             </div>
             <div className="admin-settings-aside__item">
               <span className="admin-settings-aside__label">{t('settings.personal.scope.displayFormat')}</span>
-              <span className="admin-settings-aside__value">
-                {timePreference?.voDisplayFormat || 'yyyy-MM-dd HH:mm:ss'}
-              </span>
+              <span className="admin-settings-aside__value">{timePreference?.voDisplayFormat || '--'}</span>
             </div>
             <div className="admin-settings-aside__item">
               <span className="admin-settings-aside__label">{t('settings.personal.scope.notifications')}</span>
@@ -367,16 +449,14 @@ export const Settings = () => {
       <Modal
         title={t('settings.personal.password.title')}
         open={passwordModalVisible}
-        onOk={handleChangePassword}
-        onCancel={() => {
-          setPasswordModalVisible(false);
-          passwordForm.resetFields();
-        }}
-        confirmLoading={passwordLoading}
+        onOk={() => void handleChangePassword()}
+        onCancel={closePasswordModal}
+        confirmLoading={passwordBusy}
         width={500}
         forceRender
+        maskClosable={false}
       >
-        <Form form={passwordForm} layout="vertical">
+        <Form form={passwordForm} layout="vertical" onValuesChange={() => setPasswordDirty(true)}>
           <Form.Item
             name="currentPassword"
             label={t('settings.personal.password.current')}

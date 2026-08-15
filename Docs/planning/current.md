@@ -6,15 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R R3-F02-B 自服务权威状态（方案待确认）`
-- **产品下一顺位**：`审计并收口 Settings / Profile 的动态规则、权威快照、dirty / CAS / stale 边界，再进入错误与路由边界`
-- **复核日期**：`2026-08-13`
+- **工程第一顺位**：`F4-R R3-F02-C 错误与路由边界（方案待确认）`
+- **产品下一顺位**：`收口 Client / Console 的 Not Found、权限拒绝与根级运行时错误，再执行 F02 成组运行态验收`
+- **复核日期**：`2026-08-15`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
-- `2026-08-13` 已完成 [R3-F02-A OIDC 回流信任门禁实现与静态门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)：Client / Console 共用密码学随机 `state + PKCE S256`、五分钟会话尝试、一次性 callback 消费与稳定授权错误；Flutter 完成等价协议、持久化 verifier 和 Android state 回传；Auth 在凭据查询前拒绝非本地 `returnUrl`，`radish-client / radish-console` 已统一启用 PKCE requirement。Console 深链只恢复同 base 安全来源，原始授权 / Token 详情不直接展示。后端 `1275 passed / 41 skipped`、HTTP `48 / 48`、Client `550 / 550`、Console `130 / 130`、Flutter `209 / 209`、Android 原生单测、构建、Lint、类型与身份门禁通过；静态阶段未启动服务 / 浏览器或修改 Pencil。下一顺位进入 `R3-F02-B 自服务权威状态` 方案确认。
+- `2026-08-15` 已完成 [R3-F02-B 自服务权威状态实现与静态门禁](/records/f4-r-r3-f02-b-self-service-authoritative-state-implementation-2026-08-15)：Console Settings 只开放时区、浏览器本地语言与密码真实能力，后置设置不再伪装可写；Client / Console Profile 以独立请求代际维护资料、余额、统计和时间偏好，首次失败 unavailable、刷新失败 stale 并冻结写入，dirty / busy 与离开保护覆盖导航、浏览器和 WebOS 窗口。未提供的最近登录不再伪装空值，触达错误具备稳定 `Code / MessageKey`。后端 `1278 passed / 41 skipped`、Client `553 / 553`、Console `133 / 133`、两端 Lint / production build 与后端构建通过；未启动服务 / 浏览器或修改 Pencil。下一顺位进入 `R3-F02-C 错误与路由边界` 方案确认。
 - `2026-08-13` 已完成 [R3-F02 自服务与边界页设计前代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)：Settings / Profile 继续继承 `R1-C01 + R2-C03`，Login / OIDC / Not Found / Error 继续继承 `R1-F01`，没有新壳层或响应式模型，不修改 Pencil。审计同时确认 Web / Console / Flutter 尚未形成 `state + PKCE` 闭环，Auth 登录 POST 未限制本地 `returnUrl`，callback 丢失授权错误，Console 登录丢失内部来源；因此 F02 拆为 A OIDC 回流信任、B 自服务权威状态、C 错误与路由边界三批，先实施 A。当前只完成文档审计，运行时代码方案等待确认，未启动服务 / 浏览器或变更依赖。
 - `2026-08-13` 已完成 [R3-C05 Console 仪表与治理派生成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)：本地 SQLite 幂等应用 `_021 / _022` 且 strict Doctor 全部 ready，五宿主入口均为 `200`；Dashboard、Channel、Documents、Experience 通过 Gateway PC `1920 × 1080`、Mobile `390 × 844` 与中英文复核，Test 种子账号被 Console 权限停止页准确拒绝。Experience 完成 `+1 → -1` 与“冻结 → 解冻”，最终总经验 `17`、未冻结，append-only 审计事实保留。运行态成组修正 migration verifier 读取待新增列、共享 Button 在 Form 内默认 submit、HMR 重复 React Root 与未挂载 Review Form 重置四类根因；全新标签稳定态 `0 warning / 0 error`。R3-C05 关闭，下一顺位进入 `R3-F02` 设计前代码事实审计。
 - `2026-08-13` 已完成 [R3-C05-D Experience 权威台账治理代码及静态门禁](/records/f4-r-r3-c05-d-experience-authoritative-ledger-governance-implementation-2026-08-13)：所有受控写入绑定权威用户与 `UserExperience.Version`，调账 / 人工审核以独立幂等域支持安全重放，冻结 / 解冻 / 自动到期具备版本动作事实；`20260813_022_experience_authoritative_governance` 建立动作版本快照与等级重算 append-only 审计，预览指纹在事务内重验后整批重算。用户、统计、流水和动作查询进入 URL，五类证据分别维护请求代际与 `loading / ready / unavailable / stale`；CAS 冲突保留表单与幂等键并精确刷新。后端全量 `1270 passed / 41 skipped`、Console `126 / 126`、类型、Lint、production build、权限与卫生门禁通过；未新增权限键，未启动服务 / 浏览器或修改 Pencil。R3-C05 四批静态门禁关闭，下一顺位进入成组运行态验收。
@@ -174,24 +174,24 @@
 64. 按确认设计完成 R2-A02 正式前端实现：Docs / Forum 共享相邻 / 当前双快照差异，Mine 主轴与 Mobile 顺序收敛，正式 Composer 以同一实例承载 PC / Mobile 半屏和全屏；Client 全量 `536 / 536`、类型、Lint、构建与变更卫生通过。
 65. 获授权后使用种子管理员完成 Gateway PC `1440 × 900` 与 Mobile `390 × 844` 成组验收；修正选中文档行 Mobile 断点和 Composer 图标按钮可访问名称，复验无横向溢出，干净标签页 `0 warning / 0 error`，R2-A02 关闭。
 66. 按确认方案关闭 R3-F02-A：Web / Console / Flutter 的 state + PKCE、Auth 本地回跳、稳定授权错误、Console 深链返回与 OpenIddict requirement 均已落地；后端、HTTP、Client、Console、Flutter、Android 原生、构建、Lint、类型、身份与卫生门禁通过。
+67. 按确认方案关闭 R3-F02-B：Settings / Profile 的真实能力、独立权威快照、unavailable / stale、dirty / busy、Mobile 主任务顺序和稳定自服务错误均已落地；后端、Client、Console、Lint 与生产构建通过。
 
-## 明天事项（2026-08-14）
+## 下一步事项
 
-1. 新会话先读取本页、[今日日终记录](/records/f4-day-end-doc-review-2026-08-13)、[R3-F02 审计记录](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)、[A 批实现记录](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)和 Settings / Profile 既有测试入口。
-2. 先确认 `R3-F02-B 自服务权威状态` 精确方案：反查 Console Settings 的动态规则、dirty / CAS / stale 与 Client / Console Profile 的独立摘要快照和失败边界。
-3. B 批只收口既有自服务能力，不新增 Profile 字段、通知设置、账号恢复、2FA、会话管理、权限键、API 聚合或视觉壳层。
-4. B 批静态门禁关闭后进入 `R3-F02-C 错误与路由边界`；A / B / C 全部完成后另行申请服务启动和 Gateway 成组验收。
+1. 新会话先读取本页、[R3-F02 审计记录](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)、[A 批实现记录](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)与[B 批实现记录](/records/f4-r-r3-f02-b-self-service-authoritative-state-implementation-2026-08-15)。
+2. 先确认 `R3-F02-C 错误与路由边界` 精确方案：区分 Client 未知路径与 `/desktop`，补齐两端根级 ErrorBoundary，并分离 Console 权限拒绝、Not Found 和运行时错误。
+3. C 批保持现有路由 metadata、权限键、身份能力和 R1-F01 视觉语义，不建立万能错误状态机或新增 Pencil 画板。
+4. C 批静态门禁关闭后另行申请服务启动，按审计矩阵执行 F02 Gateway PC / Mobile 成组验收。
 5. 三处既有 `DateTime.Now` 继续留在独立维护线，不与 R3-F02 混批。
 
 ## 当前执行入口
 
 - [2026-08-13 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-13)
 - [R3-F02 自服务与边界页设计前代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)
+- [R3-F02-B 自服务权威状态实现与静态门禁](/records/f4-r-r3-f02-b-self-service-authoritative-state-implementation-2026-08-15)
 - [R3-F02-A OIDC 回流信任门禁实现与静态门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)
 - [R3-C05 Console 仪表与治理派生成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)
 - [R3-C05-D Experience 权威台账治理实现](/records/f4-r-r3-c05-d-experience-authoritative-ledger-governance-implementation-2026-08-13)
-- [R3-C05-C Documents 权威治理实现](/records/f4-r-r3-c05-c-documents-authoritative-governance-implementation-2026-08-13)
-- [R3-C05-B Channel Discoverability 权威公开资格治理实现](/records/f4-r-r3-c05-b-channel-discoverability-authoritative-governance-implementation-2026-08-13)
 - [R3-C05-A Console Dashboard 权威调度面实现](/records/f4-r-r3-c05-a-console-dashboard-authoritative-dispatch-implementation-2026-08-12)
 - [R3-C05 Console 仪表与治理派生设计前审计](/records/f4-r-r3-c05-console-dashboard-governance-readiness-audit-2026-08-12)
 - [R3-C04-F Coins 权威调账与流水治理实现](/records/f4-r-r3-c04-f-console-coins-implementation-2026-08-12)

@@ -18,6 +18,36 @@
   font-size: 13px;
 }
 
+.settings-local-authority-note {
+  color: var(--console-text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.settings-deferred-list {
+  display: grid;
+  gap: 10px;
+}
+
+.settings-deferred-item {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-control);
+  background: var(--console-bg-muted);
+}
+
+.settings-deferred-item strong {
+  color: var(--console-text-primary);
+}
+
+.settings-deferred-item span {
+  color: var(--console-text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
 .password-section {
   padding: 16px;
   background: var(--console-bg-muted);
@@ -39,6 +69,10 @@
 }
 
 @media (max-width: 768px) {
+  .settings-page .admin-settings-main {
+    order: -1;
+  }
+
   .settings-page .admin-feature-header .ant-space {
     width: 100%;
     justify-content: flex-end;

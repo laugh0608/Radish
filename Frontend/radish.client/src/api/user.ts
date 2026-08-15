@@ -3,7 +3,7 @@
  * 直接使用后端 Vo 字段名，不做映射
  */
 
-import { apiGet, configureApiClient, createApiResponseError } from '@radish/http';
+import { apiGet, apiPost, configureApiClient, createApiResponseError } from '@radish/http';
 import type { TFunction } from 'i18next';
 import { getApiBaseUrl } from '@/config/env';
 import type { UserAdornment } from '@/types/userAdornment';
@@ -95,6 +95,33 @@ export interface PublicUserStats {
   voTotalLikeCount: number;
   voPostLikeCount: number;
   voCommentLikeCount: number;
+}
+
+export interface MyProfileInfo {
+  voUserId: LongId;
+  voPublicId?: string | null;
+  voPublicIndex?: string | number | null;
+  voDisplayName?: string | null;
+  voDisplayHandle?: string | null;
+  voUserName: string;
+  voUserEmail: string;
+  voSex: number;
+  voAge: number;
+  voBirth?: string | null;
+  voAddress: string;
+  voCreateTime: string;
+  voAvatarAttachmentId?: string | null;
+  voAvatarUrl?: string | null;
+  voAvatarThumbnailUrl?: string | null;
+}
+
+export interface UpdateMyProfileRequest {
+  userName?: string;
+  userEmail?: string;
+  sex?: number;
+  age?: number;
+  birth?: string | null;
+  address?: string;
 }
 
 export interface PublicUserPost {
@@ -242,6 +269,40 @@ export async function getPublicUserStats(identifier: PublicUserIdentifier): Prom
 
   if (!response.ok || !response.data) {
     throw createApiResponseError(response, '加载用户统计失败');
+  }
+
+  return response.data;
+}
+
+export async function getMyProfile(t: TFunction): Promise<MyProfileInfo> {
+  const response = await apiGet<MyProfileInfo>('/api/v1/User/GetMyProfile', { withAuth: true });
+
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, t('profile.authority.profileLoadFailed'));
+  }
+
+  return response.data;
+}
+
+export async function updateMyProfile(
+  request: UpdateMyProfileRequest,
+  t: TFunction,
+): Promise<void> {
+  const response = await apiPost<null>('/api/v1/User/UpdateMyProfile', request, { withAuth: true });
+
+  if (!response.ok) {
+    throw createApiResponseError(response, t('profile.info.saveFailed'));
+  }
+}
+
+export async function getUserStats(userId: LongId, t: TFunction): Promise<PublicUserStats> {
+  const response = await apiGet<PublicUserStats>(
+    `/api/v1/User/GetUserStats?userId=${encodeURIComponent(String(userId))}`,
+    { withAuth: true },
+  );
+
+  if (!response.ok || !response.data) {
+    throw createApiResponseError(response, t('profile.authority.statsLoadFailed'));
   }
 
   return response.data;

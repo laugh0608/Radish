@@ -12,6 +12,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
+using Radish.Shared.Constants;
 using Microsoft.Extensions.Localization;
 using Radish.Api.Resources;
 using Radish.Model.DtoModels;
@@ -76,6 +77,63 @@ public class UserController : ControllerBase
     }
 
     private CurrentUser Current => _currentUserAccessor.Current;
+
+    private static MessageModel BuildSelfServiceFailure(
+        HttpStatusCodeEnum statusCode,
+        string message,
+        string errorCode)
+    {
+        return new MessageModel
+        {
+            IsSuccess = false,
+            StatusCode = (int)statusCode,
+            MessageInfo = message,
+            Code = errorCode,
+            MessageKey = UserSelfServiceErrorCodes.ResolveMessageKey(errorCode)
+        };
+    }
+
+    private static (HttpStatusCodeEnum StatusCode, string ErrorCode) ResolveProfileFailure(Exception exception)
+    {
+        if (exception.Message == "邮箱已被占用")
+        {
+            return (HttpStatusCodeEnum.Conflict, UserSelfServiceErrorCodes.ProfileEmailConflict);
+        }
+
+        if (exception.Message.StartsWith("显示名修改过于频繁", StringComparison.Ordinal) ||
+            exception.Message.StartsWith("显示名在", StringComparison.Ordinal))
+        {
+            return (HttpStatusCodeEnum.Conflict, UserSelfServiceErrorCodes.ProfileChangeLimited);
+        }
+
+        if (exception.Message == "个人资料已发生并发变化，请重新加载后重试")
+        {
+            return (HttpStatusCodeEnum.Conflict, UserSelfServiceErrorCodes.ProfileConcurrentChange);
+        }
+
+        if (exception.Message.Contains("系统设置无效", StringComparison.Ordinal))
+        {
+            return (HttpStatusCodeEnum.ServiceUnavailable, UserSelfServiceErrorCodes.ProfilePolicyUnavailable);
+        }
+
+        if (exception.Message is "用户不存在或已禁用" or "用户不存在")
+        {
+            return (HttpStatusCodeEnum.NotFound, UserSelfServiceErrorCodes.UserUnavailable);
+        }
+
+        return (HttpStatusCodeEnum.BadRequest, UserSelfServiceErrorCodes.ProfileInvalid);
+    }
+
+    private static (HttpStatusCodeEnum StatusCode, string ErrorCode) ResolvePasswordFailure(Exception exception)
+    {
+        return exception.Message switch
+        {
+            "当前密码不正确" => (HttpStatusCodeEnum.BadRequest, UserSelfServiceErrorCodes.CurrentPasswordIncorrect),
+            "用户不存在或已禁用" => (HttpStatusCodeEnum.NotFound, UserSelfServiceErrorCodes.UserUnavailable),
+            "密码更新失败" => (HttpStatusCodeEnum.Conflict, UserSelfServiceErrorCodes.PasswordUpdateConflict),
+            _ => (HttpStatusCodeEnum.BadRequest, UserSelfServiceErrorCodes.PasswordInvalid)
+        };
+    }
 
     /// <summary>
     /// 获取全部用户列表
@@ -437,24 +495,20 @@ public class UserController : ControllerBase
         var requestedTimeZoneId = dto.TimeZoneId?.Trim();
         if (string.IsNullOrWhiteSpace(requestedTimeZoneId))
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "时区不能为空"
-            };
+            return BuildSelfServiceFailure(
+                HttpStatusCodeEnum.BadRequest,
+                "时区不能为空",
+                UserSelfServiceErrorCodes.TimeZoneRequired);
         }
 
         var isResolvableTimeZone = TimeZoneResolver.IsValidTimeZoneId(requestedTimeZoneId);
         var isLikelyIanaTimeZone = TimeZoneResolver.IsLikelyIanaTimeZoneId(requestedTimeZoneId);
         if (!isResolvableTimeZone && !isLikelyIanaTimeZone)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = "无效时区，请传入有效的 IANA/Windows 时区 ID"
-            };
+            return BuildSelfServiceFailure(
+                HttpStatusCodeEnum.BadRequest,
+                "无效时区，请传入有效的 IANA/Windows 时区 ID",
+                UserSelfServiceErrorCodes.TimeZoneInvalid);
         }
 
         var userId = Current.UserId;
@@ -768,31 +822,21 @@ public class UserController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            var failure = ResolveProfileFailure(ex);
+            return BuildSelfServiceFailure(failure.StatusCode, ex.Message, failure.ErrorCode);
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            var failure = ResolveProfileFailure(ex);
+            return BuildSelfServiceFailure(failure.StatusCode, ex.Message, failure.ErrorCode);
         }
 
         if (!updated)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.NotFound,
-                MessageInfo = "用户不存在"
-            };
+            return BuildSelfServiceFailure(
+                HttpStatusCodeEnum.NotFound,
+                "用户不存在",
+                UserSelfServiceErrorCodes.UserUnavailable);
         }
 
         return new MessageModel
@@ -829,21 +873,13 @@ public class UserController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            var failure = ResolvePasswordFailure(ex);
+            return BuildSelfServiceFailure(failure.StatusCode, ex.Message, failure.ErrorCode);
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            var failure = ResolvePasswordFailure(ex);
+            return BuildSelfServiceFailure(failure.StatusCode, ex.Message, failure.ErrorCode);
         }
     }
 
