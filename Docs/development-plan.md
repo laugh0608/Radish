@@ -8,8 +8,8 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R-T02 reduced-motion 与静态退出门禁`
-- **产品下一顺位**：`关闭 T02 reduced-motion 与 T03 四主题运行态，再进入 Flutter 语义映射`
+- **工程第一顺位**：`F4-R-T03 Web 四主题成组运行态验收（待当轮启动与临时权益数据授权）`
+- **产品下一顺位**：`关闭 T03 四主题运行态，再进入 Flutter 语义映射`
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）
 - **复核日期**：`2026-08-15`
 - **当前结论**：
@@ -133,7 +133,7 @@ Radish V1 固定为：
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
-17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A / B、family-ui `v26.7.3` 基线补充、C-0、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)、`R1-F01`、六个 R1、四个 R2 与六组 Web R3 实现 / Gateway 验收均已关闭。[T01 Web 主题语义基线](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)已完成，下一步按 T02 / T03 收口 reduced-motion 与四主题运行态；Web 基线关闭后再进入 Flutter 语义映射。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)已经启动；A / B、family-ui `v26.7.3` 基线补充、C-0、[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)、`R1-F01`、六个 R1、四个 R2 与六组 Web R3 实现 / Gateway 验收均已关闭。[T01 主题语义](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)与 [T02 reduced-motion](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)已完成，下一步执行 T03 四主题运行态；Web 基线关闭后再进入 Flutter 语义映射。
 18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层

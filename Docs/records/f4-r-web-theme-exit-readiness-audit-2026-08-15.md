@@ -2,7 +2,7 @@
 
 > 日期：2026-08-15（Asia/Shanghai）
 >
-> 状态：代码事实、历史证据与退出缺口已审计；[T01](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)已完成，T02 / T03 待关闭，F4-R 尚未关闭
+> 状态：代码事实、历史证据与退出缺口已审计；[T01](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)与 [T02](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)已完成，T03 待关闭，F4-R 尚未关闭
 >
 > 范围：`radish.client` 四主题、`@radish/ui` 共享主题、Console Workbench、可访问性与 reduced-motion；Flutter 只确定后续入口，本批不实现 Dart 映射
 
@@ -23,7 +23,7 @@
 
 本审计没有修改运行时代码、主题权益、数据库、Pencil 或依赖，也没有启动服务或浏览器。
 
-> 后续进度：`2026-08-15` 已按本审计第 5 节完成 T01；本页第 3 节继续保留审计时点的代码事实，不改写历史输入。当前下一顺位为 T02。
+> 后续进度：`2026-08-15` 已按本审计第 5、6 节完成 T01 / T02；本页第 3 节继续保留审计时点的代码事实，不改写历史输入。当前下一顺位为 T03。
 
 ## 2. 已成立的基线
 

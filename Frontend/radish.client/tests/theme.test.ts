@@ -104,6 +104,16 @@ test('family-ui token 副本与 Client L2 应保持可追溯关系', () => {
   assert.match(clientTokens, /--theme-link-primary:\s*var\(--theme-action-primary\)/);
   assert.match(clientTokens, /--theme-link-hover:\s*var\(--theme-action-hover\)/);
   assert.match(clientTokens, /--theme-state-danger:\s*var\(--rd-state-danger\)/);
+  assert.match(clientTokens, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(clientTokens, /--theme-transition-standard:\s*0ms/);
+  assert.match(clientTokens, /animation-delay:\s*0ms !important/);
+  assert.match(clientTokens, /animation-duration:\s*0\.01ms !important/);
+  assert.match(clientTokens, /animation-iteration-count:\s*1 !important/);
+  assert.match(clientTokens, /scroll-behavior:\s*auto !important/);
+  assert.match(clientTokens, /transition-delay:\s*0ms !important/);
+  assert.match(clientTokens, /transition-duration:\s*0\.01ms !important/);
+  assert.doesNotMatch(clientTokens, /display:\s*none !important/);
+  assert.doesNotMatch(clientTokens, /visibility:\s*hidden !important/);
   assert.match(
     clientTokens,
     /:root,\s*:root\[data-theme='guofeng'\]\s*\{[\s\S]*?--rd-text-on-brand:\s*#fffdf8;[\s\S]*?--rd-brand-primary:\s*#5d6c57;[\s\S]*?--rd-brand-hover:\s*#6e736d;[\s\S]*?--rd-brand-soft:\s*#e2e6de;/,

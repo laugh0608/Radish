@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：`2026-08-03` 完成 v26.7.3 破坏性基线升级补充批与 `R1-F01`；`2026-08-04` 已确认 `R1-P01 / 社区发现 / PC 1440`，下一步独立设计 mobile 与统一公开读模型，暂不进入共享主题色与 `/discover` 实现。
+> 状态：Web 页面族、[T01 主题语义](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)与 [T02 reduced-motion](/records/f4-r-t02-reduced-motion-static-exit-gate-implementation-2026-08-15)已关闭；下一顺位为 T03 四主题成组运行态，随后进入 Flutter 语义映射。
 
 ## 1. 真相源与优先级
 
