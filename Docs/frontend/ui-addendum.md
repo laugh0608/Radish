@@ -47,7 +47,7 @@ Radish 已发布的四主题是产品与商城权益契约，继续保留：
 | 主题 ID | 类型 | family-ui 映射 |
 | --- | --- | --- |
 | `default` | 内建 light | 使用 `--rd-*` 语义的中性青灰项目取值 |
-| `guofeng` | 内建 light | `R1-P01` 目标改为低饱和灰玉品牌；纸色、墨色和状态语义沿用 family-ui 亮色基线，当前运行时旧胭脂值待实现批替换 |
+| `guofeng` | 内建 light | 使用低饱和灰玉品牌；纸色、墨色和状态语义沿用 family-ui 亮色基线，常规操作继续使用墨蓝 action |
 | `theme-dark-night` | 权益 dark | 使用 `--rd-*` 暗色语义并保留暗夜主题身份 |
 | `theme-sakura` | 权益 light | 使用 `--rd-*` 语义的樱花项目取值 |
 
@@ -85,7 +85,7 @@ Radish 四主题取值与 Profile 覆盖
 
 family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的四主题取值与品牌前景继续在 Client 项目主题层显式覆盖，避免依赖上游参考默认值形成隐式产品契约。
 
-`R1-P01` 颜色校准已把 `guofeng` 品牌目标从旧胭脂调整为低饱和灰玉：品牌 `#5d6c57`、悬停 `#6e736d`、设计柔底 `#e2e6de`、实底前景 `#fffdf8`；常规操作仍使用墨蓝 `#435c74`。该配色已随 `R1-P01 / 社区发现 / PC 1440` 通过设计审核，但当前 `theme-tokens.css` 仍是旧胭脂运行时值；PC / mobile 与页面族前置现已关闭，后续按[Web 主题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)成组实现，代码完成前不能把设计目标误写成已上线事实。
+`R1-P01` 颜色校准把 `guofeng` 品牌从旧胭脂调整为低饱和灰玉：品牌 `#5d6c57`、悬停 `#6e736d`、设计柔底 `#e2e6de`、实底前景 `#fffdf8`；常规操作仍使用墨蓝 `#435c74`。该配色先随 `R1-P01 / 社区发现 / PC 1440` 通过设计审核，并已在 [F4-R-T01](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)进入 Client 四主题 CSS、Ant Design 宿主、共享公开 brand、主题预览与 WebOS 边缘消费。T01 不机械替换页面品牌引用，具体视觉误用继续由 T03 代表路径复核。
 
 迁移期间允许组件继续消费 `--theme-*`、`--console-*` 和 `--rx-*`，但这些变量必须能追溯到 `--rd-*` 或在本附录登记为项目领域 token。不得继续新增没有语义归属的硬编码颜色。
 
@@ -103,7 +103,7 @@ family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的�
 
 | family-ui 条款 | 当前偏离 | 原因 | 处理 |
 | --- | --- | --- | --- |
-| 通用参考默认与已确认的 `R1-P01` 颜色目标均使用灰玉品牌 | 当前 `guofeng` 运行时仍是旧胭脂值 | PC / mobile、统一公开读模型和页面族已收口，现进入共享主题退出批 | 按[Web 主题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)显式更新品牌、悬停、柔底和品牌前景映射；不机械替换状态色或其他主题 |
+| 通用参考默认与已确认的 `R1-P01` 颜色目标均使用灰玉品牌 | T01 已关闭旧胭脂运行时偏离 | 共享 owner 已具备成组治理条件 | 品牌、悬停、柔底和品牌前景已显式更新；页面品牌引用、状态色和其他主题身份保持原边界，待 T03 代表路径复核 |
 | 通用 light / dark | Radish 有四套注册主题 | 已发布产品与权益契约 | 保留主题 ID，统一映射到 `--rd-*` |
 | 通用规范列出 Tauri 平台映射 | Tauri 暂时弃用 | 当前多端路线已调整 | 平台示例不构成 Radish 投入要求；继续冻结 Tauri |
 | Public 为 Brand | Radish Public 是内容优先社区 | 阅读和互动密度优先 | Brand 用于气质层，不引入营销首页 |
@@ -114,7 +114,7 @@ family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的�
 
 - family-ui 非破坏性更新先评估，再更新本页遵循版本。
 - 破坏性更新必须单独建立迁移窗口，不在业务功能批次里顺手跟进。
-- `v26.7.3` 的破坏性窗口已于 `2026-08-03` 完成：新增 `text-on-brand`，当时显式固定 Radish 四主题品牌前景并保留 `guofeng` 胭脂身份；随后 `R1-P01` 颜色校准把国风品牌目标改为灰玉并随 PC 代表页获确认，mobile 与页面实现批现已收口，运行时改色进入独立的 T01 共享主题批。
+- `v26.7.3` 的破坏性窗口已于 `2026-08-03` 完成：新增 `text-on-brand`，当时显式固定 Radish 四主题品牌前景并保留 `guofeng` 胭脂身份；随后 `R1-P01` 颜色校准把国风品牌目标改为灰玉并随 PC 代表页获确认，mobile 与页面实现批收口后，运行时改色已由 [T01 共享主题批](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)关闭。
 - Public 内容流新页面默认参考 `R1-P01 / 社区发现 / PC 1440` 的现代自然紧凑语法：继承表面、密度、排版、用色、动作和数据表达，但不复制其信息架构；具体继承卡见[视觉主题规范](/frontend/visual-theme-spec#610-r1-p01-现代自然紧凑基准)。
 - 通用语义优先回到 family-ui；Radish 产品差异维护在本页及对应专题。
 - 页面级视觉工作必须先完整阅读 family-ui `references.md`、逐张查看其索引的参考图，并在 [F4-R 专题](/features/family-ui-convergence-design)中维护 Radish 页面类型的吸收 / 排除映射；只复制 token 不能视为完成视觉迁移。

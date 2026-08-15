@@ -4,8 +4,8 @@ import { theme as antdThemeEngine, type ThemeConfig } from 'antd';
  * Radish family-ui Workbench 亮色语义
  */
 export const radishColors = {
-  // Radish 的 guofeng 品牌色由项目本地决定；Workbench 主操作继续使用 action 语义。
-  brand: '#b24057',
+  // 共享基线使用灰玉品牌；Client 四主题继续由宿主显式提供产品取值。
+  brand: '#5d6c57',
   primary: '#435c74',
   primaryHover: '#55738f',
   primarySoft: 'rgba(67, 92, 116, 0.12)',

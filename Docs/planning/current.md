@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`F4-R-T01 Web 主题语义基线（方案待确认）`
-- **产品下一顺位**：`依次关闭 T01 主题语义、T02 reduced-motion 与 T03 四主题运行态，再进入 Flutter 语义映射`
+- **工程第一顺位**：`F4-R-T02 reduced-motion 与静态退出门禁`
+- **产品下一顺位**：`关闭 T02 reduced-motion 与 T03 四主题运行态，再进入 Flutter 语义映射`
 - **复核日期**：`2026-08-15`
 - **正式主线**：Web 优先；PC / mobile 浏览器共同验收。Flutter 是次级移动原生产品线，WebOS `/desktop` 仅历史兼容，Tauri 暂时弃用并等待未来重新评估。
 - **最近正式发布**：`v26.7.1.1204-release`（2026-07-12）。
 
 ## 最近结论
 
+- `2026-08-15` 已完成 [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)：`guofeng` 品牌、悬停、柔底与品牌实底前景正式切换为灰玉语义，L2 hover 直接追溯显式 L1；主题预览、WebOS 弱装饰和 Dock 激活面不再固定旧胭脂。四主题 Ant Design 主操作 / 链接统一映射 action，`@radish/ui` 公开 brand 对齐共享灰玉基线，状态色、权益、主题状态机、family-ui 固定副本与 Pencil 均未改变。HTTP `48 / 48`、UI `32 / 32`、Client `557 / 557`、Console `137 / 137`，三端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器。下一顺位进入 T02 宿主 reduced-motion。
 - `2026-08-15` 已完成 [F4-R Web 主题基线与专题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)：确认 family-ui `v26.7.3`、四主题身份 / 权益状态机、两类实底前景、Console Workbench 与新共享样式颜色边界可继承；同时定位 `guofeng` CSS / Ant / 测试仍固定旧胭脂、L2 hover 绕过显式 L1、Client Ant 主操作仍混用品牌，以及宿主 reduced-motion 无法覆盖硬编码动效。后续固定为 T01 主题语义、T02 reduced-motion、T03 四主题成组运行态三批；不修改 Pencil、不机械替换页面品牌引用，方案确认后才改运行时代码。
 - `2026-08-15` 已完成 [R3-F02 自服务与边界页成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)：Gateway 覆盖匿名、种子 Admin 与非 Console `test`、PC `1920 × 1080`、Mobile `390 × 844` CSS viewport、中英文、OIDC 允许 / 取消 / 深链回流、自服务 ready、未知路由、`/desktop` 与两端错误恢复。运行态成组修正 Consent 丢失 PKCE、StrictMode 覆盖授权取消错误、Profile mobile 三列挤压与 Form 挂载 warning；后端 `1279 passed / 41 skipped`、HTTP `48 / 48`、Client `557 / 557`、Console `137 / 137`，类型、Lint、production build 与宿主健康检查通过。受限 operator 因无既有种子身份由权限契约覆盖，未修改权限或业务数据；移动工具只能提供 DPR `1`。`R3-F02` 关闭，下一顺位先审计 Web 主题基线与 F4-R 退出门禁。
 - `2026-08-15` 已完成 [R3-F02-C 错误与路由边界实现及静态门禁](/records/f4-r-r3-f02-c-error-route-boundary-implementation-2026-08-15)：Client 只有明确 `/desktop` 进入历史 WebOS，未知顶层地址进入独立 Not Found；根级 ErrorBoundary 覆盖路由、懒加载与 Toast。Console 子路由缺权保留目标理由并提供默认授权入口，Not Found 区分匿名、非 Console 用户与已授权用户，React Router `errorElement` 和应用根边界分别承接路由及 Provider 异常。Client `557 / 557`、Console `137 / 137`、两端类型、Lint、production build 与 Baseline Quick 通过；未启动服务 / 浏览器或修改 Pencil。下一顺位进入 F02 成组运行态验收。
@@ -184,14 +185,15 @@
 ## 下一步事项
 
 1. 新会话先读取本页、[Web 主题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)、[F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)、[Radish UI 差异附录](/frontend/ui-addendum)与[视觉主题规范](/frontend/visual-theme-spec)。
-2. 方案确认后实施 `F4-R-T01`：只在共享 owner 收口 `guofeng` 灰玉、显式 hover、shared brand 与四主题 Ant action，不机械替换页面品牌引用、不改状态色、权益或 Pencil。
-3. T01 静态门禁通过后实施 `F4-R-T02`：在 Client / Console 宿主统一覆盖硬编码 transition / animation，保留状态双通道，不逐文件复制 reduced-motion 规则。
-4. T01 / T02 关闭后另行说明服务、端口、临时 Theme 权益与清理影响并取得授权，再执行 T03 Gateway 四主题、双语、PC / mobile、keyboard focus、reduced-motion 和 WebOS 阻断级兼容验收。
+2. `F4-R-T01` 已完成；实现与验证见 [T01 记录](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)。
+3. 实施 `F4-R-T02`：在 Client / Console 宿主统一覆盖硬编码 transition / animation，保留状态双通道，不逐文件复制 reduced-motion 规则。
+4. T02 关闭后另行说明服务、端口、临时 Theme 权益与清理影响并取得授权，再执行 T03 Gateway 四主题、双语、PC / mobile、keyboard focus、reduced-motion 和 WebOS 阻断级兼容验收。
 5. Web 退出门禁关闭后，再审计 Flutter Dart 语义映射和高价值移动路径；不为关闭 F4-R 机械追平 Web 功能。
 6. 三处既有 `DateTime.Now` 继续留在独立维护线，在下一次 `PR -> master` 前单独治理，不与主题或 Flutter 映射混批。
 
 ## 当前执行入口
 
+- [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)
 - [F4-R Web 主题基线与专题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)
 - [2026-08-13 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-13)
 - [R3-F02 自服务与边界页成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)

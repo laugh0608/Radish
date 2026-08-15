@@ -20,7 +20,7 @@ test('family-ui token 副本应固定并声明接入版本', () => {
 });
 
 test('共享 Ant Design 亮色主题应使用 family-ui Workbench 状态语义', () => {
-  assert.equal(radishColors.brand, '#b24057');
+  assert.equal(radishColors.brand, '#5d6c57');
   assert.equal(radishColors.primary, '#435c74');
   assert.notEqual(radishColors.brand, radishColors.primary);
   assert.equal(antdTheme.token?.colorPrimary, '#435c74');

@@ -1,10 +1,10 @@
 :root,
 :root[data-theme='guofeng'] {
-  /* Radish 默认内建主题显式保留胭脂品牌，不继承 family-ui 的灰玉参考默认值。 */
+  /* Radish 默认内建主题显式固定已确认的灰玉品牌，不依赖 family-ui 参考默认值。 */
   --rd-text-on-brand: #fffdf8;
-  --rd-brand-primary: #b24057;
-  --rd-brand-hover: #cd5076;
-  --rd-brand-soft: rgba(178, 64, 87, 0.12);
+  --rd-brand-primary: #5d6c57;
+  --rd-brand-hover: #6e736d;
+  --rd-brand-soft: #e2e6de;
 }
 
 :root {
@@ -38,6 +38,7 @@
   --theme-brand-primary: var(--rd-brand-primary);
   --theme-brand-soft: var(--rd-brand-soft);
   --theme-action-primary: var(--rd-action-primary);
+  --theme-action-hover: var(--rd-action-hover);
   --theme-action-soft: var(--rd-action-soft);
   --theme-accent-jade: var(--rd-accent-jade);
   --theme-accent-ink: var(--rd-accent-ink);
@@ -55,7 +56,7 @@
   --theme-pattern-line: var(--rd-pattern-line);
   --theme-pattern-edge: rgba(122, 92, 64, 0.24);
   --theme-shell-background:
-    radial-gradient(circle at 18% 14%, rgba(178, 64, 87, 0.08), transparent 30%),
+    radial-gradient(circle at 18% 14%, color-mix(in srgb, var(--theme-brand-primary) 8%, transparent), transparent 30%),
     radial-gradient(circle at 84% 16%, rgba(79, 156, 131, 0.08), transparent 26%),
     radial-gradient(circle at 52% 100%, rgba(136, 99, 73, 0.08), transparent 26%),
     linear-gradient(180deg, #f6f1e8 0%, #efe7db 55%, #e5dac8 100%);
@@ -71,7 +72,7 @@
   --theme-dock-divider: rgba(136, 99, 73, 0.18);
   --theme-dock-item-bg: rgba(255, 255, 255, 0.42);
   --theme-dock-item-hover-bg: rgba(255, 255, 255, 0.68);
-  --theme-dock-item-active-bg: rgba(178, 64, 87, 0.16);
+  --theme-dock-item-active-bg: color-mix(in srgb, var(--theme-brand-primary) 16%, transparent);
   --theme-dock-item-border: rgba(136, 99, 73, 0.16);
   --theme-window-bg: rgba(251, 247, 240, 0.94);
   --theme-window-title-bg: linear-gradient(180deg, rgba(255, 251, 245, 0.96) 0%, rgba(239, 231, 219, 0.98) 100%);
@@ -84,9 +85,9 @@
   --theme-border: var(--theme-border-soft);
   --theme-border-stronger: color-mix(in srgb, var(--theme-border-strong) 84%, var(--theme-text-primary) 16%);
   --theme-brand-secondary: var(--theme-accent-earth);
-  --theme-brand-hover: color-mix(in srgb, var(--theme-brand-primary) 82%, var(--theme-text-primary) 18%);
-  --theme-link-primary: var(--theme-brand-primary);
-  --theme-link-hover: var(--theme-brand-hover);
+  --theme-brand-hover: var(--rd-brand-hover);
+  --theme-link-primary: var(--theme-action-primary);
+  --theme-link-hover: var(--theme-action-hover);
   --theme-surface-2: var(--theme-bg-muted);
 
   --color-bg-base: var(--theme-bg-app);
@@ -94,7 +95,7 @@
   --color-text-primary: var(--theme-text-primary);
   --color-text-secondary: var(--theme-text-secondary);
   --color-border-default: var(--theme-border-soft);
-  --color-primary: var(--theme-brand-primary);
+  --color-primary: var(--theme-action-primary);
 
   --rx-bg-app: var(--theme-bg-app);
   --rx-bg-surface: var(--theme-bg-surface);

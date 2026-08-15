@@ -18,6 +18,9 @@ export interface ThemeDefinition {
   themeConfig: {
     token: {
       colorPrimary: string;
+      colorPrimaryHover: string;
+      colorLink: string;
+      colorLinkHover: string;
       colorBgBase: string;
       colorBgContainer: string;
       colorTextBase: string;
@@ -40,7 +43,10 @@ export const themeDefinitions: Record<ThemeId, ThemeDefinition> = {
     colorScheme: 'light',
     themeConfig: {
       token: {
-        colorPrimary: '#587786',
+        colorPrimary: '#435c74',
+        colorPrimaryHover: '#55738f',
+        colorLink: '#435c74',
+        colorLinkHover: '#55738f',
         colorBgBase: '#edf1f2',
         colorBgContainer: '#fbfcfc',
         colorTextBase: '#23313b',
@@ -59,7 +65,10 @@ export const themeDefinitions: Record<ThemeId, ThemeDefinition> = {
     colorScheme: 'light',
     themeConfig: {
       token: {
-        colorPrimary: '#b24057',
+        colorPrimary: '#435c74',
+        colorPrimaryHover: '#55738f',
+        colorLink: '#435c74',
+        colorLinkHover: '#55738f',
         colorBgBase: '#f4efe6',
         colorBgContainer: '#fbf7f0',
         colorTextBase: '#2f2a25',
@@ -79,6 +88,9 @@ export const themeDefinitions: Record<ThemeId, ThemeDefinition> = {
     themeConfig: {
       token: {
         colorPrimary: '#8bb9ca',
+        colorPrimaryHover: '#a1c7d5',
+        colorLink: '#8bb9ca',
+        colorLinkHover: '#a1c7d5',
         colorBgBase: '#0f171d',
         colorBgContainer: '#17232b',
         colorTextBase: '#e6edf1',
@@ -97,7 +109,10 @@ export const themeDefinitions: Record<ThemeId, ThemeDefinition> = {
     colorScheme: 'light',
     themeConfig: {
       token: {
-        colorPrimary: '#b84f72',
+        colorPrimary: '#596f88',
+        colorPrimaryHover: '#6c839d',
+        colorLink: '#596f88',
+        colorLinkHover: '#6c839d',
         colorBgBase: '#fff3f6',
         colorBgContainer: '#fffafb',
         colorTextBase: '#3d2932',
