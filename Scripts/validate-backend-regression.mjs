@@ -29,6 +29,7 @@ const backendBuild = createDotNetCommand([
   'Radish.slnx',
   '-c',
   'Debug',
+  '--warnaserror',
 ], { cwd: repoRoot });
 
 const backendTest = createDotNetCommand([

@@ -11,6 +11,7 @@ import {
   IDENTITY_GUARD_CHECK_NAME,
   IDENTITY_GUARD_VALIDATE_ARGS,
   REPO_QUALITY_CI_ONLY_CHECKS,
+  REPO_QUALITY_COMPONENT_CHECKS,
   REPO_QUALITY_LOCAL_STEPS,
   REPO_QUALITY_REQUIRED_CHECKS,
   REPO_QUALITY_WORKFLOW_JOBS,
@@ -27,6 +28,7 @@ const packageJsonPath = path.join(repoRoot, 'package.json');
 const validateCiPath = path.join(repoRoot, 'Scripts', 'validate-ci.mjs');
 const validateBaselinePath = path.join(repoRoot, 'Scripts', 'validate-baseline.mjs');
 const validateCandidatePath = path.join(repoRoot, 'Scripts', 'validate-candidate.mjs');
+const validateBackendPath = path.join(repoRoot, 'Scripts', 'validate-backend-regression.mjs');
 const dependencySecurityPath = path.join(repoRoot, 'Scripts', 'check-dependency-security.mjs');
 const dotnetCommandPath = path.join(repoRoot, 'Scripts', 'dotnet-command.mjs');
 const dotnetLocalPath = path.join(repoRoot, 'Scripts', 'dotnet-local.ps1');
@@ -102,6 +104,12 @@ function parseRulesetRequiredChecks(rulesetContent) {
   return checks
     .map((check) => check?.context?.trim())
     .filter(Boolean);
+}
+
+function parseRulesetRequiredApprovalCount(rulesetContent) {
+  const ruleset = JSON.parse(rulesetContent);
+  const pullRequestRule = (ruleset.rules ?? []).find((rule) => rule.type === 'pull_request');
+  return pullRequestRule?.parameters?.required_approving_review_count ?? null;
 }
 
 function compareExactArray(label, actual, expected, failures) {
@@ -243,6 +251,7 @@ const packageJsonContent = JSON.parse(readUtf8(packageJsonPath));
 const validateCiSource = readUtf8(validateCiPath);
 const validateBaselineSource = readUtf8(validateBaselinePath);
 const validateCandidateSource = readUtf8(validateCandidatePath);
+const validateBackendSource = readUtf8(validateBackendPath);
 const dependencySecuritySource = readUtf8(dependencySecurityPath);
 const dotnetCommandSource = readUtf8(dotnetCommandPath);
 const dotnetLocalSource = readUtf8(dotnetLocalPath);
@@ -252,6 +261,7 @@ const workflowName = parseWorkflowName(workflowContent);
 const parsedWorkflowJobs = parseWorkflowJobs(workflowContent);
 const workflowJobNames = parsedWorkflowJobs.map((job) => job.name).filter(Boolean);
 const rulesetRequiredChecks = parseRulesetRequiredChecks(rulesetContent);
+const rulesetRequiredApprovalCount = parseRulesetRequiredApprovalCount(rulesetContent);
 const packageScripts = packageJsonContent.scripts ?? {};
 const localCheckNames = [
   ...REPO_QUALITY_LOCAL_STEPS.map((step) => step.checkName),
@@ -259,7 +269,7 @@ const localCheckNames = [
   IDENTITY_GUARD_CHECK_NAME,
 ];
 const ciOnlyCheckNames = new Set(REPO_QUALITY_CI_ONLY_CHECKS);
-const expectedLocalCheckNames = REPO_QUALITY_REQUIRED_CHECKS.filter(
+const expectedLocalCheckNames = REPO_QUALITY_COMPONENT_CHECKS.filter(
   (checkName) => !ciOnlyCheckNames.has(checkName)
 );
 
@@ -272,14 +282,20 @@ if (workflowName !== REPO_QUALITY_WORKFLOW_NAME) {
 compareExactArray(
   '.github/rulesets/master-protection.json required checks',
   rulesetRequiredChecks,
-  [...REPO_QUALITY_REQUIRED_CHECKS, CANDIDATE_QUALITY_REQUIRED_CHECK_NAME],
+  REPO_QUALITY_REQUIRED_CHECKS,
   failures
 );
+
+if (rulesetRequiredApprovalCount !== 0) {
+  failures.push(
+    `.github/rulesets/master-protection.json 单人协作审批数不正确。\n  期望: 0\n  实际: ${rulesetRequiredApprovalCount ?? '<missing>'}`
+  );
+}
 
 compareContainsInOrder(
   '.github/workflows/repo-quality.yml job 名',
   workflowJobNames,
-  REPO_QUALITY_REQUIRED_CHECKS,
+  [...REPO_QUALITY_COMPONENT_CHECKS, CANDIDATE_QUALITY_REQUIRED_CHECK_NAME],
   failures
 );
 
@@ -293,10 +309,10 @@ compareExactArray(
 );
 
 const unknownCiOnlyChecks = REPO_QUALITY_CI_ONLY_CHECKS.filter(
-  (checkName) => !REPO_QUALITY_REQUIRED_CHECKS.includes(checkName)
+  (checkName) => !REPO_QUALITY_COMPONENT_CHECKS.includes(checkName)
 );
 if (unknownCiOnlyChecks.length > 0) {
-  failures.push(`CI-only checks 未包含在 required checks 中: ${unknownCiOnlyChecks.join(', ')}`);
+  failures.push(`CI-only checks 未包含在 PR quality components 中: ${unknownCiOnlyChecks.join(', ')}`);
 }
 
 assertPackageScript(
@@ -328,9 +344,6 @@ assertPackageScript(
 );
 
 for (const requiredFragment of [
-  'pull_request:',
-  'branches:',
-  '- master',
   'workflow_call:',
   'workflow_dispatch:',
   'image: postgres:17',
@@ -342,9 +355,9 @@ for (const requiredFragment of [
   }
 }
 
-for (const forbiddenFragment of ['schedule:', 'cron:']) {
+for (const forbiddenFragment of ['pull_request:', 'schedule:', 'cron:']) {
   if (candidateWorkflowContent.includes(forbiddenFragment)) {
-    failures.push(`Candidate Quality workflow 不应保留定时触发: ${forbiddenFragment}`);
+    failures.push(`Candidate Quality workflow 不应保留 PR 或定时触发: ${forbiddenFragment}`);
   }
 }
 
@@ -392,7 +405,6 @@ for (const requiredFragment of [
   "['run', 'check:repo-hygiene:candidate']",
   "['run', 'lint']",
   "['run', 'validate:baseline', '--', '--warnings-as-errors']",
-  "['run', 'check:long-id-safety']",
   "['run', 'check:dependency-security']",
 ]) {
   if (!validateCandidateSource.includes(requiredFragment)) {
@@ -441,6 +453,7 @@ for (const requiredFragment of [
   "args: ['run', 'check:image-vulnerability-policy:self-test']",
   "args: ['run', 'check:sensitive-literals:self-test']",
   "args: ['run', 'check:sensitive-literals']",
+  "args: ['run', 'check:long-id-safety']",
 ]) {
   if (!validateBaselineSource.includes(requiredFragment)) {
     failures.push(`Scripts/validate-baseline.mjs 缺少敏感字面量门禁片段: ${requiredFragment}`);
@@ -453,6 +466,10 @@ assertPackageScript(
   'node Scripts/validate-backend-regression.mjs',
   failures
 );
+
+if (!validateBackendSource.includes("'--warnaserror'")) {
+  failures.push('Scripts/validate-backend-regression.mjs 必须以 --warnaserror 构建后端候选。');
+}
 
 assertPackageScript(
   packageScripts,
@@ -503,11 +520,9 @@ if (failures.length > 0) {
 console.log('[repo-quality-contract] 校验通过。');
 console.log(`- workflow: ${workflowName}`);
 console.log(
-  `- master required checks: ${[
-    ...REPO_QUALITY_REQUIRED_CHECKS,
-    CANDIDATE_QUALITY_REQUIRED_CHECK_NAME,
-  ].join(', ')}`
+  `- master required checks: ${REPO_QUALITY_REQUIRED_CHECKS.join(', ')}`
 );
+console.log(`- PR quality components: ${REPO_QUALITY_COMPONENT_CHECKS.join(', ')}`);
 console.log(`- workflow job 名: ${workflowJobNames.join(', ')}`);
 console.log(`- 本地 validate:ci contract: ${localCheckNames.join(', ')}`);
 console.log(`- CI-only checks: ${REPO_QUALITY_CI_ONLY_CHECKS.join(', ')}`);

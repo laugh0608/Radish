@@ -377,6 +377,12 @@ const steps = [
     command: npmCommand,
     args: ['run', 'check:identity-claims'],
   },
+  {
+    title: '外部 LongId 字符串安全',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:long-id-safety'],
+  },
 ];
 
 if (!isQuick) {

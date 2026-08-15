@@ -7,7 +7,6 @@ const steps = [
   ['全量仓库卫生预算', ['run', 'check:repo-hygiene:candidate']],
   ['全量前端零 warning lint', ['run', 'lint']],
   ['候选 baseline', ['run', 'validate:baseline', '--', '--warnings-as-errors']],
-  ['外部 LongId 字符串安全', ['run', 'check:long-id-safety']],
   ['依赖安全', ['run', 'check:dependency-security']],
 ];
 
