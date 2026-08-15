@@ -257,14 +257,14 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - 盘点每个页面的 owner、状态、调用链、关键交互、测试和技术债。
 - 建立 compact / medium / expanded 结构表与 R1 / R2 / R3 继承表。
 - 区分“保留行为、调整编排、重做呈现、后置功能”，不改代码和依赖。
-- 选出 `P2` 的最小代表场景。
+- 确定 `P2` 的首批完整代表场景。
 
 退出条件：所有现有页面有唯一归属，首个 spike 不依赖猜测。
 
 ### P2：技术基座 spike 与依赖裁决
 
 - 在取得依赖授权后，验证 FlexColorScheme、自有 ThemeExtension、字体本地资产和共享组件边界。
-- 用 Shell + Discover + Forum detail 的最小真实状态比较纯 Material 主题、推荐组合和可选 shadcn 隔离样例。
+- 用 Shell + Discover + Forum detail 的完整真实状态组合比较纯 Material 主题、推荐组合和可选 shadcn 隔离样例。
 - 验证四主题、reduced-motion、compact / expanded、键盘 / 触控与现有测试可维护性。
 
 退出条件：只保留一套全局主题 / 组件基础，包版本、许可证、资产和回滚方式明确。
@@ -281,7 +281,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 - 落地 Theme Controller、四主题映射、ThemeExtension 和主题持久化。
 - 落地 typography、radius、surface、state、motion 与共享导航 / 状态 / 表单组件。
-- 只接入最小代表页，先关闭公共 owner 风险。
+- 接入首批完整代表页，先关闭公共 owner 风险。
 
 退出条件：主题与权益测试、组件测试、analyze 和代表尺寸 widget tests 通过。
 

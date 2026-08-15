@@ -203,7 +203,7 @@ changed
 2. 复用 `ChatChannelAccessService` 校验 `CanView`，不接受客户端成员或频道类型声明。
 3. Public / Announcement 缺少个人跟踪行时允许原子创建；Private / Direct 必须已有有效成员。
 4. Repository 使用条件更新或等价原子 SQL，只在 `LastReadMessageId IS NULL OR LastReadMessageId < target` 时推进。
-5. 唯一键竞争、相同目标和更旧目标均收敛到当前权威游标，不作为业务失败。
+5. 唯一键竞争、相同目标和更旧目标均收敛到当前权威游标；并发创建或推进后执行有界二次条件更新与权威状态复读，目标仍未收敛时显式失败，不以无界重试或默认成功掩盖竞争。
 6. 更新后重新计算个人未读与 mention，并向 `user:{userId}` 广播 `ChannelUnreadChanged`。
 7. 仅在游标实际前进且频道允许回执时发送回执失效提示。
 
@@ -461,13 +461,15 @@ F4-F 不改变：
 
 完成事实见 [F4-F-D 成组验收记录](/records/f4-f-d-chat-message-read-receipt-stage-acceptance-2026-07-19)。验收发现并修复实时持久消息未同步频道最后消息投影的共同根因；其余隐私、活跃阅读面、单调游标、恢复和不污染边界与本文契约一致。
 
+`2026-08-15` 的 PostgreSQL 发布候选补测进一步暴露并修复“成员行并发创建成功后，较大目标可能只读到较小初始游标”的竞争；Repository 现按第 5 条执行有界二次推进与权威复读，`8` 个并发目标的增强用例连续 `10` 轮及完整候选均通过。该维护不改变接口、数据模型、权限或回执可见性矩阵。
+
 ---
 
 ## 十三、验证矩阵
 
 | 层级 | 核心验证 |
 |------|----------|
-| Repository | 原子单调推进、唯一键竞争、聚合索引、20 条摘要、50 人 keyset、无 N+1 |
+| Repository | 原子单调推进、并发创建后的有界收敛、唯一键竞争、聚合索引、20 条摘要、50 人 keyset、无 N+1 |
 | Service / ACL | Public / Announcement 禁止对外回执；Private 仅发送者；Direct 全状态；成员加入 / 退出 / 失权 |
 | API / Hub | LongId 字符串、稳定错误、真实状态码、Hub 只失效不写入、不泄露个人载荷 |
 | Migration | SQLite / PostgreSQL 首次、重入、doctor、apply、verify、SQLite 备份恢复 |

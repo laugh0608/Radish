@@ -164,7 +164,7 @@ npm run validate:candidate
   - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`，以及 API JWT audience、Auth transport security、Gateway Forwarded Proto 和 compose 暴露面契约
 - `validate:backend`
   - 后端 / API 专题聚合入口，不替代默认 baseline
-  - 运行 `dotnet build Radish.slnx -c Debug --warnaserror` 与 `dotnet test Radish.Api.Tests`；远程 `Backend Guard` 固定提供 PostgreSQL 17，不会把环境集成测试静默跳过
+  - 运行 `dotnet build Radish.slnx -c Debug --warnaserror` 与 `dotnet test Radish.Api.Tests`；远程 `Backend Guard` 固定提供 PostgreSQL 17，不会把环境集成测试静默跳过；所有带 `Database=PostgreSQL` trait 的测试类由约束测试强制进入独占 collection，避免 SqlSugar CodeFirst 进程级状态并发串扰不同 schema
 - `validate:ci`
   - 本地复现当前 `Repo Quality` 的最小执行面
   - 依次运行 `check:repo-hygiene:changed`、`lint:changed`、`validate:baseline:quick`

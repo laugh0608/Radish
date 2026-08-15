@@ -186,13 +186,13 @@
 68. 按确认方案关闭 R3-F02-C：Client 未知路径与 `/desktop` 已明确分离，两端根级运行时边界完整；Console 未登录、非 Console 用户、页面缺权、Not Found 与路由异常保持不同理由。Client、Console、类型、Lint、生产构建与 Baseline Quick 通过。
 69. 获授权后完成 R3-F02 Gateway 成组运行态验收；匿名、Admin 与非 Console `test` 的 OIDC、自服务、错误 / 路由和 PC / mobile 双语矩阵通过，运行态发现的三类共同根因已成组修正并全量回归，登录会话清理完成，专题关闭。
 
-## 下一步事项
+## 明日事项（2026-08-16）
 
-1. 新会话先读取本页与 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)；涉及多端归属或视觉语义时再读[前端多壳层策略](/frontend/shell-strategy)、[F4-R 专题](/features/family-ui-convergence-design)和 [UI 差异附录](/frontend/ui-addendum)。
+1. 新会话先读取本页、[今日日终回顾](/records/f4-day-end-doc-review-2026-08-15)、[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)和 `Clients/radish.flutter/README.md`；只有出现多端归属或视觉语义争议时再读壳层与 F4-R 专题。
 2. `P0` 已确认 Web / Flutter 两条产品线、Tauri 正式弃用、Flutter mobile-first / desktop stage-gated，以及 Material 3 + FlexColorScheme 候选 + Radish ThemeExtension + 薄组件层方向。
-3. 当前先完成 `v26.8.1` 版本同步、候选回归记录与 `PR -> master` 静态门禁；推送、PR、合并、tag、镜像和部署保持独立授权边界。
-4. 候选合并与发布动作完成后进入 `P1`：逐页盘点 owner、状态、调用链、窗口结构和测试，建立 compact / medium / expanded 与 R1 / R2 / R3 矩阵，不修改 Dart、依赖、Pencil 或平台工程。
-5. `P1` 完成后先汇报页面族与首个 spike 裁决；依赖安装、UI 设计和代码实现分别等待确认，不启动服务或浏览器。
+3. 完整执行 `P1` 全页面事实审计：覆盖 app / shell、认证、Discover、Forum、Docs、Profile、Notification、Shop、订单、背包、Wallet、Experience、Leaderboard、shared widgets、测试与 Android bridge，逐项记录 owner、状态、调用链、关键交互、错误边界、来源返回和技术债；不修改 Dart、依赖、Pencil 或平台工程。
+4. 基于事实建立页面族唯一归属、compact / medium / expanded 结构矩阵和 R1 / R2 / R3 继承表，逐页裁决“保留行为、调整编排、重做呈现、明确后置”，不能遗漏现有页面，也不能按文件名批量换皮。
+5. `P1` 结束时给出 `P2` 首批完整代表场景、依赖评估输入、影响文件和验证矩阵并先汇报等待确认；继续保持 Web 优先、Flutter 次级，不解析 CSS、不建立第二套主题权益状态机、不恢复 Tauri / 扩展 WebOS、不重启生产证据采集。生产部署仍是独立授权事项。
 
 ## 当前执行入口
 
