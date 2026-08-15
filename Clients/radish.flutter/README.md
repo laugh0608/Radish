@@ -1,12 +1,14 @@
 # Radish Flutter
 
-`radish.flutter` 是 `Phase 2-3 Flutter 客户端 MVP` 的仓库落点。
+`radish.flutter` 是 Radish Flutter Native 原生安装包产品线的仓库落点，现有实现起源于 `Phase 2-3 Flutter 客户端 MVP`。
 
-当前状态是 Android MVP 第一轮已完成，Flutter 后续定位收束为 Android / iOS 移动原生安装包路线；Windows / macOS / Linux 桌面安装包不再按 Flutter 默认扩平台推进，优先走 `Tauri 壳 + WebOS 桌面工作台`。
+当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
+
+现有业务链路继续作为产品化基线，但页面视觉仍是早期 MVP / demo 级实现。下一阶段先按 [Flutter Native 产品化与 UI 重构](../../Docs/features/flutter-native-product-ui-design.md)完成全页面事实审计、技术基座和代表设计，再成组重构 UI；不以逐页换色或默认组件换皮代替设计系统。
 
 ## 当前范围
 
-- Android 起步的原生客户端壳层；iOS 后续单独评估
+- 当前为 Android 起步的原生客户端；iOS 与 Windows / macOS / Linux 在共享 UI 和平台门禁通过后分别产品化
 - `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
 - 最小登录、退出、会话恢复、Android 本地会话持久化与浏览器 OIDC 回调
 - forum feed、forum detail、问答回答、评论分页、子评论分页、评论发布 / 回复、作者编辑帖子正文 / 根评论、作者跳转与 detail 原地登录续接；回答失败重试复用 `forum-answer:` 提交意图 key，评论 / 回复失败重试复用 `forum-comment:` 提交意图 key，帖子 / 评论编辑失败重试复用 `forum-post-edit:` / `forum-comment-edit:` 提交意图 key
@@ -31,14 +33,13 @@
 - 已登录态商城订单 / 背包入口：我的页可打开订单列表、订单详情和背包，订单详情可按订单 ID 查看扣款流水并进入背包发放确认，背包权益 / 道具可查看来源订单或来源商品；来源订单 / 商品 ID 按规范字符串 LongId 承接，不进入 Dart `int` 数值域；当前不开放购物车、取消订单、退款、权益激活或道具使用
 - 已登录态胡萝卜资产只读入口：我的页可查看可用余额、冻结余额、累计统计和最近流水；从订单详情进入时保留 `Order #orderId` 筛选上下文；当前不开放转账、打赏、调账或支付操作
 - 已登录态经验记录只读入口：我的页可查看等级、当前经验、总经验、升级进度、冻结状态和最近经验流水；当前不开放经验调整、冻结治理或管理员复核
-- 环境配置、认证存储与主题基线
+- 环境配置、认证存储与单一亮色 `ThemeData` 基线；四主题状态、`ThemeExtension` 和持久化尚未实现
 - 与现有 Web / API 契约一致的复用边界
 - Android 模拟器经 Gateway `https://localhost:5000` 的最小联调入口
 
 ## 当前不含
 
-- iOS 产品化工程
-- Windows / macOS / Linux 桌面安装包平台目录
+- iOS / Windows / macOS / Linux 平台工程、签名、更新与分发门禁
 - 聊天、完整通知中心、完整商城工作台、完整资产中心、完整创作器、购物车、退款、权益使用、回答采纳、编辑治理
 - “移动版 WebOS”
 
@@ -80,11 +81,11 @@ Clients/radish.flutter/
 
 ## 后续接线顺序
 
-1. Flutter 环境切换能力：支持通过构建参数指定本机 / 测试 / 正式 Gateway
-2. Android 正式签名材料与外部分发前置准备：详见 [Flutter Android RC 分发前置清单](../../Docs/guide/flutter-android-rc-distribution.md)
-3. Android MVP 产品化深化：测试对象、反馈回收、已知问题列表、版本说明、release 前验收与分发留痕
-4. iOS 作为移动安装包后续单独评估，不与 Android 第一轮完成结论混成同一批
-5. Windows / macOS / Linux 桌面安装包转入 `Tauri + WebOS` 第二轮评估，不在本目录生成 Flutter 桌面平台工程
+1. `P1` 全页面事实审计：逐页确认 owner、状态、调用链、窗口结构、测试和 R1 / R2 / R3 继承关系
+2. `P2–P3` 技术基座 spike 与代表设计：确认四主题、字体、本地资产、共享组件和 compact / medium / expanded 布局
+3. `P4–P5` 主题 / Shell 与页面族成组实现：先 Community，再 Docs / Commerce，最后派生只读面
+4. Android 先形成新版 UI RC；Android 既有分发基线见 [Flutter Android RC 分发前置清单](../../Docs/guide/flutter-android-rc-distribution.md)
+5. iOS 与 Windows / macOS / Linux 在共享 UI 门禁后分别生成 / 补齐平台工程并建立构建、签名、更新与分发验证
 
 ## Flutter 环境切换
 
@@ -122,7 +123,7 @@ flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-d
 
 ## 平台目录说明
 
-Android 平台目录已经生成。当前不建议在本目录补齐 Windows / macOS / Linux 平台工程；桌面安装包路线以 `Frontend/radish.client` 的 WebOS 工作台复用和 Tauri 壳层能力评估为准。
+Android 平台目录已经生成。iOS / Windows / macOS / Linux 是长期产品目标，但当前不提前生成：先关闭共享 UI 的 expanded 布局、键鼠、焦点、滚动和窗口门禁，再逐个平台进入工程与分发批次。Tauri 和 WebOS 不再作为桌面安装包替代路线。
 
 ## Android 模拟器联调
 

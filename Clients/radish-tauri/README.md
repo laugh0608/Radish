@@ -1,23 +1,23 @@
 # Radish Tauri
 
-> 状态：暂时弃用，仅保留历史验证资产；不进入当前开发、UI、CI、构建、发布或验收门禁。
+> 状态：正式弃用，仅保留历史验证资产；不进入当前开发、UI、CI、构建、发布或验收门禁。
 
-`radish-tauri` 是 Radish 已完成阶段性验证的 Tauri 桌面安装包壳层。当前产品顺位为 Web 优先、Flutter 次级；本目录只保存既有实现与验证事实，未来只有桌面原生价值、目标用户和维护预算同时明确时才重新评估。
+`radish-tauri` 是 Radish 已完成阶段性验证、现已弃用的 Tauri 桌面安装包壳层。当前正式产品只保留 Web / Flutter Native 两条线；本目录只保存既有实现与验证事实，不构成重启条件，长期桌面安装包由 Flutter Native 分阶段承接。
 
 ## 当前定位
 
 - 复用 `Frontend/radish.client` 的 React / Vite 构建产物
 - 历史实现覆盖 Windows / macOS / Linux 的系统窗口、系统浏览器登录回跳、deep link 兼容与外部浏览器打开
 - 历史 Tauri 运行时根路径 `/` 仍会进入 `/desktop`；该行为仅为兼容资产，不代表当前桌面产品方向
-- 不作为移动端路线，不替代 Flutter Android / iOS 移动安装包
+- 不作为任何正式产品路线，不替代 Flutter Native PC / mobile 安装包
 - 当前不继续功能、UI、签名、更新、分发或专属兼容开发
-- 未来若重新评估成立，不作为原生 UI 重写工程，UI 默认增强正式 Web，不再绑定 WebOS 工作台
+- 不设置重新评估或恢复节点，不再绑定正式 Web 或 WebOS 工作台
 
 ## 历史构建关系
 
 当前工程使用 Tauri v2 的平铺结构，`Cargo.toml`、`tauri.conf.json`、`src/`、`capabilities/` 均位于 `Clients/radish-tauri/` 下，不使用 `src-tauri/` 子目录。
 
-以下命令只用于未来明确重启后的历史参考，不是当前开发或验收入口。
+以下命令只用于追溯历史构建关系，不是当前开发或验收入口。
 
 Tauri 配置中的 `frontendDist` 指向：
 

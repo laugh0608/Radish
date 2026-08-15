@@ -4,7 +4,7 @@
 >
 > 评审日期：2026-05-13（Asia/Shanghai）
 >
-> 本页承载第二开发阶段收口清单、后置边界和下一主任务判断，不作为当前多端路线依据。快速入口仍以 [当前进行中](/planning/current) 为准；当前投入顺位为 Web 优先、Flutter 次级，Tauri 暂时弃用且不再绑定 WebOS；本页中 Tauri + WebOS 为第二阶段历史验证结论。
+> 本页承载第二开发阶段收口清单、后置边界和下一主任务判断，不作为当前多端路线依据。快速入口仍以 [当前进行中](/planning/current) 为准；当前正式路线为 Web / Flutter Native 两条产品线，Tauri 已弃用且不再绑定 WebOS；本页中 Tauri + WebOS 为第二阶段历史验证结论。
 
 ## 评审结论
 
@@ -45,7 +45,7 @@
 | WebOS / PC 工作台 | 保持桌面工作台主路径稳定，只处理成片工作流中的阻断级缺口 |
 | 后端 + Console 治理 | 只处理新暴露的安全、权限授权一致性、治理数据可信度问题 |
 | Flutter Android MVP | 保持已验收链路稳定，不默认追加低增益微体验批次 |
-| Tauri 桌面安装包 | 保留个人开发阶段 Tauri + WebOS 验证成果；当前暂时弃用，只有桌面原生价值、目标用户和维护预算同时明确后才重新评估 |
+| Tauri 桌面安装包 | 保留个人开发阶段 Tauri + WebOS 验证成果；当前正式弃用，不构成重启条件 |
 | 构建与验证基线 | 继续维护 `validate:baseline`、`validate:baseline:host`、`validate:ci` 和 Identity Guard |
 
 ## 明确后置
@@ -56,7 +56,7 @@
 | 数据库主键迁移与全量 `PublicId` 切换 | `ID Phase A` 当前只冻结外部 `long` 扩散和字符串安全边界 |
 | Flutter iOS 产品化工程 | 需要在 Android 已登录链路价值确认后单独评估 |
 | Android / Tauri 正式分发材料 | 当前优先级低于产品主路径和移动端高价值链路 |
-| Tauri 签名、自动更新、SmartScreen、托盘 / 菜单 | 只在真实对外分发前重新评估 |
+| Tauri 签名、自动更新、SmartScreen、托盘 / 菜单 | 随路线弃用，不再进入产品规划；Flutter desktop 分平台另建发布门禁 |
 | 完整 `PWA / Service Worker / Web Push` | 不属于当前第二阶段收口目标 |
 | 完整 Playwright / E2E 平台 | 保持验证基线，不在收口期扩完整平台 |
 | 完整可观测性平台、开放平台、BFF 深化 | 后续阶段另行立项，不挤占当前收口判断 |

@@ -4,7 +4,7 @@
 >
 > 最后更新：2026-05-25（Asia/Shanghai）
 >
-> 本页是第二阶段边界摘要，不承载批次流水，也不作为当前多端路线依据。今日推进先看 [当前进行中](/planning/current)，历史事实看 [开发日志](/changelog/) 与 [已完成摘要](/planning/archive)。当前投入顺位为 Web 优先、Flutter 次级；Tauri 暂时弃用并等待未来重新评估。
+> 本页是第二阶段边界摘要，不承载批次流水，也不作为当前多端路线依据。今日推进先看 [当前进行中](/planning/current)，历史事实看 [开发日志](/changelog/) 与 [已完成摘要](/planning/archive)。当前正式路线为 Web / Flutter Native 两条产品线，Tauri 已弃用。
 
 ## 阶段结论
 
@@ -26,7 +26,7 @@
 - `radish.client` 仍是桌面 / WebOS 优先架构，移动端不能理解为“把窗口缩小到手机”
 - WebOS 的角色收束为桌面工作台，不再是公开社区、移动端与原生客户端的唯一入口
 - Flutter 是 Android / iOS 移动安装包路线，Android MVP 已完成第一轮，iOS 后续单独评估
-- Tauri 曾作为 WebOS 桌面工作台的安装包壳完成个人开发阶段验证；当前暂时弃用，未来只有桌面原生价值、目标用户和维护预算明确时才重新评估
+- Tauri 曾作为 WebOS 桌面工作台的安装包壳完成个人开发阶段验证；当前正式弃用，只保留历史资产
 - 公开内容壳层面向 PC / 移动浏览器响应式阅读，不承担完整工作台治理
 
 ## 阶段拆分状态
@@ -37,7 +37,7 @@
 | `Phase 2-1` 社区深化第一批 | 已完成当前批次目标 | 论坛轻回应墙与最小回流链路已收口，后续稳定维护 |
 | `Phase 2-2` 移动 Web 形态 | 已完成当前批次目标 | forum / docs / `u/:id` / leaderboard / shop / discover 公开内容壳层首批收口，后续稳定维护 |
 | `Phase 2-3` Flutter 客户端 MVP | Android 第一轮已完成 | Android MVP 已完成 RC 验收并给出 Go 结论，不默认追加低增益微体验批次 |
-| `Phase 2-4` Tauri + WebOS 桌面安装包评估 | 个人开发阶段验证通过 | 作为历史验证成果保留；当前 Tauri 暂时弃用且不再绑定 WebOS |
+| `Phase 2-4` Tauri + WebOS 桌面安装包评估 | 个人开发阶段验证通过 | 作为历史验证成果保留；当前 Tauri 正式弃用且不再绑定 WebOS |
 | `Phase 2-5` 产品功能补全与治理收口 | 已完成当前目标 | WebOS、Console、商城、经验治理、安全尾项、构建 warning 与 `P2-C5-A` Flutter 首批补强已完成；下一步只保留 `P0/P1` 阻断级闭环 |
 
 ## 当前优先级

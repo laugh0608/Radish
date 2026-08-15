@@ -25,7 +25,7 @@ features:
     details: 聊天、关注和通知连接发现、参与、关系与再次访问，Docs 负责沉淀长期可读知识。
   - icon: 🌐
     title: Web-first 正式产品
-    details: PC 与 mobile 浏览器共享正式优先主路径；Flutter 作为次级移动原生产品线，WebOS 只保留历史兼容。
+    details: Web 覆盖 PC / mobile 浏览器；Flutter Native 次级覆盖原生 PC / mobile 安装包，WebOS 只保留历史兼容，Tauri 已弃用。
   - icon: 🧱
     title: 可持续工程治理
     details: 分层架构、统一契约、风险分级验证和有限阶段门禁共同支撑长期维护。
@@ -44,6 +44,7 @@ features:
 - [F4-R C-1 代表页代码事实审计](/frontend/f4-r-representative-page-audit) - 正式路由与页面结构盘点、代表类型评分和继承表
 - [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和 Pencil 协作约束
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
+- [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design) - 原生 PC / mobile 产品边界、主题技术方向、页面族与分阶段门禁
 - [Client 与 Console 跨应用导航契约](/frontend/client-console-navigation-contract) - 产品端、治理端与原生壳层的跳转、返回和认证边界
 - [可恢复错误与诊断复制](/frontend/recoverable-error-diagnostics) - 页面级错误恢复、复制诊断和隐私边界
 - [Web 功能地图](/workbench) - 正式 Web 低频能力与历史兼容入口，不承担 Discover 首页主叙事
