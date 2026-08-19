@@ -351,8 +351,14 @@ class ShopUserBenefit {
     required this.sourceType,
     required this.isActive,
     required this.isExpired,
+    this.canActivate = false,
+    this.canDeactivate = false,
     this.benefitTypeDisplay,
+    this.benefitValue,
     this.benefitName,
+    this.status,
+    this.statusDisplay,
+    this.unavailableReason,
     this.sourceOrderId,
     this.sourceProductId,
     this.sourceTypeDisplay,
@@ -368,7 +374,13 @@ class ShopUserBenefit {
       id: _readRequiredId(map, 'voId'),
       benefitType: _readString(map['voBenefitType']) ?? 'Unknown',
       benefitTypeDisplay: _readString(map['voBenefitTypeDisplay']),
+      benefitValue: _readString(map['voBenefitValue']),
       benefitName: _readString(map['voBenefitName']),
+      status: _readString(map['voStatus']),
+      statusDisplay: _readString(map['voStatusDisplay']),
+      canActivate: _readBool(map['voCanActivate']),
+      canDeactivate: _readBool(map['voCanDeactivate']),
+      unavailableReason: _readString(map['voUnavailableReason']),
       sourceType: _readString(map['voSourceType']) ?? 'Unknown',
       sourceTypeDisplay: _readString(map['voSourceTypeDisplay']),
       sourceOrderId: _readString(map['voSourceOrderId']),
@@ -384,7 +396,13 @@ class ShopUserBenefit {
   final String id;
   final String benefitType;
   final String? benefitTypeDisplay;
+  final String? benefitValue;
   final String? benefitName;
+  final String? status;
+  final String? statusDisplay;
+  final bool canActivate;
+  final bool canDeactivate;
+  final String? unavailableReason;
   final String sourceType;
   final String? sourceTypeDisplay;
   final String? sourceOrderId;
@@ -394,6 +412,36 @@ class ShopUserBenefit {
   final bool isActive;
   final bool isExpired;
   final String? createTime;
+
+  bool get isThemeBenefit =>
+      benefitType == '4' || benefitType.toLowerCase() == 'theme';
+}
+
+class ShopUserBenefitActionResult {
+  const ShopUserBenefitActionResult({
+    required this.changed,
+    required this.action,
+    required this.benefitId,
+    required this.status,
+    this.currentBenefitId,
+  });
+
+  factory ShopUserBenefitActionResult.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    return ShopUserBenefitActionResult(
+      changed: _readBool(map['voChanged']),
+      action: _readString(map['voAction']) ?? 'Unknown',
+      benefitId: _readRequiredId(map, 'voBenefitId'),
+      status: _readString(map['voStatus']) ?? 'Unknown',
+      currentBenefitId: _readString(map['voCurrentBenefitId']),
+    );
+  }
+
+  final bool changed;
+  final String action;
+  final String benefitId;
+  final String status;
+  final String? currentBenefitId;
 }
 
 class ShopInventoryItem {

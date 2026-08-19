@@ -11,14 +11,14 @@ Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以�
 ## 当前状态
 
 - **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`Flutter Native 产品化与 UI 重构 P1 全页面事实审计`
-- **复核日期**：`2026-08-15`
+- **当前主线**：`Flutter Native 产品化与 UI 重构 P3 代表设计`
+- **复核日期**：`2026-08-19`
 - **当前结论**：
   - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
   - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
-  - Flutter readiness 与 P0 路线裁决已完成，下一步盘点全页面 owner、窗口结构和代表类型，不直接修改代码或依赖
+  - Flutter P1 全页面事实审计与 P2 Theme Foundation + Adaptive Shell + Discover + Forum Detail 技术基座已完成；下一步进入 typography、本地字体资产和 compact / expanded 代表设计
   - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
-  - 合并 `master`、创建 tag 与部署仍是三个独立决策
+  - 生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能推进前置
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
 - **当前验证基线**：
   - 快速基线：`npm run validate:baseline:quick`

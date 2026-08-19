@@ -7,6 +7,7 @@ import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/config/app_environment.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../core/platform/app_lifecycle_gateway.dart';
+import '../../../core/theme/radish_theme_controller.dart';
 import '../../../features/discover/data/discover_repository.dart';
 import '../../../features/discover/data/discover_models.dart';
 import '../../../features/docs/data/docs_follow_up_store.dart';
@@ -33,6 +34,8 @@ import '../../../features/shop/presentation/shop_product_detail_page.dart';
 import '../../../features/shop/presentation/shop_product_list_page.dart';
 import '../../../features/wallet/data/wallet_repository.dart';
 import '../../../features/wallet/presentation/wallet_page.dart';
+import 'radish_adaptive_navigation.dart';
+import 'radish_theme_selector.dart';
 
 class RadishFlutterShell extends StatefulWidget {
   const RadishFlutterShell({
@@ -44,6 +47,7 @@ class RadishFlutterShell extends StatefulWidget {
     required this.forumRepository,
     required this.profileRepository,
     required this.followUpStore,
+    required this.themeController,
     this.leaderboardRepository = const EmptyLeaderboardRepository(),
     this.shopRepository = const EmptyShopRepository(),
     this.walletRepository = const EmptyWalletRepository(),
@@ -63,6 +67,7 @@ class RadishFlutterShell extends StatefulWidget {
   final ForumRepository forumRepository;
   final ProfileRepository profileRepository;
   final ForumFollowUpStore followUpStore;
+  final RadishThemeController themeController;
   final LeaderboardRepository leaderboardRepository;
   final ShopRepository shopRepository;
   final WalletRepository walletRepository;
@@ -782,8 +787,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       }
 
       setState(() {
-        _notificationItems = const <NotificationListItem>[];
-        _notificationLookupState = _NotificationLookupState.error;
+        _notificationLookupState = _notificationItems.isEmpty
+            ? _NotificationLookupState.error
+            : _NotificationLookupState.stale;
       });
     }
   }
@@ -1170,10 +1176,23 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
             unawaited(_handleRootBack());
           },
-          child: Scaffold(
-            appBar: AppBar(
-              title: const Text('Radish Flutter'),
-            ),
+          child: RadishAdaptiveNavigation(
+            selectedIndex: _currentIndex,
+            onDestinationSelected: _selectTab,
+            destinations: _shellDestinations,
+            title: const Text('Radish Flutter'),
+            actions: [
+              IconButton(
+                tooltip: '外观主题',
+                onPressed: () => showRadishThemeSelector(
+                  context: context,
+                  controller: widget.themeController,
+                  userId: sessionState.session?.userId,
+                  accessToken: sessionState.session?.accessToken,
+                ),
+                icon: const Icon(Icons.palette_outlined),
+              ),
+            ],
             body: SafeArea(
               child: Column(
                 children: [
@@ -1187,37 +1206,6 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                   ),
                 ],
               ),
-            ),
-            bottomNavigationBar: NavigationBar(
-              selectedIndex: _currentIndex,
-              onDestinationSelected: _selectTab,
-              destinations: const [
-                NavigationDestination(
-                  icon: Icon(Icons.explore_outlined),
-                  selectedIcon: Icon(Icons.explore),
-                  label: '发现',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.forum_outlined),
-                  selectedIcon: Icon(Icons.forum),
-                  label: '论坛',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.description_outlined),
-                  selectedIcon: Icon(Icons.description),
-                  label: '文档',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.emoji_events_outlined),
-                  selectedIcon: Icon(Icons.emoji_events),
-                  label: '榜单',
-                ),
-                NavigationDestination(
-                  icon: Icon(Icons.person_outline),
-                  selectedIcon: Icon(Icons.person),
-                  label: '我的',
-                ),
-              ],
             ),
           ),
         );
@@ -1403,6 +1391,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           ),
         );
         break;
+      case _NotificationLookupState.stale:
+        chips.add(
+          _ShellStatusChip(
+            icon: Icons.notifications_paused_outlined,
+            label: '通知 ${_notificationItems.length} 条（上次）',
+            onTap: _openNotificationList,
+          ),
+        );
+        break;
     }
 
     if (_notificationLookupState != _NotificationLookupState.loading) {
@@ -1419,12 +1416,41 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   }
 }
 
+const _shellDestinations = <RadishNavigationDestination>[
+  RadishNavigationDestination(
+    icon: Icon(Icons.explore_outlined),
+    selectedIcon: Icon(Icons.explore),
+    label: '发现',
+  ),
+  RadishNavigationDestination(
+    icon: Icon(Icons.forum_outlined),
+    selectedIcon: Icon(Icons.forum),
+    label: '论坛',
+  ),
+  RadishNavigationDestination(
+    icon: Icon(Icons.description_outlined),
+    selectedIcon: Icon(Icons.description),
+    label: '文档',
+  ),
+  RadishNavigationDestination(
+    icon: Icon(Icons.emoji_events_outlined),
+    selectedIcon: Icon(Icons.emoji_events),
+    label: '榜单',
+  ),
+  RadishNavigationDestination(
+    icon: Icon(Icons.person_outline),
+    selectedIcon: Icon(Icons.person),
+    label: '我的',
+  ),
+];
+
 enum _NotificationLookupState {
   idle,
   loading,
   available,
   empty,
   error,
+  stale,
 }
 
 String? _normalizeUserId(String? userId) {

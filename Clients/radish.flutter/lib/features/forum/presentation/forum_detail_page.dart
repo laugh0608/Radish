@@ -3,8 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
+import '../../../core/layout/radish_window_class.dart';
 import '../../../core/network/radish_api_client.dart';
-import '../../../shared/widgets/phase_scope_card.dart';
+import '../../../core/theme/radish_motion.dart';
 import '../../../shared/widgets/public_link_copy_panel.dart';
 import '../../../shared/widgets/read_only_markdown_view.dart';
 import '../data/forum_models.dart';
@@ -246,174 +247,217 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
           _schedulePendingCommentScroll();
         }
 
-        return Scaffold(
-          appBar: AppBar(
-            title: Text(title),
-          ),
-          body: SafeArea(
-            child: ListView(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(20),
-              children: [
-                Text(
-                  '帖子详情',
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  '阅读帖子正文、基础信息、轻回应、问题回答和公开评论。已登录用户可以发表根评论、回复评论或回答问题帖。',
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-                const SizedBox(height: 20),
-                PhaseScopeCard(
-                  title: '当前能力',
-                  items: [
-                    '当前环境：${widget.environment.name}',
-                    '打开来源：${widget.handoffSource.label}',
-                    '支持帖子正文、问题帖纯文本回答、轻回应发布、根评论发布、评论回复、根评论编辑、评论分页和原生返回',
-                    '当前不支持子评论编辑、回答采纳、点赞、投票、审核治理、富文本回答或富文本评论',
-                    detail == null ? '正在准备帖子详情' : '正在阅读帖子详情',
-                    commentState.isIdle
-                        ? '评论暂未加载'
-                        : commentState.isLoading
-                            ? '正在加载评论'
-                            : commentState.isError
-                                ? '评论加载失败'
-                                : '已加载 ${commentState.comments.length} / ${commentState.totalCount} 条根评论',
+        final commentSummary = commentState.isIdle
+            ? '评论暂未加载'
+            : commentState.isLoading
+                ? '正在加载评论'
+                : commentState.isError
+                    ? '评论加载失败'
+                    : '已加载 ${commentState.comments.length} / ${commentState.totalCount} 条根评论';
+        final readingPane = ListView(
+          controller: _scrollController,
+          children: [
+            RadishContentFrame(
+              maxWidth: 900,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '帖子详情',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '阅读帖子正文、基础信息、轻回应、问题回答和公开评论。已登录用户可以发表根评论、回复评论或回答问题帖。',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Chip(label: Text('打开来源：${widget.handoffSource.label}')),
+                      Chip(label: Text(commentSummary)),
+                      if (detail?.isQuestion == true)
+                        Chip(
+                          label: Text(detail!.isSolved ? '问题已解决' : '问题待解答'),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (_navigationNotice != null &&
+                      _navigationNotice!.isNotEmpty) ...[
+                    _ForumNavigationNotice(message: _navigationNotice!),
+                    const SizedBox(height: 16),
                   ],
-                ),
-                const SizedBox(height: 16),
-                if (_navigationNotice != null &&
-                    _navigationNotice!.isNotEmpty) ...[
-                  _ForumNavigationNotice(message: _navigationNotice!),
-                  const SizedBox(height: 16),
-                ],
-                if (canRequestSignIn &&
-                    sessionState.isAnonymous &&
-                    authState.lastErrorMessage != null &&
-                    authState.lastErrorMessage!.isNotEmpty) ...[
-                  _ForumDetailAuthNotice(
-                    message: authState.lastErrorMessage!,
-                    onDismiss: widget.authController!.dismissError,
-                    onRetry: () => _requestSignIn(currentDetailTarget),
-                    isBusy: authState.isBusy,
+                  if (canRequestSignIn &&
+                      sessionState.isAnonymous &&
+                      authState.lastErrorMessage != null &&
+                      authState.lastErrorMessage!.isNotEmpty) ...[
+                    _ForumDetailAuthNotice(
+                      message: authState.lastErrorMessage!,
+                      onDismiss: widget.authController!.dismissError,
+                      onRetry: () => _requestSignIn(currentDetailTarget),
+                      isBusy: authState.isBusy,
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  if (canRequestSignIn && sessionState.isAnonymous) ...[
+                    _ForumDetailSignInCard(
+                      isBusy: authState.isBusy,
+                      onRequestSignIn: () =>
+                          _requestSignIn(currentDetailTarget),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.tonalIcon(
+                      onPressed: state.isLoading ? null : _controller.refresh,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('刷新详情'),
+                    ),
                   ),
                   const SizedBox(height: 16),
+                  if (state.isLoading) const _ForumDetailLoadingState(),
+                  if (state.isError)
+                    _ForumDetailErrorState(
+                      message: state.errorMessage ?? '无法加载帖子详情。',
+                      postId: widget.postId,
+                      handoffSource: widget.handoffSource,
+                      commentId: _targetCommentId,
+                      onRetry: _controller.refresh,
+                    ),
+                  if (state.isReady && detail != null)
+                    _ForumDetailContent(
+                      environment: widget.environment,
+                      repository: widget.repository,
+                      handoffSource: widget.handoffSource,
+                      detail: detail,
+                      isAuthenticated: sessionState?.isAuthenticated ?? false,
+                      accessToken: accessToken,
+                      currentUserId: currentUserId,
+                      authState: authState,
+                      isSubmittingPostEdit: _isSubmittingPostEdit,
+                      postEditErrorMessage: _postEditErrorMessage,
+                      postEditSuccessMessage: _postEditSuccessMessage,
+                      onSubmitPostEdit: (content) => _submitPostEdit(
+                        detail: detail,
+                        content: content,
+                        accessToken: accessToken ?? '',
+                        userId: currentUserId ?? '',
+                      ),
+                      quickReplyState: quickReplyState,
+                      quickReplySectionKey: _quickReplySectionKey,
+                      answerSectionKey: _answerSectionKey,
+                      commentSectionKey: _commentSectionKey,
+                      quickReplyLoginReturnNotice: _quickReplyLoginReturnNotice,
+                      onRetryQuickReplies: _quickReplyController.refresh,
+                      onSubmitQuickReply: (content) => _submitQuickReply(
+                        postId: detail.id,
+                        content: content,
+                        accessToken: sessionState?.session?.accessToken ?? '',
+                      ),
+                      isSubmittingAnswer: _isSubmittingAnswer,
+                      answerSubmitErrorMessage: _answerSubmitErrorMessage,
+                      answerSubmitSuccessMessage: _answerSubmitSuccessMessage,
+                      answerLoginReturnNotice: _answerLoginReturnNotice,
+                      onSubmitAnswer: (content) => _submitAnswer(
+                        detail: detail,
+                        content: content,
+                        accessToken: sessionState?.session?.accessToken ?? '',
+                        userId: sessionState?.session?.userId ?? '',
+                      ),
+                      onRequestSignInForAnswer: canRequestSignIn
+                          ? () => _requestSignInForAnswerComposer(
+                                currentDetailTarget,
+                              )
+                          : null,
+                      commentReplyTarget: _commentReplyTarget,
+                      isSubmittingComment: _isSubmittingComment,
+                      commentSubmitErrorMessage: _commentSubmitErrorMessage,
+                      commentSubmitSuccessMessage: _commentSubmitSuccessMessage,
+                      commentLoginReturnNotice: _commentLoginReturnNotice,
+                      onSubmitComment: (content) => _submitComment(
+                        detail: detail,
+                        content: content,
+                        accessToken: accessToken ?? '',
+                        userId: currentUserId ?? '',
+                      ),
+                      commentEditTarget: _commentEditTarget,
+                      isSubmittingCommentEdit: _isSubmittingCommentEdit,
+                      commentEditErrorMessage: _commentEditErrorMessage,
+                      commentEditSuccessMessage: _commentEditSuccessMessage,
+                      onSubmitCommentEdit: (content) => _submitCommentEdit(
+                        content: content,
+                        accessToken: accessToken ?? '',
+                        userId: currentUserId ?? '',
+                      ),
+                      onRequestSignInForComment: canRequestSignIn
+                          ? () => _requestSignInForCommentComposer(
+                                currentDetailTarget,
+                              )
+                          : null,
+                      onCancelCommentReply: _cancelCommentReply,
+                      onRequestSignIn: canRequestSignIn
+                          ? () => _requestSignInForQuickReply(
+                                currentDetailTarget,
+                              )
+                          : null,
+                      commentState: commentState,
+                      onRetryComments: _commentController.refresh,
+                      onLoadMoreComments: _commentController.loadMore,
+                      targetCommentId: _targetCommentId,
+                      expandedRootCommentId: _expandedRootCommentId,
+                      expandedChildPageIndex: _expandedChildPageIndex,
+                      registerCommentKey: _registerCommentKey,
+                      onOpenProfileUser: widget.onOpenProfileUser,
+                      onReplyComment: _startCommentReply,
+                      onStartCommentEdit: _startCommentEdit,
+                      onCancelCommentEdit: _cancelCommentEdit,
+                    ),
                 ],
-                if (canRequestSignIn && sessionState.isAnonymous) ...[
-                  _ForumDetailSignInCard(
-                    isBusy: authState.isBusy,
-                    onRequestSignIn: () => _requestSignIn(currentDetailTarget),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: FilledButton.tonalIcon(
-                    onPressed: state.isLoading ? null : _controller.refresh,
-                    icon: const Icon(Icons.refresh),
-                    label: const Text('刷新详情'),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                if (state.isLoading) const _ForumDetailLoadingState(),
-                if (state.isError)
-                  _ForumDetailErrorState(
-                    message: state.errorMessage ?? '无法加载帖子详情。',
-                    postId: widget.postId,
-                    handoffSource: widget.handoffSource,
-                    commentId: _targetCommentId,
-                    onRetry: _controller.refresh,
-                  ),
-                if (state.isReady && detail != null)
-                  _ForumDetailContent(
-                    environment: widget.environment,
-                    repository: widget.repository,
-                    handoffSource: widget.handoffSource,
-                    detail: detail,
-                    isAuthenticated: sessionState?.isAuthenticated ?? false,
-                    accessToken: accessToken,
-                    currentUserId: currentUserId,
-                    authState: authState,
-                    isSubmittingPostEdit: _isSubmittingPostEdit,
-                    postEditErrorMessage: _postEditErrorMessage,
-                    postEditSuccessMessage: _postEditSuccessMessage,
-                    onSubmitPostEdit: (content) => _submitPostEdit(
-                      detail: detail,
-                      content: content,
-                      accessToken: accessToken ?? '',
-                      userId: currentUserId ?? '',
+              ),
+            ),
+          ],
+        );
+
+        return Scaffold(
+          appBar: AppBar(title: Text(title)),
+          body: SafeArea(
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final windowClass = RadishWindowClassResolution.fromWidth(
+                  constraints.maxWidth,
+                );
+                if (windowClass != RadishWindowClass.expanded) {
+                  return KeyedSubtree(
+                    key: Key('forum-detail-${windowClass.name}'),
+                    child: readingPane,
+                  );
+                }
+                return Row(
+                  key: const Key('forum-detail-expanded'),
+                  children: [
+                    Expanded(child: readingPane),
+                    const VerticalDivider(width: 1),
+                    SizedBox(
+                      width: 304,
+                      child: _ForumDetailContextRail(
+                        detail: detail,
+                        sourceLabel: widget.handoffSource.label,
+                        commentSummary: commentSummary,
+                        onRefresh: state.isLoading ? null : _controller.refresh,
+                        onJumpToQuickReply: _scrollToQuickReplySection,
+                        onJumpToAnswer: detail?.isQuestion == true
+                            ? _scrollToAnswerSection
+                            : null,
+                        onJumpToComments: _scrollToCommentSection,
+                      ),
                     ),
-                    quickReplyState: quickReplyState,
-                    quickReplySectionKey: _quickReplySectionKey,
-                    answerSectionKey: _answerSectionKey,
-                    commentSectionKey: _commentSectionKey,
-                    quickReplyLoginReturnNotice: _quickReplyLoginReturnNotice,
-                    onRetryQuickReplies: _quickReplyController.refresh,
-                    onSubmitQuickReply: (content) => _submitQuickReply(
-                      postId: detail.id,
-                      content: content,
-                      accessToken: sessionState?.session?.accessToken ?? '',
-                    ),
-                    isSubmittingAnswer: _isSubmittingAnswer,
-                    answerSubmitErrorMessage: _answerSubmitErrorMessage,
-                    answerSubmitSuccessMessage: _answerSubmitSuccessMessage,
-                    answerLoginReturnNotice: _answerLoginReturnNotice,
-                    onSubmitAnswer: (content) => _submitAnswer(
-                      detail: detail,
-                      content: content,
-                      accessToken: sessionState?.session?.accessToken ?? '',
-                      userId: sessionState?.session?.userId ?? '',
-                    ),
-                    onRequestSignInForAnswer: canRequestSignIn
-                        ? () => _requestSignInForAnswerComposer(
-                              currentDetailTarget,
-                            )
-                        : null,
-                    commentReplyTarget: _commentReplyTarget,
-                    isSubmittingComment: _isSubmittingComment,
-                    commentSubmitErrorMessage: _commentSubmitErrorMessage,
-                    commentSubmitSuccessMessage: _commentSubmitSuccessMessage,
-                    commentLoginReturnNotice: _commentLoginReturnNotice,
-                    onSubmitComment: (content) => _submitComment(
-                      detail: detail,
-                      content: content,
-                      accessToken: accessToken ?? '',
-                      userId: currentUserId ?? '',
-                    ),
-                    commentEditTarget: _commentEditTarget,
-                    isSubmittingCommentEdit: _isSubmittingCommentEdit,
-                    commentEditErrorMessage: _commentEditErrorMessage,
-                    commentEditSuccessMessage: _commentEditSuccessMessage,
-                    onSubmitCommentEdit: (content) => _submitCommentEdit(
-                      content: content,
-                      accessToken: accessToken ?? '',
-                      userId: currentUserId ?? '',
-                    ),
-                    onRequestSignInForComment: canRequestSignIn
-                        ? () => _requestSignInForCommentComposer(
-                              currentDetailTarget,
-                            )
-                        : null,
-                    onCancelCommentReply: _cancelCommentReply,
-                    onRequestSignIn: canRequestSignIn
-                        ? () => _requestSignInForQuickReply(
-                              currentDetailTarget,
-                            )
-                        : null,
-                    commentState: commentState,
-                    onRetryComments: _commentController.refresh,
-                    onLoadMoreComments: _commentController.loadMore,
-                    targetCommentId: _targetCommentId,
-                    expandedRootCommentId: _expandedRootCommentId,
-                    expandedChildPageIndex: _expandedChildPageIndex,
-                    registerCommentKey: _registerCommentKey,
-                    onOpenProfileUser: widget.onOpenProfileUser,
-                    onReplyComment: _startCommentReply,
-                    onStartCommentEdit: _startCommentEdit,
-                    onCancelCommentEdit: _cancelCommentEdit,
-                  ),
-              ],
+                  ],
+                );
+              },
             ),
           ),
         );
@@ -951,7 +995,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     Scrollable.ensureVisible(
       context,
-      duration: const Duration(milliseconds: 280),
+      duration: RadishMotion.duration(
+        context,
+        const Duration(milliseconds: 280),
+      ),
       curve: Curves.easeOutCubic,
       alignment: 0.12,
     );
@@ -965,7 +1012,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     Scrollable.ensureVisible(
       context,
-      duration: const Duration(milliseconds: 280),
+      duration: RadishMotion.duration(
+        context,
+        const Duration(milliseconds: 280),
+      ),
       curve: Curves.easeOutCubic,
       alignment: 0.08,
     );
@@ -979,7 +1029,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     Scrollable.ensureVisible(
       context,
-      duration: const Duration(milliseconds: 280),
+      duration: RadishMotion.duration(
+        context,
+        const Duration(milliseconds: 280),
+      ),
       curve: Curves.easeOutCubic,
       alignment: 0.08,
     );
@@ -1110,7 +1163,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
           _maxPendingNavigationScrollAttempts) {
         _pendingNavigationScrollAttempts++;
         _schedulePendingCommentScroll(
-          delay: const Duration(milliseconds: 80),
+          delay: RadishMotion.duration(
+            this.context,
+            const Duration(milliseconds: 80),
+          ),
         );
       }
       return;
@@ -1118,7 +1174,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
 
     Scrollable.ensureVisible(
       context,
-      duration: const Duration(milliseconds: 280),
+      duration: RadishMotion.duration(
+        context,
+        const Duration(milliseconds: 280),
+      ),
       curve: Curves.easeInOut,
       alignment: 0.25,
     );
@@ -1147,6 +1206,78 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         _scrollToPendingCommentIfNeeded();
       });
     });
+  }
+}
+
+class _ForumDetailContextRail extends StatelessWidget {
+  const _ForumDetailContextRail({
+    required this.detail,
+    required this.sourceLabel,
+    required this.commentSummary,
+    required this.onRefresh,
+    required this.onJumpToQuickReply,
+    required this.onJumpToAnswer,
+    required this.onJumpToComments,
+  });
+
+  final ForumPostDetail? detail;
+  final String sourceLabel;
+  final String commentSummary;
+  final VoidCallback? onRefresh;
+  final VoidCallback onJumpToQuickReply;
+  final VoidCallback? onJumpToAnswer;
+  final VoidCallback onJumpToComments;
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      key: const Key('forum-detail-context-rail'),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text('阅读导航', style: Theme.of(context).textTheme.titleLarge),
+          const SizedBox(height: 8),
+          Text('来源：$sourceLabel'),
+          const SizedBox(height: 4),
+          Text(commentSummary),
+          if (detail != null) ...[
+            const SizedBox(height: 4),
+            Text('${detail!.viewCount} 次浏览 · ${detail!.commentCount} 条评论'),
+          ],
+          const SizedBox(height: 20),
+          FilledButton.tonalIcon(
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh),
+            label: const Text('刷新详情'),
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onJumpToQuickReply,
+            icon: const Icon(Icons.bolt_outlined),
+            label: const Text('轻回应'),
+          ),
+          if (onJumpToAnswer != null) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: onJumpToAnswer,
+              icon: const Icon(Icons.question_answer_outlined),
+              label: const Text('回答问题'),
+            ),
+          ],
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: onJumpToComments,
+            icon: const Icon(Icons.comment_outlined),
+            label: const Text('评论区'),
+          ),
+          const SizedBox(height: 20),
+          Text('当前边界', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          const Text('内容审核、治理与复杂富文本编辑继续由 Web 工作台承载。'),
+        ],
+      ),
+    );
   }
 }
 

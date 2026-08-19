@@ -1,8 +1,8 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P0` 产品路线与技术方向已确认；下一顺位为 `P1` 全页面事实审计与代表类型分级，尚未修改 Flutter 代码或依赖
+> 状态：`P1` 全页面事实审计与 `P2` 主题 / 自适应技术基座已完成；下一顺位为 `P3` Flutter 代表设计
 >
-> 最后更新：2026-08-15（Asia/Shanghai）
+> 最后更新：2026-08-19（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -11,6 +11,7 @@
 > - [Radish UI 差异附录](/frontend/ui-addendum)
 > - [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)
 > - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff)
+> - [P1 全页面事实审计与代表分级](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)
 
 ## 1. 结论摘要
 
@@ -82,8 +83,8 @@ lib/app/app.dart
 - Shell 已承接 Android Back、OIDC 回流、应用生命周期、底部主导航和通知入口。
 - Discover、Forum、Docs、Profile、Leaderboard、Shop、Wallet、Experience 已有独立数据 / 展示 owner。
 - 论坛写入已具备失败重试 key、局部更新、草稿保留和来源返回。
-- 商品权益已能通过 `ShopRepository.getMyBenefits()` 读取，并具备激活 / 停用 API 调用入口。
-- 当前 `ShopUserBenefit` 尚未完整保留主题映射所需的 `voBenefitValue`、状态等字段，Theme owner 也未消费权益结果；这是四主题不能承接的直接断点。
+- 商品权益已能通过 `ShopRepository.getMyBenefits()` 读取，但当前 Repository 没有激活 / 停用方法。
+- P2 已补齐 `ShopUserBenefit` 的 `voBenefitValue`、完整状态与可操作字段，并通过独立 gateway 复用既有 `GetMyBenefits / ActivateBenefit / DeactivateBenefit` 契约；Flutter 没有建立本地伪权益写入链。
 
 ### 4.3 与 Web 家族 UI 的差距及根因
 
@@ -152,10 +153,10 @@ Flutter 不复刻 Web 已有画板。进入页面代码前，按移动原生与�
 | 等级 | 代表类型 | 设计要求 |
 | --- | --- | --- |
 | R1 | App Shell + 认证 / 通知；Discover；Forum 详情与互动；Profile / 我的 | 同时维护 compact 与 expanded 正式代表设计，必要时补 medium 关键差异 |
-| R2 | Forum 列表 / 发帖；Docs 目录—正文；Shop 交易回流；共享状态与主题设置 | 维护关键区块、状态或响应式差异，不复制完整等价页面 |
-| R3 | Leaderboard、Wallet、Experience、订单 / 背包等派生面 | 写明继承来源后实现，通过真实窗口截图复核 |
+| R2 | Forum 列表 / 发帖；Docs 目录—正文；Shop 浏览 / 交易回流；共享状态与主题设置 | 维护关键区块、状态或响应式差异，不复制完整等价页面 |
+| R3 | 订单 / 背包；Wallet、Experience、Leaderboard；最近访问 | 写明 R1 / R2 继承来源后实现，通过真实窗口截图复核 |
 
-`P1` 必须先逐个审计现有页面 owner、业务状态、窗口结构、共享候选与风险，再最终确认 R1 / R2 / R3。不能仅凭文件名批量换皮。
+以上分级已经由 [P1 全页面事实审计](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)确认。Profile 编辑继承 Identity / Revisit，Docs 的内联详情与 handoff route 共享 Docs Reader owner，通知 sheet 归属 Shell / Auth / Notification；不能按文件名批量换皮。
 
 ## 8. 视觉系统方向
 
@@ -208,13 +209,13 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 - `google_fonts`：可用于字体 API 与本地资产接线；生产构建必须随包打入字体资产、关闭运行时网络获取，并保留字体许可证。具体字族在代表设计比较后确定。
 - `flutter_animate`：等主题、组件和 motion token 稳定后再引入；只封装少量共享微动效，并完整支持 reduced-motion。
-- `shadcn_ui`：不作为全局基础。它与 Material / FlexColorScheme 并行时容易形成第二套主题和组件语义；如确有价值，只允许在 `P2` 对单个隔离代表面做 spike，失败即退出。
+- `shadcn_ui`：P2 已裁决不引入。它与 Material / FlexColorScheme 并行会形成第二套主题和组件语义，当前没有真实复用价值。
 
 ### 9.3 不采用
 
 - `macos_ui` 不作为共享产品框架。它只适合 macOS 风格与平台能力，无法支撑 Android / iOS / Windows / Linux 一致的 Radish 产品身份。
 - 不同时引入 `shadcn_ui`、其他完整组件框架和自有 Material 主题三套全局体系。
-- 本文只裁决方向，不固定包版本；版本、许可证、维护活跃度、传递依赖和锁文件影响须在 `P2` 重新核对，安装前另行说明命令并取得授权。
+- P2 已单独核对并获授权固定 `flex_color_scheme ^8.4.0` 与 `shared_preferences ^2.5.5`；版本、BSD-3-Clause 许可证、传递依赖、lockfile 影响和回滚面见 P2 实现记录。
 
 官方参考：[`flex_color_scheme`](https://pub.dev/packages/flex_color_scheme)、[`google_fonts`](https://pub.dev/packages/google_fonts)、[`flutter_animate`](https://pub.dev/packages/flutter_animate)、[`shadcn_ui`](https://pub.dev/packages/shadcn_ui)、[`macos_ui`](https://pub.dev/packages/macos_ui)、[Flutter adaptive and responsive design](https://docs.flutter.dev/ui/adaptive-responsive)。
 
@@ -252,22 +253,24 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 退出条件：入口、路线、壳层、UI 附录和 Flutter README 口径一致。
 
-### P1：全页面事实审计与代表分级（下一批）
+### P1：全页面事实审计与代表分级（已完成，2026-08-19）
 
 - 盘点每个页面的 owner、状态、调用链、关键交互、测试和技术债。
 - 建立 compact / medium / expanded 结构表与 R1 / R2 / R3 继承表。
 - 区分“保留行为、调整编排、重做呈现、后置功能”，不改代码和依赖。
 - 确定 `P2` 的首批完整代表场景。
 
-退出条件：所有现有页面有唯一归属，首个 spike 不依赖猜测。
+退出条件已满足：所有现有页面与非 Page 表面已有唯一归属，compact / medium / expanded 结构、R1 / R2 / R3 继承和首个 spike 输入已经形成，详见 [P1 审计记录](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)。
 
-### P2：技术基座 spike 与依赖裁决
+### P2：技术基座 spike 与依赖裁决（已完成，2026-08-19）
 
-- 在取得依赖授权后，验证 FlexColorScheme、自有 ThemeExtension、字体本地资产和共享组件边界。
-- 用 Shell + Discover + Forum detail 的完整真实状态组合比较纯 Material 主题、推荐组合和可选 shadcn 隔离样例。
-- 验证四主题、reduced-motion、compact / expanded、键盘 / 触控与现有测试可维护性。
+- 获授权加入 `flex_color_scheme ^8.4.0` 与 `shared_preferences ^2.5.5`；两者均为 BSD-3-Clause，无顺带直接依赖升级。
+- 用自有 `RadishThemeTokens` 作为产品语义真相源，FlexColorScheme 只负责 Material 3 组件子主题；不引入 shadcn 或第二套组件系统。
+- Theme Controller 复用 Shop 权益读取 / 激活 / 停用契约，内置偏好与服务端权益分属清晰 owner，账号切换与迟到响应已隔离。
+- Shell 与 Discover / Forum Detail 覆盖 compact / medium / expanded、键盘切换、reduced-motion 与现有交互回归。
+- 字体依赖未安装；字族、本地资产和许可证留到 P3 代表设计后裁决。
 
-退出条件：只保留一套全局主题 / 组件基础，包版本、许可证、资产和回滚方式明确。
+退出条件已满足：只保留一套全局主题 / 自适应基础，包版本、许可证、权益 owner、持久化、回滚面和验证结论见 [P2 实现记录](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)。
 
 ### P3：Flutter 代表设计
 
@@ -279,9 +282,9 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 ### P4：主题与共享组件实现
 
-- 落地 Theme Controller、四主题映射、ThemeExtension 和主题持久化。
-- 落地 typography、radius、surface、state、motion 与共享导航 / 状态 / 表单组件。
-- 接入首批完整代表页，先关闭公共 owner 风险。
+- 基于 P2 已有 Theme Controller、四主题映射、ThemeExtension 和持久化 owner，按 P3 确认稿收口视觉细节。
+- 落地经确认的 typography、本地字体资产、density、surface、state 与共享状态 / 表单组件。
+- 巩固 Shell、Discover 与 Forum Detail 的代表实现，再为页面族扩展提供唯一组件基础。
 
 退出条件：主题与权益测试、组件测试、analyze 和代表尺寸 widget tests 通过。
 
@@ -299,29 +302,26 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - desktop 在共享 UI 通过宽屏和输入门禁后，按 Windows、macOS、Linux 分别生成 / 补齐平台工程、构建、签名、更新和分发。
 - 平台工程与分发要求独立授权和记录，不因 Dart UI 可运行自动宣称产品完成。
 
-## 12. 推荐第一实现批次
+## 12. P2 技术基座结果
 
-在 `P1–P3` 完成并获实现确认后，第一实现批次推荐为 **Flutter Theme Foundation + Adaptive Shell**，暂不整页重做全部业务。
+P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail** 落地可退出技术基座，不等于 P3 代表设计或 P4–P5 全量实现。
 
-预计影响：
+已实现：
 
-- `Clients/radish.flutter/pubspec.yaml`：经授权加入最终确认的主题 / 字体依赖与本地字体资产。
-- `lib/core/theme/`：四主题定义、Radish `ThemeExtension`、typography、Theme Controller 与持久化 owner。
-- `lib/features/shop/data/shop_models.dart`、`shop_repository.dart`：完整保留并读取主题权益映射字段，不改服务端状态机。
-- `lib/app/app.dart`、`lib/app/bootstrap.dart`：注入主题 owner，让 `MaterialApp` 消费权威主题状态。
-- `lib/features/shell/presentation/radish_flutter_shell.dart`：compact / medium / expanded 导航骨架和主题入口。
-- `lib/shared/widgets/`：只增加首批真实复用的状态、表面、按钮与导航组件。
-- `test/`：主题映射、权益 / 本地偏好、失效回退、窗口等级、reduced-motion 和键盘焦点测试。
+- `default / guofeng / theme-dark-night / theme-sakura` 四主题和自有 `ThemeExtension`；
+- `SharedPreferencesAsync` 内置偏好与 Shop 权益 gateway；
+- `<600 / 600–1023 / >=1024` 三档 Shell 与 `Ctrl/Cmd + 1..5`；
+- compact Bottom Sheet 与 medium / expanded Dialog 主题入口；
+- Discover 单列 / 双列结构和 Forum Detail 宽屏阅读导航 rail；
+- 评论定位 reduced-motion 和通知刷新 stale 保留。
 
-验证方式：
+已验证：
 
-1. `flutter analyze`
-2. `flutter test` 与主题 / Shell 定向 widget tests
-3. 对 compact、medium、expanded 固定 surface 尺寸执行 golden 或结构快照；golden 策略需先解决跨平台字体稳定性
-4. 覆盖四主题、未登录 / 已登录、无权益 / 有权益 / 失效、light / dark、reduced-motion
-5. desktop 追加键盘焦点和窗口缩放测试，mobile 追加安全区、系统返回和键盘避让
-6. 只有专题准备验收且服务启动另获授权后，才执行真实 Android / desktop smoke；不重启生产证据采集
+1. `flutter analyze`：零问题；
+2. `flutter test`：`228 / 228` 通过；
+3. `390 / 800 / 1200` 结构、键盘切换、四主题、权益失效 / stale / 账号隔离与代表页回归通过；
+4. Android debug 构建因本机 Gradle daemon 无任务输出而中止，未记为通过；本批未启动服务或执行真实 smoke。
 
 ## 13. 下一动作
 
-当前下一顺位是 `P1`：只做 Flutter 全页面事实审计、页面族分级和首个 spike 场景裁决。该批不修改 Dart、`pubspec.yaml`、平台目录、Pencil 或服务状态；完成后先汇报并等待确认，再进入依赖与设计基座验证。
+当前下一顺位是 `P3` Flutter 代表设计：基于 P2 已稳定的主题与自适应骨架，确认 typography、本地字体资产、组件密度、四主题视觉及 Discover / Forum Detail compact / expanded 代表稿。代表设计未确认前，不批量改造其他页面族，不安装字体依赖，不生成新平台工程。
