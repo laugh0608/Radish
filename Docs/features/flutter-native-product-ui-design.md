@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P1` 全页面事实审计与 `P2` 主题 / 自适应技术基座已完成；下一顺位为 `P3` Flutter 代表设计
+> 状态：`P3` 独立 Flutter 代表稿已完成，等待视觉确认后进入 `P4`
 >
 > 最后更新：2026-08-19（Asia/Shanghai）
 >
@@ -12,6 +12,7 @@
 > - [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)
 > - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff)
 > - [P1 全页面事实审计与代表分级](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)
+> - [P3 Flutter 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 
 ## 1. 结论摘要
 
@@ -272,13 +273,16 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 退出条件已满足：只保留一套全局主题 / 自适应基础，包版本、许可证、权益 owner、持久化、回滚面和验证结论见 [P2 实现记录](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)。
 
-### P3：Flutter 代表设计
+### P3：Flutter 代表设计（代表稿已完成，待确认）
 
+- 新建并维护独立活动设计源 `Docs/frontend/design-sources/radish-flutter-native-ui-v1.pen`，不把 Flutter 画板追加进 Web / Console 活动源。
 - 按 R1 / R2 维护 Flutter 专用 compact / expanded 代表设计；medium 只补真实结构差异。
 - 吸收 Web 家族 UI 的语义和气质，不复制 Web 画板。
 - 确认 typography、四主题、圆角、阴影、状态、导航、宽屏布局和 motion。
 
-退出条件：代表设计经确认，R3 继承路径完整，代码实现不再临场决定视觉系统。
+当前已在独立设计源完成视觉基座、Discover / Forum Detail compact 与 expanded、主题选择器、medium rail 差分和权益关键状态，R3 继承路径也已形成，详见 [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)。
+
+退出条件尚待项目所有者视觉确认：确认后代码实现不再临场决定视觉系统，并进入 P4。
 
 ### P4：主题与共享组件实现
 
@@ -322,6 +326,6 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 3. `390 / 800 / 1200` 结构、键盘切换、四主题、权益失效 / stale / 账号隔离与代表页回归通过；
 4. Android debug 构建因本机 Gradle daemon 无任务输出而中止，未记为通过；本批未启动服务或执行真实 smoke。
 
-## 13. 下一动作
+## 13. 明日动作（2026-08-20）
 
-当前下一顺位是 `P3` Flutter 代表设计：基于 P2 已稳定的主题与自适应骨架，确认 typography、本地字体资产、组件密度、四主题视觉及 Discover / Forum Detail compact / expanded 代表稿。代表设计未确认前，不批量改造其他页面族，不安装字体依赖，不生成新平台工程。
+第一顺位是 `P3` 视觉审核：复核独立 `radish-flutter-native-ui-v1.pen` 中的 typography 方向、组件密度、四主题视觉及 Discover / Forum Detail compact / expanded 代表稿。确认后进入 `P4-A` readiness，先反查现有 Dart owner 并说明本地字体资产、许可证、包体积、回退链、依赖与 lockfile 影响；具体资产或依赖变更另行取得授权。确认前不批量改造其他页面族，不生成新平台工程。

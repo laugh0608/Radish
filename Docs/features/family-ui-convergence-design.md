@@ -210,7 +210,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 ### 9.2 设计源
 
-当前唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`。文件保留已确认的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01 / R1-C02`、`R2-C03 / R2-P03 / R2-W02 / R2-A02` 必要代表画板、组件母版、关键状态和主题变量；失败研究只由 Git 历史留存。后续 R1 / R2 继续在该文件中新增或替换必要代表设计。`v1` 在普通设计迭代中持续演进并由 Git 留存，只有不兼容的结构性升级才新建 `v2`。
+Web / Console 的唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`。文件保留已确认的 `R1-P01 / R1-P02 / R1-A01 / R1-W01 / R1-C01 / R1-C02`、`R2-C03 / R2-P03 / R2-W02 / R2-A02` 必要代表画板、组件母版、关键状态和主题变量；失败研究只由 Git 历史留存。Flutter Native 自 `2026-08-19` 起使用独立 `radish-flutter-native-ui-v1.pen`，只继承家族语义，不把原生画板或组件追加进 Web 文件。两个文件各自按主版本演进。
 
 `web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 保留为只读历史资产，不删除、不改名、不继续同步。[C-1A 代码事实审计](/frontend/f4-r-representative-page-audit)已按自动升级条件和六维评分裁决一个基础矩阵与六类完整页面类型：
 

@@ -6,14 +6,15 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P3 代表设计`
-- **产品下一顺位**：`确认 Theme Foundation + Adaptive Shell + Discover + Forum Detail 的范围与停止线`
+- **工程第一顺位**：`Flutter Native P3 视觉确认`
+- **产品下一顺位**：`确认独立 Flutter 设计源的 typography、密度与代表页面`
 - **复核日期**：`2026-08-19`
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
+- `2026-08-19` 已完成 [Flutter Native P3 代表稿](/records/f4-flutter-native-p3-representative-design-2026-08-19)：按项目所有者意见建立独立 `radish-flutter-native-ui-v1.pen`，Web / Console 与 Flutter 不再共用活动设计源；六个顶层画板冻结视觉基座、Discover / Forum Detail compact / expanded、主题设置、medium rail 与权益关键状态，四个 Flutter 组件母版和 R3 继承路径同步形成。Pencil 原生 visitor 零布局问题、placeholder 全部清除并通过 Pen 保存；当前等待视觉确认，尚未进入字体资产 / 依赖接入或 P4 代码收口。
 - `2026-08-19` 已完成 Flutter Native [P1 全页面事实审计](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)与 [P2 主题 / 自适应技术基座](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)：现有业务 owner、OIDC、幂等、来源返回和分页契约保留；四主题、Shop 权益、内置偏好、三档 Shell、Discover 与 Forum Detail 代表实现已落地，`flutter analyze` 零问题、`flutter test` `228 / 228` 通过。下一顺位为 P3 代表设计；生产部署与长期运维由项目所有者独立负责。
 - `2026-08-15` 已完成 [PR CI / CD 质量门禁治理](/records/ci-quality-gate-governance-2026-08-15)：PR 只保留一条 `Repo Quality` workflow，以 `Candidate Quality` 聚合六个组件；远端卫生与 Lint 改为全量确定性检查，后端命中时固定 PostgreSQL 17 和 warning-as-error，候选 workflow 仅供手动与 tag 复用。单人阶段审批数收敛为 `0`，不再依赖管理员 bypass；质量覆盖未降低，Flutter Native P1 / P2 后已进入 P3。
 - `2026-08-15` 已完成 [v26.8.1 Web 阶段收口发布](/records/m15-release-record-v26.8.1-2026-08-15)：本地按 CI 同规格 PostgreSQL 17 完成 `1320 passed / 0 skipped / 0 failed`，PR #68 的八项 required checks 全部通过后以 merge commit `e518a306` 合入 `master`，最新 `origin/master` 已 fast-forward 回灌并推送至 `dev`。`v26.8.1-release` tag 与 DbMigrate、API、Auth、Gateway、Frontend 五镜像发布成功，镜像 workflow 的 Candidate Quality 和 Trivy 策略评估均通过；生产固定 tag 前滚与部署后复核仍是独立授权动作，不阻断 Flutter Native 产品化推进。
@@ -93,7 +94,6 @@
 - `2026-08-03` 已完成 `R1-F01`：统一四主题变量矩阵、Brand / Workbench Action 前景语义、按钮 / 输入 / 状态 chip、加载 / 空态 / 错误 / 权限状态槽，以及 PC / 390px mobile 壳层契约。
 - `2026-08-03` 已将 F4-R 上游基线升级为 RadishX `family-ui v26.7.3`：通用副本使用灰玉参考默认并新增 `text-on-brand`；基线补充批当时显式保留 `guofeng` 胭脂品牌，后续 R1-P01 灰玉裁决不改写该历史事实。
 - `2026-08-03` 已复核新版全部规范正文、token 和参考索引；27 张参考图仅迁入 family-ui `reference-ui/`，Git blob 全部 `R100` 相同，既有页面族映射继续有效，并强化“观察、拆解、提炼、转译”与禁止照抄边界。
-- `2026-07-30` 已将 Pencil 协作调整为代表页驱动：功能、文案、权限和状态机服从专题与代码；R1 / R2 维护必要代表设计，R3 继承实现并通过真实页面截图复核，不再维持逐路由设计镜像。
 - `2026-07-30` 已完成 C-1A 代码事实审计：裁决 `7` 个 R1、`4` 个 R2 与 R3 继承表；Console 普通表格 / 明细和案件治理 / 审计因布局、动作与 mobile 模型不同，拆为两个完整代表类型。
 - `2026-07-30` 已完成并关闭 [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)：公开类型固定为经验、发帖、评论、人气、热门商品；余额、累计消费与购买数量退出匿名排名；列表、总数和个人排名统一资格与稳定排序，读取不再补写公开身份。D 批通过 Gateway PC / mobile、匿名 / TestUser、旧路由和失败契约矩阵，并修正未知整数类型被框架枚举绑定提前截断的问题。
 - `2026-07-30` 已完成镜像漏洞门禁分层：`CRITICAL` 与存在修复版本的 `HIGH` 默认阻断，无修复 `HIGH` 留痕但不阻断；原始报告、策略裁决和限期精确例外均可追溯。
@@ -187,17 +187,16 @@
 68. 按确认方案关闭 R3-F02-C：Client 未知路径与 `/desktop` 已明确分离，两端根级运行时边界完整；Console 未登录、非 Console 用户、页面缺权、Not Found 与路由异常保持不同理由。Client、Console、类型、Lint、生产构建与 Baseline Quick 通过。
 69. 获授权后完成 R3-F02 Gateway 成组运行态验收；匿名、Admin 与非 Console `test` 的 OIDC、自服务、错误 / 路由和 PC / mobile 双语矩阵通过，运行态发现的三类共同根因已成组修正并全量回归，登录会话清理完成，专题关闭。
 
-## 当前事项（2026-08-19）
+## 明日事项（2026-08-20）
 
-1. `P1` 全页面事实审计与 `P2` 主题 / 自适应技术基座均已完成；当前以 [P2 实现记录](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)为准。
-2. Flutter 已统一 `default / guofeng / theme-dark-night / theme-sakura` 语义主题、Shop 权益 owner、内置偏好持久化与 compact / medium / expanded Shell；Discover 与 Forum Detail 已作为首批代表页接入。
-3. `flutter analyze` 零问题，`flutter test` `228 / 228` 通过；Android debug 构建因本机 Gradle daemon 无任务输出而有限等待后中止，未记为通过也不冒充代码失败。
-4. 下一顺位进入 `P3` Flutter 代表设计：确认 typography、本地字体资产、组件密度、四主题视觉与 Discover / Forum Detail compact / expanded 代表稿；未确认前不批量重构页面族。
-5. 继续保持 Web 优先、Flutter 次级，不建立第二套主题权益状态机、不恢复 Tauri / 扩展 WebOS、不重启生产证据采集。生产部署与长期运维由项目所有者独立负责，不进入当前开发任务。
+1. 第一顺位只做 `P3` 视觉审核：复核独立 Flutter 设计源的 `Noto Sans SC + Noto Serif SC` 分工、`8 / 12 / 18` 圆角、`48 / 40` 触达密度、四主题，以及 Discover / Forum Detail compact / expanded 信息结构。
+2. 若审核要求调整，只修改 Flutter 设计源与对应记录，不把原生页面放回 Web / Console `.pen`，也不提前批量重构页面族。
+3. 若审核确认，进入 `P4-A` readiness：先反查现有 Dart 主题与共享组件事实，形成字体本地资产、许可证、包体积、回退链、`pubspec` / lockfile 影响和实施拆批方案，再就具体资产或依赖变更另行取得授权。
+4. P4 首个实现批仍只收口 Theme Foundation、共享组件、Shell、Discover 与 Forum Detail；不顺势生成 iOS / desktop 平台工程，不启动服务或重启生产证据采集。
 
 ## 当前执行入口
 
-- [Flutter Native P2 主题与自适应技术基座实现](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)
+- [Flutter Native P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19) · [P2 主题与自适应技术基座](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 - [F4-R-T03 Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)
 - [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)

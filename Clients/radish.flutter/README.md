@@ -4,7 +4,7 @@
 
 当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)和 [P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)已完成：业务 owner 与行为契约保留，四主题、权益 owner、三档 Shell 与 Discover / Forum Detail 代表实现已落地。下一顺位是 P3 代表设计，不以逐页换色或默认组件换皮代替设计系统。
+现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)和 [P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)已完成：业务 owner 与行为契约保留，四主题、权益 owner、三档 Shell 与 Discover / Forum Detail 代表实现已落地，Flutter 页面和 Web 页面分别维护设计源。当前先确认 P3 视觉方向，再进入 P4 字体资产与共享组件收口。
 
 ## 当前范围
 
@@ -84,7 +84,7 @@ Clients/radish.flutter/
 
 1. `P1` 全页面事实审计已完成：页面唯一归属、状态与错误边界、compact / medium / expanded 结构和 R1 / R2 / R3 继承见[审计记录](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)
 2. `P2` 技术基座已完成：四主题、权益 owner、偏好持久化、Adaptive Shell 与两个代表页见 [P2 实现记录](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)
-3. `P3` 代表设计：裁决 typography、本地字体资产、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿
+3. `P3` 代表设计：独立 Flutter 设计源中的 typography 方向、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿已完成，等待视觉确认
 4. `P4–P5` 主题 / Shell 与页面族成组实现：先 Community，再 Docs / Commerce，最后派生只读面
 5. Android 先形成新版 UI RC；iOS 与 desktop 在共享 UI 门禁后再分别进入平台工程与分发验证
 
