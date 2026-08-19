@@ -73,7 +73,7 @@ C-1A 最终裁决为：
 | `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen`（PC / Mobile、实现与运行态已关闭） |
 | `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `radish-web-family-ui-v1.pen` |
 
-R1 只在唯一活动设计源中维护必要代表设计，不为主题、locale、权限和每个状态复制完整页面。业务类型必须提供可按真实尺寸独立审核的 PC / mobile 顶层业务画板；关键状态与辅助说明可单独成板，复合说明板中的嵌入缩略图不计作业务页面完成。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点。
+Web / Console 的 R1 只在 `radish-web-family-ui-v1.pen` 中维护必要代表设计，不为主题、locale、权限和每个状态复制完整页面。业务类型必须提供可按真实尺寸独立审核的 PC / mobile 顶层业务画板；关键状态与辅助说明可单独成板，复合说明板中的嵌入缩略图不计作业务页面完成。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点；Flutter Native 使用独立设计源，不进入本表。
 
 `R1-P01` 的稳定代码事实现为：`/discover` 只消费统一 `PublicDiscoverFeedVo`，由服务端按 snapshot cutoff 与稳定 keyset 游标合并 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question`；Channel 摘要必须经 Console 显式 opt-in，页面不再自行拼装帖子、热门标签、Wiki 或商品列表。分类、`#标签` 与结构化状态仍由 Forum 列表 / 详情分层表达，不挤入紧凑混合轨道。`2026-08-04`—`08-05` 已完成公开能力审计、PC / mobile 视觉确认、代码实现与 Gateway 阶段性运行态复核，最终结构以国风暖白表面、无衬线层级、克制圆角阴影、灰玉品牌语义、墨蓝操作语义和内嵌数据反馈建立现代自然紧凑气质；活动设计源只保留正式 PC / mobile 和必要母版。匿名 / 登录回流、双语、代表主题、Console 治理只读路径与横向溢出检查均通过，运行态发现的 Int64 wire contract 偏差已在统一 HTTP 契约层修正。详见[结构研究记录](/records/f4-r-r1-p01-public-discover-structure-study-2026-08-04)、[设计记录](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)与[实现记录](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)。全局品牌 token 尚未机械替换，继续由共享主题批治理。
 

@@ -7,7 +7,8 @@
 - `radish-web-family-ui-v1.pen`：Radish Web / Console 唯一活动设计源。当前保留已确认的 `R1-P01 / 社区发现 / PC 1440`、`Mobile 390`、`8` 个必要组件母版和主题变量；后续命中的 R1 / R2 代表设计继续在同一文件维护。
 - `radish-flutter-native-ui-v1.pen`：Flutter Native 独立活动设计源。P3 起只承载原生视觉基础、compact / medium / expanded 壳层、Discover / Forum Detail 代表结构及必要 R2 状态，不复制 Web 页面或四套主题页面族。
 - 当前 family-ui 基线：RadishX `v26.7.3`。
-- 当前进度：`R1-F01` 已完成；`R1-P01 / 社区发现` PC / mobile、统一公开读模型、代码实现与 Gateway 运行态复核已关闭。`R1-P02 / Public 详情与互动` 已完成[代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)，但尚未修改活动设计源；用户确认连续阅读面、统一帖子操作带和线程索引方向后，才进入 `2～3` 个低保真 PC 构图比较。
+- Web / Console 当前进度：`R1-F01`、六个 R1、四个 R2、六组 R3 继承与 Web 四主题退出门禁均已关闭；后续只在新的真实代表差异触发升级条件时修改 Web 活动源。
+- Flutter 当前进度：P1 全页面审计、P2 主题 / 自适应技术基座与 P3 独立代表稿已完成；`2026-08-20` 先做视觉审核，确认后进入 P4-A 字体资产与共享组件 readiness。
 - `R1-P01` 评审结论：Public 内容流采用现代自然紧凑语法、非对称主次、连续扫描行和灰玉 / 墨蓝 / 国风暖白家族色；后续页面继承视觉语法，不照搬社区信息架构。
 - `R1-P01` 颜色裁决：`guofeng` 品牌目标改为低饱和灰玉 `#5d6c57`，悬停 `#6e736d`，常规操作继续使用墨蓝 `#435c74`；`/discover` 已通过现有语义 token 局部落地，全局品牌 token 仍待共享主题批成组更新。
 

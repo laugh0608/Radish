@@ -269,7 +269,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - 用自有 `RadishThemeTokens` 作为产品语义真相源，FlexColorScheme 只负责 Material 3 组件子主题；不引入 shadcn 或第二套组件系统。
 - Theme Controller 复用 Shop 权益读取 / 激活 / 停用契约，内置偏好与服务端权益分属清晰 owner，账号切换与迟到响应已隔离。
 - Shell 与 Discover / Forum Detail 覆盖 compact / medium / expanded、键盘切换、reduced-motion 与现有交互回归。
-- 字体依赖未安装；字族、本地资产和许可证留到 P3 代表设计后裁决。
+- 字体依赖未安装；P3 已把字族方向冻结为 `Noto Sans SC + Noto Serif SC`，实际本地资产、许可证、包体积、回退链与 `pubspec` 影响留到 P4-A readiness 裁决。
 
 退出条件已满足：只保留一套全局主题 / 自适应基础，包版本、许可证、权益 owner、持久化、回滚面和验证结论见 [P2 实现记录](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)。
 

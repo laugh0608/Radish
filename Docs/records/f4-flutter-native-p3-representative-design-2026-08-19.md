@@ -64,7 +64,21 @@ Pencil 主题轴使用 `default / guofeng / dark-night / sakura`，分别映射�
 - error 保留可读错误与重试入口，不创建本地解锁。
 - 未拥有主题只解释来源并引导商店，不在设置弹层内实现购买或伪激活。
 
-## 5. R3 继承路径
+## 5. P2 当前代码与 P3 代表稿差分
+
+P3 是下一实现阶段的视觉契约，不代表以下行为已经在 P2 代码中落地。日终代码反查固定这些差分，P4 必须按确认结果显式关闭：
+
+| 领域 | P2 当前代码事实 | P3 目标 |
+| --- | --- | --- |
+| 字体 | `ThemeData` 仍使用系统字体，没有字体 asset 或 `google_fonts` | `Noto Sans SC` 承载 UI / 正文，`Noto Serif SC` 只做有限展示强调；本地资产和回退链经授权接入 |
+| 主题确认 | `radish_theme_selector.dart` 点击主题项会直接调用 `selectTheme`，内建主题立即写偏好，权益主题立即尝试激活 | 选择先形成可撤销预览，用户显式确认后再持久化或调用权益动作 |
+| motion | `MaterialApp.themeAnimationDuration` 当前为 `180ms`，`RadishMotion` 只负责在 `disableAnimations` 下归零调用方时长 | 统一收口 `120 / 200 / 280ms` token，同时保持 reduced-motion 归零 |
+| Discover | P2 已有 compact 单列、medium / expanded 双列，但仍以通用 context / section card 组合为主 | 按代表稿收紧焦点内容、连续列表、Docs / Shop 次区和表面密度 |
+| Forum Expanded | P2 为受控 reading pane 加右侧 `304px` context rail | 按代表稿复核主 rail、本页 context rail、受控正文与互动区的左右关系和密度 |
+
+视觉审核若调整上述目标，以审核后的代表稿和本记录更新为准；不得反向修改 P2 历史实现记录来伪装差分已经落地。
+
+## 6. R3 继承路径
 
 | 页面族 | 继承来源 | 实现时必须补的真实复核 |
 | --- | --- | --- |
@@ -76,7 +90,7 @@ Pencil 主题轴使用 `default / guofeng / dark-night / sakura`，分别映射�
 
 这些页面不再新增完整 Pencil 镜像；P4 / P5 按继承来源实现，并通过真实 compact / expanded 截图与对应自动化复核差异。
 
-## 6. 静态复核
+## 7. 静态复核
 
 - 六个顶层画板和四个组件母版均已清除 `placeholder`。
 - Pencil 原生 visitor 逐根检查未报告 clipping、collapse、overflow 或无效图标。
@@ -84,7 +98,7 @@ Pencil 主题轴使用 `default / guofeng / dark-night / sakura`，分别映射�
 - 设计源已通过 Pen 桌面应用原生保存。
 - 本批没有修改 Flutter 运行时代码、API、数据库、依赖或平台工程，没有启动服务或执行真实 smoke。
 
-## 7. 明日视觉审核与下一步（2026-08-20）
+## 8. 明日视觉审核与下一步（2026-08-20）
 
 项目所有者需要确认以下视觉方向：
 
