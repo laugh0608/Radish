@@ -4,7 +4,7 @@ import { formatCommand, runCommand } from './process-runner.mjs';
 
 const repoRoot = process.cwd();
 const steps = [
-  ['全量仓库卫生预算', ['run', 'check:repo-hygiene:candidate']],
+  ['全量仓库与文档治理', ['run', 'check:repo-quality:candidate']],
   ['全量前端零 warning lint', ['run', 'lint']],
   ['候选 baseline', ['run', 'validate:baseline', '--', '--warnings-as-errors']],
   ['依赖安全', ['run', 'check:dependency-security']],

@@ -23,7 +23,7 @@ export const REPO_QUALITY_WORKFLOW_JOBS = [
     jobId: 'repo-hygiene',
     checkName: 'Repo Hygiene',
     requiredFragments: [
-      'run: npm run check:repo-hygiene:candidate',
+      'run: npm run check:repo-quality:candidate',
     ],
   },
   {
@@ -96,7 +96,7 @@ export const REPO_QUALITY_LOCAL_STEPS = [
   {
     checkName: 'Repo Hygiene',
     title: 'Repo Hygiene changed-only',
-    npmArgs: ['run', 'check:repo-hygiene:changed'],
+    npmArgs: ['run', 'check:repo-quality:changed'],
   },
   {
     checkName: 'Frontend Lint',

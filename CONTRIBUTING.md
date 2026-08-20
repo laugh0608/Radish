@@ -48,7 +48,7 @@
 
 ```bash
 # 文档或小型配置变更
-npm run check:repo-hygiene:changed
+npm run check:repo-quality:changed
 git diff --check
 
 # 日常改动的本地最小门禁

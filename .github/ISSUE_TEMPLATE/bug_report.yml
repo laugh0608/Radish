@@ -1,0 +1,95 @@
+name: Bug 报告
+description: 报告可复现的功能、兼容性或运行问题
+title: "[Bug]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢提交问题。安全漏洞、凭据泄露或越权访问不要填写公开 Issue，请改按[安全策略](https://github.com/laugh0608/Radish/security/policy)私下报告。
+        提交前请移除密码、Token、连接串、个人数据和未经脱敏的生产日志。
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: 问题摘要
+      description: 简要说明发生了什么，以及它对正常使用造成的影响。
+      placeholder: 在什么场景下出现了什么问题？
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: 复现步骤
+      description: 提供能够稳定复现问题的最小步骤、输入和前置状态。
+      placeholder: |
+        1. 进入……
+        2. 执行……
+        3. 观察到……
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-actual
+    attributes:
+      label: 预期行为与实际行为
+      description: 分别说明预期结果与实际结果；如有错误提示，请完整但脱敏地记录。
+      placeholder: |
+        预期：
+        实际：
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境与版本
+      description: 请填写 Radish 版本或提交、入口、浏览器或客户端、操作系统、数据库及必要部署条件。
+      placeholder: |
+        - Radish 版本 / commit：
+        - 入口：Gateway / Client / Console / Flutter / API / Auth
+        - 浏览器或客户端版本：
+        - 操作系统：
+        - 数据库：SQLite / PostgreSQL
+        - 其他部署条件：
+    validations:
+      required: true
+
+  - type: dropdown
+    id: surface
+    attributes:
+      label: 主要影响面
+      description: 选择最直接受到影响的产品面或模块。
+      options:
+        - Web（PC 浏览器）
+        - Web（移动浏览器）
+        - Console 管理后台
+        - Flutter Native
+        - API / Service / Repository
+        - Auth / OIDC / 权限
+        - Gateway / 部署 / 数据迁移
+        - 文档 / 开发工具
+        - 其他或无法判断
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: 补充证据
+      description: 可添加已脱敏的日志、截图、请求响应或最小样例。请勿提交真实秘密和第三方私密数据。
+      placeholder: 将材料拖到这里，或说明暂无补充证据。
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: confirmation
+    attributes:
+      label: 提交确认
+      options:
+        - label: 我已搜索现有 Issue，未发现相同问题。
+          required: true
+        - label: 我确认这不是需要私下报告的安全漏洞，且材料已经脱敏。
+          required: true
+        - label: 我同意遵守项目的[社区行为准则](https://github.com/laugh0608/Radish/blob/master/CODE_OF_CONDUCT.md)。
+          required: true

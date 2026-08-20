@@ -21,6 +21,8 @@ npm run check:docs
 npm run check:repo-hygiene
 npm run check:repo-hygiene:candidate
 npm run check:repo-hygiene:changed
+npm run check:repo-quality:changed
+npm run check:repo-quality:candidate
 npm run check:repo-quality-contract
 npm run check:dependency-security
 npm run check:sensitive-literals
@@ -56,8 +58,9 @@ npm run validate:candidate
   - 将 Git `core.hooksPath` 指向仓库内的 `.githooks`
   - 启用 `pre-commit` 与 `commit-msg` 本地拦截
 - `check:docs`
-  - 通过 `./scripts/check-docs.sh` 全量扫描 `Docs/`，包含未跟踪的新文档
+  - 通过 `./scripts/check-docs.sh` 全量扫描 `Docs/` 与根目录 `README.md / SECURITY.md / CONTRIBUTING.md / CODE_OF_CONDUCT.md / AGENTS.md / CLAUDE.md / LICENSE`，包含未跟踪的新文档
   - 复用仓库卫生检查器，阻断非法 UTF-8、UTF-8 BOM、`U+FFFD`、常见乱码特征、错误换行和缺失末尾换行；该专用入口不输出篇幅治理提醒
+  - 同时检查 Markdown 中指向仓库文件或目录的本地相对链接；外部 URL、页内 anchor、正式站内绝对路由和 fenced code 示例不按本地文件误判
 - `check:repo-hygiene`
   - 全量检查仓库已跟踪文本文件的 UTF-8 / BOM / 换行符 / 末尾换行 / 尾随空格
   - 适合治理历史文本问题时使用
@@ -65,8 +68,14 @@ npm run validate:candidate
   - 全量扫描所有已跟踪文件，并以 `Scripts/repo-hygiene-baseline.json` 记录的已审计问题为预算
   - 历史问题允许持续下降，但新增文件或新增问题指纹会阻断候选验证
 - `check:repo-hygiene:changed`
-  - 只检查当前 worktree 变更文件的文本卫生
+  - 检查当前 worktree 的 staged、unstaged 与未跟踪文件文本卫生，忽略符合 `.gitignore` 的本地文件
   - 适合日常本地最小验证；远程 `Repo Hygiene` 使用带历史预算的全仓扫描
+- `check:repo-quality:changed`
+  - 依次执行 changed-only 仓库文本卫生与全量文档治理
+  - 作为本地 `validate:ci` 的 Repo Hygiene 对齐入口，确保新建未跟踪文件和根目录治理文档不会漏检
+- `check:repo-quality:candidate`
+  - 依次执行带历史预算的全仓文本卫生与全量文档治理
+  - 作为远程 `Repo Hygiene` 和本地候选验证的统一入口
 - `check:repo-quality-contract`
   - 校验 `.github/workflows/repo-quality.yml` 的六个组件与聚合 job、`.github/rulesets/master-protection.json` 的单一 required check、本地 `validate:ci`、单人审批数和 CI-only 门禁是否仍然一致
   - 适合在调整 workflow job、ruleset required checks 或本地 `Repo Quality` 复现入口时先做轻量自校验
@@ -85,7 +94,7 @@ npm run validate:candidate
   - 只对 staged 变更中的前端脚本文件执行 `eslint`
   - 适合提交前先看“这次准备提交的文件”是否通过
 - `collect:changed`
-  - 统一输出当前 staged 与 unstaged 变更文件列表
+  - 统一输出当前 staged、unstaged 与未跟踪文件列表，忽略符合 `.gitignore` 的本地文件
   - 适合排查“当前 CI / changed-only 脚本到底看到了哪些文件”
 - `collect:changed:staged`
   - 统一输出 staged 变更文件列表
@@ -167,7 +176,7 @@ npm run validate:candidate
   - 运行 `dotnet build Radish.slnx -c Debug --warnaserror` 与 `dotnet test Radish.Api.Tests`；远程 `Backend Guard` 固定提供 PostgreSQL 17，不会把环境集成测试静默跳过；所有带 `Database=PostgreSQL` trait 的测试类由约束测试强制进入独占 collection，避免 SqlSugar CodeFirst 进程级状态并发串扰不同 schema
 - `validate:ci`
   - 本地复现当前 `Repo Quality` 的最小执行面
-  - 依次运行 `check:repo-hygiene:changed`、`lint:changed`、`validate:baseline:quick`
+  - 依次运行 `check:repo-quality:changed`（changed-only 文本卫生 + 全量文档治理）、`lint:changed`、`validate:baseline:quick`
   - 再按 `check:backend-impact` 的同源规则决定是否追加 `validate:backend`
   - 再按 `check:identity-impact` 的同源规则决定是否追加 `validate:identity`
   - 本地门禁复用同一份 Repo Quality contract 并保留 changed-only 快速反馈；远程改用全仓卫生预算与全量前端 lint，由同一 workflow 内的 `Candidate Quality` 汇总
@@ -437,7 +446,7 @@ npm run collect:change-regression-record -- --title "当前批次" --scope "当�
 
 - `master` 当前受规则保护，只允许通过 PR 合并
 - 批次级回归记录默认放在这一层补，不要求绑定每一个本地 commit
-- GitHub Actions 中的 `Repo Hygiene` 使用全仓预算扫描，`Frontend Lint` 使用四个 Web workspace 全量零 warning lint；本地 `validate:ci` 仍使用 changed-only 入口，兼顾 PR 稳定性与连续开发效率
+- GitHub Actions 中的 `Repo Hygiene` 使用全仓预算扫描并追加全量文档治理，`Frontend Lint` 使用四个 Web workspace 全量零 warning lint；本地 `validate:ci` 使用 changed-only 文本卫生并同样追加全量文档治理，兼顾 PR 稳定性与治理口径一致
 - `Dependency Security` 是始终执行的联网组件，不按改动范围跳过；本地 `validate:ci` 暂不复现它，contract 会显式维护这项 CI-only 差异
 - `Backend Guard` 当前按变更文件触发：先用 `check:backend-impact` 判定是否命中后端 / API 影响面，再决定是否执行 `validate:backend`
 - `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
@@ -446,7 +455,7 @@ npm run collect:change-regression-record -- --title "当前批次" --scope "当�
 - `check:repo-quality-contract` 当前会校验 workflow 六个组件、聚合 `Candidate Quality`、ruleset、本地 `validate:ci` 与 CI-only 组件契约，避免门禁名称或执行面无声漂移
 - `check:identity-impact` 的命中范围当前已收口到单一规则源，只覆盖身份语义代码、Auth 协议输出、前端 Token 解析、`AuthFlow`、身份专题文档与实际身份门禁资产；通用规划、PR 模板和 ruleset 变更不会机械触发完整身份回归
 - `check:backend-impact` 的命中范围当前覆盖后端宿主、服务、模型、仓储、DbMigrate、后端测试、后端配置和后端门禁资产
-- 工作区级 changed-only 默认使用 `collect:changed`，同时合并 staged 与 unstaged diff，但不纳入未跟踪文件
+- 工作区级 changed-only 默认使用 `collect:changed`，同时合并 staged、unstaged 与未跟踪文件，并排除符合 `.gitignore` 的本地内容
 - 提交前只看 staged 内容时，优先使用 `collect:changed:staged`、`lint:staged`、`check:backend-impact:staged` 与 `check:identity-impact:staged`
 - `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用
 

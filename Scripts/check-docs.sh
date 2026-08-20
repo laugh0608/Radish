@@ -12,5 +12,31 @@ if [[ ! -d Docs ]]; then
   exit 1
 fi
 
-echo "[check-docs] 检查 Docs/ 的 UTF-8、BOM、疑似乱码、换行和文本卫生。"
-find Docs -type f -print0 | node Scripts/check-repo-hygiene.mjs --stdin-z --skip-document-length-warnings
+community_documents=(
+  README.md
+  SECURITY.md
+  CONTRIBUTING.md
+  CODE_OF_CONDUCT.md
+  AGENTS.md
+  CLAUDE.md
+  LICENSE
+)
+
+for document_path in "${community_documents[@]}"; do
+  if [[ ! -f "${document_path}" ]]; then
+    echo "[check-docs] 缺少根目录治理文档：${document_path}" >&2
+    exit 1
+  fi
+done
+
+echo "[check-docs] 检查 Docs/ 与根目录治理文档的 UTF-8、BOM、疑似乱码、换行和文本卫生。"
+{
+  find Docs -type f -print0
+  printf '%s\0' "${community_documents[@]}"
+} | node Scripts/check-repo-hygiene.mjs --stdin-z --skip-document-length-warnings
+
+echo "[check-docs] 检查 Markdown 本地相对链接。"
+{
+  find Docs -type f -name '*.md' -print0
+  printf '%s\0' README.md SECURITY.md CONTRIBUTING.md CODE_OF_CONDUCT.md AGENTS.md CLAUDE.md
+} | node Scripts/check-markdown-links.mjs --stdin-z

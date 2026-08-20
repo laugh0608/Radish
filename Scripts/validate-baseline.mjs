@@ -366,6 +366,18 @@ const steps = [
     args: ['run', 'check:repo-quality-contract'],
   },
   {
+    title: '变更文件收集规则自测',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:changed-files:self-test'],
+  },
+  {
+    title: 'Markdown 本地链接规则自测',
+    phase: 'baseline',
+    command: npmCommand,
+    args: ['run', 'check:markdown-links:self-test'],
+  },
+  {
     title: '身份语义影响面判定自校验',
     phase: 'baseline',
     command: npmCommand,

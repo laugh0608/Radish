@@ -23,7 +23,7 @@
 
 ## 现阶段策略
 
-仓库历史中还存在一批已审计的 BOM / 末尾换行 / 尾随空格问题，因此远程 `Repo Hygiene` 使用全仓预算扫描：既允许 baseline 内的历史问题，也阻断任何新增问题。日常本地 `validate:ci` 仍使用 changed-only 入口，避免连续开发反复扫描无关文件。
+仓库历史中还存在一批已审计的 BOM / 末尾换行 / 尾随空格问题，因此远程 `Repo Hygiene` 使用全仓预算扫描：既允许 baseline 内的历史问题，也阻断任何新增问题；随后追加 `check:docs`，检查 `Docs/`、根目录治理文档与 Markdown 本地相对链接。日常本地 `validate:ci` 使用包含未跟踪文件的 changed-only 文本卫生，并复用同一全量文档治理入口。
 
 远程 `Frontend Lint` 执行四个 Web workspace 的全量零 warning lint；本地 `validate:ci` 仍只检查本轮变更文件。发布前不再由第二个 PR workflow 重复执行同一套 lint。
 

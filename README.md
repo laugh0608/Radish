@@ -192,7 +192,10 @@ Radish/
 
 ### 其他资源
 - 📖 [**文档首页**](Docs/index.md) - 文档地图与推荐阅读路径
-- 🤝 [**贡献指南**](AGENTS.md) - 参与项目开发的指引
+- 🤝 [**贡献指南**](CONTRIBUTING.md) - 参与项目开发、提交与验证的公开指引
+- 🔐 [**安全策略**](SECURITY.md) - 安全漏洞的私下报告与协调披露流程
+- 🧭 [**社区行为准则**](CODE_OF_CONDUCT.md) - Issue、Pull Request 与评审中的协作边界
+- 🤖 [**AI 协作规则**](AGENTS.md) - AI 协作者的项目执行约束
 - 🤖 [**AI 开发助手配置**](CLAUDE.md) - Claude Code 工作指南
 
 ## 关键特性
@@ -329,18 +332,18 @@ git push origin v26.7.1-release
 
 欢迎提交 Issue 和 Pull Request！
 
-请确保：
-1. 代码遵循项目 [开发规范](Docs/architecture/specifications.md)
-2. 单元测试通过（`dotnet test`）
-3. 提交前至少运行与改动匹配的 `npm run type-check`、`npm run lint` 或专题 `HttpTest`
-4. 在 [开发日志](Docs/changelog/) 中记录重大变更
+参与前请阅读[贡献指南](CONTRIBUTING.md)与[社区行为准则](CODE_OF_CONDUCT.md)。安全漏洞不要创建公开 Issue，请按[安全策略](SECURITY.md)私下报告。
+
+提交 Pull Request 时，请确保改动符合[开发规范](Docs/architecture/specifications.md)，执行并如实记录与风险匹配的验证；重大变更还应同步更新对应专题文档。分支、提交、验证和许可证边界以贡献指南为准。
 
 ## 许可
 
-DaBaiLuoBo(laugh0608) 保留所有代码权力，详见 LICENSE 文件。
+DaBaiLuoBo(laugh0608) 保留所有代码权利，详见 [LICENSE](LICENSE)。
 
 ## 相关链接
 
 - [Docs 文档目录](Docs/README.md) - 固定项目文档入口
+- [贡献指南](CONTRIBUTING.md) - 贡献流程、分支治理与验证要求
+- [安全策略](SECURITY.md) - 安全问题范围与私下报告渠道
 - [API 文档](https://localhost:5000/scalar) - Scalar 交互式文档（推荐通过 Gateway 访问，内部由 Radish.Api 提供 `/scalar`，旧 `/api/docs` 路径仅做重定向兼容）
 - [开发计划](Docs/development-plan.md) - 迭代规划与里程碑

@@ -402,7 +402,7 @@ if (imagePolicyEvaluatorCount !== 2) {
 }
 
 for (const requiredFragment of [
-  "['run', 'check:repo-hygiene:candidate']",
+  "['run', 'check:repo-quality:candidate']",
   "['run', 'lint']",
   "['run', 'validate:baseline', '--', '--warnings-as-errors']",
   "['run', 'check:dependency-security']",
@@ -454,11 +454,41 @@ for (const requiredFragment of [
   "args: ['run', 'check:sensitive-literals:self-test']",
   "args: ['run', 'check:sensitive-literals']",
   "args: ['run', 'check:long-id-safety']",
+  "args: ['run', 'check:changed-files:self-test']",
+  "args: ['run', 'check:markdown-links:self-test']",
 ]) {
   if (!validateBaselineSource.includes(requiredFragment)) {
-    failures.push(`Scripts/validate-baseline.mjs 缺少敏感字面量门禁片段: ${requiredFragment}`);
+    failures.push(`Scripts/validate-baseline.mjs 缺少默认基线门禁片段: ${requiredFragment}`);
   }
 }
+
+assertPackageScript(
+  packageScripts,
+  'check:repo-quality:changed',
+  'npm run check:repo-hygiene:changed && npm run check:docs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'check:repo-quality:candidate',
+  'npm run check:repo-hygiene:candidate && npm run check:docs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'check:changed-files:self-test',
+  'node --test Scripts/changed-files.test.mjs',
+  failures
+);
+
+assertPackageScript(
+  packageScripts,
+  'check:markdown-links:self-test',
+  'node --test Scripts/check-markdown-links.test.mjs',
+  failures
+);
 
 assertPackageScript(
   packageScripts,

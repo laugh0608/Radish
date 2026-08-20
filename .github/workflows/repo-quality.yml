@@ -28,7 +28,7 @@ jobs:
           node-version: '24'
 
       - name: Check repository hygiene
-        run: npm run check:repo-hygiene:candidate
+        run: npm run check:repo-quality:candidate
 
   frontend-lint:
     name: Frontend Lint
