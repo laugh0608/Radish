@@ -9,11 +9,15 @@
     "Frontend/radish.ui"
   ],
   "scripts": {
-    "check:docs": "./scripts/check-docs.sh",
+    "check:docs": "./Scripts/check-docs.sh",
+    "check:markdown-links:self-test": "node --test Scripts/check-markdown-links.test.mjs",
+    "check:changed-files:self-test": "node --test Scripts/changed-files.test.mjs",
     "check:repo-hygiene": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-hygiene:candidate": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z --baseline=Scripts/repo-hygiene-baseline.json",
     "check:repo-hygiene:changed": "node Scripts/run-with-changed-files.mjs --mode=worktree -- node Scripts/check-repo-hygiene.mjs --stdin-z",
     "check:repo-hygiene:staged": "node Scripts/run-with-changed-files.mjs --mode=staged -- node Scripts/check-repo-hygiene.mjs --stdin-z",
+    "check:repo-quality:changed": "npm run check:repo-hygiene:changed && npm run check:docs",
+    "check:repo-quality:candidate": "npm run check:repo-hygiene:candidate && npm run check:docs",
     "check:repo-quality-contract": "node Scripts/check-repo-quality-contract.mjs",
     "check:sensitive-literals": "node Scripts/check-sensitive-literals.mjs",
     "check:sensitive-literals:self-test": "node --test Scripts/sensitive-literal-rules.test.mjs",

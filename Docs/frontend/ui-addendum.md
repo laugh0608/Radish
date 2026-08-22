@@ -120,6 +120,6 @@ family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的�
 - 页面级视觉工作必须先完整阅读 family-ui `references.md`、逐张查看其索引的参考图，并在 [F4-R 专题](/features/family-ui-convergence-design)中维护 Radish 页面类型的吸收 / 排除映射；只复制 token 不能视为完成视觉迁移。
 - 参考图只用于内部原则提炼，不得进入 `.pen`、产品、`public/` 或对外交付物；移动端不得由桌面参考图等比缩放。
 - Pencil 遵循[代表页协作流程](/frontend/pencil-representative-page-workflow)：R1 / R2 先完成必要代表设计，R3 明确继承来源后直接实现，不为每条路由和文案变化复制画板。
-- 唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`；原四个大型 `.pen` 只读留档。普通设计迭代继续更新 `v1`，只有不兼容的结构性升级才新建下一主版本。
+- Web / Console 活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`，Flutter Native 活动设计源为同目录的 `radish-flutter-native-ui-v1.pen`；两条产品线共享本附录的语义与品牌边界，但独立维护组件、壳层和代表画板。原四个大型 Web `.pen` 只读留档。
 - 功能、按钮、文案、权限与状态机以专题文档和当前代码为准；Pencil 只约束共享视觉契约、代表结构、关键状态和响应式变化。
 - 页面族验收以代表路径覆盖 PC / mobile、`zh / en`、四主题和 reduced-motion；派生页通过继承检查、代码侧验证和真实截图复核。

@@ -20,6 +20,7 @@
 
 | 文档类型 | 典型位置 | 软上限 | 硬上限 |
 | --- | --- | ---: | ---: |
+| Agent 根入口 | `AGENTS.md`、`CLAUDE.md` | `180` 行 | `250` 行 |
 | 入口 / 索引 | `Docs/index.md`、`Docs/README.md`、目录 `index.md`、`Docs/planning/current.md` | `300` 行 | `500` 行 |
 | 当前规划 / 当前进度 | `Docs/development-plan.md`、`Docs/planning/current.md` | `300` 行 | `500` 行 |
 | 架构 / 规范 / 设计 | `Docs/architecture/`、`Docs/frontend/`、`Docs/guide/` 中的稳定规则文档 | `600` 行 | `900` 行 |
@@ -34,6 +35,8 @@
 
 ## 内容归位
 
+- Agent 根入口只保留跨任务、跨阶段且必须启动即生效的长期约束；详细判定见 [Agent 协作与执行规则](./agent-collaboration.md)。
+- 阶段状态、临时门禁和“当前不做”写入 `Docs/planning/current.md` 或对应阶段专题，不复制到 Agent 根入口。
 - 当前结论、执行入口和必要约束保留在入口文档。
 - 稳定规则和契约写入架构、规范或设计文档。
 - 复杂模块背景和方案写入专题文档。
@@ -46,3 +49,4 @@
 - 拆分文档后，应同步更新 `Docs/README.md`、对应目录 `index.md` 或专题入口。
 - 短入口应链接到长文档，而不是复制长文档正文。
 - 同一主题出现多个文件时，应明确哪个文件是当前真相源，哪个文件是历史记录或参考资料。
+- `AGENTS.md` 与 `CLAUDE.md` 除标题和首段入口名称外必须保持逐字同步，并通过 `npm run check:docs` 验证。

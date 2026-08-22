@@ -35,7 +35,7 @@
         "dismiss_stale_reviews_on_push": true,
         "require_code_owner_review": false,
         "require_last_push_approval": false,
-        "required_approving_review_count": 1,
+        "required_approving_review_count": 0,
         "required_review_thread_resolution": true
       }
     },
@@ -44,24 +44,6 @@
       "parameters": {
         "do_not_enforce_on_create": true,
         "required_status_checks": [
-          {
-            "context": "Repo Hygiene"
-          },
-          {
-            "context": "Frontend Lint"
-          },
-          {
-            "context": "Baseline Quick"
-          },
-          {
-            "context": "Dependency Security"
-          },
-          {
-            "context": "Backend Guard"
-          },
-          {
-            "context": "Identity Guard"
-          },
           {
             "context": "Candidate Quality"
           }

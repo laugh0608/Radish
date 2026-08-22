@@ -1,5 +1,5 @@
 name: radish_flutter
-description: Phase 2-3 Flutter client MVP shell for Radish.
+description: Radish Flutter Native client.
 publish_to: none
 version: 26.8.1+1
 
@@ -11,6 +11,8 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   crypto: ^3.0.7
+  flex_color_scheme: ^8.4.0
+  shared_preferences: ^2.5.5
 
 dev_dependencies:
   flutter_test:

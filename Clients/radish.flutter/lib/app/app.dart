@@ -7,6 +7,8 @@ import '../core/auth/native_auth_controller.dart';
 import '../core/config/app_environment.dart';
 import '../core/platform/app_lifecycle_gateway.dart';
 import '../core/theme/radish_theme.dart';
+import '../core/theme/radish_theme_controller.dart';
+import '../core/theme/radish_theme_preference_store.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
@@ -38,6 +40,7 @@ class RadishApp extends StatefulWidget {
     this.docsFollowUpStore = const EmptyDocsFollowUpStore(),
     this.notificationRepository = const EmptyNotificationRepository(),
     this.appLifecycleGateway = const EmptyAppLifecycleGateway(),
+    this.themeController,
     this.initialForumHandoffTarget,
     super.key,
   });
@@ -57,6 +60,7 @@ class RadishApp extends StatefulWidget {
   final DocsFollowUpStore docsFollowUpStore;
   final NotificationRepository notificationRepository;
   final AppLifecycleGateway appLifecycleGateway;
+  final RadishThemeController? themeController;
   final ForumDetailHandoffTarget? initialForumHandoffTarget;
 
   @override
@@ -64,9 +68,15 @@ class RadishApp extends StatefulWidget {
 }
 
 class _RadishAppState extends State<RadishApp> {
+  late RadishThemeController _themeController;
+  late bool _ownsThemeController;
+
   @override
   void initState() {
     super.initState();
+    _attachThemeController();
+    widget.sessionController.addListener(_syncThemeSession);
+    unawaited(_themeController.restore());
     unawaited(widget.sessionController.restore());
   }
 
@@ -75,22 +85,78 @@ class _RadishAppState extends State<RadishApp> {
     super.didUpdateWidget(oldWidget);
 
     if (oldWidget.sessionController != widget.sessionController) {
+      oldWidget.sessionController.removeListener(_syncThemeSession);
+      widget.sessionController.addListener(_syncThemeSession);
       unawaited(widget.sessionController.restore());
+      _syncThemeSession();
     }
+
+    if (oldWidget.themeController != widget.themeController) {
+      if (_ownsThemeController) {
+        _themeController.dispose();
+      }
+      _attachThemeController();
+      unawaited(_themeController.restore());
+      _syncThemeSession();
+    }
+  }
+
+  @override
+  void dispose() {
+    widget.sessionController.removeListener(_syncThemeSession);
+    if (_ownsThemeController) {
+      _themeController.dispose();
+    }
+    super.dispose();
+  }
+
+  void _attachThemeController() {
+    _ownsThemeController = widget.themeController == null;
+    _themeController = widget.themeController ??
+        RadishThemeController(
+          preferenceStore: InMemoryRadishThemePreferenceStore(),
+          entitlementGateway: const EmptyRadishThemeEntitlementGateway(),
+        );
+  }
+
+  void _syncThemeSession() {
+    final session = widget.sessionController.state.session;
+    unawaited(
+      _themeController.syncSession(
+        userId: session?.userId,
+        accessToken: session?.accessToken,
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: widget.sessionController,
+      animation: Listenable.merge([
+        widget.sessionController,
+        _themeController,
+      ]),
       builder: (context, child) {
         final sessionState = widget.sessionController.state;
+        final themeState = _themeController.state;
+        final theme = buildRadishTheme(themeState.currentTheme);
+        final disableAnimations = View.of(context)
+            .platformDispatcher
+            .accessibilityFeatures
+            .disableAnimations;
 
         return MaterialApp(
           title: 'Radish Flutter',
           debugShowCheckedModeBanner: false,
-          theme: buildRadishTheme(),
-          home: sessionState.isRestoring
+          theme: theme,
+          darkTheme: theme,
+          themeMode: themeState.currentTheme.brightness == Brightness.dark
+              ? ThemeMode.dark
+              : ThemeMode.light,
+          themeAnimationDuration: disableAnimations
+              ? Duration.zero
+              : const Duration(milliseconds: 180),
+          home: sessionState.isRestoring || themeState.isRestoring
               ? const _RadishLaunchGate()
               : RadishFlutterShell(
                   environment: widget.environment,
@@ -108,6 +174,7 @@ class _RadishAppState extends State<RadishApp> {
                   docsFollowUpStore: widget.docsFollowUpStore,
                   notificationRepository: widget.notificationRepository,
                   appLifecycleGateway: widget.appLifecycleGateway,
+                  themeController: _themeController,
                   initialForumHandoffTarget: widget.initialForumHandoffTarget,
                 ),
         );

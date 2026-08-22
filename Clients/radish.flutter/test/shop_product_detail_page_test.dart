@@ -52,7 +52,7 @@ void main() {
     expect(find.text('单商品购买'), findsOneWidget);
     expect(find.text('登录后购买'), findsOneWidget);
     expect(
-      find.text('本批只支持当前商品直接购买 1 件；购物车、退款、权益使用和完整移动商城不在本次范围。'),
+      find.text('本批只支持当前商品直接购买 1 件；购物车、退款、除主题选择外的权益使用和完整移动商城不在本次范围。'),
       findsOneWidget,
     );
 

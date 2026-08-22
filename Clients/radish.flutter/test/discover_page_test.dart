@@ -62,11 +62,12 @@ void main() {
     expect(find.text('商城精选'), findsOneWidget);
     expect(find.text('Profile Rename Card'), findsOneWidget);
     await tester.scrollUntilVisible(
-      find.text('只读边界'),
+      find.text('能力边界'),
       300,
       scrollable: scrollable,
     );
-    expect(find.text('只读边界'), findsOneWidget);
+    expect(find.text('能力边界'), findsOneWidget);
+    expect(find.byKey(const Key('discover-content-expanded')), findsOneWidget);
   });
 
   testWidgets('renders discover error state when repository fails', (
@@ -309,7 +310,8 @@ void main() {
       scrollable: scrollable,
     );
     expect(find.text('发现上下文'), findsOneWidget);
-    expect(find.text('公开只读'), findsWidgets);
+    expect(find.text('公开摘要'), findsWidgets);
+    expect(find.byKey(const Key('discover-content-compact')), findsOneWidget);
     await tester.scrollUntilVisible(
       find.textContaining('A very long discover post title'),
       250,

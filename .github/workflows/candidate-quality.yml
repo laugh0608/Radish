@@ -1,9 +1,6 @@
 name: Candidate Quality
 
 on:
-  pull_request:
-    branches:
-      - master
   workflow_call:
   workflow_dispatch:
 

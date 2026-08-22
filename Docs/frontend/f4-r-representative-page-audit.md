@@ -1,8 +1,8 @@
 # F4-R C-1 代表页代码事实审计
 
-> 日期：2026-07-30；2026-08-13 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-15 更新（Asia/Shanghai）
 >
-> 状态：C-1A、六个 R1、四个 R2、三个 Public R3、R3-C04 六批与 R3-C05 四批均已关闭；R3-F02 继承审计已完成，不新增 Pencil
+> 状态：六个 R1、四个 R2、六组 Web R3、主题语义、reduced-motion 与四主题运行态均已关闭；Web 代表页专题完成，下一顺位为 Flutter P1 独立事实审计
 >
 > 范围：正式 Web（Public、Private / Author）与 Console；不含 WebOS 新功能、Tauri 和 Flutter 画板
 
@@ -73,7 +73,7 @@ C-1A 最终裁决为：
 | `R1-C01` | Console 表格 / 明细；锚点 `/console/orders` | `2/1/2/2/2/1` | `10` | 高密度表格与 mobile 收敛规则影响多个资源页 | `radish-web-family-ui-v1.pen`（PC / Mobile、实现与运行态已关闭） |
 | `R1-C02` | Console 案件治理 / 审计；锚点 `/console/moderation` | `2/2/2/2/2/1` | `11` | 权限、证据、多步骤决定、纠正动作与冲突 | `radish-web-family-ui-v1.pen` |
 
-R1 只在唯一活动设计源中维护必要代表设计，不为主题、locale、权限和每个状态复制完整页面。业务类型必须提供可按真实尺寸独立审核的 PC / mobile 顶层业务画板；关键状态与辅助说明可单独成板，复合说明板中的嵌入缩略图不计作业务页面完成。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点。
+Web / Console 的 R1 只在 `radish-web-family-ui-v1.pen` 中维护必要代表设计，不为主题、locale、权限和每个状态复制完整页面。业务类型必须提供可按真实尺寸独立审核的 PC / mobile 顶层业务画板；关键状态与辅助说明可单独成板，复合说明板中的嵌入缩略图不计作业务页面完成。原四个按领域拆分的 `.pen` 只读留档，不再作为当前画板落点；Flutter Native 使用独立设计源，不进入本表。
 
 `R1-P01` 的稳定代码事实现为：`/discover` 只消费统一 `PublicDiscoverFeedVo`，由服务端按 snapshot cutoff 与稳定 keyset 游标合并 `ChannelSummary / MemberActivity / HighlightedComment / Post / Question`；Channel 摘要必须经 Console 显式 opt-in，页面不再自行拼装帖子、热门标签、Wiki 或商品列表。分类、`#标签` 与结构化状态仍由 Forum 列表 / 详情分层表达，不挤入紧凑混合轨道。`2026-08-04`—`08-05` 已完成公开能力审计、PC / mobile 视觉确认、代码实现与 Gateway 阶段性运行态复核，最终结构以国风暖白表面、无衬线层级、克制圆角阴影、灰玉品牌语义、墨蓝操作语义和内嵌数据反馈建立现代自然紧凑气质；活动设计源只保留正式 PC / mobile 和必要母版。匿名 / 登录回流、双语、代表主题、Console 治理只读路径与横向溢出检查均通过，运行态发现的 Int64 wire contract 偏差已在统一 HTTP 契约层修正。详见[结构研究记录](/records/f4-r-r1-p01-public-discover-structure-study-2026-08-04)、[设计记录](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)与[实现记录](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)。全局品牌 token 尚未机械替换，继续由共享主题批治理。
 
@@ -122,7 +122,7 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 
 每个 R3 实现批次仍需写明代表来源、局部差异、关键状态与 mobile 转换。发现继承不成立时停止扩张并升级分级。
 
-`2026-08-11` 的[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定了六组 R3 顺位。`R3-P04 / P05 / P06`、R3-C04 六批与 R3-C05 四批均已完成；[R3-F02 代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)进一步确认 Settings / Profile 继承 `R1-C01 + R2-C03`，Login / OIDC / Not Found / Error 继承 `R1-F01`，没有新壳层或响应式模型，继续不修改 Pencil。[R3-F02-A OIDC 回流信任门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)已完成代码与静态门禁，下一步进入自服务权威状态。
+`2026-08-11` 的[R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定了六组 R3 顺位。`R3-P04 / P05 / P06`、R3-C04 六批、R3-C05 四批与 `R3-F02-A / B / C` 均已完成；[R3-F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)确认 Settings / Profile、Login / OIDC、Not Found / Error 的既有继承成立，没有新增壳层、响应式模型或 Pencil 页面范式。T01 主题语义、T02 reduced-motion 与 T03 四主题运行态随后关闭，Web 代表页专题完成。
 
 ## 7. 本批不纳入代表设计
 
@@ -146,7 +146,7 @@ R2 交付物可以是关键区块、状态带或交互序列；若设计时发�
 10. `R2-P03` readiness、两批能力门禁、七轮结构反馈、商品评价补充设计、正式商品详情 / 公开主页和 Gateway PC / mobile 运行态验收均已完成，专题关闭。
 11. `R2-W02` readiness、五组前端能力门禁、三张局部代表板、六个正式入口实现与 Gateway PC / mobile 成组验收均已完成，专题关闭。
 12. `R2-A02` readiness、五组能力门禁、九张确认代表板、正式实现与 Gateway PC / Mobile 运行态验收均已完成，专题关闭。
-13. 六个 R1、四个 R2、`R3-P04 / P05 / P06`、`R3-C04-A` 至 `C04-F`、R3-C05 四批与 R3-F02-A 均已形成闭环；下一步按 B / C 实施自服务权威状态与错误路由边界，不修改 Pencil。
+13. 六个 R1、四个 R2、`R3-P04 / P05 / P06`、`R3-C04-A` 至 `C04-F`、R3-C05 四批、`R3-F02-A / B / C` 与成组运行态均已完成；主题语义、reduced-motion 和四主题运行态退出门禁已关闭，下一步由 Flutter P1 独立审计原生页面族，不复制 Web 画板。
 14. R3 继承不成立或发现新结构 / 响应式模型时，必须停止扩张并按自动升级条件重新裁决 R1 / R2。
 
 进入后续 R1 / R2 前，代码事实核对必须同时回答正式 Web 是否承接了仍有价值的既有能力；不得把 WebOS 历史来源排除在设计矩阵之外后，又把正式 Web 的暂时缺口当作产品停止线。F4-R 完成后的视觉工作默认继承本批家族 UI 基线进行优化更新，除非新产品形态或结构性冲突经过明确裁决，不从零重新设计。

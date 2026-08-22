@@ -12,6 +12,8 @@ import '../core/config/app_environment.dart';
 import '../core/network/radish_api_client.dart';
 import '../core/network/radish_api_endpoints.dart';
 import '../core/platform/app_lifecycle_gateway.dart';
+import '../core/theme/radish_theme_controller.dart';
+import '../core/theme/radish_theme_preference_store.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
@@ -22,6 +24,7 @@ import '../features/leaderboard/data/leaderboard_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
 import '../features/profile/data/profile_repository.dart';
 import '../features/shop/data/shop_repository.dart';
+import '../features/shop/data/shop_theme_entitlement_gateway.dart';
 import '../features/wallet/data/wallet_repository.dart';
 import 'app.dart';
 
@@ -88,6 +91,13 @@ class RadishBootstrap {
       apiClient: apiClient,
       endpoints: apiEndpoints,
     );
+    final themeController = RadishThemeController(
+      preferenceStore: SharedPreferencesRadishThemePreferenceStore(),
+      entitlementGateway: ShopThemeEntitlementGateway(
+        shopRepository: shopRepository,
+        benefitActionRepository: shopRepository,
+      ),
+    );
     final walletRepository = HttpWalletRepository(
       apiClient: apiClient,
       endpoints: apiEndpoints,
@@ -114,6 +124,7 @@ class RadishBootstrap {
         docsFollowUpStore: docsFollowUpStore,
         notificationRepository: notificationRepository,
         appLifecycleGateway: appLifecycleGateway,
+        themeController: themeController,
       ),
     );
   }

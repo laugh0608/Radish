@@ -17,6 +17,7 @@
 | 你看到的现象 | 实际归类 | 先看哪里 |
 | --- | --- | --- |
 | `npm run check:repo-quality-contract` 失败 | 门禁契约漂移 | 本页第 2 节 |
+| `Candidate Quality` 聚合失败 | 同一 `Repo Quality` workflow 内至少一个组件失败或取消 | 先看 Actions Summary 的组件表，再进入对应 job |
 | `npm run validate:ci` 失败，但某个子步骤本身报错 | 默认执行面里的具体检查失败 | 本页第 3 节 |
 | `validate:ci` 里只在命中后端 / API 影响面时追加 `validate:backend`，而这一步失败 | 后端 / API 专题回归失败 | 本页第 3.4 节 |
 | `validate:ci` 里只在命中身份语义影响面时追加 `validate:identity`，而这一步失败 | 身份语义专题回归失败 | 本页第 4 节 |
@@ -40,23 +41,25 @@ npm run validate:ci
 
 这类失败优先怀疑“治理真相源漂移”，不要先去改业务代码。
 
-当前 contract 会校验四层事实：
+当前 contract 会校验五层事实：
 
 1. `.github/workflows/repo-quality.yml`
-2. `.github/rulesets/master-protection.json`
-3. 本地 `npm run validate:ci`
-4. `Dependency Security` 等显式 CI-only 门禁
+2. 六个组件与聚合 `Candidate Quality` 的依赖关系
+3. `.github/rulesets/master-protection.json` 只要求聚合检查且单人审批数为 `0`
+4. 本地 `npm run validate:ci`
+5. `Dependency Security` 等显式 CI-only 门禁
 
 并且不仅校验 required check 名称，还会校验 `repo-quality.yml` 各 job 的关键命令片段。
 
 ### 2.1 常见原因
 
-- workflow job 名改了，但 ruleset required checks 还沿用旧名字
-- ruleset required checks 改了，但本地 `validate:ci` 仍在复现旧门禁
-- 新增联网 required check，却没有明确它应进入本地 `validate:ci` 还是保持 CI-only
+- 聚合 job 名改了，但 ruleset required check 仍沿用旧名字
+- 组件 job 被删除或移出 `Candidate Quality.needs`，导致聚合门禁不再覆盖完整执行面
+- ruleset 又直接要求全部组件，恢复多上下文漂移和绕过风险
+- 新增联网必需组件，却没有明确它应进入本地 `validate:ci` 还是保持 CI-only
 - workflow 名字没变，但关键命令片段变了
-  - 例如 changed-only 入口不再走统一 collector
-  - 或 `Backend Guard` 不再按 `check:backend-impact` 条件触发
+  - 例如远程全仓卫生预算或全量 lint 被改回重复 Candidate workflow
+  - 或 `Backend Guard` 不再按 `check:backend-impact` 条件触发 / 不再提供 PostgreSQL 17
   - 或 `Identity Guard` 不再按 `check:identity-impact` 条件触发
 - 本地 `validate:ci` 的执行面改了，但 contract 没同步
 
@@ -75,6 +78,7 @@ npm run validate:ci
 - CI-only 只能用于确实依赖联网或候选环境的检查，并必须在 contract 中显式登记；不能用它掩盖本地本可执行的回归
 - 如果你只是想让本地更快通过，不要绕开 contract；先解释为什么 required checks 或命令语义应该变化
 - 如果是 `Backend Guard` 或 `Identity Guard` 触发条件变化，优先回到统一 impact 规则源，而不是在 workflow 里单独补一份路径清单
+- 如果只是一个组件失败，先修组件根因；不要修改聚合 job 让它忽略 `failure / cancelled / skipped`
 
 ## 3. `validate:ci` 失败时
 

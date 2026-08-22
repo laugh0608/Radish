@@ -46,6 +46,18 @@ abstract class ShopRepository {
   });
 }
 
+abstract interface class ShopBenefitActionRepository {
+  Future<ShopUserBenefitActionResult> activateBenefit({
+    required String accessToken,
+    required String benefitId,
+  });
+
+  Future<ShopUserBenefitActionResult> deactivateBenefit({
+    required String accessToken,
+    required String benefitId,
+  });
+}
+
 class EmptyShopRepository implements ShopRepository {
   const EmptyShopRepository();
 
@@ -116,7 +128,8 @@ class EmptyShopRepository implements ShopRepository {
   }
 }
 
-class HttpShopRepository implements ShopRepository {
+class HttpShopRepository
+    implements ShopRepository, ShopBenefitActionRepository {
   const HttpShopRepository({
     required this.apiClient,
     required this.endpoints,
@@ -298,6 +311,55 @@ class HttpShopRepository implements ShopRepository {
       uri: uri,
       bearerToken: normalizedAccessToken,
       decode: _decodeBenefits,
+    );
+  }
+
+  @override
+  Future<ShopUserBenefitActionResult> activateBenefit({
+    required String accessToken,
+    required String benefitId,
+  }) {
+    return _changeBenefitActivation(
+      accessToken: accessToken,
+      benefitId: benefitId,
+      action: 'ActivateBenefit',
+    );
+  }
+
+  @override
+  Future<ShopUserBenefitActionResult> deactivateBenefit({
+    required String accessToken,
+    required String benefitId,
+  }) {
+    return _changeBenefitActivation(
+      accessToken: accessToken,
+      benefitId: benefitId,
+      action: 'DeactivateBenefit',
+    );
+  }
+
+  Future<ShopUserBenefitActionResult> _changeBenefitActivation({
+    required String accessToken,
+    required String benefitId,
+    required String action,
+  }) {
+    final normalizedAccessToken = accessToken.trim();
+    final normalizedBenefitId = benefitId.trim();
+    if (normalizedAccessToken.isEmpty) {
+      throw const RadishApiClientException('请先登录后切换权益主题');
+    }
+    if (normalizedBenefitId.isEmpty) {
+      throw const RadishApiClientException('主题权益缺少权益 ID');
+    }
+
+    final uri = endpoints.resolveApi(
+      '/api/v1/Shop/$action/$normalizedBenefitId',
+    );
+    return apiClient.post(
+      uri: uri,
+      bearerToken: normalizedAccessToken,
+      body: const <String, Object?>{},
+      decode: ShopUserBenefitActionResult.fromJson,
     );
   }
 

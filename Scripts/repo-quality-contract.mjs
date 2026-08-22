@@ -2,6 +2,10 @@ export const REPO_QUALITY_WORKFLOW_NAME = 'Repo Quality';
 export const CANDIDATE_QUALITY_REQUIRED_CHECK_NAME = 'Candidate Quality';
 
 export const REPO_QUALITY_REQUIRED_CHECKS = [
+  CANDIDATE_QUALITY_REQUIRED_CHECK_NAME,
+];
+
+export const REPO_QUALITY_COMPONENT_CHECKS = [
   'Repo Hygiene',
   'Frontend Lint',
   'Baseline Quick',
@@ -16,29 +20,17 @@ export const REPO_QUALITY_CI_ONLY_CHECKS = [
 
 export const REPO_QUALITY_WORKFLOW_JOBS = [
   {
-    jobId: 'version-contract',
-    checkName: 'Version Contract',
-    requiredFragments: [
-      'run: npm run check:version-contract',
-      'run: npm run check:version-contract:self-test',
-    ],
-  },
-  {
     jobId: 'repo-hygiene',
     checkName: 'Repo Hygiene',
     requiredFragments: [
-      'node Scripts/collect-changed-files.mjs',
-      '--write=changed-files.txt',
-      'node Scripts/check-repo-hygiene.mjs --stdin-z < changed-files.txt',
+      'run: npm run check:repo-quality:candidate',
     ],
   },
   {
     jobId: 'frontend-lint',
     checkName: 'Frontend Lint',
     requiredFragments: [
-      'node Scripts/collect-changed-files.mjs',
-      '--write=changed-files.txt',
-      'node Scripts/lint-frontend-changed.mjs --stdin-z < changed-files.txt',
+      'run: npm run lint',
     ],
   },
   {
@@ -61,6 +53,8 @@ export const REPO_QUALITY_WORKFLOW_JOBS = [
     jobId: 'backend-guard',
     checkName: 'Backend Guard',
     requiredFragments: [
+      'image: postgres:17',
+      'RADISH_TEST_POSTGRES_CONNECTION_STRING:',
       'node Scripts/collect-changed-files.mjs',
       '--write=changed-files.txt',
       'node Scripts/check-backend-impact.mjs --stdin-z --format=github-output < changed-files.txt >> "$GITHUB_OUTPUT"',
@@ -81,13 +75,28 @@ export const REPO_QUALITY_WORKFLOW_JOBS = [
       'Identity Guard skipped: no identity-related files changed.',
     ],
   },
+  {
+    jobId: 'candidate-quality',
+    checkName: CANDIDATE_QUALITY_REQUIRED_CHECK_NAME,
+    requiredFragments: [
+      'if: always()',
+      '- repo-hygiene',
+      '- frontend-lint',
+      '- baseline-quick',
+      '- dependency-security',
+      '- backend-guard',
+      '- identity-guard',
+      'Summarize PR quality gate',
+      'All PR quality components succeeded.',
+    ],
+  },
 ];
 
 export const REPO_QUALITY_LOCAL_STEPS = [
   {
     checkName: 'Repo Hygiene',
     title: 'Repo Hygiene changed-only',
-    npmArgs: ['run', 'check:repo-hygiene:changed'],
+    npmArgs: ['run', 'check:repo-quality:changed'],
   },
   {
     checkName: 'Frontend Lint',

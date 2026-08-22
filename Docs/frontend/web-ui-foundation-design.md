@@ -18,9 +18,9 @@
 >
 > 更新：2026-07-08（Asia/Shanghai）：E8 首日已将 `radish.client` Public / Private 主导航收敛为 PC `发现 / 论坛 / 聊天 / 更多` + 右侧 `通知 / 账号`，移动底栏为 `发现 / 论坛 / 聊天 / 更多 / 我的`；`/workbench` 是“更多”功能地图，`/desktop` 只保留历史入口。
 >
-> 更新：2026-08-03（Asia/Shanghai）：F4-R C-1B 建立唯一活动设计源 `radish-web-family-ui-v1.pen` 并完成 `R1-F01`；原四个大型设计源只读留档，不再跨文件同步。
+> 更新：2026-08-19（Asia/Shanghai）：`radish-web-family-ui-v1.pen` 继续作为 Web / Console 唯一活动设计源；Flutter Native 已建立独立 `radish-flutter-native-ui-v1.pen`，两者只共享家族语义，不跨文件复制组件或页面。
 >
-> 状态：当前共享基座以 `R1-F01` 与同文件可复用组件区为准；下一代表页为 `R1-P01` Public 内容流
+> 状态：Web `R1-F01`、六个 R1、四个 R2、六组 R3 继承与四主题退出门禁均已关闭；本页继续作为 Web 共享基座说明，不承载 Flutter 原生组件。
 
 ## 设计源
 

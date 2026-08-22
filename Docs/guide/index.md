@@ -23,6 +23,7 @@
 ### 基础运行与协作
 
 - [快速开始](/guide/getting-started)
+- [Agent 协作与执行规则](/guide/agent-collaboration)
 - [本地运行与排障手册](/guide/operations-runbook)
 - [验证基线说明](/guide/validation-baseline)
 - [页面真实联调与浏览器 Smoke 规则](/guide/browser-smoke)

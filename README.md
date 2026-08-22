@@ -11,14 +11,14 @@ Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以�
 ## 当前状态
 
 - **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`Flutter Native 产品化与 UI 重构 P1 全页面事实审计`
-- **复核日期**：`2026-08-15`
+- **当前主线**：`Flutter Native 产品化与 UI 重构 P3 视觉确认`
+- **复核日期**：`2026-08-19`
 - **当前结论**：
   - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
   - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
-  - Flutter readiness 与 P0 路线裁决已完成，下一步盘点全页面 owner、窗口结构和代表类型，不直接修改代码或依赖
+  - Flutter P1 全页面事实审计、P2 技术基座与独立 P3 代表稿已完成；当前先确认 typography、密度、四主题及 Discover / Forum Detail 双断点方向，再进入 P4 字体资产与共享组件收口
   - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
-  - 合并 `master`、创建 tag 与部署仍是三个独立决策
+  - 生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能推进前置
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
 - **当前验证基线**：
   - 快速基线：`npm run validate:baseline:quick`
@@ -192,7 +192,10 @@ Radish/
 
 ### 其他资源
 - 📖 [**文档首页**](Docs/index.md) - 文档地图与推荐阅读路径
-- 🤝 [**贡献指南**](AGENTS.md) - 参与项目开发的指引
+- 🤝 [**贡献指南**](CONTRIBUTING.md) - 参与项目开发、提交与验证的公开指引
+- 🔐 [**安全策略**](SECURITY.md) - 安全漏洞的私下报告与协调披露流程
+- 🧭 [**社区行为准则**](CODE_OF_CONDUCT.md) - Issue、Pull Request 与评审中的协作边界
+- 🤖 [**AI 协作规则**](AGENTS.md) - AI 协作者的项目执行约束
 - 🤖 [**AI 开发助手配置**](CLAUDE.md) - Claude Code 工作指南
 
 ## 关键特性
@@ -329,18 +332,18 @@ git push origin v26.7.1-release
 
 欢迎提交 Issue 和 Pull Request！
 
-请确保：
-1. 代码遵循项目 [开发规范](Docs/architecture/specifications.md)
-2. 单元测试通过（`dotnet test`）
-3. 提交前至少运行与改动匹配的 `npm run type-check`、`npm run lint` 或专题 `HttpTest`
-4. 在 [开发日志](Docs/changelog/) 中记录重大变更
+参与前请阅读[贡献指南](CONTRIBUTING.md)与[社区行为准则](CODE_OF_CONDUCT.md)。安全漏洞不要创建公开 Issue，请按[安全策略](SECURITY.md)私下报告。
+
+提交 Pull Request 时，请确保改动符合[开发规范](Docs/architecture/specifications.md)，执行并如实记录与风险匹配的验证；重大变更还应同步更新对应专题文档。分支、提交、验证和许可证边界以贡献指南为准。
 
 ## 许可
 
-DaBaiLuoBo(laugh0608) 保留所有代码权力，详见 LICENSE 文件。
+DaBaiLuoBo(laugh0608) 保留所有代码权利，详见 [LICENSE](LICENSE)。
 
 ## 相关链接
 
 - [Docs 文档目录](Docs/README.md) - 固定项目文档入口
+- [贡献指南](CONTRIBUTING.md) - 贡献流程、分支治理与验证要求
+- [安全策略](SECURITY.md) - 安全问题范围与私下报告渠道
 - [API 文档](https://localhost:5000/scalar) - Scalar 交互式文档（推荐通过 Gateway 访问，内部由 Radish.Api 提供 `/scalar`，旧 `/api/docs` 路径仅做重定向兼容）
 - [开发计划](Docs/development-plan.md) - 迭代规划与里程碑

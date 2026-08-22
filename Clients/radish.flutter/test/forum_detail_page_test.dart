@@ -63,6 +63,11 @@ void main() {
     );
 
     await tester.pumpAndSettle();
+    expect(find.byKey(const Key('forum-detail-expanded')), findsOneWidget);
+    expect(
+      find.byKey(const Key('forum-detail-context-rail')),
+      findsOneWidget,
+    );
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(
       find.text('评论'),
@@ -135,6 +140,8 @@ void main() {
 
     await tester.pumpAndSettle();
 
+    expect(find.byKey(const Key('forum-detail-compact')), findsOneWidget);
+    expect(find.byKey(const Key('forum-detail-context-rail')), findsNothing);
     expect(find.text('详情上下文'), findsOneWidget);
     expect(find.text('通知回流'), findsWidgets);
     expect(find.text('公开地址待生成'), findsWidgets);

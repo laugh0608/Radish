@@ -21,6 +21,8 @@ npm run check:docs
 npm run check:repo-hygiene
 npm run check:repo-hygiene:candidate
 npm run check:repo-hygiene:changed
+npm run check:repo-quality:changed
+npm run check:repo-quality:candidate
 npm run check:repo-quality-contract
 npm run check:dependency-security
 npm run check:sensitive-literals
@@ -56,8 +58,9 @@ npm run validate:candidate
   - 将 Git `core.hooksPath` 指向仓库内的 `.githooks`
   - 启用 `pre-commit` 与 `commit-msg` 本地拦截
 - `check:docs`
-  - 通过 `./scripts/check-docs.sh` 全量扫描 `Docs/`，包含未跟踪的新文档
+  - 先校验 `AGENTS.md` 与 `CLAUDE.md` 从第 4 行开始完全一致，再通过 `./Scripts/check-docs.sh` 全量扫描 `Docs/` 与根目录 `README.md / SECURITY.md / CONTRIBUTING.md / CODE_OF_CONDUCT.md / AGENTS.md / CLAUDE.md / LICENSE`，包含未跟踪的新文档
   - 复用仓库卫生检查器，阻断非法 UTF-8、UTF-8 BOM、`U+FFFD`、常见乱码特征、错误换行和缺失末尾换行；该专用入口不输出篇幅治理提醒
+  - 同时检查 Markdown 中指向仓库文件或目录的本地相对链接；外部 URL、页内 anchor、正式站内绝对路由和 fenced code 示例不按本地文件误判
 - `check:repo-hygiene`
   - 全量检查仓库已跟踪文本文件的 UTF-8 / BOM / 换行符 / 末尾换行 / 尾随空格
   - 适合治理历史文本问题时使用
@@ -65,27 +68,33 @@ npm run validate:candidate
   - 全量扫描所有已跟踪文件，并以 `Scripts/repo-hygiene-baseline.json` 记录的已审计问题为预算
   - 历史问题允许持续下降，但新增文件或新增问题指纹会阻断候选验证
 - `check:repo-hygiene:changed`
-  - 只检查当前 worktree 变更文件的文本卫生
-  - 适合与 GitHub Actions 的 `Repo Hygiene` changed-only 行为对齐
+  - 检查当前 worktree 的 staged、unstaged 与未跟踪文件文本卫生，忽略符合 `.gitignore` 的本地文件
+  - 适合日常本地最小验证；远程 `Repo Hygiene` 使用带历史预算的全仓扫描
+- `check:repo-quality:changed`
+  - 依次执行 changed-only 仓库文本卫生与全量文档治理
+  - 作为本地 `validate:ci` 的 Repo Hygiene 对齐入口，确保新建未跟踪文件和根目录治理文档不会漏检
+- `check:repo-quality:candidate`
+  - 依次执行带历史预算的全仓文本卫生与全量文档治理
+  - 作为远程 `Repo Hygiene` 和本地候选验证的统一入口
 - `check:repo-quality-contract`
-  - 校验 `.github/workflows/repo-quality.yml`、`.github/rulesets/master-protection.json`、本地 `validate:ci` 与 CI-only 门禁的契约是否仍然一致
+  - 校验 `.github/workflows/repo-quality.yml` 的六个组件与聚合 job、`.github/rulesets/master-protection.json` 的单一 required check、本地 `validate:ci`、单人审批数和 CI-only 门禁是否仍然一致
   - 适合在调整 workflow job、ruleset required checks 或本地 `Repo Quality` 复现入口时先做轻量自校验
 - `check:dependency-security`
   - 联网执行 `npm audit --omit=dev --json` 与 NuGet 直接 / 传递依赖漏洞审计
   - npm 或 NuGet 存在 High / Critical 时失败；命令失败、审计源不可用或 JSON 无法解析时同样失败
-  - 属于 `master` PR 的 CI-only 必需检查，暂不并入日常本地 `validate:ci`；准备合并或处理依赖时单独执行
+  - 属于 `master` PR 的 CI-only 必需组件，暂不并入日常本地 `validate:ci`；准备合并或处理依赖时单独执行
 - `check:sensitive-literals`
   - 扫描 Git 已跟踪文件和未忽略的工作区新文件，阻断完整 JWT、硬编码 Bearer Token 与私钥 PEM 头
   - 只报告文件、行号和规则，不回显命中值；环境变量、模板变量、占位值和 `invalid_token` 测试值不会被误判
   - 规则自测与全仓扫描均已接入 `validate:baseline:quick`，因此同时进入本地 `validate:ci` 和远程 `Baseline Quick`
 - `lint:changed`
   - 只对当前变更中的前端脚本文件执行 `eslint`
-  - 适合与 GitHub Actions 的 `Frontend Lint` 对齐
+  - 适合日常本地最小验证；远程 `Frontend Lint` 对四个 Web workspace 执行全量零 warning lint
 - `lint:staged`
   - 只对 staged 变更中的前端脚本文件执行 `eslint`
   - 适合提交前先看“这次准备提交的文件”是否通过
 - `collect:changed`
-  - 统一输出当前 staged 与 unstaged 变更文件列表
+  - 统一输出当前 staged、unstaged 与未跟踪文件列表，忽略符合 `.gitignore` 的本地文件
   - 适合排查“当前 CI / changed-only 脚本到底看到了哪些文件”
 - `collect:changed:staged`
   - 统一输出 staged 变更文件列表
@@ -130,7 +139,7 @@ npm run validate:candidate
     - 确保 workflow job 名、ruleset required checks 与本地 `validate:ci` 没有再次分叉
   - 运行身份语义 impact 判定自校验
     - 确保 `check:identity-impact` 与 `Identity Guard` 的命中规则未因脚本或文档入口调整而漂移
-  - 运行身份语义防回归扫描
+  - 运行身份语义防回归与外部 LongId 字符串安全扫描
     - 运行时代码是否重新散落 `FindFirst/FindAll/ClaimTypes/User.IsInRole` 等原始 Claim 读取
     - `Radish.Auth` 协议输出侧是否试图恢复 `ClaimTypes.NameIdentifier / ClaimTypes.Name / ClaimTypes.Role / TenantId / jti` 等历史双写承诺
   - 运行后端 `build`
@@ -142,7 +151,7 @@ npm run validate:candidate
   - `Console` 权限链路扫描
   - Repo Quality contract 自校验
   - 身份语义 impact 判定自校验
-  - 身份语义防回归扫描
+  - 身份语义防回归与外部 LongId 字符串安全扫描
 - `validate:baseline:host`
   - 等同于 `validate:baseline`
   - 额外追加 `DbMigrate doctor` / `verify` 只读自检（复用前序构建产物，不重复 build）
@@ -164,17 +173,17 @@ npm run validate:candidate
   - 运行身份语义后端定向测试，覆盖 `ClaimsPrincipalNormalizer`、`HttpContextUser`、`AccountController`、`AuthorizationController`、`UserInfoController`，以及 API JWT audience、Auth transport security、Gateway Forwarded Proto 和 compose 暴露面契约
 - `validate:backend`
   - 后端 / API 专题聚合入口，不替代默认 baseline
-  - 运行 `dotnet build Radish.slnx -c Debug` 与 `dotnet test Radish.Api.Tests`
+  - 运行 `dotnet build Radish.slnx -c Debug --warnaserror` 与 `dotnet test Radish.Api.Tests`；远程 `Backend Guard` 固定提供 PostgreSQL 17，不会把环境集成测试静默跳过；所有带 `Database=PostgreSQL` trait 的测试类由约束测试强制进入独占 collection，避免 SqlSugar CodeFirst 进程级状态并发串扰不同 schema
 - `validate:ci`
   - 本地复现当前 `Repo Quality` 的最小执行面
-  - 依次运行 `check:repo-hygiene:changed`、`lint:changed`、`validate:baseline:quick`
+  - 依次运行 `check:repo-quality:changed`（changed-only 文本卫生 + 全量文档治理）、`lint:changed`、`validate:baseline:quick`
   - 再按 `check:backend-impact` 的同源规则决定是否追加 `validate:backend`
   - 再按 `check:identity-impact` 的同源规则决定是否追加 `validate:identity`
-  - 当前其本地门禁定义也已改为复用同一份 Repo Quality contract，避免 workflow / ruleset / 本地入口继续各自维护
+  - 本地门禁复用同一份 Repo Quality contract 并保留 changed-only 快速反馈；远程改用全仓卫生预算与全量前端 lint，由同一 workflow 内的 `Candidate Quality` 汇总
   - 当前也已支持 `--report` / `--report-file <path>`，可把批次级本地门禁结论直接收成固定 Markdown 报告，回写到 `PR -> master` 的回归记录或 PR 描述
 - `validate:candidate`
-  - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline、外部 LongId 字符串安全与联网依赖安全审计
-  - `.github/workflows/candidate-quality.yml` 作为 `PR -> master` 的 required check，并保留手动与 Docker 镜像发布前复用入口；不再定时运行
+  - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline 与联网依赖安全审计；LongId 已进入 baseline，不再重复执行
+  - `.github/workflows/candidate-quality.yml` 只供手动与 Docker tag 复用；`PR -> master` 由 `repo-quality.yml` 的六个并行组件和单一 required check `Candidate Quality` 聚合，避免重复执行与通知
   - 远程门禁在 PostgreSQL 17 服务下运行环境集成测试，确保数据库迁移与 Repository 专题不会因普通本地入口缺少连接而被跳过
   - Docker 镜像先进行本地单平台构建与分层漏洞扫描：`CRITICAL` 和存在修复版本的 `HIGH` 默认阻断，无修复 `HIGH` 留痕但不阻断；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像，例外和报告规则见[镜像漏洞门禁分层](/guide/image-vulnerability-gate)
 
@@ -437,16 +446,16 @@ npm run collect:change-regression-record -- --title "当前批次" --scope "当�
 
 - `master` 当前受规则保护，只允许通过 PR 合并
 - 批次级回归记录默认放在这一层补，不要求绑定每一个本地 commit
-- GitHub Actions 中的 `Repo Hygiene` 与 `Frontend Lint` 当前仅检查“本次变更文件”，用于先拦新增问题，避免被历史债务拖死
-- `Dependency Security` 是始终执行的联网 required check，不按改动范围跳过；本地 `validate:ci` 暂不复现它，contract 会显式维护这项 CI-only 差异
+- GitHub Actions 中的 `Repo Hygiene` 使用全仓预算扫描并追加全量文档治理，`Frontend Lint` 使用四个 Web workspace 全量零 warning lint；本地 `validate:ci` 使用 changed-only 文本卫生并同样追加全量文档治理，兼顾 PR 稳定性与治理口径一致
+- `Dependency Security` 是始终执行的联网组件，不按改动范围跳过；本地 `validate:ci` 暂不复现它，contract 会显式维护这项 CI-only 差异
 - `Backend Guard` 当前按变更文件触发：先用 `check:backend-impact` 判定是否命中后端 / API 影响面，再决定是否执行 `validate:backend`
 - `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
-- 当前 changed-only 入口与 `Repo Quality` 的变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
+- 当前 changed-only 入口与 `Repo Quality` 的 Backend / Identity impact 变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
 - `check:repo-hygiene:changed` 与 `check:repo-hygiene:staged` 当前也已切到统一 collector，不再单独维护 `git diff` 口径
-- `check:repo-quality-contract` 当前会校验 workflow、ruleset、本地 `validate:ci` 与 CI-only required checks 契约，避免门禁名称或执行面无声漂移
-- `check:identity-impact` 的命中范围当前已收口到单一规则源，除身份语义代码、Auth 协议输出、前端 Token 解析与 `AuthFlow` 入口外，也覆盖 `validation-baseline / regression-index / repo-quality-troubleshooting / change-regression-record-template / regression-result-template / dev-first-regression-record / development-plan / planning/current / PR template / repo-quality contract / validate:ci` 等默认执行面文档与门禁资产
+- `check:repo-quality-contract` 当前会校验 workflow 六个组件、聚合 `Candidate Quality`、ruleset、本地 `validate:ci` 与 CI-only 组件契约，避免门禁名称或执行面无声漂移
+- `check:identity-impact` 的命中范围当前已收口到单一规则源，只覆盖身份语义代码、Auth 协议输出、前端 Token 解析、`AuthFlow`、身份专题文档与实际身份门禁资产；通用规划、PR 模板和 ruleset 变更不会机械触发完整身份回归
 - `check:backend-impact` 的命中范围当前覆盖后端宿主、服务、模型、仓储、DbMigrate、后端测试、后端配置和后端门禁资产
-- 工作区级 changed-only 默认使用 `collect:changed`，同时合并 staged 与 unstaged diff，但不纳入未跟踪文件
+- 工作区级 changed-only 默认使用 `collect:changed`，同时合并 staged、unstaged 与未跟踪文件，并排除符合 `.gitignore` 的本地内容
 - 提交前只看 staged 内容时，优先使用 `collect:changed:staged`、`lint:staged`、`check:backend-impact:staged` 与 `check:identity-impact:staged`
 - `check:repo-hygiene` 本地全量扫描仍建议按需人工执行，适合做历史清理批次时使用
 

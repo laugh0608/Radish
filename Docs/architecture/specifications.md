@@ -563,7 +563,7 @@ git push origin v26.1.1.3003
 - `Radish.Common.AppSettings` 为自定义配置入口，Program.cs 使用 `builder.Services.AddSingleton(new AppSettings(builder.Configuration));` 注册后即可在任何层注入/静态调用。
   - 当需要分段读取配置时，统一调用 `AppSettings.RadishApp(params string[] sections)`，禁止在业务代码中自行 new ConfigurationBuilder，以保证配置来源一致。
   - 强类型配置建议实现 `IConfigurableOptions`（位于 `Radish.Common.Option.Core`），由 `ConfigurableOptions` + `AllOptionRegister` 自动绑定，再通过 `IOptions<T>` 注入。
-- `Radish.Common.Core.App` 负责缓存 `Configuration/WebHostEnvironment/RootServices`，Program.cs 必须依次执行 `hostingContext.Configuration.ConfigureApplication()`、`builder.ConfigureApplication()`、`app.ConfigureApplication()` 与 `app.UseApplicationSetup()` 才能完成注入；仅在无法通过构造函数注入时，才在静态上下文调用 `App.GetService<T>`、`App.GetOptions<T>`，并优先保证线程安全与生命周期一致。
+- `Radish.Common.Core.App` 负责缓存 `Configuration/WebHostEnvironment/RootServices`，Program.cs 必须依次执行 `hostingContext.Configuration.ConfigureApplication()`、`builder.ConfigureApplication()`、`app.ConfigureApplication()` 与 `app.UseApplicationSetup()` 才能完成注入；仅在无法通过构造函数注入时，才在静态上下文调用 `App.GetService<T>`、`App.GetOptions<T>`，并优先保证线程安全与生命周期一致。预启动阶段的非强制解析必须允许返回空，`App.CurrentUser` 必须回退匿名上下文；不得依赖其他测试或宿主先行初始化 `InternalApp.InternalServices`，强制解析才报告尚未 Build。
 - 对应扩展支持 `Get<T>()`、`ObjToString()` 等常用方法，可在新增配置时同步补充注释，方便多人协作。
 
 ## 缓存策略

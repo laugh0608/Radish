@@ -560,7 +560,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
                   ? '正在准备商品 ${widget.productId}'
                   : '正在查看商品 ${product.id}',
               _isAuthenticated ? '当前已具备购买会话' : '未登录时可先阅读详情，再登录后购买',
-              '本批只开放单商品购买，不扩展购物车、退款、权益使用或完整移动商城',
+              '本批只开放单商品购买，不扩展购物车、退款、除主题选择外的权益使用或完整移动商城',
             ],
           ),
           const SizedBox(height: 16),
@@ -1080,7 +1080,7 @@ class _ShopPurchasePanel extends StatelessWidget {
               ),
             ],
             const SizedBox(height: 12),
-            const Text('本批只支持当前商品直接购买 1 件；购物车、退款、权益使用和完整移动商城不在本次范围。'),
+            const Text('本批只支持当前商品直接购买 1 件；购物车、退款、除主题选择外的权益使用和完整移动商城不在本次范围。'),
           ],
         ),
       ),

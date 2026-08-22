@@ -4,7 +4,7 @@
 
 当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线，但页面视觉仍是早期 MVP / demo 级实现。下一阶段先按 [Flutter Native 产品化与 UI 重构](../../Docs/features/flutter-native-product-ui-design.md)完成全页面事实审计、技术基座和代表设计，再成组重构 UI；不以逐页换色或默认组件换皮代替设计系统。
+现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)和 [P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)已完成：业务 owner 与行为契约保留，四主题、权益 owner、三档 Shell 与 Discover / Forum Detail 代表实现已落地，Flutter 页面和 Web 页面分别维护设计源。当前先确认 P3 视觉方向，再进入 P4 字体资产与共享组件收口。
 
 ## 当前范围
 
@@ -30,17 +30,18 @@
 - 已登录态纯文本发帖与帖子正文编辑：论坛页读取顶级分类，登录用户可发布纯文本帖子，成功后刷新列表并打开新帖子详情，详情公开链接使用 `Post.PublicId`；作者可在原生帖子详情编辑自己的帖子正文，失败重试复用 `forum-post-edit:` 提交意图 key；匿名态从发帖表单提交会登录回流并保留页面存活期间的草稿，发布失败也保留草稿输入并复用 `forum-post:` 提交意图 key；当前不开放富文本、附件、投票、抽奖、草稿箱、分类 / 标签编辑或子评论编辑
 - 已登录态问题回答：问题帖详情可展示已有回答，登录用户可发布纯文本回答，成功后局部更新回答区和回答数；匿名态从回答区发起登录会回到当前回答输入上下文，发布失败保留输入并复用 `forum-answer:` 提交意图 key；当前不开放回答采纳、回答编辑、富文本回答、附件回答或问题发帖模式
 - 已登录态单商品购买：商品详情支持当前胡萝卜余额读取、购买资格检查、支付口令输入和购买 `1` 件商品，成功后刷新余额并进入订单详情确认结果；匿名态购买会先登录并回到当前商品
-- 已登录态商城订单 / 背包入口：我的页可打开订单列表、订单详情和背包，订单详情可按订单 ID 查看扣款流水并进入背包发放确认，背包权益 / 道具可查看来源订单或来源商品；来源订单 / 商品 ID 按规范字符串 LongId 承接，不进入 Dart `int` 数值域；当前不开放购物车、取消订单、退款、权益激活或道具使用
+- 已登录态商城订单 / 背包入口：我的页可打开订单列表、订单详情和背包，订单详情可按订单 ID 查看扣款流水并进入背包发放确认，背包权益 / 道具可查看来源订单或来源商品；主题权益由壳层外观入口读取并调用既有激活 / 停用契约，其他权益与道具使用仍未开放
 - 已登录态胡萝卜资产只读入口：我的页可查看可用余额、冻结余额、累计统计和最近流水；从订单详情进入时保留 `Order #orderId` 筛选上下文；当前不开放转账、打赏、调账或支付操作
 - 已登录态经验记录只读入口：我的页可查看等级、当前经验、总经验、升级进度、冻结状态和最近经验流水；当前不开放经验调整、冻结治理或管理员复核
-- 环境配置、认证存储与单一亮色 `ThemeData` 基线；四主题状态、`ThemeExtension` 和持久化尚未实现
+- 四主题 `ThemeData` / `RadishThemeTokens`、内置偏好持久化、Shop 主题权益激活 / 停用、账号隔离与 reduced-motion 基线
+- compact `<600`、medium `600–1023`、expanded `>=1024` 的统一 Shell，桌面键盘可用 `Ctrl/Cmd + 1..5` 切换主入口
 - 与现有 Web / API 契约一致的复用边界
 - Android 模拟器经 Gateway `https://localhost:5000` 的最小联调入口
 
 ## 当前不含
 
 - iOS / Windows / macOS / Linux 平台工程、签名、更新与分发门禁
-- 聊天、完整通知中心、完整商城工作台、完整资产中心、完整创作器、购物车、退款、权益使用、回答采纳、编辑治理
+- 聊天、完整通知中心、完整商城工作台、完整资产中心、完整创作器、购物车、退款、除主题选择外的权益使用、道具使用、回答采纳、编辑治理
 - “移动版 WebOS”
 
 ## 公开路由与链接口径
@@ -81,11 +82,11 @@ Clients/radish.flutter/
 
 ## 后续接线顺序
 
-1. `P1` 全页面事实审计：逐页确认 owner、状态、调用链、窗口结构、测试和 R1 / R2 / R3 继承关系
-2. `P2–P3` 技术基座 spike 与代表设计：确认四主题、字体、本地资产、共享组件和 compact / medium / expanded 布局
-3. `P4–P5` 主题 / Shell 与页面族成组实现：先 Community，再 Docs / Commerce，最后派生只读面
-4. Android 先形成新版 UI RC；Android 既有分发基线见 [Flutter Android RC 分发前置清单](../../Docs/guide/flutter-android-rc-distribution.md)
-5. iOS 与 Windows / macOS / Linux 在共享 UI 门禁后分别生成 / 补齐平台工程并建立构建、签名、更新与分发验证
+1. `P1` 全页面事实审计已完成：页面唯一归属、状态与错误边界、compact / medium / expanded 结构和 R1 / R2 / R3 继承见[审计记录](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)
+2. `P2` 技术基座已完成：四主题、权益 owner、偏好持久化、Adaptive Shell 与两个代表页见 [P2 实现记录](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)
+3. `P3` 代表设计：独立 Flutter 设计源中的 typography 方向、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿已完成，等待视觉确认
+4. `P4–P5` 主题 / Shell 与页面族成组实现：先 Community，再 Docs / Commerce，最后派生只读面
+5. Android 先形成新版 UI RC；iOS 与 desktop 在共享 UI 门禁后再分别进入平台工程与分发验证
 
 ## Flutter 环境切换
 

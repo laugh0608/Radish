@@ -1,490 +1,110 @@
-# CLAUDE 指南
+# Radish 协作约定
 
-本文件为 Claude Code 提供 Radish 项目的独立协作说明。
+本文件为 AI 协作者提供 Radish 项目的启动级长期约束。
 
-## 称呼
+## 定位与优先级
 
-- 对话开始或结束总结时，请称呼我为 `萝卜SAMA`
+- `Docs/` 是项目文档唯一真相源；本文件只保留任何任务开始时都必须知道的长期约束，不承载当前阶段、临时门禁、历史记录或专题实现细节。
+- 当前阶段、优先级、停止线和“当前不做”以 `Docs/planning/current.md` 为准；架构、接口、流程、验证和视觉细则以对应专题文档为准。
+- 项目所有者在当前任务中的明确要求优先于仓库默认流程；若要求会改变架构、规则、接口、依赖或运行时边界，仍应先说明影响并确认范围。
+- 只读取当前任务需要的文档；不要默认展开 `Docs/changelog/`、`Docs/records/`、`Docs/planning/archive.md` 或历史 RC 材料。
 
-## 语言规范
+## 称呼与语言
 
-- 默认使用中文进行说明、讨论和文档编写。
+- 对话开始或结束总结时，请称呼项目所有者为 `萝卜SAMA`。
+- 默认使用中文说明、讨论和编写文档。
 - 代码、技术标识、配置键、命令、路径和引用名保留原文。
 
-## 协作流程
+## 协作原则
 
 - 涉及架构、规则、接口、依赖、运行时行为或范围不清的改动前，必须先说明方案并等待批准。
-- 小规模、低风险、需求明确的文档、配置或清理类变更，可直接实施，无需先单独描述方案并等待批准。
-- 如果需求不明确，必须先提出问题并澄清后再动手。
-- 新增功能、修复 bug 或处理其他任务时，默认先判断问题能否从根因上收口，优先选择可维护、可验证、能减少后续重复修补的方案，而不是先追求最小改动或继续叠加兜底兼容。
-- 修改架构、接口、主题规范或流程口径时，优先以 `Docs/` 中的现行正式口径为准。
-- 涉及当前阶段、优先级或范围判断时，优先查看 `Docs/planning/current.md`。
-- 涉及本地验证、CI 对齐或回归入口时，优先查看 `Docs/guide/validation-baseline.md`。
-- 涉及页面真实联调或浏览器 smoke 时，优先遵循 `Docs/guide/browser-smoke.md`，默认同时覆盖 PC 与移动端视图。
-- 真实 smoke / 浏览器联调不作为日常连续开发的默认步骤；只有在一个专题、阶段性任务或成组功能准备验收时，或用户明确要求时，才执行 Gateway 页面访问、PC / 移动端浏览器复核、`npm run check:host-runtime` 等运行态检查。
-- 执行真实 smoke 前，必须确认前后端在当前任务中已经启动。若尚未启动，AI 应先说明启动命令、端口和运行影响并获得用户明确授权，再由 AI 启动；也可以等待用户明确说明服务已经启动。不得沿用上一轮或历史会话中的启动状态判断。
-- 普通开发轮次优先使用构建、测试、类型检查、`git diff --check`、仓库卫生检查等静态或代码侧验证。
-- 验证与留痕默认按“开发中 / 准备合并到 `master` / 发布部署”三种粒度区分：开发中的本地连续提交只做必要验证，不要求每次都补完整回归记录；批次级回归记录默认在 `PR -> master` 前补，发布 / 部署节点再补正式留痕。
-- 产品正式上线进入稳定运营前，开发节奏默认采用“主动批量验收 + 成组修复 + 一次性交付结论”：AI 协作者应主动按链路矩阵复核、补测试和收口同类问题，不把每个小修复都交给开发者手动复测后再继续推进。
-- 产品正式上线并进入稳定运营后，再切换为更小心谨慎的变更策略：优先小步修复、风险隔离、回归验证和发布留痕，避免在生产稳定期批量改动高风险链路。
-- `Docs/` 的关键入口文档必须尽可能简约，只描述最近阶段、当前进度、执行入口和必要约束；历史批次、命令级验证流水、实现细节和长背景应写入日志、归档或专题文档，避免新会话读取无关背景浪费上下文。
-- 代码应接近对应语言和框架的良好实践，禁止新增不明意义的方法、空泛工具类、晦涩命名或为了“架构感”而增加的抽象封装；抽象必须服务于真实复用、边界隔离、复杂度下降或契约稳定。
+- 小规模、低风险、需求明确的文档、配置或清理类变更可直接实施。
+- 需求不明确且不同解释会明显改变结果、风险或范围时，必须先澄清。
+- 优先从根因、长期维护性、系统一致性和可验证性出发；不要把最小修复、临时兼容或层层兜底当作默认方案。
+- 在满足需求和质量的前提下控制修改范围；不做无关重构，不为“架构感”增加无真实收益的抽象。
+- 长期功能、重要页面、跨模块能力和阶段性目标默认先确认专题文档与边界，再进入实现。
+- 更完整的任务推进、个人开发者阶段和文档分层规则见 `Docs/guide/agent-collaboration.md`。
 
-## 规划推进读取顺序
+## 必须单独授权的操作
 
-- 当用户提出“根据项目规划和开发进度，今天要做什么以推进开发”这类问题时，默认只先读取 `Docs/planning/current.md`。
-- 若 `current.md` 不足以判断阶段边界或下一顺位，再读取 `Docs/development-plan.md`。
-- 只有涉及阶段边界、多端路线或壳层归属争议时，才继续读取 `Docs/planning/phase-two-community-multiplatform.md`、`Docs/frontend/shell-strategy.md` 或对应专题文档。
-- 不要默认展开 `Docs/changelog/`、`Docs/planning/archive.md`、RC 验收记录或命令级验证记录；这些只在需要追溯历史事实或验证证据时读取。
+- 包安装或依赖更新：`dotnet add package`、`npm install`、`npm update`、`npm ci`。
+- 项目启动：`dotnet run`、`npm run dev` 及组合启动脚本。
+- 授权只覆盖当前任务中已说明的命令、版本、端口、运行影响和清理方式；不得沿用历史会话或上一轮任务的授权。
+- 若命令、依赖范围或运行影响发生实质变化，必须重新说明并获得授权。
+- 代码读写、构建、测试、类型检查、Lint、静态分析和常规 Git 操作可直接执行。
+- 默认先在沙盒中验证；若受权限、网络、证书或 PATH 限制而无法取得真实结果，可为构建、测试或已获授权的操作申请最小范围提权。
 
-## 开发节奏与文档分层
+## 任务文档路由
 
-- 当前常态节奏为“功能设计 / 说明文档先行”：长期功能、重要页面、跨模块能力或阶段性开发目标，在进入代码实现前应先确认对应专题文档已经存在且边界清楚。
-- 总体规划文档负责方向、阶段、优先级和下一顺位，不承载具体功能的长期实现细节。
-- 大专题文档负责功能定位、长期边界、入口归属、停止线、数据模型、接口契约和验证口径，例如 `Docs/features/`、`Docs/frontend/`、`Docs/guide/`、`Docs/architecture/` 下的专题页。
-- 子专题或模块说明负责具体页面流程、API 使用、迁移入口、前后端协作点和测试 / 回归入口。
-- `Docs/records/`、`Docs/changelog/` 和归档资料只记录批次事实、验证证据、历史流水和交接信息，不作为功能设计主文档。
-- 回答“下一步做什么”时，应先通过 `Docs/planning/current.md` 判断当前阶段与候选顺位，再判断要推进或补齐哪份功能设计 / 说明文档；若对应专题文档缺失或明显过期，应先补设计边界，再进入代码。
-- 小规模 bug 修复、低风险文案 / 样式调整、纯清理或不改变功能边界的验证补漏，不强制先新增专题文档，但如果暴露出现有说明与实现不一致，应同步修正文档口径。
+| 任务 | 优先读取 |
+| --- | --- |
+| 当前阶段、优先级、下一步 | [当前进行中](Docs/planning/current.md)；不足时再读[开发路线图总览](Docs/development-plan.md) |
+| Agent 协作、开发节奏、生产证据边界 | [Agent 协作与执行规则](Docs/guide/agent-collaboration.md) |
+| 架构、分层、编码与接口规范 | [架构总览](Docs/architecture/overview.md)、[开发规范](Docs/architecture/specifications.md)、[开发框架说明](Docs/architecture/framework.md) |
+| 本地验证、CI 对齐、回归入口 | [验证基线说明](Docs/guide/validation-baseline.md) |
+| 页面联调与浏览器 Smoke | [浏览器 Smoke 规则](Docs/guide/browser-smoke.md) |
+| 环境、启动、端口与排障 | [快速开始](Docs/guide/getting-started.md)、[运行与排障](Docs/guide/operations-runbook.md) |
+| 配置与数据库 | [配置管理](Docs/guide/configuration.md)、[数据库总览](Docs/guide/database-overview.md) |
+| Web / Flutter / WebOS / Tauri 边界 | [前端设计](Docs/frontend/design.md)、[前端多壳层策略](Docs/frontend/shell-strategy.md)、相关功能专题 |
+| UI、主题与 Pencil | [UI 差异附录](Docs/frontend/ui-addendum.md)、[视觉主题](Docs/frontend/visual-theme-spec.md)、[颜色参考](Docs/frontend/visual-color-reference.md)、[Pencil 流程](Docs/frontend/pencil-representative-page-workflow.md) |
+| 分支、PR 与回灌 | [分支与 PR 治理 ADR](Docs/adr/0001-branch-and-pr-governance.md) |
+| 文档拆分、索引和篇幅 | [文档篇幅治理](Docs/guide/document-governance.md) |
 
-## 个人开发者阶段约束
+## 项目长期边界
 
-- 产品仍有明确功能、维护、设计补全或可执行技术债时，默认继续推进这些工作，不以主动采集生产使用数据作为前置条件。
-- 生产使用数据采集、长期行为聚合和主动反馈归因属于项目最终收尾事项；只有计划内主线功能已经完整、没有明确功能或维护任务可推进、产品进入最终完成体复核，并由用户明确确认重启时，才允许重新开启。
-- 不得因观察周期到期、历史规划仍有记录、缺少真实使用证据或新会话重新评估，就主动建议、排期或执行生产证据采集；不得频繁重启同一证据采集专题。
-- 生产证据不足不得阻断日常功能设计、实现、测试、提交、发布或既有专题验收，也不得据此拒绝从现有产品边界和长期价值出发选择下一项完整功能。
-- 被动收到的明确生产故障、可追溯用户反馈或 `P0/P1` 仍可直接进入维护线；处理这些具体问题不等于重启主动采集专题，不应顺势扩展为全链路数据采集或长期观测工程。
+- 技术栈：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite）/ React 19 + Vite（Rolldown）+ TypeScript。
+- 正式产品线只保留 Web 与 Flutter Native；Web 优先覆盖 PC / mobile 浏览器，Flutter 次级覆盖原生 PC / mobile 安装包。
+- `radish.client` 的 `/desktop` 只保留 WebOS 历史兼容；`Clients/radish-tauri` 是正式弃用资产，不进入当前开发、UI、CI、构建、发布或验收门禁。
+- 前端使用 npm workspaces：`radish.http`、`radish.client`、`radish.console`、`radish.ui`。
+- `@radish/ui` 为源码直连共享组件库；`@radish/http` 是统一 API 客户端和类型边界。
+- 后端宿主为 `Radish.Api`、`Radish.Gateway`、`Radish.Auth`，初始化与只读自检入口为 `Radish.DbMigrate`。
+- Flutter Native 位于 `Clients/radish.flutter`；Rust 扩展位于 `Lib/radish.lib`。
 
-## Agent 协同文件
-
-- 仓库中面向不同 Agent 入口名的协作文件，应保持“基本复制”和长期同步。
-- 这些同类协作文件不应演化出彼此冲突的规则口径。
-- 若某个同类协作文件更新了通用协作规则、执行边界、验证基线或阶段约束，其余同类文件也应尽快同步。
-- 同类协作文件只允许保留极少量与入口名称直接相关的表述差异，不应借此分叉实际协作规范。
-
-## 项目概览
-
-- 后端：ASP.NET Core 10 + SQLSugar ORM + PostgreSQL（本地默认 SQLite）
-- 网关：`Radish.Gateway`，统一门户与 API 网关
-- 认证：`Radish.Auth`，基于 OpenIddict 的 OIDC 认证服务器
-- 前端：React 19 + Vite（Rolldown） + TypeScript，Web 为正式优先主线，WebOS 仅保留 `/desktop` 历史入口
-- 多端口径：只保留 Web / Flutter Native 两条正式产品线；Web 优先覆盖 PC / mobile 浏览器，Flutter 次级覆盖原生 PC / mobile 安装包并按 mobile-first、desktop stage-gated 推进；Tauri 正式弃用并只保留历史资产
-- UI 组件库：`@radish/ui`，基于 npm workspaces 的共享组件库
-- HTTP 客户端：`@radish/http`，统一 API 客户端与相关类型封装
-- Rust 扩展：`Lib/radish.lib/`
-- 主要协作分支：`dev`
-- `master` 仅作为稳定主线，只通过 Pull Request 合并
-- `master` 允许 `merge commit` 与 `rebase merge`，禁用 `squash merge`
-- 任何 PR 合并到 `master` 后，必须在开始下一轮 `dev` 开发前把最新 `origin/master` 同步回 `dev`；可快进时优先 fast-forward，否则使用普通 merge
-- `master -> dev` 回灌禁止使用 rebase、reset 或 force push 伪造同步；回灌只收口分支拓扑，不自动触发 tag、发布或部署
-- 文档唯一真相源：`Docs/`
-
-## AI 执行边界
-
-### 必须先获得用户明确授权
-
-- 包安装或依赖更新：`dotnet add package`、`npm install`、`npm update`、`npm ci`
-- 项目启动：`dotnet run`、`npm run dev`
-- 授权必须来自当前任务，历史会话、上一轮任务或笼统的长期授权不得自动沿用。
-
-### 正确做法
-
-- 执行包安装或依赖更新前，先说明具体命令、目标版本以及对依赖声明和 lockfile 的影响，等待用户明确授权；授权后 AI 可以执行并复核差异。
-- 启动服务前，先说明具体命令、端口、运行时长和清理方式，等待用户明确授权；启动成功后可在同一任务中继续真实 smoke。
-- 用户授权只覆盖已说明的命令与范围；如命令、依赖范围或运行影响发生实质变化，必须重新说明并获得授权。
-
-### 允许直接执行
-
-- 代码读写
-- 构建、测试、类型检查、Lint、静态分析
-- Git 操作
-
-### 沙盒验证与提权规则
-
-- 默认优先在沙盒中执行构建、测试和最小验证。
-- 如果因沙盒限制、权限隔离、PATH 缺失、网络或证书问题，无法确认真实构建或测试结果，可直接申请提权。
-- 提权用途必须限制在“构建 / 测试 / 必要验证”或用户已经明确授权的包安装、依赖更新和项目启动命令，不得借提权扩大操作范围。
-- 包安装、依赖更新和项目启动即使需要提权，也只能执行用户在当前任务中明确授权的命令；未获授权时不得执行。
-
-## 仓库结构
+## 实现红线
 
 ### 后端
 
-- 宿主：`Radish.Api`、`Radish.Gateway`、`Radish.Auth`
-- 初始化与只读自检：`Radish.DbMigrate`
-- 业务层：`Radish.Service`、`Radish.Repository`、`Radish.Core`、`Radish.Model`
-- 基础设施：`Radish.Common`、`Radish.Extension`、`Radish.Infrastructure`
-- 契约层：`Radish.IService`、`Radish.IRepository`
-- 共享层：`Radish.Shared`
-- 测试：`Radish.Api.Tests`
+- 依赖流、项目职责和详细分层以架构文档为准；`Common` 不依赖业务层。
+- Repository 只返回实体，Service 映射 DTO / Vo，Controller 只注入 Service 且不得返回匿名对象或直接暴露实体。
+- 先定义 `IService` / `IRepository` 再实现；简单 CRUD 优先复用 `BaseService` / `BaseRepository`。
+- Service 禁止直接使用 `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable`；通用查询能力优先沉淀到 Repository。
+- 对外 ViewModel 使用 `Vo` 后缀和 `Vo` 字段前缀；业务数据默认采用可审计的软删除。
+- 配置文件只允许共享 `appsettings.Shared.json`、宿主 `appsettings.json` 和本地不提交的 `appsettings.Local.json`。
 
 ### 前端
 
-- `Frontend/radish.http`：统一 HTTP 客户端与相关类型封装
-- `Frontend/radish.client`：WebOS 桌面客户端
-- `Frontend/radish.console`：管理后台
-- `Frontend/radish.ui`：共享组件库，源码直连，无需独立构建
-
-### 客户端
-
-- `Clients/radish.flutter`：Flutter Native 原生安装包路线，长期覆盖 Android / iOS / Windows / macOS / Linux；当前只有 Android 平台工程，Flutter Web 不进入路线
-- `Clients/radish-tauri`：正式弃用的 Tauri 桌面验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁
-
-## 环境与命令
-
-### 基础环境
-
-- .NET SDK 10
-- Node.js 24+
-- PostgreSQL 16+，或本地 SQLite
-
-### 可直接执行的验证命令
-
-```bash
-dotnet build Radish.slnx -c Debug
-dotnet test Radish.Api.Tests
-
-npm run build --workspace=radish.client
-npm run build --workspace=radish.console
-npm run type-check --workspace=@radish/ui
-npm run type-check --workspace=@radish/http
-
-npm run validate:baseline:quick
-npm run validate:baseline
-npm run validate:baseline:host
-```
-
-### 供用户手动执行的启动命令
-
-```bash
-pwsh ./start.ps1
-./start.sh
-
-dotnet run --project Radish.Api
-dotnet run --project Radish.Gateway
-dotnet run --project Radish.Auth
-
-npm run dev --workspace=radish.client
-npm run dev --workspace=radish.console
-```
-
-### 默认端口
-
-- API：`http://localhost:5100`
-- Auth：`http://localhost:5200`
-- Gateway：`https://localhost:5000`
-- Frontend：`http://localhost:3000`
-- Console：`http://localhost:3100`
-- 文档：固定项目文档统一收口到仓库 `Docs/`，由 WebOS“文档”应用承载，不再维护独立 Docs 站点
-- Scalar：Gateway `https://localhost:5000/scalar`，API 直连 `http://localhost:5100/scalar`
-
-### 本地复核入口
-
-- 浏览器复核、人工联调和集成链路默认优先访问 Gateway：`https://localhost:5000`
-- Console 管理后台默认通过 Gateway 访问：`https://localhost:5000/console/`
-- `http://localhost:3000` 与 `http://localhost:3100` 仅作为 Vite dev server 直连端口，用于 HMR、前端资源路径或局部 UI 调试
-- 如确需直连 Console dev server，路径必须带 `/console/` base，例如 `http://localhost:3100/console/`
-
-## 配置与数据库
-
-### 配置优先级
-
-```text
-appsettings.Shared.json → appsettings.json
-→ appsettings.Local.json（仅本地使用，不提交）→ 环境变量
-```
-
-- 配置文件只允许三种：共享 `appsettings.Shared.json`、宿主默认 `appsettings.json`、本地覆盖 `appsettings.Local.json`
-- 禁止新增或提交这三种之外的 `appsettings.*.json` 变体，避免配置来源和口径漂移
-
-### 关键配置
-
-- `Snowflake.WorkId`：宿主差异配置，每实例唯一
-- `Snowflake.DataCenterId`：共享配置
-- `MainDb/Databases`：共享数据库配置
-- `Redis.Enable/ConnectionString`：共享缓存配置
-- `Redis.InstanceName`：宿主差异配置
-
-### 数据库关系
-
-- API 与 Auth 共享 `Radish.db`、`Radish.Log.db`
-- Auth 独享 `Radish.OpenIddict.db`
-- 所有数据库位于 `DataBases/`
-
-### 多租户模式
-
-- 字段级：`ITenantEntity`
-- 表级：`[MultiTenant(Tables)]`
-- 库级：`[MultiTenant(DataBases)]`
-
-### 配置读取
-
-- `AppSettings.RadishApp("Section", "Key")`
-- 或实现 `IConfigurableOptions`
-
-### 缓存策略
-
-```csharp
-builder.Services.AddCacheSetup();
-```
-
-- `Redis.Enable = true` 时使用 Redis
-- `Redis.Enable = false` 时使用内存缓存
-
-## 分层架构与约束
-
-### 依赖流
-
-```text
-Common → Shared → Model → Infrastructure → IRepository/Repository
-→ Core → IService/Service → Extension → Api/Gateway/Auth
-```
-
-### 核心约束
-
-1. `Common` 仅引用外部 NuGet 包，需要访问业务层的工具放在 `Extension`
-2. `Repository` 只返回实体，`Service` 负责映射 DTO / Vo
-3. Controller 禁止直接注入 `IBaseRepository`
-4. 先定义 `IService` / `IRepository` 再写实现
-5. `Service` 层严禁直接使用 `_repository.Db.Queryable` 或 `_repository.DbBase.Queryable`
-6. 优先复用 `BaseRepository<T>` 和 `BaseService<TEntity, TVo>`
-7. 通用聚合优先扩展 `BaseRepository`，复杂查询再做实体专属仓储
-
-### ViewModel / Vo 规范
-
-- 所有返回前端的 ViewModel 必须使用 `Vo` 后缀
-- 所有字段必须使用 `Vo` 前缀
-- `UserVo` 的混淆字段命名是安全设计，不允许要求后端改名
-- Controller 严禁返回匿名对象
-- 优先使用 AutoMapper 前缀识别映射，仅在字段名、类型或逻辑不一致时手动映射
-
-## 软删除规范
-
-- 业务数据优先使用软删除
-- 新实体应实现 `IDeleteFilter`
-- 查询自动过滤 `IsDeleted = true`
-- 删除时记录 `DeletedAt` 与 `DeletedBy`
-- 恢复使用 `RestoreByIdAsync`
-
-## 编码与前端规范
-
-### 通用代码风格
-
-- C# 使用 4 空格、文件范围命名空间、nullable
-- React 组件默认使用 `const`
-- 避免 `var`，优先 `const`，需要重赋值时使用 `let`
-- 常规 Hooks 以 `useState`、`useMemo`、`useEffect` 为主
-- 单文件建议控制在 `1000` 行左右，硬上限 `1500` 行
-- 命名必须表达业务意图和技术边界，避免 `handleData`、`processInfo`、`commonHelper`、`managerUtil` 这类空泛命名或只有作者能理解的缩写
-- 方法、Hook、组件和工具函数应有明确职责；不要拆出一串只转发参数、包同名调用或隐藏简单逻辑的私有方法
-- 异常、空态、兼容和兜底逻辑必须有清晰业务原因，禁止用层层 fallback 掩盖契约不清、数据模型错误或调用边界混乱
-
-### 文本文件编码与换行
-
-- 仓库自有文本文件默认使用 `UTF-8` 无 `BOM`，避免引入乱码；如需保留外部参考资料或上游文件的特殊编码，必须有明确来源和理由
-- 换行符遵循仓库根 `.editorconfig` 与 `.gitattributes`：默认使用 `LF`，仅 `*.sln`、`*.slnx`、`*.ps1`、`*.psm1`、`*.psd1`、`*.bat`、`*.cmd` 等 Windows 文件使用 `CRLF`
-- 保持文件末尾换行；非 Markdown 文本避免尾随空格
-- 面向人工审阅的 JSON、配置文本和本地持久化文本优先保持 `UTF-8` 可读文本，中文默认直写，仅保留语法必需或序列化器仍要求保留的转义
-- 若怀疑当前修改引入乱码、换行漂移或 `BOM` 问题，优先执行 `npm run check:repo-hygiene:changed` 或 `npm run check:repo-hygiene:staged`
-
-### 日志规范
-
-#### 后端
-
-```csharp
-builder.Host.AddSerilogSetup();
-Log.Information("User {UserId} logged in", userId);
-```
-
-- 应用日志：`Logs/{ProjectName}/Log.txt`
-- SQL 日志：`Logs/{ProjectName}/AopSql/AopSql.txt`
-- 审计日志：数据库 `AuditLog_YYYYMMDD`
-
-#### 前端
-
-- Client：`Frontend/radish.client/src/utils/logger.ts`
-- Console：`Frontend/radish.console/src/utils/logger.ts`
-- 禁止直接使用 `console.log/info/warn/error`
-- 必须使用统一 `log` 工具
-
-### 前端环境配置
-
-- `.env.development`
-- `.env.production`
-- `.env.local`
-- `.env.local.example`
-
-规则：
-- 所有变量必须以 `VITE_` 开头
-- 敏感信息只放 `.env.local`
-- 通过 `env.ts` 访问配置，禁止直接使用 `import.meta.env`
-
-### API 客户端规范
-
-- 统一使用 `@radish/http` 提供的 API 客户端
-- 禁止自定义 fetch / axios 封装
-- 上传进度等特殊场景可使用 `XMLHttpRequest`
-- 特殊场景必须通过 `getApiClientConfig()` 获取统一配置，并在代码中注明原因
-
-### 前端视觉与主题规范
-
-- 家族通用视觉遵循 RadishX `docs/design/family-ui/` `v26.7.3`；灰玉仅为上游参考默认值，Radish 产品配色、四主题与多端边界见 `Docs/frontend/ui-addendum.md`
-- 视觉口径以 `Docs/frontend/visual-theme-spec.md` 与 `Docs/frontend/visual-color-reference.md` 为准
-- Pencil 协作遵循 `Docs/frontend/pencil-representative-page-workflow.md`：先审计专题文档与当前代码，再按自动升级条件和六维评分裁决 R1 / R2 / R3
-- R1 / R2 维护必要代表画板，R3 明确继承来源后直接实现并通过真实 PC / mobile 截图复核；禁止为每条路由、主题、文案或等价状态复制完整画板
-- 功能、按钮、文案、权限、接口和状态机以专题文档与当前代码为准；Pencil 只约束共享视觉契约、代表结构、关键状态和响应式变化
-- `radish.client` 必须支持 `default / guofeng` 主题切换
-- 风格方向为淡雅新中式，保持留白、克制和阅读优先
-- 云纹、山纹、水纹仅用于边缘、角标、分区收边和弱背景修饰
-- 颜色必须先抽象为语义 token，再用于页面
-- 禁止持续新增硬编码颜色
-- 不得破坏 Dock、桌面图标、窗口容器和滚动区域等基础布局
-
-### 前端架构补充
-
-- `@radish/ui` 无需单独构建，前端直接引用源码
-- 修改 `radish.ui` 时需保证 client / console 的热更新链路不被破坏
-
-## 新增功能流程
-
-### 后端
-
-1. 在 `Radish.Model/Models` 定义实体
-2. 在 `Radish.Model/ViewModels` 定义 Vo
-3. 在 `Radish.Extension/AutoMapperExtension/CustomProfiles` 增加映射
-4. 优先复用 `IBaseRepository<TEntity>`
-5. 简单 CRUD 优先复用 `IBaseService<TEntity, TVo>`
-6. 复杂逻辑再创建自定义 Service / Repository
-7. Controller 只注入 Service
-8. 补充 `Radish.Api.http` 示例和测试
-
-### 前端
-
-- 通用组件放 `@radish/ui`
-- API 调用与统一客户端能力优先复用 `@radish/http`
-- WebOS 组件放 `Frontend/radish.client/src/`
-
-## Rust 原生扩展
-
-- 位置：`Lib/radish.lib/`
-- 构建：
-
-```bash
-cd Lib/radish.lib
-cargo build --release
-```
-- 配置：
-
-```json
-{
-  "ImageProcessor": {
-    "UseRustImplementation": true
-  }
-}
-```
-
-## 常见陷阱
-
-1. 不要把业务逻辑写进 Controller
-2. 不要直接暴露实体给前端
-3. 简单 CRUD 不要滥建 Service / Repository
-4. 先定义接口再写实现
-5. `Service` 层禁止直接访问 Db
-6. 避免内存过滤，优先数据库级聚合
-7. 敏感信息不得硬编码
-8. 每环境必须保证唯一 `Snowflake.WorkId`
-9. `Common` 不要依赖业务层
-10. `ApiModule.LinkUrl` 的参数路由需包含正则
-
-## Git 提交规范
-
-- 必须遵循 Conventional Commits
-- 复杂提交建议补充 `2-5` 条简洁说明
-- 必须使用当前用户 Git 身份
-- 严禁任何 AI 协作者署名
-
-示例：
-
-```text
-fix(client): 修复桌面窗口与 Dock 遮挡问题
-
-- 调整灵动岛收起态偏移
-- 校正最大化窗口视觉关系
-- 保持现有窗口交互边界不变
-```
-
-## 文档与更新要求
-
-- `Docs/` 是唯一真相源
-- 文档应按读者目标和阅读预算拆分，不应让单文件长期承载入口、规范、历史、验证流水和实现细节等多种职责。
-- 入口类文档建议不超过 `300` 行，硬上限 `500` 行；包括 `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 以及各目录索引。
-- 架构、规范、设计类文档建议不超过 `600` 行，硬上限 `900` 行。
-- 专题深度文档建议不超过 `800` 行，硬上限 `1200` 行。
-- `Docs/changelog/`、`Docs/records/` 和归档资料可放宽篇幅限制，但必须按日期、阶段或批次拆分，并提供索引入口；超过 `1200` 行时应优先拆分或归档。
-- 超过软上限时，应优先拆出历史记录、验证流水、实现细节或专题说明；超过硬上限时，除日志、记录和归档类文档外，不应继续追加内容，应先拆分或归档。
-- 长文档顶部应提供简短摘要和必要目录，避免新会话为定位当前结论读取整篇历史。
-- 关键文档包括：
-  - `Docs/architecture/specifications.md`
-  - `Docs/architecture/framework.md`
-  - `Docs/frontend/design.md`
-  - `Docs/frontend/visual-theme-spec.md`
-  - `Docs/frontend/visual-color-reference.md`
-  - `Docs/guide/`
-  - `Docs/guide/validation-baseline.md`
-  - `Docs/guide/document-governance.md`
-  - `Docs/development-plan.md`
-  - `Docs/planning/current.md`
-  - `Docs/changelog/`
-  - `Docs/deployment/guide.md`
-- 更新日志时区为 Asia/Shanghai（UTC+8）
-- 重大架构、接口、视觉和流程变更必须同步更新文档
-
-## 开发原则
-
-1. 不做“玩具式最小实现”
-
-- 交付必须覆盖用户真实需求和主要使用路径。
-- 可以控制修改范围，但不能用临时方案、占位逻辑或半成品糊弄完成。
-
-2. 测试和验证按风险分层
-
-- 不要求任何改动都跑完整测试。
-- 小改动优先做精准验证；涉及核心流程、公共模块、数据一致性或用户可见行为时，再扩大测试范围。
-- 说明已验证的内容，以及未验证但存在风险的部分。
-
-3. 代码优先清晰、直观、易维护
-
-- 避免为了炫技引入复杂设计模式、过度抽象或晦涩写法。
-- 代码应让新人和实习生也能顺着业务逻辑读懂。
-- 只有在能明显降低复杂度、减少重复或符合现有架构时，才新增抽象。
-
-4. 保持架构清晰
-
-- 修改前先理解现有模块边界和调用关系。
-- 优先沿用项目已有风格、目录结构和设计习惯。
-- 不做无关重构，但遇到影响当前需求的结构问题时，应做小范围、必要的架构修正。
-
-5. 不做无意义的“安全兜底”
-
-- 不要为了表面稳妥到处吞异常、返回默认值或隐藏错误。
-- 对明确的外部输入、边界条件、IO、网络、权限、并发等风险点，应做必要校验和错误处理。
-- 兜底逻辑必须有明确目的，并且不能掩盖真实问题。
-
-6. 避免不必要的函数嵌套
-
-- 不写函数套函数、回调套回调等影响可读性的结构。
-- 优先使用命名清晰的普通函数、早返回和顺序流程。
-- 只有在闭包能明显简化状态管理且不影响阅读时，才允许局部函数。
-
-7. 优先最小化修改范围
-
-- 在满足需求和质量保证的前提下，尽量少改文件、少引入新变量、少新增函数。
-- 不为单次需求扩展无关能力。
-- 每个新增结构都应有明确用途，避免“顺手优化”和范围蔓延。
-
-8. 决策顺序
-
-- 先保证需求完整正确。
-- 再保证架构边界清晰。
-- 再控制修改范围和实现复杂度。
-- 最后根据风险选择合适的验证方式。
+- API 调用统一使用 `@radish/http`；除上传进度等有明确理由的场景外，不新增 fetch / axios 封装。
+- Client 与 Console 禁止直接使用 `console.log/info/warn/error`，必须使用各自统一 `log` 工具。
+- 环境变量必须以 `VITE_` 开头并通过 `env.ts` 访问；敏感信息只放 `.env.local`。
+- 颜色先抽象为语义 token；不得持续增加硬编码颜色，也不得破坏 Dock、窗口、滚动区等基础交互边界。
+- `radish.client` 必须支持 `default / guofeng` 主题；更完整视觉与多端规则按 UI 专题执行。
+
+### 通用
+
+- C# 使用 4 空格、文件范围命名空间和 nullable；React 组件默认使用 `const`，变量优先 `const`，需要重赋值时使用 `let`。
+- 单个代码文件建议控制在 `1000` 行左右，硬上限 `1500` 行；超过上限时按真实职责拆分，不做机械切片。
+- 命名必须表达业务意图和技术边界；禁止空泛工具类、晦涩缩写、无意义转发方法和影响可读性的函数嵌套。
+- 仓库自有文本默认使用 UTF-8 无 BOM、规定换行和文件末尾换行；怀疑漂移时执行仓库卫生检查。
+- 异常、兼容和兜底必须对应明确边界风险，不得吞掉真实错误或掩盖契约问题。
+
+## 验证与文档
+
+- 按风险选择定向测试、构建、类型检查、Lint、静态分析和 `git diff --check`；不要求每次改动都跑全量测试。
+- 验证和留痕区分开发中、准备合并到 `master`、发布部署三种粒度，具体命令以验证基线为准。
+- 真实 Smoke 只在专题、阶段性任务或成组功能准备验收时，或用户明确要求时执行；执行前必须确认本任务已授权并启动所需服务，默认同时覆盖 PC 与 mobile。
+- 修改架构、接口、流程、视觉或项目规则时同步更新对应 `Docs/` 真相源；历史流水和证据进入 records、changelog 或 archive，不堆入入口文档。
+
+## Git 约束
+
+- 日常协作分支为 `dev`；`master` 是稳定主线，只通过 Pull Request 合并。
+- `master` 允许 merge commit 与 rebase merge，禁用 squash merge；合并后必须先按 ADR 将最新 `origin/master` 回灌 `dev`，再开始下一轮开发。
+- 回灌禁止使用 rebase、reset 或 force push 伪造同步，也不会自动触发 tag、发布或部署。
+- 提交信息必须符合 Conventional Commits；复杂提交建议补充 `2-5` 条简洁说明。
+- 必须使用当前用户 Git 身份，严禁加入任何 AI 协作者署名。
+
+## 入口文件维护
+
+- `AGENTS.md` 与 `CLAUDE.md` 只在跨任务、跨阶段且必须启动即生效的长期约束发生变化时修改。
+- 阶段状态、临时门禁、“当前不做”和批次事实应更新其 Docs 真相源，不得复制回根入口。
+- 两个文件除标题和首段入口名称外必须逐字同步；修改任一文件时同步另一份，并执行 `npm run check:docs`。
+- 详细维护判定与内容归位规则见 `Docs/guide/agent-collaboration.md` 和 `Docs/guide/document-governance.md`。

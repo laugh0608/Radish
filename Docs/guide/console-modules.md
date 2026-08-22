@@ -24,7 +24,7 @@
 | Experience | ✅ 已接入 | 治理工作台 | `console.experience.*` | ✅ 已补齐 | 经验观察、流水、冻结、调整和等级配置已接入 |
 | Channel Discoverability | ✅ 已接入 | 治理工作台 | `console.channel-discoverability.view/manage` | ✅ 已补齐 | 匿名频道摘要资格、版本冲突与事件历史已闭环 |
 | Moderation | ✅ 已接入 | 治理工作台 | `console.moderation.view/review/appeal/action` | ✅ 已补齐 | 案件、证据、决定、动作、申诉复核、纠正和事件页面均使用权威 API |
-| Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 个人偏好、密码修改、头像上传和资料保存不走 Console 专属权限树 |
+| Settings / Profile | ✅ 已接入 | 设置 / 个人资料 | 登录态 | 不适用 | 时区、本机语言、密码、头像和资料为真实能力，不走 Console 专属权限树 |
 | Documents | ✅ 已接入 | 审核证据 + 治理工作台 | `console.docs.*` | ✅ 已补齐 | 待审队列、审核应用、独立发布、访问策略、版本和导入导出已接入 |
 | Hangfire | ✅ 已接入 | 特殊入口 / 运维外壳 | `console.hangfire.view` | ✅ 已补齐 | React 外层页承载受保护 iframe，特殊入口授权过滤器校验 |
 
@@ -328,13 +328,14 @@
 ### 当前边界
 
 - `Settings` 和 `UserProfile` 属于登录态个人设置 / 资料页面，不因视觉归入设置型布局而自动进入 Console 专属权限树。
-- 头像上传、资料保存、个人时区偏好、重置默认和密码修改保留既有接口与表单校验。
+- Settings 只开放个人时区、浏览器本地语言和密码真实能力；后置偏好保持不可写说明，不伪装已接入。
+- Profile 的头像与资料保存继续使用既有接口和表单校验；后端未提供的最近登录不显示伪空值。
 
 ### 当前状态
 
-- ✅ 已按设置型页面基座承载
-- ✅ 分组导航、设置列、个人资料摘要和影响范围说明已对齐
-- ✅ 商品、分类、贴纸和贴纸分组等深层表单的上传预览、隐藏输入、控件宽度、弱提示和弹窗 footer 动作区已统一到 `adminForm.css`
+- ✅ Settings、Profile 资料、余额、统计和时间偏好分别维护请求代际与权威快照；首次失败进入 unavailable，刷新失败保留旧证据并冻结写入
+- ✅ dirty / busy 与导航、浏览器离开保护完整，成功保存只消费权威响应并精确刷新受影响资源
+- ✅ 时区、资料和密码高频失败使用稳定 `Code / MessageKey`，页面不根据模糊消息猜测业务状态
 
 ## 3.15 Documents
 

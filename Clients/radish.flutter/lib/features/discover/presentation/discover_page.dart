@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
-import '../../../shared/widgets/phase_scope_card.dart';
+import '../../../core/layout/radish_window_class.dart';
 import '../../docs/data/docs_models.dart';
 import '../../forum/data/forum_models.dart';
 import '../data/discover_models.dart';
@@ -83,84 +83,78 @@ class _DiscoverPageState extends State<DiscoverPage> {
         final profileActionLabel = _resolveProfileActionLabel(snapshot);
 
         return ListView(
-          padding: const EdgeInsets.all(20),
           children: [
-            Text(
-              '发现',
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '浏览社区里的公开内容摘要，并继续进入论坛、文档或公开个人页阅读。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 20),
-            PhaseScopeCard(
-              title: '当前能力',
-              items: [
-                '当前环境：${widget.environment.name}',
-                '展示论坛、文档和公开商品的只读摘要',
-                '当前不支持创建、购买或桌面工作台操作',
-                widget.sessionState.isAuthenticated
-                    ? '已登录用户 ${widget.sessionState.session!.userId}'
-                    : '游客也可以阅读公开内容',
-                snapshot == null
-                    ? '正在准备发现内容'
-                    : '已加载 ${snapshot.forumPosts.length} 条帖子、${snapshot.documents.length} 篇文档、${snapshot.products.length} 个商品',
-              ],
-            ),
-            if (!state.isError) ...[
-              const SizedBox(height: 16),
-              _DiscoverHeroCard(
-                snapshot: snapshot,
-                onOpenForum: widget.onOpenForum,
-                onOpenDocs: widget.onOpenDocs,
-                onOpenProfile: profileTargetUserId == null ||
-                        widget.onOpenProfileUser == null
-                    ? null
-                    : () => widget.onOpenProfileUser!(profileTargetUserId),
-                profileActionLabel: profileActionLabel,
+            RadishContentFrame(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '发现',
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    '聚合论坛、文档和商城精选，从摘要继续进入完整阅读与商品流程。',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                  if (!state.isError) ...[
+                    const SizedBox(height: 20),
+                    _DiscoverHeroCard(
+                      snapshot: snapshot,
+                      onOpenForum: widget.onOpenForum,
+                      onOpenDocs: widget.onOpenDocs,
+                      onOpenProfile: profileTargetUserId == null ||
+                              widget.onOpenProfileUser == null
+                          ? null
+                          : () =>
+                              widget.onOpenProfileUser!(profileTargetUserId),
+                      profileActionLabel: profileActionLabel,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: FilledButton.tonalIcon(
+                      onPressed: state.isBusy ? null : _controller.refresh,
+                      icon: const Icon(Icons.refresh),
+                      label: Text(
+                        state.isRefreshing ? '正在刷新' : '刷新发现',
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (state.isLoading) const _DiscoverLoadingState(),
+                  if (state.isError)
+                    _DiscoverErrorState(
+                      message: state.errorMessage ?? '无法加载发现内容。',
+                      onRetry: _controller.refresh,
+                    ),
+                  if (state.isReady && snapshot != null) ...[
+                    if (state.isRefreshing) ...[
+                      const _DiscoverRefreshingNotice(),
+                      const SizedBox(height: 16),
+                    ],
+                    if (state.refreshIssueMessage != null &&
+                        state.refreshIssueMessage!.isNotEmpty) ...[
+                      _DiscoverRefreshIssueNotice(
+                        message: state.refreshIssueMessage!,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+                    _DiscoverContent(
+                      snapshot: snapshot,
+                      onOpenForum: widget.onOpenForum,
+                      onOpenDocs: widget.onOpenDocs,
+                      onOpenLeaderboard: widget.onOpenLeaderboard,
+                      onOpenDocument: widget.onOpenDocument,
+                      onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                      onOpenShopProduct: widget.onOpenShopProduct,
+                      onOpenShop: widget.onOpenShop,
+                    ),
+                  ],
+                ],
               ),
-            ],
-            const SizedBox(height: 16),
-            Align(
-              alignment: Alignment.centerLeft,
-              child: FilledButton.tonalIcon(
-                onPressed: state.isBusy ? null : _controller.refresh,
-                icon: const Icon(Icons.refresh),
-                label: Text(state.isRefreshing ? '正在刷新' : '刷新发现'),
-              ),
             ),
-            const SizedBox(height: 16),
-            if (state.isLoading) const _DiscoverLoadingState(),
-            if (state.isError)
-              _DiscoverErrorState(
-                message: state.errorMessage ?? '无法加载发现内容。',
-                onRetry: _controller.refresh,
-              ),
-            if (state.isReady && snapshot != null) ...[
-              if (state.isRefreshing) ...[
-                const _DiscoverRefreshingNotice(),
-                const SizedBox(height: 16),
-              ],
-              if (state.refreshIssueMessage != null &&
-                  state.refreshIssueMessage!.isNotEmpty) ...[
-                _DiscoverRefreshIssueNotice(
-                  message: state.refreshIssueMessage!,
-                ),
-                const SizedBox(height: 16),
-              ],
-              _DiscoverContent(
-                snapshot: snapshot,
-                onOpenForum: widget.onOpenForum,
-                onOpenDocs: widget.onOpenDocs,
-                onOpenLeaderboard: widget.onOpenLeaderboard,
-                onOpenDocument: widget.onOpenDocument,
-                onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
-                onOpenShopProduct: widget.onOpenShopProduct,
-                onOpenShop: widget.onOpenShop,
-              ),
-            ],
           ],
         );
       },
@@ -449,22 +443,13 @@ class _DiscoverContent extends StatelessWidget {
       );
     }
 
-    return Column(
+    final forumSection = _ForumSection(
+      posts: snapshot.forumPosts,
+      onOpenForum: onOpenForum,
+      onOpenForumDetailTarget: onOpenForumDetailTarget,
+    );
+    final secondarySections = Column(
       children: [
-        const _DiscoverContextSection(),
-        if (snapshot.hasSectionIssues) ...[
-          const SizedBox(height: 16),
-          _DiscoverSectionIssueNotice(
-            issues: snapshot.sectionIssues,
-          ),
-        ],
-        const SizedBox(height: 16),
-        _ForumSection(
-          posts: snapshot.forumPosts,
-          onOpenForum: onOpenForum,
-          onOpenForumDetailTarget: onOpenForumDetailTarget,
-        ),
-        const SizedBox(height: 16),
         _DocsSection(
           documents: snapshot.documents,
           onOpenDocs: onOpenDocs,
@@ -476,11 +461,49 @@ class _DiscoverContent extends StatelessWidget {
           onOpenShopProduct: onOpenShopProduct,
           onOpenShop: onOpenShop,
         ),
-        const SizedBox(height: 16),
-        _DiscoverBoundarySection(
-          onOpenLeaderboard: onOpenLeaderboard,
-        ),
       ],
+    );
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final windowClass = RadishWindowClassResolution.fromWidth(
+          constraints.maxWidth,
+        );
+        final key = Key('discover-content-${windowClass.name}');
+        return Column(
+          key: key,
+          children: [
+            const _DiscoverContextSection(),
+            if (snapshot.hasSectionIssues) ...[
+              const SizedBox(height: 16),
+              _DiscoverSectionIssueNotice(issues: snapshot.sectionIssues),
+            ],
+            const SizedBox(height: 16),
+            if (windowClass == RadishWindowClass.compact) ...[
+              forumSection,
+              const SizedBox(height: 16),
+              secondarySections,
+            ] else
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: windowClass == RadishWindowClass.expanded ? 3 : 1,
+                    child: forumSection,
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    flex: windowClass == RadishWindowClass.expanded ? 2 : 1,
+                    child: secondarySections,
+                  ),
+                ],
+              ),
+            const SizedBox(height: 16),
+            _DiscoverBoundarySection(
+              onOpenLeaderboard: onOpenLeaderboard,
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -498,9 +521,9 @@ class _DiscoverContextSection extends StatelessWidget {
         _SummaryTile(
           icon: Icons.explore_outlined,
           title: '公开内容分发',
-          subtitle: '当前只做摘要预览和原生阅读跳转，不承载购买、发帖、完整评论、点赞、投票或编辑治理。',
+          subtitle: '保留内容来源和返回路径，商品摘要可继续进入详情、购买、订单与背包入口。',
           meta: '来源：/discover',
-          chips: ['公开只读', '保留来源返回', '不含工作台操作'],
+          chips: ['公开摘要', '保留来源返回', '衔接原生功能'],
         ),
       ],
     );
@@ -669,7 +692,7 @@ class _ShopSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return _DiscoverSectionCard(
       title: '商城精选',
-      description: '这里只展示公开商品摘要，购买、订单和背包仍留在桌面工作台。',
+      description: '从公开商品摘要继续进入原生详情与购买流程，购买结果会同步到订单和背包。',
       emptyText: '当前暂无可展示的公开商品。',
       actionLabel: onOpenShop == null ? null : '查看全部商品',
       onAction: onOpenShop,
@@ -706,8 +729,8 @@ class _DiscoverBoundarySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _DiscoverSectionCard(
-      title: '只读边界',
-      description: '当前发现页聚焦公开阅读和入口跳转，经验榜只读首屏已进入原生入口，购买流程和工作台操作暂不进入原生 MVP。',
+      title: '能力边界',
+      description: '发现页负责公开内容聚合与入口分发；复杂编辑、内容治理和管理员工作台继续由 Web 承载。',
       emptyText: '',
       actionLabel: onOpenLeaderboard == null ? null : '打开榜单',
       onAction: onOpenLeaderboard,
@@ -715,7 +738,7 @@ class _DiscoverBoundarySection extends StatelessWidget {
         _SummaryTile(
           icon: Icons.emoji_events_outlined,
           title: '经验榜只读入口',
-          subtitle: '可查看公开经验榜首屏；我的排名、商品榜、购买确认、订单和账号专属操作仍留在后续批次评估。',
+          subtitle: '可查看公开经验榜首屏；我的排名与更多榜单维度按后续产品价值评估推进。',
           meta: '公开只读',
           chips: const ['榜单首屏', '不含工作台操作'],
           actionLabel: onOpenLeaderboard == null ? null : '打开榜单',

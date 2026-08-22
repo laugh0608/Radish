@@ -84,6 +84,7 @@ npm run dev
 
 - 唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`；共享 header、按钮、pill、卡片、状态槽和移动 tab 以其中 `R1-F01` 与[Web UI 共享基座设计说明](./web-ui-foundation-design.md)为准。
 - Public、Private / Author 与 Console 的 R1 / R2 均在同一活动设计源内维护；页面功能和实现边界分别以[公开 Web 统一体验设计说明](./public-web-unified-experience-design.md)、[私域与作者态 Web 工作流设计说明](./private-web-workflows-design.md)、[Console 样式与 Token 使用说明](./console-style-guide.md)和[Console 治理工作台设计端点](./console-governance-workbench-design.md)为准。
+- 上述“唯一”限定于 Web / Console 产品线；Flutter Native 使用独立 `Docs/frontend/design-sources/radish-flutter-native-ui-v1.pen`，以[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)约束原生组件、窗口等级与输入模型。
 - `web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 只读留档，不再作为当前设计修改入口。
 
 当前 `radish.client` 已落地的共享 Web shell 代码入口：
