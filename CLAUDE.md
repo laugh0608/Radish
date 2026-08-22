@@ -1,6 +1,6 @@
-# CLAUDE 指南
+# Radish 协作约定
 
-本文件为 Claude Code 提供 Radish 项目的启动级长期约束。
+本文件为 AI 协作者提供 Radish 项目的启动级长期约束。
 
 ## 定位与优先级
 
