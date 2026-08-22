@@ -40,6 +40,8 @@
 - `npm run validate:identity`：通过；运行时 Claim、协议输出、LongId 扫描无回归，身份语义后端定向测试 `35 / 35`。
 - `flutter analyze --no-pub`：通过，零问题。
 - `flutter test --no-pub`：通过，`228 / 228`。
+- `npm run check:repo-quality:candidate`：修正 Linux 路径大小写后通过；实际执行入口为 `./Scripts/check-docs.sh`。
+- `npm run check:repo-quality-contract`：通过。
 - `git diff --check origin/master...HEAD`：在清理唯一尾随空格后通过。
 - `npm run validate:baseline:host`：未执行；本批未命中宿主配置、数据库结构、种子或部署链路。
 
@@ -53,6 +55,8 @@
 
 - 初次在受限沙盒运行候选 baseline 时，前端静态服务器合约测试因沙盒禁止绑定 `127.0.0.1` 返回 `listen EPERM`。
 - 同一 `npm run validate:candidate` 随后在宿主机完整重跑并通过，因此该现象归类为受限环境边界，不是代码、contract 或默认执行面失败。
+- PR #70 首轮 `Repo Hygiene` 在 Ubuntu runner 暴露默认执行面失败：Git 中脚本路径为 `Scripts/check-docs.sh`，根 `package.json` 却使用 macOS 可兼容、Linux 无法解析的 `./scripts/check-docs.sh`，job 以 `127` 退出。
+- 已将 npm 入口和验证基线文档统一修正为真实大小写，并复跑候选仓库治理与 Repo Quality contract；该项必须以 PR 新一轮 `Repo Hygiene` 成功关闭。
 - 本地没有注入 PostgreSQL 17 测试连接，后端套件有 `41` 项 PostgreSQL 专题跳过；PR 的 `Backend Guard` 必须在远端 PostgreSQL 17 环境通过后才能合并。
 
 ## 结论

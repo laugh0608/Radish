@@ -58,7 +58,7 @@ npm run validate:candidate
   - 将 Git `core.hooksPath` 指向仓库内的 `.githooks`
   - 启用 `pre-commit` 与 `commit-msg` 本地拦截
 - `check:docs`
-  - 先校验 `AGENTS.md` 与 `CLAUDE.md` 从第 4 行开始完全一致，再通过 `./scripts/check-docs.sh` 全量扫描 `Docs/` 与根目录 `README.md / SECURITY.md / CONTRIBUTING.md / CODE_OF_CONDUCT.md / AGENTS.md / CLAUDE.md / LICENSE`，包含未跟踪的新文档
+  - 先校验 `AGENTS.md` 与 `CLAUDE.md` 从第 4 行开始完全一致，再通过 `./Scripts/check-docs.sh` 全量扫描 `Docs/` 与根目录 `README.md / SECURITY.md / CONTRIBUTING.md / CODE_OF_CONDUCT.md / AGENTS.md / CLAUDE.md / LICENSE`，包含未跟踪的新文档
   - 复用仓库卫生检查器，阻断非法 UTF-8、UTF-8 BOM、`U+FFFD`、常见乱码特征、错误换行和缺失末尾换行；该专用入口不输出篇幅治理提醒
   - 同时检查 Markdown 中指向仓库文件或目录的本地相对链接；外部 URL、页内 anchor、正式站内绝对路由和 fenced code 示例不按本地文件误判
 - `check:repo-hygiene`

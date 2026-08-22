@@ -9,7 +9,7 @@
     "Frontend/radish.ui"
   ],
   "scripts": {
-    "check:docs": "./scripts/check-docs.sh",
+    "check:docs": "./Scripts/check-docs.sh",
     "check:markdown-links:self-test": "node --test Scripts/check-markdown-links.test.mjs",
     "check:changed-files:self-test": "node --test Scripts/changed-files.test.mjs",
     "check:repo-hygiene": "git ls-files -z | node Scripts/check-repo-hygiene.mjs --stdin-z",
