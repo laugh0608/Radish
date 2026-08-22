@@ -29,6 +29,13 @@ for document_path in "${community_documents[@]}"; do
   fi
 done
 
+echo "[check-docs] 检查 Agent 根入口正文同步。"
+if ! cmp -s <(tail -n +4 AGENTS.md) <(tail -n +4 CLAUDE.md); then
+  echo "[check-docs] AGENTS.md 与 CLAUDE.md 从第 4 行开始必须完全一致。" >&2
+  diff -u <(tail -n +4 AGENTS.md) <(tail -n +4 CLAUDE.md) >&2 || true
+  exit 1
+fi
+
 echo "[check-docs] 检查 Docs/ 与根目录治理文档的 UTF-8、BOM、疑似乱码、换行和文本卫生。"
 {
   find Docs -type f -print0
