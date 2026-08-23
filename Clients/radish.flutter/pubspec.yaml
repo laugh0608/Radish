@@ -1,7 +1,7 @@
 name: radish_flutter
 description: Radish Flutter Native client.
 publish_to: none
-version: 26.8.1+1
+version: 26.8.2+1
 
 environment:
   sdk: ">=3.6.0 <4.0.0"
