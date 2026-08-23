@@ -67145,7 +67145,8 @@
                                   "width": "fill_container",
                                   "content": "服务端偏好",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -67178,7 +67179,8 @@
                                   "width": "fill_container",
                                   "content": "提醒范围",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -67467,7 +67469,8 @@
                                   "width": "fill_container",
                                   "content": "经验等级",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -67500,7 +67503,8 @@
                                   "width": "fill_container",
                                   "content": "胡萝卜",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -67533,7 +67537,8 @@
                                   "width": "fill_container",
                                   "content": "宠物状态",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -67822,7 +67827,8 @@
                                   "width": "fill_container",
                                   "content": "我的关注",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -67855,7 +67861,8 @@
                                   "width": "fill_container",
                                   "content": "我的粉丝",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -67888,7 +67895,8 @@
                                   "width": "fill_container",
                                   "content": "关系版本",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -68187,7 +68195,8 @@
                                   "width": "fill_container",
                                   "content": "清洁度",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -68220,7 +68229,8 @@
                                   "width": "fill_container",
                                   "content": "上次照护",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -68253,7 +68263,8 @@
                                   "width": "fill_container",
                                   "content": "权威状态",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -68542,7 +68553,8 @@
                                   "width": "fill_container",
                                   "content": "进行中订单",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -68575,7 +68587,8 @@
                                   "width": "fill_container",
                                   "content": "背包权益",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -68608,7 +68621,8 @@
                                   "width": "fill_container",
                                   "content": "读取状态",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -68897,7 +68911,8 @@
                                   "width": "fill_container",
                                   "content": "本地草稿",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -68930,7 +68945,8 @@
                                   "width": "fill_container",
                                   "content": "未读活动",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -68963,7 +68979,8 @@
                                   "width": "fill_container",
                                   "content": "权威摘要",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -69285,7 +69302,8 @@
                           "width": "fill_container",
                           "content": "需要确认一条内容处理结果；进入后保留原通知定位。",
                           "fontFamily": "$font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -69375,7 +69393,8 @@
                                   "fill": "$text-muted",
                                   "content": "未读",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -69411,7 +69430,8 @@
                                   "fill": "$text-muted",
                                   "content": "需处理",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -69447,7 +69467,8 @@
                                   "fill": "$text-muted",
                                   "content": "偏好",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -69695,7 +69716,8 @@
                           "width": "fill_container",
                           "content": "昨天 21:40 保存，回到原帖子继续完成回复。",
                           "fontFamily": "$font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -69785,7 +69807,8 @@
                                   "fill": "$text-muted",
                                   "content": "等级",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -69821,7 +69844,8 @@
                                   "fill": "$text-muted",
                                   "content": "资产",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -69857,7 +69881,8 @@
                                   "fill": "$text-muted",
                                   "content": "新反馈",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -70105,7 +70130,8 @@
                           "width": "fill_container",
                           "content": "青简关注了你的新文档；公开主页从当前来源继续打开。",
                           "fontFamily": "$font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -70195,7 +70221,8 @@
                                   "fill": "$text-muted",
                                   "content": "关注",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -70231,7 +70258,8 @@
                                   "fill": "$text-muted",
                                   "content": "粉丝",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -70267,7 +70295,8 @@
                                   "fill": "$text-muted",
                                   "content": "版本",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -70525,7 +70554,8 @@
                           "width": "fill_container",
                           "content": "当前清洁度偏低；照护动作按服务端冷却和幂等结果执行。",
                           "fontFamily": "$font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -70615,7 +70645,8 @@
                                   "fill": "$text-muted",
                                   "content": "清洁",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -70651,7 +70682,8 @@
                                   "fill": "$text-muted",
                                   "content": "饱腹",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -70687,7 +70719,8 @@
                                   "fill": "$text-muted",
                                   "content": "冷却",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -70935,7 +70968,8 @@
                           "width": "fill_container",
                           "content": "一笔售后申请等待补充信息；完成后返回订单时间线。",
                           "fontFamily": "$font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -71025,7 +71059,8 @@
                                   "fill": "$text-muted",
                                   "content": "进行中",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -71061,7 +71096,8 @@
                                   "fill": "$text-muted",
                                   "content": "权益",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -71097,7 +71133,8 @@
                                   "fill": "$text-muted",
                                   "content": "读取",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -71345,7 +71382,8 @@
                           "width": "fill_container",
                           "content": "通知摘要读取失败，已有队列仍保留；进入通知后可重试。",
                           "fontFamily": "$font-body",
-                          "fontSize": 12
+                          "fontSize": 12,
+                          "fontWeight": "normal"
                         },
                         {
                           "type": "frame",
@@ -71435,7 +71473,8 @@
                                   "fill": "$text-muted",
                                   "content": "草稿",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -71471,7 +71510,8 @@
                                   "fill": "$text-muted",
                                   "content": "未读",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             },
@@ -71507,7 +71547,8 @@
                                   "fill": "$text-muted",
                                   "content": "同步",
                                   "fontFamily": "$font-body",
-                                  "fontSize": 10
+                                  "fontSize": 10,
+                                  "fontWeight": "normal"
                                 }
                               ]
                             }
@@ -71833,7 +71874,8 @@
                       "width": "fill_container",
                       "content": "页面壳层和任务入口保留；依赖权威数据的数字统一显示未知。",
                       "fontFamily": "$font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -72058,7 +72100,8 @@
                       "width": "fill_container",
                       "content": "失败不是空态；用户仍能辨认旧内容及其时间，但新动作受限。",
                       "fontFamily": "$font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -72283,7 +72326,8 @@
                       "width": "fill_container",
                       "content": "共享页头导航、目标跳转和手动刷新都要求明确裁决。",
                       "fontFamily": "$font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -72518,7 +72562,8 @@
                       "width": "fill_container",
                       "content": "只有照护日志或次数 / 冷却证明动作已推进，才结束待裁决键。",
                       "fontFamily": "$font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -72743,7 +72788,8 @@
                       "width": "fill_container",
                       "content": "code、status、traceId 与 target 可复制；不把原始异常直接暴露。",
                       "fontFamily": "$font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -72968,7 +73014,8 @@
                       "width": "fill_container",
                       "content": "公开资料失败时显示局部错误；资产和最近复访仍按各自状态呈现。",
                       "fontFamily": "$font-body",
-                      "fontSize": 12
+                      "fontSize": 12,
+                      "fontWeight": "normal"
                     },
                     {
                       "type": "frame",
@@ -73184,7 +73231,8 @@
                       "width": "fill_container",
                       "content": "按权威范围与草稿阶段管理文档；筛选、角色和分页均来自服务端。",
                       "fontFamily": "$font-body",
-                      "fontSize": 13
+                      "fontSize": 13,
+                      "fontWeight": "normal"
                     }
                   ]
                 },
@@ -73547,7 +73595,8 @@
                               "width": "fill_container",
                               "content": "已发布 · 草稿 v4",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -73654,7 +73703,8 @@
                               "width": "fill_container",
                               "content": "已发布 · 草稿 v2",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -73761,7 +73811,8 @@
                               "width": "fill_container",
                               "content": "草稿 v1",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -73868,7 +73919,8 @@
                               "width": "fill_container",
                               "content": "已发布 · 无草稿",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -73975,7 +74027,8 @@
                               "width": "fill_container",
                               "content": "待审核 · 草稿 v3",
                               "fontFamily": "$font-body",
-                              "fontSize": 11
+                              "fontSize": 11,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -74228,7 +74281,8 @@
                           "width": "fill_container",
                           "content": "普通 Author 如何创建、协作、提交与复访正式版本。",
                           "fontFamily": "$font-body",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -74393,7 +74447,8 @@
                           "width": "fill_container",
                           "content": "补齐协作者退出后的权限边界，并更新附件读取说明。",
                           "fontFamily": "$font-body",
-                          "fontSize": 13
+                          "fontSize": 13,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -78308,7 +78363,8 @@
                           "width": "fill_container",
                           "content": "12 分钟前",
                           "fontFamily": "$font-body",
-                          "fontSize": 10
+                          "fontSize": 10,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -78408,7 +78464,8 @@
                           "width": "fill_container",
                           "content": "昨天",
                           "fontFamily": "$font-body",
-                          "fontSize": 10
+                          "fontSize": 10,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -78508,7 +78565,8 @@
                           "width": "fill_container",
                           "content": "8 月 8 日",
                           "fontFamily": "$font-body",
-                          "fontSize": 10
+                          "fontSize": 10,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -78608,7 +78666,8 @@
                           "width": "fill_container",
                           "content": "8 月 5 日",
                           "fontFamily": "$font-body",
-                          "fontSize": 10
+                          "fontSize": 10,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -80999,7 +81058,8 @@
                   "width": "fill_container",
                   "content": "列表、Revision 与共享 Composer 只补必须辨识的失败、陈旧、账号和锁定反馈。",
                   "fontFamily": "$font-body",
-                  "fontSize": 12
+                  "fontSize": 12,
+                  "fontWeight": "normal"
                 }
               ]
             },
@@ -81121,7 +81181,8 @@
                               "width": "fill_container",
                               "content": "尚无权威快照，不伪装空列表。",
                               "fontFamily": "$font-body",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -81365,7 +81426,8 @@
                               "width": "fill_container",
                               "content": "首次请求失败，没有可保留页面。",
                               "fontFamily": "$font-body",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -81439,7 +81501,8 @@
                           "width": "fill_container",
                           "content": "保留筛选条件；重试仍使用当前权威查询。",
                           "fontFamily": "$font-body",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },
@@ -81542,7 +81605,8 @@
                               "width": "fill_container",
                               "content": "同一查询刷新失败，保留已有页面。",
                               "fontFamily": "$font-body",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -81842,7 +81906,8 @@
                               "width": "fill_container",
                               "content": "选中 v3 已读取；仅修改前 v2 对比基准失败。",
                               "fontFamily": "$font-body",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -82007,7 +82072,8 @@
                               "width": "fill_container",
                               "content": "保留 v3 快照，差异区局部失败。",
                               "fontFamily": "$font-body",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         }
@@ -82112,7 +82178,8 @@
                               "width": "fill_container",
                               "content": "同一生命周期锁定关闭、取消与重复提交。",
                               "fontFamily": "$font-body",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -82387,7 +82454,8 @@
                               "width": "fill_container",
                               "content": "保留当前账号草稿，不重复 toast 或泄露原始错误。",
                               "fontFamily": "$font-body",
-                              "fontSize": 10
+                              "fontSize": 10,
+                              "fontWeight": "normal"
                             }
                           ]
                         },
@@ -82467,7 +82535,8 @@
                           "width": "fill_container",
                           "content": "请检查网络后重试；当前内容已保存在萝卜的本地草稿中。",
                           "fontFamily": "$font-body",
-                          "fontSize": 11
+                          "fontSize": 11,
+                          "fontWeight": "normal"
                         }
                       ]
                     },

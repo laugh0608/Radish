@@ -1,8 +1,8 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P3` 独立 Flutter 代表稿已完成，等待视觉确认后进入 `P4`
+> 状态：`P3` 独立 Flutter 代表稿已确认；当前进入 `P4-A readiness`
 >
-> 最后更新：2026-08-19（Asia/Shanghai）
+> 最后更新：2026-08-23（Asia/Shanghai）
 >
 > 关联文档：
 >
@@ -50,7 +50,7 @@ Flutter 桌面端是正式长期目标，但不是立即把移动页面拉宽或
 
 - 不解析或运行时加载 Web CSS / `--rd-*` 文件；Flutter 使用显式 Dart 语义映射。
 - 不建立第二套主题权益状态机；服务端权益和激活状态仍是权威来源。
-- 不把 Web 页面、DOM 结构或像素值机械复制到 Flutter。
+- 不把 Web DOM、CSS 和运行时实现机械复制到 Flutter；代表设计可以用正式 Web 可编辑页面作为信息架构母版，但必须重新归一到 Flutter 的安全区、共享壳层、语义 token 与平台交互边界。
 - 不把所有 Web 路由都搬到 Flutter；Console、SEO、完整 Author 与低频治理默认留在 Web。
 - 不恢复 Tauri，不扩展 WebOS，不引入 Flutter Web。
 - 不在 UI 重构中改后端接口、权限、业务状态机、提交幂等或来源返回契约。
@@ -107,11 +107,11 @@ lib/app/app.dart
 
 | 窗口等级 | 典型设备 | 导航与布局 | 交互重点 |
 | --- | --- | --- | --- |
-| compact | 手机、窄窗口 | 底部主导航、单任务全屏、Bottom Sheet | 触控目标、安全区、系统返回、键盘避让 |
-| medium | 平板、折叠屏、小桌面窗口 | Navigation Rail、列表—详情双栏 | 横竖屏切换、鼠标悬停、焦点顺序、状态保留 |
-| expanded | 桌面、大平板、宽窗口 | 侧栏 + 双栏 / 三栏，内容阅读宽度受控 | 键盘快捷键、右键 / hover、滚轮、窗口缩放和多任务效率 |
+| compact | 手机、窄窗口 | Web 家族品牌栏、安全区内悬浮胶囊底栏、单任务全屏、Bottom Sheet | 触控目标、安全区、系统返回、键盘避让 |
+| medium | 平板、折叠屏、小桌面窗口 | Web 家族顶部栏、按需折叠页内栏、列表—详情双栏 | 横竖屏切换、鼠标悬停、焦点顺序、状态保留 |
+| expanded | 桌面、大平板、宽窗口 | Web 家族顶部全局栏、页面级双栏 / 三栏、受控阅读宽度 | 键盘快捷键、右键 / hover、滚轮、窗口缩放和多任务效率 |
 
-同一页面族共享任务和状态，但可以有不同组合：Forum 在 compact 是列表与详情分屏导航，在 expanded 可形成列表—正文—上下文三栏；Docs 在 compact 是目录 / 搜索 / 正文单任务切换，在 expanded 可并置目录与阅读面；Shop 与 Profile 不因宽屏自动变成 WebOS 多窗口工作台。
+同一页面族共享任务和状态，但可以有不同组合：Forum 在 compact 是列表与详情分屏导航，在 expanded 可形成本页目录—正文—互动上下文三栏；Docs 在 compact 是目录 / 搜索 / 正文单任务切换，在 expanded 可并置目录与阅读面；Shop 与 Profile 不因宽屏自动变成 WebOS 多窗口工作台。Flutter 不复制 Web DOM，但品牌栏、一级导航、主题身份和信息层级必须与正式 Web 同属一个视觉家族。
 
 ## 6. 高价值承接路径
 
@@ -149,7 +149,7 @@ lib/app/app.dart
 
 ## 7. 代表类型与设计分级
 
-Flutter 不复刻 Web 已有画板。进入页面代码前，按移动原生与桌面原生的结构差异重新分级：
+Flutter 不把 Web 画板未经适配地直接当成原生实现。进入页面代码前，按移动原生与桌面原生的结构差异重新分级；R1 可复用正式 Web 可编辑母版保留信息完整性，但必须在 Flutter 独立设计源完成壳层、token、字体与交互边界适配：
 
 | 等级 | 代表类型 | 设计要求 |
 | --- | --- | --- |
@@ -273,16 +273,16 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 退出条件已满足：只保留一套全局主题 / 自适应基础，包版本、许可证、权益 owner、持久化、回滚面和验证结论见 [P2 实现记录](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)。
 
-### P3：Flutter 代表设计（代表稿已完成，待确认）
+### P3：Flutter 代表设计（已确认，2026-08-23）
 
 - 新建并维护独立活动设计源 `Docs/frontend/design-sources/radish-flutter-native-ui-v1.pen`，不把 Flutter 画板追加进 Web / Console 活动源。
 - 按 R1 / R2 维护 Flutter 专用 compact / expanded 代表设计；medium 只补真实结构差异。
-- 吸收 Web 家族 UI 的语义和气质，不复制 Web 画板。
+- 以正式 Web 的品牌栏、导航语法、主题和信息层级为视觉基准，不复制 Web DOM；再按 Flutter 安全区、返回、触控、键鼠、焦点和窗口等级做原生适配。
 - 确认 typography、四主题、圆角、阴影、状态、导航、宽屏布局和 motion。
 
-当前已在独立设计源完成视觉基座、Discover / Forum Detail compact 与 expanded、主题选择器、medium rail 差分和权益关键状态，R3 继承路径也已形成，详见 [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)。
+当前已在独立设计源完成视觉基座、Discover / Forum Detail compact 与 expanded、主题选择器、medium 页内栏差分和权益关键状态，R3 继承路径也已形成。2026-08-23 三轮审阅后，Forum Expanded 的主题漏配已修复；第二轮按正式 Web 真实几何建立 Expanded Header、Mobile Header 与 Mobile Tab Bar 三个复用组件；第三轮进一步把 Web Discover / Forum Detail 的 PC / mobile 正式页面作为可编辑母版复制到 Flutter 源，保留完整信息架构与长内容，再映射回 Flutter 安全区、共享壳层、`theme` 轴、语义 token 和 Noto 字体层级。六张正式板最终按 Foundation、Discover Mobile / PC、Forum Mobile / PC、Theme / Medium 的顺序横向排布，便于连续审阅；Discover Expanded 继续采用 `904px` 主讨论区加社区洞察区，Forum Expanded 保留 `220 / 820 / 250` 社区导航—连续正文—线程索引并完整展开回帖，详见 [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)。
 
-退出条件尚待项目所有者视觉确认：确认后代码实现不再临场决定视觉系统，并进入 P4。
+退出条件已满足：项目所有者已确认第三轮横向审阅稿，后续代码实现不再临场决定视觉系统；当前先进入 `P4-A readiness`，本次确认不自动授权字体资产、依赖或 lockfile 变更。
 
 ### P4：主题与共享组件实现
 
@@ -316,7 +316,7 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 - `SharedPreferencesAsync` 内置偏好与 Shop 权益 gateway；
 - `<600 / 600–1023 / >=1024` 三档 Shell 与 `Ctrl/Cmd + 1..5`；
 - compact Bottom Sheet 与 medium / expanded Dialog 主题入口；
-- Discover 单列 / 双列结构和 Forum Detail 宽屏阅读导航 rail；
+- Discover 单列 / 双列结构和 Forum Detail 宽屏阅读 rail；现有全局 `NavigationBar` / `NavigationRail` 外观仍是 P4 待按修订稿收口的实现差分；
 - 评论定位 reduced-motion 和通知刷新 stale 保留。
 
 已验证：
@@ -326,6 +326,6 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 3. `390 / 800 / 1200` 结构、键盘切换、四主题、权益失效 / stale / 账号隔离与代表页回归通过；
 4. Android debug 构建因本机 Gradle daemon 无任务输出而中止，未记为通过；本批未启动服务或执行真实 smoke。
 
-## 13. 明日动作（2026-08-20）
+## 13. 当前动作（2026-08-23）
 
-第一顺位是 `P3` 视觉审核：复核独立 `radish-flutter-native-ui-v1.pen` 中的 typography 方向、组件密度、四主题视觉及 Discover / Forum Detail compact / expanded 代表稿。确认后进入 `P4-A` readiness，先反查现有 Dart owner 并说明本地字体资产、许可证、包体积、回退链、依赖与 lockfile 影响；具体资产或依赖变更另行取得授权。确认前不批量改造其他页面族，不生成新平台工程。
+第一顺位进入 `P4-A readiness`：反查现有 Dart Theme Foundation、共享组件、Shell、Discover 与 Forum Detail owner，形成 P3 设计到代码的精确差分；同时单独说明 `Noto Sans SC + Noto Serif SC` 本地资产来源、许可证、子集与包体积、平台回退链、`pubspec` / lockfile 影响和实施拆批。readiness 阶段不安装包、不写入字体资产；形成方案后再就具体依赖和首个 P4 实现批取得授权，不批量改造其他页面族，不生成新平台工程。
