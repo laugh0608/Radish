@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P5-B2 Identity / Revisit` 已完成；下一步等待 `P5-C1 Docs Reader` 方案确认
+> 状态：`P5-C1 Docs Reader readiness` 已完成；下一步等待实施确认
 >
 > 最后更新：2026-08-23（Asia/Shanghai）
 >
@@ -23,6 +23,7 @@
 > - [P5-B1 Forum Feed / Compose 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)
 > - [P5-B2 Identity / Revisit readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)
 > - [P5-B2 Identity / Revisit 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)
+> - [P5-C1 Docs Reader readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23)
 
 ## 1. 结论摘要
 
@@ -320,7 +321,8 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - `P5-B1`（已完成，2026-08-23）：Forum Feed / Compose 页面 / 测试 owner 已拆分，compact 全高 composer、medium bounded composer 与 expanded `904px` 连续主轴 + 社区洞察已落地；分页旧快照、结构化错误、分类、草稿、登录回流、`forum-post:` 幂等与 handoff 保持，详见 [P5-B1 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)。
 - `P5-B2 readiness`（已完成，2026-08-23）：Identity / Revisit 固定复用既有 Profile API 与 Shell recent targets；公开身份、统计、帖子、评论和我的轻回应拆为独立权威快照，页面 / 测试按真实职责拆分，三档结构采用连续信息流、受控单主轴和 expanded `904px` 主轴 + 身份上下文，资料编辑只使用 `GetMyProfile + UpdateMyProfile` 并补 dirty / busy / 离开保护，详见 [P5-B2 readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)。
 - `P5-B2 Identity / Revisit`（已完成，2026-08-23）：五类 Profile 资源已落地独立快照 / 代际 / issue、局部 unavailable / stale、三列表去重与跨 target 隔离；页面与测试拆分后均低于文件硬上限，三档结构与权威编辑保护完成。Profile `52 / 52`、Shell Smoke `51 / 51`、全量 `274 / 274` 通过，详见 [P5-B2 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)。
-- `P5-C1–C3`：Docs Reader、Commerce Browse / Transaction、Commerce Private；购买写入只放 C2，C1 / C3 保持只读。
+- `P5-C1 Docs Reader readiness`（已完成，2026-08-23）：冻结复用 `Wiki/GetList + Wiki/GetBySlug`、目录 query target 与正文 reader 独立权威快照、同 slug 刷新旧正文 stale、inline / handoff 共用 reader controller / surface、compact 单任务与 medium / expanded 目录—正文结构；改造前 Docs `16 / 16`，详见 [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23)。
+- `P5-C1–C3`：P5-C1 等待 Docs Reader 实施确认；其后为 Commerce Browse / Transaction、Commerce Private。购买写入只放 C2，C1 / C3 保持只读。
 - `P5-D1–D3`：Wallet / Experience、Leaderboard、Browse History 等派生只读面。
 - `P5-E`：四主题、三档窗口、关键状态、全量 analyze / test 和文件边界成组静态门禁。
 
@@ -356,4 +358,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-23）
 
-`P5-B2 Identity / Revisit` 已完成：Profile 独立权威快照、owner 拆分、三档结构、target mapping 与编辑 dirty / busy / 离开保护均已落地。第一顺位等待 `P5-C1 Docs Reader` 方案确认；不自动包含 Commerce / 派生只读面、新平台工程、服务启动或真实 Gateway / 设备 Smoke。
+`P5-C1 Docs Reader readiness` 已完成：既有 API、共用 reader owner、刷新 stale、三档目录—正文、target mapping、owner / 测试拆分与停止线均已冻结。第一顺位等待 P5-C1 实施确认；不自动包含 Commerce / 派生只读面、新平台工程、服务启动或真实 Gateway / 设备 Smoke。
