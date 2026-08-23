@@ -85,7 +85,7 @@ void registerSmokeHandoffCases() {
     expect(find.text('论坛详情回流'), findsOneWidget);
     expect(
       find.text(
-        '浏览公开帖子，支持最新和热门排序。已登录用户可发布纯文本帖子，作者可在详情页编辑帖子正文和根评论。',
+        '按最新或热门连续浏览公开帖子，完整讨论继续进入原生详情。',
       ),
       findsOneWidget,
     );

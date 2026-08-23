@@ -5,13 +5,23 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../core/config/app_environment.dart';
+import '../../../core/layout/radish_window_class.dart';
 import '../../../core/network/radish_api_client.dart';
-import '../../../shared/widgets/phase_scope_card.dart';
+import '../../../core/theme/radish_motion.dart';
+import '../../../core/theme/radish_theme.dart';
+import '../../../shared/icons/radish_icons.dart';
+import '../../../shared/widgets/radish_section_surface.dart';
+import '../../../shared/widgets/radish_state_chip.dart';
+import '../../../shared/widgets/radish_state_slot.dart';
 import '../data/forum_models.dart';
 import '../data/forum_repository.dart';
 import '../data/forum_submission_key.dart';
 import 'forum_detail_page.dart';
 import 'forum_feed_controller.dart';
+
+part 'forum_feed_shared_widgets.dart';
+part 'forum_feed_surface.dart';
+part 'forum_post_composer.dart';
 
 class ForumPage extends StatefulWidget {
   const ForumPage({
@@ -62,6 +72,9 @@ class _ForumPageState extends State<ForumPage> {
   bool _isSubmittingPost = false;
   bool _isWaitingForPublishingSignIn = false;
   bool _wasAuthenticated = false;
+  bool _isComposerOpen = false;
+  BuildContext? _composerRouteContext;
+  final ValueNotifier<int> _composerRevision = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -122,6 +135,7 @@ class _ForumPageState extends State<ForumPage> {
     _postTitleController.dispose();
     _postContentController.dispose();
     _postTagsController.dispose();
+    _composerRevision.dispose();
     super.dispose();
   }
 
@@ -133,37 +147,109 @@ class _ForumPageState extends State<ForumPage> {
         final state = _controller.state;
 
         return ListView(
-          padding: const EdgeInsets.all(20),
+          key: const Key('forum-scroll'),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
           children: [
-            Text(
-              '论坛',
-              style: Theme.of(context).textTheme.headlineSmall,
+            RadishContentFrame(
+              maxWidth: 1328,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final windowClass = RadishWindowClassResolution.fromWidth(
+                    constraints.maxWidth,
+                  );
+                  final showExpandedRail =
+                      windowClass == RadishWindowClass.expanded &&
+                          constraints.maxWidth >= 1240;
+                  final flow = _ForumFlowSurface(
+                    environment: widget.environment,
+                    repository: widget.repository,
+                    sessionController: widget.sessionController,
+                    authController: widget.authController,
+                    onOpenProfileUser: widget.onOpenProfileUser,
+                    onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
+                    onRequestSignInForDetail: widget.onRequestSignInForDetail,
+                    onConsumeActiveDetailLoginTarget:
+                        widget.onConsumeActiveDetailLoginTarget,
+                    state: state,
+                    onSortChanged: _controller.changeSort,
+                    onRefresh: _controller.refresh,
+                    onOpenComposer: _openComposerTask,
+                    onPreviousPage: state.hasPreviousPage
+                        ? () => _controller.goToPage(state.pageIndex - 1)
+                        : null,
+                    onNextPage: state.hasNextPage
+                        ? () => _controller.goToPage(state.pageIndex + 1)
+                        : null,
+                  );
+
+                  if (!showExpandedRail) {
+                    return KeyedSubtree(
+                      key: Key('forum-layout-${windowClass.name}'),
+                      child: flow,
+                    );
+                  }
+
+                  return Row(
+                    key: const Key('forum-layout-expanded'),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        key: const Key('forum-main-axis-904'),
+                        width: 904,
+                        child: flow,
+                      ),
+                      const SizedBox(width: RadishSpacing.xLarge),
+                      Expanded(
+                        child: _ForumCommunityInsightRail(
+                          environmentName: widget.environment.name,
+                          state: state,
+                          onOpenComposer: _openComposerTask,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              '浏览公开帖子，支持最新和热门排序。已登录用户可发布纯文本帖子，作者可在详情页编辑帖子正文和根评论。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 20),
-            PhaseScopeCard(
-              title: '当前能力',
-              items: [
-                '当前环境：${widget.environment.name}',
-                '支持公开帖子列表、帖子详情、评论阅读和登录态纯文本发帖',
-                '当前不支持富文本、附件、投票、抽奖、草稿箱、点赞、分类 / 标签编辑或子评论编辑',
-                state.page == null
-                    ? '正在准备论坛内容'
-                    : '已加载 ${state.page!.posts.length} 条帖子，共 ${state.page!.dataCount} 条',
-              ],
-            ),
-            const SizedBox(height: 16),
-            _ForumFeedControls(
-              state: state,
-              onSortChanged: _controller.changeSort,
-              onRefresh: _controller.refresh,
-            ),
-            const SizedBox(height: 16),
-            _ForumPostComposerCard(
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _openComposerTask() async {
+    if (_isComposerOpen || !mounted) {
+      return;
+    }
+
+    _isComposerOpen = true;
+    final listenables = <Listenable>[_composerRevision];
+    if (widget.sessionController != null) {
+      listenables.add(widget.sessionController!);
+    }
+    if (widget.authController != null) {
+      listenables.add(widget.authController!);
+    }
+
+    await showGeneralDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Theme.of(context).colorScheme.scrim.withAlpha(138),
+      transitionDuration: RadishMotion.standardOf(context),
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+      pageBuilder: (routeContext, animation, secondaryAnimation) {
+        _composerRouteContext = routeContext;
+        return AnimatedBuilder(
+          animation: Listenable.merge(listenables),
+          builder: (context, child) {
+            final windowClass = RadishWindowClassResolution.fromWidth(
+              MediaQuery.sizeOf(context).width,
+            );
+            return _ForumPostComposerTask(
+              windowClass: windowClass,
               titleController: _postTitleController,
               contentController: _postContentController,
               tagsController: _postTagsController,
@@ -177,59 +263,42 @@ class _ForumPageState extends State<ForumPage> {
               isAuthenticated:
                   widget.sessionController?.state.isAuthenticated ?? false,
               authBusy: widget.authController?.state.isBusy ?? false,
+              onClose: _dismissComposerTask,
               onCategoryChanged: (value) {
-                setState(() {
+                _mutateComposerState(() {
                   _selectedCategoryId = value;
                   _postSubmitIssueMessage = null;
                 });
               },
-              onRetryCategories: () {
-                unawaited(_loadCategories());
-              },
+              onRetryCategories: () => unawaited(_loadCategories()),
               onRequestSignIn: _requestSignInForPublishing,
               onSubmit: _submitPost,
-            ),
-            const SizedBox(height: 16),
-            if (state.isRefreshing) ...[
-              const _ForumRefreshingNotice(),
-              const SizedBox(height: 16),
-            ],
-            if (state.refreshIssueMessage != null &&
-                state.refreshIssueMessage!.isNotEmpty) ...[
-              _ForumRefreshIssueNotice(
-                message: state.refreshIssueMessage!,
-              ),
-              const SizedBox(height: 16),
-            ],
-            if (state.isLoading) const _ForumLoadingState(),
-            if (state.isError)
-              _ForumErrorState(
-                message: state.errorMessage ?? '无法加载论坛内容。',
-                onRetry: _controller.refresh,
-              ),
-            if (state.isReady && state.page != null)
-              _ForumFeedContent(
-                environment: widget.environment,
-                repository: widget.repository,
-                sessionController: widget.sessionController,
-                authController: widget.authController,
-                onOpenProfileUser: widget.onOpenProfileUser,
-                onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
-                onRequestSignInForDetail: widget.onRequestSignInForDetail,
-                onConsumeActiveDetailLoginTarget:
-                    widget.onConsumeActiveDetailLoginTarget,
-                state: state,
-                onPreviousPage: state.hasPreviousPage
-                    ? () => _controller.goToPage(state.pageIndex - 1)
-                    : null,
-                onNextPage: state.hasNextPage
-                    ? () => _controller.goToPage(state.pageIndex + 1)
-                    : null,
-              ),
-          ],
+            );
+          },
         );
       },
     );
+
+    _composerRouteContext = null;
+    _isComposerOpen = false;
+  }
+
+  void _dismissComposerTask() {
+    final routeContext = _composerRouteContext;
+    if (_isSubmittingPost || routeContext == null || !routeContext.mounted) {
+      return;
+    }
+    if (ModalRoute.of(routeContext)?.isCurrent == true) {
+      Navigator.of(routeContext).pop();
+    }
+  }
+
+  void _mutateComposerState(VoidCallback mutation) {
+    if (!mounted) {
+      return;
+    }
+    setState(mutation);
+    _composerRevision.value += 1;
   }
 
   void _handleSessionStateChanged() {
@@ -247,7 +316,7 @@ class _ForumPageState extends State<ForumPage> {
       return;
     }
 
-    setState(() {
+    _mutateComposerState(() {
       _isWaitingForPublishingSignIn = false;
       _postSubmitIssueMessage = null;
       _postSubmitSuccessMessage = '已回到发帖表单，可以继续发布。';
@@ -294,7 +363,7 @@ class _ForumPageState extends State<ForumPage> {
   }
 
   Future<void> _loadCategories() async {
-    setState(() {
+    _mutateComposerState(() {
       _isLoadingCategories = true;
       _categoryLoadIssueMessage = null;
     });
@@ -305,7 +374,7 @@ class _ForumPageState extends State<ForumPage> {
         return;
       }
 
-      setState(() {
+      _mutateComposerState(() {
         _categories = categories;
         _selectedCategoryId = _resolveSelectedCategoryId(
           currentCategoryId: _selectedCategoryId,
@@ -326,7 +395,7 @@ class _ForumPageState extends State<ForumPage> {
       return;
     }
 
-    setState(() {
+    _mutateComposerState(() {
       _categories = const <ForumCategorySummary>[];
       _selectedCategoryId = null;
       _isLoadingCategories = false;
@@ -364,7 +433,7 @@ class _ForumPageState extends State<ForumPage> {
       tagNames: tagNames,
     );
     if (validationMessage != null) {
-      setState(() {
+      _mutateComposerState(() {
         _postSubmitIssueMessage = validationMessage;
         _postSubmitSuccessMessage = null;
       });
@@ -372,7 +441,7 @@ class _ForumPageState extends State<ForumPage> {
     }
 
     if (accessToken == null || accessToken.isEmpty) {
-      setState(() {
+      _mutateComposerState(() {
         _postSubmitIssueMessage = '登录后可继续提交当前帖子。';
         _postSubmitSuccessMessage = null;
       });
@@ -380,7 +449,7 @@ class _ForumPageState extends State<ForumPage> {
       return;
     }
 
-    setState(() {
+    _mutateComposerState(() {
       _isSubmittingPost = true;
       _isWaitingForPublishingSignIn = false;
       _postSubmitIssueMessage = null;
@@ -413,7 +482,7 @@ class _ForumPageState extends State<ForumPage> {
         return;
       }
 
-      setState(() {
+      _mutateComposerState(() {
         _isSubmittingPost = false;
         _postSubmitSuccessMessage = '帖子已发布，正在打开详情。';
         _postTitleController.clear();
@@ -421,8 +490,13 @@ class _ForumPageState extends State<ForumPage> {
         _postTagsController.clear();
         _postSubmissionState = null;
       });
+      _dismissComposerTask();
       unawaited(_controller.refresh());
-      _openCreatedPost(postId, title);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _openCreatedPost(postId, title);
+        }
+      });
     } on RadishApiClientException catch (error) {
       _setPostSubmitFailure(error.message);
     } on FormatException catch (error) {
@@ -435,7 +509,7 @@ class _ForumPageState extends State<ForumPage> {
       return;
     }
 
-    setState(() {
+    _mutateComposerState(() {
       _isSubmittingPost = false;
       _postSubmitIssueMessage = message;
       _postSubmitSuccessMessage = null;
@@ -466,839 +540,6 @@ class _ForumPageState extends State<ForumPage> {
           onConsumeActiveDetailLoginTarget:
               widget.onConsumeActiveDetailLoginTarget,
           onOpenProfileUser: widget.onOpenProfileUser,
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumPostComposerCard extends StatelessWidget {
-  const _ForumPostComposerCard({
-    required this.titleController,
-    required this.contentController,
-    required this.tagsController,
-    required this.categories,
-    required this.selectedCategoryId,
-    required this.isLoadingCategories,
-    required this.isSubmitting,
-    required this.categoryLoadIssueMessage,
-    required this.submitIssueMessage,
-    required this.submitSuccessMessage,
-    required this.isAuthenticated,
-    required this.authBusy,
-    required this.onCategoryChanged,
-    required this.onRetryCategories,
-    required this.onRequestSignIn,
-    required this.onSubmit,
-  });
-
-  final TextEditingController titleController;
-  final TextEditingController contentController;
-  final TextEditingController tagsController;
-  final List<ForumCategorySummary> categories;
-  final String? selectedCategoryId;
-  final bool isLoadingCategories;
-  final bool isSubmitting;
-  final String? categoryLoadIssueMessage;
-  final String? submitIssueMessage;
-  final String? submitSuccessMessage;
-  final bool isAuthenticated;
-  final bool authBusy;
-  final ValueChanged<String?> onCategoryChanged;
-  final VoidCallback onRetryCategories;
-  final Future<void> Function() onRequestSignIn;
-  final VoidCallback onSubmit;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.edit_note_outlined),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    '发布纯文本帖子',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: titleController,
-              enabled: !isSubmitting,
-              textInputAction: TextInputAction.next,
-              maxLength: 200,
-              decoration: const InputDecoration(
-                labelText: '标题',
-                hintText: '输入帖子标题',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              key: ValueKey(selectedCategoryId ?? 'forum-category-none'),
-              initialValue: selectedCategoryId,
-              items: categories
-                  .map(
-                    (category) => DropdownMenuItem<String>(
-                      value: category.id,
-                      child: Text(category.name),
-                    ),
-                  )
-                  .toList(),
-              onChanged: isLoadingCategories || isSubmitting
-                  ? null
-                  : onCategoryChanged,
-              decoration: InputDecoration(
-                labelText: '分类',
-                border: const OutlineInputBorder(),
-                suffixIcon: isLoadingCategories
-                    ? const Padding(
-                        padding: EdgeInsets.all(12),
-                        child: SizedBox.square(
-                          dimension: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        ),
-                      )
-                    : null,
-              ),
-            ),
-            if (categoryLoadIssueMessage != null) ...[
-              const SizedBox(height: 8),
-              _ForumComposerIssueNotice(
-                message: categoryLoadIssueMessage!,
-                actionLabel: '重试分类',
-                onAction: onRetryCategories,
-              ),
-            ],
-            const SizedBox(height: 12),
-            TextField(
-              controller: tagsController,
-              enabled: !isSubmitting,
-              textInputAction: TextInputAction.next,
-              decoration: const InputDecoration(
-                labelText: '标签',
-                hintText: '输入 1-5 个标签，用逗号分隔',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: contentController,
-              enabled: !isSubmitting,
-              minLines: 5,
-              maxLines: 10,
-              maxLength: 50000,
-              decoration: const InputDecoration(
-                labelText: '正文',
-                hintText: '输入纯文本正文',
-                border: OutlineInputBorder(),
-                alignLabelWithHint: true,
-              ),
-            ),
-            if (submitIssueMessage != null) ...[
-              const SizedBox(height: 8),
-              _ForumComposerIssueNotice(message: submitIssueMessage!),
-            ],
-            if (submitSuccessMessage != null) ...[
-              const SizedBox(height: 8),
-              _ForumComposerSuccessNotice(message: submitSuccessMessage!),
-            ],
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                if (!isAuthenticated)
-                  FilledButton.icon(
-                    onPressed: authBusy || isSubmitting
-                        ? null
-                        : () {
-                            unawaited(onRequestSignIn());
-                          },
-                    icon: Icon(
-                      authBusy ? Icons.hourglass_top_outlined : Icons.login,
-                    ),
-                    label: Text(authBusy ? '正在登录' : '登录后发帖'),
-                  ),
-                FilledButton.icon(
-                  onPressed:
-                      isSubmitting || isLoadingCategories ? null : onSubmit,
-                  icon: isSubmitting
-                      ? const SizedBox.square(
-                          dimension: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.send_outlined),
-                  label: Text(isSubmitting ? '正在发布' : '发布帖子'),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumFeedControls extends StatelessWidget {
-  const _ForumFeedControls({
-    required this.state,
-    required this.onSortChanged,
-    required this.onRefresh,
-  });
-
-  final ForumFeedState state;
-  final ValueChanged<ForumFeedSort> onSortChanged;
-  final VoidCallback onRefresh;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      alignment: WrapAlignment.spaceBetween,
-      runSpacing: 12,
-      spacing: 12,
-      crossAxisAlignment: WrapCrossAlignment.center,
-      children: [
-        SegmentedButton<ForumFeedSort>(
-          segments: ForumFeedSort.values
-              .map(
-                (sort) => ButtonSegment<ForumFeedSort>(
-                  value: sort,
-                  label: Text(sort.label),
-                ),
-              )
-              .toList(),
-          selected: {state.sort},
-          onSelectionChanged: (selection) {
-            onSortChanged(selection.first);
-          },
-        ),
-        FilledButton.tonalIcon(
-          onPressed: state.isBusy ? null : onRefresh,
-          icon: const Icon(Icons.refresh),
-          label: Text(state.isRefreshing ? '正在刷新' : '刷新'),
-        ),
-      ],
-    );
-  }
-}
-
-class _ForumRefreshingNotice extends StatelessWidget {
-  const _ForumRefreshingNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.secondary),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            SizedBox.square(
-              dimension: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: colorScheme.onSecondaryContainer,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text('正在刷新论坛列表，当前仍展示上次可用帖子。'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumComposerIssueNotice extends StatelessWidget {
-  const _ForumComposerIssueNotice({
-    required this.message,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.error_outline,
-              size: 20,
-              color: colorScheme.onErrorContainer,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(color: colorScheme.onErrorContainer),
-              ),
-            ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(width: 8),
-              TextButton(
-                onPressed: onAction,
-                child: Text(actionLabel!),
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumComposerSuccessNotice extends StatelessWidget {
-  const _ForumComposerSuccessNotice({
-    required this.message,
-  });
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.tertiaryContainer,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 20,
-              color: colorScheme.onTertiaryContainer,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                style: TextStyle(color: colorScheme.onTertiaryContainer),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumRefreshIssueNotice extends StatelessWidget {
-  const _ForumRefreshIssueNotice({
-    required this.message,
-  });
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.error),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: colorScheme.onErrorContainer,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '刷新论坛失败',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    message,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumLoadingState extends StatelessWidget {
-  const _ForumLoadingState();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Card(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('正在加载论坛内容...'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumErrorState extends StatelessWidget {
-  const _ForumErrorState({
-    required this.message,
-    required this.onRetry,
-  });
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '暂时无法加载论坛',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            Text(message),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('重试'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumFeedContent extends StatelessWidget {
-  const _ForumFeedContent({
-    required this.environment,
-    required this.repository,
-    required this.sessionController,
-    required this.authController,
-    required this.onOpenProfileUser,
-    required this.onOpenForumDetailTarget,
-    required this.onRequestSignInForDetail,
-    required this.onConsumeActiveDetailLoginTarget,
-    required this.state,
-    required this.onPreviousPage,
-    required this.onNextPage,
-  });
-
-  final AppEnvironment environment;
-  final ForumRepository repository;
-  final SessionController? sessionController;
-  final NativeAuthController? authController;
-  final ValueChanged<String>? onOpenProfileUser;
-  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
-  final Future<void> Function(ForumDetailHandoffTarget target)?
-      onRequestSignInForDetail;
-  final Future<void> Function()? onConsumeActiveDetailLoginTarget;
-  final ForumFeedState state;
-  final VoidCallback? onPreviousPage;
-  final VoidCallback? onNextPage;
-
-  @override
-  Widget build(BuildContext context) {
-    final page = state.page!;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(
-                '第 ${page.page} / ${page.pageCount} 页',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-            Text(
-              '共 ${page.dataCount} 条帖子',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        if (page.posts.isEmpty)
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Text('当前没有可公开阅读的帖子。'),
-            ),
-          ),
-        for (final post in page.posts) ...[
-          _ForumPostCard(
-            post: post,
-            onOpenProfileUser: onOpenProfileUser,
-            onOpen: () {
-              if (onOpenForumDetailTarget != null) {
-                onOpenForumDetailTarget!(
-                  ForumDetailHandoffTarget(
-                    postId: post.id,
-                    initialTitle: post.title,
-                  ),
-                );
-                return;
-              }
-
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (context) => ForumDetailPage(
-                    environment: environment,
-                    repository: repository,
-                    postId: post.id,
-                    initialTitle: post.title,
-                    sessionController: sessionController,
-                    authController: authController,
-                    onRequestSignIn: onRequestSignInForDetail,
-                    onConsumeActiveDetailLoginTarget:
-                        onConsumeActiveDetailLoginTarget,
-                    onOpenProfileUser: onOpenProfileUser,
-                  ),
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-        ],
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 12,
-          runSpacing: 12,
-          children: [
-            OutlinedButton.icon(
-              onPressed: onPreviousPage,
-              icon: const Icon(Icons.arrow_back),
-              label: const Text('上一页'),
-            ),
-            FilledButton.tonalIcon(
-              onPressed: onNextPage,
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('下一页'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ForumPostCard extends StatelessWidget {
-  const _ForumPostCard({
-    required this.post,
-    required this.onOpenProfileUser,
-    required this.onOpen,
-  });
-
-  final ForumPostSummary post;
-  final ValueChanged<String>? onOpenProfileUser;
-  final VoidCallback onOpen;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onOpen,
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (post.badges.isNotEmpty) ...[
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: post.badges
-                      .map(
-                        (badge) => Chip(
-                          label: Text(badge),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      )
-                      .toList(),
-                ),
-                const SizedBox(height: 12),
-              ],
-              Text(
-                post.title,
-                style: textTheme.titleLarge,
-              ),
-              if (post.summary != null) ...[
-                const SizedBox(height: 12),
-                Text(
-                  post.summary!,
-                  style: textTheme.bodyMedium,
-                ),
-              ],
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 16,
-                runSpacing: 8,
-                children: [
-                  _ForumMetaAction(
-                    icon: Icons.person_outline,
-                    text: _formatForumAuthorName(post.authorName),
-                    onTap: onOpenProfileUser == null
-                        ? null
-                        : () => onOpenProfileUser!(post.authorId),
-                  ),
-                  _ForumMetaText(
-                    icon: Icons.folder_outlined,
-                    text: _formatForumCategoryName(post.categoryName),
-                  ),
-                  _ForumMetaText(
-                    icon: Icons.schedule_outlined,
-                    text: _formatCreateTime(post.createTime),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Wrap(
-                spacing: 16,
-                runSpacing: 8,
-                children: [
-                  _ForumMetaText(
-                    icon: Icons.visibility_outlined,
-                    text: '${post.viewCount} 次浏览',
-                  ),
-                  _ForumMetaText(
-                    icon: Icons.thumb_up_alt_outlined,
-                    text: '${post.likeCount} 个赞',
-                  ),
-                  _ForumMetaText(
-                    icon: Icons.chat_bubble_outline,
-                    text: '${post.commentCount} 条评论',
-                  ),
-                  if (post.isQuestion)
-                    _ForumMetaText(
-                      icon: Icons.question_answer_outlined,
-                      text: '${post.answerCount} 个回答',
-                    ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Text(
-                    '查看详情',
-                    style: textTheme.labelLarge,
-                  ),
-                  const SizedBox(width: 8),
-                  const Icon(Icons.arrow_forward, size: 18),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatCreateTime(String? value) {
-    if (value == null || value.isEmpty) {
-      return '时间未知';
-    }
-
-    final parsed = DateTime.tryParse(value);
-    if (parsed == null) {
-      return value;
-    }
-
-    final local = parsed.toLocal();
-    final year = local.year.toString().padLeft(4, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    final day = local.day.toString().padLeft(2, '0');
-    final hour = local.hour.toString().padLeft(2, '0');
-    final minute = local.minute.toString().padLeft(2, '0');
-    return '$year-$month-$day $hour:$minute';
-  }
-}
-
-class _ForumMetaText extends StatelessWidget {
-  const _ForumMetaText({
-    required this.icon,
-    required this.text,
-  });
-
-  final IconData icon;
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Icon(icon, size: 18),
-        const SizedBox(width: 6),
-        Text(text),
-      ],
-    );
-  }
-}
-
-String _formatForumAuthorName(String? value) {
-  final normalized = value?.trim();
-  return normalized == null || normalized.isEmpty ? '未知用户' : normalized;
-}
-
-String _formatForumCategoryName(String? value) {
-  final normalized = value?.trim();
-  return normalized == null || normalized.isEmpty ? '未分类' : normalized;
-}
-
-String? _resolveSelectedCategoryId({
-  required String? currentCategoryId,
-  required List<ForumCategorySummary> categories,
-}) {
-  if (categories.isEmpty) {
-    return null;
-  }
-
-  final normalizedCurrent = currentCategoryId?.trim();
-  if (normalizedCurrent != null &&
-      normalizedCurrent.isNotEmpty &&
-      categories.any((category) => category.id == normalizedCurrent)) {
-    return normalizedCurrent;
-  }
-
-  return categories.first.id;
-}
-
-List<String> _readTagNames(String value) {
-  return value
-      .split(RegExp(r'[,，、\s]+'))
-      .map((tag) => tag.trim())
-      .where((tag) => tag.isNotEmpty)
-      .toSet()
-      .toList();
-}
-
-String? _validatePostDraft({
-  required String title,
-  required String content,
-  required String? categoryId,
-  required List<String> tagNames,
-}) {
-  if (title.isEmpty) {
-    return '请输入帖子标题。';
-  }
-
-  if (title.length > 200) {
-    return '帖子标题不能超过 200 个字符。';
-  }
-
-  if (categoryId == null || categoryId.trim().isEmpty) {
-    return '请选择帖子分类。';
-  }
-
-  if (tagNames.isEmpty) {
-    return '请至少填写 1 个标签。';
-  }
-
-  if (tagNames.length > 5) {
-    return '标签最多填写 5 个。';
-  }
-
-  if (content.isEmpty) {
-    return '请输入帖子正文。';
-  }
-
-  if (content.length > 50000) {
-    return '帖子正文不能超过 50000 个字符。';
-  }
-
-  return null;
-}
-
-class _ForumMetaAction extends StatelessWidget {
-  const _ForumMetaAction({
-    required this.icon,
-    required this.text,
-    this.onTap,
-  });
-
-  final IconData icon;
-  final String text;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    if (onTap == null) {
-      return _ForumMetaText(icon: icon, text: text);
-    }
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 18),
-            const SizedBox(width: 6),
-            Text(text),
-          ],
         ),
       ),
     );

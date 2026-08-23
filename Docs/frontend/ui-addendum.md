@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1 / P2 / P3、P4-A 与 [P4-B1–B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)已完成，P4 静态退出门禁关闭，下一顺位等待 P5 页面族成组重构拆批。
+> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1 / P2 / P3、P4-A、[P4-B1–B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)、P5-A 与 [P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)已完成，下一顺位等待 P5-B2 Identity / Revisit 方案确认。
 
 ## 1. 真相源与优先级
 
@@ -81,7 +81,7 @@ Radish 四主题取值与 Profile 覆盖
 - 主题注册表与运行时：`Frontend/radish.client/src/theme/theme.ts`
 - 共享 Ant Design 语义：`Frontend/radish.ui/src/theme/antd-theme.ts`
 - Console Workbench L2：`Frontend/radish.console/src/index.css`
-- Flutter 映射：四主题 `ThemeData`、`RadishThemeTokens`、权益状态与内置偏好 owner 已在 P2 建立；P4-B1 已补齐 Noto typography、density / surface / motion、焦点、共享状态原语和主题预览—确认，P4-B2 已补齐 compact / medium / expanded Web 家族壳层、受控 Lucide 导航和动作状态，P4-B3 已补齐统一公开 Discover cursor 流、compact 连续信息流和 expanded `904px` 主轴 + 社区洞察，P4-B4 已补齐 Forum Detail compact 连续阅读、medium 单主轴与 expanded `220 / 820 / 250` 页面级三栏，P4-B5 已以成组代表测试、全量 analyze / test 和文件边界检查关闭静态退出门禁，详见 [P4-B5 门禁记录](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)。下一批按 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)进入 P5 页面族成组重构拆批。
+- Flutter 映射：四主题 `ThemeData`、`RadishThemeTokens`、权益状态与内置偏好 owner 已在 P2 建立；P4-B1 已补齐 Noto typography、density / surface / motion、焦点、共享状态原语和主题预览—确认，P4-B2 已补齐 compact / medium / expanded Web 家族壳层、受控 Lucide 导航和动作状态，P4-B3 已补齐统一公开 Discover cursor 流、compact 连续信息流和 expanded `904px` 主轴 + 社区洞察，P4-B4 已补齐 Forum Detail compact 连续阅读、medium 单主轴与 expanded `220 / 820 / 250` 页面级三栏，P4-B5 已关闭静态退出门禁，P5-A 已拆出后续页面批次，P5-B1 已补齐 Forum Feed 连续流与独立 composer，详见 [P5-B1 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)。下一批等待 Identity / Revisit 方案确认。
 
 family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的四主题取值与品牌前景继续在 Client 项目主题层显式覆盖，避免依赖上游参考默认值形成隐式产品契约。
 

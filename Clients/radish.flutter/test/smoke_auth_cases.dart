@@ -912,6 +912,9 @@ void registerSmokeAuthCases() {
     await tester.tap(find.text('论坛'));
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const Key('forum-open-composer')));
+    await tester.pumpAndSettle();
+
     await tester.enterText(_forumTextFieldByLabel('标题'), '登录回流发帖');
     await tester.enterText(_forumTextFieldByLabel('标签'), 'flutter, 回流');
     await tester.enterText(
@@ -919,7 +922,7 @@ void registerSmokeAuthCases() {
       '匿名态进入登录后，回来继续发布同一份草稿。',
     );
 
-    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.tap(find.byKey(const Key('forum-composer-submit')));
     await tester.pumpAndSettle();
 
     expect(repository.createPostRequests, isEmpty);
@@ -944,7 +947,7 @@ void registerSmokeAuthCases() {
     expect(find.text('登录回流发帖'), findsOneWidget);
     expect(find.text('匿名态进入登录后，回来继续发布同一份草稿。'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, '发布帖子'));
+    await tester.tap(find.byKey(const Key('forum-composer-submit')));
     await tester.pump();
     await tester.pumpAndSettle();
 
