@@ -8,12 +8,13 @@
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`Flutter Native P3 视觉确认`
 - **产品下一顺位**：`确认独立 Flutter 设计源的 typography、密度与代表页面`
-- **复核日期**：`2026-08-19`
+- **复核日期**：`2026-08-23`
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
+- `2026-08-23` 已完成 [GitHub Release 自动化](/records/github-release-automation-2026-08-23)：`Docker Images` 在 Candidate Quality、五镜像漏洞策略、构建与推送全部成功后，为 `v*-test` 创建不占用 Latest 的 Pre-release，为 `v*-release` 创建正式 Latest Release，`v*-dev` 不创建 Release；重跑只验证既有 Release 轨道并保持幂等，自动 notes 固定以上一个可达正式 tag 为基线。当前未补建历史 Release、推送新 tag 或执行部署，下一枚新 tag 仍需补首次线上证据。
 - `2026-08-19` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)：复核 `9a6fc07d..12d5878b` 两个提交和 `43` 个唯一变更文件，确认 P1 / P2 代码、依赖、测试与 P3 独立设计源均有准确证据；补齐主题预览确认、字体、motion、Discover 和 Forum context rail 的 P2 → P4 实施差分，清理 Web 设计源与开发顺位旧口径。明日第一顺位为 P3 视觉审核，确认后先做 P4-A readiness。
 - `2026-08-19` 已完成 [Flutter Native P3 代表稿](/records/f4-flutter-native-p3-representative-design-2026-08-19)：按项目所有者意见建立独立 `radish-flutter-native-ui-v1.pen`，Web / Console 与 Flutter 不再共用活动设计源；六个顶层画板冻结视觉基座、Discover / Forum Detail compact / expanded、主题设置、medium rail 与权益关键状态，四个 Flutter 组件母版和 R3 继承路径同步形成。Pencil 原生 visitor 零布局问题、placeholder 全部清除并通过 Pen 保存；当前等待视觉确认，尚未进入字体资产 / 依赖接入或 P4 代码收口。
 - `2026-08-19` 已完成 Flutter Native [P1 全页面事实审计](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)与 [P2 主题 / 自适应技术基座](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)：现有业务 owner、OIDC、幂等、来源返回和分页契约保留；四主题、Shop 权益、内置偏好、三档 Shell、Discover 与 Forum Detail 代表实现已落地，`flutter analyze` 零问题、`flutter test` `228 / 228` 通过；随后已完成 P3 独立代表稿，生产部署与长期运维继续由项目所有者独立负责。

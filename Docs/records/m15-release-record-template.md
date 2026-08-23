@@ -23,6 +23,7 @@
 本模板只回答最小发布留痕问题：
 
 - 这次发布对应哪个 Git tag
+- 这次发布对应哪个 GitHub Release，以及它是 Pre-release 还是正式 Latest
 - 这次发布对应哪些镜像 tag
 - 测试部署是否通过
 - 生产部署是否通过
@@ -45,6 +46,7 @@
    - 日期、记录人、发布类型
 2. 发布标识
    - Git tag
+   - GitHub Release URL、Pre-release / 正式 Latest 状态
    - 镜像 tag
    - 对应分支 / 提交
 3. 测试部署结论
@@ -78,6 +80,8 @@ imageTag: <vYY.M.RELEASE-release>
 ### 发布标识
 
 - Git tag：`<tag>`
+- GitHub Release：`<url>`
+- Release 轨道：Pre-release（`v*-test`，不占用 Latest）/ 正式 Latest（`v*-release`）
 - 对应提交：`<sha>`
 - 来源分支：`master` / `dev`
 - 镜像 tag：
@@ -125,6 +129,8 @@ node Scripts/version-contract.mjs --tag <tag>
 ```
 
 测试轨道记录可以继续使用同一模板，但只有正式 `-release` tag 会强制检查 front matter。发布记录在 tag 前应如实写“未部署”；部署结论必须在实际完成后再更新。
+
+GitHub Release 由 `Docker Images` 在 Candidate Quality、五镜像漏洞策略与推送全部成功后创建。Release 页面创建成功不等于测试或生产部署完成；记录仍须分别填写镜像、部署和复核事实。
 
 ## 推荐写法
 

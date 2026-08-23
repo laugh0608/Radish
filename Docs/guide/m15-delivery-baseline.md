@@ -42,8 +42,9 @@ npm run validate:baseline:quick
 7. 把最新 `origin/master` 回灌并推送到 `dev`，确认下一轮开发基于当前稳定主线
 8. 在 tag 目标提交执行 `node Scripts/version-contract.mjs --tag <tag>`，通过后创建规范 tag
 9. 等待 `Docker Images` 工作流再次校验并产出同 tag 镜像
-10. 在部署环境用固定 `RADISH_IMAGE_TAG` 指向本次发布镜像
-11. 部署后补充发布记录中的真实复核与回滚结论
+10. 确认 workflow 在五镜像全部成功后创建同 tag GitHub Release：`v*-test` 为不占用 Latest 的 Pre-release，`v*-release` 为正式 Latest Release
+11. 在部署环境用固定 `RADISH_IMAGE_TAG` 指向本次发布镜像
+12. 部署后补充发布记录中的真实复核与回滚结论
 
 ## 最小部署顺序
 
@@ -126,7 +127,8 @@ npm run collect:m14-host-record
 ### 当前边界
 
 - 自动回滚脚本：不做
-- workflow 改造：不做
+- GitHub Release 页面：已纳入 `Docker Images` 自动化，但只在同 tag 五镜像与安全门禁全部成功后发布
+- Release 附件：当前只使用 GitHub 自动源码归档并在 notes 列出五镜像坐标；Flutter APK、桌面安装包、签名制品和临时 Trivy artifact 不自动上传
 - 蓝绿 / 金丝雀 / 多集群发布：不做
 - `Gateway & BFF` 深化：不做
 

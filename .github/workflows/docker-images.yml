@@ -366,3 +366,98 @@ jobs:
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.ref.name=${{ github.ref_name }}
             org.opencontainers.image.version=${{ github.ref_name }}
+
+  github-release:
+    name: GitHub Release
+    runs-on: ubuntu-latest
+    needs:
+      - candidate-quality
+      - prepare
+      - backend-images
+      - frontend-image
+    if: needs.prepare.outputs.publish_track == 'test' || needs.prepare.outputs.publish_track == 'release'
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout full tag history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Create or verify GitHub Release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RADISH_IMAGE_NAMESPACE: ${{ needs.prepare.outputs.image_namespace }}
+          RADISH_PUBLISH_TRACK: ${{ needs.prepare.outputs.publish_track }}
+          RADISH_RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+
+          expected_prerelease=false
+          release_title="${RADISH_RELEASE_TAG}"
+          latest_args=(--latest)
+          track_notice='本页对应正式发布轨道；生产部署仍是独立授权动作。'
+
+          if [[ "${RADISH_PUBLISH_TRACK}" == "test" ]]; then
+            expected_prerelease=true
+            release_title="${RADISH_RELEASE_TAG} (Test)"
+            latest_args=(--prerelease --latest=false)
+            track_notice='> [!WARNING]
+          > 本页是测试预发布，不可视为生产可用版本，也不会占用 Latest。'
+          fi
+
+          if gh release view "${RADISH_RELEASE_TAG}" \
+            --repo "${GITHUB_REPOSITORY}" \
+            --json isDraft,isPrerelease,url > existing-release.json 2>/dev/null; then
+            actual_draft="$(jq -r '.isDraft' existing-release.json)"
+            actual_prerelease="$(jq -r '.isPrerelease' existing-release.json)"
+            release_url="$(jq -r '.url' existing-release.json)"
+
+            if [[ "${actual_draft}" != "false" || "${actual_prerelease}" != "${expected_prerelease}" ]]; then
+              echo "Existing GitHub Release has unexpected state: draft=${actual_draft}, prerelease=${actual_prerelease}" >&2
+              exit 1
+            fi
+
+            echo "GitHub Release already exists with the expected track: ${release_url}"
+            echo "GitHub Release: ${release_url}" >> "${GITHUB_STEP_SUMMARY}"
+            exit 0
+          fi
+
+          previous_release_tag="$(
+            git tag --merged "${GITHUB_SHA}" --list 'v*-release' --sort=-version:refname |
+              while IFS= read -r candidate_tag; do
+                if [[ "${candidate_tag}" != "${RADISH_RELEASE_TAG}" ]]; then
+                  echo "${candidate_tag}"
+                  break
+                fi
+              done
+          )"
+
+          release_notes="$(printf '%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n' \
+            "${track_notice}" \
+            '### Container images' \
+            "- \`${RADISH_IMAGE_NAMESPACE}/radish-dbmigrate:${RADISH_RELEASE_TAG}\`" \
+            "- \`${RADISH_IMAGE_NAMESPACE}/radish-api:${RADISH_RELEASE_TAG}\`" \
+            "- \`${RADISH_IMAGE_NAMESPACE}/radish-auth:${RADISH_RELEASE_TAG}\`" \
+            "- \`${RADISH_IMAGE_NAMESPACE}/radish-gateway:${RADISH_RELEASE_TAG}\`" \
+            "- \`${RADISH_IMAGE_NAMESPACE}/radish-frontend:${RADISH_RELEASE_TAG}\`")"
+
+          create_args=(
+            release create "${RADISH_RELEASE_TAG}"
+            --repo "${GITHUB_REPOSITORY}"
+            --verify-tag
+            --title "${release_title}"
+            --generate-notes
+            --notes "${release_notes}"
+          )
+
+          if [[ -n "${previous_release_tag}" ]]; then
+            create_args+=(--notes-start-tag "${previous_release_tag}")
+          fi
+
+          create_args+=("${latest_args[@]}")
+          gh "${create_args[@]}"
+
+          release_url="$(gh release view "${RADISH_RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json url --jq '.url')"
+          echo "GitHub Release: ${release_url}" >> "${GITHUB_STEP_SUMMARY}"
