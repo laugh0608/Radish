@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P3` 独立 Flutter 代表稿已确认；当前进入 `P4-A readiness`
+> 状态：`P4-B1 Theme Foundation + Shared Primitives` 已完成；等待 `P4-B2 Web-Family Adaptive Shell` 实施授权
 >
 > 最后更新：2026-08-23（Asia/Shanghai）
 >
@@ -13,6 +13,8 @@
 > - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff)
 > - [P1 全页面事实审计与代表分级](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)
 > - [P3 Flutter 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
+> - [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23)
+> - [P4-B1 Theme / Shared 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)
 
 ## 1. 结论摘要
 
@@ -269,7 +271,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - 用自有 `RadishThemeTokens` 作为产品语义真相源，FlexColorScheme 只负责 Material 3 组件子主题；不引入 shadcn 或第二套组件系统。
 - Theme Controller 复用 Shop 权益读取 / 激活 / 停用契约，内置偏好与服务端权益分属清晰 owner，账号切换与迟到响应已隔离。
 - Shell 与 Discover / Forum Detail 覆盖 compact / medium / expanded、键盘切换、reduced-motion 与现有交互回归。
-- 字体依赖未安装；P3 已把字族方向冻结为 `Noto Sans SC + Noto Serif SC`，实际本地资产、许可证、包体积、回退链与 `pubspec` 影响留到 P4-A readiness 裁决。
+- 字体依赖未安装；P3 已把字族方向冻结为 `Noto Sans SC + Noto Serif SC`，P4-A 进一步完成本地资产、许可证、包体积、回退链与 `pubspec` 影响裁决。
 
 退出条件已满足：只保留一套全局主题 / 自适应基础，包版本、许可证、权益 owner、持久化、回滚面和验证结论见 [P2 实现记录](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)。
 
@@ -282,15 +284,27 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 当前已在独立设计源完成视觉基座、Discover / Forum Detail compact 与 expanded、主题选择器、medium 页内栏差分和权益关键状态，R3 继承路径也已形成。2026-08-23 三轮审阅后，Forum Expanded 的主题漏配已修复；第二轮按正式 Web 真实几何建立 Expanded Header、Mobile Header 与 Mobile Tab Bar 三个复用组件；第三轮进一步把 Web Discover / Forum Detail 的 PC / mobile 正式页面作为可编辑母版复制到 Flutter 源，保留完整信息架构与长内容，再映射回 Flutter 安全区、共享壳层、`theme` 轴、语义 token 和 Noto 字体层级。六张正式板最终按 Foundation、Discover Mobile / PC、Forum Mobile / PC、Theme / Medium 的顺序横向排布，便于连续审阅；Discover Expanded 继续采用 `904px` 主讨论区加社区洞察区，Forum Expanded 保留 `220 / 820 / 250` 社区导航—连续正文—线程索引并完整展开回帖，详见 [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)。
 
-退出条件已满足：项目所有者已确认第三轮横向审阅稿，后续代码实现不再临场决定视觉系统；当前先进入 `P4-A readiness`，本次确认不自动授权字体资产、依赖或 lockfile 变更。
+退出条件已满足：项目所有者已确认第三轮横向审阅稿，后续代码实现不再临场决定视觉系统；`P4-A readiness` 也已完成，设计确认与 readiness 结论均不自动授权字体资产、依赖或 lockfile 变更。
 
-### P4：主题与共享组件实现
+### P4-A：实施就绪审计（已完成，2026-08-23）
 
-- 基于 P2 已有 Theme Controller、四主题映射、ThemeExtension 和持久化 owner，按 P3 确认稿收口视觉细节。
-- 落地经确认的 typography、本地字体资产、density、surface、state 与共享状态 / 表单组件。
-- 巩固 Shell、Discover 与 Forum Detail 的代表实现，再为页面族扩展提供唯一组件基础。
+- 反查 Theme、Shared、Shell、Theme Selector、Discover 与 Forum Detail 的 owner、规模、可继承契约和阻断项。
+- 固定 Noto 官方简体中文区域子集变量 TTF 随包交付、平台默认回退与 OFL / SHA 留痕；不采用运行时网络字体或按当前文案裁字。
+- 裁决以精确版本 `lucide_icons_flutter 3.1.15` 替换零运行时引用的 `cupertino_icons`；字体资产不改 lockfile，图标依赖替换会改 `pubspec.yaml` / `pubspec.lock`。
+- 识别 Shell 与 Forum Detail 超过仓库文件硬上限，冻结先拆 owner 再改布局；Discover 改用既有 `PublicDiscover/GetFeed` 公开读模型，不新增后端 API 或 Flutter Chat。
+- 将 P4 拆为 B1 Theme / Shared、B2 Shell、B3 Discover、B4 Forum Detail 与 B5 成组静态门禁，避免一次授权扩大为全页面改造。
 
-退出条件：主题与权益测试、组件测试、analyze 和代表尺寸 widget tests 通过。
+退出条件已满足：设计到代码差分、字体 / 图标供应链裁决、包体积验证方法、实施拆批与停止线均已形成，详见 [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23)。
+
+### P4-B：主题、共享组件与代表实现
+
+- `B1 Theme Foundation + Shared Primitives`（已完成，2026-08-23）：已接入经校验的 Noto 本地字体和精确版本 Lucide 图标；typography、density、surface、motion、焦点、共享状态原语与主题预览—确认均已落地，详见 [P4-B1 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)。
+- `B2 Web-Family Adaptive Shell`：按 compact / medium / expanded 重建共享壳层几何，保留五个真实入口与现有 OIDC、通知、返回和键盘契约。
+- `B3 Discover`：迁移既有公开发现 cursor 读模型，完成连续信息流与 expanded 洞察区，不扩建聊天。
+- `B4 Forum Detail`：先拆分页面与测试 owner，再完成 compact 连续阅读和 expanded `220 / 820 / 250` 页面级三栏。
+- `B5`：执行代表范围成组静态门禁；真实 Gateway / Android RC Smoke 仍作为独立阶段验收并另行授权。
+
+退出条件：主题与权益测试、组件测试、代表尺寸 widget tests、全量 analyze / test 和文件边界检查通过；B1–B4 分批获得授权、实现和验证。
 
 ### P5：页面族成组重构
 
@@ -328,4 +342,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-23）
 
-第一顺位进入 `P4-A readiness`：反查现有 Dart Theme Foundation、共享组件、Shell、Discover 与 Forum Detail owner，形成 P3 设计到代码的精确差分；同时单独说明 `Noto Sans SC + Noto Serif SC` 本地资产来源、许可证、子集与包体积、平台回退链、`pubspec` / lockfile 影响和实施拆批。readiness 阶段不安装包、不写入字体资产；形成方案后再就具体依赖和首个 P4 实现批取得授权，不批量改造其他页面族，不生成新平台工程。
+`P4-B1 Theme Foundation + Shared Primitives` 已完成：固定 Noto 字体、OFL / SHA 记录、精确版本 `lucide_icons_flutter 3.1.15`、正式 Theme / Shared 基座和主题预览—确认均已落地，`flutter analyze` 零问题、`flutter test` `233 / 233` 通过。Android release 内容链路验证显示完整 SC 字体使 APK / AAB 分别增加约 `26.64 / 26.66 MiB`；标准 Gradle Lint Vital 仍需在网络 / 缓存稳定环境补跑。第一顺位等待 `P4-B2 Web-Family Adaptive Shell` 实施授权；该授权不自动包含 B3 Discover、B4 Forum Detail、其他页面族、新平台工程、服务启动或真实 Smoke。

@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：Web 页面族与主题退出门禁已关闭；Flutter readiness 审计和 [Native 产品化 / UI 专题](/features/flutter-native-product-ui-design) P0 已完成，下一顺位为 Flutter P1 全页面事实审计。
+> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1 / P2 / P3、[P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23)与 [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)已完成，下一顺位等待 P4-B2 Web-Family Adaptive Shell 实施授权。
 
 ## 1. 真相源与优先级
 
@@ -81,7 +81,7 @@ Radish 四主题取值与 Profile 覆盖
 - 主题注册表与运行时：`Frontend/radish.client/src/theme/theme.ts`
 - 共享 Ant Design 语义：`Frontend/radish.ui/src/theme/antd-theme.ts`
 - Console Workbench L2：`Frontend/radish.console/src/index.css`
-- Flutter 映射：当前只有 `lib/core/theme/radish_theme.dart` 固定亮色 `ThemeData`；目标 owner、四主题状态、`ThemeExtension` 和实施拆批见 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
+- Flutter 映射：四主题 `ThemeData`、`RadishThemeTokens`、权益状态与内置偏好 owner 已在 P2 建立；P4-B1 已补齐 Noto typography、density / surface / motion、焦点、共享状态原语和主题预览—确认，详见 [P4-B1 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)。下一批按 [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)进入 Web-Family Adaptive Shell。
 
 family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的四主题取值与品牌前景继续在 Client 项目主题层显式覆盖，避免依赖上游参考默认值形成隐式产品契约。
 

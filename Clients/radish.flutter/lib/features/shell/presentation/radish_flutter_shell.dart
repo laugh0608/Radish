@@ -34,6 +34,7 @@ import '../../../features/shop/presentation/shop_product_detail_page.dart';
 import '../../../features/shop/presentation/shop_product_list_page.dart';
 import '../../../features/wallet/data/wallet_repository.dart';
 import '../../../features/wallet/presentation/wallet_page.dart';
+import '../../../shared/icons/radish_icons.dart';
 import 'radish_adaptive_navigation.dart';
 import 'radish_theme_selector.dart';
 
@@ -1189,8 +1190,9 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
                   controller: widget.themeController,
                   userId: sessionState.session?.userId,
                   accessToken: sessionState.session?.accessToken,
+                  onOpenShop: _openShopFromDiscover,
                 ),
-                icon: const Icon(Icons.palette_outlined),
+                icon: const Icon(RadishIcons.palette),
               ),
             ],
             body: SafeArea(

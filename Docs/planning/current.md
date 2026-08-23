@@ -6,18 +6,20 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P4-A readiness`
-- **产品下一顺位**：`审计字体资产与共享组件实施边界`
+- **工程第一顺位**：`Flutter Native P4-B2 实施授权`
+- **产品下一顺位**：`Web-Family Adaptive Shell`
 - **复核日期**：`2026-08-23`
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
-- `2026-08-23` 项目所有者已确认 [Flutter Native P3 代表稿](/records/f4-flutter-native-p3-representative-design-2026-08-19)，`P3` 退出门禁关闭：三轮修订依次完成画布与主题统一、正式 Web 壳层几何对齐，以及 Web Discover / Forum Detail 四张可编辑母版的完整信息迁移与 Flutter 安全区、共享壳层、`theme` 轴、语义 token 适配。六张正式板按 Foundation → Discover Mobile / PC → Forum Mobile / PC → Theme / Medium 形成单条横向审阅带；旧稀疏页面、临时节点、重复变量与 Geist / Inter 字族均已清理，画布无重叠、visitor 零布局问题、placeholder 清零。下一步进入 `P4-A` readiness，尚未修改 Flutter 运行时代码或授权字体 / 依赖变更。
+- `2026-08-23` 已完成 [Flutter Native P4-B1 Theme Foundation 与 Shared Primitives](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)：固定 Noto Sans / Serif SC 变量 TTF、OFL / SHA 供应链记录和精确版本 `lucide_icons_flutter 3.1.15` 已接入；四主题 typography、density、surface、focus、motion、共享状态原语与主题预览—确认已收口，未拥有主题只引导 Shop。定向测试 `16 / 16`、`flutter analyze` 零问题、全量 `flutter test` `233 / 233`；同口径 release 内容链路下 APK / AAB 较 P3 基线分别增加约 `26.64 / 26.66 MiB`，增量来自完整 SC 字体，标准 Gradle Lint Vital 待网络 / 缓存稳定环境补跑。本批未改 Shell 几何、Discover、Forum Detail 或服务运行态，下一步等待 P4-B2 明确授权。
+- `2026-08-23` 已完成 [Flutter Native P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23)：P2 主题状态机与业务 owner 可继承，但 Theme 尚缺正式字体 / typography / density / surface / motion，Shared 尚无统一状态原语，Shell 与 Forum Detail 已超过文件硬上限；P4 固定为 B1 Theme / Shared、B2 Shell、B3 Discover 公开读模型、B4 Forum Detail 拆分与布局、B5 成组静态门禁。字体采用 Noto 官方 SC 区域子集变量 TTF 随包交付并保留 OFL / SHA，图标建议以精确版本 `lucide_icons_flutter 3.1.15` 替换未使用的 `cupertino_icons`。本批仅修改文档，下一步等待 B1 对字体下载、依赖 / lockfile 和对应 Dart 实现的明确授权。
+- `2026-08-23` 项目所有者已确认 [Flutter Native P3 代表稿](/records/f4-flutter-native-p3-representative-design-2026-08-19)，`P3` 退出门禁关闭：三轮修订依次完成画布与主题统一、正式 Web 壳层几何对齐，以及 Web Discover / Forum Detail 四张可编辑母版的完整信息迁移与 Flutter 安全区、共享壳层、`theme` 轴、语义 token 适配。六张正式板按 Foundation → Discover Mobile / PC → Forum Mobile / PC → Theme / Medium 形成单条横向审阅带；旧稀疏页面、临时节点、重复变量与 Geist / Inter 字族均已清理，画布无重叠、visitor 零布局问题、placeholder 清零。其后进入 `P4-A` readiness；P3 本身未修改 Flutter 运行时代码或授权字体 / 依赖变更。
 - `2026-08-23` 已完成 [GitHub Release 自动化](/records/github-release-automation-2026-08-23)：`Docker Images` 在 Candidate Quality、五镜像漏洞策略、构建与推送全部成功后，为 `v*-test` 创建不占用 Latest 的 Pre-release，为 `v*-release` 创建正式 Latest Release，`v*-dev` 不创建 Release；重跑只验证既有 Release 轨道并保持幂等，自动 notes 固定以上一个可达正式 tag 为基线。当前未补建历史 Release、推送新 tag 或执行部署，下一枚新 tag 仍需补首次线上证据。
 - `2026-08-19` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)：复核 `9a6fc07d..12d5878b` 两个提交和 `43` 个唯一变更文件，确认 P1 / P2 代码、依赖、测试与 P3 独立设计源均有准确证据；补齐主题预览确认、字体、motion、Discover 和 Forum context rail 的 P2 → P4 实施差分，清理 Web 设计源与开发顺位旧口径。明日第一顺位为 P3 视觉审核，确认后先做 P4-A readiness。
-- `2026-08-19` 已完成 [Flutter Native P3 代表稿](/records/f4-flutter-native-p3-representative-design-2026-08-19)：按项目所有者意见建立独立 `radish-flutter-native-ui-v1.pen`，Web / Console 与 Flutter 不再共用活动设计源；六个顶层画板冻结视觉基座、Discover / Forum Detail compact / expanded、主题设置、medium rail 与权益关键状态，四个 Flutter 组件母版和 R3 继承路径同步形成。Pencil 原生 visitor 零布局问题、placeholder 全部清除并通过 Pen 保存；当前等待视觉确认，尚未进入字体资产 / 依赖接入或 P4 代码收口。
+- `2026-08-19` 已完成 [Flutter Native P3 代表稿](/records/f4-flutter-native-p3-representative-design-2026-08-19)：按项目所有者意见建立独立 `radish-flutter-native-ui-v1.pen`，Web / Console 与 Flutter 不再共用活动设计源；六个顶层画板冻结视觉基座、Discover / Forum Detail compact / expanded、主题设置、medium rail 与权益关键状态，四个 Flutter 组件母版和 R3 继承路径同步形成。Pencil 原生 visitor 零布局问题、placeholder 全部清除并通过 Pen 保存；该稿已于 2026-08-23 获得视觉确认，其后 P4-A 与 P4-B1 已完成。
 - `2026-08-19` 已完成 Flutter Native [P1 全页面事实审计](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)与 [P2 主题 / 自适应技术基座](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)：现有业务 owner、OIDC、幂等、来源返回和分页契约保留；四主题、Shop 权益、内置偏好、三档 Shell、Discover 与 Forum Detail 代表实现已落地，`flutter analyze` 零问题、`flutter test` `228 / 228` 通过；随后已完成 P3 独立代表稿，生产部署与长期运维继续由项目所有者独立负责。
 - `2026-08-15` 已完成 [PR CI / CD 质量门禁治理](/records/ci-quality-gate-governance-2026-08-15)：PR 只保留一条 `Repo Quality` workflow，以 `Candidate Quality` 聚合六个组件；远端卫生与 Lint 改为全量确定性检查，后端命中时固定 PostgreSQL 17 和 warning-as-error，候选 workflow 仅供手动与 tag 复用。单人阶段审批数收敛为 `0`，不再依赖管理员 bypass；质量覆盖未降低，Flutter Native 当前已推进到 P3 视觉审核。
 - `2026-08-15` 已完成 [v26.8.1 Web 阶段收口发布](/records/m15-release-record-v26.8.1-2026-08-15)：本地按 CI 同规格 PostgreSQL 17 完成 `1320 passed / 0 skipped / 0 failed`，PR #68 的八项 required checks 全部通过后以 merge commit `e518a306` 合入 `master`，最新 `origin/master` 已 fast-forward 回灌并推送至 `dev`。`v26.8.1-release` tag 与 DbMigrate、API、Auth、Gateway、Frontend 五镜像发布成功，镜像 workflow 的 Candidate Quality 和 Trivy 策略评估均通过；生产固定 tag 前滚与部署后复核仍是独立授权动作，不阻断 Flutter Native 产品化推进。
@@ -190,15 +192,15 @@
 
 ## 当前事项（2026-08-23）
 
-1. 第一顺位进入 `P4-A` readiness：反查现有 Dart Theme Foundation、共享组件、Shell、Discover 与 Forum Detail owner，形成 P3 设计到代码的精确差分表。
-2. 单独裁决 `Noto Sans SC + Noto Serif SC` 的本地资产来源、许可证保留、子集范围、包体积、平台回退链、`pubspec` 与 lockfile 影响；readiness 阶段不安装依赖、不写入字体资产。
-3. 基于差分与字体裁决形成 P4 首个实现批方案并请求授权；首批仍只收口 Theme Foundation、共享组件、Shell、Discover 与 Forum Detail。
-4. 不顺势批量改造其他页面族，不生成 iOS / desktop 平台工程，不启动服务或重启生产证据采集。
+1. `P4-B1 Theme Foundation + Shared Primitives` 已完成；第一顺位等待 `P4-B2 Web-Family Adaptive Shell` 实施授权。
+2. B2 的拟定变更面固定为：先把通知 sheet / tile / 状态从 Shell 巨型文件拆出，再落地 compact 品牌栏与安全区胶囊底栏、expanded 顶部全局栏，并让 medium 的 rail 回归页面级上下文。
+3. B2 必须保留五个真实入口、`IndexedStack`、Android Back、OIDC、通知、主题、来源返回和 `Ctrl/Cmd + 1..5`；不新增 Flutter Chat，也不把 Web DOM 或状态机复制到 Flutter。
+4. B2 不自动授权 B3 Discover 公开读模型或 B4 Forum Detail；不生成 iOS / desktop 平台工程，不启动服务、执行真实 Smoke 或重启生产证据采集。
 
 ## 当前执行入口
 
 - [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
-- [Flutter Native P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19) · [P2 主题与自适应技术基座](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)
+- [Flutter Native P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19) · [P2 主题与自适应技术基座](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 - [F4-R-T03 Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)
 - [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)

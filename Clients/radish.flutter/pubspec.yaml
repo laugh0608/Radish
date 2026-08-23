@@ -9,9 +9,9 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.8
   crypto: ^3.0.7
   flex_color_scheme: ^8.4.0
+  lucide_icons_flutter: 3.1.15
   shared_preferences: ^2.5.5
 
 dev_dependencies:
@@ -21,3 +21,12 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/fonts/noto/licenses/
+  fonts:
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/noto/NotoSansSC-VF.ttf
+    - family: NotoSerifSC
+      fonts:
+        - asset: assets/fonts/noto/NotoSerifSC-VF.ttf

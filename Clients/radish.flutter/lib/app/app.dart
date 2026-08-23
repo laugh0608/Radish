@@ -9,6 +9,7 @@ import '../core/platform/app_lifecycle_gateway.dart';
 import '../core/theme/radish_theme.dart';
 import '../core/theme/radish_theme_controller.dart';
 import '../core/theme/radish_theme_preference_store.dart';
+import '../core/theme/radish_motion.dart';
 import '../features/discover/data/discover_repository.dart';
 import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
@@ -139,7 +140,7 @@ class _RadishAppState extends State<RadishApp> {
       builder: (context, child) {
         final sessionState = widget.sessionController.state;
         final themeState = _themeController.state;
-        final theme = buildRadishTheme(themeState.currentTheme);
+        final theme = buildRadishTheme(themeState.effectiveTheme);
         final disableAnimations = View.of(context)
             .platformDispatcher
             .accessibilityFeatures
@@ -150,12 +151,11 @@ class _RadishAppState extends State<RadishApp> {
           debugShowCheckedModeBanner: false,
           theme: theme,
           darkTheme: theme,
-          themeMode: themeState.currentTheme.brightness == Brightness.dark
+          themeMode: themeState.effectiveTheme.brightness == Brightness.dark
               ? ThemeMode.dark
               : ThemeMode.light,
-          themeAnimationDuration: disableAnimations
-              ? Duration.zero
-              : const Duration(milliseconds: 180),
+          themeAnimationDuration:
+              disableAnimations ? Duration.zero : RadishMotion.standard,
           home: sessionState.isRestoring || themeState.isRestoring
               ? const _RadishLaunchGate()
               : RadishFlutterShell(

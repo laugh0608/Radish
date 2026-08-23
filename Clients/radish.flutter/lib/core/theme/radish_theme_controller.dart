@@ -94,6 +94,7 @@ class RadishThemeState {
     required this.isStale,
     this.errorMessage,
     this.userId,
+    this.previewTheme,
   });
 
   factory RadishThemeState.initial() {
@@ -115,6 +116,9 @@ class RadishThemeState {
   final bool isStale;
   final String? errorMessage;
   final String? userId;
+  final RadishThemeId? previewTheme;
+
+  RadishThemeId get effectiveTheme => previewTheme ?? currentTheme;
 
   RadishThemeEntitlement? entitlementFor(RadishThemeId themeId) {
     for (final entitlement in entitlements) {
@@ -145,6 +149,8 @@ class RadishThemeState {
     bool clearErrorMessage = false,
     String? userId,
     bool clearUserId = false,
+    RadishThemeId? previewTheme,
+    bool clearPreviewTheme = false,
   }) {
     return RadishThemeState(
       currentTheme: currentTheme ?? this.currentTheme,
@@ -157,6 +163,8 @@ class RadishThemeState {
       errorMessage:
           clearErrorMessage ? null : errorMessage ?? this.errorMessage,
       userId: clearUserId ? null : userId ?? this.userId,
+      previewTheme:
+          clearPreviewTheme ? null : previewTheme ?? this.previewTheme,
     );
   }
 }
@@ -175,6 +183,20 @@ class RadishThemeController extends ChangeNotifier {
   int _syncGeneration = 0;
 
   RadishThemeState get state => _state;
+
+  void previewTheme(RadishThemeId themeId) {
+    if (_state.isSyncing || _state.previewTheme == themeId) {
+      return;
+    }
+    _replaceState(_state.copyWith(previewTheme: themeId));
+  }
+
+  void clearThemePreview() {
+    if (_state.previewTheme == null) {
+      return;
+    }
+    _replaceState(_state.copyWith(clearPreviewTheme: true));
+  }
 
   Future<void> restore() async {
     try {
@@ -219,6 +241,7 @@ class RadishThemeController extends ChangeNotifier {
           isStale: false,
           clearErrorMessage: true,
           clearUserId: true,
+          clearPreviewTheme: true,
         ),
       );
       return;
@@ -239,6 +262,7 @@ class RadishThemeController extends ChangeNotifier {
           isStale: false,
           clearErrorMessage: true,
           userId: normalizedUserId,
+          clearPreviewTheme: true,
         ),
       );
     } else {
@@ -385,6 +409,7 @@ class RadishThemeController extends ChangeNotifier {
         isSyncing: false,
         isStale: false,
         clearErrorMessage: true,
+        clearPreviewTheme: true,
       ),
     );
   }
@@ -436,6 +461,7 @@ class RadishThemeController extends ChangeNotifier {
           isSyncing: false,
           isStale: false,
           clearErrorMessage: true,
+          clearPreviewTheme: true,
         ),
       );
     } catch (_) {
