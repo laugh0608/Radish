@@ -27,4 +27,12 @@ abstract final class RadishIcons {
   static const IconData preview = LucideIcons.sparkles;
   static const IconData forward = LucideIcons.chevronRight;
   static const IconData markRead = LucideIcons.checkCheck;
+  static const IconData search = LucideIcons.search;
+  static const IconData clear = LucideIcons.x;
+  static const IconData back = LucideIcons.arrowLeft;
+  static const IconData link = LucideIcons.link;
+  static const IconData clock = LucideIcons.clock3;
+  static const IconData visibility = LucideIcons.eye;
+  static const IconData status = LucideIcons.circleCheckBig;
+  static const IconData document = LucideIcons.fileText;
 }
