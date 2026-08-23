@@ -1,6 +1,6 @@
 # Flutter Native P5-B2 Identity / Revisit 实施就绪与方案冻结
 
-> 状态：`P5-B2 readiness` 已完成；等待 Identity / Revisit 实施确认
+> 状态：`P5-B2 readiness` 已完成；后续 [P5-B2 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) 已关闭本批
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -153,4 +153,4 @@ P5-B2 只消费以下既有契约：
 - 不读取或修改 Pen；P5-B2 直接继承 P3 Identity / Revisit、P4 Theme / Shared 与 P5-B1 连续流。
 - 不启动服务，不执行真实 Gateway、浏览器、Android RC 或其他设备 Smoke；运行态验收继续独立授权。
 
-按以上边界，P5-B2 的下一步是独立实施确认；若实现中发现必须改变 API、Shell target ownership、资料字段或上述范围，先停止并重新说明影响。
+上述冻结边界已由 [P5-B2 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) 完整落地，未改变 API、Shell target ownership 或资料字段。后续顺位转入 `P5-C1 Docs Reader readiness`。

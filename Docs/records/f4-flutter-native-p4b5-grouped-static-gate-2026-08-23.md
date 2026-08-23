@@ -68,4 +68,4 @@ P4-B5 已在不新增页面能力、不改变 API / 业务 owner、也不启动�
 - P4-B1–B5 均已按独立授权完成，P4 的主题 / 共享基座、代表 Shell、Discover、Forum Detail 与成组静态门禁退出条件满足。
 - 本批未读取、使用或修改 Pen，未改后端 API、数据库、权限、依赖、lockfile、其他页面族或平台工程。
 - 本批未启动 API / Auth / Gateway 或 Flutter 应用，未执行真实 Gateway PC / mobile、四主题、Android RC、桌面平台、签名或分发验收；这些不能由静态门禁结果替代。
-- 后续 `P5-A 页面族成组重构拆批与首批就绪审计` 与 [P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) 已完成。当前等待 `P5-B2 Identity / Revisit` 方案确认；P4-B5 不自动授权 P5 后续实现或运行态 Smoke。
+- 后续 `P5-A 页面族成组重构拆批与首批就绪审计`、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) 与 [P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) 已完成。当前等待 `P5-C1 Docs Reader` 方案确认；P4-B5 不自动授权 P5 后续实现或运行态 Smoke。

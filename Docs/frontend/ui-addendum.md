@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1 / P2 / P3、P4-A、[P4-B1–B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)与 [P5-B2 Identity / Revisit readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)已完成，下一顺位等待 P5-B2 实施确认。
+> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1 / P2 / P3、P4-A、[P4-B1–B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)与 [P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)已完成，下一顺位等待 P5-C1 Docs Reader 方案确认。
 
 ## 1. 真相源与优先级
 
@@ -81,7 +81,7 @@ Radish 四主题取值与 Profile 覆盖
 - 主题注册表与运行时：`Frontend/radish.client/src/theme/theme.ts`
 - 共享 Ant Design 语义：`Frontend/radish.ui/src/theme/antd-theme.ts`
 - Console Workbench L2：`Frontend/radish.console/src/index.css`
-- Flutter 映射：四主题 `ThemeData`、`RadishThemeTokens`、权益状态与内置偏好 owner 已在 P2 建立；P4-B1 已补齐 Noto typography、density / surface / motion、焦点、共享状态原语和主题预览—确认，P4-B2 已补齐 compact / medium / expanded Web 家族壳层、受控 Lucide 导航和动作状态，P4-B3 已补齐统一公开 Discover cursor 流、compact 连续信息流和 expanded `904px` 主轴 + 社区洞察，P4-B4 已补齐 Forum Detail compact 连续阅读、medium 单主轴与 expanded `220 / 820 / 250` 页面级三栏，P4-B5 已关闭静态退出门禁，P5-A 已拆出后续页面批次，P5-B1 已补齐 Forum Feed 连续流与独立 composer，P5-B2 已冻结 Profile 独立快照、三档结构和编辑保护，详见 [P5-B2 readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)。下一步等待独立实施确认。
+- Flutter 映射：四主题 `ThemeData`、`RadishThemeTokens`、权益状态与内置偏好 owner 已在 P2 建立；P4-B1 已补齐 Noto typography、density / surface / motion、焦点、共享状态原语和主题预览—确认，P4-B2 已补齐 compact / medium / expanded Web 家族壳层、受控 Lucide 导航和动作状态，P4-B3 已补齐统一公开 Discover cursor 流、compact 连续信息流和 expanded `904px` 主轴 + 社区洞察，P4-B4 已补齐 Forum Detail compact 连续阅读、medium 单主轴与 expanded `220 / 820 / 250` 页面级三栏，P4-B5 已关闭静态退出门禁，P5-A 已拆出后续页面批次，P5-B1 已补齐 Forum Feed 连续流与独立 composer，P5-B2 已落地 Profile 五类独立快照、三档结构、`904px` 主轴 + 身份 rail 和权威编辑保护，详见 [P5-B2 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)。下一步等待 P5-C1 Docs Reader 方案确认。
 
 family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的四主题取值与品牌前景继续在 Client 项目主题层显式覆盖，避免依赖上游参考默认值形成隐式产品契约。
 

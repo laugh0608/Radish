@@ -6,16 +6,17 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P5-B2 Identity / Revisit 实施确认`
-- **产品下一顺位**：`Profile 独立权威快照与资料编辑保护`
+- **工程第一顺位**：`Flutter Native P5-C1 Docs Reader 方案确认`
+- **产品下一顺位**：`Docs 共用正文 owner 与目录—正文三档阅读`
 - **复核日期**：`2026-08-23`
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
-- `2026-08-23` 已完成 [Flutter Native P5-B2 Identity / Revisit 实施就绪与方案冻结](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)：确认 P5-B2 可完全复用既有 Profile API 与 Shell Forum / Docs handoff，不新增后端聚合；公开身份、统计、帖子、评论和我的轻回应将拆为独立权威快照、请求代际与结构化 issue，设备 recent 与完整服务端 Browse History 继续保持不同 owner。`1904` 行页面、`2598` 行测试将在布局前按职责拆分；`390 / 800 / 1440` 固定为连续信息流、受控单主轴和 expanded `904px` 主轴 + 身份上下文。资料编辑只使用 `GetMyProfile + UpdateMyProfile`，补齐权威草稿、dirty / busy / 离开保护。改造前 Profile 基线 `32 / 32`；本批只修改文档，未改 Dart、API、依赖、Pen 或平台工程，未启动服务。下一步等待 P5-B2 实施确认。
-- `2026-08-23` 已完成 [Flutter Native P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)：原 `1306` 行页面与 `1467` 行测试已按真实职责拆分，本批最大 Dart owner `702` 行；compact 连续流 + 全高键盘安全 composer、medium 单主轴 + bounded composer、expanded `904px` 主轴 + 社区洞察已落地。`Post/GetList` 最新 / 热门、页码、请求代际、刷新旧快照与结构化错误保持，分类只服务发帖；同草稿、登录回流、`forum-post:` 幂等、成功详情 / 作者 / 外部 Shell handoff 均保留。定向 `33 / 33`、Shell Smoke `51 / 51`、全量 `254 / 254` 与 `flutter analyze` 零问题；未改 API、依赖、Pen、平台工程或服务运行态。下一步等待 P5-B2 Identity / Revisit 方案确认。
+- `2026-08-23` 已完成 [Flutter Native P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)：Profile identity、stats、posts、comments 和本人 quick replies 已拆为独立权威快照、请求代际和结构化 issue，次级失败只在局部呈现 unavailable / stale；跨用户、disposed owner 迟到响应与跨账号私域快照均被隔离。原 `1904` 行页面和 `2598` 行测试已按职责拆分，compact / medium / expanded 为连续流、受控主轴与 `904px` 主轴 + 身份 rail；`GetMyProfile + UpdateMyProfile` 编辑任务具备精确 dirty、busy、丢弃确认和失败保留。Profile `52 / 52`、Shell Smoke `51 / 51`、全量 `274 / 274` 与 analyze 零问题；未改 API、依赖、Pen、平台工程或服务运行态。下一顺位进入 `P5-C1 Docs Reader` 方案确认。
+- `2026-08-23` 已完成 [Flutter Native P5-B2 Identity / Revisit 实施就绪与方案冻结](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)：确认 P5-B2 可完全复用既有 Profile API 与 Shell Forum / Docs handoff，不新增后端聚合；公开身份、统计、帖子、评论和我的轻回应将拆为独立权威快照、请求代际与结构化 issue，设备 recent 与完整服务端 Browse History 继续保持不同 owner。`1904` 行页面、`2598` 行测试将在布局前按职责拆分；`390 / 800 / 1440` 固定为连续信息流、受控单主轴和 expanded `904px` 主轴 + 身份上下文。资料编辑只使用 `GetMyProfile + UpdateMyProfile`，补齐权威草稿、dirty / busy / 离开保护。改造前 Profile 基线 `32 / 32`；本批只修改文档，未改 Dart、API、依赖、Pen 或平台工程，未启动服务。其后 P5-B2 已按冻结方案实施完成。
+- `2026-08-23` 已完成 [Flutter Native P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)：原 `1306` 行页面与 `1467` 行测试已按真实职责拆分，本批最大 Dart owner `702` 行；compact 连续流 + 全高键盘安全 composer、medium 单主轴 + bounded composer、expanded `904px` 主轴 + 社区洞察已落地。`Post/GetList` 最新 / 热门、页码、请求代际、刷新旧快照与结构化错误保持，分类只服务发帖；同草稿、登录回流、`forum-post:` 幂等、成功详情 / 作者 / 外部 Shell handoff 均保留。定向 `33 / 33`、Shell Smoke `51 / 51`、全量 `254 / 254` 与 `flutter analyze` 零问题；未改 API、依赖、Pen、平台工程或服务运行态。其后 P5-B2 已完成，当前转入 P5-C1 方案确认。
 - `2026-08-23` 已完成 [Flutter Native P5-A 页面族拆批与首批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)：P4 已完成的 Shell、通知状态、Discover 与 Forum Detail 固定为 P5 继承来源，不重复重构；剩余页面按 Community、Docs / Commerce、派生只读面拆为 B1–D3，并以 E 批成组静态门禁收口。首批建议为 `P5-B1 Forum Feed / Compose`：先拆 `1306` 行页面和 `1467` 行测试，再实现 `390 / 800 / 1440` 连续帖子流与独立 composer 任务，保留分页旧快照、分类、草稿、登录回流、`forum-post:` 幂等和 handoff；Profile 独立快照 / 资料编辑另列 B2。本批只修改文档，未改 Dart、API、依赖、Pen 或平台工程，未启动服务。
 - `2026-08-23` 已完成 [Flutter Native P4-B5 代表范围成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)：B1–B4 主题 / 权益、共享组件、Shell、Discover、Forum Detail 与 Forum 列表成组代表测试 `138 / 138`，Shell Smoke `51 / 51`、全量 `241 / 241`、`flutter analyze` 零问题。审计发现并机械拆分 B2 / B3 已改动的 `5144` 行 `smoke_test.dart`，拆分后最大 Smoke owner `963` 行、P4 全部改动 Dart owner 最大 `1467` 行，均低于 `1500` 行；相较 P2 `228 / 228` 基线净增 `13` 个用例且覆盖未减少。P4 静态退出门禁关闭，下一步等待 P5 页面族成组重构拆批；本批未改 Pen、API、依赖或平台工程，也未启动服务或执行真实运行态 Smoke。
 - `2026-08-23` 已完成 [Flutter Native P4-B4 Forum Detail 拆分与代表页](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23)：原 `3768` 行页面与 `2232` 行测试已按真实职责拆分，所有本批 Dart owner 均低于 `1500` 行；compact 连续阅读、medium 单主轴与 `1440px` 下 `220 / 820 / 250` 社区导航—连续正文—线程索引已落地。回答、轻回应、评论 / 子评论、编辑、幂等、登录回流、来源返回、定位和分页契约保持；定向 `29 / 29`、Forum 列表 `20 / 20`、Shell Smoke `51 / 51`、全量 `241 / 241` 与 `flutter analyze` 零问题。本批未改 Pen、后端 API、其他页面族、平台工程或服务运行态；其后 P4-B5 已完成并关闭 P4 静态退出门禁。
@@ -192,14 +193,14 @@
 
 ## 当前事项（2026-08-23）
 
-1. `P5-B1 Forum Feed / Compose` 已完成；P4 Shell / Notification / Discover / Forum Detail 继续作为继承基座。
-2. 第一顺位等待确认 `P5-B2 Identity / Revisit`：先审计 Profile 独立权威快照、页面 / 测试 owner、三档结构和资料编辑 dirty / busy / 离开保护。
-3. P5-B2 不自动授权 Docs / Commerce / 派生只读面、真实 Gateway / Android RC Smoke、平台工程、服务启动、签名或分发。
+1. `P5-B1 Forum Feed / Compose` 与 `P5-B2 Identity / Revisit` 已完成；P4 Shell / Notification / Discover / Forum Detail 继续作为继承基座。
+2. 第一顺位等待确认 `P5-C1 Docs Reader`：先审计内联详情 / handoff route 共用正文 owner、刷新旧正文 stale、页面 / 测试边界和目录—正文三档结构。
+3. P5-C1 不自动授权 Commerce / 派生只读面、真实 Gateway / Android RC Smoke、平台工程、服务启动、签名或分发。
 
 ## 当前执行入口
 
 - [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
-- [Flutter Native P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
+- [Flutter Native P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 - [F4-R-T03 Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)
 - [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)

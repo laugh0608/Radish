@@ -4,199 +4,292 @@ import '../../../core/network/radish_api_client.dart';
 import '../data/profile_models.dart';
 import '../data/profile_repository.dart';
 
-enum ProfileStatus {
-  idle,
-  loading,
-  ready,
-  error,
+enum ProfileResourceStatus { idle, loading, ready, unavailable, stale }
+
+enum ProfileIssueKind { unavailable, invalidResponse, request }
+
+class ProfileIssue {
+  const ProfileIssue({
+    required this.kind,
+    required this.message,
+    this.code,
+    this.statusCode,
+  });
+
+  factory ProfileIssue.fromApi(RadishApiClientException error) {
+    final unavailable = error.statusCode == null || error.statusCode == 503;
+    return ProfileIssue(
+      kind:
+          unavailable ? ProfileIssueKind.unavailable : ProfileIssueKind.request,
+      message: error.message,
+      code: error.code,
+      statusCode: error.statusCode,
+    );
+  }
+
+  factory ProfileIssue.invalidResponse(
+    FormatException error, {
+    required String resourceLabel,
+  }) {
+    return ProfileIssue(
+      kind: ProfileIssueKind.invalidResponse,
+      message: '$resourceLabel返回格式异常：${error.message}',
+      code: 'Profile.InvalidResponse',
+    );
+  }
+
+  final ProfileIssueKind kind;
+  final String message;
+  final String? code;
+  final int? statusCode;
+}
+
+class ProfileSnapshot<T> {
+  const ProfileSnapshot({
+    required this.status,
+    this.data,
+    this.issue,
+    this.isRefreshing = false,
+  });
+
+  const ProfileSnapshot.idle() : this(status: ProfileResourceStatus.idle);
+
+  final ProfileResourceStatus status;
+  final T? data;
+  final ProfileIssue? issue;
+  final bool isRefreshing;
+
+  bool get hasData => data != null;
+  bool get isLoading => status == ProfileResourceStatus.loading;
+  bool get isUnavailable => status == ProfileResourceStatus.unavailable;
+  bool get isStale => status == ProfileResourceStatus.stale;
+
+  ProfileSnapshot<T> startLoad() {
+    if (data == null) {
+      return ProfileSnapshot<T>(status: ProfileResourceStatus.loading);
+    }
+    return ProfileSnapshot<T>(
+      status: status == ProfileResourceStatus.stale
+          ? ProfileResourceStatus.stale
+          : ProfileResourceStatus.ready,
+      data: data,
+      issue: issue,
+      isRefreshing: true,
+    );
+  }
+
+  ProfileSnapshot<T> resolve(T nextData) {
+    return ProfileSnapshot<T>(
+      status: ProfileResourceStatus.ready,
+      data: nextData,
+    );
+  }
+
+  ProfileSnapshot<T> reject(ProfileIssue nextIssue) {
+    if (data == null) {
+      return ProfileSnapshot<T>(
+        status: ProfileResourceStatus.unavailable,
+        issue: nextIssue,
+      );
+    }
+    return ProfileSnapshot<T>(
+      status: ProfileResourceStatus.stale,
+      data: data,
+      issue: nextIssue,
+    );
+  }
+}
+
+class ProfilePagedSnapshot<T> {
+  const ProfilePagedSnapshot({
+    required this.status,
+    this.items = const [],
+    this.page = 1,
+    this.pageSize = 3,
+    this.total = 0,
+    this.issue,
+    this.loadMoreIssue,
+    this.isRefreshing = false,
+    this.isLoadingMore = false,
+  });
+
+  const ProfilePagedSnapshot.idle() : this(status: ProfileResourceStatus.idle);
+
+  final ProfileResourceStatus status;
+  final List<T> items;
+  final int page;
+  final int pageSize;
+  final int total;
+  final ProfileIssue? issue;
+  final ProfileIssue? loadMoreIssue;
+  final bool isRefreshing;
+  final bool isLoadingMore;
+
+  bool get hasData =>
+      status == ProfileResourceStatus.ready ||
+      status == ProfileResourceStatus.stale ||
+      items.isNotEmpty;
+  bool get isLoading => status == ProfileResourceStatus.loading;
+  bool get isUnavailable => status == ProfileResourceStatus.unavailable;
+  bool get isStale => status == ProfileResourceStatus.stale;
+  bool get hasMore => pageSize > 0 && total > items.length;
+
+  ProfilePagedSnapshot<T> startLoad() {
+    if (!hasData) {
+      return ProfilePagedSnapshot<T>(status: ProfileResourceStatus.loading);
+    }
+    return ProfilePagedSnapshot<T>(
+      status: status == ProfileResourceStatus.stale
+          ? ProfileResourceStatus.stale
+          : ProfileResourceStatus.ready,
+      items: items,
+      page: page,
+      pageSize: pageSize,
+      total: total,
+      issue: issue,
+      isRefreshing: true,
+    );
+  }
+
+  ProfilePagedSnapshot<T> resolve({
+    required List<T> nextItems,
+    required int nextPage,
+    required int nextPageSize,
+    required int nextTotal,
+  }) {
+    return ProfilePagedSnapshot<T>(
+      status: ProfileResourceStatus.ready,
+      items: List<T>.unmodifiable(nextItems),
+      page: nextPage,
+      pageSize: nextPageSize,
+      total: nextTotal,
+    );
+  }
+
+  ProfilePagedSnapshot<T> reject(ProfileIssue nextIssue) {
+    if (!hasData) {
+      return ProfilePagedSnapshot<T>(
+        status: ProfileResourceStatus.unavailable,
+        issue: nextIssue,
+      );
+    }
+    return ProfilePagedSnapshot<T>(
+      status: ProfileResourceStatus.stale,
+      items: items,
+      page: page,
+      pageSize: pageSize,
+      total: total,
+      issue: nextIssue,
+    );
+  }
+
+  ProfilePagedSnapshot<T> startLoadMore() {
+    return ProfilePagedSnapshot<T>(
+      status: status,
+      items: items,
+      page: page,
+      pageSize: pageSize,
+      total: total,
+      issue: issue,
+      isRefreshing: isRefreshing,
+      isLoadingMore: true,
+    );
+  }
+
+  ProfilePagedSnapshot<T> resolveLoadMore({
+    required List<T> nextItems,
+    required int nextPage,
+    required int nextPageSize,
+    required int nextTotal,
+  }) {
+    return ProfilePagedSnapshot<T>(
+      status: status,
+      items: List<T>.unmodifiable(nextItems),
+      page: nextPage,
+      pageSize: nextPageSize,
+      total: nextTotal,
+      issue: issue,
+    );
+  }
+
+  ProfilePagedSnapshot<T> rejectLoadMore(ProfileIssue nextIssue) {
+    return ProfilePagedSnapshot<T>(
+      status: status,
+      items: items,
+      page: page,
+      pageSize: pageSize,
+      total: total,
+      issue: issue,
+      loadMoreIssue: nextIssue,
+    );
+  }
 }
 
 class ProfileState {
   const ProfileState({
-    required this.status,
     this.userId,
-    this.profile,
-    this.stats,
-    this.posts = const <PublicProfilePostSummary>[],
-    this.postsPage = 1,
-    this.postsPageSize = 3,
-    this.postsTotal = 0,
-    this.isLoadingMorePosts = false,
-    this.postsLoadMoreErrorMessage,
-    this.comments = const <PublicProfileCommentSummary>[],
-    this.commentsPage = 1,
-    this.commentsPageSize = 3,
-    this.commentsTotal = 0,
-    this.isLoadingMoreComments = false,
-    this.commentsLoadMoreErrorMessage,
-    this.myQuickReplies = const <UserQuickReplySummary>[],
-    this.myQuickRepliesPage = 1,
-    this.myQuickRepliesPageSize = 3,
-    this.myQuickRepliesTotal = 0,
     this.includesMyQuickReplies = false,
-    this.isLoadingMoreMyQuickReplies = false,
-    this.myQuickRepliesErrorMessage,
-    this.myQuickRepliesLoadMoreErrorMessage,
-    this.isRefreshing = false,
-    this.refreshIssueMessage,
-    this.errorMessage,
+    this.identity = const ProfileSnapshot<PublicProfileSummary>.idle(),
+    this.stats = const ProfileSnapshot<PublicProfileStats>.idle(),
+    this.posts = const ProfilePagedSnapshot<PublicProfilePostSummary>.idle(),
+    this.comments =
+        const ProfilePagedSnapshot<PublicProfileCommentSummary>.idle(),
+    this.myQuickReplies =
+        const ProfilePagedSnapshot<UserQuickReplySummary>.idle(),
   });
 
-  const ProfileState.idle()
-      : this(
-          status: ProfileStatus.idle,
-        );
-
-  final ProfileStatus status;
   final String? userId;
-  final PublicProfileSummary? profile;
-  final PublicProfileStats? stats;
-  final List<PublicProfilePostSummary> posts;
-  final int postsPage;
-  final int postsPageSize;
-  final int postsTotal;
-  final bool isLoadingMorePosts;
-  final String? postsLoadMoreErrorMessage;
-  final List<PublicProfileCommentSummary> comments;
-  final int commentsPage;
-  final int commentsPageSize;
-  final int commentsTotal;
-  final bool isLoadingMoreComments;
-  final String? commentsLoadMoreErrorMessage;
-  final List<UserQuickReplySummary> myQuickReplies;
-  final int myQuickRepliesPage;
-  final int myQuickRepliesPageSize;
-  final int myQuickRepliesTotal;
   final bool includesMyQuickReplies;
-  final bool isLoadingMoreMyQuickReplies;
-  final String? myQuickRepliesErrorMessage;
-  final String? myQuickRepliesLoadMoreErrorMessage;
-  final bool isRefreshing;
-  final String? refreshIssueMessage;
-  final String? errorMessage;
+  final ProfileSnapshot<PublicProfileSummary> identity;
+  final ProfileSnapshot<PublicProfileStats> stats;
+  final ProfilePagedSnapshot<PublicProfilePostSummary> posts;
+  final ProfilePagedSnapshot<PublicProfileCommentSummary> comments;
+  final ProfilePagedSnapshot<UserQuickReplySummary> myQuickReplies;
 
-  bool get isIdle => status == ProfileStatus.idle;
-
-  bool get isLoading => status == ProfileStatus.loading;
-
-  bool get isReady => status == ProfileStatus.ready;
-
-  bool get isError => status == ProfileStatus.error;
-
-  bool get isBusy => isLoading || isRefreshing;
-
-  bool get hasMoreMyQuickReplies =>
-      includesMyQuickReplies &&
-      myQuickRepliesTotal > myQuickReplies.length &&
-      myQuickRepliesPageSize > 0;
-
-  bool get hasMorePosts => postsTotal > posts.length && postsPageSize > 0;
-
-  bool get hasMoreComments =>
-      commentsTotal > comments.length && commentsPageSize > 0;
+  bool get isIdle => userId == null;
+  bool get isBusy => identity.isLoading || isRefreshing;
+  bool get isRefreshing =>
+      identity.isRefreshing ||
+      stats.isRefreshing ||
+      posts.isRefreshing ||
+      comments.isRefreshing ||
+      myQuickReplies.isRefreshing;
 
   ProfileState copyWith({
-    ProfileStatus? status,
     String? userId,
     bool clearUserId = false,
-    PublicProfileSummary? profile,
-    bool clearProfile = false,
-    PublicProfileStats? stats,
-    bool clearStats = false,
-    List<PublicProfilePostSummary>? posts,
-    bool clearPosts = false,
-    int? postsPage,
-    int? postsPageSize,
-    int? postsTotal,
-    bool? isLoadingMorePosts,
-    String? postsLoadMoreErrorMessage,
-    bool clearPostsLoadMoreError = false,
-    List<PublicProfileCommentSummary>? comments,
-    bool clearComments = false,
-    int? commentsPage,
-    int? commentsPageSize,
-    int? commentsTotal,
-    bool? isLoadingMoreComments,
-    String? commentsLoadMoreErrorMessage,
-    bool clearCommentsLoadMoreError = false,
-    List<UserQuickReplySummary>? myQuickReplies,
-    bool clearMyQuickReplies = false,
-    int? myQuickRepliesPage,
-    int? myQuickRepliesPageSize,
-    int? myQuickRepliesTotal,
     bool? includesMyQuickReplies,
-    bool? isLoadingMoreMyQuickReplies,
-    String? myQuickRepliesErrorMessage,
-    bool clearMyQuickRepliesError = false,
-    String? myQuickRepliesLoadMoreErrorMessage,
-    bool clearMyQuickRepliesLoadMoreError = false,
-    bool? isRefreshing,
-    String? refreshIssueMessage,
-    bool clearRefreshIssue = false,
-    String? errorMessage,
-    bool clearError = false,
+    ProfileSnapshot<PublicProfileSummary>? identity,
+    ProfileSnapshot<PublicProfileStats>? stats,
+    ProfilePagedSnapshot<PublicProfilePostSummary>? posts,
+    ProfilePagedSnapshot<PublicProfileCommentSummary>? comments,
+    ProfilePagedSnapshot<UserQuickReplySummary>? myQuickReplies,
   }) {
     return ProfileState(
-      status: status ?? this.status,
       userId: clearUserId ? null : (userId ?? this.userId),
-      profile: clearProfile ? null : (profile ?? this.profile),
-      stats: clearStats ? null : (stats ?? this.stats),
-      posts: clearPosts
-          ? const <PublicProfilePostSummary>[]
-          : (posts ?? this.posts),
-      postsPage: postsPage ?? this.postsPage,
-      postsPageSize: postsPageSize ?? this.postsPageSize,
-      postsTotal: postsTotal ?? this.postsTotal,
-      isLoadingMorePosts: isLoadingMorePosts ?? this.isLoadingMorePosts,
-      postsLoadMoreErrorMessage: clearPostsLoadMoreError
-          ? null
-          : (postsLoadMoreErrorMessage ?? this.postsLoadMoreErrorMessage),
-      comments: clearComments
-          ? const <PublicProfileCommentSummary>[]
-          : (comments ?? this.comments),
-      commentsPage: commentsPage ?? this.commentsPage,
-      commentsPageSize: commentsPageSize ?? this.commentsPageSize,
-      commentsTotal: commentsTotal ?? this.commentsTotal,
-      isLoadingMoreComments:
-          isLoadingMoreComments ?? this.isLoadingMoreComments,
-      commentsLoadMoreErrorMessage: clearCommentsLoadMoreError
-          ? null
-          : (commentsLoadMoreErrorMessage ?? this.commentsLoadMoreErrorMessage),
-      myQuickReplies: clearMyQuickReplies
-          ? const <UserQuickReplySummary>[]
-          : (myQuickReplies ?? this.myQuickReplies),
-      myQuickRepliesPage: myQuickRepliesPage ?? this.myQuickRepliesPage,
-      myQuickRepliesPageSize:
-          myQuickRepliesPageSize ?? this.myQuickRepliesPageSize,
-      myQuickRepliesTotal: myQuickRepliesTotal ?? this.myQuickRepliesTotal,
       includesMyQuickReplies:
           includesMyQuickReplies ?? this.includesMyQuickReplies,
-      isLoadingMoreMyQuickReplies:
-          isLoadingMoreMyQuickReplies ?? this.isLoadingMoreMyQuickReplies,
-      myQuickRepliesErrorMessage: clearMyQuickRepliesError
-          ? null
-          : (myQuickRepliesErrorMessage ?? this.myQuickRepliesErrorMessage),
-      myQuickRepliesLoadMoreErrorMessage: clearMyQuickRepliesLoadMoreError
-          ? null
-          : (myQuickRepliesLoadMoreErrorMessage ??
-              this.myQuickRepliesLoadMoreErrorMessage),
-      isRefreshing: isRefreshing ?? this.isRefreshing,
-      refreshIssueMessage: clearRefreshIssue
-          ? null
-          : (refreshIssueMessage ?? this.refreshIssueMessage),
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
+      identity: identity ?? this.identity,
+      stats: stats ?? this.stats,
+      posts: posts ?? this.posts,
+      comments: comments ?? this.comments,
+      myQuickReplies: myQuickReplies ?? this.myQuickReplies,
     );
   }
 }
 
 class ProfileController extends ChangeNotifier {
-  ProfileController({
-    required ProfileRepository repository,
-  }) : _repository = repository;
+  ProfileController({required ProfileRepository repository})
+      : _repository = repository;
 
   final ProfileRepository _repository;
-  ProfileState _state = const ProfileState.idle();
-  int _requestVersion = 0;
+  ProfileState _state = const ProfileState();
+  int _targetEpoch = 0;
+  int _identityVersion = 0;
+  int _statsVersion = 0;
+  int _postsVersion = 0;
+  int _commentsVersion = 0;
+  int _quickRepliesVersion = 0;
 
   ProfileState get state => _state;
 
@@ -205,422 +298,555 @@ class ProfileController extends ChangeNotifier {
     bool includeMyQuickReplies = false,
     String? accessToken,
   }) async {
-    final normalizedUserId = userId?.trim();
-    if (normalizedUserId == null || normalizedUserId.isEmpty) {
-      _requestVersion++;
-      _state = const ProfileState.idle();
-      notifyListeners();
+    final normalizedUserId = _normalize(userId);
+    if (normalizedUserId == null) {
+      _clearTarget();
       return;
     }
 
     if (_state.userId == normalizedUserId &&
         _state.includesMyQuickReplies == includeMyQuickReplies &&
-        (_state.isLoading || _state.isReady)) {
+        (_state.identity.isLoading || _state.identity.hasData)) {
       return;
     }
 
-    await _load(
-      normalizedUserId,
-      includeMyQuickReplies: includeMyQuickReplies,
-      accessToken: accessToken,
+    final epoch = ++_targetEpoch;
+    _invalidateResourceRequests();
+    _state = ProfileState(
+      userId: normalizedUserId,
+      includesMyQuickReplies: includeMyQuickReplies,
+      identity: const ProfileSnapshot<PublicProfileSummary>(
+        status: ProfileResourceStatus.loading,
+      ),
+      stats: const ProfileSnapshot<PublicProfileStats>(
+        status: ProfileResourceStatus.loading,
+      ),
+      posts: const ProfilePagedSnapshot<PublicProfilePostSummary>(
+        status: ProfileResourceStatus.loading,
+      ),
+      comments: const ProfilePagedSnapshot<PublicProfileCommentSummary>(
+        status: ProfileResourceStatus.loading,
+      ),
+      myQuickReplies: includeMyQuickReplies
+          ? const ProfilePagedSnapshot<UserQuickReplySummary>(
+              status: ProfileResourceStatus.loading,
+            )
+          : const ProfilePagedSnapshot<UserQuickReplySummary>.idle(),
     );
+    notifyListeners();
+
+    final identityFuture = _loadIdentity(normalizedUserId, epoch: epoch);
+    final statsFuture = _loadStats(normalizedUserId, epoch: epoch);
+    final postsFuture = _loadPosts(normalizedUserId, epoch: epoch);
+    final commentsFuture = _loadComments(normalizedUserId, epoch: epoch);
+    final quickRepliesFuture = includeMyQuickReplies
+        ? _loadQuickReplies(accessToken, epoch: epoch)
+        : Future<void>.value();
+
+    await identityFuture;
+    await statsFuture;
+    await postsFuture;
+    await commentsFuture;
+    await quickRepliesFuture;
   }
 
-  Future<void> refresh({
-    String? accessToken,
-  }) async {
+  Future<void> refresh({String? accessToken}) async {
     final userId = _state.userId;
-    if (userId == null || userId.isEmpty) {
+    if (userId == null) {
       return;
     }
 
-    await _load(
-      userId,
-      includeMyQuickReplies: _state.includesMyQuickReplies,
-      accessToken: accessToken,
-      preserveCurrentProfile: _state.profile != null,
-    );
+    final epoch = _targetEpoch;
+    final identityFuture = _loadIdentity(userId, epoch: epoch);
+    final statsFuture = _loadStats(userId, epoch: epoch);
+    final postsFuture = _loadPosts(userId, epoch: epoch);
+    final commentsFuture = _loadComments(userId, epoch: epoch);
+    final quickRepliesFuture = _state.includesMyQuickReplies
+        ? _loadQuickReplies(accessToken, epoch: epoch)
+        : Future<void>.value();
+
+    await identityFuture;
+    await statsFuture;
+    await postsFuture;
+    await commentsFuture;
+    await quickRepliesFuture;
   }
 
   Future<void> loadMorePosts() async {
     final userId = _state.userId;
-    if (!_state.isReady ||
-        userId == null ||
-        userId.isEmpty ||
-        !_state.hasMorePosts ||
-        _state.isLoadingMorePosts) {
+    final current = _state.posts;
+    if (userId == null ||
+        !current.hasMore ||
+        current.isLoadingMore ||
+        current.isRefreshing) {
       return;
     }
 
-    final requestVersion = ++_requestVersion;
-    final nextPage = _state.postsPage + 1;
-    final pageSize = _state.postsPageSize <= 0 ? 3 : _state.postsPageSize;
-    _state = _state.copyWith(
-      isLoadingMorePosts: true,
-      clearPostsLoadMoreError: true,
-    );
+    final epoch = _targetEpoch;
+    final version = ++_postsVersion;
+    _state = _state.copyWith(posts: current.startLoadMore());
     notifyListeners();
 
     try {
-      final postPage = await _repository.getPublicPosts(
+      final page = await _repository.getPublicPosts(
         userId: userId,
-        pageIndex: nextPage,
-        pageSize: pageSize,
+        pageIndex: current.page + 1,
+        pageSize: current.pageSize <= 0 ? 3 : current.pageSize,
       );
-
-      if (requestVersion != _requestVersion) {
+      if (!_isCurrent(epoch, version, _postsVersion)) {
         return;
       }
-
-      final existingIds = _state.posts.map((item) => item.id).toSet();
-      final nextPosts = <PublicProfilePostSummary>[
-        ..._state.posts,
-        ...postPage.posts.where((item) => !existingIds.contains(item.id)),
+      final existingIds = current.items.map((item) => item.id).toSet();
+      final items = <PublicProfilePostSummary>[
+        ...current.items,
+        ...page.posts.where((item) => existingIds.add(item.id)),
       ];
-
       _state = _state.copyWith(
-        posts: nextPosts,
-        postsPage: postPage.page,
-        postsPageSize: postPage.pageSize,
-        postsTotal: postPage.dataCount,
-        isLoadingMorePosts: false,
-        clearPostsLoadMoreError: true,
+        posts: current.resolveLoadMore(
+          nextItems: items,
+          nextPage: page.page,
+          nextPageSize: page.pageSize,
+          nextTotal: page.dataCount,
+        ),
       );
       notifyListeners();
     } on RadishApiClientException catch (error) {
-      _setPostsLoadMoreError(requestVersion, error.message);
+      _rejectPostsLoadMore(epoch, version, ProfileIssue.fromApi(error));
     } on FormatException catch (error) {
-      _setPostsLoadMoreError(
-        requestVersion,
-        '公开帖子返回格式异常：${error.message}',
+      _rejectPostsLoadMore(
+        epoch,
+        version,
+        ProfileIssue.invalidResponse(error, resourceLabel: '公开帖子'),
+      );
+    } catch (error) {
+      _rejectPostsLoadMore(
+        epoch,
+        version,
+        _unexpectedProfileIssue(error, resourceLabel: '公开帖子'),
       );
     }
   }
 
   Future<void> loadMoreComments() async {
     final userId = _state.userId;
-    if (!_state.isReady ||
-        userId == null ||
-        userId.isEmpty ||
-        !_state.hasMoreComments ||
-        _state.isLoadingMoreComments) {
+    final current = _state.comments;
+    if (userId == null ||
+        !current.hasMore ||
+        current.isLoadingMore ||
+        current.isRefreshing) {
       return;
     }
 
-    final requestVersion = ++_requestVersion;
-    final nextPage = _state.commentsPage + 1;
-    final pageSize = _state.commentsPageSize <= 0 ? 3 : _state.commentsPageSize;
-    _state = _state.copyWith(
-      isLoadingMoreComments: true,
-      clearCommentsLoadMoreError: true,
-    );
+    final epoch = _targetEpoch;
+    final version = ++_commentsVersion;
+    _state = _state.copyWith(comments: current.startLoadMore());
     notifyListeners();
 
     try {
-      final commentPage = await _repository.getPublicComments(
+      final page = await _repository.getPublicComments(
         userId: userId,
-        pageIndex: nextPage,
-        pageSize: pageSize,
+        pageIndex: current.page + 1,
+        pageSize: current.pageSize <= 0 ? 3 : current.pageSize,
       );
-
-      if (requestVersion != _requestVersion) {
+      if (!_isCurrent(epoch, version, _commentsVersion)) {
         return;
       }
-
-      final existingIds = _state.comments.map((item) => item.id).toSet();
-      final nextComments = <PublicProfileCommentSummary>[
-        ..._state.comments,
-        ...commentPage.comments.where((item) => !existingIds.contains(item.id)),
+      final existingIds = current.items.map((item) => item.id).toSet();
+      final items = <PublicProfileCommentSummary>[
+        ...current.items,
+        ...page.comments.where((item) => existingIds.add(item.id)),
       ];
-
       _state = _state.copyWith(
-        comments: nextComments,
-        commentsPage: commentPage.page,
-        commentsPageSize: commentPage.pageSize,
-        commentsTotal: commentPage.dataCount,
-        isLoadingMoreComments: false,
-        clearCommentsLoadMoreError: true,
+        comments: current.resolveLoadMore(
+          nextItems: items,
+          nextPage: page.page,
+          nextPageSize: page.pageSize,
+          nextTotal: page.dataCount,
+        ),
       );
       notifyListeners();
     } on RadishApiClientException catch (error) {
-      _setCommentsLoadMoreError(requestVersion, error.message);
+      _rejectCommentsLoadMore(epoch, version, ProfileIssue.fromApi(error));
     } on FormatException catch (error) {
-      _setCommentsLoadMoreError(
-        requestVersion,
-        '公开评论返回格式异常：${error.message}',
+      _rejectCommentsLoadMore(
+        epoch,
+        version,
+        ProfileIssue.invalidResponse(error, resourceLabel: '公开评论'),
+      );
+    } catch (error) {
+      _rejectCommentsLoadMore(
+        epoch,
+        version,
+        _unexpectedProfileIssue(error, resourceLabel: '公开评论'),
       );
     }
   }
 
-  Future<void> loadMoreMyQuickReplies({
-    required String accessToken,
-  }) async {
-    final normalizedAccessToken = accessToken.trim();
-    if (!_state.isReady ||
-        !_state.includesMyQuickReplies ||
-        !_state.hasMoreMyQuickReplies ||
-        _state.isLoadingMoreMyQuickReplies ||
-        normalizedAccessToken.isEmpty) {
+  Future<void> loadMoreMyQuickReplies({required String accessToken}) async {
+    final current = _state.myQuickReplies;
+    final normalizedToken = _normalize(accessToken);
+    if (!_state.includesMyQuickReplies ||
+        normalizedToken == null ||
+        !current.hasMore ||
+        current.isLoadingMore ||
+        current.isRefreshing) {
       return;
     }
 
-    final requestVersion = ++_requestVersion;
-    final nextPage = _state.myQuickRepliesPage + 1;
-    final pageSize =
-        _state.myQuickRepliesPageSize <= 0 ? 3 : _state.myQuickRepliesPageSize;
-    _state = _state.copyWith(
-      isLoadingMoreMyQuickReplies: true,
-      clearMyQuickRepliesLoadMoreError: true,
-    );
+    final epoch = _targetEpoch;
+    final version = ++_quickRepliesVersion;
+    _state = _state.copyWith(myQuickReplies: current.startLoadMore());
     notifyListeners();
 
     try {
-      final quickReplyPage = await _repository.getMyQuickReplies(
-        pageIndex: nextPage,
-        pageSize: pageSize,
-        accessToken: normalizedAccessToken,
+      final page = await _repository.getMyQuickReplies(
+        pageIndex: current.page + 1,
+        pageSize: current.pageSize <= 0 ? 3 : current.pageSize,
+        accessToken: normalizedToken,
       );
-
-      if (requestVersion != _requestVersion) {
+      if (!_isCurrent(epoch, version, _quickRepliesVersion)) {
         return;
       }
-
-      final existingIds = _state.myQuickReplies.map((item) => item.id).toSet();
-      final nextItems = <UserQuickReplySummary>[
-        ..._state.myQuickReplies,
-        ...quickReplyPage.items.where((item) => !existingIds.contains(item.id)),
+      final existingIds = current.items.map((item) => item.id).toSet();
+      final items = <UserQuickReplySummary>[
+        ...current.items,
+        ...page.items.where((item) => existingIds.add(item.id)),
       ];
-
       _state = _state.copyWith(
-        myQuickReplies: nextItems,
-        myQuickRepliesPage: quickReplyPage.page,
-        myQuickRepliesPageSize: quickReplyPage.pageSize,
-        myQuickRepliesTotal: quickReplyPage.total,
-        isLoadingMoreMyQuickReplies: false,
-        clearMyQuickRepliesLoadMoreError: true,
+        myQuickReplies: current.resolveLoadMore(
+          nextItems: items,
+          nextPage: page.page,
+          nextPageSize: page.pageSize,
+          nextTotal: page.total,
+        ),
       );
       notifyListeners();
     } on RadishApiClientException catch (error) {
-      _setMyQuickRepliesLoadMoreError(requestVersion, error.message);
+      _rejectQuickRepliesLoadMore(epoch, version, ProfileIssue.fromApi(error));
     } on FormatException catch (error) {
-      _setMyQuickRepliesLoadMoreError(
-        requestVersion,
-        '我的轻回应返回格式异常：${error.message}',
+      _rejectQuickRepliesLoadMore(
+        epoch,
+        version,
+        ProfileIssue.invalidResponse(error, resourceLabel: '我的轻回应'),
+      );
+    } catch (error) {
+      _rejectQuickRepliesLoadMore(
+        epoch,
+        version,
+        _unexpectedProfileIssue(error, resourceLabel: '我的轻回应'),
       );
     }
   }
 
-  Future<void> _load(
-    String userId, {
-    required bool includeMyQuickReplies,
-    String? accessToken,
-    bool preserveCurrentProfile = false,
-  }) async {
-    final requestVersion = ++_requestVersion;
-    _state = _state.copyWith(
-      status:
-          preserveCurrentProfile ? ProfileStatus.ready : ProfileStatus.loading,
-      userId: userId,
-      includesMyQuickReplies: includeMyQuickReplies,
-      isRefreshing: preserveCurrentProfile,
-      clearStats: !preserveCurrentProfile,
-      clearPosts: !preserveCurrentProfile,
-      postsPage: preserveCurrentProfile ? null : 1,
-      postsPageSize: preserveCurrentProfile ? null : 3,
-      postsTotal: preserveCurrentProfile ? null : 0,
-      isLoadingMorePosts: false,
-      clearPostsLoadMoreError: true,
-      clearComments: !preserveCurrentProfile,
-      commentsPage: preserveCurrentProfile ? null : 1,
-      commentsPageSize: preserveCurrentProfile ? null : 3,
-      commentsTotal: preserveCurrentProfile ? null : 0,
-      isLoadingMoreComments: false,
-      clearCommentsLoadMoreError: true,
-      clearMyQuickReplies: !preserveCurrentProfile,
-      myQuickRepliesPage: preserveCurrentProfile ? null : 1,
-      myQuickRepliesPageSize: preserveCurrentProfile ? null : 3,
-      myQuickRepliesTotal: preserveCurrentProfile ? null : 0,
-      clearMyQuickRepliesError: true,
-      isLoadingMoreMyQuickReplies: false,
-      clearMyQuickRepliesLoadMoreError: true,
-      clearRefreshIssue: true,
-      clearError: true,
-    );
+  Future<void> _loadIdentity(String userId, {required int epoch}) async {
+    final version = ++_identityVersion;
+    _state = _state.copyWith(identity: _state.identity.startLoad());
     notifyListeners();
-
     try {
-      final results = await Future.wait<Object>([
-        _repository.getPublicProfile(userId: userId),
-        _repository.getPublicStats(userId: userId),
-        _repository.getPublicPosts(
-          userId: userId,
-          pageIndex: 1,
-          pageSize: 3,
-        ),
-        _repository.getPublicComments(
-          userId: userId,
-          pageIndex: 1,
-          pageSize: 3,
-        ),
-      ]);
-
-      if (requestVersion != _requestVersion) {
+      final profile = await _repository.getPublicProfile(userId: userId);
+      if (!_isCurrent(epoch, version, _identityVersion)) {
         return;
       }
+      _state = _state.copyWith(identity: _state.identity.resolve(profile));
+      notifyListeners();
+    } on RadishApiClientException catch (error) {
+      _rejectIdentity(epoch, version, ProfileIssue.fromApi(error));
+    } on FormatException catch (error) {
+      _rejectIdentity(
+        epoch,
+        version,
+        ProfileIssue.invalidResponse(error, resourceLabel: '公开资料'),
+      );
+    } catch (error) {
+      _rejectIdentity(
+        epoch,
+        version,
+        _unexpectedProfileIssue(error, resourceLabel: '公开资料'),
+      );
+    }
+  }
 
-      final profile = results[0] as PublicProfileSummary;
-      final stats = results[1] as PublicProfileStats;
-      final postPage = results[2] as PublicProfilePostPage;
-      final posts = postPage.posts;
-      final commentPage = results[3] as PublicProfileCommentPage;
-      final comments = commentPage.comments;
-      var myQuickReplies = const <UserQuickReplySummary>[];
-      var myQuickRepliesPage = 1;
-      var myQuickRepliesPageSize = 3;
-      var myQuickRepliesTotal = 0;
-      String? myQuickRepliesErrorMessage;
-
-      final normalizedAccessToken = accessToken?.trim();
-      if (includeMyQuickReplies &&
-          normalizedAccessToken != null &&
-          normalizedAccessToken.isNotEmpty) {
-        try {
-          final quickReplyPage = await _repository.getMyQuickReplies(
-            pageIndex: 1,
-            pageSize: 3,
-            accessToken: normalizedAccessToken,
-          );
-          myQuickReplies = quickReplyPage.items;
-          myQuickRepliesPage = quickReplyPage.page;
-          myQuickRepliesPageSize = quickReplyPage.pageSize;
-          myQuickRepliesTotal = quickReplyPage.total;
-        } on RadishApiClientException catch (error) {
-          myQuickRepliesErrorMessage = error.message;
-        } on FormatException catch (error) {
-          myQuickRepliesErrorMessage = '我的轻回应返回格式异常：${error.message}';
-        }
-      }
-
-      if (requestVersion != _requestVersion) {
+  Future<void> _loadStats(String userId, {required int epoch}) async {
+    final version = ++_statsVersion;
+    _state = _state.copyWith(stats: _state.stats.startLoad());
+    notifyListeners();
+    try {
+      final stats = await _repository.getPublicStats(userId: userId);
+      if (!_isCurrent(epoch, version, _statsVersion)) {
         return;
       }
+      _state = _state.copyWith(stats: _state.stats.resolve(stats));
+      notifyListeners();
+    } on RadishApiClientException catch (error) {
+      _rejectStats(epoch, version, ProfileIssue.fromApi(error));
+    } on FormatException catch (error) {
+      _rejectStats(
+        epoch,
+        version,
+        ProfileIssue.invalidResponse(error, resourceLabel: '公开统计'),
+      );
+    } catch (error) {
+      _rejectStats(
+        epoch,
+        version,
+        _unexpectedProfileIssue(error, resourceLabel: '公开统计'),
+      );
+    }
+  }
 
-      _state = _state.copyWith(
-        status: ProfileStatus.ready,
+  Future<void> _loadPosts(String userId, {required int epoch}) async {
+    final version = ++_postsVersion;
+    _state = _state.copyWith(posts: _state.posts.startLoad());
+    notifyListeners();
+    try {
+      final page = await _repository.getPublicPosts(
         userId: userId,
-        isRefreshing: false,
-        profile: profile,
-        stats: stats,
-        posts: posts,
-        postsPage: postPage.page,
-        postsPageSize: postPage.pageSize,
-        postsTotal: postPage.dataCount,
-        isLoadingMorePosts: false,
-        clearPostsLoadMoreError: true,
-        comments: comments,
-        commentsPage: commentPage.page,
-        commentsPageSize: commentPage.pageSize,
-        commentsTotal: commentPage.dataCount,
-        isLoadingMoreComments: false,
-        clearCommentsLoadMoreError: true,
-        myQuickReplies: myQuickReplies,
-        myQuickRepliesPage: myQuickRepliesPage,
-        myQuickRepliesPageSize: myQuickRepliesPageSize,
-        myQuickRepliesTotal: myQuickRepliesTotal,
-        includesMyQuickReplies: includeMyQuickReplies,
-        isLoadingMoreMyQuickReplies: false,
-        myQuickRepliesErrorMessage: myQuickRepliesErrorMessage,
-        clearMyQuickRepliesError: myQuickRepliesErrorMessage == null,
-        clearMyQuickRepliesLoadMoreError: true,
-        clearRefreshIssue: true,
-        clearError: true,
+        pageIndex: 1,
+        pageSize: 3,
+      );
+      if (!_isCurrent(epoch, version, _postsVersion)) {
+        return;
+      }
+      _state = _state.copyWith(
+        posts: _state.posts.resolve(
+          nextItems: _dedupeByStringId(
+            page.posts,
+            (item) => item.id,
+          ),
+          nextPage: page.page,
+          nextPageSize: page.pageSize,
+          nextTotal: page.dataCount,
+        ),
       );
       notifyListeners();
     } on RadishApiClientException catch (error) {
-      if (preserveCurrentProfile) {
-        _setRefreshIssue(requestVersion, error.message);
-      } else {
-        _setError(requestVersion, userId, error.message);
-      }
+      _rejectPosts(epoch, version, ProfileIssue.fromApi(error));
     } on FormatException catch (error) {
-      final message = '公开资料返回格式异常：${error.message}';
-      if (preserveCurrentProfile) {
-        _setRefreshIssue(requestVersion, message);
-      } else {
-        _setError(requestVersion, userId, message);
+      _rejectPosts(
+        epoch,
+        version,
+        ProfileIssue.invalidResponse(error, resourceLabel: '公开帖子'),
+      );
+    } catch (error) {
+      _rejectPosts(
+        epoch,
+        version,
+        _unexpectedProfileIssue(error, resourceLabel: '公开帖子'),
+      );
+    }
+  }
+
+  Future<void> _loadComments(String userId, {required int epoch}) async {
+    final version = ++_commentsVersion;
+    _state = _state.copyWith(comments: _state.comments.startLoad());
+    notifyListeners();
+    try {
+      final page = await _repository.getPublicComments(
+        userId: userId,
+        pageIndex: 1,
+        pageSize: 3,
+      );
+      if (!_isCurrent(epoch, version, _commentsVersion)) {
+        return;
       }
+      _state = _state.copyWith(
+        comments: _state.comments.resolve(
+          nextItems: _dedupeByStringId(
+            page.comments,
+            (item) => item.id,
+          ),
+          nextPage: page.page,
+          nextPageSize: page.pageSize,
+          nextTotal: page.dataCount,
+        ),
+      );
+      notifyListeners();
+    } on RadishApiClientException catch (error) {
+      _rejectComments(epoch, version, ProfileIssue.fromApi(error));
+    } on FormatException catch (error) {
+      _rejectComments(
+        epoch,
+        version,
+        ProfileIssue.invalidResponse(error, resourceLabel: '公开评论'),
+      );
+    } catch (error) {
+      _rejectComments(
+        epoch,
+        version,
+        _unexpectedProfileIssue(error, resourceLabel: '公开评论'),
+      );
     }
   }
 
-  void _setError(int requestVersion, String userId, String message) {
-    if (requestVersion != _requestVersion) {
+  Future<void> _loadQuickReplies(
+    String? accessToken, {
+    required int epoch,
+  }) async {
+    final normalizedToken = _normalize(accessToken);
+    final version = ++_quickRepliesVersion;
+    _state = _state.copyWith(
+      myQuickReplies: _state.myQuickReplies.startLoad(),
+    );
+    notifyListeners();
+
+    if (normalizedToken == null) {
+      _rejectQuickReplies(
+        epoch,
+        version,
+        const ProfileIssue(
+          kind: ProfileIssueKind.request,
+          message: '登录会话不可用，无法读取我的轻回应。',
+          code: 'Profile.SessionUnavailable',
+        ),
+      );
       return;
     }
 
+    try {
+      final page = await _repository.getMyQuickReplies(
+        pageIndex: 1,
+        pageSize: 3,
+        accessToken: normalizedToken,
+      );
+      if (!_isCurrent(epoch, version, _quickRepliesVersion)) {
+        return;
+      }
+      _state = _state.copyWith(
+        myQuickReplies: _state.myQuickReplies.resolve(
+          nextItems: _dedupeByStringId(
+            page.items,
+            (item) => item.id,
+          ),
+          nextPage: page.page,
+          nextPageSize: page.pageSize,
+          nextTotal: page.total,
+        ),
+      );
+      notifyListeners();
+    } on RadishApiClientException catch (error) {
+      _rejectQuickReplies(epoch, version, ProfileIssue.fromApi(error));
+    } on FormatException catch (error) {
+      _rejectQuickReplies(
+        epoch,
+        version,
+        ProfileIssue.invalidResponse(error, resourceLabel: '我的轻回应'),
+      );
+    } catch (error) {
+      _rejectQuickReplies(
+        epoch,
+        version,
+        _unexpectedProfileIssue(error, resourceLabel: '我的轻回应'),
+      );
+    }
+  }
+
+  void _rejectIdentity(int epoch, int version, ProfileIssue issue) {
+    if (!_isCurrent(epoch, version, _identityVersion)) return;
+    _state = _state.copyWith(identity: _state.identity.reject(issue));
+    notifyListeners();
+  }
+
+  void _rejectStats(int epoch, int version, ProfileIssue issue) {
+    if (!_isCurrent(epoch, version, _statsVersion)) return;
+    _state = _state.copyWith(stats: _state.stats.reject(issue));
+    notifyListeners();
+  }
+
+  void _rejectPosts(int epoch, int version, ProfileIssue issue) {
+    if (!_isCurrent(epoch, version, _postsVersion)) return;
+    _state = _state.copyWith(posts: _state.posts.reject(issue));
+    notifyListeners();
+  }
+
+  void _rejectComments(int epoch, int version, ProfileIssue issue) {
+    if (!_isCurrent(epoch, version, _commentsVersion)) return;
+    _state = _state.copyWith(comments: _state.comments.reject(issue));
+    notifyListeners();
+  }
+
+  void _rejectQuickReplies(int epoch, int version, ProfileIssue issue) {
+    if (!_isCurrent(epoch, version, _quickRepliesVersion)) return;
     _state = _state.copyWith(
-      status: ProfileStatus.error,
-      userId: userId,
-      isRefreshing: false,
-      errorMessage: message,
+      myQuickReplies: _state.myQuickReplies.reject(issue),
     );
     notifyListeners();
   }
 
-  void _setRefreshIssue(int requestVersion, String message) {
-    if (requestVersion != _requestVersion) {
-      return;
-    }
-
-    _state = _state.copyWith(
-      status: ProfileStatus.ready,
-      isRefreshing: false,
-      refreshIssueMessage: message,
-    );
+  void _rejectPostsLoadMore(int epoch, int version, ProfileIssue issue) {
+    if (!_isCurrent(epoch, version, _postsVersion)) return;
+    _state = _state.copyWith(posts: _state.posts.rejectLoadMore(issue));
     notifyListeners();
   }
 
-  void _setCommentsLoadMoreError(
-    int requestVersion,
-    String message,
+  void _rejectCommentsLoadMore(int epoch, int version, ProfileIssue issue) {
+    if (!_isCurrent(epoch, version, _commentsVersion)) return;
+    _state = _state.copyWith(comments: _state.comments.rejectLoadMore(issue));
+    notifyListeners();
+  }
+
+  void _rejectQuickRepliesLoadMore(
+    int epoch,
+    int version,
+    ProfileIssue issue,
   ) {
-    if (requestVersion != _requestVersion) {
-      return;
-    }
-
+    if (!_isCurrent(epoch, version, _quickRepliesVersion)) return;
     _state = _state.copyWith(
-      isLoadingMoreComments: false,
-      commentsLoadMoreErrorMessage: message,
+      myQuickReplies: _state.myQuickReplies.rejectLoadMore(issue),
     );
     notifyListeners();
   }
 
-  void _setPostsLoadMoreError(
-    int requestVersion,
-    String message,
-  ) {
-    if (requestVersion != _requestVersion) {
-      return;
-    }
+  bool _isCurrent(int epoch, int version, int currentVersion) {
+    return epoch == _targetEpoch && version == currentVersion;
+  }
 
-    _state = _state.copyWith(
-      isLoadingMorePosts: false,
-      postsLoadMoreErrorMessage: message,
-    );
+  void _clearTarget() {
+    if (_state.isIdle) return;
+    _targetEpoch++;
+    _invalidateResourceRequests();
+    _state = const ProfileState();
     notifyListeners();
   }
 
-  void _setMyQuickRepliesLoadMoreError(
-    int requestVersion,
-    String message,
-  ) {
-    if (requestVersion != _requestVersion) {
-      return;
-    }
-
-    _state = _state.copyWith(
-      isLoadingMoreMyQuickReplies: false,
-      myQuickRepliesLoadMoreErrorMessage: message,
-    );
-    notifyListeners();
+  void _invalidateResourceRequests() {
+    _identityVersion++;
+    _statsVersion++;
+    _postsVersion++;
+    _commentsVersion++;
+    _quickRepliesVersion++;
   }
+
+  @override
+  void dispose() {
+    _targetEpoch++;
+    _invalidateResourceRequests();
+    super.dispose();
+  }
+}
+
+String? _normalize(String? value) {
+  final normalized = value?.trim();
+  return normalized == null || normalized.isEmpty ? null : normalized;
+}
+
+List<T> _dedupeByStringId<T>(
+  Iterable<T> items,
+  String Function(T item) idOf,
+) {
+  final seen = <String>{};
+  return List<T>.unmodifiable(
+    items.where((item) => seen.add(idOf(item))),
+  );
+}
+
+ProfileIssue _unexpectedProfileIssue(
+  Object error, {
+  required String resourceLabel,
+}) {
+  final message = error.toString().trim();
+  return ProfileIssue(
+    kind: ProfileIssueKind.request,
+    message: message.isEmpty ? '$resourceLabel请求失败。' : message,
+    code: 'Profile.Unexpected',
+  );
 }

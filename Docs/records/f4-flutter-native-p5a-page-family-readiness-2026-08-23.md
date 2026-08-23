@@ -1,6 +1,6 @@
 # Flutter Native P5-A 页面族成组重构拆批与首批就绪审计
 
-> 状态：`P5-A readiness` 已完成；后续 [P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) 与 [P5-B2 Identity / Revisit readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23) 已完成，当前等待 P5-B2 实施确认
+> 状态：`P5-A readiness` 已完成；后续 [P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) 与 [P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) 已完成，当前等待 P5-C1 Docs Reader 方案确认
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -106,4 +106,4 @@ P5 页面不得复制 Web DOM / CSS、P4 controller 或 handoff 状态，也不�
 
 ## 7. 后续进展
 
-项目所有者已确认并完成 P5-B1，实施结果与本审计边界一致，详见 [P5-B1 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)。P5-B2 已进一步完成 [Identity / Revisit readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)，下一顺位等待独立实施确认；其他页面族、服务启动和真实 Smoke 仍不随之自动授权。
+项目所有者已确认并完成 P5-B1 与 P5-B2，实施结果与本审计边界一致，详见 [P5-B1 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) 与 [P5-B2 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)。下一顺位为 `P5-C1 Docs Reader readiness`；Commerce、派生只读面、服务启动和真实 Smoke 仍不随之自动授权。
