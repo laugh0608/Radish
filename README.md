@@ -324,7 +324,7 @@ git push origin v26.7.1-release
 
 热更新 tag 格式：`vYY.M.RELEASE.DDXX-(dev|test|release)`（如 `v26.2.1.1203-test` = 12日第3次测试轨道更新）
 
-当前 GitHub Actions 的镜像发布只响应带环境后缀的 tag：`v*-dev`、`v*-test`、`v*-release`。普通 `dev` 分支 push 不再触发镜像构建发布。
+当前 GitHub Actions 的镜像发布只响应带环境后缀的 tag：`v*-dev`、`v*-test`、`v*-release`。普通 `dev` 分支 push 不再触发镜像构建发布；五镜像成功后，`v*-test` 自动创建不占用 Latest 的 GitHub Pre-release，`v*-release` 自动创建正式 Latest Release，`v*-dev` 不创建 Release 页面。
 
 详细规范参见 [产品版本与发布标识治理](Docs/guide/version-governance.md)。
 

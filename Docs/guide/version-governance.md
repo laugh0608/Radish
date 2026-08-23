@@ -8,6 +8,7 @@
 - .NET、npm workspaces、Rust 扩展、Tauri 与 Flutter 均跟随同一个 Radish 日历版本。
 - Flutter 的商店构建号独立递增，但展示版本仍跟随产品版本，例如 `26.8.1+1`。
 - Git tag 的环境后缀只表示发布轨道，不改变产品版本。
+- `v*-test` 在五镜像成功后自动创建 GitHub Pre-release，`v*-release` 自动创建正式 Latest Release；`v*-dev` 不创建 Release 页面。
 - `Version Contract` 会阻止源码、lockfile、tag、镜像和正式发布记录不一致。
 - 当前源码产品版本为 `26.8.1`；最近生产部署仍使用固定扩展 tag `v26.7.1.1204-release`。候选版本不代表已经创建 tag 或完成部署。
 
@@ -102,6 +103,10 @@ imageTag: v26.7.1-release
 - `imageTag` 必须等于 `releaseTag`，五个正式镜像不得分别漂移。
 - 同一个 `releaseTag` 必须且只能匹配一份发布记录。
 - `dev / test` tag 不强制正式发布记录，但仍校验源码版本和 tag 格式。
+- `test` Release 必须保持 `prerelease=true / latest=false`；正式 Release 必须保持 `prerelease=false` 并显式标记 Latest。
+- GitHub Release 只复用已经存在的远端 tag；自动化必须使用 `--verify-tag`，不得在 Release job 内隐式创建或移动 tag。
+- 自动生成 notes 时，`test` 与正式 Release 都以上一个可达的 `v*-release` tag 为起点，避免正式版紧跟测试版时只剩 `test -> release` 的窄差异。
+- 同一 tag 的 workflow 重跑只能验证既有 Release 的 draft / prerelease 轨道；状态不一致必须失败，不自动覆盖 Release 或附件。
 
 发布记录应在候选提交中先写明“尚未部署”的真实状态；部署后再补实际结果，不能在 tag 前预写成功结论。
 
@@ -111,7 +116,7 @@ imageTag: v26.7.1-release
 - `npm run check:version-contract:self-test`：验证 tag 格式与发布记录元数据解析规则。
 - `npm run validate:baseline:quick`：包含以上两项。
 - GitHub `Repo Quality / Version Contract`：PR 中独立展示版本结果；现有必需检查 `Baseline Quick` 同时执行相同门禁，因此无需修改远程 ruleset 也能阻断漂移。
-- GitHub `Docker Images`：在登录 GHCR 和构建前执行 tag 校验；正式 tag 额外校验发布记录。
+- GitHub `Docker Images`：在登录 GHCR 和构建前执行 tag 校验；正式 tag 额外校验发布记录。Candidate Quality、五镜像漏洞策略和推送全部成功后，`test` tag 创建 Pre-release，正式 tag 创建 Latest Release。
 - Docker 镜像统一写入 `org.opencontainers.image.version=<完整 tag>`。
 
 ## 发布顺序
@@ -122,13 +127,15 @@ imageTag: v26.7.1-release
 4. 合并到 `master` 后，先把最新 `origin/master` 回灌并推送到 `dev`，关闭本次 PR 的分支拓扑。
 5. 在 tag 目标提交执行 `node Scripts/version-contract.mjs --tag <tag>`。
 6. 创建并推送 tag；Docker workflow 复核相同契约后才允许推送镜像。
-7. 部署时用 `RADISH_IMAGE_TAG=<tag>` 固定五个镜像。
-8. 部署后更新发布记录中的真实验证与回滚结论。
+7. 等待五镜像与漏洞策略全部成功，再确认同 tag GitHub Release 已自动创建：`test` 为 Pre-release 且不占用 Latest，正式轨道为 Latest Release。
+8. 部署时用 `RADISH_IMAGE_TAG=<tag>` 固定五个镜像。
+9. 部署后更新发布记录中的真实验证与回滚结论。
 
 合并 `master`、创建 tag 和部署仍是三个独立决策。版本同步完成不自动授权创建 tag 或部署。
 
 ## 历史边界
 
 - 不重写、不删除既有 Git tag 或已经发布的镜像。
+- 不把测试 Pre-release 改写为正式 Release；从测试晋级正式轨道时创建新的 `v*-release` tag 和独立 Release。
 - 历史 `26.1.1` 源版本与 `v26.3.x / v26.5.x` tag 的漂移作为既有事实保留。
 - 新门禁只约束当前及未来提交，防止继续产生无法解释的版本组合。

@@ -401,6 +401,50 @@ if (imagePolicyEvaluatorCount !== 2) {
   );
 }
 
+const dockerWorkflowJobs = parseWorkflowJobs(dockerWorkflowContent);
+const githubReleaseJob = dockerWorkflowJobs.find((job) => job.jobId === 'github-release');
+const dockerWorkflowTopLevelPermissions = 'permissions:\n  contents: read\n  packages: write';
+if (!dockerWorkflowContent.includes(dockerWorkflowTopLevelPermissions)) {
+  failures.push('Docker Images workflow 顶层权限必须保持 contents: read / packages: write。');
+}
+
+const contentsWriteCount = dockerWorkflowContent.split('contents: write').length - 1;
+if (contentsWriteCount !== 1) {
+  failures.push(`Docker Images workflow 的 contents: write 必须只授予 GitHub Release job，实际出现 ${contentsWriteCount} 次。`);
+}
+
+if (!githubReleaseJob) {
+  failures.push('Docker Images workflow 缺少 github-release job。');
+} else {
+  for (const requiredFragment of [
+    'name: GitHub Release',
+    '- candidate-quality',
+    '- prepare',
+    '- backend-images',
+    '- frontend-image',
+    "needs.prepare.outputs.publish_track == 'test'",
+    "needs.prepare.outputs.publish_track == 'release'",
+    'contents: write',
+    'fetch-depth: 0',
+    'gh release view "${RADISH_RELEASE_TAG}"',
+    '--json isDraft,isPrerelease,url',
+    "git tag --merged \"${GITHUB_SHA}\" --list 'v*-release'",
+    '--verify-tag',
+    '--generate-notes',
+    '--notes-start-tag',
+    'latest_args=(--prerelease --latest=false)',
+    'latest_args=(--latest)',
+  ]) {
+    if (!githubReleaseJob.block.includes(requiredFragment)) {
+      failures.push(`Docker Images workflow GitHub Release job 缺少片段: ${requiredFragment}`);
+    }
+  }
+
+  if (githubReleaseJob.block.includes("publish_track == 'dev'")) {
+    failures.push('Docker Images workflow GitHub Release job 不得为 dev 轨道创建 Release。');
+  }
+}
+
 for (const requiredFragment of [
   "['run', 'check:repo-quality:candidate']",
   "['run', 'lint']",
