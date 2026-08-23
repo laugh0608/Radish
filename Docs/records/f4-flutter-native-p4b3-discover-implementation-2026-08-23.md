@@ -1,6 +1,6 @@
 # Flutter Native P4-B3 Discover 正式读模型与代表页实现记录
 
-> 状态：`P4-B3` 已完成；下一步等待 `P4-B4 Forum Detail 拆分与代表页` 实施授权
+> 状态：`P4-B3` 已完成；后续 `P4-B4 / P4-B5` 已完成，P4 静态退出门禁关闭
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -71,4 +71,4 @@ P4-B3 已将 Flutter Discover 从 Forum / Docs / Shop 三接口客户端聚合�
 - 本批未读取、使用或修改 `radish-flutter-native-ui-v1.pen`；实现只消费已冻结的 P3 信息层级。
 - 未新增或修改后端 API、数据库、权限、依赖、lockfile 或平台工程。
 - 未进入 `P4-B4 Forum Detail`、其他页面族、服务启动或真实运行态 Smoke。
-- 下一顺位为 `P4-B4 Forum Detail 拆分与代表页`：先按页面编排、正文 / 回答、轻回应、评论 / 子评论和 context rail 拆分超限 owner，再实施 compact 连续阅读与 expanded `220 / 820 / 250` 页面级三栏；需另行授权后实施。
+- 后续 `P4-B4 Forum Detail 拆分与代表页` 与 `P4-B5 成组静态门禁` 已按独立授权完成，详见 [P4-B4 实现记录](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23)和 [P4-B5 门禁记录](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)。P4 静态退出门禁关闭，下一顺位等待 P5 拆批。

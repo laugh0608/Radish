@@ -6,14 +6,16 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P4-B4 实施授权`
-- **产品下一顺位**：`Forum Detail 拆分与代表页`
+- **工程第一顺位**：`Flutter Native P5 页面族成组重构拆批`
+- **产品下一顺位**：`先 Shell / Community，再 Docs / Commerce，最后派生只读面`
 - **复核日期**：`2026-08-23`
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
+- `2026-08-23` 已完成 [Flutter Native P4-B5 代表范围成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)：B1–B4 主题 / 权益、共享组件、Shell、Discover、Forum Detail 与 Forum 列表成组代表测试 `138 / 138`，Shell Smoke `51 / 51`、全量 `241 / 241`、`flutter analyze` 零问题。审计发现并机械拆分 B2 / B3 已改动的 `5144` 行 `smoke_test.dart`，拆分后最大 Smoke owner `963` 行、P4 全部改动 Dart owner 最大 `1467` 行，均低于 `1500` 行；相较 P2 `228 / 228` 基线净增 `13` 个用例且覆盖未减少。P4 静态退出门禁关闭，下一步等待 P5 页面族成组重构拆批；本批未改 Pen、API、依赖或平台工程，也未启动服务或执行真实运行态 Smoke。
+- `2026-08-23` 已完成 [Flutter Native P4-B4 Forum Detail 拆分与代表页](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23)：原 `3768` 行页面与 `2232` 行测试已按真实职责拆分，所有本批 Dart owner 均低于 `1500` 行；compact 连续阅读、medium 单主轴与 `1440px` 下 `220 / 820 / 250` 社区导航—连续正文—线程索引已落地。回答、轻回应、评论 / 子评论、编辑、幂等、登录回流、来源返回、定位和分页契约保持；定向 `29 / 29`、Forum 列表 `20 / 20`、Shell Smoke `51 / 51`、全量 `241 / 241` 与 `flutter analyze` 零问题。本批未改 Pen、后端 API、其他页面族、平台工程或服务运行态；其后 P4-B5 已完成并关闭 P4 静态退出门禁。
 - `2026-08-23` 已完成 [Flutter Native P4-B3 Discover 正式读模型与代表页](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)：Flutter Discover 已从 Forum / Docs / Shop 三接口客户端聚合迁移到既有 `PublicDiscover/GetFeed` cursor 读模型，完整保留旧快照、请求代际、分页去重和结构化错误；Forum / Docs 使用现有原生 handoff，Messages 只读说明 Web 能力边界。compact 连续信息流与 expanded `904px` 主轴 + 社区洞察已落地，定向 `11 / 11`、Shell Smoke `51 / 51`、全量 `237 / 237` 与 `flutter analyze` 零问题。本批未改 Pen、后端 API、Forum Detail、其他页面族、平台工程或服务运行态，下一步等待 P4-B4 明确授权。
 - `2026-08-23` 已完成 [Flutter Native P4-B2 Web-Family Adaptive Shell](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)：compact 已落地 `64px` 品牌栏与安全区内 `358 × 64px` 胶囊五入口，medium / expanded 统一为 `68px` 顶部全局栏且不再使用全局 rail；通知表面与账户 / 最近阅读动作已从 Shell 拆分，常驻环境 / 会话 chip 带删除，五入口、`IndexedStack`、Android Back、OIDC、通知、主题、来源返回和快捷键保持。Shell 由 `1920` 行降至 `1445` 行；定向 `8 / 8`、Smoke `51 / 51`、全量 `236 / 236` 与 `flutter analyze` 零问题。本批未改 Pen、Discover、Forum Detail、平台工程或服务运行态，下一步等待 P4-B3 明确授权。
 - `2026-08-23` 已完成 [Flutter Native P4-B1 Theme Foundation 与 Shared Primitives](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)：固定 Noto Sans / Serif SC 变量 TTF、OFL / SHA 供应链记录和精确版本 `lucide_icons_flutter 3.1.15` 已接入；四主题 typography、density、surface、focus、motion、共享状态原语与主题预览—确认已收口，未拥有主题只引导 Shop。定向测试 `16 / 16`、`flutter analyze` 零问题、全量 `flutter test` `233 / 233`；同口径 release 内容链路下 APK / AAB 较 P3 基线分别增加约 `26.64 / 26.66 MiB`，增量来自完整 SC 字体，标准 Gradle Lint Vital 待网络 / 缓存稳定环境补跑。本批未改 Shell 几何、Discover、Forum Detail 或服务运行态；其后 P4-B2 已完成。
@@ -78,13 +80,6 @@
 - `2026-08-08` 已完成 [R1-C01 Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)：正式 `/console/orders` 已承接列表、独立详情、筛选 / 分页、备注、履约重试和受权资源回跳，现有 API、权限、结构化错误、LongId 与事务边界足以进入代表设计；当前结构债集中在卡片与大缝隙、重复摘要 / 动作、主表被常驻右栏挤窄，以及 mobile 仍依赖横向表格。正式方向建议采用连续表格主轴 + 按需详情 inspector，并校正 `Failed` 筛选、可重试统计、LongId 输入和通用发放文案；确认前未修改 `.pen` 或代码。
 - `2026-08-08` 已完成并关闭 [R1-W01 Private 消息工作区成组实现与运行态验收](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)：唯一活动 `.pen` 已形成 PC `1440`、Mobile `390` 与必要关键状态代表画板；正式 `/messages` 落地连续会话列表 / 消息主轴 / 按需成员上下文、搜索与在线成员互斥、紧凑 Pin、Mobile 单任务流与共享 Bottom Sheet，并统一 `720px` 结构断点和账户切换 reset。Gateway 普通 User + Accepted 互关 Direct 覆盖文本、引用、图片、Reaction、Pin、已读边界、搜索、成员互斥、焦点恢复与无横向溢出；运行态修正 Mobile 按钮可访问名称和 Chat 私密附件绑定消息后的 ACL 查询翻译错误。后端 `1194` 项、Client `509` 项测试、Lint、三项 type-check 与 production build 通过；临时 Main / Chat / Message / Log / OpenIddict 数据和上传文件均已清零，服务端口已停止。
 - `2026-08-08` 已完成并关闭 [R1-A01 Author 编辑代表页成组实现与运行态验收](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)：正式 `/docs/edit/:id` 已按确认设计落地标题 / Markdown 正文主轴、紧凑版本与动作上下文、PC `320px` context rail 和 Mobile Bottom Sheet；Gateway 下普通 Owner `TestUser` + Published 正式 v1 + `Editing` 共享草稿 v2 + Accepted Editor 覆盖 PC `1440 × 1024` 与 Mobile `390 × 844`，无横向溢出。运行态发现并修正移动端标题被动作区挤压的问题，任务头由 `261px` 收敛到 `170px`；Client `504` 项测试、Lint 与 production build 通过，临时文档、通知、审计和登录会话增量均已清零。
-- `2026-08-08` 已完成 [R1-W01 消息工作区能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)：ChatMessage 举报按 tenant / channel / reporter `CanView` 在快照与写入前失败关闭，LongId 全链保持字符串；失败重试复用原键并允许 Pending Direct 模糊结果同键回放；History / MessageWindow 统一稳定 404，Client 在权威失权时清理服务端缓存并隐藏旧正文。后端全量 `1193` 项、Client 全量 `501` 项测试与 production build 通过；撤回权限仍冻结待裁决。
-- `2026-08-08` 已完成 [R1-W01 消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)：正式 `/messages` 与 WebOS 已共用同一 ChatApp / API / Store / Hub，Direct、搜索、Reaction、Pin、回执与实时主体能力均已承接；审计发现 ChatMessage 举报 ACL / LongId、失败重试幂等和 History / MessageWindow 错误契约三组代码阻断，撤回能力证据与频道角色权限另需裁决。该临时 readiness 不改变 `R1-A01` 第一顺位。
-- `2026-08-08` 已完成 [R1-A01 Author 能力覆盖门禁修复](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)：新增关系授权的 Author Revision history / detail，支持最新终态证据与载荷清理标记，统一 Author 写响应 evidence，并将 Apply 唯一绑定服务端 `Draft.BaseDocumentVersion`；Pending Invitee 的 Draft / Revision 附件、正式 Slug / Published 公开链接和终态保留时间锚同时按最窄权限闭合。后端全量 `1179` 项与 Client 全量 `492` 项测试、production build 通过；PostgreSQL 条件用例因本机未配置继续显式跳过。
-- `2026-08-08` 已完成 [R1-A01 Author 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)：正式 Web 已承接创建、共享草稿、保存、提交 / 撤回、协作者和冲突恢复主体流程，WebOS 没有应迁回普通 Author 的独占能力；代表身份固定为“登录普通 Owner + Custom 已发布文档 + `Editing` 活跃共享草稿 + Accepted Editor”。审计发现的四项代码缺口已由同日修复批闭合。
-- `2026-08-08` 已完成并关闭 [R1-P02 帖子详情成组实现与运行态验收](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)：正式详情按已确认 PC / Mobile 代表设计落地，接入帖子 / 回帖点赞、reaction、赞赏和两级回帖；`PublicForumDetail.tsx` 从 `2292` 行收敛到 `1500` 行。Gateway 下普通读者 `TestUser` + 普通帖子覆盖 PC `1440 × 1000`、mobile `390 × 844`、`zh-CN / en-US`、`default / guofeng`、点赞 / reaction 可逆写入、两级回帖目标、来源 / 分享与无横向溢出；本地赞赏开关按既有默认关闭边界保持不变。
-- `2026-08-06` [正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)的四项推进决策已确认：正式帖子详情承接点赞、reaction 与回帖的回帖；作者删除、投票和抽奖按作者 / 类型状态保留；基础资料、头像和显示时区进入正式 Private Web；转账、资产安全和统计脱离 F4-R，后续单独裁决迁移或退役。R1-P02 的 PC / Mobile 正式代表设计随后均已确认并进入成组代码实现。
-- `2026-08-06` R1-P02 多轮评审暴露出跨页面族风险：现有代表页审计能够判断布局和视觉复用，但没有证明正式 Web 已承接项目现有能力。R1-P02 Pencil 暂停继续修补，改为先建立正式 Web、WebOS 历史实现、既有专题与 API / Service 的能力覆盖矩阵；不把“当前 Public 未接入”自动固化为长期产品边界。
 - `2026-08-06` 已确认长期视觉演进原则：F4-R 当前批次负责建立并落地新的 Radish 家族 UI 基线；本批完成后的视觉重构默认根据最新 family-ui、项目差异附录、已确认代表页和正式代码进行优化与更新，不从零重新设计。只有全新产品形态、现有信息架构无法承载目标任务或功能边界发生结构性变化并获裁决时，才重新建立页面范式。
 - `2026-08-05` 已完成 [R1-P02 Public 详情与互动代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)：现有 API、权限与写入边界保持不变；代表设计固定为普通帖子登录读者的 PC 1440 / Mobile 390 完整画板，加问答、身份回流和既有浮层关键状态。当前结构债集中在参与入口重复、解释型侧栏、卡片套卡片、mobile 辅助区长尾，以及 `PublicForumDetail.tsx` 达 `2292` 行；Pencil 方向确认前不进入代码。
 - `2026-08-05` [R1-P01 公开发现成组实现与运行态验收](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)已关闭：migration 与 host runtime 通过；Gateway 匿名 / 种子管理员登录回流、PC `1440 × 1000`、mobile `390 × 844`、`zh / en`、`default / guofeng`、真实链接和 Console 治理只读路径通过，页面无横向溢出。
@@ -194,15 +189,14 @@
 
 ## 当前事项（2026-08-23）
 
-1. `P4-B3 Discover 正式读模型与代表页` 已完成；第一顺位等待 `P4-B4 Forum Detail 拆分与代表页` 实施授权。
-2. B4 的拟定变更面固定为：先按页面编排、正文 / 回答、轻回应、评论 / 子评论和 context rail 拆分 `forum_detail_page.dart` 与超长测试，再实施 compact 连续阅读和 expanded `220 / 820 / 250` 页面级三栏。
-3. B4 必须保留 Forum 详情、回答、轻回应、评论 / 子评论、编辑、幂等、登录回流、来源返回、定位和分页 owner；不改变后端 API、业务状态机或权限。
-4. B4 不自动授权其他页面族、平台工程、服务启动或真实 Gateway / 设备 Smoke；若实施需要改变接口、架构或既有互动边界，先说明影响并等待确认。
+1. `P4-B5 代表范围成组静态门禁` 已完成，P4-B1–B5 静态退出条件满足。
+2. 第一顺位进入 `P5 页面族成组重构` 拆批；先按 Shell / Community、Docs / Commerce、派生只读面的继承顺序确认首批页面 owner、代表尺寸、状态矩阵与停止线，再实施代码。
+3. P4 完成不自动授权真实 Gateway / Android RC Smoke、P5 页面实现、平台工程、服务启动、签名或分发。
 
 ## 当前执行入口
 
 - [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
-- [Flutter Native P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
+- [Flutter Native P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 - [F4-R-T03 Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)
 - [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)
@@ -253,14 +247,9 @@
 - [R1-C01 Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)
 - [R1-W01 Private 消息工作区成组实现](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)
 - [R1-A01 Author 编辑代表页成组实现](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)
-- [R1-W01 消息工作区能力门禁修复](/records/f4-r-r1-w01-messages-capability-gate-implementation-2026-08-08)
-- [R1-W01 消息工作区设计前代码事实与能力覆盖门禁](/records/f4-r-r1-w01-messages-readiness-audit-2026-08-08)
-- [R1-A01 Author 能力覆盖门禁修复](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)
-- [R1-A01 Author 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)
 - [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)
 - [私域与作者态 Web 工作流](/frontend/private-web-workflows-design)
 - [文档作者协作与审核使用说明](/guide/docs-author-collaboration)
-- [正式 Web 能力覆盖复核](/records/f4-r-formal-web-capability-coverage-audit-2026-08-06)
 - [R1-P02 Public 详情与互动代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)
 - [R1-P02 帖子详情成组实现](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)
 - [公开 forum 应用结构](/features/forum-public-app)

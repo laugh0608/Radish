@@ -8,6 +8,7 @@ import 'package:radish_flutter/core/auth/session_store.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
+import 'package:radish_flutter/core/theme/radish_theme.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_repository.dart';
 import 'package:radish_flutter/features/forum/presentation/forum_page.dart';
@@ -17,6 +18,10 @@ Finder _forumTextFieldByLabel(String labelText) {
     (widget) =>
         widget is TextField && widget.decoration?.labelText == labelText,
   );
+}
+
+Widget _forumPageTestApp({required Widget home}) {
+  return MaterialApp(theme: buildRadishTheme(), home: home);
 }
 
 void main() {
@@ -259,7 +264,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: _SuccessForumRepository(),
@@ -284,7 +289,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: _FailingForumRepository(),
@@ -309,7 +314,7 @@ void main() {
     final repository = _PendingRefreshForumRepository();
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: repository,
@@ -349,7 +354,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: _RefreshFailingForumRepository(),
@@ -384,7 +389,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: _FailThenRecoverForumRepository(),
@@ -415,7 +420,7 @@ void main() {
     String? openedUserId;
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: _SuccessForumRepository(),
@@ -444,7 +449,7 @@ void main() {
     final openedTargets = <ForumDetailHandoffTarget>[];
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: _SuccessForumRepository(),
@@ -489,7 +494,7 @@ void main() {
     await sessionController.restore();
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: repository,
@@ -547,7 +552,7 @@ void main() {
     await sessionController.restore();
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: repository,
@@ -600,7 +605,7 @@ void main() {
     await sessionController.restore();
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: repository,
@@ -651,7 +656,7 @@ void main() {
     await sessionController.restore();
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: repository,
@@ -701,7 +706,7 @@ void main() {
     await sessionController.restore();
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: repository,
@@ -771,7 +776,7 @@ void main() {
     var consumed = 0;
 
     await tester.pumpWidget(
-      MaterialApp(
+      _forumPageTestApp(
         home: ForumPage(
           environment: const AppEnvironment.development(),
           repository: _SuccessForumRepository(),
@@ -808,7 +813,7 @@ void main() {
 
     Future<void> pumpForumPage() async {
       await tester.pumpWidget(
-        MaterialApp(
+        _forumPageTestApp(
           home: ForumPage(
             environment: const AppEnvironment.development(),
             repository: _SuccessForumRepository(),

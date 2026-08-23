@@ -1,6 +1,6 @@
 # Flutter Native P4-B2 Web-Family Adaptive Shell 实现记录
 
-> 状态：`P4-B2` 已完成；后续 `P4-B3 Discover` 已完成，当前等待 `P4-B4 Forum Detail` 实施授权
+> 状态：`P4-B2` 已完成；后续 `P4-B3–B5` 已完成，P4 静态退出门禁关闭
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -66,4 +66,4 @@ P4-B2 已把 Flutter 的默认 Material 导航改造成与正式 Web 同属一�
 - 本批未修改 `radish-flutter-native-ui-v1.pen`；实现只读取已冻结的 P3 几何与信息层级，不占用 Pen 插件。
 - 本批未安装 / 更新依赖，未生成 iOS / desktop 平台目录，未执行签名、分发或业务数据写入。
 - 本批未进入 B3 Discover、B4 Forum Detail、其他页面族或 B5 成组运行态门禁。
-- 后续 `P4-B3 Discover 正式读模型与代表页` 已按独立授权完成，详见 [P4-B3 实现记录](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)。当前下一顺位为 `P4-B4 Forum Detail 拆分与代表页`，仍需单独确认后实施。
+- 后续 `P4-B3 Discover`、`P4-B4 Forum Detail` 与 `P4-B5 成组静态门禁` 已按独立授权完成，详见 [P4-B3 实现记录](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)、[P4-B4 实现记录](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23)和 [P4-B5 门禁记录](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)。P4 静态退出门禁关闭，下一顺位等待 P5 拆批。

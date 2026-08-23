@@ -92,6 +92,15 @@ Forum tab 当前开放已登录态的纯文本帖子发布。
 - 发帖请求会生成 `forum-post:` 前缀的 `clientSubmissionId`；同一草稿失败后直接重试复用同一个 key，成功、草稿变化或账号变化后生成新 key。
 - 当前不扩展 Markdown / 富文本切换、附件、投票、抽奖、草稿箱、编辑、点赞或完整创作器。
 
+## Forum Detail 原生阅读布局
+
+Forum detail 保持“正文 -> 回答区（仅问题帖）-> 轻回应 -> 评论区”的同一连续阅读轴。
+
+- compact / medium 使用单主轴与“社区 / 本帖”紧凑入口，正文、互动和目标评论定位不拆成独立页面。
+- `1440px` expanded 代表尺寸使用 `220 / 820 / 250` 社区导航—连续正文—线程索引三栏；较窄 expanded 保留主阅读与线程索引，并把社区 / 来源上下文放回正文。
+- 三档布局共享同一 detail、comment、quick reply controller 和 handoff target，不复制数据状态或改变 Android Back 来源返回。
+- loading、empty、unavailable 与能力停止线复用 Flutter 共享状态原语；不因布局调整新增后端接口或 Web 治理能力。
+
 ## Forum 评论发布与回复
 
 Forum detail 当前在公开阅读基础上开放已登录态的根评论发布与评论回复。
