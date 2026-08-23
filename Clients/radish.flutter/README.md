@@ -4,7 +4,7 @@
 
 当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A 与 [P5-B1 Forum Feed / Compose](../../Docs/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell、统一公开 Discover cursor 流、Forum Detail 连续阅读 / 页面级三栏，以及 Forum Feed 三档连续流与独立 composer 均已落地。当前等待 P5-B2 Identity / Revisit 方案确认。
+现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、[P5-B1 Forum Feed / Compose](../../Docs/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23.md)与 [P5-B2 Identity / Revisit readiness](../../Docs/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell、统一公开 Discover cursor 流、Forum Detail 连续阅读 / 页面级三栏，以及 Forum Feed 三档连续流与独立 composer 均已落地；Profile 独立快照、三档结构和资料编辑保护已冻结。当前等待 P5-B2 实施确认。
 
 ## 当前范围
 
@@ -86,7 +86,7 @@ Clients/radish.flutter/
 2. `P2` 技术基座已完成：四主题、权益 owner、偏好持久化、Adaptive Shell 与两个代表页见 [P2 实现记录](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)
 3. `P3` 代表设计已确认：独立 Flutter 设计源已冻结 typography、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿
 4. `P4-A / P4-B1–B5` 已完成 readiness、Theme / Shared、Web-Family Adaptive Shell、统一公开 Discover cursor 流、Forum Detail 代表页与成组静态门禁
-5. `P5-A / P5-B1` 已完成拆批与 Forum Feed / Compose；下一步等待 `P5-B2 Identity / Revisit` 方案确认，后续再按 Docs / Commerce、派生只读面的顺序独立授权；Android UI RC、iOS 与 desktop 平台工程继续等待各自门禁
+5. `P5-A / P5-B1 / P5-B2 readiness` 已完成拆批、Forum Feed / Compose 与 Identity / Revisit 方案冻结；下一步等待 `P5-B2` 实施确认，后续再按 Docs / Commerce、派生只读面的顺序独立授权；Android UI RC、iOS 与 desktop 平台工程继续等待各自门禁
 
 ## Flutter 环境切换
 

@@ -1,6 +1,6 @@
 # Flutter Native P5-B1 Forum Feed / Compose 实现记录
 
-> 状态：`P5-B1` 已完成；下一步等待 `P5-B2 Identity / Revisit` 方案确认与独立授权
+> 状态：`P5-B1` 已完成；后续 [P5-B2 Identity / Revisit readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23) 已完成，等待独立实施确认
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -82,4 +82,4 @@ Repository contract 测试固定 `Post/GetList?pageIndex=2&pageSize=20&sortBy=ho
 
 ## 6. 后续顺位
 
-下一顺位为 `P5-B2 Identity / Revisit`。该批需要先确认 Profile 独立权威快照、页面 / 测试拆分、公开主页 / 我的三档结构，以及 `User/UpdateMyProfile` 的 dirty / busy / 离开保护；不由 P5-B1 自动授权。
+下一顺位为 `P5-B2 Identity / Revisit`。其独立权威快照、页面 / 测试拆分、公开主页 / 我的三档结构，以及 `User/UpdateMyProfile` 的 dirty / busy / 离开保护已在 [P5-B2 readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23) 冻结；当前等待独立实施确认，不由 P5-B1 自动授权。

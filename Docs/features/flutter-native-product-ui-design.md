@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P5-B1 Forum Feed / Compose` 已完成；下一步等待 `P5-B2 Identity / Revisit` 方案确认与实施授权
+> 状态：`P5-B2 Identity / Revisit readiness` 已完成；下一步等待独立实施确认
 >
 > 最后更新：2026-08-23（Asia/Shanghai）
 >
@@ -21,6 +21,7 @@
 > - [P4-B5 成组静态门禁记录](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)
 > - [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)
 > - [P5-B1 Forum Feed / Compose 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)
+> - [P5-B2 Identity / Revisit readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)
 
 ## 1. 结论摘要
 
@@ -316,7 +317,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 - `P5-A readiness`（已完成，2026-08-23）：确认 P4 Shell / Notification / Discover / Forum Detail 作为继承基座，不重复实现；剩余页面拆为 B1 Forum Feed / Compose、B2 Identity / Revisit、C1 Docs、C2 Commerce Browse / Transaction、C3 Commerce Private、D1 Wallet / Experience、D2 Leaderboard、D3 Browse History 与 E 成组静态门禁，详见 [P5-A 审计记录](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)。
 - `P5-B1`（已完成，2026-08-23）：Forum Feed / Compose 页面 / 测试 owner 已拆分，compact 全高 composer、medium bounded composer 与 expanded `904px` 连续主轴 + 社区洞察已落地；分页旧快照、结构化错误、分类、草稿、登录回流、`forum-post:` 幂等与 handoff 保持，详见 [P5-B1 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)。
-- `P5-B2`：Identity / Revisit；Profile 独立权威快照、页面 / 测试拆分、三档结构和资料编辑 dirty / busy / 离开保护。
+- `P5-B2 readiness`（已完成，2026-08-23）：Identity / Revisit 固定复用既有 Profile API 与 Shell recent targets；公开身份、统计、帖子、评论和我的轻回应拆为独立权威快照，页面 / 测试按真实职责拆分，三档结构采用连续信息流、受控单主轴和 expanded `904px` 主轴 + 身份上下文，资料编辑只使用 `GetMyProfile + UpdateMyProfile` 并补 dirty / busy / 离开保护，详见 [P5-B2 readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)。
 - `P5-C1–C3`：Docs Reader、Commerce Browse / Transaction、Commerce Private；购买写入只放 C2，C1 / C3 保持只读。
 - `P5-D1–D3`：Wallet / Experience、Leaderboard、Browse History 等派生只读面。
 - `P5-E`：四主题、三档窗口、关键状态、全量 analyze / test 和文件边界成组静态门禁。
@@ -353,4 +354,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-23）
 
-`P5-B1 Forum Feed / Compose` 已完成：原 `1306` 行页面和 `1467` 行测试已按职责拆分，`390 / 800 / 1440` 连续帖子流、独立 composer、expanded `904px` 主轴和社区洞察已落地；定向 `33 / 33`、Shell Smoke `51 / 51`、全量 `254 / 254` 与 analyze 零问题。第一顺位等待确认 `P5-B2 Identity / Revisit`；不自动包含 Docs / Commerce / 派生只读面、新平台工程、服务启动或真实 Gateway / 设备 Smoke。
+`P5-B2 Identity / Revisit readiness` 已完成：现有 Profile `32 / 32` 基线、API / target mapping、独立快照、owner 拆分、三档结构和编辑保护已冻结。第一顺位等待 P5-B2 独立实施确认；不自动包含 Docs / Commerce / 派生只读面、新平台工程、服务启动或真实 Gateway / 设备 Smoke。
