@@ -46,6 +46,22 @@ Finder _forumTextFieldByLabel(String labelText) {
   );
 }
 
+Future<void> _openAccountMenu(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('radish-account-action')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openNotificationMenu(WidgetTester tester) async {
+  await tester.tap(find.byKey(const Key('radish-notification-action')));
+  await tester.pumpAndSettle();
+}
+
+Future<void> _openNotificationList(WidgetTester tester) async {
+  await _openNotificationMenu(tester);
+  await tester.tap(find.text('查看通知'));
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets('restores into guest shell when no session exists',
       (tester) async {
@@ -76,11 +92,11 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('Radish Flutter'), findsOneWidget);
-    expect(find.text('游客'), findsOneWidget);
+    expect(find.text('Radish'), findsOneWidget);
+    expect(find.byTooltip('账户：游客'), findsOneWidget);
   });
 
-  testWidgets('renders shell status strip on narrow screens without overflow',
+  testWidgets('renders Web-family compact shell without overflow',
       (tester) async {
     tester.view.physicalSize = const Size(390, 844);
     tester.view.devicePixelRatio = 1.0;
@@ -108,10 +124,10 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Radish Flutter'), findsOneWidget);
-    expect(find.text('DEVELOPMENT'), findsOneWidget);
-    expect(find.text('游客'), findsOneWidget);
-    expect(find.text('登录'), findsOneWidget);
+    expect(find.text('Radish'), findsOneWidget);
+    expect(find.byKey(const Key('radish-mobile-tab-bar')), findsOneWidget);
+    expect(find.byTooltip('登录后查看通知'), findsOneWidget);
+    expect(find.byTooltip('账户：游客'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
@@ -145,13 +161,13 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('Radish Flutter'), findsOneWidget);
+    expect(find.text('Radish'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 1);
-    expect(find.text('Radish Flutter'), findsOneWidget);
+    expect(find.text('Radish'), findsOneWidget);
   });
 
   testWidgets('restores authenticated session into profile boundary',
@@ -193,7 +209,7 @@ void main() {
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
-    expect(find.text('已登录'), findsOneWidget);
+    expect(find.byTooltip('账户：user-42'), findsOneWidget);
     expect(find.text('已登录用户 user-42'), findsOneWidget);
   });
 
@@ -1130,8 +1146,8 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('已登录'), findsOneWidget);
-    expect(find.text('游客'), findsNothing);
+    expect(find.byTooltip('账户：user-42'), findsOneWidget);
+    expect(find.byTooltip('账户：游客'), findsNothing);
   });
 
   testWidgets('falls back to guest shell when refresh fails', (tester) async {
@@ -1173,8 +1189,9 @@ void main() {
 
     await tester.pump();
 
-    expect(find.text('游客'), findsOneWidget);
-    expect(find.text('会话已失效'), findsOneWidget);
+    expect(find.byTooltip('账户：游客'), findsOneWidget);
+    expect(find.text('会话需要恢复'), findsOneWidget);
+    expect(find.text('重新登录'), findsOneWidget);
   });
 
   testWidgets('native OIDC callback redeems a session into the shell',
@@ -1223,7 +1240,7 @@ void main() {
     await tester.tap(find.text('我的'));
     await tester.pumpAndSettle();
 
-    expect(find.text('已登录'), findsOneWidget);
+    expect(find.byTooltip('账户：user-88'), findsOneWidget);
     expect(find.text('已登录用户 user-88'), findsOneWidget);
   });
 
@@ -1376,7 +1393,7 @@ void main() {
 
     expect(find.text('我的'), findsWidgets);
     expect(find.text('已登录用户 user-108'), findsOneWidget);
-    expect(find.text('已登录'), findsOneWidget);
+    expect(find.byTooltip('账户：user-108'), findsOneWidget);
   });
 
   testWidgets('persisted profile sign-in target survives shell rebuild',
@@ -1453,7 +1470,7 @@ void main() {
 
     expect(find.text('我的'), findsWidgets);
     expect(find.text('已登录用户 user-208'), findsOneWidget);
-    expect(find.text('已登录'), findsOneWidget);
+    expect(find.byTooltip('账户：user-208'), findsOneWidget);
   });
 
   testWidgets('retry sign-in resumes forum detail target after cancellation',
@@ -1510,6 +1527,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
+    await _openAccountMenu(tester);
     await tester.tap(find.text('登录'));
     await tester.pumpAndSettle();
     await authController.consumePendingCallback();
@@ -1598,6 +1616,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
+    await _openAccountMenu(tester);
     await tester.tap(find.text('登录'));
     await tester.pumpAndSettle();
 
@@ -2016,7 +2035,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
-    expect(find.text('已登录'), findsWidgets);
+    expect(find.byKey(const Key('radish-account-action')), findsOneWidget);
     expect(find.text('已回到发帖表单，可以继续发布。'), findsOneWidget);
     expect(find.text('登录回流发帖'), findsOneWidget);
     expect(find.text('匿名态进入登录后，回来继续发布同一份草稿。'), findsOneWidget);
@@ -2811,9 +2830,10 @@ void main() {
     await tester.tap(find.text('我的').last);
     await tester.pumpAndSettle();
     expect(find.text('已登录用户 user-42'), findsOneWidget);
+    await _openNotificationMenu(tester);
     expect(find.text('通知 3 条'), findsOneWidget);
 
-    await tester.tap(find.text('通知 3 条'));
+    await tester.tap(find.text('查看通知'));
     await tester.pumpAndSettle();
 
     expect(find.text('系统维护'), findsOneWidget);
@@ -2840,6 +2860,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('已登录用户 user-42'), findsOneWidget);
+    await _openNotificationMenu(tester);
     expect(find.text('通知 3 条'), findsOneWidget);
   });
 
@@ -2905,8 +2926,7 @@ void main() {
 
     await tester.tap(find.text('我的').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('通知 1 条'));
-    await tester.pumpAndSettle();
+    await _openNotificationList(tester);
 
     expect(find.text('帖子被评论'), findsOneWidget);
     expect(find.textContaining('评论 · 未读'), findsOneWidget);
@@ -2983,8 +3003,7 @@ void main() {
 
     await tester.tap(find.text('我的').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('通知 1 条'));
-    await tester.pumpAndSettle();
+    await _openNotificationList(tester);
     await tester.tap(find.text('帖子被评论'));
     await tester.pumpAndSettle();
 
@@ -3038,6 +3057,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    await _openNotificationMenu(tester);
     expect(find.text('通知刷新失败'), findsOneWidget);
     expect(find.text('刷新通知'), findsOneWidget);
     expect(notificationRepository.callCount, 1);
@@ -3047,6 +3067,7 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    await _openNotificationMenu(tester);
     expect(find.text('暂无通知'), findsOneWidget);
     expect(find.text('刷新通知'), findsOneWidget);
     expect(notificationRepository.callCount, 2);
@@ -3061,10 +3082,11 @@ void main() {
     await tester.pump();
     await tester.pumpAndSettle();
 
+    await _openNotificationMenu(tester);
     expect(find.text('通知 1 条'), findsOneWidget);
     expect(notificationRepository.callCount, 3);
 
-    await tester.tap(find.text('通知 1 条'));
+    await tester.tap(find.text('查看通知'));
     await tester.pumpAndSettle();
 
     expect(find.text('帖子被评论'), findsOneWidget);
@@ -3115,6 +3137,8 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
+    await tester.tap(find.byKey(const Key('radish-recent-action')));
+    await tester.pumpAndSettle();
     expect(find.text('继续阅读论坛'), findsOneWidget);
     await tester.tap(find.text('继续阅读论坛'));
     await tester.pump();

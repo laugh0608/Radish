@@ -2,6 +2,17 @@ import 'package:flutter/widgets.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 abstract final class RadishIcons {
+  static const IconData brand = LucideIcons.sprout;
+  static const IconData discover = LucideIcons.compass;
+  static const IconData forum = LucideIcons.messagesSquare;
+  static const IconData docs = LucideIcons.notebookText;
+  static const IconData leaderboard = LucideIcons.trophy;
+  static const IconData profile = LucideIcons.userRound;
+  static const IconData notifications = LucideIcons.bell;
+  static const IconData notificationOff = LucideIcons.bellOff;
+  static const IconData history = LucideIcons.history;
+  static const IconData login = LucideIcons.logIn;
+  static const IconData logout = LucideIcons.logOut;
   static const IconData palette = LucideIcons.palette;
   static const IconData refresh = LucideIcons.refreshCw;
   static const IconData selected = LucideIcons.circleCheck;
@@ -14,4 +25,6 @@ abstract final class RadishIcons {
   static const IconData empty = LucideIcons.inbox;
   static const IconData loading = LucideIcons.loaderCircle;
   static const IconData preview = LucideIcons.sparkles;
+  static const IconData forward = LucideIcons.chevronRight;
+  static const IconData markRead = LucideIcons.checkCheck;
 }

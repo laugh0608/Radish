@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P4-B1 Theme Foundation + Shared Primitives` 已完成；等待 `P4-B2 Web-Family Adaptive Shell` 实施授权
+> 状态：`P4-B2 Web-Family Adaptive Shell` 已完成；等待 `P4-B3 Discover 正式读模型与代表页` 实施授权
 >
 > 最后更新：2026-08-23（Asia/Shanghai）
 >
@@ -15,6 +15,7 @@
 > - [P3 Flutter 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 > - [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23)
 > - [P4-B1 Theme / Shared 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)
+> - [P4-B2 Adaptive Shell 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)
 
 ## 1. 结论摘要
 
@@ -299,7 +300,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 ### P4-B：主题、共享组件与代表实现
 
 - `B1 Theme Foundation + Shared Primitives`（已完成，2026-08-23）：已接入经校验的 Noto 本地字体和精确版本 Lucide 图标；typography、density、surface、motion、焦点、共享状态原语与主题预览—确认均已落地，详见 [P4-B1 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)。
-- `B2 Web-Family Adaptive Shell`：按 compact / medium / expanded 重建共享壳层几何，保留五个真实入口与现有 OIDC、通知、返回和键盘契约。
+- `B2 Web-Family Adaptive Shell`（已完成，2026-08-23）：三档壳层、compact 安全区胶囊底栏、medium / expanded 顶部全局栏与独立通知 / 账户动作已落地，五入口及既有行为契约保持，详见 [P4-B2 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)。
 - `B3 Discover`：迁移既有公开发现 cursor 读模型，完成连续信息流与 expanded 洞察区，不扩建聊天。
 - `B4 Forum Detail`：先拆分页面与测试 owner，再完成 compact 连续阅读和 expanded `220 / 820 / 250` 页面级三栏。
 - `B5`：执行代表范围成组静态门禁；真实 Gateway / Android RC Smoke 仍作为独立阶段验收并另行授权。
@@ -342,4 +343,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-23）
 
-`P4-B1 Theme Foundation + Shared Primitives` 已完成：固定 Noto 字体、OFL / SHA 记录、精确版本 `lucide_icons_flutter 3.1.15`、正式 Theme / Shared 基座和主题预览—确认均已落地，`flutter analyze` 零问题、`flutter test` `233 / 233` 通过。Android release 内容链路验证显示完整 SC 字体使 APK / AAB 分别增加约 `26.64 / 26.66 MiB`；标准 Gradle Lint Vital 仍需在网络 / 缓存稳定环境补跑。第一顺位等待 `P4-B2 Web-Family Adaptive Shell` 实施授权；该授权不自动包含 B3 Discover、B4 Forum Detail、其他页面族、新平台工程、服务启动或真实 Smoke。
+`P4-B2 Web-Family Adaptive Shell` 已完成：compact `64px` 品牌栏与 `358 × 64px` 安全区胶囊五入口、medium / expanded `68px` 顶部全局栏、通知 / 账户 / 最近阅读动作拆分与常驻状态带清理均已落地；Shell 由 `1920` 行降至 `1445` 行。定向测试 `8 / 8`、Shell Smoke `51 / 51`、`flutter analyze` 零问题、全量 `flutter test` `236 / 236` 通过。第一顺位等待 `P4-B3 Discover 正式读模型与代表页` 实施授权；该授权不自动包含 B4 Forum Detail、其他页面族、新平台工程、服务启动或真实 Gateway / 设备 Smoke。

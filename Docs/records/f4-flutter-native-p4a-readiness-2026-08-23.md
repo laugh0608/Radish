@@ -1,6 +1,6 @@
 # Flutter Native P4-A 实施就绪审计
 
-> 状态：`P4-A readiness` 已完成；后续 `P4-B1` 已实施，当前等待 `P4-B2 Web-Family Adaptive Shell` 授权
+> 状态：`P4-A readiness` 已完成；后续 `P4-B1 / P4-B2` 已实施，当前等待 `P4-B3 Discover` 授权
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -191,4 +191,4 @@ P3 活动设计源和代表记录均冻结 Lucide 线性图标；当前 `cuperti
 - 修改 Flutter Theme / shared widgets / theme selector 及对应测试；
 - 执行 Android release 包体积前后对比，但不启动应用服务或真实 Smoke。
 
-实现与验证结论见 [P4-B1 Theme / Shared 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)。B1 授权没有自动扩大到 B2–B4 的 Shell、Discover 读模型和 Forum Detail 运行时代码改造；当前等待 P4-B2 明确授权，后续继续按本记录逐批推进并保留可审阅提交边界。
+实现与验证结论见 [P4-B1 Theme / Shared 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)与 [P4-B2 Adaptive Shell 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)。两个批次均按独立授权和可审阅边界完成；当前等待 P4-B3 明确授权，后续 B3 / B4 仍按本记录逐批推进。
