@@ -1,6 +1,6 @@
 # Flutter Native P5-C1 Docs Reader 实施就绪与方案冻结
 
-> 状态：`P5-C1 readiness` 已完成；等待实施确认
+> 状态：`P5-C1 readiness` 已完成；后续 [P5-C1 Docs Reader 实现](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)已完成
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -132,4 +132,4 @@ medium / expanded 选中新文档只更新右侧 reader，目录搜索、页码�
 - 不读取或修改 Pen；P5-C1 直接继承 P3 Reader 方向与 P4 Theme / Shared / Shell。
 - 不启动服务，不执行真实 Gateway、浏览器、Android RC 或其他设备 Smoke；运行态验收继续独立授权。
 
-P5-C1 readiness 已关闭，下一步等待项目所有者确认按上述冻结方案进入 Dart 实施。Commerce、派生只读面、平台工程与运行态 Smoke 不随本方案自动授权。
+P5-C1 readiness 已关闭，后续 Dart 实现与静态门禁结果见 [P5-C1 实现记录](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)。下一顺位进入 P5-C2 Commerce Browse / Transaction readiness；购买代码改造、P5-C3、派生只读面、平台工程与运行态 Smoke 不随之自动授权。

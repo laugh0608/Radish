@@ -1,6 +1,6 @@
 # Flutter Native P5-B2 Identity / Revisit 实现记录
 
-> 状态：`P5-B2` 已完成；后续 [P5-C1 Docs Reader readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) 已完成
+> 状态：`P5-B2` 已完成；后续 [P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)已完成
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -54,4 +54,4 @@ compact / medium / expanded 分别形成连续信息流、受控单主轴和 exp
 
 ## 6. 下一顺位
 
-P5-B2 关闭。后续 [P5-C1 Docs Reader readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) 已完成：内联详情与 handoff route 共用 reader owner、旧正文刷新 stale、目录—正文三档结构与测试边界均已冻结，当前等待实施确认。该顺位不自动授权 Commerce、派生只读面、平台工程、服务启动或真实运行态 Smoke。
+P5-B2 关闭。后续 [P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)已完成：内联详情与 handoff route 共用 reader owner、旧正文刷新 stale、目录—正文三档结构与测试边界均已落地。当前顺位进入 P5-C2 Commerce Browse / Transaction readiness；购买代码改造、P5-C3、派生只读面、平台工程、服务启动或真实运行态 Smoke 不随之自动授权。

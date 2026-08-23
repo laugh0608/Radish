@@ -5,12 +5,12 @@
 ## 当前活动设计源
 
 - `radish-web-family-ui-v1.pen`：Radish Web / Console 唯一活动设计源。当前保留已确认的 `R1-P01 / 社区发现 / PC 1440`、`Mobile 390`、`8` 个必要组件母版和主题变量；后续命中的 R1 / R2 代表设计继续在同一文件维护。
-- `radish-flutter-native-ui-v1.pen`：Flutter Native 独立活动设计源。P3 起只承载原生视觉基础、compact / medium / expanded 壳层、Discover / Forum Detail 代表结构及必要 R2 状态，不复制 Web 页面或四套主题页面族。
+- `radish-flutter-native-ui-v1.pen`：Flutter Native 独立活动设计源。承载原生视觉基础、compact / medium / expanded 壳层、Discover / Forum Detail 代表结构及必要 R2 状态；可复制正式 Web 可编辑代表页作为信息架构母版，但必须在本文件内完成 Flutter 安全区、壳层、token、输入和响应式归一化，不复制四套主题页面族。
 - 当前 family-ui 基线：RadishX `v26.7.3`。
 - Web / Console 当前进度：`R1-F01`、六个 R1、四个 R2、六组 R3 继承与 Web 四主题退出门禁均已关闭；后续只在新的真实代表差异触发升级条件时修改 Web 活动源。
-- Flutter 当前进度：P1 全页面审计、P2 主题 / 自适应技术基座与 P3 独立代表稿已完成；`2026-08-20` 先做视觉审核，确认后进入 P4-A 字体资产与共享组件 readiness。
+- Flutter 当前进度：P1–P3、P4-A / B1–B5、P5-A、P5-B1、P5-B2 与 P5-C1 已完成；下一顺位进入 P5-C2 Commerce Browse / Transaction readiness，不修改本设计源。
 - `R1-P01` 评审结论：Public 内容流采用现代自然紧凑语法、非对称主次、连续扫描行和灰玉 / 墨蓝 / 国风暖白家族色；后续页面继承视觉语法，不照搬社区信息架构。
-- `R1-P01` 颜色裁决：`guofeng` 品牌目标改为低饱和灰玉 `#5d6c57`，悬停 `#6e736d`，常规操作继续使用墨蓝 `#435c74`；`/discover` 已通过现有语义 token 局部落地，全局品牌 token 仍待共享主题批成组更新。
+- `R1-P01` 颜色裁决：`guofeng` 品牌使用低饱和灰玉 `#5d6c57`，悬停 `#6e736d`，常规操作继续使用墨蓝 `#435c74`；Web 全局品牌 token 已由 T01 成组更新并通过 T03 四主题运行态验收，Flutter 在 P4-B1 通过独立 Dart 语义映射对齐。
 
 文件名中的 `v1` 表示对应产品线设计源的主版本，而不是每次提交的快照号：
 
@@ -58,7 +58,7 @@
 
 - Web 的 header、按钮、pill、卡片、状态槽和移动 tab 先在 Web 活动源的 `R1-F01` 确认；Flutter 的 App Bar、Navigation Bar / Rail、Button、Card、Field、Chip 和状态面先在 Flutter 活动源的原生基础矩阵确认。
 - Public、Private / Author、Console 代表画板在同一文件中组合合法变体；业务密度和导航职责可以不同，但不得分叉共享样式。
-- Flutter 代表画板只组合 Flutter 活动源组件；与 Web 的一致性追溯语义 token、主题身份和专题边界，不跨文件复制完整组件或页面。
+- Flutter 代表画板只把 Flutter 活动源组件视为可复用 owner；为保留已确认信息架构，可以从 Web 活动源复制代表页母版，但复制结果必须转为 Flutter 组件、壳层和交互语义，不能把跨文件副本伪装成共享组件或直接实现依据。
 - 共享契约变更只更新受影响的 R1 / R2；R3 从代码共享层继承，不复制结构。
 - 移动底栏统一使用浮动胶囊样式、图标上文字下、5 项以内顶级入口和柔和品牌色激活态；`radish.client` public / private 共用 `发现 / 论坛 / 聊天 / 更多 / 我的`，Console 保留后台专用导航职责。
 - `/workbench` 是正式 Web “更多”功能地图，PC header 和移动底栏只展示高频入口，其余能力由“更多”或页面内入口承接。

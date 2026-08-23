@@ -6,18 +6,21 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P5-C1 Docs Reader 实施确认`
-- **产品下一顺位**：`Docs 共用正文 owner 与目录—正文三档阅读`
+- **工程第一顺位**：`Flutter Native P5-C2 Commerce Browse / Transaction 方案确认`
+- **产品下一顺位**：`Commerce 公开浏览、单商品购买与订单回流边界冻结`
 - **复核日期**：`2026-08-23`
+- **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
-- `2026-08-23` 已完成 [Flutter Native P5-C1 Docs Reader 实施就绪与方案冻结](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23)：确认只复用 `Wiki/GetList + Wiki/GetBySlug`，不新增 API；Docs tab 的目录—正文与直达 handoff 共用同一 reader controller / surface 契约，每个 Navigator route 保持独立实例和真实返回栈。目录按 query target 保留同查询旧页，reader 只在同 slug 刷新时保留旧正文 stale，切换 slug 必须清空旧正文。三档固定为 compact 单任务、medium `200–280px` 目录 + 正文、expanded `280 / 904` 目录—正文；改造前 Docs 基线 `16 / 16`。本批只修改文档，未改 Dart、API、依赖、Pen 或平台工程，未启动服务。下一步等待 P5-C1 实施确认。
+- `2026-08-23` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23)：复核 `cc2041bd..2d044927` 的 `12` 个提交与 `135` 个唯一文件，确认 GitHub Release 自动化、`26.8.2` 源码候选、P3 代表稿确认、P4-A / B1–B5 和 P5-A / B1 / B2 / C1 均有与代码一致的边界和验证证据；修正八月日志、设计源索引与 Pencil Web 母版适配旧口径。明日第一顺位只做 P5-C2 Commerce Browse / Transaction readiness，完成方案后再等待实施确认。
+- `2026-08-23` 已完成 [Flutter Native P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)：Docs 目录已落地 query target、请求代际、结构化 issue 与同查询旧页 stale；inline、handoff 和文档内链共用 reader controller / surface，同 slug 刷新保留旧正文，切换 slug 清空旧正文。原 `1294` 行页面和 `944` 行测试已按职责拆分，本批 Dart owner 最大 `951` 行；compact 单任务、medium 目录—正文与 expanded `280 / 904` 阅读结构完成。Docs `35 / 35`、Shell Smoke `51 / 51`、全量 `293 / 293` 与 analyze 零问题；未改 API、依赖、Pen、平台工程或服务运行态。下一顺位进入 P5-C2 Commerce Browse / Transaction readiness。
+- `2026-08-23` 已完成 [Flutter Native P5-C1 Docs Reader 实施就绪与方案冻结](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23)：确认只复用 `Wiki/GetList + Wiki/GetBySlug`，不新增 API；Docs tab 的目录—正文与直达 handoff 共用同一 reader controller / surface 契约，每个 Navigator route 保持独立实例和真实返回栈。目录按 query target 保留同查询旧页，reader 只在同 slug 刷新时保留旧正文 stale，切换 slug 必须清空旧正文。三档固定为 compact 单任务、medium `200–280px` 目录 + 正文、expanded `280 / 904` 目录—正文；改造前 Docs 基线 `16 / 16`。其后已按冻结方案实施完成。
 - `2026-08-23` 已完成 [Flutter Native P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)：Profile identity、stats、posts、comments 和本人 quick replies 已拆为独立权威快照、请求代际和结构化 issue，次级失败只在局部呈现 unavailable / stale；跨用户、disposed owner 迟到响应与跨账号私域快照均被隔离。原 `1904` 行页面和 `2598` 行测试已按职责拆分，compact / medium / expanded 为连续流、受控主轴与 `904px` 主轴 + 身份 rail；`GetMyProfile + UpdateMyProfile` 编辑任务具备精确 dirty、busy、丢弃确认和失败保留。Profile `52 / 52`、Shell Smoke `51 / 51`、全量 `274 / 274` 与 analyze 零问题；未改 API、依赖、Pen、平台工程或服务运行态。其后已完成 P5-C1 Docs Reader readiness。
 - `2026-08-23` 已完成 [Flutter Native P5-B2 Identity / Revisit 实施就绪与方案冻结](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)：确认 P5-B2 可完全复用既有 Profile API 与 Shell Forum / Docs handoff，不新增后端聚合；公开身份、统计、帖子、评论和我的轻回应将拆为独立权威快照、请求代际与结构化 issue，设备 recent 与完整服务端 Browse History 继续保持不同 owner。`1904` 行页面、`2598` 行测试将在布局前按职责拆分；`390 / 800 / 1440` 固定为连续信息流、受控单主轴和 expanded `904px` 主轴 + 身份上下文。资料编辑只使用 `GetMyProfile + UpdateMyProfile`，补齐权威草稿、dirty / busy / 离开保护。改造前 Profile 基线 `32 / 32`；本批只修改文档，未改 Dart、API、依赖、Pen 或平台工程，未启动服务。其后 P5-B2 已按冻结方案实施完成。
-- `2026-08-23` 已完成 [Flutter Native P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)：原 `1306` 行页面与 `1467` 行测试已按真实职责拆分，本批最大 Dart owner `702` 行；compact 连续流 + 全高键盘安全 composer、medium 单主轴 + bounded composer、expanded `904px` 主轴 + 社区洞察已落地。`Post/GetList` 最新 / 热门、页码、请求代际、刷新旧快照与结构化错误保持，分类只服务发帖；同草稿、登录回流、`forum-post:` 幂等、成功详情 / 作者 / 外部 Shell handoff 均保留。定向 `33 / 33`、Shell Smoke `51 / 51`、全量 `254 / 254` 与 `flutter analyze` 零问题；未改 API、依赖、Pen、平台工程或服务运行态。其后 P5-B2 已完成，当前转入 P5-C1 方案确认。
+- `2026-08-23` 已完成 [Flutter Native P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)：原 `1306` 行页面与 `1467` 行测试已按真实职责拆分，本批最大 Dart owner `702` 行；compact 连续流 + 全高键盘安全 composer、medium 单主轴 + bounded composer、expanded `904px` 主轴 + 社区洞察已落地。`Post/GetList` 最新 / 热门、页码、请求代际、刷新旧快照与结构化错误保持，分类只服务发帖；同草稿、登录回流、`forum-post:` 幂等、成功详情 / 作者 / 外部 Shell handoff 均保留。定向 `33 / 33`、Shell Smoke `51 / 51`、全量 `254 / 254` 与 `flutter analyze` 零问题；未改 API、依赖、Pen、平台工程或服务运行态。其后 P5-B2 与 P5-C1 已完成。
 - `2026-08-23` 已完成 [Flutter Native P5-A 页面族拆批与首批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)：P4 已完成的 Shell、通知状态、Discover 与 Forum Detail 固定为 P5 继承来源，不重复重构；剩余页面按 Community、Docs / Commerce、派生只读面拆为 B1–D3，并以 E 批成组静态门禁收口。首批建议为 `P5-B1 Forum Feed / Compose`：先拆 `1306` 行页面和 `1467` 行测试，再实现 `390 / 800 / 1440` 连续帖子流与独立 composer 任务，保留分页旧快照、分类、草稿、登录回流、`forum-post:` 幂等和 handoff；Profile 独立快照 / 资料编辑另列 B2。本批只修改文档，未改 Dart、API、依赖、Pen 或平台工程，未启动服务。
 - `2026-08-23` 已完成 [Flutter Native P4-B5 代表范围成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)：B1–B4 主题 / 权益、共享组件、Shell、Discover、Forum Detail 与 Forum 列表成组代表测试 `138 / 138`，Shell Smoke `51 / 51`、全量 `241 / 241`、`flutter analyze` 零问题。审计发现并机械拆分 B2 / B3 已改动的 `5144` 行 `smoke_test.dart`，拆分后最大 Smoke owner `963` 行、P4 全部改动 Dart owner 最大 `1467` 行，均低于 `1500` 行；相较 P2 `228 / 228` 基线净增 `13` 个用例且覆盖未减少。P4 静态退出门禁关闭，下一步等待 P5 页面族成组重构拆批；本批未改 Pen、API、依赖或平台工程，也未启动服务或执行真实运行态 Smoke。
 - `2026-08-23` 已完成 [Flutter Native P4-B4 Forum Detail 拆分与代表页](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23)：原 `3768` 行页面与 `2232` 行测试已按真实职责拆分，所有本批 Dart owner 均低于 `1500` 行；compact 连续阅读、medium 单主轴与 `1440px` 下 `220 / 820 / 250` 社区导航—连续正文—线程索引已落地。回答、轻回应、评论 / 子评论、编辑、幂等、登录回流、来源返回、定位和分页契约保持；定向 `29 / 29`、Forum 列表 `20 / 20`、Shell Smoke `51 / 51`、全量 `241 / 241` 与 `flutter analyze` 零问题。本批未改 Pen、后端 API、其他页面族、平台工程或服务运行态；其后 P4-B5 已完成并关闭 P4 静态退出门禁。
@@ -192,87 +195,21 @@
 68. 按确认方案关闭 R3-F02-C：Client 未知路径与 `/desktop` 已明确分离，两端根级运行时边界完整；Console 未登录、非 Console 用户、页面缺权、Not Found 与路由异常保持不同理由。Client、Console、类型、Lint、生产构建与 Baseline Quick 通过。
 69. 获授权后完成 R3-F02 Gateway 成组运行态验收；匿名、Admin 与非 Console `test` 的 OIDC、自服务、错误 / 路由和 PC / mobile 双语矩阵通过，运行态发现的三类共同根因已成组修正并全量回归，登录会话清理完成，专题关闭。
 
-## 当前事项（2026-08-23）
+## 明日事项（2026-08-24）
 
-1. `P5-B1 Forum Feed / Compose` 与 `P5-B2 Identity / Revisit` 已完成；P4 Shell / Notification / Discover / Forum Detail 继续作为继承基座。
-2. `P5-C1 Docs Reader readiness` 已完成：内联详情 / handoff route 共用 reader owner、刷新旧正文 stale、页面 / 测试拆分与目录—正文三档结构已冻结；第一顺位等待实施确认。
-3. P5-C1 不自动授权 Commerce / 派生只读面、真实 Gateway / Android RC Smoke、平台工程、服务启动、签名或分发。
+1. 新会话先读本页、[今日终审记录](/records/f4-day-end-doc-review-2026-08-23)、[P5-A 页面族拆批审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)、[Flutter Native 专题](/features/flutter-native-product-ui-design)与 Flutter README。
+2. 第一顺位只做 `P5-C2 Commerce Browse / Transaction readiness`：反查商品列表、`1341` 行商品详情、购买 owner、`1428` 行详情测试、repository / models 与 Shell / order handoff，不直接修改购买代码。
+3. 冻结既有商品 API、target mapping、列表 / 详情 / 资格 / 余额权威状态、支付草稿、购买 busy / error、登录回流、单商品幂等、订单确认、三档结构、owner / 测试拆分和停止线。
+4. 运行现有 Shop 定向测试建立改造前基线；readiness 报告完成后等待项目所有者确认再实施。
+5. 不提前进入 P5-C3 Commerce Private、派生只读面、Pen、依赖、平台工程、服务启动、真实 Gateway / Android RC Smoke、签名或分发。
 
 ## 当前执行入口
 
-- [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
-- [Flutter Native P5-C1 Docs Reader readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) · [P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
+- [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
+- [Flutter Native P5-C1 Docs Reader 实现](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23) · [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) · [P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
-- [F4-R-T03 Web 四主题成组运行态验收](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)
-- [F4-R-T01 Web 主题语义基线实现与静态门禁](/records/f4-r-t01-web-theme-semantic-baseline-implementation-2026-08-15)
-- [F4-R Web 主题基线与专题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)
-- [2026-08-13 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-13)
-- [R3-F02 自服务与边界页成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)
-- [R3-F02 自服务与边界页设计前代码事实与风险拆批审计](/records/f4-r-r3-f02-self-service-boundary-readiness-audit-2026-08-13)
-- [R3-F02-C 错误与路由边界实现及静态门禁](/records/f4-r-r3-f02-c-error-route-boundary-implementation-2026-08-15)
-- [R3-F02-B 自服务权威状态实现与静态门禁](/records/f4-r-r3-f02-b-self-service-authoritative-state-implementation-2026-08-15)
-- [R3-F02-A OIDC 回流信任门禁实现与静态门禁](/records/f4-r-r3-f02-a-oidc-return-trust-gate-implementation-2026-08-13)
-- [R3-C05 Console 仪表与治理派生成组运行态验收](/records/f4-r-r3-c05-console-dashboard-governance-stage-acceptance-2026-08-13)
-- [R3-C04-F Coins 权威调账与流水治理实现](/records/f4-r-r3-c04-f-console-coins-implementation-2026-08-12)
-- [R3-C04-E Stickers 权威媒体资源治理实现](/records/f4-r-r3-c04-e-console-stickers-implementation-2026-08-12)
-- [R3-C04-D Products 权威列表与独立上下架实现](/records/f4-r-r3-c04-d-console-products-implementation-2026-08-12)
-- [R3-C04-C Applications 权威目录与一次性 Secret 实现](/records/f4-r-r3-c04-c-console-applications-implementation-2026-08-12)
-- [R3-C04-B Users 权威列表与聚合详情实现](/records/f4-r-r3-c04-b-console-users-implementation-2026-08-12)
-- [2026-08-11 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-11)
-- [R3-C04-A Categories / Tags 与共享响应式资源表面实现](/records/f4-r-r3-c04-a-console-taxonomy-implementation-2026-08-11)
-- [R3-C04 Console 普通资源设计前代码事实与风险拆批审计](/records/f4-r-r3-c04-console-ordinary-resources-readiness-audit-2026-08-11)
-- [R3-P06 Public Shop 浏览与 Leaderboard 正式实现及 Gateway 验收](/records/f4-r-r3-p06-public-shop-leaderboard-implementation-2026-08-11)
-- [R3-P05 Public Docs 与 Legal 正式实现及 Gateway 验收](/records/f4-r-r3-p05-public-docs-legal-implementation-2026-08-11)
-- [R3 路由继承实施分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)
-- [R2-A02 Author 列表、修订与 Forum Compose 正式实现及 Gateway 验收](/records/f4-r-r2-a02-author-list-revisions-forum-compose-implementation-2026-08-11)
-- [2026-08-10 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-10)
 - [开发路线图](/development-plan)
-- [R2-A02 Author 列表、修订与 Forum 发布差异局部代表设计](/records/f4-r-r2-a02-author-list-revisions-forum-compose-representative-design-2026-08-10)
-- [R2-A02 Author 列表、修订与 Forum 发布差异能力门禁实现](/records/f4-r-r2-a02-author-list-revisions-forum-compose-capability-gate-implementation-2026-08-10)
-- [R2-A02 Author 列表、修订与 Forum 发布差异设计前代码事实与能力覆盖审计](/records/f4-r-r2-a02-author-list-revisions-forum-compose-readiness-audit-2026-08-10)
-- [R2-W02 Private 仪表 / 任务侧栏正式实现与 Gateway 验收](/records/f4-r-r2-w02-private-dashboard-task-rail-implementation-2026-08-10)
-- [R2-W02 Private 仪表 / 任务侧栏前端能力门禁实现](/records/f4-r-r2-w02-private-dashboard-task-rail-capability-gate-implementation-2026-08-10)
-- [R2-W02 Private 仪表 / 任务侧栏设计前代码事实与能力覆盖审计](/records/f4-r-r2-w02-private-dashboard-task-rail-readiness-audit-2026-08-10)
-- [R2-P03 Public 只读详情变体正式实现与 Gateway 验收](/records/f4-r-r2-p03-public-read-only-detail-variants-implementation-2026-08-10)
-- [R2-P03 商品评价与公开等级能力门禁实现](/records/f4-r-r2-p03-product-review-public-level-capability-gate-implementation-2026-08-09)
-- [R2-P03 商品评价与公开等级范围审计](/records/f4-r-r2-p03-product-review-public-level-scope-audit-2026-08-09)
-- [R2-P03 Public 只读详情变体局部代表设计](/records/f4-r-r2-p03-public-read-only-detail-variants-representative-design-2026-08-09)
-- [R2-P03 Public 只读详情变体能力门禁实现](/records/f4-r-r2-p03-public-read-only-detail-variants-capability-gate-implementation-2026-08-09)
-- [R2-P03 Public 只读详情变体设计前代码事实与能力覆盖审计](/records/f4-r-r2-p03-public-read-only-detail-variants-readiness-audit-2026-08-09)
-- [R2-C03 Console 设置与权限矩阵正式实现](/records/f4-r-r2-c03-console-settings-permissions-implementation-2026-08-09)
-- [R2-C03 Console 设置与权限矩阵局部代表设计](/records/f4-r-r2-c03-console-settings-permissions-representative-design-2026-08-09)
-- [R2-C03 Console 设置与权限矩阵能力门禁实现](/records/f4-r-r2-c03-console-settings-permissions-capability-gate-implementation-2026-08-09)
-- [R2-C03 Console 设置与权限矩阵设计前代码事实与能力覆盖审计](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)
-- [R1-C02 Console 案件治理 / 审计成组实现](/records/f4-r-r1-c02-console-moderation-implementation-2026-08-09)
-- [R1-C02 Console 案件治理 / 审计正式代表设计](/records/f4-r-r1-c02-console-moderation-representative-design-2026-08-09)
-- [R1-C02 Console 案件治理 / 审计前端能力门禁实现](/records/f4-r-r1-c02-console-moderation-capability-gate-implementation-2026-08-09)
-- [R1-C02 Console 案件治理 / 审计设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c02-console-moderation-readiness-audit-2026-08-09)
-- [2026-08-08 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-08)
-- [R1-C01 Console 订单表格—明细成组实现](/records/f4-r-r1-c01-console-orders-implementation-2026-08-08)
-- [R1-C01 Console 订单表格—明细设计前代码事实与能力覆盖门禁](/records/f4-r-r1-c01-console-orders-readiness-audit-2026-08-08)
-- [R1-W01 Private 消息工作区成组实现](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)
-- [R1-A01 Author 编辑代表页成组实现](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)
-- [Docs / Wiki 普通作者贡献与协作设计](/features/wiki-author-contribution-collaboration-design)
-- [私域与作者态 Web 工作流](/frontend/private-web-workflows-design)
-- [文档作者协作与审核使用说明](/guide/docs-author-collaboration)
-- [R1-P02 Public 详情与互动代码事实与设计边界审计](/records/f4-r-r1-p02-public-detail-interaction-audit-2026-08-05)
-- [R1-P02 帖子详情成组实现](/records/f4-r-r1-p02-public-detail-implementation-2026-08-08)
-- [公开 forum 应用结构](/features/forum-public-app)
-- [R1-P01 公开发现成组实现](/records/f4-r-r1-p01-public-discover-implementation-2026-08-05)
-- [R1-P01 mobile 与统一公开读模型设计](/records/f4-r-r1-p01-mobile-public-read-model-design-2026-08-05)
-- [社区发现 Public App](/features/discover-public-app)
-- [R1-P01 公开社区发现结构研究](/records/f4-r-r1-p01-public-discover-structure-study-2026-08-04)
-- [2026-08-04 日终设计收口与文档审阅](/records/f4-day-end-doc-review-2026-08-04)
-- [2026-08-03 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-03)
-- [2026-07-30 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-07-30)
-- [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)
-- [F4-R C-1 代表页代码事实审计](/frontend/f4-r-representative-page-audit)
-- [Radish UI 差异附录](/frontend/ui-addendum)
-- [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)
-- [F4-S-D 公开排行榜治理成组验收](/records/f4-s-d-leaderboard-public-governance-stage-acceptance-2026-07-30)
-- [F4-S 公开排行榜治理代码侧验收](/records/f4-s-leaderboard-public-governance-code-acceptance-2026-07-30)
-- [验证基线说明](/guide/validation-baseline)
-- [镜像漏洞门禁分层](/guide/image-vulnerability-gate)
+- [记录索引](/records/)
 
 ## 并行维护线
 

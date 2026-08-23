@@ -152,6 +152,9 @@ Docs detail 当前承载公开文档的原生只读阅读。
 
 - `discover` 文档精选、docs 列表、docs 搜索结果和 profile 最近文档都可进入原生 docs detail，并按来源返回。
 - 公开文档正文中的 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 文档链接会继续打开原生 docs detail。
+- Docs tab 内联正文、直达 handoff 与文档内链 route 共用同一 reader controller / surface 契约；每个 route 保持独立 controller 和真实返回栈。
+- 同 slug 刷新保留旧正文并局部表达 refreshing / stale；切换 slug 立即清空上一篇正文，迟到响应不会回写当前 target。
+- compact 为目录 / 正文互斥单任务，medium 为 `200–280px` 目录 + 正文，expanded 为 `280px` 目录 + `24px` 间距 + `904px` 阅读轴；直达 handoff 不为布局额外请求目录。
 - 页内锚点、附件路径、外部链接和非 docs 链接仍按文本展示，不在 Flutter 内扩外部浏览器跳转或附件治理。
 - 16 位以上纯数字旧 long slug 不作为公开可见 slug 展示或复制，避免把兼容路径当作普通用户可读地址。
 

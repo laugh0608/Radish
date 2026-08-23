@@ -1,6 +1,6 @@
 # Flutter Native P5-B1 Forum Feed / Compose 实现记录
 
-> 状态：`P5-B1` 已完成；后续 [P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) 已完成
+> 状态：`P5-B1` 已完成；后续 [P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)与 [P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)已完成
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -82,4 +82,4 @@ Repository contract 测试固定 `Post/GetList?pageIndex=2&pageSize=20&sortBy=ho
 
 ## 6. 后续顺位
 
-`P5-B2 Identity / Revisit` 已按独立授权完成，详见 [P5-B2 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)。当前顺位转入 `P5-C1 Docs Reader readiness`，不由 P5-B1 / B2 自动授权。
+`P5-B2 Identity / Revisit` 与 `P5-C1 Docs Reader` 已按独立授权完成，详见 [P5-B2 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)和 [P5-C1 实现记录](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)。当前顺位进入 `P5-C2 Commerce Browse / Transaction readiness`，不由 P5-B1–C1 自动授权购买代码改造。
