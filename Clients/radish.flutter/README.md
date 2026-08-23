@@ -4,7 +4,7 @@
 
 当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、[P4-A 实施就绪审计](../../Docs/records/f4-flutter-native-p4a-readiness-2026-08-23.md)和 [P4-B1 Theme / Shared 实现](../../Docs/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23.md)已完成：业务 owner 与行为契约保留，四主题、权益 owner、正式 Noto typography、Lucide 受控映射、共享状态原语、三档 Shell 与 Discover / Forum Detail 代表实现已落地，Flutter 页面和 Web 页面分别维护设计源。当前等待 P4-B2 Web-Family Adaptive Shell 明确授权；Discover 和 Forum Detail 继续后续分批推进。
+现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、[P4-A 实施就绪审计](../../Docs/records/f4-flutter-native-p4a-readiness-2026-08-23.md)、[P4-B1 Theme / Shared](../../Docs/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23.md)、[P4-B2 Adaptive Shell](../../Docs/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23.md)和 [P4-B3 Discover](../../Docs/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell，以及统一公开 Discover cursor 流均已落地。当前等待 P4-B4 Forum Detail 拆分与代表页明确授权。
 
 ## 当前范围
 
@@ -22,7 +22,7 @@
 - docs 正文内链跳转：公开文档正文中的 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 文档链接会继续打开原生 docs 详情；页内锚点、附件路径和非 docs 链接仍按文本展示
 - docs 关键词搜索复访：docs tab 可搜索公开文档，搜索结果继续复用原生列表、分页、刷新与详情打开路径
 - leaderboard 公开主页回流：经验榜用户可打开原生公开主页，并通过 Android 返回键回到榜单
-- shop 公开商品列表与商品详情：发现页可进入原生公开商城列表，列表项和商城精选商品可打开商品详情，并通过 Android 返回键回到原来源；匿名态购买会登录回流，登录态可在详情页查看当前胡萝卜余额并完成单商品购买
+- shop 公开商品列表与商品详情：发现页可通过从属上下文入口进入原生公开商城列表，列表项可打开商品详情，并通过 Android 返回键回到原来源；匿名态购买会登录回流，登录态可在详情页查看当前胡萝卜余额并完成单商品购买
 - 原生公开详情链接复制：forum detail、docs detail 与 shop detail 展示完整公开链接并支持复制；复制口径为当前 Gateway Base URL 加 Web 公开路由，不接入系统分享 SDK
 - 公开主页来源返回：从发现、论坛作者和榜单进入原生公开主页后，Android Back 会回到原来源；公开主页继续打开帖子 / 评论详情并返回后，仍保留原 profile 来源 tab
 - 已登录态通知列表：原生壳层会读取当前用户最近站内通知，展示标题、内容、类型、已读状态和时间；forum 通知可复用 forum detail handoff 打开 `postId / commentId`，未读 forum 通知打开详情前会尝试标记已读；系统等不可跳通知保持只读展示；未读通知支持单条显式标记已读
@@ -85,7 +85,7 @@ Clients/radish.flutter/
 1. `P1` 全页面事实审计已完成：页面唯一归属、状态与错误边界、compact / medium / expanded 结构和 R1 / R2 / R3 继承见[审计记录](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)
 2. `P2` 技术基座已完成：四主题、权益 owner、偏好持久化、Adaptive Shell 与两个代表页见 [P2 实现记录](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)
 3. `P3` 代表设计已确认：独立 Flutter 设计源已冻结 typography、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿
-4. `P4-A / P4-B1` 已完成 readiness、字体 / 图标供应链、Theme / Shared 与主题选择器；下一步进入 `P4-B2` Web-Family Adaptive Shell，其后按 B3 Discover、B4 Forum Detail 分批推进
+4. `P4-A / P4-B1 / P4-B2 / P4-B3` 已完成 readiness、Theme / Shared、Web-Family Adaptive Shell 与统一公开 Discover cursor 流；下一步等待 `P4-B4 Forum Detail` 拆分与代表页授权
 5. Android 先形成新版 UI RC；iOS 与 desktop 在共享 UI 门禁后再分别进入平台工程与分发验证
 
 ## Flutter 环境切换

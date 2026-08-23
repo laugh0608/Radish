@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
-import '../../../core/auth/session_controller.dart';
-import '../../../core/config/app_environment.dart';
 import '../../../core/layout/radish_window_class.dart';
+import '../../../core/theme/radish_theme.dart';
+import '../../../shared/icons/radish_icons.dart';
+import '../../../shared/widgets/radish_section_surface.dart';
+import '../../../shared/widgets/radish_state_chip.dart';
+import '../../../shared/widgets/radish_state_slot.dart';
 import '../../docs/data/docs_models.dart';
 import '../../forum/data/forum_models.dart';
 import '../data/discover_models.dart';
@@ -11,30 +14,24 @@ import 'discover_feed_controller.dart';
 
 class DiscoverPage extends StatefulWidget {
   const DiscoverPage({
-    required this.environment,
-    required this.sessionState,
     required this.repository,
     this.onOpenForum,
     this.onOpenDocs,
     this.onOpenLeaderboard,
     this.onOpenShop,
-    this.onOpenDocument,
+    this.onOpenDocsDetailTarget,
     this.onOpenForumDetailTarget,
-    this.onOpenShopProduct,
     this.onOpenProfileUser,
     super.key,
   });
 
-  final AppEnvironment environment;
-  final SessionState sessionState;
   final DiscoverRepository repository;
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
   final VoidCallback? onOpenLeaderboard;
   final VoidCallback? onOpenShop;
-  final ValueChanged<DocsDocumentSummary>? onOpenDocument;
+  final ValueChanged<DocsDetailHandoffTarget>? onOpenDocsDetailTarget;
   final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
-  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
   final ValueChanged<String>? onOpenProfileUser;
 
   @override
@@ -47,23 +44,20 @@ class _DiscoverPageState extends State<DiscoverPage> {
   @override
   void initState() {
     super.initState();
-    _controller = DiscoverFeedController(
-      repository: widget.repository,
-    );
+    _controller = DiscoverFeedController(repository: widget.repository);
     _controller.loadInitial();
   }
 
   @override
   void didUpdateWidget(covariant DiscoverPage oldWidget) {
     super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.repository != widget.repository) {
-      _controller.dispose();
-      _controller = DiscoverFeedController(
-        repository: widget.repository,
-      );
-      _controller.loadInitial();
+    if (oldWidget.repository == widget.repository) {
+      return;
     }
+
+    _controller.dispose();
+    _controller = DiscoverFeedController(repository: widget.repository);
+    _controller.loadInitial();
   }
 
   @override
@@ -78,81 +72,61 @@ class _DiscoverPageState extends State<DiscoverPage> {
       animation: _controller,
       builder: (context, child) {
         final state = _controller.state;
-        final snapshot = state.snapshot;
-        final profileTargetUserId = _resolveProfileTargetUserId(snapshot);
-        final profileActionLabel = _resolveProfileActionLabel(snapshot);
-
         return ListView(
+          key: const Key('discover-scroll'),
           children: [
             RadishContentFrame(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '发现',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    '聚合论坛、文档和商城精选，从摘要继续进入完整阅读与商品流程。',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  if (!state.isError) ...[
-                    const SizedBox(height: 20),
-                    _DiscoverHeroCard(
-                      snapshot: snapshot,
-                      onOpenForum: widget.onOpenForum,
-                      onOpenDocs: widget.onOpenDocs,
-                      onOpenProfile: profileTargetUserId == null ||
-                              widget.onOpenProfileUser == null
-                          ? null
-                          : () =>
-                              widget.onOpenProfileUser!(profileTargetUserId),
-                      profileActionLabel: profileActionLabel,
-                    ),
-                  ],
-                  const SizedBox(height: 16),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: FilledButton.tonalIcon(
-                      onPressed: state.isBusy ? null : _controller.refresh,
-                      icon: const Icon(Icons.refresh),
-                      label: Text(
-                        state.isRefreshing ? '正在刷新' : '刷新发现',
+              maxWidth: 1328,
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final windowClass = RadishWindowClassResolution.fromWidth(
+                    constraints.maxWidth,
+                  );
+                  final showExpandedRail =
+                      windowClass == RadishWindowClass.expanded &&
+                          constraints.maxWidth >= 1136;
+                  final flow = _DiscoverFlowSurface(
+                    state: state,
+                    showCompactContext: !showExpandedRail,
+                    onRefresh: _controller.refresh,
+                    onLoadMore: _controller.loadMore,
+                    onOpenForum: widget.onOpenForum,
+                    onOpenDocs: widget.onOpenDocs,
+                    onOpenLeaderboard: widget.onOpenLeaderboard,
+                    onOpenShop: widget.onOpenShop,
+                    resolveItemAction: _resolveItemAction,
+                  );
+
+                  if (!showExpandedRail) {
+                    return KeyedSubtree(
+                      key: Key('discover-layout-${windowClass.name}'),
+                      child: flow,
+                    );
+                  }
+
+                  return Row(
+                    key: const Key('discover-layout-expanded'),
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        key: const Key('discover-main-axis-904'),
+                        width: 904,
+                        child: flow,
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (state.isLoading) const _DiscoverLoadingState(),
-                  if (state.isError)
-                    _DiscoverErrorState(
-                      message: state.errorMessage ?? '无法加载发现内容。',
-                      onRetry: _controller.refresh,
-                    ),
-                  if (state.isReady && snapshot != null) ...[
-                    if (state.isRefreshing) ...[
-                      const _DiscoverRefreshingNotice(),
-                      const SizedBox(height: 16),
-                    ],
-                    if (state.refreshIssueMessage != null &&
-                        state.refreshIssueMessage!.isNotEmpty) ...[
-                      _DiscoverRefreshIssueNotice(
-                        message: state.refreshIssueMessage!,
+                      const SizedBox(width: RadishSpacing.xLarge),
+                      Expanded(
+                        child: _DiscoverInsightRail(
+                          snapshot: state.snapshot,
+                          onOpenForum: widget.onOpenForum,
+                          onOpenDocs: widget.onOpenDocs,
+                          onOpenLeaderboard: widget.onOpenLeaderboard,
+                          onOpenShop: widget.onOpenShop,
+                          onOpenProfileUser: widget.onOpenProfileUser,
+                        ),
                       ),
-                      const SizedBox(height: 16),
                     ],
-                    _DiscoverContent(
-                      snapshot: snapshot,
-                      onOpenForum: widget.onOpenForum,
-                      onOpenDocs: widget.onOpenDocs,
-                      onOpenLeaderboard: widget.onOpenLeaderboard,
-                      onOpenDocument: widget.onOpenDocument,
-                      onOpenForumDetailTarget: widget.onOpenForumDetailTarget,
-                      onOpenShopProduct: widget.onOpenShopProduct,
-                      onOpenShop: widget.onOpenShop,
-                    ),
-                  ],
-                ],
+                  );
+                },
               ),
             ),
           ],
@@ -161,736 +135,275 @@ class _DiscoverPageState extends State<DiscoverPage> {
     );
   }
 
-  String? _resolveProfileTargetUserId(DiscoverSnapshot? snapshot) {
-    if (widget.sessionState.isAuthenticated) {
-      return widget.sessionState.session?.userId;
-    }
-
-    if (snapshot == null) {
-      return null;
-    }
-
-    for (final post in snapshot.forumPosts) {
-      if (post.authorId.trim().isNotEmpty) {
-        return post.authorId;
-      }
-    }
-
-    return null;
-  }
-
-  String? _resolveProfileActionLabel(DiscoverSnapshot? snapshot) {
-    if (widget.sessionState.isAuthenticated) {
-      return '打开我的主页';
-    }
-
-    if (snapshot == null) {
-      return null;
-    }
-
-    for (final post in snapshot.forumPosts) {
-      final authorName = post.authorName?.trim();
-      if (authorName != null && authorName.isNotEmpty) {
-        return '打开 @$authorName';
-      }
-    }
-
-    return snapshot.forumPosts.isEmpty ? null : '打开公开主页';
-  }
-}
-
-class _DiscoverHeroCard extends StatelessWidget {
-  const _DiscoverHeroCard({
-    required this.snapshot,
-    required this.onOpenForum,
-    required this.onOpenDocs,
-    required this.onOpenProfile,
-    required this.profileActionLabel,
-  });
-
-  final DiscoverSnapshot? snapshot;
-  final VoidCallback? onOpenForum;
-  final VoidCallback? onOpenDocs;
-  final VoidCallback? onOpenProfile;
-  final String? profileActionLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final snapshot = this.snapshot;
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '继续阅读',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              snapshot == null
-                  ? '正在准备公开内容摘要。'
-                  : '在这里预览高价值内容，再继续进入论坛、文档或公开主页阅读。',
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 12,
-              runSpacing: 12,
-              children: [
-                FilledButton.icon(
-                  onPressed: onOpenForum,
-                  icon: const Icon(Icons.forum_outlined),
-                  label: const Text('进入论坛'),
-                ),
-                OutlinedButton.icon(
-                  onPressed: onOpenDocs,
-                  icon: const Icon(Icons.description_outlined),
-                  label: const Text('进入文档'),
-                ),
-                if (profileActionLabel != null)
-                  OutlinedButton.icon(
-                    onPressed: onOpenProfile,
-                    icon: const Icon(Icons.person_outline),
-                    label: Text(profileActionLabel!),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DiscoverLoadingState extends StatelessWidget {
-  const _DiscoverLoadingState();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Card(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('正在加载发现内容...'),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DiscoverErrorState extends StatelessWidget {
-  const _DiscoverErrorState({
-    required this.message,
-    required this.onRetry,
-  });
-
-  final String message;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '暂时无法加载发现内容',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 12),
-            Text(message),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh),
-              label: const Text('重试'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DiscoverRefreshingNotice extends StatelessWidget {
-  const _DiscoverRefreshingNotice();
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.secondaryContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.secondary),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            SizedBox.square(
-              dimension: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                color: colorScheme.onSecondaryContainer,
+  VoidCallback? _resolveItemAction(DiscoverFeedItem item) {
+    switch (item.target.kind) {
+      case DiscoverTargetKind.messages:
+        return null;
+      case DiscoverTargetKind.docs:
+        final onOpen = widget.onOpenDocsDetailTarget;
+        if (onOpen == null) {
+          return null;
+        }
+        return () => onOpen(
+              DocsDetailHandoffTarget(
+                slug: item.target.documentSlug!,
+                source: DocsDetailHandoffSource.discover,
+                initialTitle: item.title,
               ),
-            ),
-            const SizedBox(width: 12),
-            const Expanded(
-              child: Text('正在刷新发现内容，当前仍展示上次可用摘要。'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _DiscoverRefreshIssueNotice extends StatelessWidget {
-  const _DiscoverRefreshIssueNotice({
-    required this.message,
-  });
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.error),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: colorScheme.onErrorContainer,
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '刷新发现失败',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    message,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
+            );
+      case DiscoverTargetKind.forumPost:
+        final onOpen = widget.onOpenForumDetailTarget;
+        if (onOpen == null) {
+          return null;
+        }
+        return () => onOpen(
+              ForumDetailHandoffTarget(
+                postId: item.target.postPublicId!,
+                source: ForumDetailHandoffSource.discover,
+                initialTitle: item.title,
+                commentId: item.target.commentId,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
+            );
+    }
   }
 }
 
-class _DiscoverContent extends StatelessWidget {
-  const _DiscoverContent({
-    required this.snapshot,
+class _DiscoverFlowSurface extends StatelessWidget {
+  const _DiscoverFlowSurface({
+    required this.state,
+    required this.showCompactContext,
+    required this.onRefresh,
+    required this.onLoadMore,
     required this.onOpenForum,
     required this.onOpenDocs,
     required this.onOpenLeaderboard,
-    required this.onOpenDocument,
-    required this.onOpenForumDetailTarget,
-    required this.onOpenShopProduct,
     required this.onOpenShop,
+    required this.resolveItemAction,
   });
 
-  final DiscoverSnapshot snapshot;
+  final DiscoverFeedState state;
+  final bool showCompactContext;
+  final VoidCallback onRefresh;
+  final VoidCallback onLoadMore;
   final VoidCallback? onOpenForum;
   final VoidCallback? onOpenDocs;
   final VoidCallback? onOpenLeaderboard;
-  final ValueChanged<DocsDocumentSummary>? onOpenDocument;
-  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
-  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
   final VoidCallback? onOpenShop;
+  final VoidCallback? Function(DiscoverFeedItem item) resolveItemAction;
 
   @override
   Widget build(BuildContext context) {
-    if (snapshot.isEmpty && !snapshot.hasSectionIssues) {
-      return const Card(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text(
-            '发现页暂无可公开阅读的内容。',
+    final snapshot = state.snapshot;
+    return RadishSectionSurface(
+      padding: EdgeInsets.zero,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _DiscoverFlowHeader(
+            itemCount: snapshot?.items.length,
+            isBusy: state.isRefreshing,
+            onRefresh: onRefresh,
+          ),
+          if (showCompactContext) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(RadishSpacing.large),
+              child: _DiscoverContextActions(
+                onOpenForum: onOpenForum,
+                onOpenDocs: onOpenDocs,
+                onOpenLeaderboard: onOpenLeaderboard,
+                onOpenShop: onOpenShop,
+              ),
+            ),
+          ],
+          const Divider(height: 1),
+          _DiscoverFeedBody(
+            state: state,
+            onRefresh: onRefresh,
+            onLoadMore: onLoadMore,
+            resolveItemAction: resolveItemAction,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiscoverFlowHeader extends StatelessWidget {
+  const _DiscoverFlowHeader({
+    required this.itemCount,
+    required this.isBusy,
+    required this.onRefresh,
+  });
+
+  final int? itemCount;
+  final bool isBusy;
+  final VoidCallback onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: RadishSpacing.xLarge,
+        vertical: RadishSpacing.large,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '社区正在发生',
+                  style: Theme.of(context).textTheme.headlineMedium,
+                ),
+                const SizedBox(height: RadishSpacing.xSmall),
+                Text(
+                  '按时间读取当前公开、可撤回的社区内容。',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          if (itemCount != null) ...[
+            RadishStateChip(
+              label: '$itemCount 条',
+              tone: RadishStateTone.brand,
+            ),
+            const SizedBox(width: RadishSpacing.small),
+          ],
+          IconButton(
+            tooltip: isBusy ? '正在刷新' : '刷新发现',
+            onPressed: isBusy ? null : onRefresh,
+            icon: const Icon(RadishIcons.refresh),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiscoverFeedBody extends StatelessWidget {
+  const _DiscoverFeedBody({
+    required this.state,
+    required this.onRefresh,
+    required this.onLoadMore,
+    required this.resolveItemAction,
+  });
+
+  final DiscoverFeedState state;
+  final VoidCallback onRefresh;
+  final VoidCallback onLoadMore;
+  final VoidCallback? Function(DiscoverFeedItem item) resolveItemAction;
+
+  @override
+  Widget build(BuildContext context) {
+    final snapshot = state.snapshot;
+    if (state.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.all(RadishSpacing.large),
+        child: RadishStateSlot(
+          kind: RadishStateKind.loading,
+          title: '正在读取公开发现流',
+          message: '正在汇总讨论、知识贡献与社区动态。',
+        ),
+      );
+    }
+
+    if (state.isError) {
+      final issue = state.error!;
+      return Padding(
+        padding: const EdgeInsets.all(RadishSpacing.large),
+        child: RadishStateSlot(
+          kind: issue.isUnavailable
+              ? RadishStateKind.unavailable
+              : RadishStateKind.error,
+          title: issue.isUnavailable ? '社区发现暂不可用' : '无法读取社区发现',
+          message: _issueMessage(issue),
+          action: FilledButton.tonalIcon(
+            onPressed: onRefresh,
+            icon: const Icon(RadishIcons.refresh),
+            label: const Text('重试'),
           ),
         ),
       );
     }
 
-    final forumSection = _ForumSection(
-      posts: snapshot.forumPosts,
-      onOpenForum: onOpenForum,
-      onOpenForumDetailTarget: onOpenForumDetailTarget,
-    );
-    final secondarySections = Column(
+    if (snapshot == null || snapshot.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(RadishSpacing.large),
+        child: RadishStateSlot(
+          kind: RadishStateKind.empty,
+          title: '还没有公开动态',
+          message: '当前窗口没有符合公开资格的讨论或知识贡献，可前往论坛继续浏览。',
+        ),
+      );
+    }
+
+    return Column(
       children: [
-        _DocsSection(
-          documents: snapshot.documents,
-          onOpenDocs: onOpenDocs,
-          onOpenDocument: onOpenDocument,
-        ),
-        const SizedBox(height: 16),
-        _ShopSection(
-          products: snapshot.products,
-          onOpenShopProduct: onOpenShopProduct,
-          onOpenShop: onOpenShop,
-        ),
-      ],
-    );
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final windowClass = RadishWindowClassResolution.fromWidth(
-          constraints.maxWidth,
-        );
-        final key = Key('discover-content-${windowClass.name}');
-        return Column(
-          key: key,
-          children: [
-            const _DiscoverContextSection(),
-            if (snapshot.hasSectionIssues) ...[
-              const SizedBox(height: 16),
-              _DiscoverSectionIssueNotice(issues: snapshot.sectionIssues),
-            ],
-            const SizedBox(height: 16),
-            if (windowClass == RadishWindowClass.compact) ...[
-              forumSection,
-              const SizedBox(height: 16),
-              secondarySections,
-            ] else
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: windowClass == RadishWindowClass.expanded ? 3 : 1,
-                    child: forumSection,
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    flex: windowClass == RadishWindowClass.expanded ? 2 : 1,
-                    child: secondarySections,
-                  ),
-                ],
+        if (state.isRefreshing)
+          const Padding(
+            padding: EdgeInsets.all(RadishSpacing.large),
+            child: RadishStateSlot(
+              kind: RadishStateKind.loading,
+              title: '正在刷新公开发现流',
+              message: '当前仍展示上次可用内容，刷新完成后会整体替换。',
+              compact: true,
+            ),
+          ),
+        if (state.refreshIssue != null)
+          Padding(
+            padding: const EdgeInsets.all(RadishSpacing.large),
+            child: RadishStateSlot(
+              key: const Key('discover-stale-state'),
+              kind: RadishStateKind.stale,
+              title: '刷新失败，继续显示旧快照',
+              message: _issueMessage(state.refreshIssue!),
+              compact: true,
+              action: TextButton(
+                onPressed: onRefresh,
+                child: const Text('重试'),
               ),
-            const SizedBox(height: 16),
-            _DiscoverBoundarySection(
-              onOpenLeaderboard: onOpenLeaderboard,
             ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _DiscoverContextSection extends StatelessWidget {
-  const _DiscoverContextSection();
-
-  @override
-  Widget build(BuildContext context) {
-    return const _DiscoverSectionCard(
-      title: '发现上下文',
-      description: '这里承载 /discover 的公开分发入口，继续把阅读目标带回论坛、文档或公开主页。',
-      emptyText: '',
-      children: [
-        _SummaryTile(
-          icon: Icons.explore_outlined,
-          title: '公开内容分发',
-          subtitle: '保留内容来源和返回路径，商品摘要可继续进入详情、购买、订单与背包入口。',
-          meta: '来源：/discover',
-          chips: ['公开摘要', '保留来源返回', '衔接原生功能'],
-        ),
-      ],
-    );
-  }
-}
-
-class _DiscoverSectionIssueNotice extends StatelessWidget {
-  const _DiscoverSectionIssueNotice({
-    required this.issues,
-  });
-
-  final List<DiscoverSectionIssue> issues;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.error),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(
-                  Icons.error_outline,
-                  color: colorScheme.onErrorContainer,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    '部分发现内容暂时不可用',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '可用区块会继续展示，失败区块会保留为空态，稍后可刷新重试。',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            for (final issue in issues) ...[
-              Text(
-                '${issue.title}：${issue.message}',
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (issue != issues.last) const SizedBox(height: 6),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ForumSection extends StatelessWidget {
-  const _ForumSection({
-    required this.posts,
-    required this.onOpenForum,
-    required this.onOpenForumDetailTarget,
-  });
-
-  final List<ForumPostSummary> posts;
-  final VoidCallback? onOpenForum;
-  final ValueChanged<ForumDetailHandoffTarget>? onOpenForumDetailTarget;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DiscoverSectionCard(
-      title: '论坛精选',
-      description: '预览最新公开帖子，进入论坛后可继续浏览完整列表。',
-      emptyText: '当前暂无可展示的论坛帖子。',
-      actionLabel: onOpenForum == null ? null : '查看全部帖子',
-      onAction: onOpenForum,
-      children: posts
-          .map(
-            (post) => _SummaryTile(
-              icon: Icons.forum_outlined,
-              title: post.title,
-              subtitle: post.summary ?? post.categoryName ?? '公开论坛帖子',
-              meta: '${post.commentCount} 条评论 · ${post.viewCount} 次浏览',
-              chips: post.badges,
-              actionLabel: onOpenForumDetailTarget == null ? null : '打开帖子',
-              onAction: onOpenForumDetailTarget == null
-                  ? null
-                  : () => onOpenForumDetailTarget!(
-                        ForumDetailHandoffTarget(
-                          postId: post.id,
-                          source: ForumDetailHandoffSource.discover,
-                          initialTitle: post.title,
-                        ),
-                      ),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _DocsSection extends StatelessWidget {
-  const _DocsSection({
-    required this.documents,
-    required this.onOpenDocs,
-    required this.onOpenDocument,
-  });
-
-  final List<DocsDocumentSummary> documents;
-  final VoidCallback? onOpenDocs;
-  final ValueChanged<DocsDocumentSummary>? onOpenDocument;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DiscoverSectionCard(
-      title: '文档精选',
-      description: '预览已发布的公开文档，不需要进入桌面文档应用。',
-      emptyText: '当前暂无可展示的公开文档。',
-      actionLabel: onOpenDocs == null ? null : '查看全部文档',
-      onAction: onOpenDocs,
-      children: documents
-          .map(
-            (document) => _SummaryTile(
-              icon: Icons.description_outlined,
-              title: document.title,
-              subtitle: document.summary ?? '可公开阅读的文档',
-              meta: document.displayTime == null
-                  ? '公开文档'
-                  : '更新于 ${_formatDateTime(document.displayTime)}',
-              chips: [
-                if (document.slug.isNotEmpty) '/docs/${document.slug}',
-              ],
-              actionLabel: onOpenDocument == null || document.slug.isEmpty
-                  ? null
-                  : '打开文档',
-              onAction: onOpenDocument == null || document.slug.isEmpty
-                  ? null
-                  : () => onOpenDocument!(document),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _ShopSection extends StatelessWidget {
-  const _ShopSection({
-    required this.products,
-    required this.onOpenShopProduct,
-    required this.onOpenShop,
-  });
-
-  final List<DiscoverProductSummary> products;
-  final ValueChanged<DiscoverProductSummary>? onOpenShopProduct;
-  final VoidCallback? onOpenShop;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DiscoverSectionCard(
-      title: '商城精选',
-      description: '从公开商品摘要继续进入原生详情与购买流程，购买结果会同步到订单和背包。',
-      emptyText: '当前暂无可展示的公开商品。',
-      actionLabel: onOpenShop == null ? null : '查看全部商品',
-      onAction: onOpenShop,
-      children: products
-          .map(
-            (product) => _SummaryTile(
-              icon: Icons.local_mall_outlined,
-              title: product.name,
-              subtitle: _buildProductSummary(product),
-              meta: '${product.price} 胡萝卜',
-              chips: [
-                _formatProductType(product.productType),
-                if (product.hasDiscount) '有折扣',
-                if (!product.inStock) '暂时缺货',
-              ],
-              actionLabel: onOpenShopProduct == null ? null : '查看详情',
-              onAction: onOpenShopProduct == null
-                  ? null
-                  : () => onOpenShopProduct!(product),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _DiscoverBoundarySection extends StatelessWidget {
-  const _DiscoverBoundarySection({
-    required this.onOpenLeaderboard,
-  });
-
-  final VoidCallback? onOpenLeaderboard;
-
-  @override
-  Widget build(BuildContext context) {
-    return _DiscoverSectionCard(
-      title: '能力边界',
-      description: '发现页负责公开内容聚合与入口分发；复杂编辑、内容治理和管理员工作台继续由 Web 承载。',
-      emptyText: '',
-      actionLabel: onOpenLeaderboard == null ? null : '打开榜单',
-      onAction: onOpenLeaderboard,
-      children: [
-        _SummaryTile(
-          icon: Icons.emoji_events_outlined,
-          title: '经验榜只读入口',
-          subtitle: '可查看公开经验榜首屏；我的排名与更多榜单维度按后续产品价值评估推进。',
-          meta: '公开只读',
-          chips: const ['榜单首屏', '不含工作台操作'],
-          actionLabel: onOpenLeaderboard == null ? null : '打开榜单',
-          onAction: onOpenLeaderboard,
-        ),
-      ],
-    );
-  }
-}
-
-class _DiscoverSectionCard extends StatelessWidget {
-  const _DiscoverSectionCard({
-    required this.title,
-    required this.description,
-    required this.emptyText,
-    required this.children,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final String title;
-  final String description;
-  final String emptyText;
-  final List<Widget> children;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                ),
-                if (actionLabel != null)
-                  TextButton(
-                    onPressed: onAction,
-                    child: Text(actionLabel!),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            if (children.isEmpty)
-              Text(emptyText)
-            else
-              for (final child in children) ...[
-                child,
-                if (child != children.last) const Divider(height: 24),
-              ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryTile extends StatelessWidget {
-  const _SummaryTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.meta,
-    required this.chips,
-    this.actionLabel,
-    this.onAction,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final String meta;
-  final List<String> chips;
-  final String? actionLabel;
-  final VoidCallback? onAction;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(icon, size: 28),
-        const SizedBox(width: 16),
-        Expanded(
+          ),
+        for (var index = 0; index < snapshot.items.length; index++) ...[
+          if (index > 0) const Divider(height: 1, indent: 24, endIndent: 24),
+          _DiscoverFeedTile(
+            item: snapshot.items[index],
+            index: index,
+            isFocus: index == 0,
+            onOpen: resolveItemAction(snapshot.items[index]),
+          ),
+        ],
+        const Divider(height: 1),
+        Padding(
+          padding: const EdgeInsets.all(RadishSpacing.large),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text(
-                title,
-                style: textTheme.titleMedium,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                subtitle,
-                style: textTheme.bodyMedium,
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                meta,
-                style: textTheme.bodySmall,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (chips.isNotEmpty) ...[
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: chips
-                      .map(
-                        (chip) => Chip(
-                          label: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 220),
-                            child: Text(
-                              chip,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          visualDensity: VisualDensity.compact,
-                        ),
-                      )
-                      .toList(),
+              if (state.loadMoreIssue != null) ...[
+                RadishStateSlot(
+                  key: const Key('discover-load-more-error'),
+                  kind: RadishStateKind.error,
+                  title: '后续内容加载失败',
+                  message: _issueMessage(state.loadMoreIssue!),
+                  compact: true,
                 ),
+                const SizedBox(height: RadishSpacing.medium),
               ],
-              if (actionLabel != null && onAction != null) ...[
-                const SizedBox(height: 12),
-                FilledButton.tonalIcon(
-                  onPressed: onAction,
-                  icon: const Icon(Icons.arrow_forward),
-                  label: Text(actionLabel!),
+              if (snapshot.hasMore)
+                OutlinedButton(
+                  key: const Key('discover-load-more'),
+                  onPressed: state.isLoadingMore ? null : onLoadMore,
+                  child: Text(state.isLoadingMore ? '正在加载…' : '继续加载'),
+                )
+              else
+                Text(
+                  '已显示当前公开窗口的全部内容',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-              ],
             ],
           ),
         ),
@@ -899,47 +412,532 @@ class _SummaryTile extends StatelessWidget {
   }
 }
 
-String _buildProductSummary(DiscoverProductSummary product) {
-  if (product.durationDisplay != null) {
-    return '${_formatProductType(product.productType)} · ${product.durationDisplay}';
-  }
+class _DiscoverFeedTile extends StatelessWidget {
+  const _DiscoverFeedTile({
+    required this.item,
+    required this.index,
+    required this.isFocus,
+    required this.onOpen,
+  });
 
-  if (product.soldCount > 0) {
-    return '${_formatProductType(product.productType)} · 已售 ${product.soldCount}';
-  }
+  final DiscoverFeedItem item;
+  final int index;
+  final bool isFocus;
+  final VoidCallback? onOpen;
 
-  return '${_formatProductType(product.productType)} · 公开商品';
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<RadishThemeTokens>()!;
+    final isMessages = item.target.kind == DiscoverTargetKind.messages;
+    final foreground = isFocus ? tokens.onBrand : tokens.text;
+    final mutedForeground =
+        isFocus ? tokens.onBrand.withAlpha(190) : tokens.textMuted;
+    final content = Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: RadishSpacing.xLarge,
+        vertical: isFocus ? RadishSpacing.xLarge : RadishSpacing.large,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 32,
+            child: Text(
+              (index + 1).toString().padLeft(2, '0'),
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: mutedForeground,
+                  ),
+            ),
+          ),
+          const SizedBox(width: RadishSpacing.medium),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: RadishSpacing.small,
+                  runSpacing: RadishSpacing.xSmall,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Icon(
+                      _itemIcon(item.kind),
+                      size: 16,
+                      color: foreground,
+                    ),
+                    Text(
+                      _itemKindLabel(item.kind),
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: foreground,
+                          ),
+                    ),
+                    Text(
+                      _formatDateTime(item.occurredAtUtc),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: mutedForeground,
+                          ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: RadishSpacing.small),
+                Text(
+                  item.title,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: (isFocus
+                          ? Theme.of(context).textTheme.headlineSmall
+                          : Theme.of(context).textTheme.titleMedium)
+                      ?.copyWith(color: foreground),
+                ),
+                if (item.summary.isNotEmpty) ...[
+                  const SizedBox(height: RadishSpacing.small),
+                  Text(
+                    item.summary,
+                    maxLines: isFocus ? 4 : 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: mutedForeground,
+                        ),
+                  ),
+                ],
+                const SizedBox(height: RadishSpacing.medium),
+                Wrap(
+                  spacing: RadishSpacing.medium,
+                  runSpacing: RadishSpacing.small,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    if (item.actor != null)
+                      Text(
+                        item.actor!.displayName,
+                        style:
+                            Theme.of(context).textTheme.labelMedium?.copyWith(
+                                  color: foreground,
+                                ),
+                      ),
+                    if (item.primaryMetric != null)
+                      Text(
+                        _metricLabel(item.primaryMetric!),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: mutedForeground,
+                            ),
+                      ),
+                    if (item.target.requiresAuthentication)
+                      const RadishStateChip(
+                        label: '需登录',
+                        tone: RadishStateTone.warning,
+                      ),
+                    if (isMessages)
+                      const RadishStateChip(
+                        label: 'Web 提供',
+                        tone: RadishStateTone.info,
+                      )
+                    else if (onOpen != null)
+                      Icon(RadishIcons.forward, size: 16, color: foreground),
+                  ],
+                ),
+                if (isMessages) ...[
+                  const SizedBox(height: RadishSpacing.small),
+                  Text(
+                    '消息会话与频道历史由 Web 承载，Flutter Native 本批只读展示此公开摘要。',
+                    key: Key('discover-item-web-boundary-${item.key}'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: mutedForeground,
+                        ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final tile = isFocus
+        ? Padding(
+            padding: const EdgeInsets.all(RadishSpacing.large),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: tokens.brand,
+                borderRadius: BorderRadius.circular(RadishRadii.large),
+              ),
+              child: content,
+            ),
+          )
+        : content;
+
+    return Semantics(
+      button: onOpen != null,
+      enabled: onOpen != null,
+      label: '${_itemKindLabel(item.kind)}：${item.title}',
+      child: onOpen == null
+          ? KeyedSubtree(key: Key('discover-item-${item.key}'), child: tile)
+          : InkWell(
+              key: Key('discover-item-${item.key}'),
+              onTap: onOpen,
+              child: tile,
+            ),
+    );
+  }
 }
 
-String _formatProductType(String value) {
-  switch (value) {
-    case 'Benefit':
-    case '1':
-      return '权益';
-    case 'Consumable':
-    case '2':
-      return '消耗品';
-    case 'Physical':
-    case '99':
-      return '实物';
-    default:
-      return value;
+class _DiscoverInsightRail extends StatelessWidget {
+  const _DiscoverInsightRail({
+    required this.snapshot,
+    required this.onOpenForum,
+    required this.onOpenDocs,
+    required this.onOpenLeaderboard,
+    required this.onOpenShop,
+    required this.onOpenProfileUser,
+  });
+
+  final DiscoverFeedSnapshot? snapshot;
+  final VoidCallback? onOpenForum;
+  final VoidCallback? onOpenDocs;
+  final VoidCallback? onOpenLeaderboard;
+  final VoidCallback? onOpenShop;
+  final ValueChanged<String>? onOpenProfileUser;
+
+  @override
+  Widget build(BuildContext context) {
+    final contributors = _collectContributors(snapshot?.items ?? const []);
+    return Column(
+      key: const Key('discover-community-insight'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (snapshot != null) ...[
+          _DiscoverPulseCard(pulse: snapshot!.pulse),
+          const SizedBox(height: RadishSpacing.large),
+        ],
+        if (contributors.isNotEmpty) ...[
+          RadishSectionSurface(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('近期贡献者', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: RadishSpacing.medium),
+                for (final contributor in contributors)
+                  _ContributorTile(
+                    contributor: contributor,
+                    onOpen: onOpenProfileUser == null
+                        ? null
+                        : () => onOpenProfileUser!(contributor.publicId),
+                  ),
+              ],
+            ),
+          ),
+          const SizedBox(height: RadishSpacing.large),
+        ],
+        RadishSectionSurface(
+          isMuted: true,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('继续探索', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: RadishSpacing.small),
+              Text(
+                '发现只负责公开内容分发，完整任务继续交给各原生页面。',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              const SizedBox(height: RadishSpacing.medium),
+              _DiscoverContextActions(
+                onOpenForum: onOpenForum,
+                onOpenDocs: onOpenDocs,
+                onOpenLeaderboard: onOpenLeaderboard,
+                onOpenShop: onOpenShop,
+                stacked: true,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: RadishSpacing.large),
+        const RadishStateSlot(
+          kind: RadishStateKind.unavailable,
+          title: 'Messages 由 Web 提供',
+          message: 'Flutter Native 不扩建 Chat；公开频道摘要仅用于理解社区动态。',
+          compact: true,
+        ),
+      ],
+    );
   }
 }
 
-String _formatDateTime(String? value) {
-  if (value == null || value.isEmpty) {
-    return '时间未知';
-  }
+class _DiscoverPulseCard extends StatelessWidget {
+  const _DiscoverPulseCard({required this.pulse});
 
-  final parsed = DateTime.tryParse(value);
-  if (parsed == null) {
-    return value;
-  }
+  final DiscoverPulse pulse;
 
-  final local = parsed.toLocal();
-  final year = local.year.toString().padLeft(4, '0');
+  @override
+  Widget build(BuildContext context) {
+    return RadishSectionSurface(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '社区脉搏',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              const Icon(RadishIcons.brand, size: 20),
+            ],
+          ),
+          const SizedBox(height: RadishSpacing.medium),
+          _PulseMetric(label: '公开频道', value: pulse.discoverableChannelCount),
+          const Divider(height: 24),
+          _PulseMetric(label: '近 24 小时动态', value: pulse.eligibleItemCount),
+          const Divider(height: 24),
+          _PulseMetric(
+            label: '知识贡献',
+            value: pulse.knowledgeContributionCount,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PulseMetric extends StatelessWidget {
+  const _PulseMetric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(child: Text(label)),
+        Text(value, style: Theme.of(context).textTheme.titleLarge),
+      ],
+    );
+  }
+}
+
+class _ContributorTile extends StatelessWidget {
+  const _ContributorTile({required this.contributor, required this.onOpen});
+
+  final _ContributorSummary contributor;
+  final VoidCallback? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final tokens = Theme.of(context).extension<RadishThemeTokens>()!;
+    final tile = Padding(
+      padding: const EdgeInsets.symmetric(vertical: RadishSpacing.small),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: tokens.brandSoft,
+            foregroundColor: tokens.brand,
+            child: Text(_initial(contributor.displayName)),
+          ),
+          const SizedBox(width: RadishSpacing.medium),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  contributor.displayName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                Text(
+                  '${contributor.contributionCount} 条公开动态',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+              ],
+            ),
+          ),
+          if (onOpen != null) const Icon(RadishIcons.forward, size: 16),
+        ],
+      ),
+    );
+    return onOpen == null
+        ? tile
+        : InkWell(
+            key: Key('discover-contributor-${contributor.publicId}'),
+            onTap: onOpen,
+            child: tile,
+          );
+  }
+}
+
+class _DiscoverContextActions extends StatelessWidget {
+  const _DiscoverContextActions({
+    required this.onOpenForum,
+    required this.onOpenDocs,
+    required this.onOpenLeaderboard,
+    required this.onOpenShop,
+    this.stacked = false,
+  });
+
+  final VoidCallback? onOpenForum;
+  final VoidCallback? onOpenDocs;
+  final VoidCallback? onOpenLeaderboard;
+  final VoidCallback? onOpenShop;
+  final bool stacked;
+
+  @override
+  Widget build(BuildContext context) {
+    final actions = <Widget>[
+      _ContextButton(
+        label: '进入论坛',
+        icon: RadishIcons.forum,
+        onPressed: onOpenForum,
+      ),
+      _ContextButton(
+        label: '进入文档',
+        icon: RadishIcons.docs,
+        onPressed: onOpenDocs,
+      ),
+      _ContextButton(
+        label: '打开榜单',
+        icon: RadishIcons.leaderboard,
+        onPressed: onOpenLeaderboard,
+      ),
+      _ContextButton(
+        label: '打开商城',
+        icon: RadishIcons.shop,
+        onPressed: onOpenShop,
+      ),
+    ];
+    if (stacked) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (final action in actions) ...[
+            action,
+            if (action != actions.last)
+              const SizedBox(height: RadishSpacing.small),
+          ],
+        ],
+      );
+    }
+    return Wrap(
+      spacing: RadishSpacing.small,
+      runSpacing: RadishSpacing.small,
+      children: actions,
+    );
+  }
+}
+
+class _ContextButton extends StatelessWidget {
+  const _ContextButton({
+    required this.label,
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final String label;
+  final IconData icon;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(label),
+    );
+  }
+}
+
+class _ContributorSummary {
+  const _ContributorSummary({
+    required this.publicId,
+    required this.displayName,
+    required this.contributionCount,
+  });
+
+  final String publicId;
+  final String displayName;
+  final int contributionCount;
+}
+
+List<_ContributorSummary> _collectContributors(
+  List<DiscoverFeedItem> items,
+) {
+  final counts = <String, int>{};
+  final names = <String, String>{};
+  for (final item in items) {
+    final actor = item.actor;
+    if (actor == null) {
+      continue;
+    }
+    counts.update(actor.publicId, (count) => count + 1, ifAbsent: () => 1);
+    names[actor.publicId] = actor.displayName;
+  }
+  final contributors = counts.entries
+      .map(
+        (entry) => _ContributorSummary(
+          publicId: entry.key,
+          displayName: names[entry.key]!,
+          contributionCount: entry.value,
+        ),
+      )
+      .toList()
+    ..sort((left, right) {
+      final countOrder = right.contributionCount.compareTo(
+        left.contributionCount,
+      );
+      return countOrder != 0
+          ? countOrder
+          : left.publicId.compareTo(right.publicId);
+    });
+  return contributors.take(3).toList(growable: false);
+}
+
+IconData _itemIcon(DiscoverItemKind kind) {
+  return switch (kind) {
+    DiscoverItemKind.channelSummary => RadishIcons.forum,
+    DiscoverItemKind.memberActivity => RadishIcons.docs,
+    DiscoverItemKind.highlightedComment => RadishIcons.selected,
+    DiscoverItemKind.post => RadishIcons.forum,
+    DiscoverItemKind.question => RadishIcons.info,
+  };
+}
+
+String _itemKindLabel(DiscoverItemKind kind) {
+  return switch (kind) {
+    DiscoverItemKind.channelSummary => '频道动态',
+    DiscoverItemKind.memberActivity => '知识贡献',
+    DiscoverItemKind.highlightedComment => '精选评论',
+    DiscoverItemKind.post => '公开帖子',
+    DiscoverItemKind.question => '社区问答',
+  };
+}
+
+String _metricLabel(DiscoverMetric metric) {
+  final label = switch (metric.kind) {
+    DiscoverMetricKind.recentReplies => '近期回复',
+    DiscoverMetricKind.likes => '赞同',
+    DiscoverMetricKind.comments => '评论',
+    DiscoverMetricKind.answers => '回答',
+  };
+  return '${metric.value} $label';
+}
+
+String _formatDateTime(DateTime value) {
+  final local = value.toLocal();
   final month = local.month.toString().padLeft(2, '0');
   final day = local.day.toString().padLeft(2, '0');
-  return '$year-$month-$day';
+  final hour = local.hour.toString().padLeft(2, '0');
+  final minute = local.minute.toString().padLeft(2, '0');
+  return '$month-$day $hour:$minute';
+}
+
+String _issueMessage(DiscoverFeedIssue issue) {
+  final code = issue.code?.trim();
+  if (code == null || code.isEmpty) {
+    return issue.message;
+  }
+  return '${issue.message}（$code）';
+}
+
+String _initial(String displayName) {
+  final characters = displayName.trim().characters;
+  return characters.isEmpty ? 'R' : characters.first.toUpperCase();
 }

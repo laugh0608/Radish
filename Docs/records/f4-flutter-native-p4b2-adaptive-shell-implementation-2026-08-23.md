@@ -1,6 +1,6 @@
 # Flutter Native P4-B2 Web-Family Adaptive Shell 实现记录
 
-> 状态：`P4-B2` 已完成；下一步等待 `P4-B3 Discover 正式读模型与代表页` 实施授权
+> 状态：`P4-B2` 已完成；后续 `P4-B3 Discover` 已完成，当前等待 `P4-B4 Forum Detail` 实施授权
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -66,4 +66,4 @@ P4-B2 已把 Flutter 的默认 Material 导航改造成与正式 Web 同属一�
 - 本批未修改 `radish-flutter-native-ui-v1.pen`；实现只读取已冻结的 P3 几何与信息层级，不占用 Pen 插件。
 - 本批未安装 / 更新依赖，未生成 iOS / desktop 平台目录，未执行签名、分发或业务数据写入。
 - 本批未进入 B3 Discover、B4 Forum Detail、其他页面族或 B5 成组运行态门禁。
-- 下一顺位为 `P4-B3 Discover 正式读模型与代表页`：将 Flutter Discover 迁移到既有 `PublicDiscover/GetFeed` cursor 读模型，保持旧快照、请求代际、分页去重与原生 handoff，再按 compact 连续信息流和 expanded 主轴 / 社区洞察布局实现。该批会改变 Discover 数据与页面 owner，需单独确认后实施。
+- 后续 `P4-B3 Discover 正式读模型与代表页` 已按独立授权完成，详见 [P4-B3 实现记录](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)。当前下一顺位为 `P4-B4 Forum Detail 拆分与代表页`，仍需单独确认后实施。

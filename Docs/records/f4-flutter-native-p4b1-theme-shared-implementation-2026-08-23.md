@@ -1,6 +1,6 @@
 # Flutter Native P4-B1 Theme Foundation 与 Shared Primitives 实现记录
 
-> 状态：`P4-B1` 已完成；后续 `P4-B2 Adaptive Shell` 已完成，当前等待 `P4-B3 Discover` 授权
+> 状态：`P4-B1` 已完成；后续 `P4-B2 Adaptive Shell / P4-B3 Discover` 已完成，当前等待 `P4-B4 Forum Detail` 授权
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -91,4 +91,4 @@ APK 内 Noto Sans SC 由 `17,773,132` 压缩至 `11,297,997` bytes，Noto Serif 
 - 本批未启动 API / Auth / Gateway、未运行 Flutter 应用、未执行真实 Gateway / Android Smoke，也未改业务数据。
 - 本批未进入 B2 Shell、B3 Discover、B4 Forum Detail、其他页面族、新平台工程、签名或分发。
 - 字体包体积增量是“完整用户内容字形优先”的已知成本；若后续需要分发预算治理，必须单独裁决动态特性或其他可验证策略，不回退到运行时网络字体，也不按当前文案裁字。
-- 下一批 `P4-B2 Web-Family Adaptive Shell` 已另行授权并完成，详见 [P4-B2 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)；当前顺位已进入 P4-B3 授权等待。
+- 后续 `P4-B2 Web-Family Adaptive Shell` 与 `P4-B3 Discover` 已分别授权并完成，详见 [P4-B2 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)和 [P4-B3 实现记录](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)；当前顺位等待 P4-B4 授权。

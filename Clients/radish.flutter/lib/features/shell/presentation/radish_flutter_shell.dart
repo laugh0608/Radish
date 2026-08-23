@@ -11,7 +11,6 @@ import '../../../core/platform/app_lifecycle_gateway.dart';
 import '../../../core/theme/radish_theme.dart';
 import '../../../core/theme/radish_theme_controller.dart';
 import '../../../features/discover/data/discover_repository.dart';
-import '../../../features/discover/data/discover_models.dart';
 import '../../../features/docs/data/docs_follow_up_store.dart';
 import '../../../features/docs/data/docs_models.dart';
 import '../../../features/docs/data/docs_repository.dart';
@@ -32,7 +31,6 @@ import '../../../features/profile/presentation/profile_page.dart';
 import '../../../features/shop/data/shop_repository.dart';
 import '../../../features/shop/presentation/shop_inventory_page.dart';
 import '../../../features/shop/presentation/shop_order_list_page.dart';
-import '../../../features/shop/presentation/shop_product_detail_page.dart';
 import '../../../features/shop/presentation/shop_product_list_page.dart';
 import '../../../features/wallet/data/wallet_repository.dart';
 import '../../../features/wallet/presentation/wallet_page.dart';
@@ -575,30 +573,6 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     } on FormatException catch (error) {
       return '通知已读状态返回格式异常：${error.message}';
     }
-  }
-
-  void _openShopProductFromDiscover(DiscoverProductSummary product) {
-    final productId = product.id.trim();
-    if (productId.isEmpty) {
-      return;
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => ShopProductDetailPage(
-          environment: widget.environment,
-          repository: widget.shopRepository,
-          walletRepository: widget.walletRepository,
-          productId: productId,
-          initialTitle: product.name,
-          sessionController: widget.sessionController,
-          authController: widget.authController,
-          onRequestSignIn: () => _startLoginForTarget(
-            const ShellPostLoginTarget(tabIndex: _discoverTabIndex),
-          ),
-        ),
-      ),
-    );
   }
 
   void _openShopFromDiscover() {
@@ -1150,23 +1124,14 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         );
         final pages = <Widget>[
           DiscoverPage(
-            environment: widget.environment,
-            sessionState: sessionState,
             repository: widget.discoverRepository,
             onOpenForum: () => _openTabFromDiscover(_forumTabIndex),
             onOpenDocs: () => _openTabFromDiscover(_docsTabIndex),
             onOpenLeaderboard: () => _openTabFromDiscover(
               _leaderboardTabIndex,
             ),
-            onOpenDocument: (document) => _openDocsDetailTarget(
-              DocsDetailHandoffTarget(
-                slug: document.slug,
-                source: DocsDetailHandoffSource.discover,
-                initialTitle: document.title,
-              ),
-            ),
+            onOpenDocsDetailTarget: _openDocsDetailTarget,
             onOpenForumDetailTarget: _openForumDetailTarget,
-            onOpenShopProduct: _openShopProductFromDiscover,
             onOpenShop: _openShopFromDiscover,
             onOpenProfileUser: _openProfileUserFromCurrentTab,
           ),

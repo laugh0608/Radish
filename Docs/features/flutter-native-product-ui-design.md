@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P4-B2 Web-Family Adaptive Shell` 已完成；等待 `P4-B3 Discover 正式读模型与代表页` 实施授权
+> 状态：`P4-B3 Discover 正式读模型与代表页` 已完成；等待 `P4-B4 Forum Detail 拆分与代表页` 实施授权
 >
 > 最后更新：2026-08-23（Asia/Shanghai）
 >
@@ -16,6 +16,7 @@
 > - [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23)
 > - [P4-B1 Theme / Shared 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)
 > - [P4-B2 Adaptive Shell 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)
+> - [P4-B3 Discover 实现记录](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)
 
 ## 1. 结论摘要
 
@@ -301,7 +302,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 - `B1 Theme Foundation + Shared Primitives`（已完成，2026-08-23）：已接入经校验的 Noto 本地字体和精确版本 Lucide 图标；typography、density、surface、motion、焦点、共享状态原语与主题预览—确认均已落地，详见 [P4-B1 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)。
 - `B2 Web-Family Adaptive Shell`（已完成，2026-08-23）：三档壳层、compact 安全区胶囊底栏、medium / expanded 顶部全局栏与独立通知 / 账户动作已落地，五入口及既有行为契约保持，详见 [P4-B2 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)。
-- `B3 Discover`：迁移既有公开发现 cursor 读模型，完成连续信息流与 expanded 洞察区，不扩建聊天。
+- `B3 Discover`（已完成，2026-08-23）：已迁移既有公开发现 cursor 读模型，完成 compact 连续信息流与 expanded `904px` 主轴 + 社区洞察；Forum / Docs 保持原生 handoff，Messages 只读说明 Web 边界，详见 [P4-B3 实现记录](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)。
 - `B4 Forum Detail`：先拆分页面与测试 owner，再完成 compact 连续阅读和 expanded `220 / 820 / 250` 页面级三栏。
 - `B5`：执行代表范围成组静态门禁；真实 Gateway / Android RC Smoke 仍作为独立阶段验收并另行授权。
 
@@ -343,4 +344,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-23）
 
-`P4-B2 Web-Family Adaptive Shell` 已完成：compact `64px` 品牌栏与 `358 × 64px` 安全区胶囊五入口、medium / expanded `68px` 顶部全局栏、通知 / 账户 / 最近阅读动作拆分与常驻状态带清理均已落地；Shell 由 `1920` 行降至 `1445` 行。定向测试 `8 / 8`、Shell Smoke `51 / 51`、`flutter analyze` 零问题、全量 `flutter test` `236 / 236` 通过。第一顺位等待 `P4-B3 Discover 正式读模型与代表页` 实施授权；该授权不自动包含 B4 Forum Detail、其他页面族、新平台工程、服务启动或真实 Gateway / 设备 Smoke。
+`P4-B3 Discover 正式读模型与代表页` 已完成：Flutter 已改用既有 `PublicDiscover/GetFeed` cursor 读模型，保留旧快照、请求代际、分页去重和结构化错误；compact 连续信息流、expanded `904px` 主轴 + 社区洞察以及 Forum / Docs 原生 handoff 均已落地，Messages 只读说明 Web 能力边界。定向测试 `11 / 11`、Shell Smoke `51 / 51`、`flutter analyze` 零问题、全量 `flutter test` `237 / 237` 通过。第一顺位等待 `P4-B4 Forum Detail 拆分与代表页` 实施授权；该授权不自动包含其他页面族、新平台工程、服务启动或真实 Gateway / 设备 Smoke。

@@ -431,11 +431,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('打开 @luobo'),
+      find.byKey(const Key('discover-contributor-user-9')),
       200,
       scrollable: scrollable,
     );
-    await tester.tap(find.text('打开 @luobo'));
+    await tester.tap(find.byKey(const Key('discover-contributor-user-9')));
     await tester.pumpAndSettle();
 
     expect(find.text('我的'), findsWidgets);
@@ -446,7 +446,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
-    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('社区正在发生'), findsOneWidget);
     expect(find.text('Native discover'), findsOneWidget);
   });
 
@@ -479,11 +479,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('打开帖子'),
+      find.byKey(const Key('discover-item-post:1')),
       200,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('打开帖子'));
+    await tester.tap(find.byKey(const Key('discover-item-post:1')));
     await tester.pumpAndSettle();
 
     expect(find.text('帖子详情'), findsWidgets);
@@ -493,7 +493,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('社区正在发生'), findsOneWidget);
     expect(find.text('Native discover'), findsOneWidget);
   });
 
@@ -541,7 +541,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
-    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('社区正在发生'), findsOneWidget);
     expect(find.text('Native discover'), findsOneWidget);
   });
 
@@ -584,7 +584,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
-    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('社区正在发生'), findsOneWidget);
     expect(find.text('Native discover'), findsOneWidget);
   });
 
@@ -634,11 +634,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
-    expect(find.text('继续阅读'), findsOneWidget);
+    expect(find.text('社区正在发生'), findsOneWidget);
     expect(find.text('Native discover'), findsOneWidget);
   });
 
-  testWidgets('discover shop product opens read-only detail and returns',
+  testWidgets('discover shop context opens read-only detail and returns',
       (tester) async {
     tester.view.physicalSize = const Size(1200, 2200);
     tester.view.devicePixelRatio = 1.0;
@@ -668,10 +668,14 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('查看详情'),
+      find.text('打开商城'),
       200,
       scrollable: find.byType(Scrollable).last,
     );
+    await tester.tap(find.text('打开商城'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('商品列表'), findsOneWidget);
     await tester.tap(find.text('查看详情'));
     await tester.pumpAndSettle();
 
@@ -685,9 +689,12 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    expect(find.text('继续阅读'), findsOneWidget);
-    expect(find.text('商城精选'), findsOneWidget);
-    expect(find.text('Profile Rename Card'), findsOneWidget);
+    expect(find.text('商品列表'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('社区正在发生'), findsOneWidget);
   });
 
   testWidgets(
@@ -732,14 +739,16 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('查看详情'),
+      find.text('打开商城'),
       200,
       scrollable: find.byType(Scrollable).last,
     );
+    await tester.tap(find.text('打开商城'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('查看详情'));
     await tester.pumpAndSettle();
 
-    expect(find.text('来源：发现页商城精选'), findsOneWidget);
+    expect(find.text('来源：公开商品列表'), findsOneWidget);
     expect(find.text('/shop/product/4001'), findsOneWidget);
     expect(find.text('当前可购买'), findsOneWidget);
 
@@ -761,9 +770,12 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    expect(find.text('继续阅读'), findsOneWidget);
-    expect(find.text('商城精选'), findsOneWidget);
-    expect(find.text('Profile Rename Card'), findsOneWidget);
+    expect(find.text('商品列表'), findsOneWidget);
+
+    await tester.pageBack();
+    await tester.pumpAndSettle();
+
+    expect(find.text('社区正在发生'), findsOneWidget);
   });
 
   testWidgets('discover shop shortcut opens read-only product list and returns',
@@ -796,11 +808,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('查看全部商品'),
+      find.text('打开商城'),
       200,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('查看全部商品'));
+    await tester.tap(find.text('打开商城'));
     await tester.pumpAndSettle();
 
     expect(find.text('公开商城'), findsWidgets);
@@ -823,8 +835,7 @@ void main() {
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    expect(find.text('继续阅读'), findsOneWidget);
-    expect(find.text('商城精选'), findsOneWidget);
+    expect(find.text('社区正在发生'), findsOneWidget);
   });
 
   testWidgets('leaderboard user can open public profile and return to ranking',
@@ -1070,11 +1081,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('打开 @luobo'),
+      find.byKey(const Key('discover-contributor-user-9')),
       200,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('打开 @luobo'));
+    await tester.tap(find.byKey(const Key('discover-contributor-user-9')));
     await tester.pumpAndSettle();
 
     expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
@@ -2544,11 +2555,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('打开文档'),
+      find.byKey(const Key('discover-item-docs:1')),
       200,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('打开文档'));
+    await tester.tap(find.byKey(const Key('discover-item-docs:1')));
     await tester.pump();
     await tester.pumpAndSettle();
 
@@ -2560,7 +2571,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('发现'), findsWidgets);
-    expect(find.text('文档精选'), findsOneWidget);
+    expect(find.text('Radish Flutter docs scope'), findsOneWidget);
     expect(find.text('文档详情'), findsNothing);
 
     final recentTarget = await docsFollowUpStore.readRecentDocumentTarget();
@@ -2598,11 +2609,11 @@ void main() {
     await tester.pumpAndSettle();
 
     await tester.scrollUntilVisible(
-      find.text('打开文档'),
+      find.byKey(const Key('discover-item-docs:1')),
       200,
       scrollable: find.byType(Scrollable).last,
     );
-    await tester.tap(find.text('打开文档'));
+    await tester.tap(find.byKey(const Key('discover-item-docs:1')));
     await tester.pumpAndSettle();
 
     final linkedDocsAction = find.text('公开阅读边界').last;
@@ -3272,43 +3283,37 @@ NativeAuthController _buildAuthController(
 
 class _FakeDiscoverRepository implements DiscoverRepository {
   @override
-  Future<DiscoverSnapshot> getSnapshot({
+  Future<DiscoverFeedPage> getFeed({
     required int pageSize,
+    String? cursor,
   }) async {
-    return const DiscoverSnapshot(
-      forumPosts: [],
-      documents: [],
-      products: [],
-    );
+    return _smokeDiscoverPage(items: const []);
   }
 }
 
 class _SeededDiscoverRepository implements DiscoverRepository {
   @override
-  Future<DiscoverSnapshot> getSnapshot({
+  Future<DiscoverFeedPage> getFeed({
     required int pageSize,
+    String? cursor,
   }) async {
-    return const DiscoverSnapshot(
-      forumPosts: [
-        ForumPostSummary(
-          id: 'post-1',
+    return _smokeDiscoverPage(
+      items: [
+        DiscoverFeedItem(
+          key: 'post:1',
+          kind: DiscoverItemKind.post,
+          occurredAtUtc: DateTime.utc(2026, 5, 31, 8),
           title: 'Native discover',
           summary: 'Use discover to jump into real tabs.',
-          categoryId: 'forum-cat-1',
-          categoryName: 'General',
-          authorId: 'user-9',
-          authorName: 'luobo',
-        ),
-      ],
-      documents: [],
-      products: [
-        DiscoverProductSummary(
-          id: '4001',
-          name: 'Profile Rename Card',
-          productType: 'Consumable',
-          price: 120,
-          soldCount: 3,
-          durationDisplay: '永久',
+          actor: const DiscoverActor(
+            publicId: 'user-9',
+            displayName: 'luobo',
+          ),
+          target: const DiscoverTarget(
+            kind: DiscoverTargetKind.forumPost,
+            postPublicId: 'post-1',
+            requiresAuthentication: false,
+          ),
         ),
       ],
     );
@@ -3675,46 +3680,69 @@ class _SeededExperienceRepository implements ExperienceRepository {
 
 class _SeededDocumentDiscoverRepository implements DiscoverRepository {
   @override
-  Future<DiscoverSnapshot> getSnapshot({
+  Future<DiscoverFeedPage> getFeed({
     required int pageSize,
+    String? cursor,
   }) async {
-    return const DiscoverSnapshot(
-      forumPosts: [],
-      documents: [
-        DocsDocumentSummary(
-          id: 'doc-3001',
+    return _smokeDiscoverPage(
+      items: [
+        DiscoverFeedItem(
+          key: 'docs:1',
+          kind: DiscoverItemKind.memberActivity,
+          occurredAtUtc: DateTime.utc(2026, 4, 20, 8),
           title: 'Radish Flutter docs scope',
-          slug: 'flutter-docs-scope',
           summary: 'Read-only docs route handoff.',
-          modifyTime: '2026-04-20T08:00:00Z',
+          target: const DiscoverTarget(
+            kind: DiscoverTargetKind.docs,
+            documentSlug: 'flutter-docs-scope',
+            requiresAuthentication: false,
+          ),
         ),
       ],
-      products: [],
     );
   }
 }
 
 class _SeededBigIdDiscoverRepository implements DiscoverRepository {
   @override
-  Future<DiscoverSnapshot> getSnapshot({
+  Future<DiscoverFeedPage> getFeed({
     required int pageSize,
+    String? cursor,
   }) async {
-    return const DiscoverSnapshot(
-      forumPosts: [
-        ForumPostSummary(
-          id: '2042219067430928384',
+    return _smokeDiscoverPage(
+      items: [
+        DiscoverFeedItem(
+          key: 'post:big-id',
+          kind: DiscoverItemKind.post,
+          occurredAtUtc: DateTime.utc(2026, 5, 31, 8),
           title: 'Native discover wiring plan',
           summary: 'Use discover to jump into real tabs.',
-          categoryId: 'forum-cat-1',
-          categoryName: 'General',
-          authorId: 'user-9',
-          authorName: 'luobo',
+          target: const DiscoverTarget(
+            kind: DiscoverTargetKind.forumPost,
+            postPublicId: '2042219067430928384',
+            requiresAuthentication: false,
+          ),
         ),
       ],
-      documents: [],
-      products: [],
     );
   }
+}
+
+DiscoverFeedPage _smokeDiscoverPage({
+  required List<DiscoverFeedItem> items,
+}) {
+  return DiscoverFeedPage(
+    items: items,
+    pulse: DiscoverPulse(
+      windowStartedAtUtc: DateTime.utc(2026, 5, 30, 8),
+      windowEndedAtUtc: DateTime.utc(2026, 5, 31, 8),
+      discoverableChannelCount: '2',
+      eligibleItemCount: items.length.toString(),
+      knowledgeContributionCount: '1',
+    ),
+    hasMore: false,
+    generatedAtUtc: DateTime.utc(2026, 5, 31, 8),
+  );
 }
 
 class _FakeDocsRepository implements DocsRepository {
