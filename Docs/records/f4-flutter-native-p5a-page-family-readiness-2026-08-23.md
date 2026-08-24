@@ -1,6 +1,6 @@
 # Flutter Native P5-A 页面族成组重构拆批与首批就绪审计
 
-> 状态：`P5-A readiness` 已完成；后续 [P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)与 [P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)已完成，当前进入 P5-C3 Commerce Private readiness
+> 状态：`P5-A readiness` 已完成；后续 [P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)、[P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)与 [P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)已完成，当前进入 P5-D1 Wallet / Experience readiness
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -106,4 +106,4 @@ P5 页面不得复制 Web DOM / CSS、P4 controller 或 handoff 状态，也不�
 
 ## 7. 后续进展
 
-项目所有者已确认并完成 P5-B1、P5-B2、P5-C1 与 P5-C2，实施结果与本审计边界一致，详见 [P5-B1 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 实现记录](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)与 [P5-C2 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)。下一顺位进入 P5-C3 Commerce Private readiness；派生只读面、服务启动和真实 Smoke 仍不随之自动授权。
+项目所有者已确认并完成 P5-B1、P5-B2、P5-C1、P5-C2 与 [P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)，实施结果与本审计边界一致；P5-C3 已落地四个只读 owner、局部状态、测试拆分与三档结构，Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318`。下一顺位只进入 P5-D1 Wallet / Experience readiness；派生实现、服务启动和真实 Smoke 仍不随之自动授权。

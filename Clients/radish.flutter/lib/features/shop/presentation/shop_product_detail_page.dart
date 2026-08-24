@@ -25,6 +25,7 @@ class ShopProductDetailPage extends StatefulWidget {
     this.sourceLabel = '发现页商城精选',
     this.returnLabel = '返回发现',
     this.accessToken,
+    this.accountId,
     this.sessionController,
     this.authController,
     this.onRequestSignIn,
@@ -39,6 +40,7 @@ class ShopProductDetailPage extends StatefulWidget {
   final String sourceLabel;
   final String returnLabel;
   final String? accessToken;
+  final String? accountId;
   final SessionController? sessionController;
   final NativeAuthController? authController;
   final Future<void> Function()? onRequestSignIn;
@@ -84,6 +86,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
     }
 
     if (oldWidget.accessToken != widget.accessToken ||
+        oldWidget.accountId != widget.accountId ||
         oldWidget.sessionController != widget.sessionController) {
       _syncPurchaseTarget();
     }
@@ -175,6 +178,10 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
     if (accessToken == null) {
       return null;
     }
+    final explicitAccountId = _normalize(widget.accountId);
+    if (explicitAccountId != null) {
+      return explicitAccountId;
+    }
     final session = widget.sessionController?.state.session;
     if (_normalize(session?.accessToken) == accessToken) {
       return _normalize(session?.userId) ?? accessToken;
@@ -254,6 +261,7 @@ class _ShopProductDetailPageState extends State<ShopProductDetailPage> {
           repository: widget.repository,
           walletRepository: widget.walletRepository,
           accessToken: accessToken,
+          accountId: _currentAccountId,
           orderId: orderId,
           initialTitle: outcome.result.orderNo,
           sourceLabel: '购买结果',

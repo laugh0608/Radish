@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1 / P2 / P3、P4-A、[P4-B1–B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)与 [P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)已完成，下一顺位进入 P5-C3 Commerce Private readiness。
+> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1 / P2 / P3、P4-A、[P4-B1–B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)、[P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)与 [P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)已完成，当前进入 P5-D1 Wallet / Experience readiness。
 
 ## 1. 真相源与优先级
 
@@ -81,7 +81,7 @@ Radish 四主题取值与 Profile 覆盖
 - 主题注册表与运行时：`Frontend/radish.client/src/theme/theme.ts`
 - 共享 Ant Design 语义：`Frontend/radish.ui/src/theme/antd-theme.ts`
 - Console Workbench L2：`Frontend/radish.console/src/index.css`
-- Flutter 映射：四主题 `ThemeData`、`RadishThemeTokens`、权益状态与内置偏好 owner 已在 P2 建立；P4-B1 已补齐 Noto typography、density / surface / motion、焦点、共享状态原语和主题预览—确认，P4-B2 已补齐 compact / medium / expanded Web 家族壳层、受控 Lucide 导航和动作状态，P4-B3 已补齐统一公开 Discover cursor 流、compact 连续信息流和 expanded `904px` 主轴 + 社区洞察，P4-B4 已补齐 Forum Detail compact 连续阅读、medium 单主轴与 expanded `220 / 820 / 250` 页面级三栏，P4-B5 已关闭静态退出门禁，P5-A 已拆出后续页面批次，P5-B1 已补齐 Forum Feed 连续流与独立 composer，P5-B2 已落地 Profile 五类独立快照、三档结构、`904px` 主轴 + 身份 rail 和权威编辑保护，P5-C1 已落地 Docs Reader 共用 owner、compact 单任务、medium 自适应目录—正文和 expanded `280 / 904` 阅读结构；P5-C2 已落地 Commerce 独立状态、敏感购买任务、目录 `1 / 2 / 3` 列和详情单任务 / 双区 / `820 + 24 + 360` 结构，详见 [P5-C2 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)。下一步进入 P5-C3 Commerce Private readiness。
+- Flutter 映射：四主题 `ThemeData`、`RadishThemeTokens`、权益状态与内置偏好 owner 已在 P2 建立；P4-B1 已补齐 Noto typography、density / surface / motion、焦点、共享状态原语和主题预览—确认，P4-B2 已补齐 compact / medium / expanded Web 家族壳层、受控 Lucide 导航和动作状态，P4-B3 已补齐统一公开 Discover cursor 流、compact 连续信息流和 expanded `904px` 主轴 + 社区洞察，P4-B4 已补齐 Forum Detail compact 连续阅读、medium 单主轴与 expanded `220 / 820 / 250` 页面级三栏，P4-B5 已关闭静态退出门禁，P5-A 已拆出后续页面批次，P5-B1 已补齐 Forum Feed 连续流与独立 composer，P5-B2 已落地 Profile 五类独立快照、三档结构、`904px` 主轴 + 身份 rail 和权威编辑保护，P5-C1 已落地 Docs Reader 共用 owner、compact 单任务、medium 自适应目录—正文和 expanded `280 / 904` 阅读结构；P5-C2 已落地 Commerce 独立状态、敏感购买任务、目录 `1 / 2 / 3` 列和详情单任务 / 双区 / `820 + 24 + 360` 结构，详见 [P5-C2 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)；P5-C3 已落地 Commerce Private 四个只读 owner、权益 / 道具局部状态、订单 `1 / 2 / 3` 列、详情 rail 与背包双 lane，Shop `50 / 50`、全量 `318 / 318`，详见 [P5-C3 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)。
 
 family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的四主题取值与品牌前景继续在 Client 项目主题层显式覆盖，避免依赖上游参考默认值形成隐式产品契约。
 

@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P5-C3 Commerce Private readiness`
-- **产品下一顺位**：`审计订单、背包、权益私域只读面与三档结构，冻结方案后再等待实施确认`
+- **工程第一顺位**：`Flutter Native P5-D1 Wallet / Experience readiness`
+- **产品下一顺位**：`审计资产与经验私域只读面、局部状态和三档结构，冻结方案后再等待实施确认`
 - **复核日期**：`2026-08-24`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
@@ -15,7 +15,9 @@
 
 ## 最近结论
 
-- `2026-08-24` 已完成 [Flutter Native P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)：公开目录、详情和购买已拆为独立 owner，目录 refresh / append、详情 stale、资格 / 余额 / 交易局部结论、登录意图、支付草稿 dirty / busy、`shop:` 幂等及 product / account / generation 隔离均已落地；compact / medium / expanded 形成目录 `1 / 2 / 3` 列与详情单任务、双区、`820 + 24 + 360` 结构。Shop `35 / 35`、Shell Smoke `51 / 51`、全量 `303 / 303` 与 analyze 零问题；未改 API、依赖、Pen、平台工程或服务运行态。下一顺位进入 P5-C3 Commerce Private readiness。
+- `2026-08-24` 已完成 [Flutter Native P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)：订单目录 / 详情、权益、道具已拆为四个只读 owner，订单 refresh / append、详情 stale、权益 / 道具单边失败、空快照 stale、account / target / generation / dispose 隔离与明确 `userId` 传递均已落地；订单目录 `1 / 2 / 3` 列、详情连续任务 / 双区 / `820 + 24 + 360` 和背包 sequential / 双 lane 完成。原组合测试由 `1428` 降至 `1214` 行，本批运行时 owner 最大 `421` 行；Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318` 与 analyze 零问题。下一顺位进入 P5-D1 Wallet / Experience readiness。
+- `2026-08-24` 已完成 [Flutter Native P5-C3 Commerce Private readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24)：确认既有 `GetMyOrders + GetOrder + GetMyBenefits + GetMyInventory`、Coin 订单流水筛选、主题 gateway 与原生 route 足够，不新增 API；冻结订单目录 / 详情、权益、道具四个独立只读 owner，账号 / target / generation 隔离，权益 / 道具单边失败与 stale，以及订单目录 `1 / 2 / 3` 列、详情 `820 + 24 + 360` 和背包 sequential / 双 lane 结构。改造前 Shop 组合 `23 / 23`、Shell Smoke `51 / 51`；本批只修改文档，未改 Dart、API、依赖、Pen、平台工程或服务运行态，其后已按冻结方案实施完成。
+- `2026-08-24` 已完成 [Flutter Native P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)：公开目录、详情和购买已拆为独立 owner，目录 refresh / append、详情 stale、资格 / 余额 / 交易局部结论、登录意图、支付草稿 dirty / busy、`shop:` 幂等及 product / account / generation 隔离均已落地；compact / medium / expanded 形成目录 `1 / 2 / 3` 列与详情单任务、双区、`820 + 24 + 360` 结构。Shop `35 / 35`、Shell Smoke `51 / 51`、全量 `303 / 303` 与 analyze 零问题；未改 API、依赖、Pen、平台工程或服务运行态。其后 P5-C3 Commerce Private readiness 已完成。
 - `2026-08-24` 已完成 [Flutter Native P5-C2 Commerce Browse / Transaction readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24)：确认既有 `Shop/GetProducts + GetProduct + CheckCanBuy + Purchase`、`Coin/GetBalance` 与订单详情 route 足够，不新增 API；冻结目录 / 详情 / 资格 / 余额独立权威状态、支付草稿 dirty / busy、登录意图、单商品幂等、账号 / target 隔离、购买成功与订单确认分层，以及 compact 单列 / medium 两列和购买双区 / expanded 三列与 `820 / 360` 详情结构。商品详情 `1341` 行、详情测试 `1428` 行按职责控制增长；改造前 Shop `25 / 25`。其后已按冻结方案实施完成。
 - `2026-08-23` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23)：复核 `cc2041bd..2d044927` 的 `12` 个提交与 `135` 个唯一文件，确认 GitHub Release 自动化、`26.8.2` 源码候选、P3 代表稿确认、P4-A / B1–B5 和 P5-A / B1 / B2 / C1 均有与代码一致的边界和验证证据；修正八月日志、设计源索引与 Pencil Web 母版适配旧口径。明日第一顺位只做 P5-C2 Commerce Browse / Transaction readiness，完成方案后再等待实施确认。
 - `2026-08-23` 已完成 [Flutter Native P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)：Docs 目录已落地 query target、请求代际、结构化 issue 与同查询旧页 stale；inline、handoff 和文档内链共用 reader controller / surface，同 slug 刷新保留旧正文，切换 slug 清空旧正文。原 `1294` 行页面和 `944` 行测试已按职责拆分，本批 Dart owner 最大 `951` 行；compact 单任务、medium 目录—正文与 expanded `280 / 904` 阅读结构完成。Docs `35 / 35`、Shell Smoke `51 / 51`、全量 `293 / 293` 与 analyze 零问题；未改 API、依赖、Pen、平台工程或服务运行态。下一顺位进入 P5-C2 Commerce Browse / Transaction readiness。
@@ -199,15 +201,15 @@
 
 ## 当前事项（2026-08-24）
 
-1. `P5-C2 Commerce Browse / Transaction` 已完成，Shop `35 / 35`、Shell Smoke `51 / 51`、全量 `303 / 303` 与 analyze 零问题，详见[实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)。
-2. 下一步只进入 `P5-C3 Commerce Private readiness`，审计订单列表 / 详情、背包、权益与主题 gateway 的 owner、只读状态、三档结构、文件规模和测试基线。
-3. readiness 先冻结 P5-C3 页面 / 测试拆分与停止线，再等待独立实施确认；当前不直接修改 P5-C3 运行时代码。
-4. 购买写入、支付草稿与幂等继续只归 P5-C2；P5-C3 不扩取消订单、退款、权益使用、道具使用或完整移动商城。
+1. `P5-C3 Commerce Private` 已完成，Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318` 与 analyze 零问题，详见[实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)。
+2. 下一步只进入 `P5-D1 Wallet / Experience readiness`，审计余额概要 / Coin 流水与经验概要 / 记录的 owner、局部失败、分页、三档结构、文件规模和测试基线。
+3. readiness 先冻结 Wallet / Experience 状态、页面 / 测试拆分与停止线，再等待独立实施确认；当前不直接修改 P5-D1 运行时代码。
+4. P5-D1 保持私域只读，不新增转账、调账、经验调整、冻结 / 审核或其他资产 / 经验写入，也不提前进入 Leaderboard、Browse History 或 P5-E。
 5. 不提前进入派生只读面、Pen、依赖、平台工程、服务启动、真实 Gateway / Android RC Smoke、签名或分发。
 
 ## 当前执行入口
 
-- [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
+- [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
 - [Flutter Native P5-C1 Docs Reader 实现](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23) · [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) · [P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 - [开发路线图](/development-plan)

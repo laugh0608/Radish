@@ -1,6 +1,6 @@
 # Flutter Native P5-C2 Commerce Browse / Transaction 实现记录
 
-> 状态：`P5-C2` 已完成；下一顺位进入 `P5-C3 Commerce Private readiness`
+> 状态：`P5-C2` 已完成；后续 [P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)也已完成，当前进入 P5-D1 Wallet / Experience readiness
 >
 > 日期：2026-08-24（Asia/Shanghai）
 >
@@ -62,4 +62,4 @@ compact / medium / expanded 已形成目录 `1 / 2 / 3` 列，以及详情单任
 
 ## 6. 下一顺位
 
-P5-C2 关闭。下一顺位进入 `P5-C3 Commerce Private readiness`，先审计订单列表 / 详情、背包、权益与主题 gateway 的既有 owner、只读边界、三档结构和测试拆分，再等待独立实施确认。购买写入仍只归 P5-C2；P5-C3 不新增取消订单、退款、权益使用或道具使用。派生只读面、平台工程、服务启动与真实运行态 Smoke 不随之自动授权。
+P5-C2 关闭。后续 [P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)也已完成：订单目录 / 详情、权益、道具四个只读 owner、局部状态、测试拆分和三档结构已经落地，Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318`。购买写入仍只归 P5-C2；P5-C3 没有新增取消订单、退款、权益使用或道具使用。下一顺位只进入 P5-D1 Wallet / Experience readiness；派生实现、平台工程、服务启动与真实运行态 Smoke 不随之自动授权。

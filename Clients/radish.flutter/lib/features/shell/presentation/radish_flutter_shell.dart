@@ -593,8 +593,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   }
 
   Future<void> _openShopOrdersFromProfile() async {
-    final accessToken =
-        widget.sessionController.state.session?.accessToken.trim();
+    final session = widget.sessionController.state.session;
+    final accessToken = session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       await _startLoginForProfile();
       return;
@@ -611,14 +611,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           repository: widget.shopRepository,
           walletRepository: widget.walletRepository,
           accessToken: accessToken,
+          accountId: session?.userId,
         ),
       ),
     );
   }
 
   Future<void> _openShopInventoryFromProfile() async {
-    final accessToken =
-        widget.sessionController.state.session?.accessToken.trim();
+    final session = widget.sessionController.state.session;
+    final accessToken = session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       await _startLoginForProfile();
       return;
@@ -635,6 +636,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           repository: widget.shopRepository,
           walletRepository: widget.walletRepository,
           accessToken: accessToken,
+          accountId: session?.userId,
         ),
       ),
     );

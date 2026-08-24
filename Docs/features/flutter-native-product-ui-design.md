@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P5-C2 Commerce Browse / Transaction` 已完成；下一顺位进入 `P5-C3 Commerce Private readiness`
+> 状态：`P5-C3 Commerce Private` 已完成；下一顺位为 `P5-D1 Wallet / Experience readiness`
 >
 > 最后更新：2026-08-24（Asia/Shanghai）
 >
@@ -25,6 +25,10 @@
 > - [P5-B2 Identity / Revisit 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)
 > - [P5-C1 Docs Reader readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23)
 > - [P5-C1 Docs Reader 实现记录](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)
+> - [P5-C2 Commerce Browse / Transaction readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24)
+> - [P5-C2 Commerce Browse / Transaction 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)
+> - [P5-C3 Commerce Private readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24)
+> - [P5-C3 Commerce Private 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)
 
 ## 1. 结论摘要
 
@@ -35,7 +39,7 @@ Radish 长期只维护两条正式产品线：
 
 `Frontend/radish.client` 的 WebOS `/desktop` 继续作为 Web 内的历史兼容入口，不构成第三条产品线。`Clients/radish-tauri` 正式弃用，只保留历史代码与验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁。Flutter Web 不进入路线，避免维护第二套 Web 前端。
 
-P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。当前 P4 与 P5-B1–C2 已完成首轮主题、壳层和高价值页面族收口，剩余 Commerce Private 与派生只读面继续按 P5 拆批推进。
+P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。当前 P4 与 P5-B1–C3 已完成首轮主题、壳层和高价值页面族收口；下一顺位进入 P5-D1 Wallet / Experience readiness，派生只读面继续按 P5 拆批推进。
 
 ## 2. 产品边界
 
@@ -326,8 +330,10 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - `P5-C1 Docs Reader`（已完成，2026-08-23）：目录 query target、请求代际、结构化 issue 与旧页 stale 已落地；inline / handoff / linked-doc 共用 reader controller / surface，compact 单任务、medium 目录—正文与 expanded `280 / 904` 阅读结构完成。Docs `35 / 35`、Shell Smoke `51 / 51`、全量 `293 / 293` 与 analyze 零问题，详见 [P5-C1 实现记录](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)。
 - `P5-C2 readiness`（已完成，2026-08-24）：冻结复用既有 Shop / Coin 契约、目录 / 详情 / 资格 / 余额独立权威状态、支付草稿 dirty / busy、单商品幂等生命周期、账号 / target 隔离、订单确认回流、三档结构与 owner / 测试拆分；改造前 Shop `25 / 25`，详见 [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24)。
 - `P5-C2 Commerce Browse / Transaction`（已完成，2026-08-24）：目录、详情、购买三个独立 owner、结构化 issue、refresh / append / stale、支付草稿 dirty / busy、登录回流、同意图幂等、product / account / generation 隔离与订单确认回流已落地；目录三档 `1 / 2 / 3` 列，详情完成 compact 单任务、medium 双区与 expanded `820 + 24 + 360`。Shop `35 / 35`、Shell Smoke `51 / 51`、全量 `303 / 303` 与 analyze 零问题，详见 [P5-C2 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)。
-- `P5-C3`：下一顺位进入 Commerce Private readiness。购买写入只放 C2；C3 保持订单、背包与权益私域只读，不扩取消、退款或道具使用。
-- `P5-D1–D3`：Wallet / Experience、Leaderboard、Browse History 等派生只读面。
+- `P5-C3 readiness`（已完成，2026-08-24）：冻结只复用订单列表 / 详情、权益、道具、Coin 订单流水与主题 gateway 既有契约；订单目录 / 详情、权益、道具拆为四个只读 owner，权益 / 道具不再整批失败，账号 / target / generation 隔离与测试拆分明确。三档采用订单 `1 / 2 / 3` 列、详情 `820 + 24 + 360` 和背包 sequential / 双 lane；改造前 Shop 组合 `23 / 23`、Shell Smoke `51 / 51`，详见 [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24)。
+- `P5-C3 Commerce Private`（已完成，2026-08-24）：订单目录 / 详情、权益、道具四个只读 owner 与账号 / target / generation / dispose 隔离已落地；订单目录 `1 / 2 / 3` 列、详情 compact 连续 / medium 双区 / expanded `820 + 24 + 360`、背包 sequential / 双 lane 完成，权益与道具单边失败 / stale 独立。Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318` 与 analyze 零问题，详见 [P5-C3 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)。购买写入仍只属于 C2，C3 未扩取消、退款、权益激活 / 使用或道具使用。
+- `P5-D1`：下一顺位先完成 Wallet / Experience readiness，冻结概要与流水的独立权威状态、局部失败、三档结构和测试边界后再申请实施确认。
+- `P5-D2–D3`：Leaderboard、Browse History 等后续派生只读面。
 - `P5-E`：四主题、三档窗口、关键状态、全量 analyze / test 和文件边界成组静态门禁。
 
 每批保留业务状态、幂等、来源返回和原生 handoff，按继承关系改呈现；单批不跨越多个高风险写入领域，不顺手扩新功能。
@@ -362,4 +368,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-24）
 
-`P5-C2 Commerce Browse / Transaction` 已完成：目录、详情与购买独立 owner、局部状态、支付草稿、幂等和账号 / target 隔离均已落地，目录 `1 / 2 / 3` 列与详情单任务 / 双区 / `820 + 24 + 360` 结构完成，Shop `35 / 35`、Shell Smoke `51 / 51`、全量 `303 / 303` 与 analyze 零问题。下一步进入 P5-C3 Commerce Private readiness；P5-C3 实施、派生只读面、新平台工程、服务启动或真实 Gateway / 设备 Smoke 仍需独立确认。
+`P5-C3 Commerce Private` 已完成：四个只读 owner、账号 / target / generation / dispose 隔离、权益 / 道具单边失败与 stale、测试拆分和三档结构均已落地；Shop `50 / 50`、Shell Smoke `51 / 51`、Flutter 全量 `318 / 318` 与 analyze 零问题。下一步只进入 `P5-D1 Wallet / Experience readiness`，先审计既有私域只读契约并冻结独立状态、布局与测试边界；派生实现、新平台工程、服务启动或真实 Gateway / 设备 Smoke 仍需独立确认。
