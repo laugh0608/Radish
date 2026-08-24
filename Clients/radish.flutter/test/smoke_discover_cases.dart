@@ -474,19 +474,19 @@ void registerSmokeDiscoverCases() {
     await tester.tap(find.text('榜单').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('luobo'), findsOneWidget);
-    await tester.tap(find.text('打开公开主页'));
+    expect(find.text('luobo'), findsWidgets);
+    await tester.tap(find.text('打开公开主页').first);
     await tester.pumpAndSettle();
 
     expect(find.text('公开主页'), findsOneWidget);
-    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 9'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
     expect(find.text('榜单类型：经验榜'), findsOneWidget);
-    expect(find.text('luobo'), findsOneWidget);
+    expect(find.text('luobo'), findsWidgets);
   });
 
   testWidgets(
@@ -524,10 +524,10 @@ void registerSmokeDiscoverCases() {
     await tester.tap(find.text('榜单').last);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('打开公开主页'));
+    await tester.tap(find.text('打开公开主页').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 9'), findsOneWidget);
 
     final scrollable = find.byType(Scrollable).last;
     final openPostButton = find.widgetWithText(FilledButton, '打开帖子');
@@ -551,14 +551,14 @@ void registerSmokeDiscoverCases() {
     await tester.pumpAndSettle();
 
     expect(find.text('最近公开帖子'), findsOneWidget);
-    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 9'), findsOneWidget);
 
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
     expect(find.text('榜单类型：经验榜'), findsOneWidget);
-    expect(find.text('luobo'), findsOneWidget);
+    expect(find.text('luobo'), findsWidgets);
   });
 
   testWidgets(
@@ -595,10 +595,10 @@ void registerSmokeDiscoverCases() {
 
     await tester.tap(find.text('榜单').last);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('打开公开主页'));
+    await tester.tap(find.text('打开公开主页').first);
     await tester.pumpAndSettle();
 
-    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 9'), findsOneWidget);
 
     final profileScrollable = find.byType(Scrollable).last;
     final openPostButton = find.widgetWithText(FilledButton, '打开帖子');
@@ -618,7 +618,7 @@ void registerSmokeDiscoverCases() {
     await tester.pumpAndSettle();
 
     expect(find.text('最近公开帖子'), findsOneWidget);
-    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 9'), findsOneWidget);
     expect(find.text('帖子详情'), findsNothing);
 
     final openCommentButton = find.widgetWithText(FilledButton, '打开评论上下文');
@@ -637,7 +637,7 @@ void registerSmokeDiscoverCases() {
     await tester.pumpAndSettle();
 
     expect(find.text('最近公开评论'), findsOneWidget);
-    expect(find.text('正在阅读公开主页 user-9'), findsOneWidget);
+    expect(find.text('正在阅读公开主页 9'), findsOneWidget);
     expect(find.text('First public child comment'), findsNothing);
     expect(find.text('帖子详情'), findsNothing);
 
@@ -646,7 +646,7 @@ void registerSmokeDiscoverCases() {
 
     expect(lifecycleGateway.moveTaskToBackCallCount, 0);
     expect(find.text('榜单类型：经验榜'), findsOneWidget);
-    expect(find.text('luobo'), findsOneWidget);
+    expect(find.text('luobo'), findsWidgets);
   });
 
   testWidgets('recent public profile target survives shell rebuild',

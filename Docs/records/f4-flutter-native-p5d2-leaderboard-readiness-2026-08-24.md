@@ -1,6 +1,6 @@
 # Flutter Native P5-D2 Leaderboard 实施就绪与方案冻结
 
-> 状态：`P5-D2 readiness` 已完成；等待项目所有者确认实施
+> 状态：`P5-D2 readiness` 已完成；后续已按冻结边界实施完成
 >
 > 日期：2026-08-24（Asia/Shanghai）
 >
@@ -115,4 +115,4 @@ GET /api/v1/Leaderboard/GetLeaderboard?type=1&pageIndex=1&pageSize=20
 - 不读取或修改 Pen；P5-D2 直接继承 P3 方向和 P4 Theme / Shared / Shell。
 - 不启动服务，不执行真实 Gateway、浏览器、Android RC 或其他设备 Smoke；阶段运行态验收继续独立授权。
 
-P5-D2 readiness 已关闭。下一步等待项目所有者确认后，按本记录先补模型 / controller 测试，再拆页面 owner、实现三档 surface 并完成静态回归。P5-D3、P5-E、服务启动与真实运行态 Smoke 不随该确认自动扩张。
+P5-D2 readiness 已关闭，后续已按本记录补齐模型 / controller 测试，拆分页面 owner、实现三档 surface 并完成静态回归，详见 [P5-D2 实现记录](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)。下一顺位进入 P5-D3 Browse History readiness；P5-D3 实现、P5-E、服务启动与真实运行态 Smoke 不随本记录自动授权。

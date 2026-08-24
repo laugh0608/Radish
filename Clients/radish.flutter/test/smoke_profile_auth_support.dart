@@ -116,7 +116,7 @@ class _SeededLeaderboardRepository implements LeaderboardRepository {
       items: [
         LeaderboardItem(
           rank: 1,
-          userId: 'user-9',
+          userId: '9',
           userName: 'luobo',
           currentLevel: 8,
           currentLevelName: '探索者',
