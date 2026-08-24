@@ -1,5 +1,9 @@
+import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/core/network/radish_api_client.dart';
+import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/features/experience/data/experience_models.dart';
+import 'package:radish_flutter/features/experience/data/experience_repository.dart';
 
 void main() {
   test('parses user experience metadata', () {
@@ -86,4 +90,90 @@ void main() {
     expect(page.transactions.last.expAmount, 10);
     expect(page.transactions.last.isLevelUp, isTrue);
   });
+
+  test('requests summary with the normalized bearer credential', () async {
+    final apiClient = _RecordingApiClient({
+      'voUserId': 42,
+      'voCurrentLevel': 3,
+    });
+    final repository = HttpExperienceRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final summary = await repository.getMyExperience(
+      accessToken: '  access-token  ',
+    );
+
+    expect(summary.userId, '42');
+    expect(apiClient.lastUri?.path, '/api/v1/Experience/GetMyExperience');
+    expect(apiClient.lastBearerToken, 'access-token');
+  });
+
+  test('requests transaction page with bounded pagination', () async {
+    final apiClient = _RecordingApiClient({
+      'page': 1,
+      'pageSize': 1,
+      'dataCount': 0,
+      'pageCount': 1,
+      'data': <Object?>[],
+    });
+    final repository = HttpExperienceRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final page = await repository.getTransactions(
+      accessToken: 'access-token',
+      pageIndex: -2,
+      pageSize: 0,
+    );
+
+    expect(page.page, 1);
+    expect(apiClient.lastUri?.path, '/api/v1/Experience/GetTransactions');
+    expect(apiClient.lastUri?.queryParameters, {
+      'pageIndex': '1',
+      'pageSize': '1',
+    });
+    expect(apiClient.lastBearerToken, 'access-token');
+  });
+}
+
+class _RecordingApiClient implements RadishApiClient {
+  _RecordingApiClient(this.response);
+
+  final Object? response;
+  Uri? lastUri;
+  String? lastBearerToken;
+
+  @override
+  Future<T> get<T>({
+    required Uri uri,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) async {
+    lastUri = uri;
+    lastBearerToken = bearerToken;
+    return decode(response);
+  }
+
+  @override
+  Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<T> put<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
 }

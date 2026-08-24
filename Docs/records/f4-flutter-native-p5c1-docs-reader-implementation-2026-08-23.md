@@ -1,6 +1,6 @@
 # Flutter Native P5-C1 Docs Reader 实现记录
 
-> 状态：`P5-C1` 已完成；后续 P5-C2、P5-C3 与 [P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)也已完成，当前等待 P5-D1 实施确认
+> 状态：`P5-C1` 已完成；后续 P5-C2、P5-C3 与 [P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)也已完成，当前进入 P5-D2 Leaderboard readiness
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -59,4 +59,4 @@ compact / medium / expanded 分别形成目录与正文互斥的单任务流、�
 
 ## 6. 下一顺位
 
-P5-C1 关闭。后续 P5-C2 与 P5-C3 均已按冻结边界完成；P5-C3 关闭时 Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318`。[P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)也已完成，当前等待实施确认；派生实现、平台工程、服务启动或真实运行态 Smoke 仍需独立授权。
+P5-C1 关闭。后续 P5-C2、P5-C3 与 [P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)均已按冻结边界完成，当前进入 P5-D2 Leaderboard readiness；P5-D2 实施、后续派生面、平台工程、服务启动或真实运行态 Smoke 仍需独立授权。

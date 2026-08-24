@@ -1,6 +1,6 @@
 # Flutter Native P5-D1 Wallet / Experience 实施就绪与方案冻结
 
-> 状态：`P5-D1 readiness` 已完成；等待独立实施确认
+> 状态：`P5-D1 readiness` 已完成；后续已按冻结边界实施完成
 >
 > 日期：2026-08-24（Asia/Shanghai）
 >
@@ -138,4 +138,4 @@ Wallet 流水 query target 由标准化 transactionType、status、businessType 
 - 不读取或修改 Pen；P5-D1 直接继承 P3 方向和 P4 Theme / Shared / Shell。
 - 不启动服务，不执行真实 Gateway、浏览器、Android RC 或其他设备 Smoke；阶段运行态验收继续独立授权。
 
-P5-D1 readiness 已关闭。下一步等待项目所有者确认后，先建立四个状态 owner 与 controller tests，再拆两页 surface、补三档结构和完整静态回归。P5-D1 实施、P5-D2、平台工程、服务启动与真实运行态 Smoke 均不随本记录自动授权。
+P5-D1 readiness 已关闭，后续已按本记录建立四个状态 owner 与 controller tests，拆分两页 surface，并完成三档结构与完整静态回归，详见 [P5-D1 实现记录](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)。下一顺位进入 P5-D2 Leaderboard readiness；P5-D2 实施、平台工程、服务启动与真实运行态 Smoke 均不随本记录自动授权。

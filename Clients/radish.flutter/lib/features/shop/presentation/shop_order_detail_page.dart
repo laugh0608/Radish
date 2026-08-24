@@ -120,6 +120,7 @@ class _ShopOrderDetailPageState extends State<ShopOrderDetailPage> {
           environment: widget.environment,
           repository: widget.walletRepository,
           accessToken: widget.accessToken,
+          accountId: _accountId,
           title: '订单扣款流水',
           description:
               '查看订单 ${order.orderNo} 对应的胡萝卜扣款流水，用于核对购买后的资产变动。本页只读，不开放转账、退款或调账操作。',
