@@ -1,6 +1,6 @@
 # Flutter Native P5-C1 Docs Reader 实现记录
 
-> 状态：`P5-C1` 已完成；下一顺位进入 `P5-C2 Commerce Browse / Transaction readiness`
+> 状态：`P5-C1` 已完成；后续 [P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)也已完成，当前进入 P5-C3 Commerce Private readiness
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -59,4 +59,4 @@ compact / medium / expanded 分别形成目录与正文互斥的单任务流、�
 
 ## 6. 下一顺位
 
-P5-C1 关闭。下一顺位进入 `P5-C2 Commerce Browse / Transaction readiness`：先复核既有商品列表 / 详情、购买资格、余额、单商品购买与订单回流 owner，再冻结页面 / 测试拆分、三档结构和敏感购买任务边界。readiness 只做代码事实审计、定向基线与方案确认；不会自动授权购买代码改造、P5-C3 Commerce Private、派生只读面、平台工程、服务启动或真实运行态 Smoke。
+P5-C1 关闭。后续 [P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)已按冻结边界完成，Shop `35 / 35`、Shell Smoke `51 / 51`、全量 `303 / 303`；当前进入 P5-C3 Commerce Private readiness。P5-C3 实施、派生只读面、平台工程、服务启动或真实运行态 Smoke 仍需独立授权。
