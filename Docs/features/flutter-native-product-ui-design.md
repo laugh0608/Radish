@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P5-D1 Wallet / Experience` 已完成；当前进入 `P5-D2 Leaderboard readiness`
+> 状态：`P5-D1 Wallet / Experience` 已完成；`P5-D2 Leaderboard readiness` 已关闭，等待实施确认
 >
 > 最后更新：2026-08-24（Asia/Shanghai）
 >
@@ -31,6 +31,7 @@
 > - [P5-C3 Commerce Private 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)
 > - [P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)
 > - [P5-D1 Wallet / Experience 实现记录](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)
+> - [P5-D2 Leaderboard readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24)
 
 ## 1. 结论摘要
 
@@ -41,7 +42,7 @@ Radish 长期只维护两条正式产品线：
 
 `Frontend/radish.client` 的 WebOS `/desktop` 继续作为 Web 内的历史兼容入口，不构成第三条产品线。`Clients/radish-tauri` 正式弃用，只保留历史代码与验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁。Flutter Web 不进入路线，避免维护第二套 Web 前端。
 
-P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。当前 P4 与 P5-B1–D1 已完成首轮主题、壳层、高价值页面族与资产 / 经验只读面收口；后续派生只读面继续从 P5-D2 Leaderboard readiness 按批推进。
+P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。当前 P4 与 P5-B1–D1 已完成首轮主题、壳层、高价值页面族与资产 / 经验只读面收口；P5-D2 Leaderboard 的实施边界也已冻结，等待确认后按批实现。
 
 ## 2. 产品边界
 
@@ -336,7 +337,8 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - `P5-C3 Commerce Private`（已完成，2026-08-24）：订单目录 / 详情、权益、道具四个只读 owner 与账号 / target / generation / dispose 隔离已落地；订单目录 `1 / 2 / 3` 列、详情 compact 连续 / medium 双区 / expanded `820 + 24 + 360`、背包 sequential / 双 lane 完成，权益与道具单边失败 / stale 独立。Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318` 与 analyze 零问题，详见 [P5-C3 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)。购买写入仍只属于 C2，C3 未扩取消、退款、权益激活 / 使用或道具使用。
 - `P5-D1 readiness`（已完成，2026-08-24）：冻结只复用 Coin / Experience 四个私域读取 endpoint、Wallet 余额 / 流水和 Experience 等级 / 流水四个独立只读 owner、account / query / credential generation / dispose 隔离、单边 unavailable / stale、append 稳定去重和页面 / 测试拆分。三档采用 compact 连续任务、medium 概要双列 + 完整流水、expanded `280–300 + 24 + <=904`；改造前模型 `4 / 4`、Commerce / Wallet route `20 / 20`、Shell Smoke `51 / 51`，详见 [P5-D1 readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)。
 - `P5-D1`（已完成，2026-08-24）：四个独立只读 owner、局部 unavailable / stale、空快照、refresh 替换、append issue / 去重、account / query / credential generation / dispose 隔离和三档 surface 已落地。P5-D1 定向 `113 / 113`、全量 `356 / 356`、analyze 零问题，详见 [P5-D1 实现记录](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)。
-- `P5-D2`：当前进入 Leaderboard readiness，先反查紧凑排名、expanded 公开主页上下文、业务 accent 与主题可读性，不扩排行分页 API。
+- `P5-D2 readiness`（已完成，2026-08-24）：冻结只复用匿名经验榜第一页 20 条和既有 Public Profile handoff，补映射公共身份字段，建立单一首屏 owner、结构化 empty / unavailable / stale 与 generation / dispose 隔离；compact 连续紧凑排名、medium 受控密集列表、expanded `<=904 + 24 + 280–300` 榜首身份上下文，以及“严格 `#RRGGBB` 只作无文字装饰 accent”已固定。改造前 Leaderboard `4 / 4`、Shell Smoke `51 / 51`，详见 [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24)。
+- `P5-D2`：等待实施确认；不扩其他榜单、类型元数据、“我的排名”、分页、登录态或远程媒体。
 - `P5-D3`：Browse History 稳定去重、连续历史、原生 handoff 与设备 recent 边界。
 - `P5-E`：四主题、三档窗口、关键状态、全量 analyze / test 和文件边界成组静态门禁。
 
@@ -372,4 +374,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-24）
 
-`P5-D1 Wallet / Experience` 已完成：四个只读 owner、account / query / credential generation / dispose 隔离、概要 / 流水局部状态、append 去重、测试拆分和三档结构均已落地；P5-D1 定向 `113 / 113`、Flutter 全量 `356 / 356`、analyze 零问题。当前进入 P5-D2 Leaderboard readiness；P5-D2 实现、P5-D3、新平台工程、服务启动或真实 Gateway / 设备 Smoke 仍需独立确认。
+`P5-D1 Wallet / Experience` 已完成：四个只读 owner、account / query / credential generation / dispose 隔离、概要 / 流水局部状态、append 去重、测试拆分和三档结构均已落地；P5-D1 定向 `113 / 113`、Flutter 全量 `356 / 356`、analyze 零问题。`P5-D2 Leaderboard readiness` 也已关闭，当前等待按冻结边界实施；P5-D3、新平台工程、服务启动或真实 Gateway / 设备 Smoke 仍需独立确认。

@@ -8,8 +8,8 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P5-D2 Leaderboard readiness`
-- **产品下一顺位**：`反查只读排行契约、公开主页 handoff、三档结构与主题可读性`
+- **工程第一顺位**：`Flutter Native P5-D2 Leaderboard implementation confirmation`
+- **产品下一顺位**：`按冻结边界实施公开经验榜首屏、PublicId 优先身份、结构化状态、三档排名与语义 accent；等待项目所有者确认`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布；生产部署与长期运维由项目所有者独立负责）
 - **复核日期**：`2026-08-24`
@@ -43,7 +43,7 @@
   - F4-L-A-D 已完成并关闭：Main `WikiAttachmentReference`、Wiki 私有默认、动态 ACL、草稿 / Apply 事务同步、令牌先鉴权后消费、正式 Web 受保护资源、六身份 Gateway 矩阵、清理和 SQLite / PostgreSQL 验证形成闭环；通用 Document 保持独立边界。下一顺位进入 F4-M-A 单专题候选审计。
   - F4-M、F4-N、F4-O 与 F4-P 均已完成 A-D 批并关闭。F4-P 建立帖子私有收藏权威关系、显式幂等状态、个人稳定分页、不可用目标移除和正式 Web 回访闭环；D 批修正完整 `MeRoute` 来源返回并完成代表运行态矩阵、清理和严格数据库复核。
   - F4-Q 已完成 A-D 批并关闭：统一公开帖子判定，落地数据库侧标签公开计数 / 热门 / 相关聚合、标签首包 head、tags sitemap、正式 Web 相关主题和代表运行态矩阵；D 批修正 sitemap 分片、单一 JSON-LD、不可用标签 `noindex` 与 Console 软删除恢复契约，清理和严格数据库复核完成。
-  - F4-R 已完成 A / B、C-0、C-1A、`R1-F01`、六个 R1、四个 R2、六组 Web R3，以及 T01 主题语义、T02 reduced-motion 和 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)；Web 主题退出门禁已关闭。Flutter Native P1 / P2 / P3、P4-A、P4-B1–B5、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)、[P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)与 [P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)已完成，当前进入 P5-D2 Leaderboard readiness。F4-S 公开排行榜治理已穿插完成并关闭。
+  - F4-R 已完成 A / B、C-0、C-1A、`R1-F01`、六个 R1、四个 R2、六组 Web R3，以及 T01 主题语义、T02 reduced-motion 和 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)；Web 主题退出门禁已关闭。Flutter Native P1 / P2 / P3、P4-A、P4-B1–B5、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)、[P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)与 [P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)已完成，[P5-D2 Leaderboard readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24) 已关闭并等待实施确认。F4-S 公开排行榜治理已穿插完成并关闭。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -63,7 +63,7 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q、F4-S 及 F4-R Web 页面族 / 主题退出门禁均已关闭，`v26.8.1-release` 正式 tag 与五镜像发布完成。Flutter Native P1 / P2 / P3、P4-A、P4-B1–B5、P5-A、P5-B1、P5-B2、P5-C1、P5-C2、P5-C3 与 P5-D1 已完成，当前进入 P5-D2 Leaderboard readiness；生产部署与长期运维由项目所有者独立负责，不进入当前开发顺位。
+- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q、F4-S 及 F4-R Web 页面族 / 主题退出门禁均已关闭，`v26.8.1-release` 正式 tag 与五镜像发布完成。Flutter Native P1 / P2 / P3、P4-A、P4-B1–B5、P5-A、P5-B1、P5-B2、P5-C1、P5-C2、P5-C3 与 P5-D1 已完成，P5-D2 Leaderboard readiness 已关闭并等待实施确认；生产部署与长期运维由项目所有者独立负责，不进入当前开发顺位。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
 - 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊、F4-B 至 F4-Q 与 F4-S 已关闭，功能完成线继续推进 Flutter Native 产品化与 UI 重构。
 - Q4、公开 head 和 WebOS 继续按触达范围或真实问题维护；Flutter 作为次级原生安装包产品线按明确价值推进，mobile-first、desktop stage-gated，不与 Web 优先主线并行复制功能。
@@ -134,7 +134,7 @@ Radish V1 固定为：
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
-17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)的 Web 基线已关闭；[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)已完成 P0、P1、P2、P3、P4-A、P4-B1–B5、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)、[P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)与 [P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)。当前进入 P5-D2 Leaderboard readiness；P5-D2 / D3 实现、P5-E 和运行态 Smoke 继续独立授权。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)的 Web 基线已关闭；[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)已完成 P0、P1、P2、P3、P4-A、P4-B1–B5、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)、[P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)与 [P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)，[P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24) 已关闭。当前等待 P5-D2 实施确认；P5-D3、P5-E 和运行态 Smoke 继续独立授权。
 18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层
