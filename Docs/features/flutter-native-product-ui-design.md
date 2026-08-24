@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P5-D2 Leaderboard` 已完成；当前进入 `P5-D3 Browse History readiness`
+> 状态：`P5-D3 Browse History readiness` 已完成；等待实施确认
 >
 > 最后更新：2026-08-24（Asia/Shanghai）
 >
@@ -33,6 +33,7 @@
 > - [P5-D1 Wallet / Experience 实现记录](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)
 > - [P5-D2 Leaderboard readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24)
 > - [P5-D2 Leaderboard 实现记录](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)
+> - [P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24)
 
 ## 1. 结论摘要
 
@@ -43,7 +44,7 @@ Radish 长期只维护两条正式产品线：
 
 `Frontend/radish.client` 的 WebOS `/desktop` 继续作为 Web 内的历史兼容入口，不构成第三条产品线。`Clients/radish-tauri` 正式弃用，只保留历史代码与验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁。Flutter Web 不进入路线，避免维护第二套 Web 前端。
 
-P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。当前 P4 与 P5-B1–D2 已完成首轮主题、壳层、高价值页面族和资产 / 经验 / 排行派生只读面收口；后续从 P5-D3 Browse History readiness 按批推进。
+P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。当前 P4 与 P5-B1–D2 已完成首轮主题、壳层、高价值页面族和资产 / 经验 / 排行派生只读面收口；P5-D3 Browse History 的数据源、owner、去重、handoff 与三档结构也已完成 readiness，等待实施确认。
 
 ## 2. 产品边界
 
@@ -340,7 +341,8 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - `P5-D1`（已完成，2026-08-24）：四个独立只读 owner、局部 unavailable / stale、空快照、refresh 替换、append issue / 去重、account / query / credential generation / dispose 隔离和三档 surface 已落地。P5-D1 定向 `113 / 113`、全量 `356 / 356`、analyze 零问题，详见 [P5-D1 实现记录](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)。
 - `P5-D2 readiness`（已完成，2026-08-24）：冻结只复用匿名经验榜第一页 20 条和既有 Public Profile handoff，补映射公共身份字段，建立单一首屏 owner、结构化 empty / unavailable / stale 与 generation / dispose 隔离；compact 连续紧凑排名、medium 受控密集列表、expanded `<=904 + 24 + 280–300` 榜首身份上下文，以及“严格 `#RRGGBB` 只作无文字装饰 accent”已固定。改造前 Leaderboard `4 / 4`、Shell Smoke `51 / 51`，详见 [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24)。
 - `P5-D2`（已完成，2026-08-24）：单一首屏 owner、结构化状态、PublicId 优先公共身份、三档排名 surface 和业务色无文字 accent 已落地；P5-D2 定向 `22 / 22`、Shell `51 / 51`、全量 `374 / 374`、analyze 零问题，详见 [P5-D2 实现记录](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)。
-- `P5-D3`：当前进入 Browse History readiness，先反查稳定去重、连续历史、原生 handoff、设备 recent 边界和测试基线。
+- `P5-D3 readiness`（已完成，2026-08-24）：冻结只复用登录态 `User/GetMyBrowseHistory` 与现有 Forum / Docs / Shop handoff；服务端账号完整历史和本机 Forum / Docs 各最多 `5` 条 recent shortcut 保持不同 owner。分页 snapshot 使用 `VoId` 稳定去重，补 account / credential generation / dispose 隔离和 typed target；三档采用 compact 连续历史、medium 时间顺序密集列表与 expanded `<=904 + 24 + 280–300` 数据来源上下文。改造前 Browse History `2 / 2`、Shell `51 / 51`，Flutter 合计 `53 / 53`；服务端契约 `3 / 3`，详见 [P5-D3 readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24)。
+- `P5-D3 implementation`：等待项目所有者确认；只按冻结边界拆 owner、补状态 / target / 三档 surface 与静态回归。
 - `P5-E`：四主题、三档窗口、关键状态、全量 analyze / test 和文件边界成组静态门禁。
 
 每批保留业务状态、幂等、来源返回和原生 handoff，按继承关系改呈现；单批不跨越多个高风险写入领域，不顺手扩新功能。
@@ -375,4 +377,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-24）
 
-`P5-D2 Leaderboard` 已完成：公开经验榜首屏、PublicId 优先身份、结构化状态、三档排名和业务 accent 语义边界均已落地；P5-D2 定向 `22 / 22`、Shell `51 / 51`、Flutter 全量 `374 / 374`、analyze 零问题。当前进入 P5-D3 Browse History readiness；P5-D3 实现、P5-E、新平台工程、服务启动或真实 Gateway / 设备 Smoke 仍需独立确认。
+`P5-D2 Leaderboard` 已完成：公开经验榜首屏、PublicId 优先身份、结构化状态、三档排名和业务 accent 语义边界均已落地；P5-D2 定向 `22 / 22`、Shell `51 / 51`、Flutter 全量 `374 / 374`、analyze 零问题。P5-D3 Browse History readiness 也已关闭，账号完整历史、设备 recent 边界、分页稳定去重、typed handoff 与三档结构均已冻结；当前等待 P5-D3 实施确认，P5-E、新平台工程、服务启动或真实 Gateway / 设备 Smoke 仍需独立确认。
