@@ -158,4 +158,4 @@ P5-C2 只消费以下既有契约：
 - 不读取或修改 Pen；P5-C2 直接继承 P1 已冻结的 Commerce 结构、P3 家族方向和 P4 Theme / Shared / Shell。
 - 不启动服务，不执行真实 Gateway、浏览器、Android RC 或其他设备 Smoke；运行态验收继续独立授权。
 
-P5-C2 readiness 已关闭，其后已按本记录完成商品目录、详情和购买 owner / 测试拆分与三档结构，详见 [P5-C2 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)。后续 [P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)也已完成，当前进入 P5-D1 Wallet / Experience readiness；派生实现、平台工程与运行态 Smoke 不随之自动授权。
+P5-C2 readiness 已关闭，其后已按本记录完成商品目录、详情和购买 owner / 测试拆分与三档结构，详见 [P5-C2 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)。后续 P5-C3 与 [P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)也已完成，当前等待 P5-D1 实施确认；派生实现、平台工程与运行态 Smoke 不随之自动授权。

@@ -1,6 +1,6 @@
 # Flutter Native P5-C3 Commerce Private 实现记录
 
-> 状态：`P5-C3` 已完成；下一顺位进入 `P5-D1 Wallet / Experience readiness`
+> 状态：`P5-C3` 已完成；后续 [P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)也已完成，当前等待 P5-D1 实施确认
 >
 > 日期：2026-08-24（Asia/Shanghai）
 >
@@ -71,4 +71,4 @@ compact / medium / expanded 已形成订单目录 `1 / 2 / 3` 列、订单详情
 
 ## 7. 下一顺位
 
-P5-C3 关闭。下一顺位进入 `P5-D1 Wallet / Experience readiness`，先审计余额概要 / Coin 流水与经验概要 / 记录的既有 owner、整批失败、分页、三档结构和测试规模，再等待独立实施确认。P5-C3 不扩取消订单、退款、权益 / 道具使用；P5-D1 也不随之自动获得资产或经验写入授权。Leaderboard、Browse History、P5-E、平台工程、服务启动与真实运行态 Smoke 继续独立授权。
+P5-C3 关闭。后续 [P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)已完成，四个只读 owner、局部状态、三档结构和测试边界已经冻结，当前等待独立实施确认。P5-C3 不扩取消订单、退款、权益 / 道具使用；P5-D1 也不随之自动获得资产或经验写入授权。Leaderboard、Browse History、P5-E、平台工程、服务启动与真实运行态 Smoke 继续独立授权。

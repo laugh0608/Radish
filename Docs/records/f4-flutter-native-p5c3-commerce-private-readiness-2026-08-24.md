@@ -161,4 +161,4 @@ P5-C3 只消费以下既有契约：
 
 ## 9. 下一顺位
 
-P5-C3 readiness 已关闭，其后已按本记录先拆私域测试，再完成四个只读 owner、账号 / 请求隔离、局部状态与三档 surface，详见 [P5-C3 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)。下一顺位进入 P5-D1 Wallet / Experience readiness；平台工程、服务启动与真实运行态 Smoke 不随之自动授权。
+P5-C3 readiness 已关闭，其后已按本记录先拆私域测试，再完成四个只读 owner、账号 / 请求隔离、局部状态与三档 surface，详见 [P5-C3 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)。后续 [P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)也已完成，当前等待实施确认；平台工程、服务启动与真实运行态 Smoke 不随之自动授权。

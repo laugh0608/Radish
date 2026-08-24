@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P5-D1 Wallet / Experience readiness`
-- **产品下一顺位**：`审计资产与经验私域只读面、局部状态和三档结构，冻结方案后再等待实施确认`
+- **工程第一顺位**：`Flutter Native P5-D1 Wallet / Experience 实施确认`
+- **产品下一顺位**：`按已冻结的四个只读 owner、局部状态和三档结构等待项目所有者确认`
 - **复核日期**：`2026-08-24`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
@@ -15,6 +15,7 @@
 
 ## 最近结论
 
+- `2026-08-24` 已完成 [Flutter Native P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)：确认既有 `Coin/GetBalance + GetTransactions`、`Experience/GetMyExperience + GetTransactions`、Shell Profile actions 与订单扣款流水 handoff 足够，不新增 API；冻结 Wallet 余额 / 流水和 Experience 等级 / 流水四个独立只读 owner、account / query / credential generation / dispose 隔离、单边 unavailable / stale、append 稳定去重，以及 compact 连续任务、medium 概要双列 + 完整流水、expanded `280–300 + 24 + <=904` 结构。改造前模型 `4 / 4`、Commerce / Wallet route `20 / 20`、Shell Smoke `51 / 51`，合计 `75 / 75`；本批只修改文档，未改 Dart、API、依赖、Pen、平台工程或服务运行态。下一步等待 P5-D1 实施确认。
 - `2026-08-24` 已完成 [Flutter Native P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)：订单目录 / 详情、权益、道具已拆为四个只读 owner，订单 refresh / append、详情 stale、权益 / 道具单边失败、空快照 stale、account / target / generation / dispose 隔离与明确 `userId` 传递均已落地；订单目录 `1 / 2 / 3` 列、详情连续任务 / 双区 / `820 + 24 + 360` 和背包 sequential / 双 lane 完成。原组合测试由 `1428` 降至 `1214` 行，本批运行时 owner 最大 `421` 行；Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318` 与 analyze 零问题。下一顺位进入 P5-D1 Wallet / Experience readiness。
 - `2026-08-24` 已完成 [Flutter Native P5-C3 Commerce Private readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24)：确认既有 `GetMyOrders + GetOrder + GetMyBenefits + GetMyInventory`、Coin 订单流水筛选、主题 gateway 与原生 route 足够，不新增 API；冻结订单目录 / 详情、权益、道具四个独立只读 owner，账号 / target / generation 隔离，权益 / 道具单边失败与 stale，以及订单目录 `1 / 2 / 3` 列、详情 `820 + 24 + 360` 和背包 sequential / 双 lane 结构。改造前 Shop 组合 `23 / 23`、Shell Smoke `51 / 51`；本批只修改文档，未改 Dart、API、依赖、Pen、平台工程或服务运行态，其后已按冻结方案实施完成。
 - `2026-08-24` 已完成 [Flutter Native P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)：公开目录、详情和购买已拆为独立 owner，目录 refresh / append、详情 stale、资格 / 余额 / 交易局部结论、登录意图、支付草稿 dirty / busy、`shop:` 幂等及 product / account / generation 隔离均已落地；compact / medium / expanded 形成目录 `1 / 2 / 3` 列与详情单任务、双区、`820 + 24 + 360` 结构。Shop `35 / 35`、Shell Smoke `51 / 51`、全量 `303 / 303` 与 analyze 零问题；未改 API、依赖、Pen、平台工程或服务运行态。其后 P5-C3 Commerce Private readiness 已完成。
@@ -201,15 +202,15 @@
 
 ## 当前事项（2026-08-24）
 
-1. `P5-C3 Commerce Private` 已完成，Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318` 与 analyze 零问题，详见[实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)。
-2. 下一步只进入 `P5-D1 Wallet / Experience readiness`，审计余额概要 / Coin 流水与经验概要 / 记录的 owner、局部失败、分页、三档结构、文件规模和测试基线。
-3. readiness 先冻结 Wallet / Experience 状态、页面 / 测试拆分与停止线，再等待独立实施确认；当前不直接修改 P5-D1 运行时代码。
+1. `P5-D1 Wallet / Experience readiness` 已完成，四个只读 owner、账号 / query / 请求隔离、单边失败、页面 / 测试拆分和三档结构已经冻结，详见[就绪记录](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)。
+2. 改造前模型 `4 / 4`、Commerce / Wallet route `20 / 20`、Shell Smoke `51 / 51`，合计 `75 / 75`；当前等待项目所有者独立确认 P5-D1 实施。
+3. 获确认后先补四个 controller 与状态测试，再拆 Wallet / Experience 页面和 surface；当前不直接修改运行时代码。
 4. P5-D1 保持私域只读，不新增转账、调账、经验调整、冻结 / 审核或其他资产 / 经验写入，也不提前进入 Leaderboard、Browse History 或 P5-E。
-5. 不提前进入派生只读面、Pen、依赖、平台工程、服务启动、真实 Gateway / Android RC Smoke、签名或分发。
+5. 不提前进入 Pen、依赖、平台工程、服务启动、真实 Gateway / Android RC Smoke、签名或分发。
 
 ## 当前执行入口
 
-- [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
+- [P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24) · [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
 - [Flutter Native P5-C1 Docs Reader 实现](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23) · [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) · [P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 - [开发路线图](/development-plan)
