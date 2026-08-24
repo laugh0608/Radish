@@ -11,12 +11,13 @@ Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以�
 ## 当前状态
 
 - **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`Flutter Native P5-D1 Wallet / Experience 实施确认`
+- **当前主线**：`Flutter Native P5-D3 Browse History implementation（2026-08-25 第一顺位）`
 - **复核日期**：`2026-08-24`
 - **当前结论**：
   - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
   - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
-  - Flutter P1–P4、P5-A、P5-B1、P5-B2、P5-C1、P5-C2、P5-C3 与 P5-D1 readiness 已完成；当前等待 P5-D1 实施确认
+  - Flutter P1–P4、P5-A、P5-B1、P5-B2、P5-C1、P5-C2、P5-C3、P5-D1 与 P5-D2 已完成；P5-D3 readiness 与冻结方案已确认，2026-08-25 进入实施
+  - 当前 Flutter 静态基线为全量 `374 / 374`、`flutter analyze` 零问题；P5-D3 不新增 API，也不合并服务端完整历史与设备 recent shortcut
   - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
   - 生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能推进前置
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准

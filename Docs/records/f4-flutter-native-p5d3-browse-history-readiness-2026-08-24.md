@@ -1,6 +1,6 @@
 # Flutter Native P5-D3 Browse History 实施就绪与方案冻结
 
-> 状态：`P5-D3 readiness` 已完成；等待实施确认
+> 状态：`P5-D3 readiness` 已完成且冻结方案已确认；2026-08-25 第一顺位实施
 >
 > 日期：2026-08-24（Asia/Shanghai）
 >
@@ -142,4 +142,4 @@ Browse History item 保留完整服务端快照，但“可打开目标”改为
 - 不读取或修改 Pen；P5-D3 直接继承 P3 Identity / Revisit、P4 Theme / Shared / Shell 和 P5-B2 Profile。
 - 不启动服务，不执行真实 Gateway、浏览器、Android RC 或其他设备 Smoke；阶段运行态验收继续独立授权。
 
-P5-D3 readiness 已关闭。下一步等待项目所有者确认后，按本记录补 controller / model 测试、拆分页面 owner、实现三档 surface 并完成静态回归；P5-D3 实现、P5-E、服务启动与真实运行态 Smoke 不随本记录自动授权。
+P5-D3 readiness 已关闭，冻结方案已由项目所有者确认；实施排入 2026-08-25 第一顺位，届时按本记录补 controller / model 测试、拆分页面 owner、实现三档 surface 并完成静态回归。授权仍只覆盖 P5-D3 冻结边界，不扩展到 P5-E、服务启动或真实运行态 Smoke。
