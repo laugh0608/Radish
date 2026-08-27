@@ -11,12 +11,12 @@ Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以�
 ## 当前状态
 
 - **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`Flutter Native P5-E grouped static gate readiness（2026-08-27 第一顺位）`
+- **当前主线**：`Flutter Native P5-E grouped static gate implementation（待确认，2026-08-27）`
 - **复核日期**：`2026-08-27`
 - **当前结论**：
   - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
   - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
-  - Flutter P1–P4、P5-A、P5-B1、P5-B2、P5-C1、P5-C2、P5-C3、P5-D1、P5-D2 与 P5-D3 已完成；下一顺位只做 P5-E grouped static gate readiness
+  - Flutter P1–P4、P5-A、P5-B1、P5-B2、P5-C1、P5-C2、P5-C3、P5-D1、P5-D2 与 P5-D3 已完成；P5-E readiness 已将剩余缺口收敛为 `13` 个代表 widget tests，当前等待 test-only 实施确认
   - 当前 Flutter 静态基线为全量 `406 / 406`、`flutter analyze` 零问题；账号完整历史与设备 recent shortcut 保持独立 owner
   - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
   - 生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能推进前置

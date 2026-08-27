@@ -8,7 +8,7 @@
 - `radish-flutter-native-ui-v1.pen`：Flutter Native 独立活动设计源。承载原生视觉基础、compact / medium / expanded 壳层、Discover / Forum Detail 代表结构及必要 R2 状态；可复制正式 Web 可编辑代表页作为信息架构母版，但必须在本文件内完成 Flutter 安全区、壳层、token、输入和响应式归一化，不复制四套主题页面族。
 - 当前 family-ui 基线：RadishX `v26.7.3`。
 - Web / Console 当前进度：`R1-F01`、六个 R1、四个 R2、六组 R3 继承与 Web 四主题退出门禁均已关闭；后续只在新的真实代表差异触发升级条件时修改 Web 活动源。
-- Flutter 当前进度：P1–P3、P4-A / B1–B5、P5-A、P5-B1、P5-B2、P5-C1、P5-C2、P5-C3 Commerce Private、P5-D1 Wallet / Experience、P5-D2 Leaderboard 与 P5-D3 Browse History 已完成；下一顺位进入 P5-E grouped static gate readiness。P5-C2、P5-C3、P5-D1、P5-D2 与 P5-D3 均没有修改本设计源。
+- Flutter 当前进度：P1–P3、P4-A / B1–B5、P5-A、P5-B1、P5-B2、P5-C1、P5-C2、P5-C3 Commerce Private、P5-D1 Wallet / Experience、P5-D2 Leaderboard 与 P5-D3 Browse History 已完成；P5-E readiness 已完成并等待 test-only 实施确认。P5-C2、P5-C3、P5-D1、P5-D2、P5-D3 与 P5-E readiness 均没有修改本设计源。
 - `R1-P01` 评审结论：Public 内容流采用现代自然紧凑语法、非对称主次、连续扫描行和灰玉 / 墨蓝 / 国风暖白家族色；后续页面继承视觉语法，不照搬社区信息架构。
 - `R1-P01` 颜色裁决：`guofeng` 品牌使用低饱和灰玉 `#5d6c57`，悬停 `#6e736d`，常规操作继续使用墨蓝 `#435c74`；Web 全局品牌 token 已由 T01 成组更新并通过 T03 四主题运行态验收，Flutter 在 P4-B1 通过独立 Dart 语义映射对齐。
 
