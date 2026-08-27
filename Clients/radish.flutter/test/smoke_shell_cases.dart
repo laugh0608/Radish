@@ -197,7 +197,7 @@ void registerSmokeShellCases() {
     expect(find.text('查看背包'), findsOneWidget);
     expect(find.text('查看胡萝卜资产'), findsOneWidget);
     expect(find.text('查看经验记录'), findsOneWidget);
-    expect(find.text('查看最近访问'), findsOneWidget);
+    expect(find.text('查看账号浏览历史'), findsOneWidget);
 
     await tester.tap(find.text('查看商城订单'));
     await tester.pumpAndSettle();
@@ -310,30 +310,30 @@ void registerSmokeShellCases() {
 
     expect(find.text('查看经验记录'), findsOneWidget);
 
-    await tester.tap(find.text('查看最近访问'));
+    await tester.tap(find.text('查看账号浏览历史'));
     await tester.pumpAndSettle();
 
-    expect(find.text('最近访问'), findsWidgets);
+    expect(find.text('账号浏览历史'), findsWidgets);
     expect(find.text('已加载 3 / 3 条记录'), findsOneWidget);
     expect(find.text('论坛详情回流'), findsOneWidget);
     expect(find.text('Native docs'), findsOneWidget);
     expect(find.text('Early Access Badge'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FilledButton, '打开详情').last);
+    await tester.tap(find.widgetWithText(FilledButton, '打开商品'));
     await tester.pumpAndSettle();
 
     expect(find.text('商品详情'), findsWidgets);
-    expect(find.text('来源：浏览记录'), findsOneWidget);
-    expect(find.text('返回最近访问'), findsOneWidget);
+    expect(find.text('来源：账号浏览历史'), findsOneWidget);
+    expect(find.text('返回账号浏览历史'), findsOneWidget);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    expect(find.text('最近访问'), findsWidgets);
+    expect(find.text('账号浏览历史'), findsWidgets);
 
     await tester.pageBack();
     await tester.pumpAndSettle();
 
-    expect(find.text('查看最近访问'), findsOneWidget);
+    expect(find.text('查看账号浏览历史'), findsOneWidget);
   });
 }

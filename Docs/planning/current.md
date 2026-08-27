@@ -6,15 +6,16 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P5-D3 Browse History implementation（2026-08-25）`
-- **产品下一顺位**：`按已确认的账号历史 owner、VoId 稳定去重、typed handoff、设备 recent 边界与三档连续历史实施`
-- **复核日期**：`2026-08-24`
+- **工程第一顺位**：`Flutter Native P5-E grouped static gate readiness（2026-08-27）`
+- **产品下一顺位**：`盘点 P4 / P5 页面族的四主题、三档宽度、关键状态、文件上限与既有测试，冻结成组静态门禁`
+- **复核日期**：`2026-08-27`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
+- `2026-08-27` 已完成 [Flutter Native P5-D3 Browse History](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)：账号完整浏览历史已拆为独立分页 owner，完成 ready / empty / unavailable / stale、append issue / retry、`VoId` 稳定去重，以及 account / credential / repository generation / dispose 隔离；Post / Wiki / Product 使用显式 typed target，非法目标保留记录但不提交空 handoff。页面完成 compact 连续历史、medium 时间顺序密集列表和 expanded `<=904 + 24 + 280–300` 数据来源说明；服务端账号历史与本机设备快捷记录继续保持不同 owner。P5-D3 定向 `34 / 34`、Shell `51 / 51`、Flutter 全量 `406 / 406`、analyze 零问题，服务端既有契约 `3 / 3`。下一顺位进入 P5-E grouped static gate readiness，不提前实施 P5-E。
 - `2026-08-24` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-24)：复核 `91e53ddb..2fae7e83` 的 `8` 个提交与 `74` 个唯一文件，确认 P5-C2、P5-C3、P5-D1、P5-D2 的最终代码与批次记录一致，P5-D3 readiness 方案已由项目所有者确认；修正根 README、Flutter README、路线图、设计索引和当前状态旧口径。2026-08-25 第一顺位实施 P5-D3，不提前进入 P5-E。
 - `2026-08-24` 已完成 [Flutter Native P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24)：确认只复用登录态 `User/GetMyBrowseHistory` 与现有 Forum / Docs / Shop 原生 handoff，不新增 API；服务端账号完整历史继续按 `(UserId, TargetType, TargetId)` 聚合、`LastViewTime DESC, Id DESC` 分页，设备 recent 仍只是本机 Forum / Docs 各最多 `5` 条快捷上下文，两者不合并。冻结分页 snapshot、ready / empty / unavailable / stale、append issue、`VoId` 稳定去重、account / credential generation / dispose 隔离，以及 Post / Wiki / Product typed target。三档固定为 compact 连续历史、medium 时间顺序密集列表和 expanded `<=904 + 24 + 280–300` 数据来源上下文。改造前 Browse History `2 / 2`、Shell `51 / 51`，Flutter 合计 `53 / 53`；服务端契约 `3 / 3`。本批只修改文档，冻结方案已确认并排入 2026-08-25 第一顺位。
 - `2026-08-24` 已完成 [Flutter Native P5-D2 Leaderboard](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)：匿名经验榜第一页已拆为独立首屏 owner，完成 ready / empty / unavailable / stale、refresh 替换、generation / dispose 隔离；补映射 PublicId / display name / handle，公开主页优先合法 `usr_`、兼容正整数 ID。页面完成 compact 连续紧凑排名、medium 密集列表和 expanded `<=904 + 24 + 280–300` 公开主页上下文；业务 `#RRGGBB` 只进入无文字 accent。P5-D2 定向 `22 / 22`、Shell `51 / 51`、全量 `374 / 374`、analyze 零问题。下一顺位进入 P5-D3 Browse History readiness。
@@ -205,25 +206,24 @@
 68. 按确认方案关闭 R3-F02-C：Client 未知路径与 `/desktop` 已明确分离，两端根级运行时边界完整；Console 未登录、非 Console 用户、页面缺权、Not Found 与路由异常保持不同理由。Client、Console、类型、Lint、生产构建与 Baseline Quick 通过。
 69. 获授权后完成 R3-F02 Gateway 成组运行态验收；匿名、Admin 与非 Console `test` 的 OIDC、自服务、错误 / 路由和 PC / mobile 双语矩阵通过，运行态发现的三类共同根因已成组修正并全量回归，登录会话清理完成，专题关闭。
 
-## 当前事项（2026-08-24 日终）
+## 当前事项（2026-08-27）
 
-1. `P5-D3 Browse History readiness` 已完成，服务端账号完整历史与设备 recent shortcut 的独立 owner、分页状态、`VoId` 去重、typed handoff 和三档结构已冻结，详见[就绪记录](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24)。
-2. 改造前 Browse History `2 / 2`、Shell `51 / 51`，Flutter 合计 `53 / 53`；服务端浏览历史契约 `3 / 3`。
-3. 项目所有者已确认 P5-D3 冻结方案；今晚不继续修改运行时代码，实施排入 2026-08-25 第一顺位。
-4. P5-D3 不新增删除 / 清空 / 筛选 / 推荐治理，不把设备 recent shortcut 与服务端完整历史合并为同一 owner，也不提前进入 P5-E。
-5. 不提前进入 Pen、依赖、平台工程、服务启动、真实 Gateway / Android RC Smoke、签名或分发。
+1. `P5-D3 Browse History` 已按冻结边界完成，详见[实现记录](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)。
+2. 账号完整历史现由独立 controller / issue / surface 承接，完成稳定分页去重、结构化状态、账号与请求代际隔离、typed target 和三档连续历史；设备 recent shortcut 保持独立 owner。
+3. P5-D3 定向 `34 / 34`、Shell `51 / 51`、Flutter 全量 `406 / 406`、`flutter analyze` 零问题，服务端既有契约 `3 / 3`。
+4. 本批未新增 API、依赖、Pen 或平台工程，未启动服务，也未执行真实 Gateway / 设备 Smoke。
+5. 下一顺位进入 P5-E grouped static gate readiness；当前只做覆盖盘点与门禁冻结，不自动开始实现或运行态验收。
 
-## 明日事项（2026-08-25）
+## 下一事项（2026-08-27）
 
-1. 新会话先读取本页、[2026-08-24 日终审阅](/records/f4-day-end-doc-review-2026-08-24)、[P5-D3 readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24)、[P5-A 拆批审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)、[Flutter 专题](/features/flutter-native-product-ui-design)和 [Flutter README](../../Clients/radish.flutter/README.md)。
-2. 第一顺位实施 `P5-D3 Browse History`：先补 controller / model 测试，覆盖 initial / empty / unavailable / recover、ready / empty stale、append issue / retry、`VoId` 去重、account / credential / repository / dispose 隔离，以及 Post / Wiki / Product typed target；Shell 继续显式传递当前会话 `userId`。
-3. 再按真实职责拆分 page / controller / issue / surface，落地 compact 连续历史、medium 时间顺序密集列表和 expanded `<=904 + 24 + 280–300` 数据来源上下文；服务端账号完整历史与设备 recent shortcut 始终保持不同 owner。
-4. 完成 P5-D3 定向、Shell `51 / 51` 基线、Flutter 全量、`flutter analyze`、服务端 `UserBrowseHistoryService` `3 / 3`、文档与仓库卫生验证，并形成实现记录后提交。
-5. 停止线：不新增删除 / 清空 / 筛选 / 推荐治理、设备同步、API、依赖、Pen 或平台工程；不启动服务或执行真实运行态 Smoke；P5-D3 关闭前不进入 P5-E。
+1. 新会话先读取本页、[P5-D3 实现记录](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)、[P5-A 拆批审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)、[Flutter 专题](/features/flutter-native-product-ui-design)和 [Flutter README](../../Clients/radish.flutter/README.md)。
+2. 第一顺位只做 `P5-E grouped static gate readiness`：盘点 P4 / P5 已完成页面族在四主题、`599 / 600 / 1024 / 1280`、关键状态、长内容与文件上限上的既有覆盖。
+3. 优先复用现有测试并识别真实缺口，形成最小成组静态门禁、验证命令和退出条件；方案冻结后再等待实施确认。
+4. 停止线：不提前进入 P5-E 实施、P6、新平台工程或分发；不安装依赖、不修改 Pen、不启动服务、不执行真实 Gateway / 浏览器 / Android RC 或其他设备 Smoke。
 
 ## 当前执行入口
 
-- [2026-08-24 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-24) · [P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24) · [P5-D2 Leaderboard 实现](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24) · [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24) · [P5-D1 Wallet / Experience 实现](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24) · [P5-D1 readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24) · [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
+- [P5-D3 Browse History 实现](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27) · [2026-08-24 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-24) · [P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24) · [P5-D2 Leaderboard 实现](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24) · [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24) · [P5-D1 Wallet / Experience 实现](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24) · [P5-D1 readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24) · [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
 - [Flutter Native P5-C1 Docs Reader 实现](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23) · [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) · [P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 - [开发路线图](/development-plan)

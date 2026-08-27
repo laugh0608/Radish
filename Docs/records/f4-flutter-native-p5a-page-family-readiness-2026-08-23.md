@@ -1,6 +1,6 @@
 # Flutter Native P5-A 页面族成组重构拆批与首批就绪审计
 
-> 状态：`P5-A readiness` 已完成；后续 P5-B1–D2 已完成，P5-D3 Browse History readiness 与冻结方案已确认，2026-08-25 第一顺位实施
+> 状态：`P5-A readiness` 已完成；后续 P5-B1–D3 已完成，下一顺位进入 P5-E grouped static gate readiness
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -106,4 +106,4 @@ P5 页面不得复制 Web DOM / CSS、P4 controller 或 handoff 状态，也不�
 
 ## 7. 后续进展
 
-项目所有者已确认并完成 P5-B1、P5-B2、P5-C1、P5-C2、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)、[P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24) 与 [P5-D2 Leaderboard](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)，实施结果与本审计边界一致。[P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24) 与冻结方案也已确认，2026-08-25 第一顺位实施；后续成组门禁、服务启动和真实 Smoke 仍不随之自动授权。
+项目所有者已确认并完成 P5-B1、P5-B2、P5-C1、P5-C2、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)、[P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)、[P5-D2 Leaderboard](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)与 [P5-D3 Browse History](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)，实施结果与本审计边界一致。下一顺位进入 P5-E grouped static gate readiness；P5-E 实施、服务启动和真实 Smoke 仍不随之自动授权。

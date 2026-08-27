@@ -269,6 +269,27 @@ class UserQuickReplyPage {
   final List<UserQuickReplySummary> items;
 }
 
+enum UserBrowseHistoryTargetKind { post, wiki, product, unknown }
+
+class UserBrowseHistoryTarget {
+  const UserBrowseHistoryTarget({
+    required this.kind,
+    required this.label,
+    required this.openLabel,
+    this.value,
+    this.unavailableReason,
+  });
+
+  final UserBrowseHistoryTargetKind kind;
+  final String label;
+  final String openLabel;
+  final String? value;
+  final String? unavailableReason;
+
+  bool get canOpen =>
+      kind != UserBrowseHistoryTargetKind.unknown && value != null;
+}
+
 class UserBrowseHistoryItem {
   const UserBrowseHistoryItem({
     required this.id,
@@ -289,11 +310,11 @@ class UserBrowseHistoryItem {
     final targetType = _readString(map['voTargetType']) ?? 'Unknown';
 
     return UserBrowseHistoryItem(
-      id: _readRequiredId(map, 'voId'),
+      id: _readRequiredPositiveLongId(map, 'voId'),
       targetType: targetType,
       targetTypeDisplay: _readString(map['voTargetTypeDisplay']) ??
           _formatTargetType(targetType),
-      targetId: _readRequiredId(map, 'voTargetId'),
+      targetId: _readRequiredPositiveLongId(map, 'voTargetId'),
       targetSlug: _readString(map['voTargetSlug']),
       title: _readString(map['voTitle']) ?? '未命名记录',
       summary: _readString(map['voSummary']),
@@ -316,54 +337,89 @@ class UserBrowseHistoryItem {
   final int viewCount;
   final String lastViewTime;
 
-  String get navigationId {
-    final normalizedType = targetType.trim().toLowerCase();
-    final normalizedSlug = targetSlug?.trim();
-    if ((normalizedType == 'post' || normalizedType == 'wiki') &&
-        normalizedSlug != null &&
-        normalizedSlug.isNotEmpty) {
-      return normalizedSlug;
+  UserBrowseHistoryTarget get target {
+    switch (targetType.trim().toLowerCase()) {
+      case 'post':
+        final routeTarget = _readPostRouteTarget(routePath);
+        final legacyPublicId = _normalizePostPublicId(targetSlug);
+        final fallbackId = _normalizePositiveLongId(targetId);
+        final value = routeTarget ?? legacyPublicId ?? fallbackId;
+        return UserBrowseHistoryTarget(
+          kind: UserBrowseHistoryTargetKind.post,
+          label: '帖子',
+          openLabel: '打开帖子',
+          value: value,
+          unavailableReason: value == null ? '帖子标识无效，暂时无法打开。' : null,
+        );
+      case 'wiki':
+        final value =
+            _normalizeWikiSlug(targetSlug) ?? _readWikiRouteTarget(routePath);
+        return UserBrowseHistoryTarget(
+          kind: UserBrowseHistoryTargetKind.wiki,
+          label: '文档',
+          openLabel: '打开文档',
+          value: value,
+          unavailableReason: value == null ? '文档 Slug 无效，暂时无法打开。' : null,
+        );
+      case 'product':
+        final value = _normalizePositiveLongId(targetId);
+        return UserBrowseHistoryTarget(
+          kind: UserBrowseHistoryTargetKind.product,
+          label: '商品',
+          openLabel: '打开商品',
+          value: value,
+          unavailableReason: value == null ? '商品 ID 无效，暂时无法打开。' : null,
+        );
+      default:
+        return UserBrowseHistoryTarget(
+          kind: UserBrowseHistoryTargetKind.unknown,
+          label: targetTypeDisplay.trim().isEmpty
+              ? '其他记录'
+              : targetTypeDisplay.trim(),
+          openLabel: '暂不可打开',
+          unavailableReason: '该记录类型暂不支持原生打开。',
+        );
     }
-
-    final normalizedRoutePath = routePath?.trim();
-    if (normalizedRoutePath != null && normalizedRoutePath.isNotEmpty) {
-      final routedId = _readLastPathSegment(normalizedRoutePath);
-      if (routedId != null) {
-        return routedId;
-      }
-    }
-
-    if (normalizedSlug != null && normalizedSlug.isNotEmpty) {
-      return normalizedSlug;
-    }
-
-    return targetId;
   }
 
+  String get navigationId => target.value ?? '';
+
   String get displayRoutePath {
-    final normalizedNavigationId = navigationId.trim();
-    if (normalizedNavigationId.isEmpty) {
+    final resolvedTarget = target;
+    final normalizedNavigationId = resolvedTarget.value;
+    if (normalizedNavigationId == null) {
       return routePath ?? targetId;
     }
 
-    switch (targetType.trim().toLowerCase()) {
-      case 'post':
+    switch (resolvedTarget.kind) {
+      case UserBrowseHistoryTargetKind.post:
         return '/forum/post/$normalizedNavigationId';
-      case 'wiki':
+      case UserBrowseHistoryTargetKind.wiki:
         return '/docs/$normalizedNavigationId';
-      case 'product':
+      case UserBrowseHistoryTargetKind.product:
         return '/shop/product/$normalizedNavigationId';
-      default:
+      case UserBrowseHistoryTargetKind.unknown:
         return routePath ?? normalizedNavigationId;
     }
   }
 
-  bool get canOpen {
-    final normalizedType = targetType.trim().toLowerCase();
-    return navigationId.trim().isNotEmpty &&
-        (normalizedType == 'post' ||
-            normalizedType == 'wiki' ||
-            normalizedType == 'product');
+  bool get canOpen => target.canOpen;
+
+  DateTime? get lastViewedAt {
+    final parsed = DateTime.tryParse(lastViewTime.trim());
+    return parsed?.toLocal();
+  }
+
+  String get lastViewTimeLabel {
+    final value = lastViewedAt;
+    if (value == null) {
+      return '时间未知';
+    }
+    return '${value.year.toString().padLeft(4, '0')}-'
+        '${value.month.toString().padLeft(2, '0')}-'
+        '${value.day.toString().padLeft(2, '0')} '
+        '${value.hour.toString().padLeft(2, '0')}:'
+        '${value.minute.toString().padLeft(2, '0')}';
   }
 }
 
@@ -498,6 +554,15 @@ String _readRequiredId(Map<String, Object?> map, String key) {
   return value;
 }
 
+String _readRequiredPositiveLongId(Map<String, Object?> map, String key) {
+  final value = _readRequiredId(map, key);
+  final normalized = _normalizePositiveLongId(value);
+  if (normalized == null) {
+    throw FormatException('Invalid positive identifier: $key');
+  }
+  return normalized;
+}
+
 String? _readString(Object? value) {
   if (value == null) {
     return null;
@@ -532,18 +597,82 @@ String _formatTargetType(String targetType) {
   }
 }
 
-String? _readLastPathSegment(String routePath) {
-  final normalized = routePath.trim();
-  if (normalized.isEmpty) {
+final RegExp _postPublicIdPattern = RegExp(r'^pst_[0-9a-f]{32}$');
+
+String? _normalizePostPublicId(String? value) {
+  final normalized = value?.trim();
+  if (normalized == null || !_postPublicIdPattern.hasMatch(normalized)) {
+    return null;
+  }
+  return normalized;
+}
+
+String? _normalizePositiveLongId(String? value) {
+  final normalized = value?.trim();
+  if (normalized == null || !RegExp(r'^[1-9][0-9]*$').hasMatch(normalized)) {
+    return null;
+  }
+  return normalized;
+}
+
+String? _normalizeWikiSlug(String? value) {
+  final normalized = value?.trim();
+  if (normalized == null ||
+      normalized.isEmpty ||
+      normalized.contains('/') ||
+      normalized.contains('?') ||
+      normalized.contains('#')) {
+    return null;
+  }
+  return normalized;
+}
+
+String? _readPostRouteTarget(String? routePath) {
+  final segments = _readInternalRouteSegments(routePath);
+  if (segments == null ||
+      segments.length != 3 ||
+      segments[0] != 'forum' ||
+      segments[1] != 'post') {
+    return null;
+  }
+  return _normalizePostPublicId(segments[2]) ??
+      _normalizePositiveLongId(segments[2]);
+}
+
+String? _readWikiRouteTarget(String? routePath) {
+  final segments = _readInternalRouteSegments(routePath);
+  if (segments == null) {
+    return null;
+  }
+  if (segments.length == 2 && segments[0] == 'docs') {
+    return _normalizeWikiSlug(segments[1]);
+  }
+  if (segments.length == 3 && segments[0] == 'wiki' && segments[1] == 'doc') {
+    return _normalizeWikiSlug(segments[2]);
+  }
+  return null;
+}
+
+List<String>? _readInternalRouteSegments(String? routePath) {
+  final normalized = routePath?.trim();
+  if (normalized == null || normalized.isEmpty || !normalized.startsWith('/')) {
     return null;
   }
 
   final uri = Uri.tryParse(normalized);
-  final segments =
-      uri?.pathSegments.where((segment) => segment.isNotEmpty).toList();
-  if (segments == null || segments.isEmpty) {
+  if (uri == null ||
+      uri.hasScheme ||
+      uri.hasAuthority ||
+      uri.hasQuery ||
+      uri.hasFragment) {
     return null;
   }
-
-  return Uri.decodeComponent(segments.last);
+  try {
+    final segments = uri.pathSegments
+        .where((segment) => segment.isNotEmpty)
+        .toList(growable: false);
+    return segments.isEmpty ? null : segments;
+  } on FormatException {
+    return null;
+  }
 }

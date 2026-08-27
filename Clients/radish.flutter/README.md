@@ -4,7 +4,7 @@
 
 当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、[P5-B1 Forum Feed / Compose](../../Docs/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23.md)、[P5-B2 Identity / Revisit](../../Docs/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23.md)、[P5-C1 Docs Reader](../../Docs/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23.md)、[P5-C2 Commerce Browse / Transaction](../../Docs/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24.md)、[P5-C3 Commerce Private](../../Docs/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24.md)、[P5-D1 Wallet / Experience](../../Docs/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24.md)与 [P5-D2 Leaderboard](../../Docs/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell、统一公开 Discover cursor 流、Forum / Profile / Docs 页面族、Commerce 公开交易与私域回访、Wallet / Experience 四个只读 owner，以及 Leaderboard 公共身份回流与三档 surface 均已落地。P5-D3 Browse History readiness 与冻结方案也已确认，2026-08-25 第一顺位只按[就绪记录](../../Docs/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24.md)实施服务端账号完整历史，不合并设备 recent shortcut，也不新增 API。
+现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、[P5-B1 Forum Feed / Compose](../../Docs/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23.md)、[P5-B2 Identity / Revisit](../../Docs/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23.md)、[P5-C1 Docs Reader](../../Docs/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23.md)、[P5-C2 Commerce Browse / Transaction](../../Docs/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24.md)、[P5-C3 Commerce Private](../../Docs/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24.md)、[P5-D1 Wallet / Experience](../../Docs/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24.md)、[P5-D2 Leaderboard](../../Docs/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24.md)与 [P5-D3 Browse History](../../Docs/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell、统一公开 Discover cursor 流、Forum / Profile / Docs 页面族、Commerce 公开交易与私域回访、Wallet / Experience 四个只读 owner、Leaderboard 公共身份回流，以及账号完整历史的分页 owner、typed handoff 与三档 surface 均已落地。账号服务端历史与设备 recent shortcut 保持独立，P5-D3 定向 `34 / 34`、Shell `51 / 51`、Flutter 全量 `406 / 406`、analyze 零问题；下一顺位只做 P5-E grouped static gate readiness。
 
 ## 当前范围
 
@@ -26,7 +26,7 @@
 - 原生公开详情链接复制：forum detail、docs detail 与 shop detail 展示完整公开链接并支持复制；复制口径为当前 Gateway Base URL 加 Web 公开路由，不接入系统分享 SDK
 - 公开主页来源返回：从发现、论坛作者和榜单进入原生公开主页后，Android Back 会回到原来源；公开主页继续打开帖子 / 评论详情并返回后，仍保留原 profile 来源 tab
 - 已登录态通知列表：原生壳层会读取当前用户最近站内通知，展示标题、内容、类型、已读状态和时间；forum 通知可复用 forum detail handoff 打开 `postId / commentId`，未读 forum 通知打开详情前会尝试标记已读；系统等不可跳通知保持只读展示；未读通知支持单条显式标记已读
-- 已登录态最近访问入口：我的页可打开最近访问列表，承接公开帖子 / 文档 / 商品详情；forum / docs 记录优先使用 `targetSlug` / `PublicId` 打开和展示公开路径；当前不开放清空、删除或推荐系统
+- 已登录态账号浏览历史入口：我的页可打开服务端账号完整历史，按 `VoId` 稳定分页并承接公开帖子 / 文档 / 商品详情；Post / Wiki / Product 使用 typed target，设备 Forum / Docs recent shortcut 保持独立；当前不开放清空、删除、筛选或推荐治理
 - 已登录态纯文本发帖与帖子正文编辑：论坛页读取顶级分类，登录用户可发布纯文本帖子，成功后刷新列表并打开新帖子详情，详情公开链接使用 `Post.PublicId`；作者可在原生帖子详情编辑自己的帖子正文，失败重试复用 `forum-post-edit:` 提交意图 key；匿名态从发帖表单提交会登录回流并保留页面存活期间的草稿，发布失败也保留草稿输入并复用 `forum-post:` 提交意图 key；当前不开放富文本、附件、投票、抽奖、草稿箱、分类 / 标签编辑或子评论编辑
 - 已登录态问题回答：问题帖详情可展示已有回答，登录用户可发布纯文本回答，成功后局部更新回答区和回答数；匿名态从回答区发起登录会回到当前回答输入上下文，发布失败保留输入并复用 `forum-answer:` 提交意图 key；当前不开放回答采纳、回答编辑、富文本回答、附件回答或问题发帖模式
 - 已登录态单商品购买：商品详情支持当前胡萝卜余额读取、购买资格检查、支付口令输入和购买 `1` 件商品，成功后刷新余额并进入订单详情确认结果；匿名态购买会先登录并回到当前商品
@@ -86,7 +86,7 @@ Clients/radish.flutter/
 2. `P2` 技术基座已完成：四主题、权益 owner、偏好持久化、Adaptive Shell 与两个代表页见 [P2 实现记录](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)
 3. `P3` 代表设计已确认：独立 Flutter 设计源已冻结 typography、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿
 4. `P4-A / P4-B1–B5` 已完成 readiness、Theme / Shared、Web-Family Adaptive Shell、统一公开 Discover cursor 流、Forum Detail 代表页与成组静态门禁
-5. `P5-A / P5-B1 / P5-B2 / P5-C1 / P5-C2 / P5-C3 / P5-D1 / P5-D2` 已完成拆批、Community、Docs、Commerce、资产 / 经验与排行榜页面族；P5-D3 readiness 与冻结方案已确认，2026-08-25 第一顺位实施 Browse History，完成后再决定 P5-E 成组静态门禁；Android UI RC、iOS 与 desktop 平台工程继续等待各自门禁
+5. `P5-A / P5-B1 / P5-B2 / P5-C1 / P5-C2 / P5-C3 / P5-D1 / P5-D2 / P5-D3` 已完成拆批、Community、Docs、Commerce、资产 / 经验、排行榜与账号浏览历史页面族；下一顺位只做 P5-E grouped static gate readiness，Android UI RC、iOS 与 desktop 平台工程继续等待各自门禁
 
 ## Flutter 环境切换
 
@@ -185,7 +185,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Android 真机人工验证 checklist
 
-当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备通知列表、最近访问、纯文本发帖、单商品购买、商城订单 / 背包、胡萝卜资产和经验记录入口，可用于验证移动端登录态承接与来源返回；forum 通知仍可验证回到 forum detail 与 `commentId` 定位。
+当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备通知列表、账号浏览历史、纯文本发帖、单商品购买、商城订单 / 背包、胡萝卜资产和经验记录入口，可用于验证移动端登录态承接与来源返回；forum 通知仍可验证回到 forum detail 与 `commentId` 定位。
 
 第十五批至第十七批已完成 `discover / forum / docs / profile` 主 tab 的刷新体验一致性收口。开发阶段可优先使用 Android Studio 模拟器 / AVD 做功能验证；若需要验证刷新失败局部提示，可在已有内容成功加载后临时断开 Gateway 或网络再点击刷新。该验证只记录为开发阶段人工检查，不替代正式 release 包发布前的真机 APK 安装验收。
 

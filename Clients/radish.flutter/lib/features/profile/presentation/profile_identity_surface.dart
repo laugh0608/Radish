@@ -441,7 +441,7 @@ class _ProfilePrivateDestinations extends StatelessWidget {
       ),
       (
         icon: Icons.manage_search_outlined,
-        label: '查看最近访问',
+        label: '查看账号浏览历史',
         onPressed: onOpenBrowseHistory
       ),
     ].where((action) => action.onPressed != null).toList();
