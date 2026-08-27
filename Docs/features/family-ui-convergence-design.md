@@ -1,8 +1,8 @@
 # F4-R 家族 UI 统一接入与产品视觉重构
 
-> 日期：2026-07-30；2026-08-15 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-27 更新（Asia/Shanghai）
 >
-> 状态：Web 页面族与主题退出门禁均已关闭；Flutter readiness 审计和 [Native 产品化 / UI 专题](/features/flutter-native-product-ui-design) P0 已完成，下一顺位为 Flutter P1 全页面事实审计
+> 状态：Web 页面族与主题退出门禁均已关闭；Flutter Native P1–P5、P6 readiness 与 P6-A Android 本地候选装配已完成，下一顺位为待单独运行授权的 P6-B compact / medium AVD 运行态验收
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
@@ -174,7 +174,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 - 共享配色语义、状态语义、字体层级和图标方向。
 - 保留原生导航、触控目标、安全区、Android Back、桌面键鼠 / 焦点 / 窗口和系统生命周期。
-- readiness 审计已确认现有固定亮色 `ThemeData` 缺少四主题状态、持久化与 `ThemeExtension`；后续以 [Flutter Native 专题](/features/flutter-native-product-ui-design)为实施真相源，不直接解析 CSS，也不建立第二套主题权益状态机。
+- `2026-08-15` readiness 审计确认当时固定亮色 `ThemeData` 缺少四主题状态、持久化与 `ThemeExtension`；随后 P2–P5 已在 [Flutter Native 专题](/features/flutter-native-product-ui-design)下落地独立 Dart 主题语义、权益状态、三档壳层、页面族和成组静态门禁，P6 readiness 与 P6-A 已完成 Android RC 分段和固定哈希候选装配。Flutter 仍不直接解析 CSS，也不建立第二套主题权益状态机；下一顺位 P6-B 只验证既有实现的真实运行态。
 
 ## 9. 参考素材与设计源
 
@@ -206,7 +206,7 @@ Console 不跟随用户商城主题，默认使用 Workbench 亮色；未来如�
 
 `2026-08-08` 的 [R1-A01 设计前代码事实与能力覆盖门禁](/records/f4-r-r1-a01-author-readiness-audit-2026-08-08)确认正式 Web 已承接主体作者流程，代表身份固定为普通 Owner 的可编辑共享草稿；审计发现的普通 Author Revision 读取、终态审核证据、写响应证据和 Apply 基准版本 CAS 已按[能力门禁修复记录](/records/f4-r-r1-a01-author-capability-gate-implementation-2026-08-08)闭合。随后完成 PC / mobile 正式代表设计、标题 / Markdown 正文主轴、统一 context rail / Bottom Sheet、页面实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-a01-author-editor-implementation-2026-08-08)。
 
-同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次形成闭环。三个 Public R3、R3-C04 六批、R3-C05 四批与 `R3-F02-A / B / C` 也已完成；[R3-F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)确认 Settings / Profile、身份、OIDC 与错误边界的继承成立，没有新增 Pencil 页面范式。正式 Web 页面族至此完成；[Web 主题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)拆出的 T01 主题语义、T02 reduced-motion 与 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)均已关闭；Flutter readiness 审计与 P0 路线裁决随后完成，下一步进入全页面事实审计与代表类型分级。
+同日 `R1-W01` 完成 readiness、ChatMessage 举报 ACL / LongId / 重试幂等 / 历史错误能力门禁、PC / mobile 正式代表设计、连续消息工作区实现与 Gateway 运行态验收，详见[成组实现记录](/records/f4-r-r1-w01-messages-web-implementation-2026-08-08)。随后 `R1-C01 / R1-C02 / R2-C03 / R2-P03 / R2-W02 / R2-A02` 依次形成闭环。三个 Public R3、R3-C04 六批、R3-C05 四批与 `R3-F02-A / B / C` 也已完成；[R3-F02 成组运行态验收](/records/f4-r-r3-f02-grouped-runtime-acceptance-2026-08-15)确认 Settings / Profile、身份、OIDC 与错误边界的继承成立，没有新增 Pencil 页面范式。正式 Web 页面族至此完成；[Web 主题退出门禁审计](/records/f4-r-web-theme-exit-readiness-audit-2026-08-15)拆出的 T01 主题语义、T02 reduced-motion 与 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)均已关闭。Flutter 随后完成 P0 路线裁决、P1–P5 原生主题与页面族、P6 readiness 和 P6-A 固定哈希候选装配；下一步进入待单独运行授权的 P6-B AVD 运行态验收。
 
 ### 9.2 设计源
 
@@ -263,7 +263,7 @@ Web / Console 的唯一活动设计源为 `Docs/frontend/design-sources/radish-w
 - Private / Author 页面族。
 - Console 页面族。
 - R3 页面按代表画板继承说明成组实现；[正式路由分批审计](/records/f4-r-r3-route-inheritance-batch-audit-2026-08-11)固定的六组顺位及后续 Gateway 验收已经全部关闭，没有新增 Pencil 页面范式。
-- Web 基线已经稳定；Flutter readiness 与 P0 路线裁决已完成，下一批按 [Flutter Native 专题](/features/flutter-native-product-ui-design)执行 P1 全页面事实审计和代表类型分级。
+- Web 基线已经稳定；Flutter 已按 [Flutter Native 专题](/features/flutter-native-product-ui-design)完成 P0–P5、P6 readiness 与 P6-A，下一批在单独运行授权后执行 P6-B compact / medium AVD 运行态验收。
 - WebOS 只做兼容回归；Tauri 不进入矩阵。
 
 退出条件：四主题、双语、PC / mobile、reduced-motion、构建与专题运行态矩阵通过。
