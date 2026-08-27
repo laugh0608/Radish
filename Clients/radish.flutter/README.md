@@ -4,7 +4,7 @@
 
 当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、[P5-B1 Forum Feed / Compose](../../Docs/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23.md)、[P5-B2 Identity / Revisit](../../Docs/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23.md)、[P5-C1 Docs Reader](../../Docs/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23.md)、[P5-C2 Commerce Browse / Transaction](../../Docs/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24.md)、[P5-C3 Commerce Private](../../Docs/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24.md)、[P5-D1 Wallet / Experience](../../Docs/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24.md)、[P5-D2 Leaderboard](../../Docs/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24.md)、[P5-D3 Browse History](../../Docs/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27.md)与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell、统一公开 Discover cursor 流、Forum / Profile / Docs 页面族、Commerce 公开交易与私域回访、Wallet / Experience 四个只读 owner、Leaderboard 公共身份回流，以及账号完整历史的分页 owner、typed handoff 与三档 surface 均已落地。P5-E 只新增 `13` 个代表 widget tests，没有修改运行时代码；成组 `396 / 396`、Shell `51 / 51`、Flutter 全量 `419 / 419`、analyze 零问题，P5 首轮静态门禁关闭。下一顺位建议进入 P6 Android UI RC readiness。
+现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、[P5-B1 Forum Feed / Compose](../../Docs/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23.md)、[P5-B2 Identity / Revisit](../../Docs/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23.md)、[P5-C1 Docs Reader](../../Docs/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23.md)、[P5-C2 Commerce Browse / Transaction](../../Docs/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24.md)、[P5-C3 Commerce Private](../../Docs/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24.md)、[P5-D1 Wallet / Experience](../../Docs/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24.md)、[P5-D2 Leaderboard](../../Docs/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24.md)、[P5-D3 Browse History](../../Docs/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27.md)与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell、统一公开 Discover cursor 流、Forum / Profile / Docs 页面族、Commerce 公开交易与私域回访、Wallet / Experience 四个只读 owner、Leaderboard 公共身份回流，以及账号完整历史的分页 owner、typed handoff 与三档 surface 均已落地。P5-E 只新增 `13` 个代表 widget tests，没有修改运行时代码；成组 `396 / 396`、Shell `51 / 51`、Flutter 全量 `419 / 419`、analyze 零问题，P5 首轮静态门禁关闭。[P6 Android UI RC readiness](../../Docs/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27.md)已进一步冻结本地候选装配、compact / medium AVD 与同哈希真机三段门禁；下一顺位为 P6-A 本地候选装配，服务与设备运行态仍分别确认。
 
 ## 当前范围
 
@@ -86,7 +86,8 @@ Clients/radish.flutter/
 2. `P2` 技术基座已完成：四主题、权益 owner、偏好持久化、Adaptive Shell 与两个代表页见 [P2 实现记录](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)
 3. `P3` 代表设计已确认：独立 Flutter 设计源已冻结 typography、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿
 4. `P4-A / P4-B1–B5` 已完成 readiness、Theme / Shared、Web-Family Adaptive Shell、统一公开 Discover cursor 流、Forum Detail 代表页与成组静态门禁
-5. `P5-A / P5-B1 / P5-B2 / P5-C1 / P5-C2 / P5-C3 / P5-D1 / P5-D2 / P5-D3 / P5-E` 已完成拆批、页面族与成组静态门禁；下一顺位建议进入 P6 Android UI RC readiness，iOS 与 desktop 平台工程继续等待各自门禁
+5. `P5-A / P5-B1 / P5-B2 / P5-C1 / P5-C2 / P5-C3 / P5-D1 / P5-D2 / P5-D3 / P5-E` 已完成拆批、页面族与成组静态门禁
+6. `P6 Android UI RC readiness` 已完成；下一顺位为 P6-A 本地候选装配，后续依次完成 compact / medium AVD 与同哈希真机门禁，iOS 与 desktop 平台工程继续等待各自门禁
 
 ## Flutter 环境切换
 
@@ -232,7 +233,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 31. 在我的 profile 中打开“查看经验记录”，确认等级概要、升级进度、冻结状态、最近流水、空态 / 错误态和返回 profile 正常，不出现经验调整、冻结治理或管理员复核入口
 32. 关闭并重启应用，确认会话恢复或匿名回落符合当前 token 状态，复访入口仍符合最近状态
 
-当前结果：
+MVP 历史结果（P1–P5 前证据，不直接继承为新版 UI RC）：
 
 - Android 真机已确认 forum notification 回到 forum detail / 评论上下文逻辑正常
 - Android release APK 已完成一轮真机安装与本机 Gateway 联调复核，登录、基础读取与样式显示均正常
