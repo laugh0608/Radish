@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P6 Android UI RC readiness` 已完成；P6-A 本地候选装配待确认
+> 状态：`P6-A Android local RC candidate assembly` 已完成；P6-B AVD 运行态待单独授权
 >
 > 最后更新：2026-08-27（Asia/Shanghai）
 >
@@ -38,6 +38,7 @@
 > - [P5-E 成组静态门禁 readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27)
 > - [P5-E 成组静态门禁实现](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)
 > - [P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)
+> - [P6-A Android 本地 RC 候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)
 
 ## 1. 结论摘要
 
@@ -48,7 +49,7 @@ Radish 长期只维护两条正式产品线：
 
 `Frontend/radish.client` 的 WebOS `/desktop` 继续作为 Web 内的历史兼容入口，不构成第三条产品线。`Clients/radish-tauri` 正式弃用，只保留历史代码与验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁。Flutter Web 不进入路线，避免维护第二套 Web 前端。
 
-P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。当前 P4 与 P5 已完成首轮主题、壳层、高价值页面族、派生只读面和成组静态门禁，P6 readiness 也已冻结 Android 新版 UI RC 的候选、AVD 与真机三段门禁；下一顺位等待确认 P6-A 本地候选装配。
+P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。当前 P4 与 P5 已完成首轮主题、壳层、高价值页面族、派生只读面和成组静态门禁，P6 readiness 已冻结 Android 新版 UI RC 的候选、AVD 与真机三段门禁，P6-A 也已完成固定候选装配；下一顺位为 P6-B AVD 运行态验收并等待单独授权。
 
 ## 2. 产品边界
 
@@ -350,6 +351,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - `P5-E readiness`（已完成，2026-08-27）：P4 / P5 `29` 个代表入口 `383 / 383`、Shell `51 / 51`、Flutter 全量 `406 / 406`、analyze 零问题，全 Flutter Dart owner 均低于 `1500` 行。审计确认只剩 Discover medium + 四主题、Forum Detail 四主题、Commerce C2 四主题 + compact 长商品信息三处直接证据；实施固定只在三个既有测试 owner 补 `13` 个 widget tests，预期成组 `396 / 396`、全量 `419 / 419`，默认不改运行时代码，详见 [P5-E readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27)。
 - `P5-E grouped static gate`（已完成，2026-08-27）：按确认方案补齐 Discover medium 四主题、Forum Detail medium 四主题、Commerce C2 medium 四主题与 compact 长商品信息 `13` 个独立 widget tests，没有修改 `lib/` 运行时代码。三个涉及入口 `56 / 56`、P4 / P5 `29` 个代表入口 `396 / 396`、Shell `51 / 51`、Flutter 全量 `419 / 419`、analyze 零问题，全 Flutter Dart owner 均低于 `1500` 行；P5 首轮静态门禁关闭，详见 [P5-E 实现记录](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)。
 - `P6 Android UI RC readiness`（已完成，2026-08-27）：平台工程、旧 MVP RC 证据、构建 / Gateway / OIDC / 签名、本机工具链、设备、证据与清理边界已审计；Android JVM 单测 `7 / 7`。当前有 compact AVD 和完整构建链，但没有在线 Android 目标、medium AVD、正式签名或候选 APK。实施固定拆为 P6-A 本地候选装配、P6-B compact / medium AVD 运行态、P6-C 同哈希真机验收；只有三段通过才可给出 Android 新版 UI 本地 / 内部 RC Go，详见 [P6 readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)。
+- `P6-A Android local RC candidate assembly`（已完成，2026-08-27）：Flutter analyze 零问题、全量 `419 / 419`、Android JVM `7 / 7` 与 release 构建通过；候选固定为 SHA-256 `d7b1b9d1f12e5943bae7ddffe3daffcf6071d63ddb79a186ae16e05946234200`、`26.8.2+1`、三 ABI、`development + https://localhost:5000`。包身份、权限、OIDC、SDK、AOT define 与 debug-signing 性质均已冻结；下一顺位为 P6-B，详见 [P6-A 记录](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)。
 
 每批保留业务状态、幂等、来源返回和原生 handoff，按继承关系改呈现；单批不跨越多个高风险写入领域，不顺手扩新功能。
 
@@ -383,4 +385,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-27）
 
-`P6 Android UI RC readiness` 已完成：确认当前工具链可复现 Android JVM `7 / 7`，旧 2026-05-04 MVP 真机 Go 只作为历史事实，不直接继承为 P1–P5 后新版 UI RC 结果。下一顺位是 P6-A：不启动服务 / AVD，只重跑静态与平台门禁、构建显式指向本机 Gateway 的 debug-signing release APK并冻结产物元数据；P6-B 服务 / AVD 与 P6-C 真机仍分别确认。正式签名、外部分发、iOS 和 desktop 继续后置。
+`P6-A Android local RC candidate assembly` 已完成：固定 SHA-256 `d7b1b9d1…34200` 的 `26.8.2+1` 三 ABI debug-signing release APK 已通过静态、Android JVM、构建与制品契约门禁。下一顺位是 P6-B：单独授权服务、compact / medium AVD、APK 安装、`adb reverse` 与运行态取证后，使用同一哈希完成默认主题完整矩阵和四主题代表矩阵；P6-C 真机仍独立确认。正式签名、外部分发、iOS 和 desktop 继续后置。
