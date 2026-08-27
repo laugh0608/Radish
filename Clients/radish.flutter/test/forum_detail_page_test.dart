@@ -50,8 +50,11 @@ Finder _commentEditTextField() {
   );
 }
 
-Widget _forumTestApp({required Widget home}) {
-  return MaterialApp(theme: buildRadishTheme(), home: home);
+Widget _forumTestApp({
+  required Widget home,
+  RadishThemeId themeId = RadishThemeId.guofeng,
+}) {
+  return MaterialApp(theme: buildRadishTheme(themeId), home: home);
 }
 
 Future<void> _setForumViewport(WidgetTester tester, Size size) async {

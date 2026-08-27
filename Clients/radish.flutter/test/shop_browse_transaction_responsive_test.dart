@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/core/theme/radish_theme.dart';
 import 'package:radish_flutter/features/shop/data/shop_models.dart';
 import 'package:radish_flutter/features/shop/data/shop_repository.dart';
 import 'package:radish_flutter/features/shop/presentation/shop_product_detail_page.dart';
@@ -76,6 +77,58 @@ void main() {
     expect(find.byKey(const ValueKey('shop-detail-main-axis-820')), findsOne);
   });
 
+  for (final themeId in RadishThemeId.values) {
+    testWidgets(
+      'keeps commerce browse transaction structure in ${themeId.value}',
+      (tester) async {
+        _configureViewport(tester, const Size(600, 2200));
+
+        await tester.pumpWidget(_detailApp(themeId: themeId));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.byKey(const ValueKey('shop-detail-layout-medium')),
+          findsOne,
+        );
+        expect(
+          find.byKey(const ValueKey('shop-purchase-rail-medium')),
+          findsOne,
+        );
+        expect(find.text('公开商品详情'), findsOne);
+        expect(find.text('单商品购买'), findsOne);
+        expect(tester.takeException(), isNull, reason: themeId.value);
+      },
+    );
+  }
+
+  testWidgets('compact long product content stays inside the viewport',
+      (tester) async {
+    _configureViewport(tester, const Size(599, 3600));
+
+    await tester.pumpWidget(
+      _detailApp(
+        repository: const _ResponsiveShopRepository(useLongContent: true),
+        productId: '9223372036854775807',
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const ValueKey('shop-detail-layout-compact')), findsOne);
+    expect(find.text(_longProductName), findsOne);
+    expect(find.text(_longProductDescription), findsOne);
+    expect(find.text(_longProductCategory), findsOne);
+    expect(find.text(_longProductBenefit), findsOne);
+    expect(
+      find.text('/shop/product/9223372036854775807'),
+      findsOne,
+    );
+    expect(
+      tester.getTopLeft(find.text('单商品购买')).dy,
+      lessThan(tester.getTopLeft(find.text('详情说明')).dy),
+    );
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('payment draft requires explicit discard before returning',
       (tester) async {
     tester.view.devicePixelRatio = 1;
@@ -115,8 +168,40 @@ void main() {
   });
 }
 
+const _longProductName = '超长商品名称用于验证紧凑窗口中的公开商品信息、购买任务和长文本仍能保持自然换行';
+const _longProductDescription =
+    '这是一段需要在 compact 商品详情中自然换行的超长描述，用来确认公开信息不会挤压单商品购买任务，也不会产生横向溢出。';
+const _longProductCategory = '超长商品分类名称用于验证紧凑标签仍然受控显示';
+const _longProductBenefit =
+    'benefit:9223372036854775807:long-value-that-must-wrap-inside-the-compact-product-detail-surface';
+
+void _configureViewport(WidgetTester tester, Size size) {
+  tester.view.devicePixelRatio = 1;
+  tester.view.physicalSize = size;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+Widget _detailApp({
+  ShopRepository repository = const _ResponsiveShopRepository(),
+  RadishThemeId themeId = RadishThemeId.defaultTheme,
+  String productId = '4001',
+}) {
+  return MaterialApp(
+    theme: buildRadishTheme(themeId),
+    home: ShopProductDetailPage(
+      environment: const AppEnvironment.development(),
+      repository: repository,
+      walletRepository: const _ResponsiveWalletRepository(),
+      productId: productId,
+    ),
+  );
+}
+
 class _ResponsiveShopRepository implements ShopRepository {
-  const _ResponsiveShopRepository();
+  const _ResponsiveShopRepository({this.useLongContent = false});
+
+  final bool useLongContent;
 
   @override
   Future<ShopProductPage> getProductPage({
@@ -163,6 +248,27 @@ class _ResponsiveShopRepository implements ShopRepository {
   Future<ShopProductDetail> getProductDetail({
     required String productId,
   }) async {
+    if (useLongContent) {
+      return const ShopProductDetail(
+        id: '9223372036854775807',
+        name: _longProductName,
+        description: _longProductDescription,
+        categoryName: _longProductCategory,
+        productType: '超长权益与道具组合类型用于验证元数据自然换行',
+        benefitValue: _longProductBenefit,
+        price: 9223372036854775000,
+        originalPrice: 9223372036854775807,
+        hasDiscount: true,
+        stockType: 'Unlimited',
+        stock: 0,
+        soldCount: 9223372036854775000,
+        limitPerUser: 1,
+        inStock: true,
+        durationDisplay: '永久有效且保留完整服务端语义',
+        isOnSale: true,
+        isEnabled: true,
+      );
+    }
     return const ShopProductDetail(
       id: '4001',
       name: 'Profile Rename Card',

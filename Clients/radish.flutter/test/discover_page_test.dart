@@ -218,6 +218,43 @@ void main() {
       expect(tester.takeException(), isNull);
     });
 
+    for (final themeId in RadishThemeId.values) {
+      testWidgets(
+        'keeps medium discover structure in ${themeId.value}',
+        (tester) async {
+          await _setViewport(tester, const Size(800, 1500));
+
+          await tester.pumpWidget(
+            _testApp(
+              DiscoverPage(
+                repository: _StaticDiscoverRepository(_representativePage()),
+              ),
+              themeId: themeId,
+            ),
+          );
+          await tester.pumpAndSettle();
+
+          expect(
+            find.byKey(const Key('discover-layout-medium')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('discover-community-insight')),
+            findsNothing,
+          );
+          expect(find.text('社区正在发生'), findsOneWidget);
+          expect(find.text('焦点公开帖子'), findsOneWidget);
+          expect(
+            find.byKey(
+              const Key('discover-item-web-boundary-channel:1'),
+            ),
+            findsOneWidget,
+          );
+          expect(tester.takeException(), isNull, reason: themeId.value);
+        },
+      );
+    }
+
     testWidgets('maps Forum and Docs items to existing native handoffs',
         (tester) async {
       await _setViewport(tester, const Size(390, 1500));
@@ -300,9 +337,12 @@ void main() {
   });
 }
 
-Widget _testApp(Widget home) {
+Widget _testApp(
+  Widget home, {
+  RadishThemeId themeId = RadishThemeId.guofeng,
+}) {
   return MaterialApp(
-    theme: buildRadishTheme(),
+    theme: buildRadishTheme(themeId),
     home: Scaffold(body: home),
   );
 }

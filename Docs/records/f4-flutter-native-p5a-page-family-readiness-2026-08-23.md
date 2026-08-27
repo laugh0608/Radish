@@ -1,6 +1,6 @@
 # Flutter Native P5-A 页面族成组重构拆批与首批就绪审计
 
-> 状态：`P5-A readiness` 已完成；后续 P5-B1–D3 已完成，P5-E readiness 已完成并等待 test-only 实施确认
+> 状态：`P5-A readiness` 已完成；后续 P5-B1–E 已完成并关闭首轮静态门禁
 >
 > 日期：2026-08-23（Asia/Shanghai）
 >
@@ -106,4 +106,4 @@ P5 页面不得复制 Web DOM / CSS、P4 controller 或 handoff 状态，也不�
 
 ## 7. 后续进展
 
-项目所有者已确认并完成 P5-B1、P5-B2、P5-C1、P5-C2、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)、[P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)、[P5-D2 Leaderboard](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)与 [P5-D3 Browse History](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)，实施结果与本审计边界一致。[P5-E readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27) 已将最后静态缺口收敛为三个既有测试 owner 中的 `13` 个代表 widget tests，当前等待 test-only 实施确认；服务启动和真实 Smoke 仍不随之自动授权。
+项目所有者已确认并完成 P5-B1、P5-B2、P5-C1、P5-C2、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)、[P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)、[P5-D2 Leaderboard](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)、[P5-D3 Browse History](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)与 [P5-E 成组静态门禁](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)，实施结果与本审计边界一致。P5 首轮静态门禁已关闭；服务启动、真实 Smoke 与 P6 平台产品化仍不随之自动授权。

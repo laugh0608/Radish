@@ -1,6 +1,6 @@
 # Flutter Native P5-E 成组静态门禁实施就绪审计
 
-> 状态：`P5-E readiness` 已完成；最小 test-only 方案待项目所有者确认实施
+> 状态：`P5-E readiness` 已完成；后续已按确认方案实施并关闭 P5 首轮静态门禁
 >
 > 日期：2026-08-27（Asia/Shanghai）
 >
@@ -101,4 +101,4 @@ P5-E 计划新增 `13` 个 widget tests：Discover `4`、Forum Detail `4`、Comm
 - 不启动 API / Auth / Gateway 或 Flutter 应用，不执行真实 Gateway、浏览器、Android RC、iOS / desktop、签名、构建或分发。
 - 不提前进入 P6 或恢复 Tauri / WebOS 新功能。
 
-P5-E readiness 已完成，当前等待项目所有者确认上述 test-only 方案。确认后才进入 P5-E 实施；本记录不自动授权服务启动、真实运行态 Smoke、平台工程或下一阶段工作。
+项目所有者已确认上述 test-only 方案，后续已由 [P5-E 实现](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)按边界落地：新增 `13` 个独立 widget tests，成组 `396 / 396`、Shell `51 / 51`、Flutter 全量 `419 / 419`、analyze 零问题，且没有修改运行时代码。P5 首轮静态门禁已关闭；本记录仍不自动授权服务启动、真实运行态 Smoke、平台工程或下一阶段工作。

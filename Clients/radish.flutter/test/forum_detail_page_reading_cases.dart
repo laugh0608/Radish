@@ -370,6 +370,42 @@ void runForumDetailReadingCases() {
     expect(tester.takeException(), isNull);
   });
 
+  for (final themeId in RadishThemeId.values) {
+    testWidgets(
+      'keeps medium forum detail structure in ${themeId.value}',
+      (tester) async {
+        await _setForumViewport(tester, const Size(800, 1400));
+
+        await tester.pumpWidget(
+          _forumTestApp(
+            themeId: themeId,
+            home: ForumDetailPage(
+              environment: const AppEnvironment.development(),
+              repository: _PagedForumRepository(),
+              postId: 'post-42',
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('forum-detail-medium')), findsOneWidget);
+        expect(
+          find.byKey(const Key('forum-detail-continuous-reading')),
+          findsOneWidget,
+        );
+        expect(
+          find.byKey(const Key('forum-detail-inline-navigation')),
+          findsOneWidget,
+        );
+        expect(
+            find.byKey(const Key('forum-detail-context-rail')), findsNothing);
+        expect(find.text('Native detail'), findsOneWidget);
+        expect(find.text('评论'), findsWidgets);
+        expect(tester.takeException(), isNull, reason: themeId.value);
+      },
+    );
+  }
+
   testWidgets('uses exact 220 820 250 expanded columns at 1440px',
       (tester) async {
     await _setForumViewport(tester, const Size(1440, 1200));
