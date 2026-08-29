@@ -61,7 +61,18 @@ class RadishBootstrap {
         environment: environment,
       ),
     );
-    final apiClient = HttpRadishApiClient(environment: environment);
+    final apiClient = HttpRadishApiClient(
+      environment: environment,
+      bearerTokenResolver: ({
+        rejectedAccessToken,
+        required forceRefresh,
+      }) {
+        return sessionController.resolveAccessToken(
+          rejectedAccessToken: rejectedAccessToken,
+          forceRefresh: forceRefresh,
+        );
+      },
+    );
     final apiEndpoints = RadishApiEndpoints(environment);
     final discoverRepository = HttpDiscoverRepository(
       apiClient: apiClient,

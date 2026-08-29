@@ -239,7 +239,7 @@ class _ForumQuickReplyComposer extends StatelessWidget {
             TextField(
               controller: controller,
               enabled: !isSubmitting,
-              maxLength: 24,
+              maxLength: 10,
               minLines: 1,
               maxLines: 2,
               decoration: const InputDecoration(

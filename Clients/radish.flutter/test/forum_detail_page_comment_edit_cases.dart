@@ -190,10 +190,20 @@ void runForumDetailCommentEditCases() {
     expect(repository.updatePostRequests.single.categoryId, 'category-1');
     expect(repository.updatePostRequests.single.tagNames, ['flutter']);
     expect(repository.updatePostRequests.single.accessToken, 'access-token');
+    expect(repository.updatePostRequests.single.expectedContentRevision, 1);
     expect(
       repository.updatePostRequests.single.clientSubmissionId,
       startsWith('forum-post-edit:'),
     );
+
+    await tester.tap(find.widgetWithText(OutlinedButton, '编辑正文'));
+    await tester.pumpAndSettle();
+    await tester.enterText(_postEditTextField(), '第二次编辑后的移动端正文');
+    await tester.tap(find.widgetWithText(FilledButton, '保存正文'));
+    await tester.pumpAndSettle();
+
+    expect(repository.updatePostRequests, hasLength(2));
+    expect(repository.updatePostRequests.last.expectedContentRevision, 2);
   });
 
   testWidgets('reuses post edit submission key when retrying failed edit',
@@ -321,10 +331,20 @@ void runForumDetailCommentEditCases() {
     expect(repository.updateCommentRequests.single.commentId, 'comment-1');
     expect(repository.updateCommentRequests.single.content, '编辑后的根评论');
     expect(repository.updateCommentRequests.single.accessToken, 'access-token');
+    expect(repository.updateCommentRequests.single.expectedContentRevision, 1);
     expect(
       repository.updateCommentRequests.single.clientSubmissionId,
       startsWith('forum-comment-edit:'),
     );
+
+    await tester.tap(find.widgetWithText(TextButton, '编辑评论'));
+    await tester.pumpAndSettle();
+    await tester.enterText(_commentEditTextField(), '第二次编辑后的根评论');
+    await tester.tap(find.widgetWithText(FilledButton, '保存评论'));
+    await tester.pumpAndSettle();
+
+    expect(repository.updateCommentRequests, hasLength(2));
+    expect(repository.updateCommentRequests.last.expectedContentRevision, 2);
   });
 
   testWidgets('reuses comment edit submission key when retrying failed edit',

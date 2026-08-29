@@ -6,9 +6,13 @@ import 'auth_token_codec.dart';
 import 'session_store.dart';
 
 class SessionRefreshException implements Exception {
-  const SessionRefreshException(this.message);
+  const SessionRefreshException(
+    this.message, {
+    this.invalidatesSession = false,
+  });
 
   final String message;
+  final bool invalidatesSession;
 
   @override
   String toString() => 'SessionRefreshException(message: $message)';
@@ -61,6 +65,7 @@ class SessionRefreshService {
             .join(': ');
         throw SessionRefreshException(
           detail.isEmpty ? '刷新登录会话失败，状态码 ${response.statusCode}' : detail,
+          invalidatesSession: error?.trim().toLowerCase() == 'invalid_grant',
         );
       }
 

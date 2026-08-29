@@ -19,19 +19,23 @@ class _ForumCommentEditTarget {
     required this.commentId,
     required this.authorId,
     required this.initialContent,
+    required this.contentRevision,
   });
 
   final String commentId;
   final String authorId;
   final String initialContent;
+  final int contentRevision;
 
   _ForumCommentEditTarget copyWith({
     String? initialContent,
+    int? contentRevision,
   }) {
     return _ForumCommentEditTarget(
       commentId: commentId,
       authorId: authorId,
       initialContent: initialContent ?? this.initialContent,
+      contentRevision: contentRevision ?? this.contentRevision,
     );
   }
 }
@@ -971,6 +975,7 @@ _ForumCommentEditTarget _buildCommentEditTarget(ForumCommentSummary comment) {
     commentId: comment.id,
     authorId: comment.authorId,
     initialContent: comment.content,
+    contentRevision: comment.contentRevision,
   );
 }
 

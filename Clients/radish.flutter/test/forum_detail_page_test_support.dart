@@ -490,12 +490,13 @@ class _RecordingForumEditRepository extends _PagedForumRepository {
   }
 
   @override
-  Future<void> updatePost({
+  Future<ForumContentEditResult> updatePost({
     required String postId,
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
   }) async {
@@ -506,16 +507,21 @@ class _RecordingForumEditRepository extends _PagedForumRepository {
         content: content,
         categoryId: categoryId,
         tagNames: tagNames,
+        expectedContentRevision: expectedContentRevision,
         accessToken: accessToken,
         clientSubmissionId: clientSubmissionId,
       ),
     );
+    return ForumContentEditResult(
+      contentRevision: expectedContentRevision + 1,
+    );
   }
 
   @override
-  Future<void> updateComment({
+  Future<ForumContentEditResult> updateComment({
     required String commentId,
     required String content,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
   }) async {
@@ -523,21 +529,26 @@ class _RecordingForumEditRepository extends _PagedForumRepository {
       _UpdateCommentRequest(
         commentId: commentId,
         content: content,
+        expectedContentRevision: expectedContentRevision,
         accessToken: accessToken,
         clientSubmissionId: clientSubmissionId,
       ),
+    );
+    return ForumContentEditResult(
+      contentRevision: expectedContentRevision + 1,
     );
   }
 }
 
 class _PostEditFailingForumRepository extends _RecordingForumEditRepository {
   @override
-  Future<void> updatePost({
+  Future<ForumContentEditResult> updatePost({
     required String postId,
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
   }) async {
@@ -547,6 +558,7 @@ class _PostEditFailingForumRepository extends _RecordingForumEditRepository {
       content: content,
       categoryId: categoryId,
       tagNames: tagNames,
+      expectedContentRevision: expectedContentRevision,
       accessToken: accessToken,
       clientSubmissionId: clientSubmissionId,
     );
@@ -556,15 +568,17 @@ class _PostEditFailingForumRepository extends _RecordingForumEditRepository {
 
 class _CommentEditFailingForumRepository extends _RecordingForumEditRepository {
   @override
-  Future<void> updateComment({
+  Future<ForumContentEditResult> updateComment({
     required String commentId,
     required String content,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
   }) async {
     await super.updateComment(
       commentId: commentId,
       content: content,
+      expectedContentRevision: expectedContentRevision,
       accessToken: accessToken,
       clientSubmissionId: clientSubmissionId,
     );
@@ -615,6 +629,7 @@ class _UpdatePostRequest {
     required this.content,
     required this.categoryId,
     required this.tagNames,
+    required this.expectedContentRevision,
     required this.accessToken,
     required this.clientSubmissionId,
   });
@@ -624,6 +639,7 @@ class _UpdatePostRequest {
   final String content;
   final String categoryId;
   final List<String> tagNames;
+  final int expectedContentRevision;
   final String accessToken;
   final String clientSubmissionId;
 }
@@ -632,12 +648,14 @@ class _UpdateCommentRequest {
   const _UpdateCommentRequest({
     required this.commentId,
     required this.content,
+    required this.expectedContentRevision,
     required this.accessToken,
     required this.clientSubmissionId,
   });
 
   final String commentId;
   final String content;
+  final int expectedContentRevision;
   final String accessToken;
   final String clientSubmissionId;
 }

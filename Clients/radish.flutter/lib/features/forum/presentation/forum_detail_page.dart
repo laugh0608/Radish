@@ -917,12 +917,13 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       );
       _postEditSubmissionState = submissionState;
 
-      await widget.repository.updatePost(
+      final editResult = await widget.repository.updatePost(
         postId: detail.id,
         title: detail.title,
         content: normalizedContent,
         categoryId: normalizedCategoryId,
         tagNames: normalizedTags,
+        expectedContentRevision: detail.contentRevision,
         accessToken: normalizedAccessToken,
         clientSubmissionId: submissionState.clientSubmissionId,
       );
@@ -934,6 +935,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
         postId: detail.id,
         title: detail.title,
         content: normalizedContent,
+        contentRevision: editResult.contentRevision,
       );
       setState(() {
         _isSubmittingPostEdit = false;
@@ -1004,9 +1006,10 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       );
       _commentEditSubmissionState = submissionState;
 
-      await widget.repository.updateComment(
+      final editResult = await widget.repository.updateComment(
         commentId: target.commentId,
         content: normalizedContent,
+        expectedContentRevision: target.contentRevision,
         accessToken: normalizedAccessToken,
         clientSubmissionId: submissionState.clientSubmissionId,
       );
@@ -1017,6 +1020,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
       _commentController.updateLoadedRootComment(
         commentId: target.commentId,
         content: normalizedContent,
+        contentRevision: editResult.contentRevision,
       );
       setState(() {
         _isSubmittingCommentEdit = false;

@@ -499,7 +499,10 @@ class _FakeSessionRefreshService extends SessionRefreshService {
   Future<AuthSession> refresh(AuthSession session) async {
     final failureMessage = _failureMessage;
     if (failureMessage != null) {
-      throw SessionRefreshException(failureMessage);
+      throw SessionRefreshException(
+        failureMessage,
+        invalidatesSession: true,
+      );
     }
 
     final nextSession = _nextSession;

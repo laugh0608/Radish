@@ -73,19 +73,21 @@ abstract class ForumRepository {
     required String clientSubmissionId,
   });
 
-  Future<void> updatePost({
+  Future<ForumContentEditResult> updatePost({
     required String postId,
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
   });
 
-  Future<void> updateComment({
+  Future<ForumContentEditResult> updateComment({
     required String commentId,
     required String content,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
   });
@@ -368,12 +370,13 @@ class HttpForumRepository implements ForumRepository {
   }
 
   @override
-  Future<void> updatePost({
+  Future<ForumContentEditResult> updatePost({
     required String postId,
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
   }) {
@@ -401,17 +404,19 @@ class HttpForumRepository implements ForumRepository {
         'content': normalizedContent,
         'categoryId': normalizedCategoryId,
         'tagNames': normalizedTags,
+        'expectedContentRevision': expectedContentRevision,
         'clientSubmissionId': normalizedClientSubmissionId,
       },
       bearerToken: accessToken,
-      decode: (_) {},
+      decode: ForumContentEditResult.fromJson,
     );
   }
 
   @override
-  Future<void> updateComment({
+  Future<ForumContentEditResult> updateComment({
     required String commentId,
     required String content,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
   }) {
@@ -429,10 +434,11 @@ class HttpForumRepository implements ForumRepository {
       body: {
         'commentId': normalizedCommentId,
         'content': normalizedContent,
+        'expectedContentRevision': expectedContentRevision,
         'clientSubmissionId': normalizedClientSubmissionId,
       },
       bearerToken: accessToken,
-      decode: (_) {},
+      decode: ForumContentEditResult.fromJson,
     );
   }
 }

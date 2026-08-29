@@ -92,12 +92,13 @@ void registerForumRepositoryTests() {
       endpoints: const RadishApiEndpoints(AppEnvironment.development()),
     );
 
-    await repository.updatePost(
+    final result = await repository.updatePost(
       postId: 'post-42',
       title: '原帖子标题',
       content: '编辑后的正文',
       categoryId: '9',
       tagNames: const ['flutter', '编辑'],
+      expectedContentRevision: 3,
       accessToken: 'access-token',
       clientSubmissionId: 'forum-post-edit:test-key',
     );
@@ -110,8 +111,10 @@ void registerForumRepositoryTests() {
       'content': '编辑后的正文',
       'categoryId': '9',
       'tagNames': ['flutter', '编辑'],
+      'expectedContentRevision': 3,
       'clientSubmissionId': 'forum-post-edit:test-key',
     });
+    expect(result.contentRevision, 4);
   });
   test('http forum repository sends comment edit client submission id',
       () async {
@@ -121,9 +124,10 @@ void registerForumRepositoryTests() {
       endpoints: const RadishApiEndpoints(AppEnvironment.development()),
     );
 
-    await repository.updateComment(
+    final result = await repository.updateComment(
       commentId: 'comment-42',
       content: '编辑后的评论',
+      expectedContentRevision: 5,
       accessToken: 'access-token',
       clientSubmissionId: 'forum-comment-edit:test-key',
     );
@@ -133,8 +137,10 @@ void registerForumRepositoryTests() {
     expect(apiClient.lastBody, {
       'commentId': 'comment-42',
       'content': '编辑后的评论',
+      'expectedContentRevision': 5,
       'clientSubmissionId': 'forum-comment-edit:test-key',
     });
+    expect(result.contentRevision, 6);
   });
   test('http forum repository rejects blank client submission id', () async {
     final repository = HttpForumRepository(
@@ -199,6 +205,7 @@ void registerForumRepositoryTests() {
         content: '正文',
         categoryId: '9',
         tagNames: const ['flutter'],
+        expectedContentRevision: 1,
         accessToken: 'access-token',
         clientSubmissionId: ' ',
       ),
@@ -215,6 +222,7 @@ void registerForumRepositoryTests() {
       () => repository.updateComment(
         commentId: 'comment-42',
         content: '评论内容',
+        expectedContentRevision: 1,
         accessToken: 'access-token',
         clientSubmissionId: ' ',
       ),

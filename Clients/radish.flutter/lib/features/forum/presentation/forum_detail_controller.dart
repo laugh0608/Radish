@@ -107,6 +107,7 @@ class ForumDetailController extends ChangeNotifier {
     required String postId,
     required String title,
     required String content,
+    required int contentRevision,
   }) {
     final detail = _state.detail;
     if (detail == null || detail.id.trim() != postId.trim()) {
@@ -118,6 +119,7 @@ class ForumDetailController extends ChangeNotifier {
       detail: detail.copyWith(
         title: title,
         content: content,
+        contentRevision: contentRevision,
         updateTime: DateTime.now().toUtc().toIso8601String(),
       ),
       clearError: true,

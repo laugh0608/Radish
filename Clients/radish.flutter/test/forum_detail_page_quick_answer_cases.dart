@@ -43,6 +43,7 @@ void runForumDetailQuickAnswerCases() {
       scrollable: scrollable,
     );
 
+    expect(tester.widget<TextField>(_quickReplyTextField()).maxLength, 10);
     await tester.enterText(_quickReplyTextField(), '同感');
     final quickReplyButton = find.widgetWithText(FilledButton, '发布轻回应');
     await tester.ensureVisible(quickReplyButton);

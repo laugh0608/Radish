@@ -255,6 +255,7 @@ class ForumPostDetail {
     this.viewCount = 0,
     this.likeCount = 0,
     this.commentCount = 0,
+    this.contentRevision = 1,
     this.answerCount = 0,
     this.isTop = false,
     this.isEssence = false,
@@ -291,6 +292,7 @@ class ForumPostDetail {
       viewCount: _readInt(map['voViewCount']) ?? 0,
       likeCount: _readInt(map['voLikeCount']) ?? 0,
       commentCount: _readInt(map['voCommentCount']) ?? 0,
+      contentRevision: _readInt(map['voContentRevision']) ?? 1,
       answerCount: _readInt(map['voAnswerCount']) ?? question?.answerCount ?? 0,
       isTop: _readBool(map['voIsTop']),
       isEssence: _readBool(map['voIsEssence']),
@@ -320,6 +322,7 @@ class ForumPostDetail {
   final int viewCount;
   final int likeCount;
   final int commentCount;
+  final int contentRevision;
   final int answerCount;
   final bool isTop;
   final bool isEssence;
@@ -371,6 +374,7 @@ class ForumPostDetail {
       viewCount: viewCount,
       likeCount: likeCount,
       commentCount: commentCount,
+      contentRevision: contentRevision,
       answerCount: question.answerCount,
       isTop: isTop,
       isEssence: isEssence,
@@ -390,6 +394,7 @@ class ForumPostDetail {
     String? title,
     String? content,
     String? updateTime,
+    int? contentRevision,
   }) {
     return ForumPostDetail(
       id: id,
@@ -406,6 +411,7 @@ class ForumPostDetail {
       viewCount: viewCount,
       likeCount: likeCount,
       commentCount: commentCount,
+      contentRevision: contentRevision ?? this.contentRevision,
       answerCount: answerCount,
       isTop: isTop,
       isEssence: isEssence,
@@ -502,6 +508,7 @@ class ForumCommentSummary {
     this.level = 1,
     this.likeCount = 0,
     this.replyCount = 0,
+    this.contentRevision = 1,
     this.isTop = false,
     this.isLiked = false,
     this.isGodComment = false,
@@ -534,6 +541,7 @@ class ForumCommentSummary {
       level: _readInt(map['voLevel']) ?? 1,
       likeCount: _readInt(map['voLikeCount']) ?? 0,
       replyCount: _readInt(map['voReplyCount']) ?? 0,
+      contentRevision: _readInt(map['voContentRevision']) ?? 1,
       isTop: _readBool(map['voIsTop']),
       isLiked: _readBool(map['voIsLiked']),
       isGodComment: _readBool(map['voIsGodComment']),
@@ -559,6 +567,7 @@ class ForumCommentSummary {
   final int level;
   final int likeCount;
   final int replyCount;
+  final int contentRevision;
   final bool isTop;
   final bool isLiked;
   final bool isGodComment;
@@ -583,6 +592,7 @@ class ForumCommentSummary {
     int? level,
     int? likeCount,
     int? replyCount,
+    int? contentRevision,
     bool? isTop,
     bool? isLiked,
     bool? isGodComment,
@@ -608,6 +618,7 @@ class ForumCommentSummary {
       level: level ?? this.level,
       likeCount: likeCount ?? this.likeCount,
       replyCount: replyCount ?? this.replyCount,
+      contentRevision: contentRevision ?? this.contentRevision,
       isTop: isTop ?? this.isTop,
       isLiked: isLiked ?? this.isLiked,
       isGodComment: isGodComment ?? this.isGodComment,
@@ -626,6 +637,22 @@ class ForumCommentSummary {
       if (isSofa) '首条回复',
     ];
   }
+}
+
+class ForumContentEditResult {
+  const ForumContentEditResult({required this.contentRevision});
+
+  factory ForumContentEditResult.fromJson(Object? json) {
+    final map = _readJsonMap(json);
+    final contentRevision = _readInt(map['contentRevision']);
+    if (contentRevision == null || contentRevision <= 0) {
+      throw const FormatException('Missing content revision.');
+    }
+
+    return ForumContentEditResult(contentRevision: contentRevision);
+  }
+
+  final int contentRevision;
 }
 
 class ForumChildCommentPage {

@@ -288,21 +288,29 @@ abstract class _BaseForumRepository implements ForumRepository {
   }
 
   @override
-  Future<void> updatePost({
+  Future<ForumContentEditResult> updatePost({
     required String postId,
     required String title,
     required String content,
     required String categoryId,
     required List<String> tagNames,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
-  }) async {}
+  }) async =>
+      ForumContentEditResult(
+        contentRevision: expectedContentRevision + 1,
+      );
 
   @override
-  Future<void> updateComment({
+  Future<ForumContentEditResult> updateComment({
     required String commentId,
     required String content,
+    required int expectedContentRevision,
     required String accessToken,
     required String clientSubmissionId,
-  }) async {}
+  }) async =>
+      ForumContentEditResult(
+        contentRevision: expectedContentRevision + 1,
+      );
 }

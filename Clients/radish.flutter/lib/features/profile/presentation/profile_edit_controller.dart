@@ -89,7 +89,7 @@ class ProfileEditController extends ChangeNotifier {
       userName: userNameController.text.trim(),
       userEmail: emailController.text.trim(),
       age: ageText.isEmpty ? null : int.tryParse(ageText),
-      address: _emptyToNull(addressController.text),
+      address: addressController.text.trim(),
     );
   }
 
@@ -167,11 +167,6 @@ bool _requestsEqual(
       left.age == right.age &&
       left.birth == right.birth &&
       left.address == right.address;
-}
-
-String? _emptyToNull(String value) {
-  final normalized = value.trim();
-  return normalized.isEmpty ? null : normalized;
 }
 
 ProfileIssue _unexpectedIssue(Object error, String fallback) {

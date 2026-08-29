@@ -18,6 +18,7 @@ void registerProfileEditProtectionTests() {
 
     controller.addressController.text = '';
     expect(controller.isDirty, isTrue);
+    expect(controller.buildRequest().address, '');
     controller.addressController.text = 'Radish base';
     expect(controller.isDirty, isFalse);
   });
