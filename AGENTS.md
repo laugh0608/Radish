@@ -96,7 +96,10 @@
 
 ## Git 约束
 
-- 日常协作分支为 `dev`；`master` 是稳定主线，只通过 Pull Request 合并。
+- `dev` 是常态开发与集成分支；串行推进的普通任务直接在 `dev` 开发和提交，不要求主题分支、Pull Request 或额外 worktree。
+- 只有项目所有者明确要求、外部贡献、并行写入、确有隔离价值的高风险改动或 hotfix 才创建主题分支；Agent 不自动创建 `codex/*` 等临时分支。
+- `dev` 当前不启用 branch protection，普通 push 不自动触发 CI；直接开发按改动范围完成本地验证，需要评审或隔离时再通过 Pull Request 合入 `dev`。
+- `master` 是稳定主线，只通过 Pull Request 合并。
 - `master` 允许 merge commit 与 rebase merge，禁用 squash merge；合并后必须先按 ADR 将最新 `origin/master` 回灌 `dev`，再开始下一轮开发。
 - 回灌禁止使用 rebase、reset 或 force push 伪造同步，也不会自动触发 tag、发布或部署。
 - 提交信息必须符合 Conventional Commits；复杂提交建议补充 `2-5` 条简洁说明。

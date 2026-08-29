@@ -1,6 +1,6 @@
 # ADR 0001: Branch And PR Governance
 
-更新时间：2026-07-12
+更新时间：2026-08-29
 
 ## 状态
 
@@ -34,15 +34,16 @@ Accepted
 ### 分支角色
 
 - `master`: 稳定主线，只接受 Pull Request 合并
-- `dev`: 当前阶段默认集成分支，功能、文档、规范、治理类改动默认合并到这里
-- `feature/*`: 功能开发分支
-- `docs/*`: 文档、规范、ADR、流程口径调整分支
-- `chore/*`: 基础设施、脚本、CI、仓库治理分支
+- `dev`: 当前阶段常态开发与集成分支，允许直接承载串行推进的功能、文档、规范和治理类提交
+- `feature/*`: 需要独立隔离或评审时使用的功能开发分支
+- `docs/*`: 需要独立隔离或评审时使用的文档、规范、ADR、流程口径调整分支
+- `chore/*`: 需要独立隔离或评审时使用的基础设施、脚本、CI、仓库治理分支
 - `hotfix/*`: 仅用于必须直接修复稳定主线问题的紧急分支
 
 ### 合并策略
 
-- 默认开发流程为 `feature/*` / `docs/*` / `chore/*` -> `dev`
+- 串行推进的普通开发默认直接在 `dev` 完成，不为了流程形式自动创建主题分支、Pull Request 或额外 worktree
+- 项目所有者明确要求、外部贡献、并行写入、确有隔离价值的高风险改动或明确需要评审时，使用 `feature/*` / `docs/*` / `chore/*` 等主题分支并向 `dev` 发 Pull Request；Agent 不自动创建 `codex/*` 等临时分支
 - 阶段性稳定后，再通过 PR 将 `dev` 合并到 `master`
 - `dev -> master` 的阶段性 PR 优先使用 merge commit，使合并后的 `master` 可以直接 fast-forward 回灌 `dev`；仓库仍允许 rebase merge，但必须承担后续普通 merge 回灌
 - 仅在必须修复稳定主线问题时，才允许 `hotfix/*` 直接向 `master` 发 PR
@@ -69,9 +70,10 @@ Accepted
 
 ### `dev` 规则
 
-- 允许作为当前阶段默认目标分支
+- 作为当前阶段常态开发与集成分支，允许串行推进的普通改动直接提交
 - 当前阶段不强制启用 branch protection
-- 仍建议保持分支开发与 PR 合并习惯，避免重新回到直接堆叠提交的模式
+- 普通 `push -> dev` 不自动触发 CI；直接开发按改动范围完成本地验证，不把分支和 PR 形式本身当作质量门禁
+- 外部贡献、并行写入、风险隔离或明确需要评审时，通过 Pull Request 合入 `dev`
 - 接受 `master` 合并结果的回灌；回灌完成前不开始下一轮集成开发
 - 如后续 `dev` 成为多人并行开发主集成面，再评估是否逐步补强保护规则
 
@@ -80,7 +82,7 @@ Accepted
 以下规则不能仅靠仓库文件完全强制，需要仓库管理员在 GitHub Settings 中启用或持续维护：
 
 1. 确保远端存在 `dev` 分支，并作为当前默认开发集成面
-2. 默认开发 PR 目标分支保持为 `dev`
+2. 需要开发 PR 时，目标分支保持为 `dev`
 3. 对 `master` 启用 branch protection / ruleset
 4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六个状态检查
 5. 对 `master` 开启 “Require a pull request before merging”
@@ -117,6 +119,7 @@ Accepted
 
 - `master` 可以继续作为稳定主线，而不是日常开发堆叠区
 - `dev` 可以作为当前阶段真实的集成面，承接频繁迭代
+- 串行日常开发不承担无实际隔离收益的分支、worktree 与 PR 管理成本
 - 每次 `master` 合并结果都会回到 `dev`，避免稳定主线 ancestry 与下一批开发长期分叉
 - PR 模板、验证基线、ruleset 与 workflow 之间的口径更容易长期保持一致
 - 多人或多 Agent 协作时，分支目标与 required checks 的判断成本更低
@@ -124,7 +127,7 @@ Accepted
 
 代价：
 
-- 开发流程从“直接提交”切换为“分支 + PR + 检查”
+- 直接在 `dev` 连续开发时，需要维护者按改动风险主动执行并如实记录本地验证
 - 需要持续维护 GitHub Settings 中的 ruleset / protection 配置
 - 每次合入 `master` 后增加一次明确的 `master -> dev` 回灌动作
 - 随着验证基线或 workflow 演进，ADR、PR 模板、ruleset README 与协作文件也需要同步维护
