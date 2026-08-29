@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1–P5、[P6 readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)与 [P6-A Android 本地候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)已关闭，下一顺位是待单独运行授权的 P6-B compact / medium AVD 运行态验收。
+> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1–P5、[P6 readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)与 [P6-A Android 本地候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)已关闭，[P6-B 第一轮](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)完成真实 AVD 取证但仍为 `No-Go`；下一顺位先修 fresh AVD OIDC callback，再完成同哈希矩阵。
 
 ## 1. 真相源与优先级
 
@@ -84,7 +84,7 @@ Radish 四主题取值与 Profile 覆盖
 - Flutter 映射：四主题 `ThemeData`、`RadishThemeTokens`、权益状态与内置偏好 owner 已在 P2 建立；P4-B1 已补齐 Noto typography、density / surface / motion、焦点、共享状态原语和主题预览—确认，P4-B2 已补齐 compact / medium / expanded Web 家族壳层、受控 Lucide 导航和动作状态，P4-B3 已补齐统一公开 Discover cursor 流、compact 连续信息流和 expanded `904px` 主轴 + 社区洞察，P4-B4 已补齐 Forum Detail compact 连续阅读、medium 单主轴与 expanded `220 / 820 / 250` 页面级三栏，P4-B5 已关闭静态退出门禁，P5-A 已拆出后续页面批次，P5-B1 已补齐 Forum Feed 连续流与独立 composer，P5-B2 已落地 Profile 五类独立快照、三档结构、`904px` 主轴 + 身份 rail 和权威编辑保护，P5-C1 已落地 Docs Reader 共用 owner、compact 单任务、medium 自适应目录—正文和 expanded `280 / 904` 阅读结构；P5-C2 已落地 Commerce 独立状态、敏感购买任务、目录 `1 / 2 / 3` 列和详情单任务 / 双区 / `820 + 24 + 360` 结构，详见 [P5-C2 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)；P5-C3 已落地 Commerce Private 四个只读 owner、权益 / 道具局部状态、订单 `1 / 2 / 3` 列、详情 rail 与背包双 lane，Shop `50 / 50`、全量 `318 / 318`，详见 [P5-C3 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)；P5-D1 已落地 Wallet / Experience 四个只读 owner、概要 / 流水局部状态与 compact 连续、medium 概要双列、expanded 概要 rail + `904px` 流水主轴，详见 [P5-D1 实现记录](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)；P5-D2 已落地公开经验榜首屏 owner、PublicId 优先身份、compact 连续排名、medium 密集列表、expanded `904px` 主轴 + 公开主页上下文和业务色无文字 accent，详见 [P5-D2 实现记录](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)。
 - Flutter P5-D3 已落地账号浏览历史独立分页 owner、Post / Wiki / Product typed target、compact 连续历史、medium 时间顺序密集列表与 expanded `904px` 主轴 + 数据来源说明；设备 recent shortcut 保持独立 owner，详见 [P5-D3 实现记录](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)。
 - Flutter P5-E 已按 readiness 补齐 Discover medium 四主题、Forum Detail 页面级四主题与 Commerce C2 四主题 / compact 长内容 `13` 个代表 widget tests；成组 `396 / 396`、全量 `419 / 419`，没有新增设计源或修改运行时视觉方向，详见 [P5-E 实现记录](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)。
-- Flutter P6 readiness 已冻结 Android UI RC 的候选、compact / medium AVD 与同哈希真机三段门禁；P6-A 已装配固定 SHA-256 的 release APK 并通过 analyze、Flutter 全量、Android JVM、构建和制品契约检查，没有修改运行时代码或设计源。下一顺位 P6-B 只验证既有视觉与真实链路，不预设 Pencil 变更。
+- Flutter P6 readiness 已冻结 Android UI RC 的候选、compact / medium AVD 与同哈希真机三段门禁；P6-A 已装配首个固定 SHA-256 的 release APK。P6-B 第一轮真实运行没有暴露需要回写 Pencil 的共享视觉结构偏差，但修正了 Auth、Profile 与 Forum 运行时契约并使旧哈希失效；下一顺位先关闭 fresh AVD OIDC callback，再用新哈希复验受影响矩阵，不预设 Pencil 变更。
 
 family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的四主题取值与品牌前景继续在 Client 项目主题层显式覆盖，避免依赖上游参考默认值形成隐式产品契约。
 

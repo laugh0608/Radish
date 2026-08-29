@@ -11,13 +11,13 @@ Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以�
 ## 当前状态
 
 - **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`Flutter Native P6-B Android AVD runtime acceptance（待单独运行授权，2026-08-27）`
-- **复核日期**：`2026-08-27`
+- **当前主线**：`Flutter Native P6-B fresh Android AVD OIDC pending attempt / callback 生命周期诊断与修正`
+- **复核日期**：`2026-08-29`
 - **当前结论**：
   - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
   - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
   - Flutter P1–P5 已完成首轮主题、页面族与成组静态门禁；P5-E 成组 `396 / 396`、Shell `51 / 51`、全量 `419 / 419`、`flutter analyze` 零问题
-  - P6-A 已装配 SHA-256 `d7b1b9d1…34200` 的 `26.8.2+1` 三 ABI debug-signing release APK；静态 / Android JVM / 构建 / 制品契约门禁通过，下一顺位为 P6-B compact / medium AVD 运行态验收并等待单独授权
+  - P6-B 第一轮已用真实 compact / medium API 35 AVD 修正会话续签、公开资料 Public API、Forum revision、轻回应 `10` 字上限和地址清空五组契约；compact 代表写入与 medium 匿名宽屏成立，但 fresh AVD 的 OIDC callback 和剩余同哈希矩阵未关闭，P6-B 保持 `No-Go`
   - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
   - 生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能推进前置
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准

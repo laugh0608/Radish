@@ -25,8 +25,16 @@ Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应
 
 - 成功响应必须能读取 `isSuccess / IsSuccess / success / Success` 和 `responseData / ResponseData / data / Data`。
 - HTTP `401 / 403 / 404 / 5xx`、空响应、非 JSON 响应和缺少成功标记的 2xx JSON 都应转成明确的 `RadishApiClientException`。
+- 携带 bearer token 的请求在发送前统一解析当前 session；access token 临近过期时先 refresh，首次 `401` 只允许强制 refresh 后重试一次，不建立业务 Repository 各自续签或无限重试。
+- 同一旧 access token 的并发 refresh 合并为一个请求，并以 session epoch 隔离迟到结果；只有授权端明确返回 `invalid_grant` 才清除本地会话，临时网络 / 服务失败保留已有会话并展示可恢复 issue。
 - 业务页面只在本地任务区域展示失败，例如购买面板、余额区域、订单刷新区或背包来源区；失败不应清空已加载详情、来源 tab、订单 / 背包上下文或登录恢复状态。
 - 接口返回格式异常、登录失效、权限不足和接口不存在属于可见错误态，不应被当作“无数据”或默认成功。
+
+## 统一登录边界
+
+- Flutter 使用系统浏览器承接 Gateway / Auth 的 OIDC Authorization Code + PKCE 登录，不在 App 内复制账号密码表单、Cookie 或授权页面。
+- App 只保存当前 pending login attempt 所需的 state / verifier 与最终 token session；浏览器取消、回调 state 不匹配或尝试过期必须显示可恢复错误，不接受未知 callback。
+- 本地 Android 使用 `https://localhost:5000` 时，App API client 可按开发环境规则接受本地证书；系统浏览器仍可能单独显示开发证书警告，该环境行为不改变生产证书或统一登录边界。
 
 ## 榜单到公开主页
 
@@ -40,6 +48,7 @@ Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应
 
 原生公开主页是 Flutter 当前个人链路的复访承接点。
 
+- 公开资料、公开统计、公开帖子和公开评论分别使用现有 Public API，并统一传递 `identifier`；不得回退到要求本人或治理权限的旧 `userId` 私有路径。
 - 从发现页、forum 作者入口或榜单打开公开主页时，壳层会记录打开前 tab。
 - Android Back 优先返回原来源 tab，而不是强制停留在 profile tab。
 - 公开主页继续打开帖子、评论或轻回应详情后，详情页返回会回到公开主页；再次 Android Back 仍应回到最初来源 tab。
@@ -75,6 +84,7 @@ Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应
 
 - 读取接口为 `User/GetMyProfile`，保存接口为 `User/UpdateMyProfile`。
 - 当前可编辑展示名（接口字段仍兼容 `userName`）、邮箱、年龄和地址；保存成功后刷新原生公开资料摘要。
+- 地址更新语义固定为：字段省略或 `null` 保持原值，空字符串清空，非空字符串修剪后写入；Flutter 与 Web 编辑器都不得把用户主动清空折叠成“未提供”。
 - 编辑对话框覆盖加载、字段校验、保存中、保存失败提示和取消返回。
 - forum 作者展示名按 `DisplayName -> UserName 兼容字段 -> User-{id}` 口径回读当前资料，Console 用户详情也展示同一展示名称；`UserRealName` 不再作为当前资料展示来源。
 - 头像上传、密码修改、完整账号设置、关注管理和资料治理不进入当前 Flutter 边界。
@@ -119,6 +129,7 @@ Forum detail 当前承接作者自己的帖子正文编辑和作者根评论编�
 
 - 作者帖子正文编辑复用 `Post/Update`，只开放当前移动端已有的正文编辑能力，不扩展富文本、附件、投票、抽奖或问答模式切换。
 - 作者根评论编辑复用 `Comment/Update`，只覆盖根评论；子评论编辑继续后置单独评审。
+- 帖子详情和评论节点必须消费服务端 `voContentRevision`；编辑提交当前 `expectedContentRevision`，成功后使用响应返回的新 revision 局部更新节点，冲突不得被本地覆盖或盲重试吞掉。
 - 编辑请求分别生成 `forum-post-edit:` 与 `forum-comment-edit:` 前缀的 `clientSubmissionId`；同一编辑目标、同一编辑内容失败后直接重试复用同一个 key。
 - 成功、编辑目标变化、编辑内容变化或账号变化后生成新 key。
 - 保存成功后局部刷新帖子正文或评论节点；失败时保留编辑输入和当前详情上下文。
@@ -141,7 +152,7 @@ Forum detail 当前在问题帖正文后开放已登录态的纯文本回答。
 Forum detail 当前按“正文 -> 回答区（仅问题帖）-> 轻回应 -> 评论区”展示。
 
 - 匿名态可读取最近轻回应。
-- 已登录态可发布一句轻回应。
+- 已登录态可发布一句最多 `10` 字的轻回应；Flutter 输入计数与服务端权威上限保持一致。
 - 从轻回应区点击“登录后发布”后，浏览器 OIDC 登录成功会回到当前帖子轻回应区，并提示可继续发布。
 - 发布成功只刷新轻回应墙与局部成功提示，不刷新正文或评论阅读位置。
 - 轻回应删除、举报、审核台能力、点赞、投票和编辑治理仍不进入当前 Flutter 边界。

@@ -1,10 +1,12 @@
 # Flutter Native P6-A Android 本地 RC 候选装配
 
-> 状态：`P6-A` 已完成；当前候选可进入 P6-B AVD 运行态验收
+> 状态：`P6-A` 已完成；本记录候选已被 P6-B 第一轮运行时修正取代
 >
 > 日期：2026-08-27（Asia/Shanghai）
 >
 > 前置记录：[P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)
+>
+> 后续结论：[P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29) 已确认本哈希因运行时代码修正失效，不得继续作为当前候选。
 
 ## 1. 结论
 

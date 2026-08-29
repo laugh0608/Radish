@@ -4,17 +4,18 @@
 
 当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、[P5-B1 Forum Feed / Compose](../../Docs/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23.md)、[P5-B2 Identity / Revisit](../../Docs/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23.md)、[P5-C1 Docs Reader](../../Docs/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23.md)、[P5-C2 Commerce Browse / Transaction](../../Docs/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24.md)、[P5-C3 Commerce Private](../../Docs/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24.md)、[P5-D1 Wallet / Experience](../../Docs/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24.md)、[P5-D2 Leaderboard](../../Docs/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24.md)、[P5-D3 Browse History](../../Docs/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27.md)与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell、统一公开 Discover cursor 流、Forum / Profile / Docs 页面族、Commerce 公开交易与私域回访、Wallet / Experience 四个只读 owner、Leaderboard 公共身份回流，以及账号完整历史的分页 owner、typed handoff 与三档 surface 均已落地。P5-E 只新增 `13` 个代表 widget tests，没有修改运行时代码；成组 `396 / 396`、Shell `51 / 51`、Flutter 全量 `419 / 419`、analyze 零问题，P5 首轮静态门禁关闭。[P6 Android UI RC readiness](../../Docs/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27.md)已冻结候选装配、compact / medium AVD 与同哈希真机三段门禁；[P6-A](../../Docs/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27.md)已进一步装配 SHA-256 `d7b1b9d1…34200` 的 `26.8.2+1` 三 ABI debug-signing release APK。下一顺位为 P6-B AVD 运行态验收，服务与设备运行仍需单独授权。
+现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、[P5-B1 Forum Feed / Compose](../../Docs/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23.md)、[P5-B2 Identity / Revisit](../../Docs/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23.md)、[P5-C1 Docs Reader](../../Docs/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23.md)、[P5-C2 Commerce Browse / Transaction](../../Docs/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24.md)、[P5-C3 Commerce Private](../../Docs/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24.md)、[P5-D1 Wallet / Experience](../../Docs/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24.md)、[P5-D2 Leaderboard](../../Docs/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24.md)、[P5-D3 Browse History](../../Docs/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27.md)与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成：业务 owner 与行为契约保留，四主题、正式字体与共享状态原语、Web 家族三档 Shell、统一公开 Discover cursor 流、Forum / Profile / Docs 页面族、Commerce 公开交易与私域回访、Wallet / Experience 四个只读 owner、Leaderboard 公共身份回流，以及账号完整历史的分页 owner、typed handoff 与三档 surface 均已落地。P5-E 以成组 `396 / 396`、Shell `51 / 51`、Flutter 全量 `419 / 419`、analyze 零问题关闭首轮静态门禁。[P6 Android UI RC readiness](../../Docs/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27.md)与 [P6-A](../../Docs/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27.md)已冻结三段门禁和首个候选；[P6-B 第一轮](../../Docs/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29.md)已完成真实 AVD 取证与五组契约修正，但 fresh medium AVD 的 OIDC callback 和剩余同哈希矩阵未关闭，当前保持 `No-Go`。
 
 ## 当前范围
 
 - 当前为 Android 起步的原生客户端；iOS 与 Windows / macOS / Linux 在共享 UI 和平台门禁通过后分别产品化
 - `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
-- 最小登录、退出、会话恢复、Android 本地会话持久化与浏览器 OIDC 回调
+- 最小登录、退出、会话恢复、Android 本地会话持久化与系统浏览器 OIDC 回调；请求前统一处理临近过期 token，同一 token 并发 refresh 合并，首次 `401` 只强制 refresh 后重试一次，只有 `invalid_grant` 清除会话
 - forum feed、forum detail、问答回答、评论分页、子评论分页、评论发布 / 回复、作者编辑帖子正文 / 根评论、作者跳转与 detail 原地登录续接；回答失败重试复用 `forum-answer:` 提交意图 key，评论 / 回复失败重试复用 `forum-comment:` 提交意图 key，帖子 / 评论编辑失败重试复用 `forum-post-edit:` / `forum-comment-edit:` 提交意图 key
-- forum detail 轻回应发布后局部体验：发布成功后即时前插到轻回应墙并给出局部成功反馈，发布失败只在轻回应区提示；从轻回应区发起登录后会回到当前轻回应区继续发布
+- forum detail 轻回应发布后局部体验：输入与服务端统一为最多 `10` 字，发布成功后即时前插到轻回应墙并给出局部成功反馈，发布失败只在轻回应区提示；从轻回应区发起登录后会回到当前轻回应区继续发布
 - discover 论坛精选直达：`discover` 中的论坛精选帖子可直接打开原生 forum detail，并按发现页来源返回
 - `profile` 我的轻回应回看：已登录态可在我的主页查看最近轻回应、继续加载更多，并回到对应 forum detail
+- `profile` 基础资料编辑：展示名、邮箱、年龄与地址通过 `GetMyProfile / UpdateMyProfile` 维护；地址省略或 `null` 保持原值，空字符串清空，非空字符串修剪后保存
 - `profile` 最近阅读轻量多条列表：已登录态可在我的主页继续打开最近多条 forum 阅读目标，并从详情返回 profile
 - `profile` 最近公开帖子回看：公开主页与我的主页可继续加载更多公开帖子，并回到对应 forum detail
 - `profile` 最近公开评论回看：公开主页与我的主页可继续加载更多公开评论，并回到对应 forum detail / 评论上下文
@@ -27,7 +28,7 @@
 - 公开主页来源返回：从发现、论坛作者和榜单进入原生公开主页后，Android Back 会回到原来源；公开主页继续打开帖子 / 评论详情并返回后，仍保留原 profile 来源 tab
 - 已登录态通知列表：原生壳层会读取当前用户最近站内通知，展示标题、内容、类型、已读状态和时间；forum 通知可复用 forum detail handoff 打开 `postId / commentId`，未读 forum 通知打开详情前会尝试标记已读；系统等不可跳通知保持只读展示；未读通知支持单条显式标记已读
 - 已登录态账号浏览历史入口：我的页可打开服务端账号完整历史，按 `VoId` 稳定分页并承接公开帖子 / 文档 / 商品详情；Post / Wiki / Product 使用 typed target，设备 Forum / Docs recent shortcut 保持独立；当前不开放清空、删除、筛选或推荐治理
-- 已登录态纯文本发帖与帖子正文编辑：论坛页读取顶级分类，登录用户可发布纯文本帖子，成功后刷新列表并打开新帖子详情，详情公开链接使用 `Post.PublicId`；作者可在原生帖子详情编辑自己的帖子正文，失败重试复用 `forum-post-edit:` 提交意图 key；匿名态从发帖表单提交会登录回流并保留页面存活期间的草稿，发布失败也保留草稿输入并复用 `forum-post:` 提交意图 key；当前不开放富文本、附件、投票、抽奖、草稿箱、分类 / 标签编辑或子评论编辑
+- 已登录态纯文本发帖与帖子正文编辑：论坛页读取顶级分类，登录用户可发布纯文本帖子，成功后刷新列表并打开新帖子详情，详情公开链接使用 `Post.PublicId`；作者帖子正文与根评论编辑消费当前 `voContentRevision`、提交 `expectedContentRevision` 并使用响应 revision 局部更新，失败重试复用原提交意图 key；匿名态从发帖表单提交会登录回流并保留页面存活期间的草稿，发布失败也保留草稿输入并复用 `forum-post:` 提交意图 key；当前不开放富文本、附件、投票、抽奖、草稿箱、分类 / 标签编辑或子评论编辑
 - 已登录态问题回答：问题帖详情可展示已有回答，登录用户可发布纯文本回答，成功后局部更新回答区和回答数；匿名态从回答区发起登录会回到当前回答输入上下文，发布失败保留输入并复用 `forum-answer:` 提交意图 key；当前不开放回答采纳、回答编辑、富文本回答、附件回答或问题发帖模式
 - 已登录态单商品购买：商品详情支持当前胡萝卜余额读取、购买资格检查、支付口令输入和购买 `1` 件商品，成功后刷新余额并进入订单详情确认结果；匿名态购买会先登录并回到当前商品
 - 已登录态商城订单 / 背包入口：我的页可打开订单列表、订单详情和背包，订单详情可按订单 ID 查看扣款流水并进入背包发放确认，背包权益 / 道具可查看来源订单或来源商品；主题权益由壳层外观入口读取并调用既有激活 / 停用契约，其他权益与道具使用仍未开放
@@ -62,6 +63,7 @@ Flutter 不引入移动端专属 BFF，`HttpRadishApiClient` 直接消费 Gatewa
 
 - 成功响应需要可读取 `isSuccess / IsSuccess / success / Success` 和 `responseData / ResponseData / data / Data`。
 - HTTP `401 / 403 / 404 / 5xx`、空响应、非 JSON 响应和缺少成功标记的 2xx JSON 会被转成 `RadishApiClientException`。
+- 携带 bearer token 的请求通过单一 session resolver 处理续签；不得在业务 Repository 内各自 refresh，也不得对 `401` 无限重试。
 - 页面应把异常展示在当前任务区域，例如购买面板、余额区、订单详情刷新区或背包来源区，并保留已加载内容、来源返回和登录恢复上下文。
 
 ## 目录概览
@@ -87,7 +89,7 @@ Clients/radish.flutter/
 3. `P3` 代表设计已确认：独立 Flutter 设计源已冻结 typography、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿
 4. `P4-A / P4-B1–B5` 已完成 readiness、Theme / Shared、Web-Family Adaptive Shell、统一公开 Discover cursor 流、Forum Detail 代表页与成组静态门禁
 5. `P5-A / P5-B1 / P5-B2 / P5-C1 / P5-C2 / P5-C3 / P5-D1 / P5-D2 / P5-D3 / P5-E` 已完成拆批、页面族与成组静态门禁
-6. `P6 Android UI RC readiness / P6-A 本地候选装配` 已完成；下一顺位为 P6-B compact / medium AVD 运行态验收，随后才进入同哈希真机门禁，iOS 与 desktop 平台工程继续等待各自门禁
+6. `P6 Android UI RC readiness / P6-A 本地候选装配` 已完成；P6-B 第一轮已完成真实 AVD 取证与契约修正但保持 `No-Go`，下一顺位先修 fresh AVD OIDC pending attempt / callback 生命周期，再重建唯一候选并关闭剩余同哈希矩阵；iOS 与 desktop 平台工程继续等待各自门禁
 
 ## Flutter 环境切换
 
