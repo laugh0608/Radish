@@ -2,21 +2,23 @@
 
 > 日期：2026-08-29（Asia/Shanghai）
 >
-> 范围：复核今日文档提交前唯一已提交变更 `4aa04ac3`，并以当前未提交的 P6-B 运行时代码 / 测试和真实 AVD 证据反查相关文档。本次日终纯文档提交自身不计入回顾范围，也不混入未提交代码。
+> 范围：复核截至 `3877870c` 的今日三个提交，并以 P6-B 运行时代码 / 测试和真实 AVD 证据反查相关文档。本次状态校正文档提交自身不计入回顾范围。
 
 ## 今日结论
 
-- 今日 Git 历史只有 `4aa04ac3 docs(governance): 改为 dev 优先开发拓扑`：`dev` 现在直接承载串行普通开发；主题分支、额外 worktree 和向 `dev` 的 PR 只在项目所有者要求、外部贡献、并行写入、风险隔离或明确评审价值时使用；`master` 继续只通过 PR 合并。
+- 今日 Git 历史截至本次状态校正前共有三个提交：`4aa04ac3` 更新 dev-first 治理，`9087d562` 收口 P6-B 第一轮与日终文档，`3877870c` 独立提交 P6-B 运行时修正和回归测试。
 - 该治理提交只修改 `AGENTS.md`、`CLAUDE.md`、`CONTRIBUTING.md` 与分支治理 ADR，共 `4` 个文件、`23` 行新增、`14` 行删除。两个 Agent 根入口正文同步，贡献指南与 ADR 的 `dev / master`、主题分支、PR、CI 和回灌口径一致。
 - P6-B 第一轮真实运行暴露并修正五组契约：Flutter bearer 请求统一续签、公开资料切换 Public API、作者编辑携带 / 更新 content revision、轻回应上限收敛为 `10` 字，以及地址空字符串明确表达清空。
 - 修正后 compact AVD 的会话恢复、地址清空、帖子 CAS 与 `10` 字轻回应成立；medium 匿名宽屏成立，但 fresh AVD 的 OIDC pending attempt / callback 未闭环，compact 根评论运行时 CAS 与新哈希剩余矩阵也未关闭。因此 P6-B 继续 `No-Go`，不能进入 P6-C。
-- 当前 P6-B 代码 / 测试仍是独立未提交工作树：`28` 个 tracked 非文档文件加 `2` 个未跟踪 Flutter tests。本次项目所有者明确要求“文档提交”，所以日终只暂存 README 与 `Docs/`，不把代码伪装成文档提交，也不丢弃现有实现。
+- P6-B 的 `28` 个 tracked 非文档文件与 `2` 个新增 Flutter tests 已作为独立代码提交 `3877870c` 落库，没有混入 `9087d562` 文档提交；提交后工作树恢复干净。
 
 ## 今日全部已提交变更
 
 | 提交 | 主题 | 审阅结论 |
 | --- | --- | --- |
 | `4aa04ac3` | `docs(governance): 改为 dev 优先开发拓扑` | 根入口、贡献指南与 ADR 同步把普通串行开发改为直接在 `dev` 进行；主题分支 / PR 改为按真实隔离与评审价值选择，`master` 稳定主线和回灌约束不变。 |
+| `9087d562` | `docs(flutter): 收口 P6-B 首轮验收与日终回顾` | 新增 P6-B 第一轮与日终记录，更新当前阶段、路线图、Flutter / UI 专题、README、日志和索引；提交只包含文档。 |
+| `3877870c` | `fix(flutter): 修正 P6-B 运行时契约` | 独立提交 Auth、Profile、Forum 的五组契约修正及 Flutter、Web、后端回归覆盖，共 `30` 个文件、`871` 行新增、`64` 行删除。 |
 
 ## 治理文档反查
 
@@ -60,7 +62,7 @@
 
 ## 明日事项（2026-08-30）
 
-1. 新会话先读取[当前进行中](/planning/current)、本记录、[P6-B 第一轮](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)、[Flutter 专题](/features/flutter-native-product-ui-design)、[移动端 handoff](/guide/flutter-mobile-handoff)、[验证基线](/guide/validation-baseline)、[运行手册](/guide/operations-runbook)和 [Flutter README](../../Clients/radish.flutter/README.md)，先确认并保留当前未提交代码。
+1. 新会话先读取[当前进行中](/planning/current)、本记录、[P6-B 第一轮](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)、[Flutter 专题](/features/flutter-native-product-ui-design)、[移动端 handoff](/guide/flutter-mobile-handoff)、[验证基线](/guide/validation-baseline)、[运行手册](/guide/operations-runbook)和 [Flutter README](../../Clients/radish.flutter/README.md)，并确认 P6-B 当前代码基线为 `3877870c`。
 2. 第一顺位只审计 OIDC pending attempt 的 `state / verifier` owner、App lifecycle / Activity recreation、Chrome 本地证书中断和 `radish://oidc/callback` 回流；先补稳定复现测试，不先改成 App 内账号密码登录。
 3. 根因与最小修正方案明确后，说明认证运行时影响并等待项目所有者批准；修复后重跑 Auth 定向、Flutter 全量与 release 构建，冻结新的唯一 APK 哈希。
 4. 新哈希先关闭 medium authenticated 回流与 compact 根评论 CAS，再补齐受影响的 default / 三套非默认主题矩阵；P6-B 完整关闭前不进入 P6-C。
@@ -70,4 +72,4 @@
 
 - 日终不重复运行今天已通过的全量代码回归，也不重新启动服务或 AVD。
 - 文档批执行 `npm run check:docs`、`npm run check:repo-hygiene:staged`、`git diff --check` 与 staged 边界检查。
-- 最终提交只包含 README 与 `Docs/` 文档；P6-B 代码 / 测试保持未提交，留待下一轮按认证根因和批准范围形成独立代码提交。
+- `9087d562` 只包含 README 与 `Docs/` 文档；P6-B 代码 / 测试随后以 `3877870c` 独立提交。本次只校正提交状态，不改变 P6-B `No-Go` 结论或明日认证修正边界。

@@ -222,7 +222,7 @@
 
 ## 明日事项（2026-08-30，认证运行时变更需再次确认）
 
-1. 新会话先读取本页、[今日收尾记录](/records/f4-day-end-doc-review-2026-08-29)、[P6-B 第一轮记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)、[Flutter 专题](/features/flutter-native-product-ui-design)、[移动端 handoff](/guide/flutter-mobile-handoff)、[验证基线](/guide/validation-baseline)、[运行手册](/guide/operations-runbook)和 [Flutter README](../../Clients/radish.flutter/README.md)；先复核并保留当前未提交的 P6-B 契约修正，不丢弃或混入无关改动。
+1. 新会话先读取本页、[今日收尾记录](/records/f4-day-end-doc-review-2026-08-29)、[P6-B 第一轮记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)、[Flutter 专题](/features/flutter-native-product-ui-design)、[移动端 handoff](/guide/flutter-mobile-handoff)、[验证基线](/guide/validation-baseline)、[运行手册](/guide/operations-runbook)和 [Flutter README](../../Clients/radish.flutter/README.md)；先确认 P6-B 当前代码基线为 `3877870c`，不回退或混入无关改动。
 2. 第一顺位只审计 fresh Android AVD 的 OIDC pending attempt：定位 `state / verifier` owner、App lifecycle / Activity recreation、系统浏览器本地证书中断和 `radish://oidc/callback` 回流之间的丢失点，并先补能稳定复现“浏览器中断后 callback 找不到尝试”的定向测试。
 3. 登录继续使用系统浏览器的 Authorization Code + PKCE，不把账号密码、Cookie 或授权页面复制进 App；根因与最小修正方案明确后，先说明运行时影响并等待项目所有者批准，再修改认证代码。
 4. 修复获批后重跑 Auth 定向、Flutter 全量与 release 构建，冻结新的唯一 APK 哈希；先关闭 medium authenticated 回流和 compact 根评论 CAS，再用同哈希补齐受影响的 default 与三套非默认主题矩阵。

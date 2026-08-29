@@ -18,7 +18,7 @@ P6-B 第一轮在 API 35 compact phone 与临时 medium tablet AVD 上完成真�
 
 | 项目 | 结果 |
 | --- | --- |
-| 源码基线 | `dev` / `4aa04ac3` 加本轮已批准、尚未提交的契约修正 |
+| 源码基线 | `dev` / `3877870c`；本轮契约修正与回归测试已独立提交 |
 | 新 APK | `Clients/radish.flutter/build/app/outputs/flutter-apk/app-release.apk`；`82,913,651` bytes |
 | SHA-256 | `ed5f57abfe265c08c2bc2020443143ce1bf1b4ba44c741a7767d88b7b0f9d950` |
 | 环境 | `development + https://localhost:5000` |
