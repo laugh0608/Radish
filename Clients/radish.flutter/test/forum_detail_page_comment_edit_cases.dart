@@ -279,6 +279,7 @@ void runForumDetailCommentEditCases() {
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetViewInsets);
 
     final repository = _RecordingForumEditRepository();
     final sessionController = SessionController(
@@ -318,7 +319,28 @@ void runForumDetailCommentEditCases() {
 
     await tester.tap(find.widgetWithText(TextButton, '编辑评论'));
     await tester.pumpAndSettle();
-    await tester.enterText(_commentEditTextField(), '编辑后的根评论');
+    final commentEditor = _commentEditTextField();
+    await tester.showKeyboard(commentEditor);
+    await tester.pump();
+    final editableText = find.descendant(
+      of: commentEditor,
+      matching: find.byType(EditableText),
+    );
+    final initialFocusNode =
+        tester.widget<EditableText>(editableText).focusNode;
+    expect(initialFocusNode.hasFocus, isTrue);
+
+    tester.view.viewInsets = const FakeViewPadding(bottom: 300);
+    await tester.pump();
+
+    final rebuiltFocusNode =
+        tester.widget<EditableText>(editableText).focusNode;
+    expect(rebuiltFocusNode, same(initialFocusNode));
+    expect(rebuiltFocusNode.hasFocus, isTrue);
+
+    tester.view.resetViewInsets();
+    await tester.pump();
+    await tester.enterText(commentEditor, '编辑后的根评论');
     await tester.pump();
     final saveButton = find.widgetWithText(FilledButton, '保存评论');
     await tester.ensureVisible(saveButton);

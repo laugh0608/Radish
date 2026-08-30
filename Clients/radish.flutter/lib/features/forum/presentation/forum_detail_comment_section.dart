@@ -67,7 +67,7 @@ class _ForumCommentSection extends StatelessWidget {
     required this.targetCommentId,
     required this.expandedRootCommentId,
     required this.expandedChildPageIndex,
-    required this.registerCommentKey,
+    required this.commentKeyFor,
     required this.onOpenProfileUser,
     required this.onReplyComment,
     required this.onStartCommentEdit,
@@ -98,7 +98,7 @@ class _ForumCommentSection extends StatelessWidget {
   final String? targetCommentId;
   final String? expandedRootCommentId;
   final int? expandedChildPageIndex;
-  final void Function(String commentId, GlobalKey key) registerCommentKey;
+  final GlobalKey Function(String commentId) commentKeyFor;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<_ForumCommentReplyTarget> onReplyComment;
   final ValueChanged<_ForumCommentEditTarget> onStartCommentEdit;
@@ -170,7 +170,7 @@ class _ForumCommentSection extends StatelessWidget {
               targetCommentId: targetCommentId,
               expandedRootCommentId: expandedRootCommentId,
               expandedChildPageIndex: expandedChildPageIndex,
-              registerCommentKey: registerCommentKey,
+              commentKeyFor: commentKeyFor,
               onOpenProfileUser: onOpenProfileUser,
               onReplyComment: onReplyComment,
               onStartCommentEdit: onStartCommentEdit,
@@ -468,7 +468,7 @@ class _ForumCommentCard extends StatelessWidget {
     required this.targetCommentId,
     required this.expandedRootCommentId,
     required this.expandedChildPageIndex,
-    required this.registerCommentKey,
+    required this.commentKeyFor,
     required this.onOpenProfileUser,
     required this.onReplyComment,
     required this.onStartCommentEdit,
@@ -485,7 +485,7 @@ class _ForumCommentCard extends StatelessWidget {
   final String? targetCommentId;
   final String? expandedRootCommentId;
   final int? expandedChildPageIndex;
-  final void Function(String commentId, GlobalKey key) registerCommentKey;
+  final GlobalKey Function(String commentId) commentKeyFor;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<_ForumCommentReplyTarget> onReplyComment;
   final ValueChanged<_ForumCommentEditTarget> onStartCommentEdit;
@@ -494,8 +494,7 @@ class _ForumCommentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
-    final key = GlobalKey();
-    registerCommentKey(comment.id, key);
+    final key = commentKeyFor(comment.id);
     final normalizedCurrentUserId = currentUserId?.trim();
     final canEdit = normalizedCurrentUserId != null &&
         normalizedCurrentUserId.isNotEmpty &&
@@ -626,7 +625,7 @@ class _ForumCommentCard extends StatelessWidget {
                 initialChildPageIndex: expandedRootCommentId == comment.id
                     ? expandedChildPageIndex
                     : null,
-                registerCommentKey: registerCommentKey,
+                commentKeyFor: commentKeyFor,
                 onOpenProfileUser: onOpenProfileUser,
                 onReplyComment: onReplyComment,
               ),
@@ -645,7 +644,7 @@ class _ForumChildCommentSection extends StatefulWidget {
     required this.targetCommentId,
     required this.forceExpanded,
     required this.initialChildPageIndex,
-    required this.registerCommentKey,
+    required this.commentKeyFor,
     required this.onOpenProfileUser,
     required this.onReplyComment,
   });
@@ -655,7 +654,7 @@ class _ForumChildCommentSection extends StatefulWidget {
   final String? targetCommentId;
   final bool forceExpanded;
   final int? initialChildPageIndex;
-  final void Function(String commentId, GlobalKey key) registerCommentKey;
+  final GlobalKey Function(String commentId) commentKeyFor;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<_ForumCommentReplyTarget> onReplyComment;
 
@@ -801,7 +800,7 @@ class _ForumChildCommentSectionState extends State<_ForumChildCommentSection> {
                     _ForumChildCommentCard(
                       comment: reply,
                       targetCommentId: widget.targetCommentId,
-                      registerCommentKey: widget.registerCommentKey,
+                      commentKeyFor: widget.commentKeyFor,
                       onOpenProfileUser: widget.onOpenProfileUser,
                       onReplyComment: widget.onReplyComment,
                     ),
@@ -855,21 +854,20 @@ class _ForumChildCommentCard extends StatelessWidget {
   const _ForumChildCommentCard({
     required this.comment,
     required this.targetCommentId,
-    required this.registerCommentKey,
+    required this.commentKeyFor,
     required this.onOpenProfileUser,
     required this.onReplyComment,
   });
 
   final ForumCommentSummary comment;
   final String? targetCommentId;
-  final void Function(String commentId, GlobalKey key) registerCommentKey;
+  final GlobalKey Function(String commentId) commentKeyFor;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<_ForumCommentReplyTarget> onReplyComment;
 
   @override
   Widget build(BuildContext context) {
-    final key = GlobalKey();
-    registerCommentKey(comment.id, key);
+    final key = commentKeyFor(comment.id);
 
     return DecoratedBox(
       key: key,

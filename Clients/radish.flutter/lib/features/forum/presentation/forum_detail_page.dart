@@ -470,7 +470,7 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
                           targetCommentId: _targetCommentId,
                           expandedRootCommentId: _expandedRootCommentId,
                           expandedChildPageIndex: _expandedChildPageIndex,
-                          registerCommentKey: _registerCommentKey,
+                          commentKeyFor: _commentKeyFor,
                           onOpenProfileUser: widget.onOpenProfileUser,
                           onReplyComment: _startCommentReply,
                           onStartCommentEdit: _startCommentEdit,
@@ -1192,11 +1192,12 @@ class _ForumDetailPageState extends State<ForumDetailPage> {
     });
   }
 
-  void _registerCommentKey(String commentId, GlobalKey key) {
-    _commentKeys[commentId] = key;
+  GlobalKey _commentKeyFor(String commentId) {
+    final key = _commentKeys.putIfAbsent(commentId, GlobalKey.new);
     if (commentId == _targetCommentId && _pendingNavigationSignature != null) {
       _schedulePendingCommentScroll();
     }
+    return key;
   }
 
   Future<void> _startCommentNavigationIfNeeded(String resolvedPostId) async {

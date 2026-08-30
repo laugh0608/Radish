@@ -232,7 +232,7 @@ class _ForumDetailContent extends StatelessWidget {
     required this.targetCommentId,
     required this.expandedRootCommentId,
     required this.expandedChildPageIndex,
-    required this.registerCommentKey,
+    required this.commentKeyFor,
     required this.onOpenProfileUser,
     required this.onReplyComment,
     required this.onStartCommentEdit,
@@ -285,7 +285,7 @@ class _ForumDetailContent extends StatelessWidget {
   final String? targetCommentId;
   final String? expandedRootCommentId;
   final int? expandedChildPageIndex;
-  final void Function(String commentId, GlobalKey key) registerCommentKey;
+  final GlobalKey Function(String commentId) commentKeyFor;
   final ValueChanged<String>? onOpenProfileUser;
   final ValueChanged<_ForumCommentReplyTarget> onReplyComment;
   final ValueChanged<_ForumCommentEditTarget> onStartCommentEdit;
@@ -516,7 +516,7 @@ class _ForumDetailContent extends StatelessWidget {
               targetCommentId: targetCommentId,
               expandedRootCommentId: expandedRootCommentId,
               expandedChildPageIndex: expandedChildPageIndex,
-              registerCommentKey: registerCommentKey,
+              commentKeyFor: commentKeyFor,
               onOpenProfileUser: onOpenProfileUser,
               onReplyComment: onReplyComment,
               onStartCommentEdit: onStartCommentEdit,
