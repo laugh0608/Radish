@@ -34,6 +34,7 @@ Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应
 
 - Flutter 使用系统浏览器承接 Gateway / Auth 的 OIDC Authorization Code + PKCE 登录，不在 App 内复制账号密码表单、Cookie 或授权页面。
 - App 只保存当前 pending login attempt 所需的 state / verifier 与最终 token session；浏览器取消、回调 state 不匹配或尝试过期必须显示可恢复错误，不接受未知 callback。
+- Native authorization attempt 自打开系统浏览器起有效 `15` 分钟，用于覆盖系统浏览器交互、开发证书确认与 Activity / Flutter owner 重建；超时、redirect 不一致、state 不匹配和重放仍 fail closed，成功或校验失败后一次性消费。
 - 本地 Android 使用 `https://localhost:5000` 时，App API client 可按开发环境规则接受本地证书；系统浏览器仍可能单独显示开发证书警告，该环境行为不改变生产证书或统一登录边界。
 
 ## 榜单到公开主页

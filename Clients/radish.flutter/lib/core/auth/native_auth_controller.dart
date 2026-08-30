@@ -59,7 +59,7 @@ class NativeAuthState {
 }
 
 class NativeAuthController extends ChangeNotifier {
-  static const _authorizationAttemptTtl = Duration(minutes: 5);
+  static const _authorizationAttemptTtl = Duration(minutes: 15);
 
   NativeAuthController({
     required AppEnvironment environment,

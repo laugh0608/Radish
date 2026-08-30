@@ -11,6 +11,7 @@
 - 当前为 Android 起步的原生客户端；iOS 与 Windows / macOS / Linux 在共享 UI 和平台门禁通过后分别产品化
 - `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
 - 最小登录、退出、会话恢复、Android 本地会话持久化与系统浏览器 OIDC 回调；请求前统一处理临近过期 token，同一 token 并发 refresh 合并，首次 `401` 只强制 refresh 后重试一次，只有 `invalid_grant` 清除会话
+- Native OIDC authorization attempt 自打开系统浏览器起有效 `15` 分钟，以覆盖系统浏览器交互、开发证书确认与 Activity / Flutter owner 重建；state、PKCE、redirect 绑定、超时与重放校验继续 fail closed，并保持一次性消费
 - forum feed、forum detail、问答回答、评论分页、子评论分页、评论发布 / 回复、作者编辑帖子正文 / 根评论、作者跳转与 detail 原地登录续接；回答失败重试复用 `forum-answer:` 提交意图 key，评论 / 回复失败重试复用 `forum-comment:` 提交意图 key，帖子 / 评论编辑失败重试复用 `forum-post-edit:` / `forum-comment-edit:` 提交意图 key
 - forum detail 轻回应发布后局部体验：输入与服务端统一为最多 `10` 字，发布成功后即时前插到轻回应墙并给出局部成功反馈，发布失败只在轻回应区提示；从轻回应区发起登录后会回到当前轻回应区继续发布
 - discover 论坛精选直达：`discover` 中的论坛精选帖子可直接打开原生 forum detail，并按发现页来源返回
