@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P6 Android UI AVD RC Go`、`P7-A iOS platform readiness` 已关闭；下一顺位为 `P7-B` 方案确认
+> 状态：`P6 Android UI AVD RC Go`、`P7-A readiness` 与 `P7-B platform foundation` 已关闭；下一顺位为 `P7-C Simulator runtime acceptance readiness`
 >
 > 最后更新：2026-08-30（Asia/Shanghai）
 >
@@ -43,6 +43,7 @@
 > - [P6-B Android AVD 运行态验收关闭](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)
 > - [P6 Android AVD 门禁项目所有者关闭](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)
 > - [P7-A iOS 平台 readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)
+> - [P7-B iOS platform foundation 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)
 
 ## 1. 结论摘要
 
@@ -53,7 +54,7 @@ Radish 长期只维护两条正式产品线：
 
 `Frontend/radish.client` 的 WebOS `/desktop` 继续作为 Web 内的历史兼容入口，不构成第三条产品线。`Clients/radish-tauri` 正式弃用，只保留历史代码与验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁。Flutter Web 不进入路线，避免维护第二套 Web 前端。
 
-P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。P4 / P5 已完成首轮主题、壳层、高价值页面族、派生只读面和成组静态门禁；P6-B 两轮真实 AVD 已修正五组跨端契约、确认 medium OIDC / 冷启动 / 主题私域，并关闭 compact 真实输入法与根评论连续 CAS。项目所有者随后裁决双 AVD 足以给出 `Android UI AVD RC Go` 并进入下一阶段，P6-C 真机验收转为 Android 分发前后置门禁；P7-A 已完成 iOS 工具链、平台目录和 runtime owner readiness，下一顺位为 P7-B 方案确认。
+P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。P4 / P5 已完成首轮主题、壳层、高价值页面族、派生只读面和成组静态门禁；P6-B 两轮真实 AVD 已修正五组跨端契约、确认 medium OIDC / 冷启动 / 主题私域，并关闭 compact 真实输入法与根评论连续 CAS。项目所有者随后裁决双 AVD 足以给出 `Android UI AVD RC Go` 并进入下一阶段，P6-C 真机验收转为 Android 分发前后置门禁；P7-A 完成 iOS 工具链与 runtime owner readiness，P7-B 已生成 iOS 工程、建立安全认证存储、非敏感偏好、Android 幂等迁移及 UIScene OIDC callback，并通过 Android / iOS 原生 build 门禁。当前进入 P7-C readiness，不提前启动 Simulator。
 
 ## 2. 产品边界
 
@@ -358,7 +359,8 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - `P6-A Android local RC candidate assembly`（已完成，2026-08-27）：Flutter analyze 零问题、全量 `419 / 419`、Android JVM `7 / 7` 与 release 构建通过；候选固定为 SHA-256 `d7b1b9d1f12e5943bae7ddffe3daffcf6071d63ddb79a186ae16e05946234200`、`26.8.2+1`、三 ABI、`development + https://localhost:5000`。包身份、权限、OIDC、SDK、AOT define 与 debug-signing 性质均已冻结；该哈希已被 P6-B 第一轮运行时修正取代，详见 [P6-A 记录](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)与 [P6-B 第一轮记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)。
 - `P6-B Android AVD runtime acceptance`（已关闭，2026-08-30）：第一轮 compact / medium API 35 真实运行修正会话统一续签、公开资料 Public API、Forum revision、轻回应 `10` 字上限和 Profile 地址清空语义；第二轮确认首个 medium callback 因约 `15 分 55 秒` 超过 `15 分钟` TTL 而正确 fail closed，新尝试完成 OIDC、私域与冷启动，并修正评论卡片重建导致的输入法失焦。最终哈希 `b08d0f5e…2cc174` 在双 AVD 完成受影响复验，compact 根评论连续 CAS `1 -> 2 -> 3` 成立，详见 [第一轮记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)与[关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)。
 - `P6 Android AVD gate owner closure`（已完成，2026-08-30）：项目所有者确认 compact / medium 双 API 35 AVD 足以关闭本阶段 Android UI 开发门禁，当前结论为 `Android UI AVD RC Go`；P6-C 未执行且不写作通过，转为未来 Android 正式签名 / AAB / 分发前门禁，详见[裁决记录](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)。
-- `P7-A iOS platform readiness`（已完成，2026-08-30）：本机 Flutter `3.44.0`、Xcode `26.6`、CocoaPods `1.16.2`、iOS `26.5` SDK / Simulator runtime 完整；仓库尚无 `ios/`，非 Android bootstrap 当前只使用内存 session / auth / follow-up 与空 lifecycle。P7-B 建议以系统安全存储承载 session / OIDC attempt、既有 `shared_preferences` 承载非敏感回访状态，并完成 Android 旧明文数据幂等迁移与最小 iOS native auth bridge；新增安全存储依赖需单独核定和授权，详见 [P7-A readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)。
+- `P7-A iOS platform readiness`（已完成，2026-08-30）：本机 Flutter `3.44.0`、Xcode `26.6`、CocoaPods `1.16.2`、iOS `26.5` SDK / Simulator runtime 完整；实施前缺少 `ios/` 与真实 iOS runtime owner，详见 [P7-A readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)。
+- `P7-B iOS platform foundation`（已完成，2026-08-30）：iOS `13.0+` / `com.radish.client` / `Radish` / `radish` URL scheme 工程已生成；`flutter_secure_storage 10.3.1` 承担 session / OIDC attempt，`shared_preferences` 承担非敏感 recent / pending，Android 旧状态只在新 owner 缺失时迁移并回读确认后清除。Flutter `435 / 435`、analyze、Android JVM `7 / 7`、新 Debug APK、iOS 无签名 `Runner.app`、Swift callback parser 与 RunnerTests build-for-testing 均通过，详见 [P7-B 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)。
 
 每批保留业务状态、幂等、来源返回和原生 handoff，按继承关系改呈现；单批不跨越多个高风险写入领域，不顺手扩新功能。
 
@@ -367,7 +369,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 ### P6–P7：平台产品化与发布门禁
 
 - Android 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`；P6-C 真机验收转为 Android 分发前门禁，不写作已通过。
-- iOS 已进入 P7：P7-A readiness 已关闭，P7-B platform foundation 等待方案确认，P7-C Simulator 运行态与 P7-D 真机 / 分发分别独立验收。
+- iOS 已进入 P7：P7-A readiness 与 P7-B platform foundation 已关闭，当前进入 P7-C Simulator runtime acceptance readiness；P7-C 运行态与 P7-D 真机 / 分发继续分别独立确认和验收。
 - desktop 在共享 UI 通过宽屏和输入门禁后，按 Windows、macOS、Linux 分别生成 / 补齐平台工程、构建、签名、更新和分发。
 - 平台工程与分发要求独立授权和记录，不因 Dart UI 可运行自动宣称产品完成。
 
@@ -393,4 +395,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-08-30）
 
-P6-B 已完成真实服务、compact / medium API 35 AVD、系统浏览器 OIDC、私域读取、冷启动、四主题代表面、真实输入法和高风险 Forum CAS，并冻结历史 APK SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`。项目所有者已确认双 AVD 足以进入下一阶段；P7-A 随后确认 iOS 工具链完整但平台工程与真实 runtime owner 尚缺。当前第一顺位为确认 P7-B 的安全认证存储、非敏感跨平台偏好、Android 幂等迁移、iOS 平台工程和 OIDC callback 最小桥接方案；确认前不生成平台工程、安装依赖或修改运行时代码。
+P6-B 已完成真实服务、compact / medium API 35 AVD、系统浏览器 OIDC、私域读取、冷启动、四主题代表面、真实输入法和高风险 Forum CAS，并冻结历史 APK SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`。项目所有者已确认双 AVD 足以进入下一阶段；P7-A 随后确认 iOS 工具链完整，P7-B 已建立 iOS 工程与真实 runtime owner，并关闭 Android / iOS 原生 build 门禁。当前第一顺位只做 P7-C readiness，冻结 phone / tablet、OIDC、冷启动、安全持久化、recent 回访、证据与清理矩阵；方案确认前不启动 P7-C 服务或 Simulator。

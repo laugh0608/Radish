@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/services.dart';
+import '../storage/secure_value_store.dart';
 
 class AuthSession {
   const AuthSession({
@@ -102,22 +102,23 @@ class InMemorySessionStore implements SessionStore {
   }
 }
 
-class PlatformSessionStore implements SessionStore {
-  PlatformSessionStore({
-    MethodChannel? channel,
-  }) : _channel =
-            channel ?? const MethodChannel('radish.flutter/session_store');
+class SecureSessionStore implements SessionStore {
+  SecureSessionStore({
+    required SecureValueStore secureValues,
+  }) : _secureValues = secureValues;
 
-  final MethodChannel _channel;
+  static const storageKey = 'radish.auth.session.v1';
+
+  final SecureValueStore _secureValues;
 
   @override
   Future<void> clear() async {
-    await _channel.invokeMethod<void>('clear');
+    await _secureValues.delete(storageKey);
   }
 
   @override
   Future<AuthSession?> read() async {
-    final rawJson = await _channel.invokeMethod<String>('read');
+    final rawJson = await _secureValues.read(storageKey);
     if (rawJson == null || rawJson.isEmpty) {
       return null;
     }
@@ -127,8 +128,8 @@ class PlatformSessionStore implements SessionStore {
 
   @override
   Future<void> write(AuthSession session) async {
-    await _channel.invokeMethod<void>(
-      'write',
+    await _secureValues.write(
+      storageKey,
       jsonEncode(session.toJson()),
     );
   }

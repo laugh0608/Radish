@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import '../../../core/storage/string_preference_store.dart';
 import 'docs_models.dart';
 
 abstract class DocsFollowUpStore {
@@ -70,6 +71,61 @@ class InMemoryDocsFollowUpStore implements DocsFollowUpStore {
     _recentDocumentTargets = _upsertRecentDocumentTarget(
       _recentDocumentTargets,
       target.copyWith(source: DocsDetailHandoffSource.browseHistory),
+    );
+  }
+}
+
+class PersistentDocsFollowUpStore implements DocsFollowUpStore {
+  PersistentDocsFollowUpStore({
+    required StringPreferenceStore preferences,
+  }) : _preferences = preferences;
+
+  static const recentDocumentTargetsKey =
+      'radish.docs.recent_document_targets.v1';
+
+  final StringPreferenceStore _preferences;
+
+  @override
+  Future<void> clearRecentDocumentTarget() {
+    return _preferences.delete(recentDocumentTargetsKey);
+  }
+
+  @override
+  Future<DocsDetailHandoffTarget?> readRecentDocumentTarget() async {
+    final targets = await readRecentDocumentTargets();
+    return targets.isEmpty ? null : targets.first;
+  }
+
+  @override
+  Future<List<DocsDetailHandoffTarget>> readRecentDocumentTargets() async {
+    final payload = await _preferences.read(recentDocumentTargetsKey);
+    if (payload == null || payload.trim().isEmpty) {
+      return const <DocsDetailHandoffTarget>[];
+    }
+
+    final decoded = jsonDecode(payload);
+    if (decoded is! List) {
+      return const <DocsDetailHandoffTarget>[];
+    }
+
+    return _normalizeTargets(
+      decoded
+          .map(DocsDetailHandoffTarget.fromJson)
+          .whereType<DocsDetailHandoffTarget>(),
+    );
+  }
+
+  @override
+  Future<void> writeRecentDocumentTarget(
+    DocsDetailHandoffTarget target,
+  ) async {
+    final nextTargets = _upsertRecentDocumentTarget(
+      await readRecentDocumentTargets(),
+      target.copyWith(source: DocsDetailHandoffSource.browseHistory),
+    );
+    await _preferences.write(
+      recentDocumentTargetsKey,
+      jsonEncode(nextTargets.map((item) => item.toJson()).toList()),
     );
   }
 }

@@ -1,24 +1,17 @@
-import 'dart:io';
-
 import 'package:flutter/widgets.dart';
 
 import '../core/auth/session_controller.dart';
 import '../core/auth/native_auth_controller.dart';
-import '../core/auth/native_auth_gateway.dart';
 import '../core/auth/authorization_code_exchange_service.dart';
 import '../core/auth/session_refresh_service.dart';
-import '../core/auth/session_store.dart';
 import '../core/config/app_environment.dart';
 import '../core/network/radish_api_client.dart';
 import '../core/network/radish_api_endpoints.dart';
-import '../core/platform/app_lifecycle_gateway.dart';
 import '../core/theme/radish_theme_controller.dart';
 import '../core/theme/radish_theme_preference_store.dart';
 import '../features/discover/data/discover_repository.dart';
-import '../features/docs/data/docs_follow_up_store.dart';
 import '../features/docs/data/docs_repository.dart';
 import '../features/experience/data/experience_repository.dart';
-import '../features/forum/data/forum_follow_up_store.dart';
 import '../features/forum/data/forum_repository.dart';
 import '../features/leaderboard/data/leaderboard_repository.dart';
 import '../features/notifications/data/notification_repository.dart';
@@ -27,6 +20,7 @@ import '../features/shop/data/shop_repository.dart';
 import '../features/shop/data/shop_theme_entitlement_gateway.dart';
 import '../features/wallet/data/wallet_repository.dart';
 import 'app.dart';
+import 'platform_services.dart';
 
 class RadishBootstrap {
   const RadishBootstrap();
@@ -35,28 +29,18 @@ class RadishBootstrap {
     WidgetsFlutterBinding.ensureInitialized();
 
     final environment = AppEnvironment.developmentForCurrentPlatform();
-    final sessionStore =
-        Platform.isAndroid ? PlatformSessionStore() : InMemorySessionStore();
-    final authGateway = Platform.isAndroid
-        ? PlatformNativeAuthGateway()
-        : InMemoryNativeAuthGateway();
-    final followUpStore = Platform.isAndroid
-        ? PlatformForumFollowUpStore()
-        : InMemoryForumFollowUpStore();
-    final docsFollowUpStore = Platform.isAndroid
-        ? PlatformDocsFollowUpStore()
-        : InMemoryDocsFollowUpStore();
-    final appLifecycleGateway = Platform.isAndroid
-        ? PlatformAppLifecycleGateway()
-        : const EmptyAppLifecycleGateway();
+    final platformServices = RadishPlatformServices.forPlatform(
+      RadishPlatformKind.current(),
+    );
+    await platformServices.initialize();
     final sessionController = SessionController(
-      sessionStore: sessionStore,
+      sessionStore: platformServices.sessionStore,
       refreshService: SessionRefreshService(environment: environment),
     );
     final authController = NativeAuthController(
       environment: environment,
       sessionController: sessionController,
-      gateway: authGateway,
+      gateway: platformServices.authGateway,
       exchangeService: HttpAuthorizationCodeExchangeService(
         environment: environment,
       ),
@@ -131,10 +115,10 @@ class RadishBootstrap {
         shopRepository: shopRepository,
         walletRepository: walletRepository,
         experienceRepository: experienceRepository,
-        followUpStore: followUpStore,
-        docsFollowUpStore: docsFollowUpStore,
+        followUpStore: platformServices.followUpStore,
+        docsFollowUpStore: platformServices.docsFollowUpStore,
         notificationRepository: notificationRepository,
-        appLifecycleGateway: appLifecycleGateway,
+        appLifecycleGateway: platformServices.appLifecycleGateway,
         themeController: themeController,
       ),
     );

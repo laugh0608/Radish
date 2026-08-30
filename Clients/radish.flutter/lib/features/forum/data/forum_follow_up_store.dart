@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import '../../../core/storage/string_preference_store.dart';
 import 'forum_models.dart';
 
 abstract class ForumFollowUpStore {
@@ -165,6 +166,124 @@ class InMemoryForumFollowUpStore implements ForumFollowUpStore {
               commentId: target.forumTarget!.normalizedCommentId,
             ),
     );
+  }
+}
+
+class PersistentForumFollowUpStore implements ForumFollowUpStore {
+  PersistentForumFollowUpStore({
+    required StringPreferenceStore preferences,
+    MethodChannel? pendingHandoffChannel,
+  })  : _preferences = preferences,
+        _pendingHandoffChannel = pendingHandoffChannel ??
+            const MethodChannel('radish.flutter/forum_follow_up');
+
+  static const recentBrowseHandoffsKey =
+      'radish.forum.recent_browse_handoffs.v1';
+  static const recentProfileUserIdKey = 'radish.profile.recent_user_id.v1';
+  static const pendingPostLoginTargetKey =
+      'radish.shell.pending_post_login_target.v1';
+
+  final StringPreferenceStore _preferences;
+  final MethodChannel _pendingHandoffChannel;
+
+  @override
+  Future<void> clearPendingPostLoginTarget() {
+    return _preferences.delete(pendingPostLoginTargetKey);
+  }
+
+  @override
+  Future<void> clearRecentBrowseHandoff() {
+    return _preferences.delete(recentBrowseHandoffsKey);
+  }
+
+  @override
+  Future<void> clearRecentProfileUserId() {
+    return _preferences.delete(recentProfileUserIdKey);
+  }
+
+  @override
+  Future<ShellPostLoginTarget?> readPendingPostLoginTarget() async {
+    final payload = await _preferences.read(pendingPostLoginTargetKey);
+    if (payload == null || payload.trim().isEmpty) {
+      return null;
+    }
+
+    return ShellPostLoginTarget.fromJson(jsonDecode(payload));
+  }
+
+  @override
+  Future<ForumDetailHandoffTarget?> readRecentBrowseHandoff() async {
+    final targets = await readRecentBrowseHandoffs();
+    return targets.isEmpty ? null : targets.first;
+  }
+
+  @override
+  Future<List<ForumDetailHandoffTarget>> readRecentBrowseHandoffs() async {
+    final payload = await _preferences.read(recentBrowseHandoffsKey);
+    if (payload == null || payload.trim().isEmpty) {
+      return const <ForumDetailHandoffTarget>[];
+    }
+
+    final decoded = jsonDecode(payload);
+    if (decoded is! List) {
+      return const <ForumDetailHandoffTarget>[];
+    }
+
+    return _normalizeRecentBrowseTargets(
+      decoded
+          .map(ForumDetailHandoffTarget.fromJson)
+          .whereType<ForumDetailHandoffTarget>(),
+    );
+  }
+
+  @override
+  Future<String?> readRecentProfileUserId() async {
+    return _normalizeUserId(
+      await _preferences.read(recentProfileUserIdKey),
+    );
+  }
+
+  @override
+  Future<ForumDetailHandoffTarget?> takePendingHandoff() async {
+    final payload = await _pendingHandoffChannel.invokeMethod<String>(
+      'takePendingHandoff',
+    );
+    if (payload == null || payload.trim().isEmpty) {
+      return null;
+    }
+
+    return ForumDetailHandoffTarget.fromJson(jsonDecode(payload));
+  }
+
+  @override
+  Future<void> writePendingPostLoginTarget(ShellPostLoginTarget target) {
+    return _preferences.write(
+      pendingPostLoginTargetKey,
+      jsonEncode(target.toJson()),
+    );
+  }
+
+  @override
+  Future<void> writeRecentBrowseHandoff(ForumDetailHandoffTarget target) async {
+    final nextTargets = _upsertRecentBrowseTarget(
+      await readRecentBrowseHandoffs(),
+      target,
+    );
+    await _preferences.write(
+      recentBrowseHandoffsKey,
+      jsonEncode(nextTargets.map((item) => item.toJson()).toList()),
+    );
+  }
+
+  @override
+  Future<void> writeRecentProfileUserId(String userId) async {
+    final normalizedUserId = _normalizeUserId(userId);
+    if (normalizedUserId == null) {
+      await clearRecentProfileUserId();
+      return;
+    }
+
+    await _preferences.write(recentProfileUserIdKey, normalizedUserId);
   }
 }
 

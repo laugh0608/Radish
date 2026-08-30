@@ -2,15 +2,15 @@
 
 `radish.flutter` 是 Radish Flutter Native 原生安装包产品线的仓库落点，现有实现起源于 `Phase 2-3 Flutter 客户端 MVP`。
 
-当前只有 Android 平台工程；Android 新版 UI 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`，真机验收转为分发前后置门禁。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
+当前已建立 Android 与 iOS 平台工程；Android 新版 UI 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`，真机验收转为分发前后置门禁。iOS 已进入 P7 平台基座阶段，运行态 Simulator 验收、真机、签名与分发仍未开放。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
 现有业务链路继续作为产品化基线。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、P5-B1–D3 与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成主题、页面族、状态 owner 与三档 surface；P6-A / B 完成 Android 候选装配与双 AVD 运行态。[P6 Android AVD 门禁裁决](../../Docs/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30.md)允许以 `Android UI AVD RC Go` 进入下一阶段，[P7-A iOS readiness](../../Docs/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30.md)已确认工具链完整，并冻结 P7-B 的平台工程、安全认证存储、非敏感跨平台偏好、Android 幂等迁移与 iOS OIDC callback 建议方案。
 
 ## 当前范围
 
-- 当前为 Android 起步的原生客户端；iOS 与 Windows / macOS / Linux 在共享 UI 和平台门禁通过后分别产品化
+- 当前为 Android 起步、iOS 已建立平台基座的原生客户端；Windows / macOS / Linux 在共享 UI 和平台门禁通过后分别产品化
 - `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
-- 最小登录、退出、会话恢复、Android 本地会话持久化与系统浏览器 OIDC 回调；请求前统一处理临近过期 token，同一 token 并发 refresh 合并，首次 `401` 只强制 refresh 后重试一次，只有 `invalid_grant` 清除会话
+- 最小登录、退出、会话恢复与 Android / iOS 系统浏览器 OIDC 回调；session token 与 OIDC authorization attempt 通过 Android Keystore / iOS Keychain 支撑的安全存储持久化，Forum / Docs recent、recent profile 与 pending post-login target 使用非敏感跨平台偏好；Android 首次升级按“新 owner 缺失 -> 读取旧值 -> 写入并回读确认 -> 清除旧值”幂等迁移。请求前统一处理临近过期 token，同一 token 并发 refresh 合并，首次 `401` 只强制 refresh 后重试一次，只有 `invalid_grant` 清除会话
 - Native OIDC authorization attempt 自打开系统浏览器起有效 `15` 分钟，以覆盖系统浏览器交互、开发证书确认与 Activity / Flutter owner 重建；state、PKCE、redirect 绑定、超时与重放校验继续 fail closed，并保持一次性消费
 - forum feed、forum detail、问答回答、评论分页、子评论分页、评论发布 / 回复、作者编辑帖子正文 / 根评论、作者跳转与 detail 原地登录续接；回答失败重试复用 `forum-answer:` 提交意图 key，评论 / 回复失败重试复用 `forum-comment:` 提交意图 key，帖子 / 评论编辑失败重试复用 `forum-post-edit:` / `forum-comment-edit:` 提交意图 key
 - forum detail 轻回应发布后局部体验：输入与服务端统一为最多 `10` 字，发布成功后即时前插到轻回应墙并给出局部成功反馈，发布失败只在轻回应区提示；从轻回应区发起登录后会回到当前轻回应区继续发布
@@ -42,7 +42,7 @@
 
 ## 当前不含
 
-- iOS / Windows / macOS / Linux 平台工程、签名、更新与分发门禁
+- iOS Simulator 运行态验收、真机、签名、更新与分发门禁，以及 Windows / macOS / Linux 平台工程
 - 聊天、完整通知中心、完整商城工作台、完整资产中心、完整创作器、购物车、退款、除主题选择外的权益使用、道具使用、回答采纳、编辑治理
 - “移动版 WebOS”
 
@@ -72,6 +72,7 @@ Flutter 不引入移动端专属 BFF，`HttpRadishApiClient` 直接消费 Gatewa
 ```text
 Clients/radish.flutter/
 ├── android/
+├── ios/
 ├── lib/
 │   ├── app/
 │   ├── core/
@@ -91,7 +92,7 @@ Clients/radish.flutter/
 4. `P4-A / P4-B1–B5` 已完成 readiness、Theme / Shared、Web-Family Adaptive Shell、统一公开 Discover cursor 流、Forum Detail 代表页与成组静态门禁
 5. `P5-A / P5-B1 / P5-B2 / P5-C1 / P5-C2 / P5-C3 / P5-D1 / P5-D2 / P5-D3 / P5-E` 已完成拆批、页面族与成组静态门禁
 6. `P6 Android UI RC readiness / P6-A 本地候选装配 / P6-B AVD 运行态` 已完成；最终 APK SHA-256 为 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`，项目所有者已裁决双 AVD 足以进入下一阶段，P6-C 真机转为 Android 分发前门禁
-7. `P7-A iOS platform readiness` 已完成；下一顺位为 P7-B 方案确认，尚未生成 `ios/`、修改运行时代码、启动 Simulator 或形成 iOS 构建结论
+7. `P7-A iOS platform readiness` 与 `P7-B iOS platform foundation` 已完成；`ios/`、安全认证存储、非敏感跨平台偏好、Android 幂等迁移、iOS OIDC callback 与显式平台选择均已落地，Android JVM / Debug APK、iOS 无签名 Simulator build 与 RunnerTests build-for-testing 已通过；下一顺位为 P7-C readiness，运行前仍需单独授权服务与 Simulator
 
 ## Flutter 环境切换
 
@@ -107,7 +108,7 @@ https://localhost:5000
 
 - `RADISH_ENVIRONMENT`：环境名称，默认 `development`，常用值为 `development` / `testing` / `production`
 - `RADISH_GATEWAY_BASE_URL`：Gateway 基址，需包含 `https://` 或 `http://`，末尾 `/` 会自动收口
-- `RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES`：是否允许本机开发证书，默认仅 Android + `localhost` Gateway 自动开启
+- `RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES`：是否允许本机开发证书，默认仅 Android + `localhost` Gateway 自动开启；iOS 必须显式传入 `true`，且代码仍只对 loopback Gateway 生效
 
 本机 Android 开发态示例：
 
@@ -129,7 +130,7 @@ flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-d
 
 ## 平台目录说明
 
-Android 平台目录已经生成。iOS 已进入 P7 平台阶段，但 P7-A readiness 只确认工具链与实施边界，当前仍未生成 `ios/`；P7-B 需在方案确认后建立平台工程、安全认证存储、非敏感跨平台偏好和系统浏览器 OIDC callback，新增安全存储依赖仍需单独授权。Windows / macOS / Linux 继续等待 expanded 布局、键鼠、焦点、滚动和窗口门禁后再逐个平台进入工程与分发批次。Tauri 和 WebOS 不再作为桌面安装包替代路线。
+Android 与 iOS 平台目录已经生成。P7-B 使用 `flutter_secure_storage 10.3.1`：Android 采用 RSA-OAEP + AES-GCM 并禁用应用数据自动备份，iOS 使用 Keychain 与 `first_unlock_this_device` 可访问级别；非敏感回访状态继续由 `shared_preferences` 承担。iOS 工程固定 `com.radish.client`、`Radish`、iOS `13.0+` 与 `radish` URL scheme，不包含本机 Apple Team、证书或 provisioning 信息。Windows / macOS / Linux 继续等待 expanded 布局、键鼠、焦点、滚动和窗口门禁后再逐个平台进入工程与分发批次。Tauri 和 WebOS 不再作为桌面安装包替代路线。
 
 ## Android 模拟器联调
 

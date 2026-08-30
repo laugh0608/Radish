@@ -1,10 +1,10 @@
 # Flutter 移动端 handoff 与回流说明
 
-本文说明 Flutter Android MVP 已经成立的原生导航、外部来源、登录回流、公开链接、登录态轻写入与复访承接边界。完整客户端范围仍以 `Clients/radish.flutter/README.md` 为准。
+本文说明 Flutter Native 已成立的原生导航、外部来源、登录回流、公开链接、登录态轻写入与复访承接边界。Android 已有真实 AVD 运行证据；iOS 已完成 P7-B 平台 owner 与无签名 Simulator build，尚未取得 Simulator 运行态。完整客户端范围仍以 `Clients/radish.flutter/README.md` 为准。
 
 ## 总体边界
 
-Flutter 当前是条件式维护资产，不是与纯 Web 并行的产品主线，也不复刻 WebOS。已验收 MVP 包含公开内容阅读、原生返回、登录续接、个人复访、基础个人资料编辑、通知列表与单条已读、forum 评论 / 问答回答 / 轻回应 / 纯文本发帖写入、作者帖子正文编辑、作者根评论编辑、公开商品浏览、登录态单商品购买、订单 / 背包查看、胡萝卜资产与经验记录只读查看、公开详情链接复制和 docs 原生阅读链路；当前只修复阻断、安全与认证兼容问题，不默认新增功能、扩 iOS 或追平纯 Web。
+Flutter Native 是 Web 之外唯一正式原生安装包产品线，但保持次级优先、mobile-first、desktop stage-gated，也不复刻 WebOS。Android 已验收 MVP 包含公开内容阅读、原生返回、登录续接、个人复访、基础个人资料编辑、通知列表与单条已读、forum 评论 / 问答回答 / 轻回应 / 纯文本发帖写入、作者帖子正文编辑、作者根评论编辑、公开商品浏览、登录态单商品购买、订单 / 背包查看、胡萝卜资产与经验记录只读查看、公开详情链接复制和 docs 原生阅读链路；iOS 当前只建立相同 Dart UI 的平台、安全存储和 OIDC 回调基座，不把静态实现当作功能验收。
 
 当前不包含：
 
@@ -33,9 +33,10 @@ Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应
 ## 统一登录边界
 
 - Flutter 使用系统浏览器承接 Gateway / Auth 的 OIDC Authorization Code + PKCE 登录，不在 App 内复制账号密码表单、Cookie 或授权页面。
-- App 只保存当前 pending login attempt 所需的 state / verifier 与最终 token session；浏览器取消、回调 state 不匹配或尝试过期必须显示可恢复错误，不接受未知 callback。
+- App 只保存当前 pending login attempt 所需的 state / verifier 与最终 token session；两者必须进入 Android Keystore / iOS Keychain 支撑的安全存储，不得写入普通 `shared_preferences`。浏览器取消、回调 state 不匹配或尝试过期必须显示可恢复错误，不接受未知 callback。
 - Native authorization attempt 自打开系统浏览器起有效 `15` 分钟，用于覆盖系统浏览器交互、开发证书确认与 Activity / Flutter owner 重建；超时、redirect 不一致、state 不匹配和重放仍 fail closed，成功或校验失败后一次性消费。
-- 本地 Android 使用 `https://localhost:5000` 时，App API client 可按开发环境规则接受本地证书；系统浏览器仍可能单独显示开发证书警告，该环境行为不改变生产证书或统一登录边界。
+- Forum / Docs recent、recent profile 与 pending post-login target 属于非敏感设备偏好，Android / iOS 共用 Dart `shared_preferences` owner；Android 旧 MethodChannel / `SharedPreferences` 状态只在新 owner 缺失时迁移，写入并回读确认后才清除旧值。
+- 本地 Android 使用 `https://localhost:5000` 时，App API client 可按开发环境规则接受本地证书；iOS 只有显式传入 `RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES=true` 且 Gateway 为 loopback 时才允许。系统浏览器仍可能单独显示开发证书警告，该环境行为不改变 production 证书或统一登录边界。
 
 ## 榜单到公开主页
 
