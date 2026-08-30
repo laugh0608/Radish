@@ -4,6 +4,7 @@
 - 适用版本：`26.8.2+1`
 - 记录性质：Android 新版 UI RC 实施前审计与方案冻结
 - 当前结论：`Ready for P6-A`；尚未构建候选 APK、启动服务、执行 AVD / 真机 Smoke 或形成 Android UI RC Go
+- 后续裁决：项目所有者于 2026-08-30 通过 [P6 Android AVD 门禁关闭记录](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)把 P6-C 真机验收调整为分发前后置门禁；本记录保留 readiness 当时冻结的三段门禁事实
 
 ## 1. 结论摘要
 

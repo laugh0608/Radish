@@ -8,11 +8,11 @@
 
 - **当前里程碑**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P6-B fresh Android AVD OIDC pending attempt / callback 生命周期诊断与修正`
-- **产品下一顺位**：`重建唯一 APK 候选并关闭 medium authenticated、compact 根评论 CAS、default 剩余矩阵与三主题代表矩阵`
+- **工程第一顺位**：`Flutter Native P7-B iOS platform foundation 方案确认`
+- **产品下一顺位**：`建立 iOS 平台工程、安全认证存储、非敏感跨平台偏好、Android 迁移与 iOS OIDC callback 最小桥接`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布；生产部署与长期运维由项目所有者独立负责）
-- **复核日期**：`2026-08-29`
+- **复核日期**：`2026-08-30`
 - **当前结论**：
   - 第二开发阶段完成公开 Web、Flutter Android MVP、Tauri + WebOS 验证与多端裁决；2026-08-15 起正式收束为 Web / Flutter Native 两条产品线，Tauri 弃用并只保留历史资产。
   - 第三阶段 P3-1 至 P3-11 已完成公开增长基础、PublicId 试点、复访链路、Web-first 信息架构、身份语义、写操作可靠性和发布候选路径验收。
@@ -44,7 +44,7 @@
   - F4-M、F4-N、F4-O 与 F4-P 均已完成 A-D 批并关闭。F4-P 建立帖子私有收藏权威关系、显式幂等状态、个人稳定分页、不可用目标移除和正式 Web 回访闭环；D 批修正完整 `MeRoute` 来源返回并完成代表运行态矩阵、清理和严格数据库复核。
   - F4-Q 已完成 A-D 批并关闭：统一公开帖子判定，落地数据库侧标签公开计数 / 热门 / 相关聚合、标签首包 head、tags sitemap、正式 Web 相关主题和代表运行态矩阵；D 批修正 sitemap 分片、单一 JSON-LD、不可用标签 `noindex` 与 Console 软删除恢复契约，清理和严格数据库复核完成。
   - F4-R 已完成 A / B、C-0、C-1A、`R1-F01`、六个 R1、四个 R2、六组 Web R3，以及 T01 主题语义、T02 reduced-motion 和 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)；Web 主题退出门禁已关闭。Flutter Native P1 / P2 / P3、P4-A、P4-B1–B5、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)、[P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)、[P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)、[P5-D2 Leaderboard](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)、[P5-D3 Browse History](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)与 [P5-E 成组静态门禁](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)均已完成，P5 首轮静态门禁关闭。F4-S 公开排行榜治理已穿插完成并关闭。
-  - [P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)已修正会话续签、公开资料 Public API、Forum revision、轻回应 `10` 字上限与地址清空契约；[第二轮关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)进一步确认 medium 系统浏览器 OIDC / 冷启动、四主题代表面、compact 真实输入法与根评论连续 CAS，P6-B 当前为 `Go`。最终 APK SHA-256 为 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`；下一顺位是在单独授权后执行同哈希 P6-C 真机验收。
+  - [P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)已修正会话续签、公开资料 Public API、Forum revision、轻回应 `10` 字上限与地址清空契约；[第二轮关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)进一步确认 medium 系统浏览器 OIDC / 冷启动、四主题代表面、compact 真实输入法与根评论连续 CAS。项目所有者随后通过 [P6 AVD 门禁关闭裁决](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)给出 `Android UI AVD RC Go`，P6-C 真机转为分发前后置门禁；[P7-A iOS readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)已确认工具链就绪、平台工程和真实 iOS runtime owner 尚缺，下一顺位为 P7-B 方案确认。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -64,7 +64,7 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q、F4-S 及 F4-R Web 页面族 / 主题退出门禁均已关闭，`v26.8.1-release` 正式 tag 与五镜像发布完成。Flutter Native P1–P5 已完成首轮主题、页面族与成组静态门禁，P6 readiness、P6-A 本地候选装配与 P6-B 双 AVD 运行态均已关闭；下一顺位为单独授权的同哈希 P6-C Android 真机验收。生产部署与长期运维由项目所有者独立负责，不进入当前开发顺位。
+- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q、F4-S 及 F4-R Web 页面族 / 主题退出门禁均已关闭，`v26.8.1-release` 正式 tag 与五镜像发布完成。Flutter Native P1–P5、P6 Android 双 AVD 开发门禁与 P7-A iOS readiness 均已关闭；P6-C 真机验收按项目所有者裁决转为 Android 分发前门禁，当前下一顺位为 P7-B iOS platform foundation 方案确认。生产部署与长期运维由项目所有者独立负责，不进入当前开发顺位。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
 - 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊、F4-B 至 F4-Q 与 F4-S 已关闭，功能完成线继续推进 Flutter Native 产品化与 UI 重构。
 - Q4、公开 head 和 WebOS 继续按触达范围或真实问题维护；Flutter 作为次级原生安装包产品线按明确价值推进，mobile-first、desktop stage-gated，不与 Web 优先主线并行复制功能。
@@ -135,7 +135,7 @@ Radish V1 固定为：
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
-17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)的 Web 基线已关闭；[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)已完成 P0–P5，[P5-E 成组静态门禁](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)以 `396 / 396` 成组、`419 / 419` 全量、Shell `51 / 51` 与 analyze 零问题关闭首轮静态门禁。[P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)已把实施拆为 P6-A 候选装配、P6-B compact / medium AVD 与 P6-C 同哈希真机验收；[P6-B 第一轮](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)修正五组跨端契约，[P6-B 关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)关闭 medium OIDC、主题 / 私域、compact 输入法与根评论连续 CAS。下一顺位为同哈希 P6-C，正式签名与分发继续后置。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)的 Web 基线已关闭；[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)已完成 P0–P5，[P5-E 成组静态门禁](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)以 `396 / 396` 成组、`419 / 419` 全量、Shell `51 / 51` 与 analyze 零问题关闭首轮静态门禁。P6-A / B 已完成 Android 候选装配和双 AVD 运行态，项目所有者通过 [P6 AVD 门禁关闭裁决](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)允许以 `Android UI AVD RC Go` 进入下一阶段，P6-C 真机验收改为 Android 分发前后置门禁。[P7-A iOS readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)已确认 Flutter / Xcode / CocoaPods / Simulator 工具链完整，并识别缺少 `ios/`、安全认证存储、非敏感跨平台偏好与 iOS OIDC callback owner；下一顺位为 P7-B 方案确认，iOS 真机、签名和分发继续后置。
 18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层

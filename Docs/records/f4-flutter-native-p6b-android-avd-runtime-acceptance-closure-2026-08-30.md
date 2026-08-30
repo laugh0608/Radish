@@ -4,6 +4,8 @@
 >
 > 日期：2026-08-30（Asia/Shanghai）
 >
+> 后续裁决：项目所有者已通过 [P6 Android AVD 门禁关闭记录](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)把 P6-C 真机验收调整为分发前后置门禁，允许以双 AVD 结果进入 P7；本记录仍保留 P6-B 关闭时的原始结论。
+>
 > 前置记录：[P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)
 
 ## 1. 结论
