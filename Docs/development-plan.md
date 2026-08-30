@@ -44,7 +44,7 @@
   - F4-M、F4-N、F4-O 与 F4-P 均已完成 A-D 批并关闭。F4-P 建立帖子私有收藏权威关系、显式幂等状态、个人稳定分页、不可用目标移除和正式 Web 回访闭环；D 批修正完整 `MeRoute` 来源返回并完成代表运行态矩阵、清理和严格数据库复核。
   - F4-Q 已完成 A-D 批并关闭：统一公开帖子判定，落地数据库侧标签公开计数 / 热门 / 相关聚合、标签首包 head、tags sitemap、正式 Web 相关主题和代表运行态矩阵；D 批修正 sitemap 分片、单一 JSON-LD、不可用标签 `noindex` 与 Console 软删除恢复契约，清理和严格数据库复核完成。
   - F4-R 已完成 A / B、C-0、C-1A、`R1-F01`、六个 R1、四个 R2、六组 Web R3，以及 T01 主题语义、T02 reduced-motion 和 [T03 四主题运行态](/records/f4-r-t03-web-four-theme-grouped-runtime-acceptance-2026-08-15)；Web 主题退出门禁已关闭。Flutter Native P1 / P2 / P3、P4-A、P4-B1–B5、P5-A、[P5-B1 Forum Feed / Compose](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)、[P5-B2 Identity / Revisit](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)、[P5-C1 Docs Reader](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)、[P5-C2 Commerce Browse / Transaction](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)、[P5-C3 Commerce Private](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)、[P5-D1 Wallet / Experience](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)、[P5-D2 Leaderboard](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)、[P5-D3 Browse History](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)与 [P5-E 成组静态门禁](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)均已完成，P5 首轮静态门禁关闭。F4-S 公开排行榜治理已穿插完成并关闭。
-  - [P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)已修正会话续签、公开资料 Public API、Forum revision、轻回应 `10` 字上限与地址清空契约；compact 代表写入成立，medium 匿名宽屏成立，但 fresh AVD 的 OIDC pending attempt / callback、compact 根评论 CAS 和剩余 default / 三主题矩阵未关闭。P6-B 继续 `No-Go`，P6-A 旧哈希失效，不进入 P6-C。
+  - [P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)已修正会话续签、公开资料 Public API、Forum revision、轻回应 `10` 字上限与地址清空契约；[第二轮关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)进一步确认 medium 系统浏览器 OIDC / 冷启动、四主题代表面、compact 真实输入法与根评论连续 CAS，P6-B 当前为 `Go`。最终 APK SHA-256 为 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`；下一顺位是在单独授权后执行同哈希 P6-C 真机验收。
   - F4-A 首轮仓库盘点只确认一条发布后生产 UX 证据：首次管理员入口门禁不一致。该 `P2` 已在 `dev` 修复；采集说明与模板保留为最终收尾资产，主动生产证据采集已经冻结，不再作为当前功能选题前置。
 
 ## V1 产品定位
@@ -64,7 +64,7 @@ Radish V1 固定为：
 
 ## 当前开发节奏
 
-- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q、F4-S 及 F4-R Web 页面族 / 主题退出门禁均已关闭，`v26.8.1-release` 正式 tag 与五镜像发布完成。Flutter Native P1–P5 已完成首轮主题、页面族与成组静态门禁，P6 readiness 与 P6-A 本地候选装配已关闭；P6-B 第一轮已完成取证与契约修正但仍为 `No-Go`，下一顺位先关闭 fresh AVD OIDC callback 生命周期，再重建候选并完成剩余 AVD 矩阵。生产部署与长期运维由项目所有者独立负责，不进入当前开发顺位。
+- 当前已进入发布后常态开发与 F4；一对一私聊、F4-B 至 F4-Q、F4-S 及 F4-R Web 页面族 / 主题退出门禁均已关闭，`v26.8.1-release` 正式 tag 与五镜像发布完成。Flutter Native P1–P5 已完成首轮主题、页面族与成组静态门禁，P6 readiness、P6-A 本地候选装配与 P6-B 双 AVD 运行态均已关闭；下一顺位为单独授权的同哈希 P6-C Android 真机验收。生产部署与长期运维由项目所有者独立负责，不进入当前开发顺位。
 - 发布后只保持一个主要功能专题在进行；`P0/P1` 用户问题可以中断，P2/P3 按同类问题成组维护。
 - 长期维护线处理反馈、安全、依赖、迁移和部署；F1 商城、F2 主题、F3 i18n、一对一私聊、F4-B 至 F4-Q 与 F4-S 已关闭，功能完成线继续推进 Flutter Native 产品化与 UI 重构。
 - Q4、公开 head 和 WebOS 继续按触达范围或真实问题维护；Flutter 作为次级原生安装包产品线按明确价值推进，mobile-first、desktop stage-gated，不与 Web 优先主线并行复制功能。
@@ -135,7 +135,7 @@ Radish V1 固定为：
 14. [F4-O 论坛问答回答生命周期与治理闭环](/features/forum-answer-lifecycle-governance-design)已完成 A-D 批并关闭；Answer 权威生命周期、治理通知、strict migration、正式 Web、Gateway 代表矩阵与清理均已通过。
 15. [F4-P 论坛帖子收藏与个人内容回访](/features/forum-post-bookmark-personal-library-design)已完成 A-D 批并关闭；私有 Bookmark 权威关系、显式幂等状态、个人稳定分页、不可用目标、migration、正式 Web、代表身份 Gateway 矩阵与清理均已通过。
 16. [F4-Q 论坛标签公开发现、可见性与 SEO 闭环](/features/forum-tag-public-discovery-seo-design)已完成 A-D 批并关闭；公开判定、标签聚合、Gateway head、tags sitemap、正式 Web、代表身份与 PC / mobile 运行态矩阵均已通过。
-17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)的 Web 基线已关闭；[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)已完成 P0–P5，[P5-E 成组静态门禁](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)以 `396 / 396` 成组、`419 / 419` 全量、Shell `51 / 51` 与 analyze 零问题关闭首轮静态门禁。[P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)已把实施拆为 P6-A 候选装配、P6-B compact / medium AVD 与 P6-C 同哈希真机验收；[P6-B 第一轮](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)已用真实 AVD 修正五组跨端契约，但 fresh medium AVD OIDC 回流与剩余运行矩阵未关闭，P6-A 旧哈希已失效。下一顺位先修正 callback 生命周期并重建唯一候选，正式签名与分发继续后置。
+17. [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)的 Web 基线已关闭；[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)已完成 P0–P5，[P5-E 成组静态门禁](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)以 `396 / 396` 成组、`419 / 419` 全量、Shell `51 / 51` 与 analyze 零问题关闭首轮静态门禁。[P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)已把实施拆为 P6-A 候选装配、P6-B compact / medium AVD 与 P6-C 同哈希真机验收；[P6-B 第一轮](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)修正五组跨端契约，[P6-B 关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)关闭 medium OIDC、主题 / 私域、compact 输入法与根评论连续 CAS。下一顺位为同哈希 P6-C，正式签名与分发继续后置。
 18. [F4-S 公开排行榜参与资格、隐私边界与可信度治理](/features/leaderboard)已在等待 Pencil 期间完成 A-D 并关闭：五类公开白名单、共同参与资格、稳定全序、敏感 / 未知类型拒绝、只读公开身份、Web 路由和 Gateway PC / mobile 成组验收均已收口。
 
 ## P3-12-F 门禁分层

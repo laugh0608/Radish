@@ -6,15 +6,16 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P6-B fresh Android AVD OIDC pending attempt / callback 生命周期诊断与修正`
-- **产品下一顺位**：`重建并冻结唯一 APK 哈希，关闭 medium authenticated 回流、compact 根评论 CAS、default 剩余矩阵与三套非默认主题代表矩阵`
-- **复核日期**：`2026-08-29`
+- **工程第一顺位**：`Flutter Native P6-C 同哈希 Android 真机验收准备与单独运行授权`
+- **产品下一顺位**：`在真实 Android 设备复核安装、系统浏览器 OIDC、会话 / Back / 冷启动、输入法、高风险写入与四主题代表面`
+- **复核日期**：`2026-08-30`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
+- `2026-08-30` 已完成 [Flutter Native P6-B Android AVD 运行态验收关闭](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)：现场时间线确认首个 medium callback 在约 `15 分 55 秒` 到达、超过 `15 分钟` TTL 后 fail closed 符合契约，新尝试立即完成系统浏览器 OIDC、私域读取与冷启动恢复；compact 评论编辑失焦根因为 build 中重建 `GlobalKey`，现由详情页按评论 ID 持有稳定 key。Flutter Forum Detail `33 / 33`、全量 `428 / 428`、analyze 零问题和 release 构建通过；最终 APK `82,913,651` bytes、SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174` 已安装到双 API 35 AVD，真实输入法保持焦点且根评论连续 CAS `1 -> 2 -> 3` 成立，受控数据精确恢复。P6-B 当前为 `Go`；下一顺位是在单独授权的真实 Android 设备上执行同哈希 P6-C，正式签名与外部分发继续 `No-Go`。
 - `2026-08-29` 已完成 [Flutter Native P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)：真实服务与 compact / medium API 35 AVD 暴露并修正 Flutter 会话统一续签、公开资料 Public API、Forum 作者编辑 revision、轻回应 `10` 字上限和 Profile 地址空字符串清空五组契约；修正后 Flutter `427 / 427`、后端定向 `52 / 52`、Web `557 / 557`，三宿主独立构建与新 release APK 均通过。compact 会话恢复、地址清空、帖子 CAS 与 `10` 字轻回应成立；medium 匿名宽屏成立，但 fresh AVD 经本地开发证书中断后的 OIDC pending attempt / callback 仍无法闭环，根评论运行时 CAS 与剩余 default / 三主题矩阵也未关闭。因此 P6-B 保持 `No-Go`，P6-A 旧哈希失效，下一顺位先诊断该 Auth 生命周期并重建唯一候选，不进入 P6-C。
 - `2026-08-27` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-27)：复核 `a0f872a3..56d2b464` 的 `5` 个提交与 `33` 个唯一文件，确认 P5-D3、P5-E、P6 readiness 与 P6-A 的最终代码、测试、制品和停止线记录一致；修正 UI 附录、设计源索引、Web 代表页审计和 family-ui 专题的旧阶段口径。2026-08-28 第一顺位为 P6-B compact / medium AVD 运行态验收，必须先取得单独运行授权。
 - `2026-08-27` 已完成 [Flutter Native P6-A Android 本地 RC 候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)：`dev` HEAD `7eecd402` 的 Flutter analyze 零问题、全量 `419 / 419`、Android JVM `7 / 7` 与 release APK 构建通过；候选固定为 `development + https://localhost:5000`、`26.8.2+1`、三 ABI、`82,897,267` bytes、SHA-256 `d7b1b9d1f12e5943bae7ddffe3daffcf6071d63ddb79a186ae16e05946234200`。包身份、`INTERNET`、`radish://oidc`、SDK 与 AOT define 均一致，manifest `debuggable=false`，签名为 Android Debug v2；可进入 P6-B / P6-C 本机内部验收，但外部分发仍 `No-Go`。本批没有修改运行时代码 / 平台工程 / 依赖，没有启动服务 / AVD、安装 APK 或执行真实 Smoke。
@@ -212,25 +213,25 @@
 68. 按确认方案关闭 R3-F02-C：Client 未知路径与 `/desktop` 已明确分离，两端根级运行时边界完整；Console 未登录、非 Console 用户、页面缺权、Not Found 与路由异常保持不同理由。Client、Console、类型、Lint、生产构建与 Baseline Quick 通过。
 69. 获授权后完成 R3-F02 Gateway 成组运行态验收；匿名、Admin 与非 Console `test` 的 OIDC、自服务、错误 / 路由和 PC / mobile 双语矩阵通过，运行态发现的三类共同根因已成组修正并全量回归，登录会话清理完成，专题关闭。
 
-## 当前事项（2026-08-27）
+## 当前事项（2026-08-30）
 
-1. `P6-A Android local RC candidate assembly` 已完成，详见[候选装配记录](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)。
-2. 固定候选 SHA-256 为 `d7b1b9d1f12e5943bae7ddffe3daffcf6071d63ddb79a186ae16e05946234200`，版本 `26.8.2+1`，三 ABI，显式使用 `development + https://localhost:5000`。
-3. Flutter analyze 零问题、全量 `419 / 419`、Android JVM `7 / 7`、release 构建和制品契约检查通过；manifest `debuggable=false`，签名为 Android Debug v2。
-4. 两个既有 AVD 都是 compact phone；当前没有在线 Android 设备或 medium AVD。正式签名缺失继续阻塞外部分发，不阻塞标明 debug signing 的本地 / 内部 UI RC。
-5. P6-A 没有修改运行时代码、平台工程、依赖或 Pen，没有启动服务 / AVD、安装 APK 或执行真实 Smoke；尚未形成 Android UI RC Go。
+1. `P6-B Android AVD runtime acceptance` 已关闭，详见[关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)；最终源码为 `4acb7dbf`。
+2. 唯一候选固定为 `26.8.2+1`、三 ABI、`development + https://localhost:5000`、`82,913,651` bytes、SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`。
+3. Flutter Forum Detail `33 / 33`、全量 `428 / 428`、analyze 零问题、Android JVM `7 / 7` 与 release 构建通过；双 API 35 AVD 的 OIDC、私域读取、冷启动、四主题代表面、真实输入法和连续根评论 CAS 已按影响范围关闭。
+4. 受控根评论、revision 与 submission 已精确恢复；服务、双 AVD、ADB reverse / forward 和临时 medium AVD按本批授权清理，不保留新的业务事实。
+5. 当前尚未形成 Android 新版 UI RC Go；只有 P6-C 同哈希真机验收完成后，才允许给出本地 / 内部 RC Go。
 
-## 明日事项（2026-08-30，认证运行时变更需再次确认）
+## 下一事项（P6-C，需单独确认设备与运行授权）
 
-1. 新会话先读取本页、[今日收尾记录](/records/f4-day-end-doc-review-2026-08-29)、[P6-B 第一轮记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)、[Flutter 专题](/features/flutter-native-product-ui-design)、[移动端 handoff](/guide/flutter-mobile-handoff)、[验证基线](/guide/validation-baseline)、[运行手册](/guide/operations-runbook)和 [Flutter README](../../Clients/radish.flutter/README.md)；先确认 P6-B 当前代码基线为 `3877870c`，不回退或混入无关改动。
-2. 第一顺位只审计 fresh Android AVD 的 OIDC pending attempt：定位 `state / verifier` owner、App lifecycle / Activity recreation、系统浏览器本地证书中断和 `radish://oidc/callback` 回流之间的丢失点，并先补能稳定复现“浏览器中断后 callback 找不到尝试”的定向测试。
-3. 登录继续使用系统浏览器的 Authorization Code + PKCE，不把账号密码、Cookie 或授权页面复制进 App；根因与最小修正方案明确后，先说明运行时影响并等待项目所有者批准，再修改认证代码。
-4. 修复获批后重跑 Auth 定向、Flutter 全量与 release 构建，冻结新的唯一 APK 哈希；先关闭 medium authenticated 回流和 compact 根评论 CAS，再用同哈希补齐受影响的 default 与三套非默认主题矩阵。
-5. 停止线：P6-B 完整关闭前不进入 P6-C、不宣称 Android UI RC Go；服务 / AVD / APK 安装与真实 Smoke 仍需当日单独运行授权，正式签名、外部分发、iOS 与 desktop 继续后置。
+1. 新会话先读取本页、[P6-B 关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)、[P6 readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)、[Flutter 专题](/features/flutter-native-product-ui-design)、[移动端 handoff](/guide/flutter-mobile-handoff)、[验证基线](/guide/validation-baseline)、[运行手册](/guide/operations-runbook)和 [Flutter README](../../Clients/radish.flutter/README.md)。
+2. 先只读确认真实 Android 设备的机型、Android 版本、ABI、logical size / density、ADB 状态，以及是否已有 `com.radish.client`；若已有，覆盖安装、保留数据或卸载策略必须由项目所有者确认。
+3. 安装的 APK 必须与 P6-B 的 SHA-256 `b08d0f5e…2cc174` 完全一致；先复核主机文件哈希，再建立所需 `adb reverse`。不得在 P6-C 前修改 Dart、Android 平台代码或构建参数。
+4. 获得当次服务、设备、APK 安装和真实 Smoke 授权后，覆盖安装 / OIDC / 会话恢复 / 冷启动 / Back、五入口主链路、输入法、高风险写入和四主题代表面；人工视觉判断由项目所有者确认。
+5. 停止线：同哈希 P6-C 未通过前不宣称 Android UI RC Go；任何运行时代码变化都使当前哈希失效并要求按影响范围回到 P6-B。正式签名、AAB、外部分发、iOS 与 desktop 继续后置。
 
 ## 当前执行入口
 
-- [2026-08-29 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-29) · [P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29) · [P6-A Android 本地 RC 候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27) · [P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27) · [2026-08-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-27) · [P5-E 成组静态门禁实现](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27) · [P5-E readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27) · [P5-D3 Browse History 实现](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27) · [2026-08-24 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-24) · [P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24) · [P5-D2 Leaderboard 实现](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24) · [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24) · [P5-D1 Wallet / Experience 实现](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24) · [P5-D1 readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24) · [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
+- [P6-B Android AVD 运行态验收关闭](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30) · [2026-08-29 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-29) · [P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29) · [P6-A Android 本地 RC 候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27) · [P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27) · [2026-08-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-27) · [P5-E 成组静态门禁实现](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27) · [P5-E readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27) · [P5-D3 Browse History 实现](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27) · [2026-08-24 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-24) · [P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24) · [P5-D2 Leaderboard 实现](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24) · [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24) · [P5-D1 Wallet / Experience 实现](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24) · [P5-D1 readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24) · [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
 - [Flutter Native P5-C1 Docs Reader 实现](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23) · [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) · [P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)
 - [开发路线图](/development-plan)
