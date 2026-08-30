@@ -622,6 +622,25 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 如果 Android Studio 安装路径不同，使用对应安装目录下的 `jbr`。不要为了这条测试链路改用 Oracle / 系统默认 JDK，也不要把该失败误判为 Flutter handoff 或 OIDC 业务代码回归。
 
+## Flutter iOS 原生构建说明
+
+修改 `Clients/radish.flutter` 下 iOS 壳层、OIDC callback、安全存储、entitlements 或插件接线后，除 Dart 测试与 `flutter analyze` 外，至少执行无签名 Simulator build 与 RunnerTests build-for-testing：
+
+```bash
+cd Clients/radish.flutter
+flutter build ios --simulator --debug --no-codesign
+
+cd ios
+xcodebuild build-for-testing -quiet \
+  -project Runner.xcodeproj \
+  -scheme Runner \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+该门禁只验证 iOS 编译、Flutter plugin、Swift / Objective-C 与原生测试接线，不会启动 Gateway / Auth / API 或 Simulator，也不能替代 phone / tablet 真实运行验收。iOS 本地开发证书必须由运行命令显式 opt-in；Apple Team、签名、provisioning、真机和分发继续属于独立后置门禁，不提交到仓库。
+
 ## Flutter Android 人工验收分层
 
 截至 `2026-05-04`，Flutter Android MVP 第一轮 RC 已完成并给出 Go 结论。后续若改动 `Clients/radish.flutter` 下 Android 壳层、`discover / forum / docs / profile` 原生页面、handoff、Android Back、OIDC 回调、本地复访状态、签名配置或 release 构建脚本，仍应按本节补对应开发阶段或 release 前验证。当前人工验收优先覆盖已经具备真实入口、真实数据或可稳定手工触发的链路：登录、退出、会话恢复、`discover / forum / docs / profile` 真实读取、forum feed、forum detail、评论阅读、评论分页、评论发布 / 回复、纯文本发帖与失败草稿保留、detail 原地登录续接、docs 搜索 / 内链、公开商城列表与商品详情、登录态单商品购买、订单 / 背包 / 钱包回流、公开详情链接复制、profile 复访、最近访问公开路由、轻回应发布，以及已登录壳层的通知列表回流和单条已读。

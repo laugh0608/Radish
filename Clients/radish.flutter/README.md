@@ -2,9 +2,9 @@
 
 `radish.flutter` 是 Radish Flutter Native 原生安装包产品线的仓库落点，现有实现起源于 `Phase 2-3 Flutter 客户端 MVP`。
 
-当前已建立 Android 与 iOS 平台工程；Android 新版 UI 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`，真机验收转为分发前后置门禁。iOS 已进入 P7 平台基座阶段，运行态 Simulator 验收、真机、签名与分发仍未开放。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
+当前已建立 Android 与 iOS 平台工程；Android 新版 UI 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`，真机验收转为分发前后置门禁。iOS P7-B 平台基座已关闭，下一顺位为 P7-C Simulator runtime acceptance readiness；运行态 Simulator 验收、真机、签名与分发仍未开放。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、P5-B1–D3 与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成主题、页面族、状态 owner 与三档 surface；P6-A / B 完成 Android 候选装配与双 AVD 运行态。[P6 Android AVD 门禁裁决](../../Docs/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30.md)允许以 `Android UI AVD RC Go` 进入下一阶段，[P7-A iOS readiness](../../Docs/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30.md)已确认工具链完整，并冻结 P7-B 的平台工程、安全认证存储、非敏感跨平台偏好、Android 幂等迁移与 iOS OIDC callback 建议方案。
+现有业务链路继续作为产品化基线。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、P5-B1–D3 与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成主题、页面族、状态 owner 与三档 surface；P6-A / B 完成 Android 候选装配与双 AVD 运行态。[P6 Android AVD 门禁裁决](../../Docs/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30.md)允许以 `Android UI AVD RC Go` 进入下一阶段，[P7-A iOS readiness](../../Docs/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30.md)确认工具链完整；[P7-B platform foundation](../../Docs/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30.md)随后完成平台工程、安全认证存储、非敏感跨平台偏好、Android 幂等迁移与 iOS OIDC callback，并通过 Android / iOS 原生构建门禁。
 
 ## 当前范围
 
@@ -131,6 +131,25 @@ flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-d
 ## 平台目录说明
 
 Android 与 iOS 平台目录已经生成。P7-B 使用 `flutter_secure_storage 10.3.1`：Android 采用 RSA-OAEP + AES-GCM 并禁用应用数据自动备份，iOS 使用 Keychain 与 `first_unlock_this_device` 可访问级别；非敏感回访状态继续由 `shared_preferences` 承担。iOS 工程固定 `com.radish.client`、`Radish`、iOS `13.0+` 与 `radish` URL scheme，不包含本机 Apple Team、证书或 provisioning 信息。Windows / macOS / Linux 继续等待 expanded 布局、键鼠、焦点、滚动和窗口门禁后再逐个平台进入工程与分发批次。Tauri 和 WebOS 不再作为桌面安装包替代路线。
+
+## iOS 原生构建验证
+
+修改 iOS 壳层、OIDC callback、安全存储、entitlements 或插件接线后，至少执行无签名 Simulator build 与 RunnerTests build-for-testing：
+
+```bash
+cd Clients/radish.flutter
+flutter build ios --simulator --debug --no-codesign
+
+cd ios
+xcodebuild build-for-testing -quiet \
+  -project Runner.xcodeproj \
+  -scheme Runner \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+这两项只验证编译、插件与原生测试接线，不会启动服务或 Simulator，也不等于 P7-C 运行态验收。Apple Team、证书、provisioning、真机与分发属于 P7-D，不进入仓库默认构建配置。
 
 ## Android 模拟器联调
 
