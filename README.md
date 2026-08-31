@@ -11,14 +11,14 @@ Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以�
 ## 当前状态
 
 - **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`Flutter Native P7-C Simulator runtime acceptance 方案确认`
+- **当前主线**：`Flutter Native P7-D iOS 真机、签名与分发 readiness`
 - **复核日期**：`2026-08-31`
 - **当前结论**：
   - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
   - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
   - Flutter P1–P5 已完成首轮主题、页面族与成组静态门禁；P5-E 成组 `396 / 396`、Shell `51 / 51`、全量 `419 / 419`、`flutter analyze` 零问题
   - P6-B 已用真实 compact / medium API 35 AVD 关闭系统浏览器 OIDC、私域 / 主题、冷启动、真实输入法与连续根评论 CAS；项目所有者确认双 AVD 足以给出 `Android UI AVD RC Go` 并进入下一阶段，P6-C 真机转为 Android 分发前后置门禁
-  - P7-A iOS readiness 与 P7-B platform foundation 已关闭：`ios/`、安全认证存储、非敏感跨平台偏好、Android 幂等迁移与 iOS OIDC callback 已落地，Android / iOS 原生构建门禁通过；P7-C 双临时 Simulator 运行矩阵、证据、停止线与清理方案已冻结，等待方案确认和单独运行授权
+  - P7-A / B 已建立 iOS 工程与 runtime owner；P7-C 使用同一 ad-hoc 候选在 iPhone compact 与 iPad medium / expanded 关闭系统 Safari OIDC、UIScene 冷 callback、Keychain / preferences、TLS、旋转、真实键盘、四主题与 fail-closed 验收，结论为 `Simulator Go`；下一顺位只做 P7-D 真机、签名与分发 readiness
   - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
   - 生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能推进前置
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
