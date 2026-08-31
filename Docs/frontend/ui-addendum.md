@@ -2,7 +2,7 @@
 
 > 遵循：RadishX `docs/design/family-ui/` `v26.7.3`（2026-07-31）
 >
-> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1–P5、[Android AVD RC 门禁](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)与 [P7-B 平台基座](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)已关闭；下一顺位为 P7-C readiness，本批未触发 Pencil 变更。
+> 状态：Web 页面族与主题退出门禁已关闭；Flutter Native P1–P5、[Android AVD RC 门禁](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)、[P7-B 平台基座](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)与 [P7-C readiness](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-readiness-2026-08-31)已关闭；P7-C 运行方案待确认，本批未触发 Pencil 变更。
 
 ## 1. 真相源与优先级
 

@@ -6,15 +6,16 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P7-C Simulator runtime acceptance readiness`
-- **产品下一顺位**：`冻结 P7-C phone / tablet、认证、持久化与回访运行矩阵；方案确认后再单独申请服务和 Simulator 运行授权`
-- **复核日期**：`2026-08-30`
+- **工程第一顺位**：`Flutter Native P7-C Simulator runtime acceptance 方案确认`
+- **产品下一顺位**：`确认 P7-C 双临时 Simulator 运行方案后，再单独授权服务、候选构建、Simulator 安装与真实 Smoke`
+- **复核日期**：`2026-08-31`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）；生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位、依赖安装或功能验收前置。
 
 ## 最近结论
 
+- `2026-08-31` 已完成 [Flutter Native P7-C iOS Simulator 运行态验收 readiness](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-readiness-2026-08-31)：确认 iOS 26.5、iPhone 17e / iPad mini device type、系统浏览器 OIDC、UIScene callback、Keychain / preferences、显式 loopback 本地证书 opt-in 与种子数据均具备进入 P7-C 的事实基础；运行方案冻结为同一候选和两个专用临时 Simulator，重点验证 Safari 登录期间终止 App 后的冷 callback、session / PKCE 安全持久化、compact / medium / expanded、旋转、真实输入、四主题、证据、停止线与精确清理。当前未启动服务或 Simulator、未安装 App，也没有产生 P7-C 运行态 `Go`；下一步等待方案确认和单独运行授权。
 - `2026-08-30` 已完成[日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-30)：复核今日截至 `fa012ce4` 的五个提交、`82` 个唯一文件与累计 `3,316 / 176` 行差异，确认 P6 双 AVD 开发门禁、P7-A / B 和 Android / iOS 原生构建事实一致；补齐根 README 与 iOS 原生构建基线。2026-08-31 第一顺位只做 P7-C readiness，真实服务与 Simulator 运行仍需单独授权。
 - `2026-08-30` 已完成 [Flutter Native P7-B iOS platform foundation](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)：经单独授权引入 `flutter_secure_storage 10.3.1`，生成 iOS `13.0+` / `com.radish.client` / `Radish` / `radish` URL scheme 工程；session 与 OIDC attempt 迁入 Android Keystore / iOS Keychain 支撑的安全存储，非敏感 follow-up 迁入 Dart `shared_preferences`，Android 旧 `SharedPreferences` 仅在新 owner 缺失时迁移并在回读确认后清除。Flutter 定向 `18 / 18`、全量 `435 / 435`、analyze、Android JVM `7 / 7`、新 Debug APK、iOS 无签名 `Runner.app`、Swift parser 与 Xcode RunnerTests build-for-testing 均通过；未保留 Apple Team 或签名材料，也未启动服务、Simulator / AVD 或真实 Smoke。P7-B 关闭，下一顺位进入 P7-C readiness。
 - `2026-08-30` 已完成 [Flutter Native P7-A iOS 平台 readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)：本机 Flutter `3.44.0`、Dart `3.12.0`、Xcode `26.6`、CocoaPods `1.16.2`、iOS `26.5` SDK / Simulator runtime 与 phone / tablet 设备齐备，`flutter doctor -v` 无问题；仓库仍没有 `ios/`，非 Android bootstrap 目前会落入内存 session / auth / follow-up 与空 lifecycle，无法形成真实 iOS 产品。P7-B 建议生成平台工程，将 session / OIDC attempt 迁入系统安全存储，非敏感回访状态复用 `shared_preferences`，通过幂等迁移保留并清除 Android 旧明文数据，原生桥接只保留系统浏览器、OIDC callback 与平台 lifecycle；架构与安全存储依赖仍需分别确认 / 授权。
@@ -217,24 +218,25 @@
 68. 按确认方案关闭 R3-F02-C：Client 未知路径与 `/desktop` 已明确分离，两端根级运行时边界完整；Console 未登录、非 Console 用户、页面缺权、Not Found 与路由异常保持不同理由。Client、Console、类型、Lint、生产构建与 Baseline Quick 通过。
 69. 获授权后完成 R3-F02 Gateway 成组运行态验收；匿名、Admin 与非 Console `test` 的 OIDC、自服务、错误 / 路由和 PC / mobile 双语矩阵通过，运行态发现的三类共同根因已成组修正并全量回归，登录会话清理完成，专题关闭。
 
-## 当前事项（2026-08-30 日终）
+## 当前事项（2026-08-31）
 
-1. P6-B 双 AVD 运行态已关闭；项目所有者进一步裁决双 AVD 结果足以形成 `Android UI AVD RC Go` 并进入下一阶段，P6-C 真机验收转为 Android 分发前后置门禁。
-2. P6 最终历史候选为 `26.8.2+1`、三 ABI、`development + https://localhost:5000`、`82,913,651` bytes、SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`；后续运行时代码变化后不再把该哈希作为分发候选。
-3. P7-B 已生成 iOS 平台工程并建立真实 iOS session / auth / follow-up owner；Android / iOS 共享安全认证存储与非敏感 Dart 偏好，iOS 原生只保留系统浏览器和 UIScene callback。
-4. Android 旧明文 session、OIDC attempt 与回访状态已进入幂等迁移边界：新 owner 缺失才读取，写入并回读确认后清除，失败保留旧值重试。
-5. Flutter `435 / 435`、analyze、Android JVM `7 / 7`、新 Debug APK、iOS 无签名 `Runner.app`、Swift parser 与 RunnerTests build-for-testing 已通过；P7-B 关闭，P7-C 尚未启动。
+1. P6 双 AVD 开发门禁、P7-A iOS 工具链 readiness 与 P7-B platform foundation 均已关闭；P6-C 真机保持 Android 分发前后置门禁，不能写作已通过。
+2. P7-C readiness 已完成，未发现需要先修改运行时代码或新增依赖的阻断；P7-B 旧 `Runner.app` 没有显式 P7-C 本地证书 define，不能直接作为运行候选。
+3. P7-C 固定创建两个专用临时 iOS 26.5 Simulator：iPhone 17e 覆盖 compact portrait，iPad mini 覆盖 portrait medium 与 landscape expanded；既有 Simulator 不复用、不修改、不清理。
+4. 两台设备必须安装同一份从干净 `dev` HEAD 构建的候选；关键链路是在 Safari 登录期间终止 App，再由 `radish://` callback 冷启动并从 Keychain 恢复同一 PKCE attempt。
+5. 当前只完成方案文档，服务、候选运行构建、证书写入、Simulator、真实 OIDC / 输入 / 可逆写入与清理仍未授权，P7-C 运行态结论仍为空。
 
-## 明日事项（2026-08-31，P7-C Simulator runtime acceptance readiness）
+## 下一事项（P7-C Simulator runtime acceptance，待确认）
 
-1. 新会话先读取本页、[2026-08-30 日终回顾](/records/f4-day-end-doc-review-2026-08-30)、[P7-B 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)、[P7-A readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)、[Flutter 专题](/features/flutter-native-product-ui-design)、[移动端 handoff](/guide/flutter-mobile-handoff)、[验证基线](/guide/validation-baseline)、[运行手册](/guide/operations-runbook)和 [Flutter README](../../Clients/radish.flutter/README.md)。
-2. 只做 P7-C readiness：反查当前 Flutter shell、iOS callback、Keychain / preferences、证书 opt-in、phone / tablet Simulator 与测试账号事实，冻结运行矩阵、失败停止线、证据和清理边界。
-3. readiness 方案确认后，再单独申请 Gateway / Auth / API、Simulator、安装与真实 Smoke 授权；当前批次不启动任何服务或 Simulator。
-4. P7-C 至少覆盖匿名启动、系统浏览器 OIDC callback、登录态恢复、冷启动、session / PKCE 安全持久化、Forum / Docs recent 与 phone / tablet 代表布局；不得用 Android 结果替代 iOS 证据。
-5. 不读取签名材料，不进入真机、TestFlight、App Store 或 production；这些边界继续后置到 P7-D。
+1. 先确认 [P7-C readiness 记录](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-readiness-2026-08-31)冻结的唯一候选、双临时设备、TLS、phone / tablet、证据、停止线与清理边界。
+2. 方案确认后，再为当前任务单独授权 Gateway / Auth / API、候选构建、两个专用 Simulator 的创建 / 启动 / 安装 / 操作 / 删除、公共证书信任与真实 Smoke；授权前不启动任何服务或 Simulator。
+3. iPhone 主矩阵覆盖 fresh anonymous、OIDC 取消、Safari 期间终止 App 后冷 callback、session 冷恢复、Forum / Docs recent、真实输入与可逆 Profile 写入、四主题和 logout / 非法 callback fail closed。
+4. iPad 补充矩阵覆盖 portrait medium、landscape expanded、旋转、键盘、正常 OIDC / session 冷恢复、设备独立 recent 和代表主题面；不得以 iPhone 或 Android 结果替代。
+5. 任一 callback / PKCE / Keychain / TLS / 输入焦点 / 布局安全问题立即停线并诊断；任何运行时代码或 define 变化都使候选失效。不进入真机、Apple Team、正式签名、TestFlight、App Store、外部分发或 production，这些边界继续后置 P7-D。
 
 ## 当前执行入口
 
+- [P7-C iOS Simulator 运行态验收 readiness](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-readiness-2026-08-31)
 - [2026-08-30 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-30)
 - [P7-B iOS platform foundation 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30) · [P7-A iOS 平台 readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30) · [P6 Android AVD 门禁项目所有者关闭](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30) · [P6-B Android AVD 运行态验收关闭](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30) · [2026-08-29 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-29) · [P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29) · [P6-A Android 本地 RC 候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27) · [P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27) · [2026-08-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-27) · [P5-E 成组静态门禁实现](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27) · [P5-E readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27) · [P5-D3 Browse History 实现](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27) · [2026-08-24 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-24) · [P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24) · [P5-D2 Leaderboard 实现](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24) · [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24) · [P5-D1 Wallet / Experience 实现](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24) · [P5-D1 readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24) · [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [2026-08-23 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-23) · [2026-08-19 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-19)
 - [Flutter Native P5-C1 Docs Reader 实现](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23) · [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) · [P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)

@@ -1,8 +1,8 @@
 # F4-R 家族 UI 统一接入与产品视觉重构
 
-> 日期：2026-07-30；2026-08-30 更新（Asia/Shanghai）
+> 日期：2026-07-30；2026-08-31 更新（Asia/Shanghai）
 >
-> 状态：Web 页面族与主题退出门禁均已关闭；Flutter Native P1–P5、Android `AVD RC Go` 与 P7-B platform foundation 已完成；下一顺位为 P7-C readiness，未触发新的视觉 owner
+> 状态：Web 页面族与主题退出门禁均已关闭；Flutter Native P1–P5、Android `AVD RC Go`、P7-B platform foundation 与 P7-C readiness 已完成；P7-C 运行方案待确认，未触发新的视觉 owner
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
