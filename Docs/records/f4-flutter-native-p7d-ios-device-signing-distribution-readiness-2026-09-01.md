@@ -7,6 +7,8 @@
 - **推荐下一步**：先进入 `P7-D1 iOS distribution compliance capability gate`，按已冻结边界实现 fail-closed 分发配置、账号删除、Flutter UGC 举报 / 屏蔽，并由项目所有者裁决 iOS 数字权益购买采用 StoreKit 还是在外部分发渠道关闭。D1 方案确认前不修改架构、接口或运行时行为。
 - **范围边界**：本批只完成仓库、本机非敏感工具链和官方规则的只读审计。没有读取 Apple Team、Keychain signing identity、证书、private key 或 provisioning 内容；没有登录 Apple 账号、连接 / 注册真机、安装 App、创建 archive / IPA、写入 App Store Connect 或上传构建。
 
+> 后续裁决：项目所有者已于同日确认近期只使用 Internal TestFlight，账号删除、完整 Flutter UGC、StoreKit 与 App Store metadata 后置 D4；调整后的门禁与分层见 [P7-D Internal TestFlight-only 项目所有者裁决](/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01)。本记录保留原始全分发审计事实，不再作为近期 D1 的范围定义。
+
 ## 2. 仓库与本机构建事实
 
 ### 2.1 App identity 与平台工程

@@ -21,13 +21,12 @@ Flutter Native 是 Web 之外唯一正式原生安装包产品线，但保持次
 
 ## iOS 分发前置边界
 
-P7-D readiness 已确认：现有 iOS identity、OIDC scheme、Keychain entitlements、AppIcon 与 Release configuration 具备继续产品化的基础，但不能直接进入签名和上传。
+P7-D readiness 已确认：现有 iOS identity、OIDC scheme、Keychain entitlements、AppIcon 与 Release configuration 具备继续产品化的基础，但不能直接进入签名和上传。项目所有者随后把近期目标限制为 Internal TestFlight。
 
 - testing / production distribution build 必须显式使用项目所有者确认的 HTTPS Gateway；localhost、保留示例域名、非法或缺失 define 必须 fail closed，开发证书 opt-in 不得进入分发候选。
-- Auth 登录页允许注册，但当前没有账号删除能力；外部 TestFlight / App Store 前必须建立用户可在 App 内发起的账号删除全链路。
-- 服务端与 Web 已有 ContentModeration / UserBlock 契约，Flutter 尚未提供 UGC 举报和用户屏蔽 / 解除入口；P7-D1 只复用既有权威 API，不新增移动专属治理真相。
-- Flutter 当前可用站内胡萝卜余额购买并解锁数字主题 / 权益，但没有 StoreKit。项目所有者必须先裁决 StoreKit 全链路或 iOS external distribution commerce gate；readiness 不自动选择。
-- Apple Team、证书、provisioning、真机、archive、TestFlight、App Store metadata、privacy answers 与 export compliance 都是后续独立授权事项，不能由 Simulator `Go` 推导。
+- Internal TestFlight 只允许 App Store Connect internal users，不创建 external group / public link；优先使用 `TestFlight Internal Only` build，不能把内部能力验证写作 App Store 合规。
+- Auth 账号删除、完整 Flutter UGC 举报 / 屏蔽、StoreKit / IAP、App Store privacy answers 与商店 metadata 统一后置 External TestFlight / App Store D4；重新进入 D4 时按当时规则重新 readiness。
+- Apple Team、证书、provisioning、真机、archive、upload、internal group 与 export compliance 仍是独立授权事项，不能由 Simulator `Go` 或本次路线裁决推导。
 
 ## API 响应与失败态
 

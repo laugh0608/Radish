@@ -1,6 +1,6 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P6 Android UI AVD RC Go` 与 `P7-C iOS Simulator Go` 已关闭；`P7-D iOS 真机、签名与分发 readiness` 已完成，下一顺位为 `P7-D1 distribution compliance capability gate readiness`
+> 状态：`P6 Android UI AVD RC Go` 与 `P7-C iOS Simulator Go` 已关闭；P7-D readiness 已完成，项目所有者确认近期只使用 Internal TestFlight，下一顺位为 `P7-D1 Internal TestFlight minimal readiness`
 >
 > 最后更新：2026-08-31（Asia/Shanghai）
 >
@@ -10,6 +10,7 @@
 > - [P7-C iOS Simulator 运行态验收 readiness](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-readiness-2026-08-31)
 > - [P7-C iOS Simulator 运行态验收关闭](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31)
 > - [P7-D iOS 真机、签名与分发 readiness](/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01)
+> - [P7-D Internal TestFlight-only 项目所有者裁决](/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01)
 > - [前端多壳层策略](/frontend/shell-strategy)
 > - [Radish UI 差异附录](/frontend/ui-addendum)
 > - [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)
@@ -365,7 +366,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - `P7-A iOS platform readiness`（已完成，2026-08-30）：本机 Flutter `3.44.0`、Xcode `26.6`、CocoaPods `1.16.2`、iOS `26.5` SDK / Simulator runtime 完整；实施前缺少 `ios/` 与真实 iOS runtime owner，详见 [P7-A readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)。
 - `P7-B iOS platform foundation`（已完成，2026-08-30）：iOS `13.0+` / `com.radish.client` / `Radish` / `radish` URL scheme 工程已生成；`flutter_secure_storage 10.3.1` 承担 session / OIDC attempt，`shared_preferences` 承担非敏感 recent / pending，Android 旧状态只在新 owner 缺失时迁移并回读确认后清除。Flutter `435 / 435`、analyze、Android JVM `7 / 7`、新 Debug APK、iOS 无签名 `Runner.app`、Swift callback parser 与 RunnerTests build-for-testing 均通过，详见 [P7-B 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)。
 - `P7-C iOS Simulator runtime acceptance`（已关闭，2026-08-31）：同一 source `ff54b12d`、`26.8.2+1`、Runner SHA-256 `2fd300a8…3fce52356` 的 ad-hoc Simulator 候选，在 iPhone compact `390 × 844` 与 iPad portrait medium `744 × 1133` / landscape expanded `1133 × 744` 上完成系统 Safari OIDC、UIScene 冷 callback、Keychain session / PKCE、preferences、TLS、旋转、真实键盘、四主题、logout 与非法 callback fail closed 验收；临时服务、证书、设备和截图已精确清理，详见 [P7-C 关闭记录](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31)。
-- `P7-D iOS device / signing / distribution readiness`（已完成，2026-09-01）：确认 bundle、version、device family、URL callback、Keychain entitlement、AppIcon、Release configuration、插件 privacy manifest 与 Xcode device SDK 具备继续产品化基础；仓库没有 Apple Team、签名材料、provisioning、archive / IPA 或上传配置。当前真机 / 分发为 `No-Go`，先关闭 distribution Gateway fail-closed、账号删除、Flutter UGC 举报 / 屏蔽与 iOS 数字权益购买策略，再按 D2 真机、D3 Internal TestFlight、D4 external / App Store 分层推进，详见 [P7-D readiness](/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01)。
+- `P7-D iOS device / signing / distribution readiness`（已完成，2026-09-01）：确认 bundle、version、device family、URL callback、Keychain entitlement、AppIcon、Release configuration、插件 privacy manifest 与 Xcode device SDK 具备继续产品化基础；仓库没有 Apple Team、签名材料、provisioning、archive / IPA 或上传配置。项目所有者随后确认近期只使用 Internal TestFlight；账号删除、完整 Flutter UGC、StoreKit 与商店 metadata 后置 D4，当前先按 D1 minimal readiness、D2 development-signed 真机、D3 TestFlight Internal Only 推进，详见 [P7-D readiness](/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01)与[范围裁决](/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01)。
 
 每批保留业务状态、幂等、来源返回和原生 handoff，按继承关系改呈现；单批不跨越多个高风险写入领域，不顺手扩新功能。
 
@@ -374,7 +375,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 ### P6–P7：平台产品化与发布门禁
 
 - Android 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`；P6-C 真机验收转为 Android 分发前门禁，不写作已通过。
-- iOS 已进入 P7：P7-A readiness、P7-B platform foundation 与 P7-C Simulator runtime acceptance 均已关闭，当前结论为 `Simulator Go`；P7-D readiness 已将后续固定为 D1 distribution compliance capability gate、D2 development-signed 真机、D3 signed archive + Internal TestFlight 与 D4 External TestFlight / App Store，各层继续独立方案、授权和验收。
+- iOS 已进入 P7：P7-A readiness、P7-B platform foundation 与 P7-C Simulator runtime acceptance 均已关闭，当前结论为 `Simulator Go`；P7-D readiness 与项目所有者范围裁决把近期后续固定为 D1 Internal TestFlight minimal readiness、D2 development-signed 真机、D3 TestFlight Internal Only，D4 External TestFlight / App Store 无限期后置。
 - desktop 在共享 UI 通过宽屏和输入门禁后，按 Windows、macOS、Linux 分别生成 / 补齐平台工程、构建、签名、更新和分发。
 - 平台工程与分发要求独立授权和记录，不因 Dart UI 可运行自动宣称产品完成。
 
@@ -400,4 +401,4 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 
 ## 13. 当前动作（2026-09-01）
 
-P6-B 已完成真实服务、compact / medium API 35 AVD、系统浏览器 OIDC、私域读取、冷启动、四主题代表面、真实输入法和高风险 Forum CAS，并冻结历史 APK SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`。项目所有者已确认双 AVD 足以进入下一阶段；P7-A / B 已建立 iOS 工具链、工程与真实 runtime owner，P7-C 在专用 iPhone / iPad Simulator 上给出 `Simulator Go`。P7-D readiness 随后确认真机 / 分发仍为 `No-Go`：distribution Gateway 未 fail closed，账号删除与 Flutter UGC 举报 / 屏蔽缺失，站内余额购买数字权益没有 StoreKit / iOS channel 裁决。下一步先完成 P7-D1 方案，只有 D1 能力门禁关闭后才进入 Apple Team、真机、签名、archive 和 TestFlight 授权。
+P6-B 已完成真实服务、compact / medium API 35 AVD、系统浏览器 OIDC、私域读取、冷启动、四主题代表面、真实输入法和高风险 Forum CAS，并冻结历史 APK SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`。项目所有者已确认双 AVD 足以进入下一阶段；P7-A / B 已建立 iOS 工具链、工程与真实 runtime owner，P7-C 在专用 iPhone / iPad Simulator 上给出 `Simulator Go`。P7-D readiness 后，项目所有者确认近期只到 Internal TestFlight；当前先完成 P7-D1 testing Gateway、archive preflight、export compliance 与 internal-only 授权方案，D1 关闭后才进入 Apple Team、真机、签名和上传授权。账号删除、完整 Flutter UGC、StoreKit 与 App Store metadata 后置 D4。
