@@ -1,10 +1,10 @@
 # Flutter 移动端 handoff 与回流说明
 
-本文说明 Flutter Native 已成立的原生导航、外部来源、登录回流、公开链接、登录态轻写入与复访承接边界。Android 已有真实 AVD 运行证据；iOS 已完成 P7-B 平台 owner 与无签名 Simulator build，尚未取得 Simulator 运行态。完整客户端范围仍以 `Clients/radish.flutter/README.md` 为准。
+本文说明 Flutter Native 已成立的原生导航、外部来源、登录回流、公开链接、登录态轻写入与复访承接边界。Android 已有真实 AVD 运行证据；iOS 已完成 P7-B 平台 owner，并通过 P7-C iPhone / iPad Simulator 运行态，当前结论为 `Simulator Go`。P7-D readiness 已确认真机 / 分发仍为 `No-Go`，完整客户端范围仍以 `Clients/radish.flutter/README.md` 为准。
 
 ## 总体边界
 
-Flutter Native 是 Web 之外唯一正式原生安装包产品线，但保持次级优先、mobile-first、desktop stage-gated，也不复刻 WebOS。Android 已验收 MVP 包含公开内容阅读、原生返回、登录续接、个人复访、基础个人资料编辑、通知列表与单条已读、forum 评论 / 问答回答 / 轻回应 / 纯文本发帖写入、作者帖子正文编辑、作者根评论编辑、公开商品浏览、登录态单商品购买、订单 / 背包查看、胡萝卜资产与经验记录只读查看、公开详情链接复制和 docs 原生阅读链路；iOS 当前只建立相同 Dart UI 的平台、安全存储和 OIDC 回调基座，不把静态实现当作功能验收。
+Flutter Native 是 Web 之外唯一正式原生安装包产品线，但保持次级优先、mobile-first、desktop stage-gated，也不复刻 WebOS。Android 已验收 MVP 包含公开内容阅读、原生返回、登录续接、个人复访、基础个人资料编辑、通知列表与单条已读、forum 评论 / 问答回答 / 轻回应 / 纯文本发帖写入、作者帖子正文编辑、作者根评论编辑、公开商品浏览、登录态单商品购买、订单 / 背包查看、胡萝卜资产与经验记录只读查看、公开详情链接复制和 docs 原生阅读链路；iOS Simulator 已验证相同 Dart UI 的系统浏览器 OIDC、Keychain / preferences、phone / tablet 三档、旋转、真实键盘和四主题，但没有真机、Apple Team、正式签名、provisioning、TestFlight 或 App Store 结论。
 
 当前不包含：
 
@@ -18,6 +18,16 @@ Flutter Native 是 Web 之外唯一正式原生安装包产品线，但保持次
 - 富文本发帖、附件发帖、富文本回答、富文本评论、回答采纳、子评论编辑、回答编辑、评论审核治理、点赞、投票、完整编辑治理
 - 系统分享 SDK、海报生成、分享统计
 - 桌面工作台多窗口能力
+
+## iOS 分发前置边界
+
+P7-D readiness 已确认：现有 iOS identity、OIDC scheme、Keychain entitlements、AppIcon 与 Release configuration 具备继续产品化的基础，但不能直接进入签名和上传。
+
+- testing / production distribution build 必须显式使用项目所有者确认的 HTTPS Gateway；localhost、保留示例域名、非法或缺失 define 必须 fail closed，开发证书 opt-in 不得进入分发候选。
+- Auth 登录页允许注册，但当前没有账号删除能力；外部 TestFlight / App Store 前必须建立用户可在 App 内发起的账号删除全链路。
+- 服务端与 Web 已有 ContentModeration / UserBlock 契约，Flutter 尚未提供 UGC 举报和用户屏蔽 / 解除入口；P7-D1 只复用既有权威 API，不新增移动专属治理真相。
+- Flutter 当前可用站内胡萝卜余额购买并解锁数字主题 / 权益，但没有 StoreKit。项目所有者必须先裁决 StoreKit 全链路或 iOS external distribution commerce gate；readiness 不自动选择。
+- Apple Team、证书、provisioning、真机、archive、TestFlight、App Store metadata、privacy answers 与 export compliance 都是后续独立授权事项，不能由 Simulator `Go` 推导。
 
 ## API 响应与失败态
 

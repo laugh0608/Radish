@@ -2,7 +2,7 @@
 
 > 日期：2026-07-30；2026-08-31 更新（Asia/Shanghai）
 >
-> 状态：Web 页面族与主题退出门禁均已关闭；Flutter Native P1–P5、Android `AVD RC Go` 与 iOS `Simulator Go` 已完成；P7-C 未触发新的视觉 owner，下一顺位为 P7-D readiness
+> 状态：Web 页面族与主题退出门禁均已关闭；Flutter Native P1–P5、Android `AVD RC Go` 与 iOS `Simulator Go` 已完成；P7-C 未触发新的视觉 owner，P7-D readiness 也没有新增 Pencil 工作，下一顺位为 P7-D1 分发合规能力方案
 >
 > 上游规范：RadishX `docs/design/family-ui/` `v26.7.3`
 >
