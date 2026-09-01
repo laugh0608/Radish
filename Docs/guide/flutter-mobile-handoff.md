@@ -1,6 +1,6 @@
 # Flutter 移动端 handoff 与回流说明
 
-本文说明 Flutter Native 已成立的原生导航、外部来源、登录回流、公开链接、登录态轻写入与复访承接边界。Android 已有真实 AVD 运行证据；iOS 已完成 P7-B 平台 owner，并通过 P7-C iPhone / iPad Simulator 运行态，当前结论为 `Simulator Go`。P7-D readiness 已确认真机 / 分发仍为 `No-Go`，完整客户端范围仍以 `Clients/radish.flutter/README.md` 为准。
+本文说明 Flutter Native 已成立的原生导航、外部来源、登录回流、公开链接、登录态轻写入与复访承接边界。Android 已有真实 AVD 运行证据；iOS 已完成 P7-B 平台 owner，并通过 P7-C iPhone / iPad Simulator 运行态，当前结论为 `Simulator Go`。P7-D1 已关闭仓库静态门禁，但项目所有者当前没有 Apple Developer Program 付费会员或可测试真机，P7-D2 / D3 暂缓，真机 / TestFlight 仍为 `No-Go`；完整客户端范围仍以 `Clients/radish.flutter/README.md` 为准。
 
 ## 总体边界
 
@@ -28,6 +28,7 @@ P7-D readiness 已确认：现有 iOS identity、OIDC scheme、Keychain entitlem
 - Internal TestFlight 只允许 App Store Connect internal users，不创建 external group / public link；优先使用 `TestFlight Internal Only` build，不能把内部能力验证写作 App Store 合规。
 - Auth 账号删除、完整 Flutter UGC 举报 / 屏蔽、StoreKit / IAP、App Store privacy answers 与商店 metadata 统一后置 External TestFlight / App Store D4；重新进入 D4 时按当时规则重新 readiness。
 - Apple Team、证书、provisioning、真机、archive、upload、internal group 与 export compliance 仍是独立授权事项，不能由 Simulator `Go` 或本次路线裁决推导。
+- 项目所有者当前只有虚拟设备，没有有效付费会员或可测试真机；D2 / D3 因外部前置条件暂停。恢复时必须使用当时最新候选重新 preflight，并重新取得 Apple 外部状态、签名、真机与 upload 的分阶段授权。
 
 ## API 响应与失败态
 

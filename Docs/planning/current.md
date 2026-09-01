@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P7-D2 development-signed 真机 Smoke readiness`
-- **产品下一顺位**：`核对 Apple Developer membership / Team / App ID、真实设备与生产数据隔离边界；未授权前不读取 Apple 外部状态或连接真机`
+- **工程第一顺位**：`Flutter Native post-P7 无 Apple 外部前置候选审计`
+- **产品下一顺位**：`在继续完成 Native 产品能力与 P8 desktop platform readiness 之间裁决；P7-D2 / D3 暂缓`
 - **复核日期**：`2026-09-01`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
@@ -15,7 +15,8 @@
 
 ## 最近结论
 
-- `2026-09-01` 已完成 [P7-D1 Internal TestFlight minimal readiness 实施](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)：项目所有者批准近期 Internal TestFlight 临时复用生产 `https://radishx.com` 并接受数据隔离风险；版本控制 define 固定 `testing + production Gateway + local cert=false`，`AppEnvironment` 对 distribution 缺失 / 非法 define、HTTP、loopback / IP、保留示例域名、非 origin 与本地证书 opt-in fail closed。repository preflight 覆盖 version / build、Runner Release、entitlements、AppIcon、依赖 privacy manifests 与 Apple 敏感制品。Flutter `437 / 437`、analyze、preflight `4 / 4`、版本契约与 iOS generic device Release `--no-codesign` 均通过；built App 含三份 privacy manifest、无 embedded profile。D1 `Go`，下一步进入 D2 readiness；本轮未访问 Apple 账号、签名、真机、archive / upload 或生产数据。
+- `2026-09-01` 项目所有者已确认[当前没有 Apple Developer Program 付费会员或可测试真机，只有虚拟设备](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)。P7-D2 development-signed 真机 Smoke 与 P7-D3 TestFlight Internal Only 因外部前置条件不可用而暂停；P7-C `Simulator Go`、P7-D1 静态 / 无签名门禁继续有效，但不能替代真机、签名、upload 或 TestFlight 证据。重新进入条件固定为有效 membership / Team / App ID / App Store Connect 范围、至少一台 iPhone、最新候选重新 preflight 与分阶段独立授权；当前第一顺位改为不依赖 Apple 外部条件的 post-P7 候选审计。
+- `2026-09-01` 已完成 [P7-D1 Internal TestFlight minimal readiness 实施](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)：项目所有者批准近期 Internal TestFlight 临时复用生产 `https://radishx.com` 并接受数据隔离风险；版本控制 define 固定 `testing + production Gateway + local cert=false`，`AppEnvironment` 对 distribution 缺失 / 非法 define、HTTP、loopback / IP、保留示例域名、非 origin 与本地证书 opt-in fail closed。repository preflight 覆盖 version / build、Runner Release、entitlements、AppIcon、依赖 privacy manifests 与 Apple 敏感制品。Flutter `437 / 437`、analyze、preflight `4 / 4`、版本契约与 iOS generic device Release `--no-codesign` 均通过；built App 含三份 privacy manifest、无 embedded profile。D1 `Go`；D2 / D3 后续因会员与真机前置不可用而暂缓。本轮未访问 Apple 账号、签名、真机、archive / upload 或生产数据。
 - `2026-09-01` 已完成 [P7-D1 Internal TestFlight minimal readiness](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-2026-09-01)：仓库只确认生产 `https://radishx.com`，没有独立 testing Gateway；D1 实施建议不新增 channel define，而让 `testing / production` 对缺失、非法、HTTP、loopback / IP、保留示例 host、非 origin URL 和本地证书 opt-in fail closed，并新增不读取 Apple 外部状态的 repository preflight。`version.json.flutterBuildNumber` 继续作为唯一 build number 真相源，当前 `26.8.2+1` 尚未证明占用；privacy / export compliance 技术盘点只确认系统 TLS、PKCE SHA-256 与 Keychain，不向 `Info.plist` 猜测写值。其后项目所有者已批准临时复用生产 Gateway 并完成 D1 implementation；本 readiness 批次本身未修改运行时代码或访问 Apple 外部状态。
 - `2026-09-01` 项目所有者已确认 [P7-D Internal TestFlight-only 范围裁决](/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01)：近期 iOS 目标只到 Internal TestFlight，不开放 external tester / public link，不提交 App Review 或 App Store。账号删除、完整 Flutter UGC 举报 / 屏蔽、StoreKit / IAP 与商店 metadata 不再阻断近期内部测试，统一后置 D4；Internal TestFlight 仍必须关闭真实 testing Gateway fail-closed、会员 / Team / App ID / app record / distribution signing、privacy manifest、export compliance、唯一 build、Internal Only group、真机回归与证据清理。调整后依次为 D1 minimal readiness、D2 development-signed 真机、D3 TestFlight Internal Only，D4 external / App Store 无限期后置。本裁决只调整计划，不授权任何 Apple 账号、签名、真机、archive 或上传操作。
 - `2026-09-01` 已完成 [Flutter Native P7-D iOS 真机、签名与分发 readiness](/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01)：确认 `com.radish.client`、`26.8.2+1`、iOS `13.0+`、iPhone / iPad、`radish` OIDC scheme、Keychain entitlements、AppIcon 与 Release configuration 具备继续产品化基础，本机 Xcode `26.6` 满足当前 upload 工具链下限；仓库未提交 Apple Team、证书、provisioning、archive / IPA 或上传配置。实际真机 / 分发仍为 `No-Go`：testing / production build 可静默落到 localhost / 示例域名，Flutter 缺少账号删除、UGC 举报 / 用户屏蔽入口，站内胡萝卜余额可购买并解锁数字权益但没有 StoreKit，privacy / support / export compliance 与 App Store metadata 也未形成。实施固定为 D1 合规能力门禁、D2 development-signed 真机、D3 signed archive + Internal TestFlight、D4 External TestFlight / App Store；下一步先完成 D1 方案，不读取签名材料或产生 Apple 外部状态。
@@ -228,19 +229,19 @@
 1. P7-D1 implementation 已关闭；Internal TestFlight define、runtime fail-closed、repository preflight、version / build、privacy inventory 与无签名 Release 编译门禁通过。
 2. 项目所有者批准生产 `https://radishx.com` 作为近期唯一 Gateway 并接受数据隔离风险；该批准不等于 testing 环境隔离，D2 / D3 必须使用专用账号、可定位写入与精确清理。
 3. `version.json.flutterBuildNumber` 继续作为唯一 build number owner；当前 `26.8.2+1` 没有 archive / upload 事实，是否可作为首个上传 build 需 D3 访问 App Store Connect 后核对。
-4. Internal TestFlight 仍为 `No-Go`。下一顺位 D2 需要确认有效付费会员、Apple Team / App ID 范围、iPhone / 可选 iPad 与生产数据操作边界。
-5. 未单独授权前不读取 Apple 外部状态、不连接真机；D2 不授权 distribution archive、App Store Connect 或 upload。
+4. 项目所有者当前没有 Apple Developer Program 付费会员或可测试真机，只有虚拟设备；Internal TestFlight 继续为 `No-Go`，P7-D2 / D3 暂停而不是失败。
+5. 不为暂停中的 D2 / D3 提前递增 build number、写入 Team / provisioning / ExportOptions 或猜测 export-compliance 答案；Simulator / AVD 可继续开发回归，但不得替代真机或分发结论。
 
-## 下一事项（P7-D2 development-signed 真机 Smoke readiness）
+## 下一事项（Flutter Native post-P7 无 Apple 外部前置候选审计）
 
-1. 项目所有者确认是否具备有效付费 Apple Developer Program membership，以及允许核对的 Team / App ID 范围。
-2. 确认可用的一台 iPhone 与可选 iPad；只冻结设备类别和 OS，不把完整设备标识写入仓库。
-3. 冻结生产 Gateway 专用测试账号、写入标记、原始值记录、禁止操作与清理清单。
-4. 完成 D2 只读 readiness 后，再单独申请 Xcode Team / device 核对、development signing、安装与真实 Smoke 授权。
-5. D2 只验证 development-signed 真机，不创建 distribution archive、不访问 App Store Connect 或上传 TestFlight。
+1. 以现有 Flutter 产品边界和未完成能力为输入，复核“继续 Native 产品能力”和“P8 desktop platform readiness”两条候选的价值、依赖与门禁。
+2. 本批只形成候选结论，不生成 Windows / macOS / Linux 平台工程，不安装依赖，不启动服务或虚拟机。
+3. 项目所有者确认下一专题后，再冻结实施范围与验证矩阵；不因仅有虚拟设备而自动扩大桌面产品范围。
+4. P7-D2 / D3 仅在 membership、Team / App ID / App Store Connect、至少一台 iPhone 和独立授权同时具备后恢复。
 
 ## 当前执行入口
 
+- [P7-D2 / D3 外部前置条件暂缓](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)
 - [P7-D1 Internal TestFlight minimal readiness 实施](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)
 - [P7-D1 Internal TestFlight minimal readiness](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-2026-09-01)
 - [P7-D Internal TestFlight-only 项目所有者裁决](/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01)
