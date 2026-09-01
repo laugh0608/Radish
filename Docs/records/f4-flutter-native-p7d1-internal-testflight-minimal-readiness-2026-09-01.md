@@ -2,8 +2,8 @@
 
 ## 1. 结论
 
-- **状态**：`Readiness 完成，实施待项目所有者确认`
-- **当前结论**：Internal TestFlight 仍为 `No-Go`。仓库能确认的唯一真实外部入口是生产 `https://radishx.com`，没有已批准的独立 testing Gateway；在项目所有者明确唯一 Gateway 前，不写入 distribution define、不修改运行时环境解析、不创建 archive。
+- **状态**：`Readiness 已确认，实施完成`
+- **当前结论**：Internal TestFlight 仍为 `No-Go`。项目所有者已批准临时复用生产 `https://radishx.com` 并接受数据隔离风险；D1 运行时门禁与 repository preflight 已按本记录实施，结果见 [D1 实施记录](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)。D2 Apple Team / 真机与 D3 archive / upload 仍需独立授权。
 - **实施建议**：优先建立与生产隔离的 HTTPS testing Gateway，并把其 `RADISH_PUBLIC_URL`、OIDC Issuer、官方客户端回调和 Flutter `RADISH_GATEWAY_BASE_URL` 固定为同一 origin。若项目所有者决定临时复用 `https://radishx.com`，必须显式承担真实数据、旧服务版本与写入隔离风险，不能由仓库历史记录自动推定。
 - **本批范围**：只冻结 fail-closed 环境契约、静态 preflight、build number、privacy / export compliance 技术判断、D2 / D3 授权和验收矩阵；不访问 Apple 账号、签名材料、App Store Connect 或真实设备，不构建 archive / IPA，不启动或部署 Gateway。
 
@@ -108,10 +108,10 @@ TestFlight build 默认有效期按 Apple 当前规则记录为 `90` 天；候�
 
 ## 6. 项目所有者待确认输入
 
-实施前只剩两项不可由仓库推断的决定：
+两项输入均已由项目所有者确认：
 
-1. 提供并批准唯一 testing HTTPS Gateway origin；推荐使用与 `https://radishx.com` 隔离的 testing 域名。若决定临时复用生产入口，必须明确写出该批准和数据隔离边界。
-2. 确认第 3 节的 fail-closed + static preflight 方案。确认后先实施 D1 代码与门禁并提交，仍不会访问 Apple 账号或真实设备。
+1. 当前只能复用生产入口，批准 `https://radishx.com` 作为近期 Internal TestFlight 唯一 Gateway，并接受真实数据隔离风险。
+2. 按第 3 节实施 fail-closed + static preflight；D1 已完成，未访问 Apple 账号或真实设备。
 
 ## 7. 本批验证与停止线
 
@@ -120,4 +120,4 @@ TestFlight build 默认有效期按 Apple 当前规则记录为 `90` 天；候�
 - `plutil -p`：Runner `Info.plist` 与 Release entitlements 可解析；
 - 未启动服务、Simulator / AVD，未构建 App，未访问 Apple 账号、签名材料、App Store Connect 或真实设备。
 
-下一步不是 archive，而是项目所有者确认唯一 Gateway 与本方案；随后进入 D1 implementation。
+下一步不是 archive，而是单独完成 D2 development-signed 真机 Smoke readiness 与授权。

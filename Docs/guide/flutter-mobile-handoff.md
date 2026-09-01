@@ -23,7 +23,7 @@ Flutter Native 是 Web 之外唯一正式原生安装包产品线，但保持次
 
 P7-D readiness 已确认：现有 iOS identity、OIDC scheme、Keychain entitlements、AppIcon 与 Release configuration 具备继续产品化的基础，但不能直接进入签名和上传。项目所有者随后把近期目标限制为 Internal TestFlight。
 
-- [P7-D1 minimal readiness](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-2026-09-01) 已固定不新增 distribution channel define：`testing / production` 必须显式使用合法 HTTPS origin 并拒绝 loopback、IP、保留示例 host、非 origin URL 与本地证书 opt-in；当前唯一真实外部入口 `https://radishx.com` 只有生产事实，不能自动视为 approved testing Gateway。
+- [P7-D1 minimal readiness](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-2026-09-01) 与[实施记录](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)已关闭：项目所有者批准近期 Internal TestFlight 临时复用生产 `https://radishx.com` 并接受数据隔离风险；版本控制 define、distribution fail-closed、repository preflight 与无签名 Release 编译均已通过。该批准不等于独立 testing 环境，D2 / D3 仍须使用专用账号、可定位写入与精确清理。
 - testing / production distribution build 必须显式使用项目所有者确认的 HTTPS Gateway；localhost、保留示例域名、非法或缺失 define 必须 fail closed，开发证书 opt-in 不得进入分发候选。
 - Internal TestFlight 只允许 App Store Connect internal users，不创建 external group / public link；优先使用 `TestFlight Internal Only` build，不能把内部能力验证写作 App Store 合规。
 - Auth 账号删除、完整 Flutter UGC 举报 / 屏蔽、StoreKit / IAP、App Store privacy answers 与商店 metadata 统一后置 External TestFlight / App Store D4；重新进入 D4 时按当时规则重新 readiness。

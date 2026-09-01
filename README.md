@@ -11,14 +11,14 @@ Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以�
 ## 当前状态
 
 - **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`Flutter Native P7-D1 Internal TestFlight minimal readiness`
+- **当前主线**：`Flutter Native P7-D2 development-signed 真机 Smoke readiness`
 - **复核日期**：`2026-09-01`
 - **当前结论**：
   - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
   - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
   - Flutter P1–P5 已完成首轮主题、页面族与成组静态门禁；P5-E 成组 `396 / 396`、Shell `51 / 51`、全量 `419 / 419`、`flutter analyze` 零问题
   - P6-B 已用真实 compact / medium API 35 AVD 关闭系统浏览器 OIDC、私域 / 主题、冷启动、真实输入法与连续根评论 CAS；项目所有者确认双 AVD 足以给出 `Android UI AVD RC Go` 并进入下一阶段，P6-C 真机转为 Android 分发前后置门禁
-  - P7-A / B 已建立 iOS 工程与 runtime owner；P7-C 使用同一 ad-hoc 候选在 iPhone compact 与 iPad medium / expanded 给出 `Simulator Go`。P7-D readiness 后，项目所有者将近期目标限制为 Internal TestFlight；下一顺位只关闭 testing Gateway、archive preflight、export compliance 与 internal-only 授权门禁，External TestFlight / App Store 无限期后置
+  - P7-A / B 已建立 iOS 工程与 runtime owner；P7-C 使用同一 ad-hoc 候选在 iPhone compact 与 iPad medium / expanded 给出 `Simulator Go`。P7-D1 已按项目所有者裁决把生产 `https://radishx.com` 固定为近期 Internal TestFlight Gateway，关闭 runtime fail-closed、repository preflight 与无签名 Release 编译门禁；下一顺位为 D2 Apple Developer membership / Team / 真机 Smoke readiness，External TestFlight / App Store 无限期后置
   - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
   - 生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能推进前置
   - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准

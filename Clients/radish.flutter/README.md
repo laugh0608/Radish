@@ -2,7 +2,7 @@
 
 `radish.flutter` 是 Radish Flutter Native 原生安装包产品线的仓库落点，现有实现起源于 `Phase 2-3 Flutter 客户端 MVP`。
 
-当前已建立 Android 与 iOS 平台工程；Android 新版 UI 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`，真机验收转为分发前后置门禁。iOS P7-B 平台基座已关闭，[P7-C Simulator runtime acceptance](../../Docs/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31.md)也已使用同一 ad-hoc 候选在 iPhone compact 与 iPad medium / expanded 给出 `Simulator Go`。[P7-D readiness](../../Docs/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01.md)后，[项目所有者已将近期目标限制为 Internal TestFlight](../../Docs/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01.md)；[P7-D1 minimal readiness](../../Docs/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-2026-09-01.md)已冻结 fail-closed、static preflight、build number、privacy / export compliance 与 D2 / D3 授权边界，当前只等待唯一 testing Gateway 和实施方案确认，不提前读取签名材料或连接真机。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
+当前已建立 Android 与 iOS 平台工程；Android 新版 UI 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`，真机验收转为分发前后置门禁。iOS P7-B 平台基座已关闭，[P7-C Simulator runtime acceptance](../../Docs/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31.md)也已使用同一 ad-hoc 候选在 iPhone compact 与 iPad medium / expanded 给出 `Simulator Go`。[P7-D readiness](../../Docs/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01.md)后，[项目所有者已将近期目标限制为 Internal TestFlight](../../Docs/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01.md)；[P7-D1 implementation](../../Docs/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01.md)已按批准把生产 `https://radishx.com` 固定为近期唯一 Gateway，并关闭 fail-closed、repository preflight 与无签名 Release 编译门禁。下一顺位为 D2 development-signed 真机 readiness，未授权前不读取签名材料或连接真机。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
 现有业务链路继续作为产品化基线。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、P5-B1–D3 与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成主题、页面族、状态 owner 与三档 surface；P6-A / B 完成 Android 候选装配与双 AVD 运行态。[P6 Android AVD 门禁裁决](../../Docs/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30.md)允许以 `Android UI AVD RC Go` 进入下一阶段，[P7-A iOS readiness](../../Docs/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30.md)确认工具链完整；[P7-B platform foundation](../../Docs/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30.md)随后完成平台工程、安全认证存储、非敏感跨平台偏好、Android 幂等迁移与 iOS OIDC callback，并通过 Android / iOS 原生构建门禁。
 
@@ -95,7 +95,7 @@ Clients/radish.flutter/
 7. `P7-A iOS platform readiness` 与 `P7-B iOS platform foundation` 已完成；`ios/`、安全认证存储、非敏感跨平台偏好、Android 幂等迁移、iOS OIDC callback 与显式平台选择均已落地，Android JVM / Debug APK、iOS 无签名 Simulator build 与 RunnerTests build-for-testing 已通过
 8. `P7-C Simulator runtime acceptance` 已关闭；同一 source `ff54b12d`、`26.8.2+1`、Runner SHA-256 `2fd300a8…3fce52356` 的 ad-hoc 候选已通过 iPhone compact 与 iPad medium / expanded 的 OIDC 冷回调、Keychain / preferences、TLS、旋转、真实输入、四主题和 fail-closed 矩阵，详见 [P7-C 关闭记录](../../Docs/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31.md)
 9. `P7-D iOS 真机、签名与分发 readiness` 已完成；项目所有者随后确认近期只使用 Internal TestFlight，不开放 external tester、public link、App Review 或 App Store
-10. `P7-D1 Internal TestFlight minimal readiness` 已冻结：不新增 channel define，由 `testing / production` 承担分发态 fail-closed；`version.json.flutterBuildNumber` 保持唯一 build owner，并建立 repository static preflight、privacy / export compliance 与 Apple 外部状态授权边界。下一步等待唯一 testing Gateway 与实施方案确认；账号删除、完整 Flutter UGC、StoreKit 与商店 metadata 后置 D4
+10. `P7-D1 Internal TestFlight minimal readiness` 已实施关闭：生产 `https://radishx.com` 经批准临时作为唯一 Gateway，版本控制 define、distribution fail-closed、repository preflight、privacy inventory 与 iOS Release `--no-codesign` 通过。下一步进入 D2 development-signed 真机 readiness；账号删除、完整 Flutter UGC、StoreKit 与商店 metadata 后置 D4
 
 ## Flutter 环境切换
 
@@ -105,12 +105,12 @@ Clients/radish.flutter/
 https://localhost:5000
 ```
 
-构建或运行时可通过 `--dart-define` 指定目标环境。当前保持 API / Auth / Gateway 同源，统一由 `RADISH_GATEWAY_BASE_URL` 派生，不额外引入 Flutter 专属 BFF。
+构建或运行时可通过 `--dart-define` 指定目标环境。当前保持 API / Auth / Gateway 同源，统一由 `RADISH_GATEWAY_BASE_URL` 派生，不额外引入 Flutter 专属 BFF。development 缺省保留本机入口；testing / production 必须显式提供合法 HTTPS origin，对缺失、非法、loopback / IP、保留示例域名或本地证书 opt-in fail closed。
 
 可用参数：
 
 - `RADISH_ENVIRONMENT`：环境名称，默认 `development`，常用值为 `development` / `testing` / `production`
-- `RADISH_GATEWAY_BASE_URL`：Gateway 基址，需包含 `https://` 或 `http://`，末尾 `/` 会自动收口
+- `RADISH_GATEWAY_BASE_URL`：Gateway 基址；development 可使用 HTTP(S)，testing / production 只能使用无 path / query / fragment 的 HTTPS origin
 - `RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES`：是否允许本机开发证书，默认仅 Android + `localhost` Gateway 自动开启；iOS 必须显式传入 `true`，且代码仍只对 loopback Gateway 生效
 
 本机 Android 开发态示例：
@@ -119,17 +119,21 @@ https://localhost:5000
 flutter run --dart-define=RADISH_ENVIRONMENT=development --dart-define=RADISH_GATEWAY_BASE_URL=https://localhost:5000
 ```
 
-测试环境 RC 构建示例：
+Internal TestFlight 仓库 preflight（在仓库根目录执行）：
 
-```powershell
-flutter build apk --release --dart-define=RADISH_ENVIRONMENT=testing --dart-define=RADISH_GATEWAY_BASE_URL=https://test-gateway.example
+```bash
+npm run check:flutter-ios-internal-testflight
 ```
 
-正式环境 RC 构建示例：
+当前经批准的 Internal TestFlight 无签名 Release 编译验证：
 
-```powershell
-flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-define=RADISH_GATEWAY_BASE_URL=https://gateway.example
+```bash
+cd Clients/radish.flutter
+flutter build ios --release --no-codesign \
+  --dart-define-from-file=config/internal-testflight.json
 ```
+
+`config/internal-testflight.json` 当前固定 `testing + https://radishx.com + local cert=false`。该 Gateway 是经项目所有者批准临时复用的生产入口，不代表已经建立 testing 数据隔离；真实写入必须使用专用账号、可定位标记、原始值记录和精确清理。上述命令只生成不可安装、不可分发的无签名编译结果；signed archive、IPA、validation 与 upload 属于 D3 独立授权。
 
 ## 平台目录说明
 
@@ -152,7 +156,7 @@ xcodebuild build-for-testing -quiet \
   CODE_SIGNING_ALLOWED=NO
 ```
 
-这两项只验证编译、插件与原生测试接线，不会启动服务或 Simulator。`--no-codesign` 产物不能用于验证 Simulator Keychain；P7-C 真实运行候选保留了 Xcode 默认 ad-hoc Simulator 签名，且没有 Apple Team。Apple Team、开发 / 分发证书、provisioning、真机与分发属于 P7-D2–D4，不进入仓库默认构建配置；在此之前必须先关闭 P7-D1 分发合规能力门禁。
+这两项只验证编译、插件与原生测试接线，不会启动服务或 Simulator。`--no-codesign` 产物不能用于验证 Simulator Keychain；P7-C 真实运行候选保留了 Xcode 默认 ad-hoc Simulator 签名，且没有 Apple Team。P7-D1 分发合规能力门禁已关闭；Apple Team、开发 / 分发证书、provisioning、真机与分发属于 P7-D2–D4，仍不进入仓库默认构建配置。
 
 ## Android 模拟器联调
 
