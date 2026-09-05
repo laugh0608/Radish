@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P8-B macOS local platform foundation readiness`
-- **产品下一顺位**：`冻结 macOS runtime / OIDC / storage / entitlement / window / desktop input 边界；未确认前不生成平台工程`
+- **工程第一顺位**：`Flutter Native P8-B1 macOS platform foundation implementation（待确认）`
+- **产品下一顺位**：`按已冻结 identity / runtime / OIDC / storage / entitlement / window 边界生成 macOS runner 并完成无服务构建；P8-B2 启动本地服务前另行授权`
 - **复核日期**：`2026-09-05`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
@@ -15,6 +15,7 @@
 
 ## 最近结论
 
+- `2026-09-05` 已完成 [Flutter Native P8-B macOS local platform foundation readiness](/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05)：固定 `com.radish.client`、macOS `10.15+` 工程下限、`RadishAcg-1024.png` 品牌 AppIcon、单窗口 `1280 × 800` / 最小 `390 × 600` / frame 恢复 / 关闭退出、MethodChannel + `NSWorkspace` + `radish://oidc/*`、Keychain / preferences、App Sandbox `network.client` / Keychain entitlement 与 desktop input 矩阵；拆为 B1 无服务工程 / 构建和 B2 本地 Gateway 运行，当前等待项目所有者确认 B1，尚未生成 `macos/` 或修改 runtime。
 - `2026-09-05` 已完成 [Flutter Native P8-A desktop platform readiness](/records/f4-flutter-native-p8a-desktop-platform-readiness-2026-09-05)：仓库只有 Android / iOS runner，desktop 当前统一落入 `unsupported` 并使用内存 session / auth / follow-up，无法形成真实产品；共享 UI 已有 expanded 与 `Ctrl + 1..5` / Tab 基础，但缺成组 hover、滚轮 / scrollbar、方向键、Enter / Space、Escape、连续焦点、窗口缩放和重启证据。macOS 宿主 Flutter `3.44.0`、Xcode `26.6`、CocoaPods `1.16.2` 与 desktop device 就绪；Windows11 ARM64 日常 VM 有 Git / Windows SDK，但缺 Flutter / Dart、CMake / Ninja / clang-cl 和 Visual Studio C++ Desktop workload，CleanBase 未启动；Debian 两 VM 本批未启动、工具链待实时审计。P8 固定按 macOS、Windows、Linux、成组门禁推进，下一顺位先做 P8-B macOS readiness，不生成平台工程或安装依赖。
 - `2026-09-01` 项目所有者已确认[当前没有 Apple Developer Program 付费会员或可测试真机，只有虚拟设备](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)。P7-D2 development-signed 真机 Smoke 与 P7-D3 TestFlight Internal Only 因外部前置条件不可用而暂停；P7-C `Simulator Go`、P7-D1 静态 / 无签名门禁继续有效，但不能替代真机、签名、upload 或 TestFlight 证据。重新进入条件固定为有效 membership / Team / App ID / App Store Connect 范围、至少一台 iPhone、最新候选重新 preflight 与分阶段独立授权；项目所有者随后确认转入 P8 desktop readiness。
 - `2026-09-01` 已完成 [P7-D1 Internal TestFlight minimal readiness 实施](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)：项目所有者批准近期 Internal TestFlight 临时复用生产 `https://radishx.com` 并接受数据隔离风险；版本控制 define 固定 `testing + production Gateway + local cert=false`，`AppEnvironment` 对 distribution 缺失 / 非法 define、HTTP、loopback / IP、保留示例域名、非 origin 与本地证书 opt-in fail closed。repository preflight 覆盖 version / build、Runner Release、entitlements、AppIcon、依赖 privacy manifests 与 Apple 敏感制品。Flutter `437 / 437`、analyze、preflight `4 / 4`、版本契约与 iOS generic device Release `--no-codesign` 均通过；built App 含三份 privacy manifest、无 embedded profile。D1 `Go`；D2 / D3 后续因会员与真机前置不可用而暂缓。本轮未访问 Apple 账号、签名、真机、archive / upload 或生产数据。
@@ -227,22 +228,23 @@
 
 ## 当前事项（2026-09-05）
 
-1. P8-A readiness 已关闭；desktop 共同阻断、三宿主工具链、UTM Windows / Debian 日常与 CleanBase 用途及 P8-B–E 顺序已冻结。
-2. desktop 当前必须保持 `No-Go`：没有平台目录，Windows / macOS / Linux 都进入 `unsupported` 内存 fallback，系统浏览器 OIDC 与持久状态不成立。
-3. macOS 是唯一现成工具链完整的平台；Windows 日常 VM 缺 Flutter 与 C++ Desktop workload，Debian 本批没有实时工具链证据。所有 VM 当前均已停止，Windows CleanBase 未启动。
-4. P7-D2 / D3 继续因会员与真机外部前置条件暂缓；P8 macOS 本地开发不等于 iOS TestFlight，也不恢复 Apple 分发工作。
-5. 生产 Gateway 复用风险批准不自动扩展到 desktop；P8 runtime Smoke 前必须另行冻结 localhost / VM-host Gateway、证书、测试账号和清理边界。
+1. P8-A 与 P8-B readiness 已关闭；desktop 共同阻断、三宿主工具链、UTM 日常 / CleanBase 用途、macOS identity / runtime / OIDC / storage / entitlement / window / input 与 P8-B–E 顺序已冻结。
+2. 当前仍只有 Android / iOS runner；项目所有者确认前不生成 `macos/`。B1 确认后只让 macOS 脱离 `unsupported`，Windows / Linux 继续保持显式内存 shell。
+3. macOS B1 固定为 `com.radish.client`、`Radish`、`10.15+`、品牌 AppIcon、单窗口、真实 MethodChannel OIDC、Keychain session / attempt、SharedPreferences follow-up / theme、App Sandbox outgoing network 与无服务 Debug / Release 构建。
+4. B2 才启动本地 Gateway / Auth / API，使用 development localhost 与显式本地证书 opt-in，关闭 OIDC 冷 / 热 callback、重启恢复、登出清理、四主题、键鼠 / focus / scroll 与窗口矩阵；启动前必须另行授权。
+5. 签名、公证、DMG / PKG、App Store、自动更新、托盘、多窗口、后台服务、生产 Gateway、Windows / Linux 工具安装和平台工程均不进入 B1。
 
-## 下一事项（P8-B macOS local platform foundation readiness）
+## 下一事项（P8-B1 macOS platform foundation implementation，待确认）
 
-1. 冻结 `RadishPlatformKind.macos`、安全 session / OIDC attempt、非敏感偏好、系统浏览器、custom scheme 冷 / 热回调与窗口 lifecycle owner，不允许内存 fallback 冒充产品。
-2. 冻结 Runner identity、最低系统版本、App Sandbox network client、Keychain Sharing、DebugProfile / Release entitlements、AppIcon 与版本 owner。
-3. 冻结 Tab / 方向键 / Enter / Space / Escape、hover、滚轮 / scrollbar、窗口初始 / 最小尺寸与缩放、四主题和 reduced-motion 验证矩阵。
-4. 冻结 macOS localhost Gateway 与本地证书显式 opt-in；不连接生产、不产生业务写入。
-5. readiness 只形成方案；`flutter create --platforms=macos .`、runtime / 原生实现、服务启动和真实运行仍须项目所有者确认。
+1. 使用当前 Flutter `3.44.0` 只生成 `macos/`，不新增 package 或改 lockfile；设置 `Radish`、`com.radish.client`、`10.15+` 与仓库品牌 AppIcon。
+2. 增加 `RadishPlatformKind.macos`，接入真实 secure session / OIDC attempt、SharedPreferences follow-up / theme，并保持 `EmptyAppLifecycleGateway`。
+3. 建立 `radish.flutter/native_auth` macOS handler、HTTP(S) 系统浏览器打开、`radish://oidc` 冷 / 热 callback、一次性 pending 消费与 fail-closed parser。
+4. 配置 App Sandbox `network.client`、Keychain Sharing、DebugProfile / Release entitlement，并建立单窗口初始 / 最小尺寸、frame 恢复与关闭退出 owner。
+5. 完成 Flutter 定向 / 全量测试、RunnerTests、macOS Debug / Release 构建及 identity / entitlement 静态检查；不启动服务。B1 提交后再申请 B2 启动授权。
 
 ## 当前执行入口
 
+- [P8-B macOS local platform foundation readiness](/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05)
 - [P8-A desktop platform readiness](/records/f4-flutter-native-p8a-desktop-platform-readiness-2026-09-05)
 - [P7-D2 / D3 外部前置条件暂缓](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)
 - [P7-D1 Internal TestFlight minimal readiness 实施](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)

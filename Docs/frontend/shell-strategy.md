@@ -17,7 +17,7 @@ Web 承担浏览器默认入口、公开访问、登录后使用、SEO、分享�
 | 壳层 | 主要用户 | 主要设备 | 主要任务 | 交互形态 |
 | --- | --- | --- | --- | --- |
 | 纯 Web 壳层 | 游客、轻登录用户、PC / 移动浏览器用户 | 手机 / 平板 / 桌面浏览器 | 浏览帖子、查看详情、访问公开主页、阅读文档、轻互动、逐步承接登录后高价值功能 | 单任务、直达内容、响应式 Web |
-| Flutter Native 次级产品 | 原生安装包用户 | Android / iOS / Windows / macOS / Linux；Android AVD 与 iOS Simulator 开发门禁已关闭，desktop runner 尚未生成 | Web 边界成立后承接高价值阅读、参与与复访；mobile-first、desktop stage-gated | 移动触控与生命周期；桌面键鼠、焦点和窗口自适应 |
+| Flutter Native 次级产品 | 原生安装包用户 | Android / iOS / Windows / macOS / Linux；Android AVD 与 iOS Simulator 开发门禁已关闭，P8-B macOS readiness 已关闭但 desktop runner 尚未生成 | Web 边界成立后承接高价值阅读、参与与复访；mobile-first、desktop stage-gated | 移动触控与生命周期；桌面键鼠、焦点和窗口自适应 |
 | WebOS 保留入口 | 历史桌面工作台用户 | 桌面浏览器 | 继续访问既有桌面工作台能力，承接迁移过渡期 | Dock、窗口系统、工作台 |
 | Tauri 弃用资产 | 无正式目标用户 | 历史 Windows / macOS / Linux 验证 | 仅保留既有代码与验证资产，不再立项 | 历史 Tauri 系统壳 + Web UI |
 
@@ -42,7 +42,7 @@ Web 承担浏览器默认入口、公开访问、登录后使用、SEO、分享�
    - 当前已补齐榜单、轻量 forum 通知列表、公开主页来源返回、forum 评论发布 / 回复、纯文本发帖、公开商城列表与详情、登录态单商品购买、订单 / 背包 / 钱包回流、公开详情链接复制和 docs 原生阅读内链等高价值移动主路径
    - 作为次级产品线继续承接高价值原生路径，但新能力先在 Web 固定产品边界，不默认追平 Web；iOS 在共享 UI 稳定后单独完成平台验收
    - 系统推送、后台任务、商店分发、原生生命周期或原生交互等能力仍需证明明确价值后单独进入批次
-   - Windows / macOS / Linux 是长期正式目标；P8-A 已确认 shared UI 有 expanded 与基础快捷键证据，但 desktop runtime 当前落入内存 fallback，hover、滚轮 / scrollbar、完整键盘焦点和真实窗口门禁未关闭。后续按 macOS、Windows、Linux 分平台建立工程与 runtime，再独立处理签名、更新与分发
+   - Windows / macOS / Linux 是长期正式目标；P8-A 已确认 shared UI 有 expanded 与基础快捷键证据，但 desktop runtime 当前落入内存 fallback。P8-B 已冻结 macOS 单窗口、真实 OIDC / Keychain / preferences、App Sandbox entitlement、hover / 滚轮 / focus / shortcut 与 resize 门禁；待确认后先做 B1 无服务平台工程，再对 B2 本地运行单独申请启动授权。Windows / Linux 后置 P8-C / D，签名、更新与分发独立处理
    - Flutter Web 不进入路线；Console、SEO 与完整 Author 默认继续由 Web 承担
 4. **Tauri 历史资产**
    - Tauri 正式弃用，不进入日常开发、UI、CI、构建、签名、分发或验收流程
