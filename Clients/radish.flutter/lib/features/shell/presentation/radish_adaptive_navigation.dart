@@ -98,7 +98,7 @@ class _RadishShellFrame extends StatelessWidget {
   Widget build(BuildContext context) {
     final isCompact = windowClass == RadishWindowClass.compact;
     return Scaffold(
-      key: Key('radish-navigation-${windowClass.name}'),
+      key: const Key('radish-navigation-shell'),
       body: Column(
         children: [
           SafeArea(

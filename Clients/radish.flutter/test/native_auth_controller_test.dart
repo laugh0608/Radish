@@ -182,6 +182,42 @@ void main() {
 
     expect(controller.state.lastErrorMessage, '浏览器登录未完成，请重新登录。');
   });
+
+  test('logout clears the local session when browser logout fails', () async {
+    final gateway = _LogoutFailureGateway(failBrowserLogout: true);
+    final sessionController = await _buildAuthenticatedSessionController();
+    final controller = _buildController(
+      gateway: gateway,
+      exchangeService: _RecordingAuthorizationCodeExchangeService(),
+      sessionController: sessionController,
+    );
+
+    await controller.startLogout();
+
+    expect(sessionController.state.isAnonymous, isTrue);
+    expect(
+      controller.state.lastErrorMessage,
+      '本地登录已退出，但无法打开浏览器退出流程。',
+    );
+  });
+
+  test('logout retries attempt cleanup without blocking local logout',
+      () async {
+    final gateway = _LogoutFailureGateway(failFirstAttemptCleanup: true);
+    final sessionController = await _buildAuthenticatedSessionController();
+    final controller = _buildController(
+      gateway: gateway,
+      exchangeService: _RecordingAuthorizationCodeExchangeService(),
+      sessionController: sessionController,
+    );
+
+    await controller.startLogout();
+
+    expect(gateway.attemptCleanupCount, 2);
+    expect(gateway.lastLogoutUri, isNotNull);
+    expect(sessionController.state.isAnonymous, isTrue);
+    expect(controller.state.lastErrorMessage, isNull);
+  });
 }
 
 SessionController _buildSessionController() {
@@ -193,8 +229,25 @@ SessionController _buildSessionController() {
   );
 }
 
+Future<SessionController> _buildAuthenticatedSessionController() async {
+  final controller = SessionController(
+    sessionStore: InMemorySessionStore(
+        initialSession: AuthSession(
+      accessToken: 'access-token',
+      refreshToken: 'refresh-token',
+      userId: 'user-1',
+      expiresAt: DateTime.now().toUtc().add(const Duration(hours: 1)),
+    )),
+    refreshService: const SessionRefreshService(
+      environment: AppEnvironment.development(),
+    ),
+  );
+  await controller.restore();
+  return controller;
+}
+
 NativeAuthController _buildController({
-  required InMemoryNativeAuthGateway gateway,
+  required NativeAuthGateway gateway,
   required AuthorizationCodeExchangeService exchangeService,
   required SessionController sessionController,
 }) {
@@ -204,6 +257,34 @@ NativeAuthController _buildController({
     gateway: gateway,
     exchangeService: exchangeService,
   );
+}
+
+class _LogoutFailureGateway extends InMemoryNativeAuthGateway {
+  _LogoutFailureGateway({
+    this.failBrowserLogout = false,
+    this.failFirstAttemptCleanup = false,
+  });
+
+  final bool failBrowserLogout;
+  final bool failFirstAttemptCleanup;
+  int attemptCleanupCount = 0;
+
+  @override
+  Future<void> clearAuthorizationAttempt() async {
+    attemptCleanupCount += 1;
+    if (failFirstAttemptCleanup && attemptCleanupCount == 1) {
+      throw StateError('attempt cleanup unavailable');
+    }
+    await super.clearAuthorizationAttempt();
+  }
+
+  @override
+  Future<void> openLogoutUrl(Uri logoutUri) async {
+    await super.openLogoutUrl(logoutUri);
+    if (failBrowserLogout) {
+      throw StateError('browser unavailable');
+    }
+  }
 }
 
 class _RecordingAuthorizationCodeExchangeService

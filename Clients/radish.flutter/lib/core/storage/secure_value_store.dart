@@ -1,5 +1,15 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
+const MacOsOptions radishMacOsSecureStorageOptions = MacOsOptions(
+  accountName: 'flutter_secure_storage_service',
+  accessibility: KeychainAccessibility.first_unlock_this_device,
+  synchronizable: false,
+  // Data Protection Keychain requires a signed application identifier/access
+  // group. Keep no-membership ad-hoc macOS builds on the encrypted login
+  // Keychain instead of falling back to preferences or an in-memory store.
+  usesDataProtectionKeychain: false,
+);
+
 abstract interface class SecureValueStore {
   Future<String?> read(String key);
 
@@ -22,11 +32,7 @@ class FlutterSecureValueStore implements SecureValueStore {
                 accessibility: KeychainAccessibility.first_unlock_this_device,
                 synchronizable: false,
               ),
-              mOptions: MacOsOptions(
-                accessibility: KeychainAccessibility.first_unlock_this_device,
-                synchronizable: false,
-                usesDataProtectionKeychain: true,
-              ),
+              mOptions: radishMacOsSecureStorageOptions,
             );
 
   final FlutterSecureStorage _storage;

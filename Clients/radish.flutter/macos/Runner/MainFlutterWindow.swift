@@ -11,7 +11,7 @@ class MainFlutterWindow: NSWindow {
     self.setFrameAutosaveName("RadishMainWindow")
 
     RegisterGeneratedPlugins(registry: flutterViewController)
-    (NSApplication.shared.delegate as? AppDelegate)?.configureNativeAuth(
+    (NSApplication.shared.delegate as? AppDelegate)?.configurePlatformChannels(
       messenger: flutterViewController.engine.binaryMessenger
     )
 

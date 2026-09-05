@@ -120,8 +120,12 @@ class SecureAuthorizationAttemptStore implements AuthorizationAttemptStore {
   final SecureValueStore _secureValues;
 
   @override
-  Future<void> clear() {
-    return _secureValues.delete(storageKey);
+  Future<void> clear() async {
+    if (await _secureValues.read(storageKey) == null) {
+      return;
+    }
+
+    await _secureValues.delete(storageKey);
   }
 
   @override

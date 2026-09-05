@@ -27,9 +27,9 @@ void main() {
   });
 
   for (final testCase in const [
-    (width: 390.0, key: 'radish-navigation-compact', headerHeight: 64.0),
-    (width: 800.0, key: 'radish-navigation-medium', headerHeight: 68.0),
-    (width: 1440.0, key: 'radish-navigation-expanded', headerHeight: 68.0),
+    (width: 390.0, windowClass: 'compact', headerHeight: 64.0),
+    (width: 800.0, windowClass: 'medium', headerHeight: 68.0),
+    (width: 1440.0, windowClass: 'expanded', headerHeight: 68.0),
   ]) {
     testWidgets('navigation adapts at ${testCase.width.toInt()} px',
         (tester) async {
@@ -41,7 +41,10 @@ void main() {
       await tester.pumpWidget(_buildHarness());
       await tester.pumpAndSettle();
 
-      expect(find.byKey(Key(testCase.key)), findsOneWidget);
+      expect(
+        find.byKey(const Key('radish-navigation-shell')),
+        findsOneWidget,
+      );
       expect(find.byType(NavigationBar), findsNothing);
       expect(find.byType(NavigationRail), findsNothing);
       expect(
@@ -49,7 +52,7 @@ void main() {
             .getSize(
               find.byKey(
                 Key(
-                  'radish-shell-header-${testCase.key.replaceFirst('radish-navigation-', '')}',
+                  'radish-shell-header-${testCase.windowClass}',
                 ),
               ),
             )
@@ -156,6 +159,32 @@ void main() {
     await tester.pump();
     expect(FocusManager.instance.primaryFocus, isNotNull);
   });
+
+  testWidgets('resizing across window classes preserves body state',
+      (tester) async {
+    tester.view.physicalSize = const Size(1440, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(_buildStatePreservationHarness());
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('increment'));
+    await tester.pump();
+    expect(find.text('state-1'), findsOneWidget);
+
+    tester.view.physicalSize = const Size(800, 800);
+    await tester.pumpAndSettle();
+    expect(find.text('state-1'), findsOneWidget);
+    expect(find.byKey(const Key('radish-shell-header-medium')), findsOneWidget);
+
+    tester.view.physicalSize = const Size(390, 844);
+    await tester.pumpAndSettle();
+    expect(find.text('state-1'), findsOneWidget);
+    expect(
+        find.byKey(const Key('radish-shell-header-compact')), findsOneWidget);
+  });
 }
 
 Widget _buildHarness({MediaQueryData? mediaQueryData}) {
@@ -166,6 +195,48 @@ Widget _buildHarness({MediaQueryData? mediaQueryData}) {
         ? harness
         : MediaQuery(data: mediaQueryData, child: harness),
   );
+}
+
+Widget _buildStatePreservationHarness() {
+  return MaterialApp(
+    theme: buildRadishTheme(),
+    home: RadishAdaptiveNavigation(
+      selectedIndex: 0,
+      onDestinationSelected: (_) {},
+      destinations: const [
+        RadishNavigationDestination(
+          icon: RadishIcons.discover,
+          label: '发现',
+        ),
+      ],
+      body: const _StatePreservationProbe(),
+    ),
+  );
+}
+
+class _StatePreservationProbe extends StatefulWidget {
+  const _StatePreservationProbe();
+
+  @override
+  State<_StatePreservationProbe> createState() =>
+      _StatePreservationProbeState();
+}
+
+class _StatePreservationProbeState extends State<_StatePreservationProbe> {
+  int _value = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text('state-$_value'),
+        TextButton(
+          onPressed: () => setState(() => _value += 1),
+          child: const Text('increment'),
+        ),
+      ],
+    );
+  }
 }
 
 class _NavigationHarness extends StatefulWidget {

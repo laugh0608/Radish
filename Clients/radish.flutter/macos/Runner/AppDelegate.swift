@@ -4,17 +4,31 @@ import FlutterMacOS
 @main
 class AppDelegate: FlutterAppDelegate {
   private var nativeAuthChannel: FlutterMethodChannel?
+  private var forumFollowUpChannel: FlutterMethodChannel?
   private let authCallbackStore = RadishNativeAuthCallbackStore()
 
-  func configureNativeAuth(messenger: FlutterBinaryMessenger) {
-    let channel = FlutterMethodChannel(
+  func configurePlatformChannels(messenger: FlutterBinaryMessenger) {
+    let authChannel = FlutterMethodChannel(
       name: "radish.flutter/native_auth",
       binaryMessenger: messenger
     )
-    channel.setMethodCallHandler { [weak self] call, result in
+    authChannel.setMethodCallHandler { [weak self] call, result in
       self?.handleNativeAuthCall(call, result: result)
     }
-    nativeAuthChannel = channel
+    nativeAuthChannel = authChannel
+
+    let followUpChannel = FlutterMethodChannel(
+      name: "radish.flutter/forum_follow_up",
+      binaryMessenger: messenger
+    )
+    followUpChannel.setMethodCallHandler { call, result in
+      if call.method == "takePendingHandoff" {
+        result(nil)
+      } else {
+        result(FlutterMethodNotImplemented)
+      }
+    }
+    forumFollowUpChannel = followUpChannel
   }
 
   override func application(
@@ -88,6 +102,7 @@ class AppDelegate: FlutterAppDelegate {
       if NSWorkspace.shared.open(url) {
         result(nil)
       } else {
+        NSLog("Radish native auth browser open failed")
         result(
           FlutterError(
             code: "open_failed",

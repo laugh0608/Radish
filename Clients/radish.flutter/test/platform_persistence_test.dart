@@ -10,6 +10,16 @@ import 'package:radish_flutter/features/forum/data/forum_follow_up_store.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
 
 void main() {
+  test('macOS secure storage stays isolated in the local login Keychain', () {
+    expect(radishMacOsSecureStorageOptions.toMap(), {
+      'accountName': 'flutter_secure_storage_service',
+      'accessibility': 'first_unlock_this_device',
+      'synchronizable': 'false',
+      'useSecureEnclave': 'false',
+      'usesDataProtectionKeychain': 'false',
+    });
+  });
+
   test('secure session and OIDC attempt round-trip and clear once', () async {
     final secureValues = InMemorySecureValueStore();
     final sessionStore = SecureSessionStore(secureValues: secureValues);
@@ -28,6 +38,17 @@ void main() {
 
     await sessionStore.clear();
     expect(await sessionStore.read(), isNull);
+  });
+
+  test('missing secure OIDC attempt clears without platform delete', () async {
+    final secureValues = _MissingDeleteFailsSecureValueStore();
+    final attemptStore = SecureAuthorizationAttemptStore(
+      secureValues: secureValues,
+    );
+
+    await attemptStore.clear();
+
+    expect(secureValues.deleteCount, 0);
   });
 
   test('persistent recent targets preserve deduped newest-first limits',
@@ -162,6 +183,22 @@ class _FailingSecureValueStore implements SecureValueStore {
   Future<void> write(String key, String value) {
     throw StateError('secure storage unavailable');
   }
+}
+
+class _MissingDeleteFailsSecureValueStore implements SecureValueStore {
+  int deleteCount = 0;
+
+  @override
+  Future<void> delete(String key) async {
+    deleteCount += 1;
+    throw StateError('missing key cannot be deleted');
+  }
+
+  @override
+  Future<String?> read(String key) async => null;
+
+  @override
+  Future<void> write(String key, String value) async {}
 }
 
 class _MemoryLegacyGateway implements LegacyAndroidPersistenceGateway {
