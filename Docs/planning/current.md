@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P8-B1 macOS platform foundation implementation（待确认）`
-- **产品下一顺位**：`按已冻结 identity / runtime / OIDC / storage / entitlement / window 边界生成 macOS runner 并完成无服务构建；P8-B2 启动本地服务前另行授权`
+- **工程第一顺位**：`Flutter Native P8-B2 macOS local runtime acceptance（待启动授权）`
+- **产品下一顺位**：`以本地 development Gateway 验证 OIDC、Keychain / preferences、三档窗口、四主题与 desktop 输入矩阵；不连接生产数据`
 - **复核日期**：`2026-09-05`
 - **源码候选版本**：`26.8.2`（只完成版本同步，尚未创建 test tag、GitHub Release、镜像或部署）
 - **正式主线**：只保留 Web 与 Flutter Native 两条产品线。Web 优先覆盖 PC / mobile 浏览器；Flutter 次级覆盖原生 PC / mobile 安装包，mobile-first、desktop stage-gated；WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
@@ -15,7 +15,8 @@
 
 ## 最近结论
 
-- `2026-09-05` 已完成 [Flutter Native P8-B macOS local platform foundation readiness](/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05)：固定 `com.radish.client`、macOS `10.15+` 工程下限、`RadishAcg-1024.png` 品牌 AppIcon、单窗口 `1280 × 800` / 最小 `390 × 600` / frame 恢复 / 关闭退出、MethodChannel + `NSWorkspace` + `radish://oidc/*`、Keychain / preferences、App Sandbox `network.client` / Keychain entitlement 与 desktop input 矩阵；拆为 B1 无服务工程 / 构建和 B2 本地 Gateway 运行，当前等待项目所有者确认 B1，尚未生成 `macos/` 或修改 runtime。
+- `2026-09-05` 已完成 [Flutter Native P8-B1 macOS platform foundation implementation](/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05)：生成 `macos/` 并落地 `Radish` / `com.radish.client` / `26.8.2+1` / `10.15+`、品牌 AppIcon、单窗口尺寸 / frame / 关闭退出、显式 `RadishPlatformKind.macos`、Keychain / preferences owner 与 MethodChannel + `NSWorkspace` + `radish://oidc/*` fail-closed callback。Xcode `26.6` 证明空 `keychain-access-groups` 会要求开发证书，而锁定插件的 macOS 分支不读取 groupId，因此移除该无效 capability，保留 Data Protection Keychain 与 sandbox `network.client`；Flutter 定向 `22 / 22`、全量 `438 / 438`、RunnerTests `5 / 5` 及 Debug / Release 构建均通过。B1 关闭，下一步等待 P8-B2 本地服务启动授权。
+- `2026-09-05` 已完成 [Flutter Native P8-B macOS local platform foundation readiness](/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05)：固定 `com.radish.client`、macOS `10.15+` 工程下限、`RadishAcg-1024.png` 品牌 AppIcon、单窗口 `1280 × 800` / 最小 `390 × 600` / frame 恢复 / 关闭退出、MethodChannel + `NSWorkspace` + `radish://oidc/*`、Keychain / preferences、App Sandbox `network.client` 与 desktop input 矩阵；拆为 B1 无服务工程 / 构建和 B2 本地 Gateway 运行。
 - `2026-09-05` 已完成 [Flutter Native P8-A desktop platform readiness](/records/f4-flutter-native-p8a-desktop-platform-readiness-2026-09-05)：仓库只有 Android / iOS runner，desktop 当前统一落入 `unsupported` 并使用内存 session / auth / follow-up，无法形成真实产品；共享 UI 已有 expanded 与 `Ctrl + 1..5` / Tab 基础，但缺成组 hover、滚轮 / scrollbar、方向键、Enter / Space、Escape、连续焦点、窗口缩放和重启证据。macOS 宿主 Flutter `3.44.0`、Xcode `26.6`、CocoaPods `1.16.2` 与 desktop device 就绪；Windows11 ARM64 日常 VM 有 Git / Windows SDK，但缺 Flutter / Dart、CMake / Ninja / clang-cl 和 Visual Studio C++ Desktop workload，CleanBase 未启动；Debian 两 VM 本批未启动、工具链待实时审计。P8 固定按 macOS、Windows、Linux、成组门禁推进，下一顺位先做 P8-B macOS readiness，不生成平台工程或安装依赖。
 - `2026-09-01` 项目所有者已确认[当前没有 Apple Developer Program 付费会员或可测试真机，只有虚拟设备](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)。P7-D2 development-signed 真机 Smoke 与 P7-D3 TestFlight Internal Only 因外部前置条件不可用而暂停；P7-C `Simulator Go`、P7-D1 静态 / 无签名门禁继续有效，但不能替代真机、签名、upload 或 TestFlight 证据。重新进入条件固定为有效 membership / Team / App ID / App Store Connect 范围、至少一台 iPhone、最新候选重新 preflight 与分阶段独立授权；项目所有者随后确认转入 P8 desktop readiness。
 - `2026-09-01` 已完成 [P7-D1 Internal TestFlight minimal readiness 实施](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)：项目所有者批准近期 Internal TestFlight 临时复用生产 `https://radishx.com` 并接受数据隔离风险；版本控制 define 固定 `testing + production Gateway + local cert=false`，`AppEnvironment` 对 distribution 缺失 / 非法 define、HTTP、loopback / IP、保留示例域名、非 origin 与本地证书 opt-in fail closed。repository preflight 覆盖 version / build、Runner Release、entitlements、AppIcon、依赖 privacy manifests 与 Apple 敏感制品。Flutter `437 / 437`、analyze、preflight `4 / 4`、版本契约与 iOS generic device Release `--no-codesign` 均通过；built App 含三份 privacy manifest、无 embedded profile。D1 `Go`；D2 / D3 后续因会员与真机前置不可用而暂缓。本轮未访问 Apple 账号、签名、真机、archive / upload 或生产数据。
@@ -228,22 +229,23 @@
 
 ## 当前事项（2026-09-05）
 
-1. P8-A 与 P8-B readiness 已关闭；desktop 共同阻断、三宿主工具链、UTM 日常 / CleanBase 用途、macOS identity / runtime / OIDC / storage / entitlement / window / input 与 P8-B–E 顺序已冻结。
-2. 当前仍只有 Android / iOS runner；项目所有者确认前不生成 `macos/`。B1 确认后只让 macOS 脱离 `unsupported`，Windows / Linux 继续保持显式内存 shell。
-3. macOS B1 固定为 `com.radish.client`、`Radish`、`10.15+`、品牌 AppIcon、单窗口、真实 MethodChannel OIDC、Keychain session / attempt、SharedPreferences follow-up / theme、App Sandbox outgoing network 与无服务 Debug / Release 构建。
-4. B2 才启动本地 Gateway / Auth / API，使用 development localhost 与显式本地证书 opt-in，关闭 OIDC 冷 / 热 callback、重启恢复、登出清理、四主题、键鼠 / focus / scroll 与窗口矩阵；启动前必须另行授权。
-5. 签名、公证、DMG / PKG、App Store、自动更新、托盘、多窗口、后台服务、生产 Gateway、Windows / Linux 工具安装和平台工程均不进入 B1。
+1. P8-A、P8-B readiness 与 P8-B1 已关闭；macOS runner、identity、runtime、OIDC、storage、sandbox、window 与无服务双配置构建已经落地。
+2. macOS 已脱离 `unsupported` 并使用真实持久化与 native auth owner；Windows / Linux 继续保持显式内存 shell，后置 P8-C / D。
+3. Xcode `26.6` 下空 `keychain-access-groups` 会要求 development certificate，且锁定插件的 macOS 实现不消费 groupId；实际 runner 保留 Data Protection Keychain 与 `network.client`，不声明 Keychain Sharing，真实持久化后置 B2 验证。
+4. P8-B2 启动本地 Gateway / Auth / API 与 macOS app，使用 development localhost 与显式本地证书 opt-in，关闭 OIDC 冷 / 热 callback、重启恢复、登出清理、四主题、键鼠 / focus / scroll 与窗口矩阵；启动前必须另行授权。
+5. 签名、公证、DMG / PKG、App Store、自动更新、托盘、多窗口、后台服务、生产 Gateway、Windows / Linux 工具安装和平台工程均不进入 P8-B2。
 
-## 下一事项（P8-B1 macOS platform foundation implementation，待确认）
+## 下一事项（P8-B2 macOS local runtime acceptance，待启动授权）
 
-1. 使用当前 Flutter `3.44.0` 只生成 `macos/`，不新增 package 或改 lockfile；设置 `Radish`、`com.radish.client`、`10.15+` 与仓库品牌 AppIcon。
-2. 增加 `RadishPlatformKind.macos`，接入真实 secure session / OIDC attempt、SharedPreferences follow-up / theme，并保持 `EmptyAppLifecycleGateway`。
-3. 建立 `radish.flutter/native_auth` macOS handler、HTTP(S) 系统浏览器打开、`radish://oidc` 冷 / 热 callback、一次性 pending 消费与 fail-closed parser。
-4. 配置 App Sandbox `network.client`、Keychain Sharing、DebugProfile / Release entitlement，并建立单窗口初始 / 最小尺寸、frame 恢复与关闭退出 owner。
-5. 完成 Flutter 定向 / 全量测试、RunnerTests、macOS Debug / Release 构建及 identity / entitlement 静态检查；不启动服务。B1 提交后再申请 B2 启动授权。
+1. 单独获授权后启动本地 Gateway / Auth / API 与 macOS app；固定 `RADISH_ENVIRONMENT=development`、`RADISH_GATEWAY_BASE_URL=https://localhost:5000`、`RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES=true`。
+2. 验证 guest 公开读取、系统浏览器 OIDC 热 callback、完全退出后的冷 callback、错误与非法 callback fail closed。
+3. 验证 Keychain session / OIDC attempt、SharedPreferences theme / recent 在退出重启后的恢复，以及登出与回调重放清理。
+4. 覆盖 expanded / medium / compact、四主题、hover、滚动、Tab / Shift+Tab、Enter / Space、Escape、`Cmd/Ctrl + 1..5`、最小化 / 全屏 / resize / frame 恢复 / 关闭退出。
+5. 全程只使用本地数据；结束后精确清理测试账号与写入、停止所有进程并记录候选证据。
 
 ## 当前执行入口
 
+- [P8-B1 macOS platform foundation implementation](/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05)
 - [P8-B macOS local platform foundation readiness](/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05)
 - [P8-A desktop platform readiness](/records/f4-flutter-native-p8a-desktop-platform-readiness-2026-09-05)
 - [P7-D2 / D3 外部前置条件暂缓](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)

@@ -12,6 +12,7 @@ import '../features/forum/data/forum_follow_up_store.dart';
 enum RadishPlatformKind {
   android,
   ios,
+  macos,
   unsupported;
 
   static RadishPlatformKind current() {
@@ -20,6 +21,9 @@ enum RadishPlatformKind {
     }
     if (Platform.isIOS) {
       return RadishPlatformKind.ios;
+    }
+    if (Platform.isMacOS) {
+      return RadishPlatformKind.macos;
     }
     return RadishPlatformKind.unsupported;
   }

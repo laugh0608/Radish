@@ -17,7 +17,7 @@ Web 承担浏览器默认入口、公开访问、登录后使用、SEO、分享�
 | 壳层 | 主要用户 | 主要设备 | 主要任务 | 交互形态 |
 | --- | --- | --- | --- | --- |
 | 纯 Web 壳层 | 游客、轻登录用户、PC / 移动浏览器用户 | 手机 / 平板 / 桌面浏览器 | 浏览帖子、查看详情、访问公开主页、阅读文档、轻互动、逐步承接登录后高价值功能 | 单任务、直达内容、响应式 Web |
-| Flutter Native 次级产品 | 原生安装包用户 | Android / iOS / Windows / macOS / Linux；Android AVD 与 iOS Simulator 开发门禁已关闭，P8-B macOS readiness 已关闭但 desktop runner 尚未生成 | Web 边界成立后承接高价值阅读、参与与复访；mobile-first、desktop stage-gated | 移动触控与生命周期；桌面键鼠、焦点和窗口自适应 |
+| Flutter Native 次级产品 | 原生安装包用户 | Android / iOS / Windows / macOS / Linux；Android AVD、iOS Simulator 与 P8-B1 macOS 无服务工程门禁已关闭，macOS 真实运行待 B2 | Web 边界成立后承接高价值阅读、参与与复访；mobile-first、desktop stage-gated | 移动触控与生命周期；桌面键鼠、焦点和窗口自适应 |
 | WebOS 保留入口 | 历史桌面工作台用户 | 桌面浏览器 | 继续访问既有桌面工作台能力，承接迁移过渡期 | Dock、窗口系统、工作台 |
 | Tauri 弃用资产 | 无正式目标用户 | 历史 Windows / macOS / Linux 验证 | 仅保留既有代码与验证资产，不再立项 | 历史 Tauri 系统壳 + Web UI |
 

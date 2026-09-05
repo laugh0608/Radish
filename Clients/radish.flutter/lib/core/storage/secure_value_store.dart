@@ -20,6 +20,12 @@ class FlutterSecureValueStore implements SecureValueStore {
               ),
               iOptions: IOSOptions(
                 accessibility: KeychainAccessibility.first_unlock_this_device,
+                synchronizable: false,
+              ),
+              mOptions: MacOsOptions(
+                accessibility: KeychainAccessibility.first_unlock_this_device,
+                synchronizable: false,
+                usesDataProtectionKeychain: true,
               ),
             );
 

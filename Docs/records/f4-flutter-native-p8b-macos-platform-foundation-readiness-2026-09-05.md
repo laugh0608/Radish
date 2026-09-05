@@ -4,7 +4,7 @@
 >
 > 源码基线：`dev@ccc27515`
 >
-> 结论：`P8-B readiness Go`；实施仍为 `No-Go`，等待项目所有者确认后进入 `P8-B1 macOS platform foundation implementation`
+> 结论：`P8-B readiness Go`；[P8-B1 platform foundation implementation](/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05) 已于同日完成，下一步为等待启动授权的 P8-B2
 
 ## 1. 范围与停止线
 
@@ -67,10 +67,11 @@ pending callback 只保留一个值符合当前“同一时刻只有一个 autho
 
 生成模板的 App Sandbox 保留。两个 entitlement 文件都增加：
 
-- `com.apple.security.network.client = true`；
-- `keychain-access-groups = []`。
+- `com.apple.security.network.client = true`。
 
-`DebugProfile.entitlements` 原有 `com.apple.security.cs.allow-jit` 与 `com.apple.security.network.server` 必须保留；Release 不增加 network server。Flutter 官方明确要求沙盒应用访问网络时添加 `network.client`，并建议共同能力在 DebugProfile / Release 两份文件对称维护，参见 [Building macOS apps with Flutter](https://docs.flutter.dev/platform-integration/macos/building)。锁定的 `flutter_secure_storage` 同时要求两份文件存在空 `keychain-access-groups`。
+`DebugProfile.entitlements` 原有 `com.apple.security.cs.allow-jit` 与 `com.apple.security.network.server` 必须保留；Release 不增加 network server。Flutter 官方明确要求沙盒应用访问网络时添加 `network.client`，并建议共同能力在 DebugProfile / Release 两份文件对称维护，参见 [Building macOS apps with Flutter](https://docs.flutter.dev/platform-integration/macos/building)。
+
+readiness 原计划按锁定插件 README 在两份 macOS entitlement 中增加空 `keychain-access-groups`。B1 实施证明 Xcode `26.6` 会因此要求 development certificate，与当前无 Apple Developer Program 会员的前置条件冲突；插件 `0.3.2` 的 macOS 源码又不读取 `groupId`，只在 iOS 查询中加入 `kSecAttrAccessGroup`。因此实际 runner 不声明 Keychain Sharing，保留默认 macOS Keychain、Data Protection Keychain 与 `synchronizable: false`；真实读写与重启恢复后置 B2。详细证据见 [P8-B1 实施记录](/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05)。
 
 P8-B2 真实运行固定使用宿主本地 Gateway：
 
@@ -138,10 +139,4 @@ B2 结束只能给出 `macOS local platform foundation Go`；公证、签名、�
 
 ## 8. 下一步
 
-等待项目所有者确认 P8-B1 实施。确认后：
-
-1. 只生成 macOS runner，不运行 package 安装或依赖更新；
-2. 按本记录建立 identity、AppIcon、entitlement、OIDC、持久化与窗口 owner；
-3. 完成无服务测试和 Debug / Release 本机构建；
-4. 提交 P8-B1 实施记录；
-5. 再单独申请 P8-B2 所需的项目启动授权。
+P8-B1 已按 [实施记录](/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05) 关闭。下一步单独申请 P8-B2 所需的 Gateway / Auth / API 与 macOS app 启动授权；未获授权前不启动服务、不运行 app，也不产生本地或生产业务写入。

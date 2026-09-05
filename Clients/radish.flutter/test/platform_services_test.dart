@@ -37,6 +37,20 @@ void main() {
     expect(services.appLifecycleGateway, isA<EmptyAppLifecycleGateway>());
   });
 
+  test('macOS selects secure persistence without Android task semantics', () {
+    final services = RadishPlatformServices.forPlatform(
+      RadishPlatformKind.macos,
+      secureValues: InMemorySecureValueStore(),
+      preferences: InMemoryStringPreferenceStore(),
+    );
+
+    expect(services.sessionStore, isA<SecureSessionStore>());
+    expect(services.authGateway, isA<PlatformNativeAuthGateway>());
+    expect(services.followUpStore, isA<PersistentForumFollowUpStore>());
+    expect(services.docsFollowUpStore, isA<PersistentDocsFollowUpStore>());
+    expect(services.appLifecycleGateway, isA<EmptyAppLifecycleGateway>());
+  });
+
   test('unsupported platforms remain explicit in-memory development shells',
       () {
     final services = RadishPlatformServices.forPlatform(
