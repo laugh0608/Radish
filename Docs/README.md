@@ -17,6 +17,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [首版 dev 边界](./planning/dev-first-scope.md)
 - [首版 dev 功能矩阵状态表](./planning/dev-first-status-matrix.md)
 - [当前进行中](./planning/current.md)
+- [工程改进候选清单](./planning/engineering-improvement-candidates.md)
 - [Console 权限治理 V1](./guide/console-permission-governance.md)
 - [Console 权限覆盖矩阵](./guide/console-permission-coverage-matrix.md)
 - [Console 权限 / 菜单 / 按钮管理一期设计方案](./guide/console-authorization-phase1.md)
@@ -83,6 +84,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 ## 记录与验收
 
 - [记录与验收索引](./records/index.md)
+- [2026-09-06 项目全面审阅](./records/project-review-2026-09-06.md)
 - [首版 dev 总回归与发布前检查单](./records/dev-first-regression-checklist.md)
 - [变更回归记录模板](./records/change-regression-record-template.md)
 - [人工验收模板](./records/manual-acceptance-template.md)
@@ -98,7 +100,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - `Docs/` 是项目固定文档的唯一真相源
 - 固定文档会在 API 启动时自动同步到前端“文档”应用
 - 在线文档由用户或管理员在应用内新建，内容存储在数据库
-- 规划类文档已拆分为“总览 / 当前 / Backlog / 已完成摘要”，避免单页持续膨胀
+- 规划类文档按“总览 / 当前 / 改进候选 / Backlog / 已完成摘要”分工：当前页保存即时状态，候选只记录待确认范围，历史审阅与验证事实进入 records
 - `Docs/index.md`、`Docs/README.md`、`Docs/development-plan.md`、`Docs/planning/current.md` 等关键入口必须尽可能简约，只描述最近阶段、当前进度、执行入口和必要约束
 - 文档篇幅按类型治理：入口 / 索引建议不超过 `300` 行、硬上限 `500` 行；架构 / 规范 / 设计建议不超过 `600` 行、硬上限 `900` 行；专题深度文档建议不超过 `800` 行、硬上限 `1200` 行
 - `Docs/changelog/`、`Docs/records/` 和归档资料可放宽篇幅限制，但必须按日期、阶段或批次拆分并提供索引；超过 `1200` 行时应优先拆分或归档

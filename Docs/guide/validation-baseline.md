@@ -1,6 +1,6 @@
 # 验证基线说明
 
-> 本页说明当前仓库认可的最小验证基线，以及 `M13` 首轮统一入口的使用方式。
+> 本页说明现有验证入口、实际覆盖范围与使用方式。入口最初由 `M13` 收束；当前阶段以[当前进行中](/planning/current)为准。
 >
 > 关联维护入口：
 >
@@ -10,7 +10,28 @@
 
 ## 当前目标
 
-`M13` 当前不追求“一次性补齐完整 CI / E2E / 宿主观测平台”，而是先把仓库里已经存在的验证资产收束成统一入口，降低“知道要跑什么，但每次靠口口相传”的协作成本。
+复用现有验证资产，按改动风险选择检查，并区分静态检查、行为测试、宿主运行和发布证据；不将某个聚合脚本成功解释为所有产品线和运行场景都已通过。
+
+## 已知覆盖限制（2026-09-06）
+
+本节记录当前实现事实，来源为[全面审阅 R-01 / R-05 / R-06](/records/project-review-2026-09-06)。对应修复仍是[待确认候选](/planning/engineering-improvement-candidates)，本次只更新文档。
+
+- **Client / Console 类型检查**：两者根 `tsconfig.json` 使用 `files: []` 与项目引用，普通 `tsc --noEmit` 实测检查文件数为 `0`；Console 的后续 strict 配置仅列出八个入口及其依赖。当前 `type-check` 聚合成功不代表两套应用与 Vite 配置均已检查。
+- **已有构建保护**：Client / Console 的生产 build 使用 `tsc -b`；这一事实不修复 type-check 或 baseline 自身的覆盖缺口。Console app 仍为 `strict: false`，单独 strict 配置通过也不等于全量 strict。
+- **Flutter**：通用 `Repo Quality` / `Candidate Quality` 没有执行 Flutter analyze、test 或平台构建；其既有本地与平台验收继续按下文专题入口执行，不能由 Web / .NET 候选成功代替。
+- **测试证据类型**：源码文本断言用于静态约定，不能直接证明 DOM 交互、键盘焦点、异步竞态或真实设备行为。`check:docs` 检查文本与链接，不判断阶段状态是否新鲜。
+
+在已有依赖可用的仓库根目录，可显式指定配置补充 Client / Console 检查；以下命令不安装依赖、不启动项目服务：
+
+```bash
+npm exec --no --workspace=radish.client -- tsc -p tsconfig.app.json --noEmit
+npm exec --no --workspace=radish.client -- tsc -p tsconfig.node.json --noEmit
+npm exec --no --workspace=radish.console -- tsc -p tsconfig.app.json --noEmit
+npm exec --no --workspace=radish.console -- tsc -p tsconfig.node.json --noEmit
+npm exec --no --workspace=radish.console -- tsc -p tsconfig.strict.json --noEmit
+```
+
+记录结果时分别注明聚合脚本、显式配置检查与未执行范围。后续修复检查编排并验证错误能够触发失败后，再移除对应限制并链接修复记录。
 
 ## 统一入口
 
@@ -130,7 +151,7 @@ npm run validate:candidate
   - 以 `--warnaserror` 构建 `Radish.slnx`，用于候选前阻断新增编译 warning
 - `validate:baseline`
   - 运行生产迁移发布编排与前端静态服务器合约测试
-  - 运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
+  - 调用 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console` 的 `type-check` 脚本；Client / Console 的实际覆盖限制与补充命令见上文
   - 运行四个前端 workspace 的现有测试；`radish.client` 以 `--test-isolation=none` 兼容受限环境
   - 运行高置信敏感字面量规则自测与全仓扫描
   - 运行时间语义增量防回归扫描，禁止业务源码超过 baseline 新增 `DateTime.Now / Today / DateTimeOffset.Now`
@@ -146,8 +167,8 @@ npm run validate:candidate
   - 运行后端 `test`
 - `validate:baseline:quick`
   - 运行产品版本、生产迁移发布编排、前端静态服务器和镜像漏洞策略的轻量合约测试
-  - 只运行前端 `type-check`，覆盖 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console`
-  - `radish.client` 最小测试
+  - 调用四个 Web workspace 的 `type-check` 脚本；Client / Console 的实际覆盖限制与补充命令见上文
+  - 运行 `@radish/http`、`@radish/ui`、`radish.client` 与 `radish.console` 的现有 node 测试；不运行 full 模式的后端构建与测试
   - `Console` 权限链路扫描
   - Repo Quality contract 自校验
   - 身份语义 impact 判定自校验
@@ -574,7 +595,7 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 如果你现在面对的是 `Repo Quality`、`validate:ci`、`check:repo-quality-contract`、身份语义条件触发或受限环境边界提示，优先先看：[Repo Quality 故障分诊手册](/guide/repo-quality-troubleshooting)。
 
 - 前端类型错误：优先看对应 workspace 的 `tsc` 输出
-- `radish.client` 最小测试失败：优先看 `Frontend/radish.client/tests/`
+- Web workspace node 测试失败：按失败步骤查看对应 workspace 的 `tests/`，不把 quick 模式理解为只执行 Client 测试
 - 权限扫描失败：优先看 `Scripts/check-console-permissions.mjs` 输出中的四层对齐差异
 - 身份语义扫描失败：优先看 `Scripts/check-identity-claims.mjs` 输出中的命中位置，确认是否回退到原始 Claim 解析或直接字符串判断
 - 若命中 `AccountController / AuthorizationController / UserInfoController`：优先按 Phase 4 口径确认是否误恢复了历史输出承诺，而不是直接放宽白名单

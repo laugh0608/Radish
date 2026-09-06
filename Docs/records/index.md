@@ -4,6 +4,7 @@
 ## 一、通用模板与总索引
 
 - [专题回归索引](/guide/regression-index)
+- [2026-09-06 项目全面审阅](/records/project-review-2026-09-06) · [工程改进候选（待确认）](/planning/engineering-improvement-candidates) · [F4 旧入口流水](/records/f4-planning-entry-history-2026-09-06)
 - [人工验收模板](/records/manual-acceptance-template)
 - [回归结论记录模板](/records/regression-result-template)
 - [变更回归记录模板](/records/change-regression-record-template)
