@@ -65,7 +65,7 @@ class HttpProfileRepository implements ProfileRepository {
     final uri = endpoints.resolveApi(
       '/api/v1/User/GetPublicProfile',
       queryParameters: {
-        'userId': userId,
+        'identifier': userId,
       },
     );
 
@@ -80,9 +80,9 @@ class HttpProfileRepository implements ProfileRepository {
     required String userId,
   }) {
     final uri = endpoints.resolveApi(
-      '/api/v1/User/GetUserStats',
+      '/api/v1/User/GetPublicUserStats',
       queryParameters: {
-        'userId': userId,
+        'identifier': userId,
       },
     );
 
@@ -99,9 +99,9 @@ class HttpProfileRepository implements ProfileRepository {
     required int pageSize,
   }) {
     final uri = endpoints.resolveApi(
-      '/api/v1/Post/GetUserPosts',
+      '/api/v1/Post/GetPublicUserPosts',
       queryParameters: {
-        'userId': userId,
+        'identifier': userId,
         'pageIndex': pageIndex.toString(),
         'pageSize': pageSize.toString(),
       },
@@ -120,9 +120,9 @@ class HttpProfileRepository implements ProfileRepository {
     required int pageSize,
   }) {
     final uri = endpoints.resolveApi(
-      '/api/v1/Comment/GetUserComments',
+      '/api/v1/Comment/GetPublicUserComments',
       queryParameters: {
-        'userId': userId,
+        'identifier': userId,
         'pageIndex': pageIndex.toString(),
         'pageSize': pageSize.toString(),
       },

@@ -18,6 +18,7 @@ test('R3-F02-B Client Profile 四类摘要保持独立权威状态', () => {
   assert.match(cardSource, /const \[balanceState, setBalanceState\]/);
   assert.match(cardSource, /getMyProfile\(t\)/);
   assert.match(cardSource, /getBalance\(t\)/);
+  assert.match(cardSource, /address: editAddress\.trim\(\)/);
   assert.match(cardSource, /onDirtyChange\(combinedDirty\)/);
   assert.match(cardSource, /disabled=\{profileState !== 'ready' \|\| combinedBusy\}/);
   assert.doesNotMatch(appSource, /fetch\(/);

@@ -565,16 +565,17 @@ Radish.Auth 支持通过配置统一控制 Token 有效期（单位：分钟）�
 }
 ```
 
-### 6.4 Flutter 原生客户端（当前 MVP 口径）
+### 6.4 Flutter 原生客户端（当前 Android / iOS 口径）
 
-- Flutter 当前继续复用同一个官方客户端 `radish-client`，不额外分叉新的 OIDC `client_id`
-- Android 起步批次当前使用系统浏览器发起 `/connect/authorize`，回调地址固定为 `radish://oidc/callback`
-- 浏览器回调返回 App 后，原生壳层会把授权码透传给 Flutter，再由 Flutter 调用 `/connect/token` 换取 `access_token / refresh_token`
-- 原生显式登出当前统一走 `/connect/endsession`，登出回跳地址为 `radish://oidc/logout-complete`
-- 浏览器未完成回跳就返回 App 时，Flutter 壳层当前会显式进入 `Sign-in needs attention` 提示，而不是静默停留在匿名态
-- `profile` 与 forum detail 来源下的登录发起当前会先记住原始 tab / handoff 目标，授权码换 Token 成功后再自动续接回原上下文
-- 窄屏 Android 设备上的壳层认证状态当前已从 `AppBar.actions` 收口到页面顶部可换行状态条，避免登录相关状态和动作在窄屏下再次出现横向溢出
-- 这条链路当前服务于 `Phase 2-3 Flutter 客户端 MVP` 的最小登录 / 登出闭环，不等于已经进入完整账户治理、完整通知中心或多平台登录深化
+- Flutter 继续复用同一个官方客户端 `radish-client`，不额外分叉新的 OIDC `client_id`
+- Android 与 iOS 都使用系统浏览器发起 `/connect/authorize`，授权回调固定为 `radish://oidc/callback`；原生壳层只负责接收 callback 并透传给 Flutter，由 Flutter 调用 `/connect/token` 换取 `access_token / refresh_token`
+- 原生显式登出统一走 `/connect/endsession`，登出回调为 `radish://oidc/logout-complete`
+- session token 与 OIDC authorization attempt 使用 Android Keystore / iOS Keychain 支撑的安全存储；authorization attempt 自打开系统浏览器起有效 `15` 分钟，state、PKCE、redirect、TTL 与 replay 校验均 fail closed，并保持一次性消费
+- Android Activity 与 iOS UIScene 都覆盖运行中和冷启动 callback；App 启动与回到前台时消费唯一 pending callback。浏览器未完成回调就返回 App 时，Flutter 壳层显式进入 `Sign-in needs attention`，不伪造登录成功
+- `profile` 与 forum detail 来源下的登录会先记录原始 tab / handoff 目标，换取 Token 成功后自动续接原上下文；这些非敏感 follow-up 与 Forum / Docs recent 使用 Dart `shared_preferences`
+- compact 壳层的认证状态位于页面顶部可换行状态条，避免登录相关状态和动作在窄屏下横向溢出
+- iOS 仅在显式 opt-in 且 Gateway 仍为 loopback host 时允许 App 内请求接受本地开发证书；系统 Safari 仍必须建立独立的本地 HTTPS 信任，不能用关闭 TLS 校验替代
+- 这条链路已进入 Flutter Native Android / iOS 平台基线，但不等于完整账户治理、完整通知中心、真机签名或分发门禁已经完成
 
 对应的配置在 `Program.cs` 中会被读取并映射到：
 

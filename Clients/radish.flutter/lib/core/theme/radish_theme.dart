@@ -1,173 +1,15 @@
-import 'package:flutter/material.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
+import 'package:flutter/material.dart';
 
-enum RadishThemeId {
-  defaultTheme(
-    value: 'default',
-    label: '默认',
-    access: RadishThemeAccess.builtIn,
-    brightness: Brightness.light,
-  ),
-  guofeng(
-    value: 'guofeng',
-    label: '国风',
-    access: RadishThemeAccess.builtIn,
-    brightness: Brightness.light,
-  ),
-  darkNight(
-    value: 'theme-dark-night',
-    label: '暗夜',
-    access: RadishThemeAccess.entitlement,
-    brightness: Brightness.dark,
-  ),
-  sakura(
-    value: 'theme-sakura',
-    label: '樱花',
-    access: RadishThemeAccess.entitlement,
-    brightness: Brightness.light,
-  );
+import 'radish_theme_tokens.dart';
+import 'radish_typography.dart';
 
-  const RadishThemeId({
-    required this.value,
-    required this.label,
-    required this.access,
-    required this.brightness,
-  });
-
-  final String value;
-  final String label;
-  final RadishThemeAccess access;
-  final Brightness brightness;
-
-  bool get isBuiltIn => access == RadishThemeAccess.builtIn;
-
-  static RadishThemeId? tryParse(String? value) {
-    for (final themeId in values) {
-      if (themeId.value == value) {
-        return themeId;
-      }
-    }
-    return null;
-  }
-}
-
-enum RadishThemeAccess { builtIn, entitlement }
-
-@immutable
-class RadishThemeTokens extends ThemeExtension<RadishThemeTokens> {
-  const RadishThemeTokens({
-    required this.appBackground,
-    required this.surface,
-    required this.surfaceMuted,
-    required this.text,
-    required this.textMuted,
-    required this.border,
-    required this.brand,
-    required this.onBrand,
-    required this.brandSoft,
-    required this.action,
-    required this.onAction,
-    required this.actionSoft,
-    required this.success,
-    required this.warning,
-    required this.error,
-    required this.info,
-  });
-
-  final Color appBackground;
-  final Color surface;
-  final Color surfaceMuted;
-  final Color text;
-  final Color textMuted;
-  final Color border;
-  final Color brand;
-  final Color onBrand;
-  final Color brandSoft;
-  final Color action;
-  final Color onAction;
-  final Color actionSoft;
-  final Color success;
-  final Color warning;
-  final Color error;
-  final Color info;
-
-  static const double radiusSmall = 8;
-  static const double radiusMedium = 12;
-  static const double radiusLarge = 18;
-
-  @override
-  RadishThemeTokens copyWith({
-    Color? appBackground,
-    Color? surface,
-    Color? surfaceMuted,
-    Color? text,
-    Color? textMuted,
-    Color? border,
-    Color? brand,
-    Color? onBrand,
-    Color? brandSoft,
-    Color? action,
-    Color? onAction,
-    Color? actionSoft,
-    Color? success,
-    Color? warning,
-    Color? error,
-    Color? info,
-  }) {
-    return RadishThemeTokens(
-      appBackground: appBackground ?? this.appBackground,
-      surface: surface ?? this.surface,
-      surfaceMuted: surfaceMuted ?? this.surfaceMuted,
-      text: text ?? this.text,
-      textMuted: textMuted ?? this.textMuted,
-      border: border ?? this.border,
-      brand: brand ?? this.brand,
-      onBrand: onBrand ?? this.onBrand,
-      brandSoft: brandSoft ?? this.brandSoft,
-      action: action ?? this.action,
-      onAction: onAction ?? this.onAction,
-      actionSoft: actionSoft ?? this.actionSoft,
-      success: success ?? this.success,
-      warning: warning ?? this.warning,
-      error: error ?? this.error,
-      info: info ?? this.info,
-    );
-  }
-
-  @override
-  RadishThemeTokens lerp(
-    covariant ThemeExtension<RadishThemeTokens>? other,
-    double t,
-  ) {
-    if (other is! RadishThemeTokens) {
-      return this;
-    }
-
-    return RadishThemeTokens(
-      appBackground: Color.lerp(appBackground, other.appBackground, t)!,
-      surface: Color.lerp(surface, other.surface, t)!,
-      surfaceMuted: Color.lerp(surfaceMuted, other.surfaceMuted, t)!,
-      text: Color.lerp(text, other.text, t)!,
-      textMuted: Color.lerp(textMuted, other.textMuted, t)!,
-      border: Color.lerp(border, other.border, t)!,
-      brand: Color.lerp(brand, other.brand, t)!,
-      onBrand: Color.lerp(onBrand, other.onBrand, t)!,
-      brandSoft: Color.lerp(brandSoft, other.brandSoft, t)!,
-      action: Color.lerp(action, other.action, t)!,
-      onAction: Color.lerp(onAction, other.onAction, t)!,
-      actionSoft: Color.lerp(actionSoft, other.actionSoft, t)!,
-      success: Color.lerp(success, other.success, t)!,
-      warning: Color.lerp(warning, other.warning, t)!,
-      error: Color.lerp(error, other.error, t)!,
-      info: Color.lerp(info, other.info, t)!,
-    );
-  }
-}
+export 'radish_theme_tokens.dart';
 
 ThemeData buildRadishTheme([
   RadishThemeId themeId = RadishThemeId.guofeng,
 ]) {
-  final tokens = _tokensFor(themeId);
+  final tokens = radishThemeTokensFor(themeId);
   final flexColors = FlexSchemeColor(
     primary: tokens.action,
     primaryContainer: tokens.actionSoft,
@@ -202,35 +44,106 @@ ThemeData buildRadishTheme([
     outlineVariant: tokens.border,
     error: tokens.error,
   );
+  final textTheme = buildRadishTextTheme(
+    base.textTheme,
+    textColor: tokens.text,
+    mutedTextColor: tokens.textMuted,
+  );
 
   return base.copyWith(
     colorScheme: colorScheme,
+    textTheme: textTheme,
+    primaryTextTheme: textTheme,
     scaffoldBackgroundColor: tokens.appBackground,
     canvasColor: tokens.appBackground,
+    focusColor: tokens.focus.withAlpha(46),
+    hoverColor: tokens.actionSoft.withAlpha(150),
+    splashColor: tokens.action.withAlpha(24),
+    visualDensity: VisualDensity.standard,
+    materialTapTargetSize: MaterialTapTargetSize.padded,
     extensions: <ThemeExtension<dynamic>>[tokens],
     appBarTheme: AppBarTheme(
       centerTitle: false,
       surfaceTintColor: Colors.transparent,
-      backgroundColor: tokens.surface,
+      backgroundColor: tokens.surfaceRaised,
       foregroundColor: tokens.text,
       elevation: 0,
       scrolledUnderElevation: 0,
+      titleTextStyle: textTheme.titleLarge,
     ),
     cardTheme: CardThemeData(
       elevation: 0,
-      color: tokens.surface,
+      color: tokens.surfaceRaised,
+      surfaceTintColor: Colors.transparent,
       margin: EdgeInsets.zero,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(RadishThemeTokens.radiusLarge),
+        borderRadius: BorderRadius.circular(RadishRadii.large),
         side: BorderSide(color: tokens.border),
       ),
     ),
     dividerTheme: DividerThemeData(color: tokens.border, thickness: 1),
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: tokens.surfaceRaised,
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: RadishSpacing.large,
+        vertical: RadishSpacing.medium,
+      ),
+      border: _inputBorder(tokens.border),
+      enabledBorder: _inputBorder(tokens.border),
+      focusedBorder: _inputBorder(tokens.focus, width: 2),
+      errorBorder: _inputBorder(tokens.error),
+      focusedErrorBorder: _inputBorder(tokens.error, width: 2),
+    ),
+    filledButtonTheme: FilledButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(
+          Size(0, RadishDensity.minimumTouchTarget),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RadishRadii.medium),
+          ),
+        ),
+        textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
+      ),
+    ),
+    outlinedButtonTheme: OutlinedButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(
+          Size(0, RadishDensity.minimumTouchTarget),
+        ),
+        side: WidgetStatePropertyAll(BorderSide(color: tokens.border)),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(RadishRadii.medium),
+          ),
+        ),
+        textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
+      ),
+    ),
+    textButtonTheme: TextButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: const WidgetStatePropertyAll(
+          Size(0, RadishDensity.minimumTouchTarget),
+        ),
+        textStyle: WidgetStatePropertyAll(textTheme.labelLarge),
+      ),
+    ),
+    iconButtonTheme: const IconButtonThemeData(
+      style: ButtonStyle(
+        minimumSize: WidgetStatePropertyAll(
+          Size.square(RadishDensity.minimumTouchTarget),
+        ),
+        iconSize: WidgetStatePropertyAll(RadishDensity.navigationIconSize),
+      ),
+    ),
     navigationBarTheme: NavigationBarThemeData(
-      backgroundColor: tokens.surface,
+      height: 72,
+      backgroundColor: tokens.surfaceRaised,
       indicatorColor: tokens.actionSoft,
       labelTextStyle: WidgetStateProperty.resolveWith(
-        (states) => TextStyle(
+        (states) => textTheme.labelSmall?.copyWith(
           color: states.contains(WidgetState.selected)
               ? tokens.action
               : tokens.textMuted,
@@ -239,103 +152,57 @@ ThemeData buildRadishTheme([
       ),
     ),
     navigationRailTheme: NavigationRailThemeData(
-      backgroundColor: tokens.surface,
+      backgroundColor: tokens.surfaceRaised,
       indicatorColor: tokens.actionSoft,
       selectedIconTheme: IconThemeData(color: tokens.action),
-      selectedLabelTextStyle: TextStyle(
+      selectedLabelTextStyle: textTheme.labelMedium?.copyWith(
         color: tokens.action,
         fontWeight: FontWeight.w600,
       ),
       unselectedIconTheme: IconThemeData(color: tokens.textMuted),
-      unselectedLabelTextStyle: TextStyle(color: tokens.textMuted),
+      unselectedLabelTextStyle: textTheme.labelMedium?.copyWith(
+        color: tokens.textMuted,
+      ),
+    ),
+    dialogTheme: DialogThemeData(
+      backgroundColor: tokens.surfaceRaised,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(RadishRadii.large),
+        side: BorderSide(color: tokens.border),
+      ),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(
+      backgroundColor: tokens.surfaceRaised,
+      surfaceTintColor: Colors.transparent,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(RadishRadii.large),
+        ),
+      ),
+    ),
+    textSelectionTheme: TextSelectionThemeData(
+      cursorColor: tokens.action,
+      selectionColor: tokens.actionSoft,
+      selectionHandleColor: tokens.action,
     ),
   );
 }
 
+OutlineInputBorder _inputBorder(Color color, {double width = 1}) {
+  return OutlineInputBorder(
+    borderRadius: BorderRadius.circular(RadishRadii.medium),
+    borderSide: BorderSide(color: color, width: width),
+  );
+}
+
 const _subThemes = FlexSubThemesData(
-  defaultRadius: RadishThemeTokens.radiusMedium,
-  cardRadius: RadishThemeTokens.radiusLarge,
-  dialogRadius: RadishThemeTokens.radiusLarge,
-  bottomSheetRadius: RadishThemeTokens.radiusLarge,
-  inputDecoratorRadius: RadishThemeTokens.radiusMedium,
-  navigationBarIndicatorRadius: RadishThemeTokens.radiusMedium,
-  navigationRailIndicatorRadius: RadishThemeTokens.radiusMedium,
+  defaultRadius: RadishRadii.medium,
+  cardRadius: RadishRadii.large,
+  dialogRadius: RadishRadii.large,
+  bottomSheetRadius: RadishRadii.large,
+  inputDecoratorRadius: RadishRadii.medium,
+  navigationBarIndicatorRadius: RadishRadii.medium,
+  navigationRailIndicatorRadius: RadishRadii.medium,
   appBarScrolledUnderElevation: 0,
 );
-
-RadishThemeTokens _tokensFor(RadishThemeId themeId) {
-  return switch (themeId) {
-    RadishThemeId.defaultTheme => const RadishThemeTokens(
-        appBackground: Color(0xFFEDF1F2),
-        surface: Color(0xFFFBFCFC),
-        surfaceMuted: Color(0xFFF1F5F5),
-        text: Color(0xFF23313B),
-        textMuted: Color(0xFF667781),
-        border: Color(0xFFCFDADD),
-        brand: Color(0xFF587786),
-        onBrand: Color(0xFFFFFFFF),
-        brandSoft: Color(0xFFDDE8EC),
-        action: Color(0xFF435C74),
-        onAction: Color(0xFFFFFFFF),
-        actionSoft: Color(0xFFDCE5EC),
-        success: Color(0xFF3F7D61),
-        warning: Color(0xFF9A6A2F),
-        error: Color(0xFFA84747),
-        info: Color(0xFF3F6F8C),
-      ),
-    RadishThemeId.guofeng => const RadishThemeTokens(
-        appBackground: Color(0xFFF4EFE6),
-        surface: Color(0xFFFBF7F0),
-        surfaceMuted: Color(0xFFF3EBDD),
-        text: Color(0xFF2F2A25),
-        textMuted: Color(0xFF746B62),
-        border: Color(0xFFD8C9BB),
-        brand: Color(0xFF5D6C57),
-        onBrand: Color(0xFFFFFFFF),
-        brandSoft: Color(0xFFE2E8DC),
-        action: Color(0xFF435C74),
-        onAction: Color(0xFFFFFFFF),
-        actionSoft: Color(0xFFDCE5EC),
-        success: Color(0xFF52765A),
-        warning: Color(0xFF9B6A32),
-        error: Color(0xFFA54848),
-        info: Color(0xFF4E6F82),
-      ),
-    RadishThemeId.darkNight => const RadishThemeTokens(
-        appBackground: Color(0xFF0F171D),
-        surface: Color(0xFF17232B),
-        surfaceMuted: Color(0xFF1E2D36),
-        text: Color(0xFFE6EDF1),
-        textMuted: Color(0xFFA8B8C1),
-        border: Color(0xFF344650),
-        brand: Color(0xFF8BB9CA),
-        onBrand: Color(0xFF102028),
-        brandSoft: Color(0xFF27414D),
-        action: Color(0xFF8BB9CA),
-        onAction: Color(0xFF102028),
-        actionSoft: Color(0xFF294652),
-        success: Color(0xFF77B892),
-        warning: Color(0xFFD9A75F),
-        error: Color(0xFFE48282),
-        info: Color(0xFF7FB3D1),
-      ),
-    RadishThemeId.sakura => const RadishThemeTokens(
-        appBackground: Color(0xFFFFF3F6),
-        surface: Color(0xFFFFFAFB),
-        surfaceMuted: Color(0xFFFFEAF0),
-        text: Color(0xFF3D2932),
-        textMuted: Color(0xFF806772),
-        border: Color(0xFFE8CBD5),
-        brand: Color(0xFFB84F72),
-        onBrand: Color(0xFFFFFFFF),
-        brandSoft: Color(0xFFF7DCE5),
-        action: Color(0xFF596F88),
-        onAction: Color(0xFFFFFFFF),
-        actionSoft: Color(0xFFDDE6EF),
-        success: Color(0xFF4C8064),
-        warning: Color(0xFFA66F34),
-        error: Color(0xFFB94D58),
-        info: Color(0xFF567A98),
-      ),
-  };
-}

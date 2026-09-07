@@ -33,6 +33,8 @@
     "check:commit-message": "node Scripts/validate-commit-message.mjs",
     "check:console-permissions": "node Scripts/check-console-permissions.mjs",
     "check:host-runtime": "node Scripts/check-host-runtime.mjs",
+    "check:flutter-ios-internal-testflight": "node Scripts/check-flutter-ios-internal-testflight.mjs",
+    "check:flutter-ios-internal-testflight:self-test": "node --test Scripts/check-flutter-ios-internal-testflight.test.mjs",
     "check:public-head-smoke": "node Scripts/check-public-head-smoke.mjs",
     "check:long-id-safety": "node Scripts/check-long-id-safety.mjs",
     "collect:m14-host-record": "node Scripts/collect-m14-host-record.mjs",

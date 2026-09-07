@@ -22,9 +22,9 @@
 
 ## 分支、提交与 Pull Request
 
-1. `dev` 是日常集成分支，普通变更从主题分支向 `dev` 发起 Pull Request。
+1. `dev` 是日常开发与集成分支。项目所有者或已授权维护者串行推进普通任务时直接在 `dev` 开发和提交；外部贡献、并行写入、确有隔离价值的高风险改动或明确需要评审时，才从主题分支向 `dev` 发起 Pull Request。
 2. `master` 是受保护的稳定主线，只通过 Pull Request 接收阶段性 `dev` 晋级或明确的紧急修复；禁止直接推送和 force push。
-3. 主题分支宜使用 `feature/*`、`fix/*`、`docs/*`、`refactor/*`、`test/*`、`chore/*` 或 `hotfix/*` 等能表达意图的名称。
+3. 需要主题分支时，宜使用 `feature/*`、`fix/*`、`docs/*`、`refactor/*`、`test/*`、`chore/*` 或 `hotfix/*` 等能表达意图的名称；Agent 不因默认流程自动创建 `codex/*` 分支或额外 worktree。
 4. 提交遵循 Conventional Commits，例如 `feat(forum): add post bookmarks`、`fix(auth): reject invalid callback state`、`docs(repo): add contribution guide`。
 5. 使用贡献者自己的 Git 身份，不在提交信息中添加 AI 协作者署名。
 6. `master` 允许 merge commit 与 rebase merge，禁止 squash merge。合并到 `master` 后，开始下一轮开发前必须把最新 `origin/master` 回灌 `dev`；可快进时优先 fast-forward，否则使用普通 merge，禁止使用 rebase、reset 或 force push 伪造同步。

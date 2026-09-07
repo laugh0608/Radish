@@ -2,562 +2,579 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:radish_flutter/core/auth/session_controller.dart';
 import 'package:radish_flutter/core/config/app_environment.dart';
 import 'package:radish_flutter/core/network/radish_api_client.dart';
 import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
+import 'package:radish_flutter/core/theme/radish_theme.dart';
 import 'package:radish_flutter/features/discover/data/discover_models.dart';
 import 'package:radish_flutter/features/discover/data/discover_repository.dart';
+import 'package:radish_flutter/features/discover/presentation/discover_feed_controller.dart';
+import 'package:radish_flutter/features/discover/presentation/discover_page.dart';
 import 'package:radish_flutter/features/docs/data/docs_models.dart';
 import 'package:radish_flutter/features/forum/data/forum_models.dart';
-import 'package:radish_flutter/features/discover/presentation/discover_page.dart';
 
 void main() {
-  testWidgets('renders discover summaries from repository', (tester) async {
-    tester.view.physicalSize = const Size(1200, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final scrollable = find.byType(Scrollable);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: _SuccessDiscoverRepository(),
+  group('PublicDiscover contract', () {
+    test('parses cursor feed, pulse, actors, metrics and target kinds', () {
+      final page = DiscoverFeedPage.fromJson(
+        _feedJson(
+          items: [
+            _itemJson(
+              key: 'channel:1',
+              kind: 1,
+              title: '频道今日讨论',
+              targetKind: 1,
+              channelId: 'channel-1',
+              requiresAuthentication: true,
+              metricKind: 1,
+              metricValue: '9223372036854775806',
+            ),
+            _itemJson(
+              key: 'docs:1',
+              kind: 2,
+              title: 'Flutter Native 指南',
+              targetKind: 2,
+              documentSlug: 'flutter-native-guide',
+            ),
+            _itemJson(
+              key: 'post:1',
+              kind: 3,
+              title: '值得继续阅读的评论',
+              targetKind: 3,
+              postPublicId: 'pst_01abcdef',
+              commentId: '2042219067430928384',
+            ),
+          ],
+          nextCursor: 'cursor-page-2',
+          hasMore: true,
         ),
-      ),
-    );
+      );
 
-    await tester.pumpAndSettle();
+      expect(page.items, hasLength(3));
+      expect(page.items[0].kind, DiscoverItemKind.channelSummary);
+      expect(page.items[0].target.kind, DiscoverTargetKind.messages);
+      expect(page.items[0].target.channelId, 'channel-1');
+      expect(page.items[0].target.requiresAuthentication, isTrue);
+      expect(
+        page.items[0].primaryMetric?.value,
+        '9223372036854775806',
+      );
+      expect(page.items[1].target.documentSlug, 'flutter-native-guide');
+      expect(page.items[2].target.postPublicId, 'pst_01abcdef');
+      expect(page.items[2].target.commentId, '2042219067430928384');
+      expect(page.pulse.discoverableChannelCount, '7');
+      expect(page.nextCursor, 'cursor-page-2');
+      expect(page.hasMore, isTrue);
+    });
 
-    await tester.scrollUntilVisible(
-      find.text('发现上下文'),
-      300,
-      scrollable: scrollable,
-    );
-    expect(find.text('发现上下文'), findsOneWidget);
-    expect(find.text('来源：/discover'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('论坛精选'),
-      300,
-      scrollable: scrollable,
-    );
-    expect(find.text('论坛精选'), findsOneWidget);
-    expect(find.text('Native discover wiring plan'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('文档精选'),
-      300,
-      scrollable: scrollable,
-    );
-    expect(find.text('文档精选'), findsOneWidget);
-    expect(find.text('Flutter MVP overview'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('商城精选'),
-      300,
-      scrollable: scrollable,
-    );
-    expect(find.text('商城精选'), findsOneWidget);
-    expect(find.text('Profile Rename Card'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('能力边界'),
-      300,
-      scrollable: scrollable,
-    );
-    expect(find.text('能力边界'), findsOneWidget);
-    expect(find.byKey(const Key('discover-content-expanded')), findsOneWidget);
+    test('rejects targets missing their kind-specific identifier', () {
+      expect(
+        () => DiscoverFeedPage.fromJson(
+          _feedJson(
+            items: [
+              _itemJson(
+                key: 'docs:invalid',
+                kind: 2,
+                title: 'Invalid docs target',
+                targetKind: 2,
+              ),
+            ],
+          ),
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('http repository uses the existing cursor endpoint', () async {
+      final apiClient = _RecordingApiClient();
+      final repository = HttpDiscoverRepository(
+        apiClient: apiClient,
+        endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+      );
+
+      await repository.getFeed(pageSize: 10, cursor: 'opaque-cursor');
+
+      expect(apiClient.requestedUri?.path, '/api/v1/PublicDiscover/GetFeed');
+      expect(apiClient.requestedUri?.queryParameters['pageSize'], '10');
+      expect(
+        apiClient.requestedUri?.queryParameters['cursor'],
+        'opaque-cursor',
+      );
+    });
   });
 
-  testWidgets('renders discover error state when repository fails', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1200, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  group('DiscoverFeedController', () {
+    test('appends cursor pages and removes overlapping stable keys', () async {
+      final repository = _PagingDiscoverRepository();
+      final controller = DiscoverFeedController(repository: repository);
+      addTearDown(controller.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: _FailingDiscoverRepository(),
-        ),
-      ),
-    );
+      await controller.loadInitial();
+      await controller.loadMore();
 
-    await tester.pumpAndSettle();
+      expect(
+        controller.state.snapshot?.items.map((item) => item.key),
+        ['post:1', 'docs:1', 'post:2'],
+      );
+      expect(controller.state.snapshot?.hasMore, isFalse);
+      expect(repository.requestedCursors, [null, 'cursor-page-2']);
+    });
 
-    expect(find.text('暂时无法加载发现内容'), findsOneWidget);
-    expect(find.text('发现内容服务暂时不可用'), findsOneWidget);
-    expect(find.text('重试'), findsOneWidget);
+    test('keeps the old snapshot and structured issue after refresh failure',
+        () async {
+      final repository = _RefreshFailingDiscoverRepository();
+      final controller = DiscoverFeedController(repository: repository);
+      addTearDown(controller.dispose);
+
+      await controller.loadInitial();
+      await controller.refresh();
+
+      expect(controller.state.isReady, isTrue);
+      expect(controller.state.snapshot?.items.single.title, '旧快照帖子');
+      expect(
+        controller.state.refreshIssue?.code,
+        'PublicDiscover.SourceUnavailable',
+      );
+      expect(controller.state.refreshIssue?.statusCode, 503);
+      expect(controller.state.refreshIssue?.isUnavailable, isTrue);
+    });
+
+    test('drops an older response after a newer refresh completes', () async {
+      final repository = _GenerationDiscoverRepository();
+      final controller = DiscoverFeedController(repository: repository);
+      addTearDown(controller.dispose);
+
+      final older = controller.loadInitial();
+      final newer = controller.refresh();
+      repository.completeSecond(_page(title: '较新的公开动态'));
+      await newer;
+      repository.completeFirst(_page(title: '迟到的旧响应'));
+      await older;
+
+      expect(controller.state.snapshot?.items.single.title, '较新的公开动态');
+    });
   });
 
-  testWidgets('renders partial discover issues without hiding ready sections', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1200, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  group('DiscoverPage', () {
+    testWidgets('renders a compact continuous feed and read-only Web boundary',
+        (tester) async {
+      await _setViewport(tester, const Size(390, 1500));
 
-    final scrollable = find.byType(Scrollable);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: _PartialIssueDiscoverRepository(),
+      await tester.pumpWidget(
+        _testApp(
+          DiscoverPage(
+            repository: _StaticDiscoverRepository(_representativePage()),
+          ),
         ),
-      ),
-    );
+      );
+      await tester.pumpAndSettle();
 
-    await tester.pumpAndSettle();
+      expect(find.byKey(const Key('discover-layout-compact')), findsOneWidget);
+      expect(find.byKey(const Key('discover-community-insight')), findsNothing);
+      expect(find.text('社区正在发生'), findsOneWidget);
+      expect(find.text('焦点公开帖子'), findsOneWidget);
 
-    expect(find.text('部分发现内容暂时不可用'), findsOneWidget);
-    expect(find.textContaining('商城精选暂时不可用'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Native discover wiring plan'),
-      300,
-      scrollable: scrollable,
-    );
-    expect(find.text('Native discover wiring plan'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('Flutter MVP overview'),
-      300,
-      scrollable: scrollable,
-    );
-    expect(find.text('Flutter MVP overview'), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.text('当前暂无可展示的公开商品。'),
-      300,
-      scrollable: scrollable,
-    );
-    expect(find.text('当前暂无可展示的公开商品。'), findsOneWidget);
-  });
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('discover-item-web-boundary-channel:1')),
+        240,
+        scrollable: find.byType(Scrollable).last,
+      );
+      expect(find.text('Web 提供'), findsOneWidget);
+      expect(
+        find.textContaining('Flutter Native 本批只读展示'),
+        findsOneWidget,
+      );
+      expect(
+        tester.widget(find.byKey(const Key('discover-item-channel:1'))),
+        isA<KeyedSubtree>(),
+      );
+      expect(tester.takeException(), isNull);
+    });
 
-  testWidgets('keeps current summaries visible while refresh is pending', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1200, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+    testWidgets('uses a 904px expanded main axis with community insight',
+        (tester) async {
+      await _setViewport(tester, const Size(1440, 1500));
 
-    final repository = _PendingRefreshDiscoverRepository();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: repository,
+      await tester.pumpWidget(
+        _testApp(
+          DiscoverPage(
+            repository: _StaticDiscoverRepository(_representativePage()),
+          ),
         ),
-      ),
-    );
+      );
+      await tester.pumpAndSettle();
 
-    await tester.pumpAndSettle();
+      expect(find.byKey(const Key('discover-layout-expanded')), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('discover-main-axis-904'))).width,
+        904,
+      );
+      expect(
+          find.byKey(const Key('discover-community-insight')), findsOneWidget);
+      expect(find.text('社区脉搏'), findsOneWidget);
+      expect(find.text('公开频道'), findsOneWidget);
+      expect(find.text('近期贡献者'), findsOneWidget);
+      expect(find.text('Messages 由 Web 提供'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
 
-    expect(find.text('Native discover wiring plan'), findsOneWidget);
+    for (final themeId in RadishThemeId.values) {
+      testWidgets(
+        'keeps medium discover structure in ${themeId.value}',
+        (tester) async {
+          await _setViewport(tester, const Size(800, 1500));
 
-    repository.refreshCompleter = Completer<DiscoverSnapshot>();
-    await tester.tap(find.text('刷新发现'));
-    await tester.pump();
+          await tester.pumpWidget(
+            _testApp(
+              DiscoverPage(
+                repository: _StaticDiscoverRepository(_representativePage()),
+              ),
+              themeId: themeId,
+            ),
+          );
+          await tester.pumpAndSettle();
 
-    expect(find.text('正在刷新发现内容，当前仍展示上次可用摘要。'), findsOneWidget);
-    expect(find.text('Native discover wiring plan'), findsOneWidget);
-    expect(find.text('正在刷新'), findsOneWidget);
+          expect(
+            find.byKey(const Key('discover-layout-medium')),
+            findsOneWidget,
+          );
+          expect(
+            find.byKey(const Key('discover-community-insight')),
+            findsNothing,
+          );
+          expect(find.text('社区正在发生'), findsOneWidget);
+          expect(find.text('焦点公开帖子'), findsOneWidget);
+          expect(
+            find.byKey(
+              const Key('discover-item-web-boundary-channel:1'),
+            ),
+            findsOneWidget,
+          );
+          expect(tester.takeException(), isNull, reason: themeId.value);
+        },
+      );
+    }
 
-    repository.refreshCompleter!.complete(_updatedDiscoverSnapshot());
-    await tester.pumpAndSettle();
+    testWidgets('maps Forum and Docs items to existing native handoffs',
+        (tester) async {
+      await _setViewport(tester, const Size(390, 1500));
+      ForumDetailHandoffTarget? forumTarget;
+      DocsDetailHandoffTarget? docsTarget;
 
-    expect(find.text('正在刷新发现内容，当前仍展示上次可用摘要。'), findsNothing);
-    expect(find.text('Updated discover summary'), findsOneWidget);
-  });
-
-  testWidgets('clears partial discover issues after a successful refresh', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1200, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: _IssueClearingDiscoverRepository(),
+      await tester.pumpWidget(
+        _testApp(
+          DiscoverPage(
+            repository: _StaticDiscoverRepository(_representativePage()),
+            onOpenForumDetailTarget: (target) => forumTarget = target,
+            onOpenDocsDetailTarget: (target) => docsTarget = target,
+          ),
         ),
-      ),
-    );
+      );
+      await tester.pumpAndSettle();
 
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('discover-item-post:1')));
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('discover-item-docs:1')),
+        240,
+        scrollable: find.byType(Scrollable).last,
+      );
+      await tester.tap(find.byKey(const Key('discover-item-docs:1')));
 
-    expect(find.text('部分发现内容暂时不可用'), findsOneWidget);
-    expect(find.textContaining('商城精选暂时不可用'), findsOneWidget);
+      expect(forumTarget?.postId, 'pst_01abcdef');
+      expect(forumTarget?.commentId, '2042219067430928384');
+      expect(forumTarget?.initialTitle, '焦点公开帖子');
+      expect(forumTarget?.source, ForumDetailHandoffSource.discover);
+      expect(docsTarget?.slug, 'flutter-native-guide');
+      expect(docsTarget?.initialTitle, 'Flutter Native 指南');
+      expect(docsTarget?.source, DocsDetailHandoffSource.discover);
+    });
 
-    await tester.tap(find.text('刷新发现'));
-    await tester.pumpAndSettle();
+    testWidgets('renders loading, empty and unavailable states',
+        (tester) async {
+      await _setViewport(tester, const Size(390, 1000));
+      final pendingRepository = _PendingDiscoverRepository();
 
-    expect(find.text('部分发现内容暂时不可用'), findsNothing);
-    expect(find.textContaining('商城精选暂时不可用'), findsNothing);
-    expect(find.text('Profile Rename Card'), findsOneWidget);
-  });
+      await tester.pumpWidget(
+        _testApp(DiscoverPage(repository: pendingRepository)),
+      );
+      await tester.pump();
+      expect(find.text('正在读取公开发现流'), findsOneWidget);
 
-  testWidgets('renders section issues when every discover section fails', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(1200, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+      pendingRepository.complete(_page(items: const []));
+      await tester.pumpAndSettle();
+      expect(find.text('还没有公开动态'), findsOneWidget);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: _AllSectionsIssueDiscoverRepository(),
+      await tester.pumpWidget(
+        _testApp(DiscoverPage(repository: _UnavailableDiscoverRepository())),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('社区发现暂不可用'), findsOneWidget);
+      expect(
+        find.textContaining('PublicDiscover.SourceUnavailable'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('keeps visible content in the stale refresh state',
+        (tester) async {
+      await _setViewport(tester, const Size(390, 1200));
+
+      await tester.pumpWidget(
+        _testApp(
+          DiscoverPage(repository: _RefreshFailingDiscoverRepository()),
         ),
-      ),
-    );
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('旧快照帖子'), findsOneWidget);
 
-    await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('刷新发现'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('部分发现内容暂时不可用'), findsOneWidget);
-    expect(find.textContaining('论坛精选暂时不可用'), findsOneWidget);
-    expect(find.textContaining('文档精选暂时不可用'), findsOneWidget);
-    expect(find.textContaining('商城精选暂时不可用'), findsOneWidget);
-    expect(find.text('发现页暂无可公开阅读的内容。'), findsNothing);
-  });
-
-  testWidgets('keeps current summaries when refresh fails', (tester) async {
-    tester.view.physicalSize = const Size(1200, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: _RefreshFailingDiscoverRepository(),
-        ),
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    expect(find.text('Native discover wiring plan'), findsOneWidget);
-
-    await tester.tap(find.text('刷新发现'));
-    await tester.pumpAndSettle();
-
-    expect(find.text('刷新发现失败'), findsOneWidget);
-    expect(find.text('刷新服务暂时不可用'), findsOneWidget);
-    expect(find.text('Native discover wiring plan'), findsOneWidget);
-    expect(find.text('暂时无法加载发现内容'), findsNothing);
-  });
-
-  test('http discover repository keeps ready sections when one section fails',
-      () async {
-    final repository = HttpDiscoverRepository(
-      apiClient: _SectionFailingApiClient(),
-      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
-    );
-
-    final snapshot = await repository.getSnapshot(pageSize: 4);
-
-    expect(snapshot.forumPosts.single.id, '2042219067430928384');
-    expect(snapshot.documents.single.slug, 'flutter-mvp-overview');
-    expect(snapshot.products, isEmpty);
-    expect(snapshot.sectionIssues.single.section, DiscoverSection.shop);
-    expect(snapshot.sectionIssues.single.title, '商城精选暂时不可用');
-    expect(snapshot.sectionIssues.single.message, '商城服务暂时不可用');
-  });
-
-  testWidgets('keeps discover summary text constrained on narrow screens', (
-    tester,
-  ) async {
-    tester.view.physicalSize = const Size(390, 1600);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final scrollable = find.byType(Scrollable);
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: _LongTextDiscoverRepository(),
-        ),
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(
-      find.text('发现上下文'),
-      250,
-      scrollable: scrollable,
-    );
-    expect(find.text('发现上下文'), findsOneWidget);
-    expect(find.text('公开摘要'), findsWidgets);
-    expect(find.byKey(const Key('discover-content-compact')), findsOneWidget);
-    await tester.scrollUntilVisible(
-      find.textContaining('A very long discover post title'),
-      250,
-      scrollable: scrollable,
-    );
-    expect(
-      find.textContaining('A very long discover post title'),
-      findsOneWidget,
-    );
-    await tester.scrollUntilVisible(
-      find.textContaining('/docs/flutter-mvp-overview-with-a-very-long-slug'),
-      250,
-      scrollable: scrollable,
-    );
-    expect(
-      find.textContaining('/docs/flutter-mvp-overview-with-a-very-long-slug'),
-      findsOneWidget,
-    );
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('supports native tab and profile handoff actions from discover',
-      (tester) async {
-    tester.view.physicalSize = const Size(1200, 2200);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
-
-    final scrollable = find.byType(Scrollable);
-    var forumOpened = false;
-    var docsOpened = false;
-    var leaderboardOpened = false;
-    var shopOpened = false;
-    DocsDocumentSummary? openedDocument;
-    ForumDetailHandoffTarget? openedForumTarget;
-    DiscoverProductSummary? openedProduct;
-    String? openedProfileUserId;
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: DiscoverPage(
-          environment: const AppEnvironment.development(),
-          sessionState: const SessionState.anonymous(),
-          repository: _SuccessDiscoverRepository(),
-          onOpenForum: () {
-            forumOpened = true;
-          },
-          onOpenDocs: () {
-            docsOpened = true;
-          },
-          onOpenLeaderboard: () {
-            leaderboardOpened = true;
-          },
-          onOpenShop: () {
-            shopOpened = true;
-          },
-          onOpenDocument: (document) {
-            openedDocument = document;
-          },
-          onOpenForumDetailTarget: (target) {
-            openedForumTarget = target;
-          },
-          onOpenShopProduct: (product) {
-            openedProduct = product;
-          },
-          onOpenProfileUser: (userId) {
-            openedProfileUserId = userId;
-          },
-        ),
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    await tester.scrollUntilVisible(
-      find.text('进入论坛'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('进入论坛'));
-    await tester.scrollUntilVisible(
-      find.text('进入文档'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('进入文档'));
-    await tester.scrollUntilVisible(
-      find.text('打开 @luobo'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('打开 @luobo'));
-    await tester.scrollUntilVisible(
-      find.text('打开帖子'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('打开帖子'));
-    await tester.scrollUntilVisible(
-      find.text('打开文档'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('打开文档'));
-    await tester.scrollUntilVisible(
-      find.text('查看详情'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('查看详情'));
-    await tester.scrollUntilVisible(
-      find.text('查看全部商品'),
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('查看全部商品'));
-    await tester.scrollUntilVisible(
-      find.text('打开榜单').first,
-      200,
-      scrollable: scrollable,
-    );
-    await tester.tap(find.text('打开榜单').first);
-
-    expect(forumOpened, isTrue);
-    expect(docsOpened, isTrue);
-    expect(leaderboardOpened, isTrue);
-    expect(shopOpened, isTrue);
-    expect(openedDocument?.slug, 'flutter-mvp-overview');
-    expect(openedForumTarget?.postId, '2042219067430928384');
-    expect(openedForumTarget?.initialTitle, 'Native discover wiring plan');
-    expect(openedForumTarget?.source, ForumDetailHandoffSource.discover);
-    expect(openedProduct?.id, '4001');
-    expect(openedProfileUserId, '1024');
+      expect(find.byKey(const Key('discover-stale-state')), findsOneWidget);
+      expect(find.text('旧快照帖子'), findsOneWidget);
+      expect(find.text('刷新失败，继续显示旧快照'), findsOneWidget);
+    });
   });
 }
 
-class _SuccessDiscoverRepository implements DiscoverRepository {
+Widget _testApp(
+  Widget home, {
+  RadishThemeId themeId = RadishThemeId.guofeng,
+}) {
+  return MaterialApp(
+    theme: buildRadishTheme(themeId),
+    home: Scaffold(body: home),
+  );
+}
+
+Future<void> _setViewport(WidgetTester tester, Size size) async {
+  tester.view.physicalSize = size;
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
+DiscoverFeedPage _representativePage() {
+  return _page(
+    items: [
+      _item(
+        key: 'post:1',
+        title: '焦点公开帖子',
+        kind: DiscoverItemKind.post,
+        target: const DiscoverTarget(
+          kind: DiscoverTargetKind.forumPost,
+          postPublicId: 'pst_01abcdef',
+          commentId: '2042219067430928384',
+          requiresAuthentication: false,
+        ),
+      ),
+      _item(
+        key: 'docs:1',
+        title: 'Flutter Native 指南',
+        kind: DiscoverItemKind.memberActivity,
+        target: const DiscoverTarget(
+          kind: DiscoverTargetKind.docs,
+          documentSlug: 'flutter-native-guide',
+          requiresAuthentication: false,
+        ),
+      ),
+      _item(
+        key: 'channel:1',
+        title: '频道今日讨论',
+        kind: DiscoverItemKind.channelSummary,
+        target: const DiscoverTarget(
+          kind: DiscoverTargetKind.messages,
+          channelId: 'channel-1',
+          requiresAuthentication: true,
+        ),
+      ),
+    ],
+  );
+}
+
+DiscoverFeedPage _page({
+  String title = '公开动态',
+  List<DiscoverFeedItem>? items,
+  String? nextCursor,
+  bool hasMore = false,
+}) {
+  return DiscoverFeedPage(
+    items: items ??
+        [
+          _item(
+            key: 'post:1',
+            title: title,
+            kind: DiscoverItemKind.post,
+            target: const DiscoverTarget(
+              kind: DiscoverTargetKind.forumPost,
+              postPublicId: 'pst_01abcdef',
+              requiresAuthentication: false,
+            ),
+          ),
+        ],
+    pulse: DiscoverPulse(
+      windowStartedAtUtc: DateTime.utc(2026, 8, 22),
+      windowEndedAtUtc: DateTime.utc(2026, 8, 23),
+      discoverableChannelCount: '7',
+      eligibleItemCount: '18',
+      knowledgeContributionCount: '4',
+    ),
+    nextCursor: nextCursor,
+    hasMore: hasMore,
+    generatedAtUtc: DateTime.utc(2026, 8, 23, 8),
+  );
+}
+
+DiscoverFeedItem _item({
+  required String key,
+  required String title,
+  required DiscoverItemKind kind,
+  required DiscoverTarget target,
+}) {
+  return DiscoverFeedItem(
+    key: key,
+    kind: kind,
+    occurredAtUtc: DateTime.utc(2026, 8, 23, 7),
+    title: title,
+    summary: '这是来自统一公开读模型的纯文本摘要。',
+    actor: const DiscoverActor(publicId: 'user-9', displayName: 'luobo'),
+    target: target,
+    primaryMetric: const DiscoverMetric(
+      kind: DiscoverMetricKind.comments,
+      value: '6',
+    ),
+  );
+}
+
+Map<String, Object?> _feedJson({
+  required List<Map<String, Object?>> items,
+  String? nextCursor,
+  bool hasMore = false,
+}) {
+  return {
+    'voItems': items,
+    'voPulse': {
+      'voWindowStartedAtUtc': '2026-08-22T08:00:00Z',
+      'voWindowEndedAtUtc': '2026-08-23T08:00:00Z',
+      'voDiscoverableChannelCount': '7',
+      'voEligibleItemCount': '18',
+      'voKnowledgeContributionCount': '4',
+    },
+    'voNextCursor': nextCursor,
+    'voHasMore': hasMore,
+    'voGeneratedAtUtc': '2026-08-23T08:00:00Z',
+  };
+}
+
+Map<String, Object?> _itemJson({
+  required String key,
+  required int kind,
+  required String title,
+  required int targetKind,
+  String? channelId,
+  String? documentSlug,
+  String? postPublicId,
+  String? commentId,
+  bool requiresAuthentication = false,
+  int? metricKind,
+  String? metricValue,
+}) {
+  return {
+    'voKey': key,
+    'voKind': kind,
+    'voOccurredAtUtc': '2026-08-23T07:00:00Z',
+    'voTitle': title,
+    'voSummary': '公开摘要',
+    'voActor': {
+      'voPublicId': 'user-9',
+      'voDisplayName': 'luobo',
+      'voAvatarThumbnailUrl': null,
+    },
+    'voTarget': {
+      'voKind': targetKind,
+      'voChannelId': channelId,
+      'voDocumentSlug': documentSlug,
+      'voPostPublicId': postPublicId,
+      'voCommentId': commentId,
+      'voRequiresAuthentication': requiresAuthentication,
+    },
+    'voPrimaryMetric': metricKind == null
+        ? null
+        : {'voKind': metricKind, 'voValue': metricValue},
+  };
+}
+
+class _StaticDiscoverRepository implements DiscoverRepository {
+  const _StaticDiscoverRepository(this.page);
+
+  final DiscoverFeedPage page;
+
   @override
-  Future<DiscoverSnapshot> getSnapshot({
+  Future<DiscoverFeedPage> getFeed({
     required int pageSize,
+    String? cursor,
+  }) async =>
+      page;
+}
+
+class _PagingDiscoverRepository implements DiscoverRepository {
+  final List<String?> requestedCursors = [];
+
+  @override
+  Future<DiscoverFeedPage> getFeed({
+    required int pageSize,
+    String? cursor,
   }) async {
-    return const DiscoverSnapshot(
-      forumPosts: [
-        ForumPostSummary(
-          id: '2042219067430928384',
-          title: 'Native discover wiring plan',
-          summary: 'Connect real summaries without expanding into details.',
-          categoryId: '9',
-          categoryName: 'Engineering',
-          authorId: '1024',
-          authorName: 'luobo',
-          commentCount: 6,
-          viewCount: 128,
-          isEssence: true,
-        ),
-      ],
-      documents: [
-        DocsDocumentSummary(
-          id: '3001',
-          title: 'Flutter MVP overview',
-          slug: 'flutter-mvp-overview',
-          summary: 'Current native client scope and boundaries.',
-          modifyTime: '2026-04-18T10:00:00Z',
-        ),
-      ],
-      products: [
-        DiscoverProductSummary(
-          id: '4001',
-          name: 'Profile Rename Card',
-          productType: 'Consumable',
-          price: 120,
-          soldCount: 3,
-        ),
-      ],
-    );
-  }
-}
-
-class _FailingDiscoverRepository implements DiscoverRepository {
-  @override
-  Future<DiscoverSnapshot> getSnapshot({
-    required int pageSize,
-  }) {
-    throw const RadishApiClientException('发现内容服务暂时不可用');
-  }
-}
-
-class _PendingRefreshDiscoverRepository implements DiscoverRepository {
-  int _calls = 0;
-  Completer<DiscoverSnapshot>? refreshCompleter;
-
-  @override
-  Future<DiscoverSnapshot> getSnapshot({
-    required int pageSize,
-  }) {
-    _calls += 1;
-    if (_calls == 1) {
-      return _SuccessDiscoverRepository().getSnapshot(pageSize: pageSize);
+    requestedCursors.add(cursor);
+    if (cursor == null) {
+      return _page(
+        items: [
+          _item(
+            key: 'post:1',
+            title: '第一页帖子',
+            kind: DiscoverItemKind.post,
+            target: const DiscoverTarget(
+              kind: DiscoverTargetKind.forumPost,
+              postPublicId: 'pst_01abcdef',
+              requiresAuthentication: false,
+            ),
+          ),
+          _item(
+            key: 'docs:1',
+            title: '第一页文档',
+            kind: DiscoverItemKind.memberActivity,
+            target: const DiscoverTarget(
+              kind: DiscoverTargetKind.docs,
+              documentSlug: 'first-doc',
+              requiresAuthentication: false,
+            ),
+          ),
+        ],
+        nextCursor: 'cursor-page-2',
+        hasMore: true,
+      );
     }
-
-    final completer = refreshCompleter;
-    if (completer == null) {
-      throw StateError('Missing refresh completer.');
-    }
-
-    return completer.future;
-  }
-}
-
-class _IssueClearingDiscoverRepository implements DiscoverRepository {
-  int _calls = 0;
-
-  @override
-  Future<DiscoverSnapshot> getSnapshot({
-    required int pageSize,
-  }) {
-    _calls += 1;
-    if (_calls == 1) {
-      return _PartialIssueDiscoverRepository().getSnapshot(pageSize: pageSize);
-    }
-
-    return _SuccessDiscoverRepository().getSnapshot(pageSize: pageSize);
-  }
-}
-
-class _AllSectionsIssueDiscoverRepository implements DiscoverRepository {
-  @override
-  Future<DiscoverSnapshot> getSnapshot({
-    required int pageSize,
-  }) async {
-    return const DiscoverSnapshot(
-      forumPosts: <ForumPostSummary>[],
-      documents: <DocsDocumentSummary>[],
-      products: <DiscoverProductSummary>[],
-      sectionIssues: [
-        DiscoverSectionIssue(
-          section: DiscoverSection.forum,
-          message: '论坛服务暂时不可用',
+    return _page(
+      items: [
+        _item(
+          key: 'docs:1',
+          title: '重叠文档',
+          kind: DiscoverItemKind.memberActivity,
+          target: const DiscoverTarget(
+            kind: DiscoverTargetKind.docs,
+            documentSlug: 'first-doc',
+            requiresAuthentication: false,
+          ),
         ),
-        DiscoverSectionIssue(
-          section: DiscoverSection.docs,
-          message: '文档服务暂时不可用',
-        ),
-        DiscoverSectionIssue(
-          section: DiscoverSection.shop,
-          message: '商城服务暂时不可用',
+        _item(
+          key: 'post:2',
+          title: '第二页帖子',
+          kind: DiscoverItemKind.post,
+          target: const DiscoverTarget(
+            kind: DiscoverTargetKind.forumPost,
+            postPublicId: 'pst_02abcdef',
+            requiresAuthentication: false,
+          ),
         ),
       ],
     );
@@ -565,172 +582,81 @@ class _AllSectionsIssueDiscoverRepository implements DiscoverRepository {
 }
 
 class _RefreshFailingDiscoverRepository implements DiscoverRepository {
-  int _calls = 0;
+  int _callCount = 0;
 
   @override
-  Future<DiscoverSnapshot> getSnapshot({
+  Future<DiscoverFeedPage> getFeed({
     required int pageSize,
-  }) {
-    _calls += 1;
-    if (_calls == 1) {
-      return _SuccessDiscoverRepository().getSnapshot(pageSize: pageSize);
+    String? cursor,
+  }) async {
+    _callCount += 1;
+    if (_callCount == 1) {
+      return _page(title: '旧快照帖子');
     }
-
-    throw const RadishApiClientException('刷新服务暂时不可用');
+    throw const RadishApiClientException(
+      '公开发现来源暂不可用',
+      statusCode: 503,
+      code: 'PublicDiscover.SourceUnavailable',
+    );
   }
 }
 
-class _PartialIssueDiscoverRepository implements DiscoverRepository {
+class _GenerationDiscoverRepository implements DiscoverRepository {
+  final _first = Completer<DiscoverFeedPage>();
+  final _second = Completer<DiscoverFeedPage>();
+  int _callCount = 0;
+
   @override
-  Future<DiscoverSnapshot> getSnapshot({
+  Future<DiscoverFeedPage> getFeed({
     required int pageSize,
-  }) async {
-    final snapshot = await _SuccessDiscoverRepository().getSnapshot(
-      pageSize: pageSize,
-    );
-
-    return DiscoverSnapshot(
-      forumPosts: snapshot.forumPosts,
-      documents: snapshot.documents,
-      products: const <DiscoverProductSummary>[],
-      sectionIssues: const [
-        DiscoverSectionIssue(
-          section: DiscoverSection.shop,
-          message: '商城服务暂时不可用',
-        ),
-      ],
-    );
+    String? cursor,
+  }) {
+    _callCount += 1;
+    return _callCount == 1 ? _first.future : _second.future;
   }
+
+  void completeFirst(DiscoverFeedPage page) => _first.complete(page);
+  void completeSecond(DiscoverFeedPage page) => _second.complete(page);
 }
 
-DiscoverSnapshot _updatedDiscoverSnapshot() {
-  return const DiscoverSnapshot(
-    forumPosts: [
-      ForumPostSummary(
-        id: '2042219067430928385',
-        title: 'Updated discover summary',
-        summary: 'Updated public summary after refresh.',
-        categoryId: '9',
-        categoryName: 'Engineering',
-        authorId: '1024',
-        authorName: 'luobo',
-        commentCount: 8,
-        viewCount: 256,
-      ),
-    ],
-    documents: [
-      DocsDocumentSummary(
-        id: '3002',
-        title: 'Updated Flutter MVP overview',
-        slug: 'updated-flutter-mvp-overview',
-        summary: 'Updated native client scope and boundaries.',
-      ),
-    ],
-    products: [
-      DiscoverProductSummary(
-        id: '4002',
-        name: 'Updated Profile Rename Card',
-        productType: 'Consumable',
-        price: 160,
-      ),
-    ],
-  );
-}
+class _PendingDiscoverRepository implements DiscoverRepository {
+  final _completer = Completer<DiscoverFeedPage>();
 
-class _LongTextDiscoverRepository implements DiscoverRepository {
   @override
-  Future<DiscoverSnapshot> getSnapshot({
+  Future<DiscoverFeedPage> getFeed({
     required int pageSize,
-  }) async {
-    return const DiscoverSnapshot(
-      forumPosts: [
-        ForumPostSummary(
-          id: '204221906743092838488888888888888888888',
-          title:
-              'A very long discover post title that should stay constrained on a narrow Android viewport',
-          summary:
-              'This summary intentionally keeps going so the native discover page can prove that long public previews do not break the summary card layout.',
-          categoryId: '9',
-          categoryName:
-              'Engineering-and-product-context-with-a-long-category-name',
-          authorId: '1024',
-          authorName: 'luobo',
-          commentCount: 6,
-          viewCount: 128,
-          isEssence: true,
-        ),
-      ],
-      documents: [
-        DocsDocumentSummary(
-          id: '3001',
-          title:
-              'Flutter MVP overview with a long title that stays inside the card',
-          slug:
-              'flutter-mvp-overview-with-a-very-long-slug-for-narrow-discover-cards',
-          summary:
-              'Current native client scope and boundaries with enough content to exercise truncation.',
-          modifyTime: '2026-04-18T10:00:00Z',
-        ),
-      ],
-      products: [
-        DiscoverProductSummary(
-          id: '4001',
-          name:
-              'Profile Rename Card With A Long Display Name For Discover Summary',
-          productType: 'Consumable',
-          price: 120,
-          soldCount: 3,
-        ),
-      ],
+    String? cursor,
+  }) =>
+      _completer.future;
+
+  void complete(DiscoverFeedPage page) => _completer.complete(page);
+}
+
+class _UnavailableDiscoverRepository implements DiscoverRepository {
+  @override
+  Future<DiscoverFeedPage> getFeed({
+    required int pageSize,
+    String? cursor,
+  }) {
+    throw const RadishApiClientException(
+      '公开发现来源暂不可用',
+      statusCode: 503,
+      code: 'PublicDiscover.SourceUnavailable',
     );
   }
 }
 
-class _SectionFailingApiClient implements RadishApiClient {
+class _RecordingApiClient implements RadishApiClient {
+  Uri? requestedUri;
+
   @override
   Future<T> get<T>({
     required Uri uri,
     required JsonFactory<T> decode,
     String? bearerToken,
   }) async {
-    final path = uri.path;
-    if (path == '/api/v1/Shop/GetProducts') {
-      throw const RadishApiClientException('商城服务暂时不可用');
-    }
-
-    if (path == '/api/v1/Post/GetList') {
-      return decode({
-        'data': [
-          {
-            'voId': '2042219067430928384',
-            'voTitle': 'Native discover wiring plan',
-            'voSummary': 'Connect real summaries.',
-            'voCategoryId': '9',
-            'voCategoryName': 'Engineering',
-            'voAuthorId': '1024',
-            'voAuthorName': 'luobo',
-            'voCommentCount': 6,
-            'voViewCount': 128,
-          },
-        ],
-      });
-    }
-
-    if (path == '/api/v1/Wiki/GetList') {
-      return decode({
-        'data': [
-          {
-            'voId': '3001',
-            'voTitle': 'Flutter MVP overview',
-            'voSlug': 'flutter-mvp-overview',
-            'voSummary': 'Current native client scope and boundaries.',
-            'voModifyTime': '2026-04-18T10:00:00Z',
-          },
-        ],
-      });
-    }
-
-    throw RadishApiClientException('Unexpected path: $path');
+    requestedUri = uri;
+    return decode(_feedJson(items: const []));
   }
 
   @override
@@ -739,9 +665,8 @@ class _SectionFailingApiClient implements RadishApiClient {
     required Object? body,
     required JsonFactory<T> decode,
     String? bearerToken,
-  }) {
-    throw UnimplementedError();
-  }
+  }) =>
+      throw UnimplementedError();
 
   @override
   Future<T> put<T>({
@@ -749,7 +674,6 @@ class _SectionFailingApiClient implements RadishApiClient {
     required Object? body,
     required JsonFactory<T> decode,
     String? bearerToken,
-  }) {
-    throw UnimplementedError();
-  }
+  }) =>
+      throw UnimplementedError();
 }

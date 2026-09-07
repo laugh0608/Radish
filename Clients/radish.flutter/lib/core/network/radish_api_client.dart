@@ -4,6 +4,10 @@ import 'dart:io';
 import '../config/app_environment.dart';
 
 typedef JsonFactory<T> = T Function(Object? json);
+typedef BearerTokenResolver = Future<String?> Function({
+  String? rejectedAccessToken,
+  required bool forceRefresh,
+});
 
 class RadishApiClientException implements Exception {
   const RadishApiClientException(
@@ -47,9 +51,11 @@ abstract class RadishApiClient {
 class HttpRadishApiClient implements RadishApiClient {
   const HttpRadishApiClient({
     required this.environment,
+    this.bearerTokenResolver,
   });
 
   final AppEnvironment environment;
+  final BearerTokenResolver? bearerTokenResolver;
 
   @override
   Future<T> get<T>({
@@ -98,6 +104,48 @@ class HttpRadishApiClient implements RadishApiClient {
   }
 
   Future<T> _send<T>({
+    required String method,
+    required Uri uri,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+    Object? body,
+  }) async {
+    final requestedBearerToken = _normalizeBearerToken(bearerToken);
+    final effectiveBearerToken = await _resolveBearerToken(
+      requestedBearerToken,
+      forceRefresh: false,
+    );
+
+    try {
+      return await _sendOnce(
+        method: method,
+        uri: uri,
+        decode: decode,
+        bearerToken: effectiveBearerToken,
+        body: body,
+      );
+    } on RadishApiClientException catch (error) {
+      if (error.statusCode != HttpStatus.unauthorized ||
+          requestedBearerToken == null ||
+          bearerTokenResolver == null) {
+        rethrow;
+      }
+
+      final refreshedBearerToken = await _resolveBearerToken(
+        effectiveBearerToken,
+        forceRefresh: true,
+      );
+      return _sendOnce(
+        method: method,
+        uri: uri,
+        decode: decode,
+        bearerToken: refreshedBearerToken,
+        body: body,
+      );
+    }
+  }
+
+  Future<T> _sendOnce<T>({
     required String method,
     required Uri uri,
     required JsonFactory<T> decode,
@@ -250,6 +298,49 @@ class HttpRadishApiClient implements RadishApiClient {
     } finally {
       client.close(force: true);
     }
+  }
+
+  Future<String?> _resolveBearerToken(
+    String? bearerToken, {
+    required bool forceRefresh,
+  }) async {
+    if (bearerToken == null) {
+      return null;
+    }
+
+    final resolver = bearerTokenResolver;
+    if (resolver == null) {
+      return bearerToken;
+    }
+
+    try {
+      final resolvedToken = await resolver(
+        rejectedAccessToken: bearerToken,
+        forceRefresh: forceRefresh,
+      );
+      final normalizedResolvedToken = _normalizeBearerToken(resolvedToken);
+      if (normalizedResolvedToken == null) {
+        throw const RadishApiClientException(
+          '登录会话已失效，请重新登录。',
+          statusCode: HttpStatus.unauthorized,
+          code: 'session_required',
+        );
+      }
+      return normalizedResolvedToken;
+    } on RadishApiClientException {
+      rethrow;
+    } catch (_) {
+      throw const RadishApiClientException(
+        '登录会话刷新失败，请稍后重试。',
+        statusCode: HttpStatus.unauthorized,
+        code: 'session_refresh_failed',
+      );
+    }
+  }
+
+  String? _normalizeBearerToken(String? bearerToken) {
+    final normalized = bearerToken?.trim();
+    return normalized == null || normalized.isEmpty ? null : normalized;
   }
 
   int? _readInt(Object? value) {

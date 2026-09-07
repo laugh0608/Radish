@@ -10,21 +10,14 @@ Radish 是面向小规模兴趣与创作者群体的现代社区产品。它以�
 
 ## 当前状态
 
-- **当前阶段**：`Phase 4：长期维护与功能完成`
-- **当前主线**：`Flutter Native 产品化与 UI 重构 P3 视觉确认`
-- **复核日期**：`2026-08-19`
-- **当前结论**：
-  - 正式 Web 已发布并进入 Phase 4；F4-B 至 F4-Q 功能专题已成组关闭
-  - F4-R Web 页面族、主题语义、reduced-motion 与四主题运行态门禁均已关闭
-  - Flutter P1 全页面事实审计、P2 技术基座与独立 P3 代表稿已完成；当前先确认 typography、密度、四主题及 Discover / Forum Detail 双断点方向，再进入 P4 字体资产与共享组件收口
-  - Web / Flutter Native 是仅有的两条正式产品线；WebOS 仅保留兼容入口，Tauri 正式弃用并只保留历史资产
-  - 生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能推进前置
-  - 当前规划、优先级与范围以 `Docs/planning/current.md` 为准
-- **当前验证基线**：
-  - 快速基线：`npm run validate:baseline:quick`
-  - 完整基线：`npm run validate:baseline`
-  - 宿主 / 配置基线：`npm run validate:baseline:host`
-  - 发布、部署与回滚维护线：`Docs/guide/m14-*`、`Docs/guide/m15-*`、`Docs/guide/post-m15-quality-baseline.md`
+正式 Web 已发布，当前进入发布后的维护与功能完善；Flutter Native 按平台推进产品化，构建、设备运行与分发分别验收。
+
+- [当前进行中](Docs/planning/current.md)：即时顺位、各平台成熟度、候选版本、最近发布与停止线的唯一详细入口。
+- [开发路线图](Docs/development-plan.md)：产品定位、阶段目标与 Web / Native 分工。
+- [工程改进候选](Docs/planning/engineering-improvement-candidates.md)：全面审阅后待确认的改进范围与完成标准。
+- [验证基线](Docs/guide/validation-baseline.md)：快速、完整和宿主检查入口，以及当前已知覆盖限制。
+
+生产部署与长期运维由项目所有者独立负责，不作为当前功能开发前置。本页不复制各平台批次状态，避免与当前规划漂移。
 
 ## 技术栈
 
@@ -138,8 +131,8 @@ npm run validate:baseline:host
 ```
 Radish/
 ├── Docs/                            # 📚 固定项目文档（开发规范、架构设计、部署指南等）
-├── Clients/radish.flutter/          # 📱 Flutter 移动原生客户端
-├── Clients/radish-tauri/            # 🖥️ Tauri 桌面安装包壳层
+├── Clients/radish.flutter/          # 📱 Flutter Native（移动优先，桌面分阶段建设）
+├── Clients/radish-tauri/            # Tauri 已弃用的历史资产
 ├── Frontend/radish.client/               # ⚛️ React 正式 Web 应用（含 WebOS 历史兼容入口）
 ├── Frontend/radish.console/              # 🎛️ 管理控制台前端
 ├── Frontend/radish.ui/                   # 🎨 UI 组件库（共享组件、Hooks、工具函数）

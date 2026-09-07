@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:flutter/services.dart';
 
+import '../storage/secure_value_store.dart';
+
 enum NativeAuthCallbackType {
   login,
   logout,
@@ -98,6 +100,60 @@ class NativeOidcAuthorizationAttempt {
   }
 }
 
+abstract interface class AuthorizationAttemptStore {
+  Future<NativeOidcAuthorizationAttempt?> read();
+
+  Future<void> write(NativeOidcAuthorizationAttempt attempt);
+
+  Future<NativeOidcAuthorizationAttempt?> take();
+
+  Future<void> clear();
+}
+
+class SecureAuthorizationAttemptStore implements AuthorizationAttemptStore {
+  SecureAuthorizationAttemptStore({
+    required SecureValueStore secureValues,
+  }) : _secureValues = secureValues;
+
+  static const storageKey = 'radish.auth.oidc_attempt.v1';
+
+  final SecureValueStore _secureValues;
+
+  @override
+  Future<void> clear() async {
+    if (await _secureValues.read(storageKey) == null) {
+      return;
+    }
+
+    await _secureValues.delete(storageKey);
+  }
+
+  @override
+  Future<NativeOidcAuthorizationAttempt?> read() async {
+    final payload = await _secureValues.read(storageKey);
+    if (payload == null || payload.trim().isEmpty) {
+      return null;
+    }
+
+    return NativeOidcAuthorizationAttempt.fromJson(jsonDecode(payload));
+  }
+
+  @override
+  Future<NativeOidcAuthorizationAttempt?> take() async {
+    final attempt = await read();
+    await clear();
+    return attempt;
+  }
+
+  @override
+  Future<void> write(NativeOidcAuthorizationAttempt attempt) {
+    return _secureValues.write(
+      storageKey,
+      jsonEncode(attempt.toJson()),
+    );
+  }
+}
+
 abstract class NativeAuthGateway {
   Future<void> openAuthorizeUrl(Uri authorizeUri);
 
@@ -168,9 +224,12 @@ class InMemoryNativeAuthGateway implements NativeAuthGateway {
 class PlatformNativeAuthGateway implements NativeAuthGateway {
   PlatformNativeAuthGateway({
     MethodChannel? channel,
-  }) : _channel = channel ?? const MethodChannel('radish.flutter/native_auth');
+    required AuthorizationAttemptStore authorizationAttemptStore,
+  })  : _channel = channel ?? const MethodChannel('radish.flutter/native_auth'),
+        _authorizationAttemptStore = authorizationAttemptStore;
 
   final MethodChannel _channel;
+  final AuthorizationAttemptStore _authorizationAttemptStore;
 
   @override
   Future<void> openAuthorizeUrl(Uri authorizeUri) async {
@@ -201,25 +260,16 @@ class PlatformNativeAuthGateway implements NativeAuthGateway {
   @override
   Future<void> writeAuthorizationAttempt(
       NativeOidcAuthorizationAttempt attempt) async {
-    await _channel.invokeMethod<void>(
-      'writeAuthorizationAttempt',
-      jsonEncode(attempt.toJson()),
-    );
+    await _authorizationAttemptStore.write(attempt);
   }
 
   @override
   Future<NativeOidcAuthorizationAttempt?> takeAuthorizationAttempt() async {
-    final payload =
-        await _channel.invokeMethod<String>('takeAuthorizationAttempt');
-    if (payload == null || payload.trim().isEmpty) {
-      return null;
-    }
-
-    return NativeOidcAuthorizationAttempt.fromJson(jsonDecode(payload));
+    return _authorizationAttemptStore.take();
   }
 
   @override
   Future<void> clearAuthorizationAttempt() async {
-    await _channel.invokeMethod<void>('clearAuthorizationAttempt');
+    await _authorizationAttemptStore.clear();
   }
 }

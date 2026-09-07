@@ -59,7 +59,7 @@ class NativeAuthState {
 }
 
 class NativeAuthController extends ChangeNotifier {
-  static const _authorizationAttemptTtl = Duration(minutes: 5);
+  static const _authorizationAttemptTtl = Duration(minutes: 15);
 
   NativeAuthController({
     required AppEnvironment environment,
@@ -123,17 +123,51 @@ class NativeAuthController extends ChangeNotifier {
     _state = const NativeAuthState.openingLogout();
     notifyListeners();
 
+    var authorizationAttemptCleanupFailed = false;
     try {
       await _gateway.clearAuthorizationAttempt();
-      await _gateway.openLogoutUrl(_buildLogoutUri());
-      await _sessionController.clearSession();
-      _state = const NativeAuthState.idle();
     } catch (_) {
-      _state = const NativeAuthState.idle(
-        lastErrorMessage: '无法打开浏览器退出流程。',
-      );
+      authorizationAttemptCleanupFailed = true;
     }
 
+    var browserLogoutFailed = false;
+    try {
+      await _gateway.openLogoutUrl(_buildLogoutUri());
+    } catch (_) {
+      browserLogoutFailed = true;
+    }
+
+    try {
+      await _sessionController.clearSession();
+    } catch (_) {
+      _state = const NativeAuthState.idle(
+        lastErrorMessage: '无法清除本地登录会话。',
+      );
+      notifyListeners();
+      return;
+    }
+
+    if (authorizationAttemptCleanupFailed) {
+      try {
+        await _gateway.clearAuthorizationAttempt();
+        authorizationAttemptCleanupFailed = false;
+      } catch (_) {
+        // The local session is already cleared. Keep the cleanup failure
+        // visible so a stale authorization attempt is never treated as a
+        // successful logout boundary.
+      }
+    }
+
+    _state = NativeAuthState.idle(
+      lastErrorMessage: switch ((
+        authorizationAttemptCleanupFailed,
+        browserLogoutFailed,
+      )) {
+        (true, _) => '本地登录已退出，但登录尝试清理失败。',
+        (false, true) => '本地登录已退出，但无法打开浏览器退出流程。',
+        (false, false) => null,
+      },
+    );
     notifyListeners();
   }
 

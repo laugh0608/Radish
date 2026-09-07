@@ -5,6 +5,9 @@ class LeaderboardItem {
     required this.userName,
     required this.primaryValue,
     required this.primaryLabel,
+    this.userPublicId,
+    this.userDisplayName,
+    this.userDisplayHandle,
     this.currentLevel,
     this.currentLevelName,
     this.secondaryValue,
@@ -21,6 +24,9 @@ class LeaderboardItem {
       rank: _readInt(map['voRank']) ?? 0,
       userId: _readString(map['voUserId']) ?? '',
       userName: _readString(map['voUserName']) ?? '',
+      userPublicId: _readString(map['voUserPublicId']),
+      userDisplayName: _readString(map['voUserDisplayName']),
+      userDisplayHandle: _readString(map['voUserDisplayHandle']),
       currentLevel: _readInt(map['voCurrentLevel']),
       currentLevelName: _readString(map['voCurrentLevelName']),
       avatarUrl: _readString(map['voAvatarUrl']),
@@ -36,6 +42,9 @@ class LeaderboardItem {
   final int rank;
   final String userId;
   final String userName;
+  final String? userPublicId;
+  final String? userDisplayName;
+  final String? userDisplayHandle;
   final int? currentLevel;
   final String? currentLevelName;
   final String? avatarUrl;
@@ -47,18 +56,52 @@ class LeaderboardItem {
   final String? secondaryLabel;
 
   String get displayName {
+    final normalizedDisplayName = userDisplayName?.trim();
+    if (normalizedDisplayName != null && normalizedDisplayName.isNotEmpty) {
+      return normalizedDisplayName;
+    }
+
     final normalizedUserName = userName.trim();
     if (normalizedUserName.isNotEmpty) {
       return normalizedUserName;
     }
 
-    final normalizedUserId = userId.trim();
-    if (normalizedUserId.isNotEmpty) {
-      return '用户 $normalizedUserId';
+    final publicId = normalizedPublicId;
+    if (publicId != null) {
+      return '用户 $publicId';
+    }
+
+    final numericUserId = normalizedNumericUserId;
+    if (numericUserId != null) {
+      return '用户 $numericUserId';
     }
 
     return '匿名用户';
   }
+
+  String? get displayHandle {
+    final normalized = userDisplayHandle?.trim();
+    return normalized == null || normalized.isEmpty ? null : normalized;
+  }
+
+  String? get normalizedPublicId {
+    final normalized = userPublicId?.trim().toLowerCase();
+    if (normalized == null || !_userPublicIdPattern.hasMatch(normalized)) {
+      return null;
+    }
+    return normalized;
+  }
+
+  String? get normalizedNumericUserId {
+    final normalized = userId.trim();
+    final numericValue = BigInt.tryParse(normalized);
+    if (numericValue == null || numericValue <= BigInt.zero) {
+      return null;
+    }
+    return normalized;
+  }
+
+  String? get profileTarget => normalizedPublicId ?? normalizedNumericUserId;
 
   String get levelText {
     final level = currentLevel;
@@ -78,6 +121,8 @@ class LeaderboardItem {
     return 'Lv.$level · $levelName';
   }
 }
+
+final RegExp _userPublicIdPattern = RegExp(r'^usr_[0-9a-f]{32}$');
 
 class LeaderboardPageResult {
   const LeaderboardPageResult({

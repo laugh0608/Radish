@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import '../../../core/auth/session_controller.dart';
 import '../../../core/auth/native_auth_controller.dart';
 import '../../../core/config/app_environment.dart';
+import '../../../core/layout/radish_window_class.dart';
 import '../../../core/network/radish_api_client.dart';
 import '../../../core/platform/app_lifecycle_gateway.dart';
+import '../../../core/theme/radish_theme.dart';
 import '../../../core/theme/radish_theme_controller.dart';
 import '../../../features/discover/data/discover_repository.dart';
-import '../../../features/discover/data/discover_models.dart';
 import '../../../features/docs/data/docs_follow_up_store.dart';
 import '../../../features/docs/data/docs_models.dart';
 import '../../../features/docs/data/docs_repository.dart';
@@ -30,11 +31,13 @@ import '../../../features/profile/presentation/profile_page.dart';
 import '../../../features/shop/data/shop_repository.dart';
 import '../../../features/shop/presentation/shop_inventory_page.dart';
 import '../../../features/shop/presentation/shop_order_list_page.dart';
-import '../../../features/shop/presentation/shop_product_detail_page.dart';
 import '../../../features/shop/presentation/shop_product_list_page.dart';
 import '../../../features/wallet/data/wallet_repository.dart';
 import '../../../features/wallet/presentation/wallet_page.dart';
+import '../../../shared/icons/radish_icons.dart';
 import 'radish_adaptive_navigation.dart';
+import 'radish_notification_surface.dart';
+import 'radish_shell_actions.dart';
 import 'radish_theme_selector.dart';
 
 class RadishFlutterShell extends StatefulWidget {
@@ -102,8 +105,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       const <DocsDetailHandoffTarget>[];
   List<NotificationListItem> _notificationItems =
       const <NotificationListItem>[];
-  _NotificationLookupState _notificationLookupState =
-      _NotificationLookupState.idle;
+  RadishNotificationLookupState _notificationLookupState =
+      RadishNotificationLookupState.idle;
   int _notificationLookupRequestId = 0;
   ShellPostLoginTarget? _pendingPostLoginTarget;
   VoidCallback? _docsInlineDetailBackHandler;
@@ -351,7 +354,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     if (_wasAuthenticated && !isAuthenticated) {
       setState(() {
         _notificationItems = const <NotificationListItem>[];
-        _notificationLookupState = _NotificationLookupState.idle;
+        _notificationLookupState = RadishNotificationLookupState.idle;
       });
     }
     _wasAuthenticated = isAuthenticated;
@@ -488,14 +491,10 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       return;
     }
 
-    final selectedNotification =
-        await showModalBottomSheet<_NotificationSelection>(
+    final selectedNotification = await showRadishNotificationList(
       context: context,
-      showDragHandle: true,
-      builder: (context) => _NotificationListSheet(
-        notifications: notifications,
-        onMarkAsRead: _markNotificationAsRead,
-      ),
+      notifications: notifications,
+      onMarkAsRead: _markNotificationAsRead,
     );
     if (!mounted || selectedNotification == null) {
       return;
@@ -576,30 +575,6 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
   }
 
-  void _openShopProductFromDiscover(DiscoverProductSummary product) {
-    final productId = product.id.trim();
-    if (productId.isEmpty) {
-      return;
-    }
-
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
-        builder: (context) => ShopProductDetailPage(
-          environment: widget.environment,
-          repository: widget.shopRepository,
-          walletRepository: widget.walletRepository,
-          productId: productId,
-          initialTitle: product.name,
-          sessionController: widget.sessionController,
-          authController: widget.authController,
-          onRequestSignIn: () => _startLoginForTarget(
-            const ShellPostLoginTarget(tabIndex: _discoverTabIndex),
-          ),
-        ),
-      ),
-    );
-  }
-
   void _openShopFromDiscover() {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -618,8 +593,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
   }
 
   Future<void> _openShopOrdersFromProfile() async {
-    final accessToken =
-        widget.sessionController.state.session?.accessToken.trim();
+    final session = widget.sessionController.state.session;
+    final accessToken = session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       await _startLoginForProfile();
       return;
@@ -636,14 +611,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           repository: widget.shopRepository,
           walletRepository: widget.walletRepository,
           accessToken: accessToken,
+          accountId: session?.userId,
         ),
       ),
     );
   }
 
   Future<void> _openShopInventoryFromProfile() async {
-    final accessToken =
-        widget.sessionController.state.session?.accessToken.trim();
+    final session = widget.sessionController.state.session;
+    final accessToken = session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       await _startLoginForProfile();
       return;
@@ -660,14 +636,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           repository: widget.shopRepository,
           walletRepository: widget.walletRepository,
           accessToken: accessToken,
+          accountId: session?.userId,
         ),
       ),
     );
   }
 
   Future<void> _openWalletFromProfile() async {
-    final accessToken =
-        widget.sessionController.state.session?.accessToken.trim();
+    final session = widget.sessionController.state.session;
+    final accessToken = session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       await _startLoginForProfile();
       return;
@@ -683,14 +660,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           environment: widget.environment,
           repository: widget.walletRepository,
           accessToken: accessToken,
+          accountId: session?.userId,
         ),
       ),
     );
   }
 
   Future<void> _openExperienceFromProfile() async {
-    final accessToken =
-        widget.sessionController.state.session?.accessToken.trim();
+    final session = widget.sessionController.state.session;
+    final accessToken = session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       await _startLoginForProfile();
       return;
@@ -706,14 +684,15 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           environment: widget.environment,
           repository: widget.experienceRepository,
           accessToken: accessToken,
+          accountId: session?.userId,
         ),
       ),
     );
   }
 
   Future<void> _openBrowseHistoryFromProfile() async {
-    final accessToken =
-        widget.sessionController.state.session?.accessToken.trim();
+    final session = widget.sessionController.state.session;
+    final accessToken = session?.accessToken.trim();
     if (accessToken == null || accessToken.isEmpty) {
       await _startLoginForProfile();
       return;
@@ -731,6 +710,7 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
           shopRepository: widget.shopRepository,
           walletRepository: widget.walletRepository,
           accessToken: accessToken,
+          accountId: session?.userId,
           onOpenForumDetailTarget: _openForumDetailTarget,
           onOpenDocsDetailTarget: _openDocsDetailTarget,
         ),
@@ -755,14 +735,14 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       if (mounted) {
         setState(() {
           _notificationItems = const <NotificationListItem>[];
-          _notificationLookupState = _NotificationLookupState.idle;
+          _notificationLookupState = RadishNotificationLookupState.idle;
         });
       }
       return;
     }
 
     setState(() {
-      _notificationLookupState = _NotificationLookupState.loading;
+      _notificationLookupState = RadishNotificationLookupState.loading;
     });
 
     try {
@@ -778,8 +758,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       setState(() {
         _notificationItems = notifications;
         _notificationLookupState = notifications.isEmpty
-            ? _NotificationLookupState.empty
-            : _NotificationLookupState.available;
+            ? RadishNotificationLookupState.empty
+            : RadishNotificationLookupState.available;
       });
     } catch (_) {
       if (!mounted || requestId != _notificationLookupRequestId) {
@@ -788,8 +768,8 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
 
       setState(() {
         _notificationLookupState = _notificationItems.isEmpty
-            ? _NotificationLookupState.error
-            : _NotificationLookupState.stale;
+            ? RadishNotificationLookupState.error
+            : RadishNotificationLookupState.stale;
       });
     }
   }
@@ -1074,6 +1054,64 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
     }
   }
 
+  void _openThemeSelector(SessionState sessionState) {
+    unawaited(
+      showRadishThemeSelector(
+        context: context,
+        controller: widget.themeController,
+        userId: sessionState.session?.userId,
+        accessToken: sessionState.session?.accessToken,
+        onOpenShop: _openShopFromDiscover,
+      ),
+    );
+  }
+
+  List<Widget> _buildNavigationActions(
+    RadishWindowClass windowClass, {
+    required SessionState sessionState,
+    required NativeAuthState authState,
+  }) {
+    final isExpanded = windowClass == RadishWindowClass.expanded;
+    final recentForumAction =
+        _recentBrowseHandoffTarget == null ? null : _resumeRecentBrowseHandoff;
+    final recentDocumentAction =
+        _recentDocumentTarget == null ? null : _resumeRecentDocumentTarget;
+    return [
+      if (isExpanded &&
+          (recentForumAction != null || recentDocumentAction != null))
+        RadishShellRecentAction(
+          onOpenForum: recentForumAction,
+          onOpenDocument: recentDocumentAction,
+        ),
+      if (isExpanded)
+        RadishShellHeaderButton(
+          icon: RadishIcons.palette,
+          tooltip: '外观主题',
+          onPressed: () => _openThemeSelector(sessionState),
+        ),
+      RadishNotificationAction(
+        state: _notificationLookupState,
+        notificationCount: _notificationItems.length,
+        enabled: sessionState.isAuthenticated,
+        onOpen: _openNotificationList,
+        onRefresh: _loadNotificationItems,
+      ),
+      RadishShellAccountAction(
+        isAuthenticated: sessionState.isAuthenticated,
+        isBusy: authState.isBusy,
+        userLabel: sessionState.session?.userId,
+        includeTheme: !isExpanded,
+        onOpenProfile: _openMyProfile,
+        onOpenTheme: () => _openThemeSelector(sessionState),
+        onAuthenticate: sessionState.isAuthenticated
+            ? widget.authController.startLogout
+            : _startLoginForCurrentContext,
+        onOpenRecentForum: isExpanded ? null : recentForumAction,
+        onOpenRecentDocument: isExpanded ? null : recentDocumentAction,
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
@@ -1084,10 +1122,6 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       builder: (context, child) {
         final sessionState = widget.sessionController.state;
         final authState = widget.authController.state;
-        final statusStrip = _buildShellStatusStrip(
-          sessionState: sessionState,
-          authState: authState,
-        );
         final authNotice = _buildAuthNotice(
           context,
           sessionState: sessionState,
@@ -1095,23 +1129,14 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
         );
         final pages = <Widget>[
           DiscoverPage(
-            environment: widget.environment,
-            sessionState: sessionState,
             repository: widget.discoverRepository,
             onOpenForum: () => _openTabFromDiscover(_forumTabIndex),
             onOpenDocs: () => _openTabFromDiscover(_docsTabIndex),
             onOpenLeaderboard: () => _openTabFromDiscover(
               _leaderboardTabIndex,
             ),
-            onOpenDocument: (document) => _openDocsDetailTarget(
-              DocsDetailHandoffTarget(
-                slug: document.slug,
-                source: DocsDetailHandoffSource.discover,
-                initialTitle: document.title,
-              ),
-            ),
+            onOpenDocsDetailTarget: _openDocsDetailTarget,
             onOpenForumDetailTarget: _openForumDetailTarget,
-            onOpenShopProduct: _openShopProductFromDiscover,
             onOpenShop: _openShopFromDiscover,
             onOpenProfileUser: _openProfileUserFromCurrentTab,
           ),
@@ -1180,118 +1205,25 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
             selectedIndex: _currentIndex,
             onDestinationSelected: _selectTab,
             destinations: _shellDestinations,
-            title: const Text('Radish Flutter'),
-            actions: [
-              IconButton(
-                tooltip: '外观主题',
-                onPressed: () => showRadishThemeSelector(
-                  context: context,
-                  controller: widget.themeController,
-                  userId: sessionState.session?.userId,
-                  accessToken: sessionState.session?.accessToken,
-                ),
-                icon: const Icon(Icons.palette_outlined),
-              ),
-            ],
-            body: SafeArea(
-              child: Column(
-                children: [
-                  statusStrip,
-                  if (authNotice != null) authNotice,
-                  Expanded(
-                    child: IndexedStack(
-                      index: _currentIndex,
-                      children: pages,
-                    ),
+            actionsBuilder: (context, windowClass) => _buildNavigationActions(
+              windowClass,
+              sessionState: sessionState,
+              authState: authState,
+            ),
+            body: Column(
+              children: [
+                if (authNotice != null) authNotice,
+                Expanded(
+                  child: IndexedStack(
+                    index: _currentIndex,
+                    children: pages,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
       },
-    );
-  }
-
-  Widget _buildShellStatusStrip({
-    required SessionState sessionState,
-    required NativeAuthState authState,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            if (_recentBrowseHandoffTarget != null)
-              _ShellStatusChip(
-                icon: Icons.history_outlined,
-                label: '继续阅读论坛',
-                onTap: _resumeRecentBrowseHandoff,
-              ),
-            if (_recentDocumentTarget != null)
-              _ShellStatusChip(
-                icon: Icons.description_outlined,
-                label: '继续阅读文档',
-                onTap: _resumeRecentDocumentTarget,
-              ),
-            ..._buildForumNotificationChips(sessionState),
-            _ShellStatusChip(
-              label: widget.environment.name.toUpperCase(),
-            ),
-            _ShellStatusChip(
-              icon: sessionState.isAuthenticated
-                  ? Icons.verified_user_outlined
-                  : Icons.person_outline,
-              label: sessionState.isAuthenticated ? '已登录' : '游客',
-            ),
-            _ShellStatusChip(
-              icon: authState.isOpeningLogout
-                  ? Icons.logout
-                  : authState.isBusy
-                      ? Icons.hourglass_top_outlined
-                      : sessionState.isAuthenticated
-                          ? Icons.logout_outlined
-                          : Icons.login_outlined,
-              label: authState.isOpeningLogin
-                  ? '正在打开登录'
-                  : authState.isRedeemingCode
-                      ? '正在完成登录'
-                      : authState.isOpeningLogout
-                          ? '正在退出'
-                          : sessionState.isAuthenticated
-                              ? '退出登录'
-                              : '登录',
-              onTap: authState.isBusy
-                  ? null
-                  : sessionState.isAuthenticated
-                      ? widget.authController.startLogout
-                      : _startLoginForCurrentContext,
-            ),
-            if (sessionState.isAnonymous &&
-                sessionState.lastErrorMessage != null &&
-                sessionState.lastErrorMessage!.isNotEmpty)
-              Tooltip(
-                message: sessionState.lastErrorMessage!,
-                child: const _ShellStatusChip(
-                  icon: Icons.warning_amber_outlined,
-                  label: '会话已失效',
-                ),
-              ),
-            if (authState.lastErrorMessage != null &&
-                authState.lastErrorMessage!.isNotEmpty)
-              Tooltip(
-                message: authState.lastErrorMessage!,
-                child: const _ShellStatusChip(
-                  icon: Icons.error_outline,
-                  label: '认证异常',
-                ),
-              ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1339,119 +1271,49 @@ class _RadishFlutterShellState extends State<RadishFlutterShell>
       );
     }
 
-    return null;
-  }
-
-  List<Widget> _buildForumNotificationChips(SessionState sessionState) {
-    if (!sessionState.isAuthenticated) {
-      return const <Widget>[];
-    }
-
-    final chips = <Widget>[];
-    switch (_notificationLookupState) {
-      case _NotificationLookupState.idle:
-        chips.add(
-          _ShellStatusChip(
-            icon: Icons.notifications_outlined,
-            label: '检查通知',
-            onTap: _loadNotificationItems,
+    final sessionErrorMessage = sessionState.lastErrorMessage;
+    if (sessionState.isAnonymous &&
+        sessionErrorMessage != null &&
+        sessionErrorMessage.isNotEmpty) {
+      return _ShellNoticeBanner(
+        severity: _ShellNoticeSeverity.error,
+        title: '会话需要恢复',
+        message: sessionErrorMessage,
+        actions: [
+          FilledButton.tonal(
+            onPressed: _startLoginForCurrentContext,
+            child: const Text('重新登录'),
           ),
-        );
-        break;
-      case _NotificationLookupState.loading:
-        chips.add(
-          const _ShellStatusChip(
-            icon: Icons.hourglass_top_outlined,
-            label: '正在刷新通知',
-          ),
-        );
-        break;
-      case _NotificationLookupState.available:
-        chips.add(
-          _ShellStatusChip(
-            icon: Icons.notifications_outlined,
-            label: '通知 ${_notificationItems.length} 条',
-            onTap: _openNotificationList,
-          ),
-        );
-        break;
-      case _NotificationLookupState.empty:
-        chips.add(
-          const _ShellStatusChip(
-            icon: Icons.notifications_none_outlined,
-            label: '暂无通知',
-          ),
-        );
-        break;
-      case _NotificationLookupState.error:
-        chips.add(
-          const _ShellStatusChip(
-            icon: Icons.error_outline,
-            label: '通知刷新失败',
-          ),
-        );
-        break;
-      case _NotificationLookupState.stale:
-        chips.add(
-          _ShellStatusChip(
-            icon: Icons.notifications_paused_outlined,
-            label: '通知 ${_notificationItems.length} 条（上次）',
-            onTap: _openNotificationList,
-          ),
-        );
-        break;
-    }
-
-    if (_notificationLookupState != _NotificationLookupState.loading) {
-      chips.add(
-        _ShellStatusChip(
-          icon: Icons.refresh,
-          label: '刷新通知',
-          onTap: _loadNotificationItems,
-        ),
+        ],
       );
     }
 
-    return chips;
+    return null;
   }
 }
 
 const _shellDestinations = <RadishNavigationDestination>[
   RadishNavigationDestination(
-    icon: Icon(Icons.explore_outlined),
-    selectedIcon: Icon(Icons.explore),
+    icon: RadishIcons.discover,
     label: '发现',
   ),
   RadishNavigationDestination(
-    icon: Icon(Icons.forum_outlined),
-    selectedIcon: Icon(Icons.forum),
+    icon: RadishIcons.forum,
     label: '论坛',
   ),
   RadishNavigationDestination(
-    icon: Icon(Icons.description_outlined),
-    selectedIcon: Icon(Icons.description),
+    icon: RadishIcons.docs,
     label: '文档',
   ),
   RadishNavigationDestination(
-    icon: Icon(Icons.emoji_events_outlined),
-    selectedIcon: Icon(Icons.emoji_events),
+    icon: RadishIcons.leaderboard,
     label: '榜单',
   ),
   RadishNavigationDestination(
-    icon: Icon(Icons.person_outline),
-    selectedIcon: Icon(Icons.person),
+    icon: RadishIcons.profile,
     label: '我的',
   ),
 ];
-
-enum _NotificationLookupState {
-  idle,
-  loading,
-  available,
-  empty,
-  error,
-  stale,
-}
 
 String? _normalizeUserId(String? userId) {
   final normalizedUserId = userId?.trim();
@@ -1460,376 +1322,6 @@ String? _normalizeUserId(String? userId) {
   }
 
   return normalizedUserId;
-}
-
-class _NotificationListSheet extends StatefulWidget {
-  const _NotificationListSheet({
-    required this.notifications,
-    required this.onMarkAsRead,
-  });
-
-  final List<NotificationListItem> notifications;
-  final Future<String?> Function(NotificationListItem notification)
-      onMarkAsRead;
-
-  @override
-  State<_NotificationListSheet> createState() => _NotificationListSheetState();
-}
-
-class _NotificationListSheetState extends State<_NotificationListSheet> {
-  late List<NotificationListItem> _notifications;
-  final Set<String> _markingReadIds = <String>{};
-  String? _markReadIssueMessage;
-
-  @override
-  void initState() {
-    super.initState();
-    _notifications = widget.notifications;
-  }
-
-  @override
-  void didUpdateWidget(covariant _NotificationListSheet oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (oldWidget.notifications != widget.notifications) {
-      _notifications = widget.notifications;
-    }
-  }
-
-  Future<void> _markAsRead(NotificationListItem notification) async {
-    final notificationId = notification.notificationId?.trim();
-    if (notificationId == null || notificationId.isEmpty) {
-      setState(() {
-        _markReadIssueMessage = '当前通知缺少可标记的通知 ID';
-      });
-      return;
-    }
-
-    setState(() {
-      _markReadIssueMessage = null;
-      _markingReadIds.add(notificationId);
-    });
-
-    final issueMessage = await widget.onMarkAsRead(notification);
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      _markingReadIds.remove(notificationId);
-      if (issueMessage == null) {
-        _notifications = _notifications
-            .map(
-              (item) => item.notificationId == notificationId
-                  ? item.copyWith(isRead: true)
-                  : item,
-            )
-            .toList();
-      } else {
-        _markReadIssueMessage = issueMessage;
-      }
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '通知',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '最近站内通知，论坛通知可回到帖子或评论。',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            if (_markReadIssueMessage != null) ...[
-              const SizedBox(height: 12),
-              _NotificationMarkReadIssueNotice(
-                message: _markReadIssueMessage!,
-              ),
-            ],
-            const SizedBox(height: 12),
-            Flexible(
-              child: ListView.separated(
-                shrinkWrap: true,
-                itemCount: _notifications.length,
-                separatorBuilder: (context, index) => const Divider(height: 1),
-                itemBuilder: (context, index) {
-                  final notification = _notifications[index];
-                  final target = notification.forumTarget;
-                  final notificationId = notification.notificationId?.trim();
-                  final isMarking = notificationId != null &&
-                      _markingReadIds.contains(notificationId);
-
-                  return _NotificationListTile(
-                    notification: notification,
-                    isMarkingRead: isMarking,
-                    onOpen: target == null
-                        ? null
-                        : () => Navigator.of(context).pop(
-                              _NotificationSelection(
-                                notification: notification,
-                                target: target,
-                              ),
-                            ),
-                    onMarkAsRead: notification.isRead || notificationId == null
-                        ? null
-                        : () => _markAsRead(notification),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NotificationSelection {
-  const _NotificationSelection({
-    required this.notification,
-    required this.target,
-  });
-
-  final NotificationListItem notification;
-  final ForumDetailHandoffTarget target;
-}
-
-class _NotificationListTile extends StatelessWidget {
-  const _NotificationListTile({
-    required this.notification,
-    required this.isMarkingRead,
-    required this.onOpen,
-    required this.onMarkAsRead,
-  });
-
-  final NotificationListItem notification;
-  final bool isMarkingRead;
-  final VoidCallback? onOpen;
-  final VoidCallback? onMarkAsRead;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final target = notification.forumTarget;
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(
-              target == null
-                  ? Icons.notifications_outlined
-                  : Icons.forum_outlined,
-            ),
-            title: Text(
-              notification.title,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: _NotificationListItemSubtitle(
-              notification: notification,
-            ),
-            trailing: target == null
-                ? Text(
-                    notification.isRead ? '已读' : '只读',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                  )
-                : const Icon(Icons.chevron_right),
-            onTap: onOpen,
-          ),
-          if (onMarkAsRead != null) ...[
-            Padding(
-              padding: const EdgeInsets.only(left: 56, bottom: 4),
-              child: FilledButton.tonalIcon(
-                onPressed: isMarkingRead ? null : onMarkAsRead,
-                icon: isMarkingRead
-                    ? const SizedBox.square(
-                        dimension: 16,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.done_all),
-                label: Text(isMarkingRead ? '正在标记' : '标记已读'),
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _NotificationMarkReadIssueNotice extends StatelessWidget {
-  const _NotificationMarkReadIssueNotice({
-    required this.message,
-  });
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.errorContainer,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.error),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              Icons.error_outline,
-              color: colorScheme.onErrorContainer,
-              size: 20,
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                message,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _NotificationListItemSubtitle extends StatelessWidget {
-  const _NotificationListItemSubtitle({
-    required this.notification,
-  });
-
-  final NotificationListItem notification;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final metadata = _buildNotificationMetadata(notification);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (notification.content != null)
-          Text(
-            notification.content!,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        Text(
-          metadata,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
-String _buildNotificationMetadata(NotificationListItem notification) {
-  final parts = <String>[
-    notification.typeLabel,
-    notification.isRead ? '已读' : '未读',
-  ];
-  final createdAt =
-      notification.createdAt ?? notification.notification?.createdAt;
-  if (createdAt != null) {
-    parts.add(createdAt);
-  }
-
-  final target = notification.forumTarget;
-  if (target != null) {
-    parts.add(_buildForumNotificationTargetLabel(target));
-  }
-
-  return parts.join(' · ');
-}
-
-String _buildForumNotificationTargetLabel(ForumDetailHandoffTarget target) {
-  final commentId = target.normalizedCommentId;
-  if (commentId == null) {
-    return '/forum/post/${target.normalizedPostId}';
-  }
-
-  return '/forum/post/${target.normalizedPostId} · comment $commentId';
-}
-
-class _ShellStatusChip extends StatelessWidget {
-  const _ShellStatusChip({
-    required this.label,
-    this.icon,
-    this.onTap,
-  });
-
-  final String label;
-  final IconData? icon;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    final child = DecoratedBox(
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 16),
-              const SizedBox(width: 6),
-            ],
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ],
-        ),
-      ),
-    );
-
-    if (onTap == null) {
-      return child;
-    }
-
-    return InkWell(
-      borderRadius: BorderRadius.circular(999),
-      onTap: onTap,
-      child: child,
-    );
-  }
 }
 
 enum _ShellNoticeSeverity {
@@ -1857,27 +1349,32 @@ class _ShellNoticeBanner extends StatelessWidget {
       _ShellNoticeSeverity.info => (
           colorScheme.secondaryContainer,
           colorScheme.secondary,
-          Icons.open_in_browser_outlined,
+          RadishIcons.info,
           colorScheme.onSecondaryContainer,
         ),
       _ShellNoticeSeverity.error => (
           colorScheme.errorContainer,
           colorScheme.error,
-          Icons.error_outline,
+          RadishIcons.error,
           colorScheme.onErrorContainer,
         ),
     };
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.fromLTRB(
+        RadishSpacing.large,
+        RadishSpacing.medium,
+        RadishSpacing.large,
+        0,
+      ),
       child: DecoratedBox(
         decoration: BoxDecoration(
           color: backgroundColor,
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(RadishRadii.large),
           border: Border.all(color: borderColor),
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(RadishSpacing.large),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1885,7 +1382,7 @@ class _ShellNoticeBanner extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(icon, color: iconColor),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: RadishSpacing.medium),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1894,7 +1391,7 @@ class _ShellNoticeBanner extends StatelessWidget {
                           title,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
-                        const SizedBox(height: 6),
+                        const SizedBox(height: RadishSpacing.small),
                         Text(message),
                       ],
                     ),
@@ -1902,10 +1399,10 @@ class _ShellNoticeBanner extends StatelessWidget {
                 ],
               ),
               if (actions.isNotEmpty) ...[
-                const SizedBox(height: 12),
+                const SizedBox(height: RadishSpacing.medium),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: RadishSpacing.small,
+                  runSpacing: RadishSpacing.small,
                   children: actions,
                 ),
               ],

@@ -391,6 +391,53 @@ public class UserIdentitySemanticsServiceTest
         Assert.NotNull(method?.GetCustomAttributes(typeof(UseTranAttribute), false).SingleOrDefault());
     }
 
+    [Theory]
+    [InlineData(null, "Old address")]
+    [InlineData("   ", "")]
+    [InlineData(" New address ", "New address")]
+    public async Task UpdateMyProfileAsync_ShouldDistinguishOmittedClearedAndUpdatedAddress(
+        string? requestedAddress,
+        string expectedAddress)
+    {
+        var harness = CreateHarness();
+        var user = new User
+        {
+            Id = 1001,
+            UserName = "Tester",
+            UserEmail = "tester@example.test",
+            UserAddress = "Old address",
+            TenantId = 7,
+            IsEnable = true,
+            IsDeleted = false
+        };
+        Expression<Func<User, User>>? capturedUpdate = null;
+        harness.BaseRepository
+            .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<User, bool>>?>()))
+            .ReturnsAsync(user);
+        harness.BaseRepository
+            .Setup(repository => repository.UpdateColumnsAsync(
+                It.IsAny<Expression<Func<User, User>>>(),
+                It.IsAny<Expression<Func<User, bool>>>() ))
+            .Callback<Expression<Func<User, User>>, Expression<Func<User, bool>>>(
+                (update, _) => capturedUpdate = update)
+            .ReturnsAsync(1);
+
+        var updated = await harness.Service.UpdateMyProfileAsync(
+            user.Id,
+            new UpdateMyProfileDto { Address = requestedAddress },
+            new UserDisplayNameChangeContext
+            {
+                OperatorUserId = user.Id,
+                OperatorUserName = user.UserName,
+                Source = UserDisplayNameChangeSources.Profile,
+                Reason = "用户个人资料修改"
+            });
+
+        Assert.True(updated);
+        Assert.NotNull(capturedUpdate);
+        Assert.Equal(expectedAddress, capturedUpdate!.Compile()(user).UserAddress);
+    }
+
     [Fact]
     public async Task UpdateMyProfileAsync_ShouldThrowSoTransactionCanRollbackWhenProfileWriteLosesTarget()
     {

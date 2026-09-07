@@ -1,5 +1,9 @@
+import 'package:radish_flutter/core/config/app_environment.dart';
+import 'package:radish_flutter/core/network/radish_api_client.dart';
+import 'package:radish_flutter/core/network/radish_api_endpoints.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:radish_flutter/features/wallet/data/wallet_models.dart';
+import 'package:radish_flutter/features/wallet/data/wallet_repository.dart';
 
 void main() {
   test('parses coin balance metadata', () {
@@ -83,4 +87,98 @@ void main() {
     expect(page.transactions.last.amount, 600);
     expect(page.transactions.last.businessId, '9001');
   });
+
+  test('requests balance with the normalized bearer credential', () async {
+    final apiClient = _RecordingApiClient({
+      'voUserId': 42,
+      'voBalance': 1200,
+    });
+    final repository = HttpWalletRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final balance = await repository.getBalance(
+      accessToken: '  access-token  ',
+    );
+
+    expect(balance.userId, '42');
+    expect(apiClient.lastUri?.path, '/api/v1/Coin/GetBalance');
+    expect(apiClient.lastBearerToken, 'access-token');
+  });
+
+  test('requests transaction page with normalized query parameters', () async {
+    final apiClient = _RecordingApiClient({
+      'page': 2,
+      'pageSize': 50,
+      'dataCount': 0,
+      'pageCount': 2,
+      'data': <Object?>[],
+    });
+    final repository = HttpWalletRepository(
+      apiClient: apiClient,
+      endpoints: const RadishApiEndpoints(AppEnvironment.development()),
+    );
+
+    final page = await repository.getTransactions(
+      accessToken: 'access-token',
+      pageIndex: 2,
+      pageSize: 80,
+      transactionType: ' CONSUME ',
+      status: ' SUCCESS ',
+      businessType: ' Order ',
+      businessId: ' 9001 ',
+    );
+
+    expect(page.page, 2);
+    expect(apiClient.lastUri?.path, '/api/v1/Coin/GetTransactions');
+    expect(apiClient.lastUri?.queryParameters, {
+      'pageIndex': '2',
+      'pageSize': '50',
+      'transactionType': 'CONSUME',
+      'status': 'SUCCESS',
+      'businessType': 'Order',
+      'businessId': '9001',
+    });
+    expect(apiClient.lastBearerToken, 'access-token');
+  });
+}
+
+class _RecordingApiClient implements RadishApiClient {
+  _RecordingApiClient(this.response);
+
+  final Object? response;
+  Uri? lastUri;
+  String? lastBearerToken;
+
+  @override
+  Future<T> get<T>({
+    required Uri uri,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) async {
+    lastUri = uri;
+    lastBearerToken = bearerToken;
+    return decode(response);
+  }
+
+  @override
+  Future<T> post<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<T> put<T>({
+    required Uri uri,
+    required Object? body,
+    required JsonFactory<T> decode,
+    String? bearerToken,
+  }) {
+    throw UnimplementedError();
+  }
 }

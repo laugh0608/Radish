@@ -1,18 +1,58 @@
 # Flutter Native 产品化与 UI 重构
 
-> 状态：`P3` 独立 Flutter 代表稿已完成，等待视觉确认后进入 `P4`
+> 状态：`P6 Android UI AVD RC Go`、`P7-C iOS Simulator Go`、`P7-D1 Internal TestFlight minimal readiness Go` 与 `P8-B2 macOS local runtime acceptance Go` 已关闭；`P7-D2 / D3` 暂缓，下一顺位为 `P8-C Windows toolchain + platform foundation readiness`
 >
-> 最后更新：2026-08-19（Asia/Shanghai）
+> 最后更新：2026-09-05（Asia/Shanghai）
 >
 > 关联文档：
 >
 > - [当前进行中](/planning/current)
+> - [P7-C iOS Simulator 运行态验收 readiness](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-readiness-2026-08-31)
+> - [P7-C iOS Simulator 运行态验收关闭](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31)
+> - [P7-D iOS 真机、签名与分发 readiness](/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01)
+> - [P7-D Internal TestFlight-only 项目所有者裁决](/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01)
+> - [P7-D2 / D3 外部前置条件暂缓](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)
+> - [P8-A desktop platform readiness](/records/f4-flutter-native-p8a-desktop-platform-readiness-2026-09-05)
+> - [P8-B macOS local platform foundation readiness](/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05)
+> - [P8-B1 macOS platform foundation implementation](/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05)
+> - [P8-B2 macOS local runtime acceptance 关闭](/records/f4-flutter-native-p8b2-macos-local-runtime-acceptance-closure-2026-09-05)
 > - [前端多壳层策略](/frontend/shell-strategy)
 > - [Radish UI 差异附录](/frontend/ui-addendum)
 > - [F4-R 家族 UI 统一接入与产品视觉重构](/features/family-ui-convergence-design)
 > - [Flutter 移动端 handoff 与回流说明](/guide/flutter-mobile-handoff)
 > - [P1 全页面事实审计与代表分级](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19)
 > - [P3 Flutter 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)
+> - [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23)
+> - [P4-B1 Theme / Shared 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)
+> - [P4-B2 Adaptive Shell 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)
+> - [P4-B3 Discover 实现记录](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)
+> - [P4-B4 Forum Detail 实现记录](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23)
+> - [P4-B5 成组静态门禁记录](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)
+> - [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)
+> - [P5-B1 Forum Feed / Compose 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)
+> - [P5-B2 Identity / Revisit readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)
+> - [P5-B2 Identity / Revisit 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)
+> - [P5-C1 Docs Reader readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23)
+> - [P5-C1 Docs Reader 实现记录](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)
+> - [P5-C2 Commerce Browse / Transaction readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24)
+> - [P5-C2 Commerce Browse / Transaction 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)
+> - [P5-C3 Commerce Private readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24)
+> - [P5-C3 Commerce Private 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)
+> - [P5-D1 Wallet / Experience readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)
+> - [P5-D1 Wallet / Experience 实现记录](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)
+> - [P5-D2 Leaderboard readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24)
+> - [P5-D2 Leaderboard 实现记录](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)
+> - [P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24)
+> - [P5-D3 Browse History 实现](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)
+> - [P5-E 成组静态门禁 readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27)
+> - [P5-E 成组静态门禁实现](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)
+> - [P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)
+> - [P6-A Android 本地 RC 候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)
+> - [P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)
+> - [P6-B Android AVD 运行态验收关闭](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)
+> - [P6 Android AVD 门禁项目所有者关闭](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)
+> - [P7-A iOS 平台 readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)
+> - [P7-B iOS platform foundation 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)
 
 ## 1. 结论摘要
 
@@ -23,7 +63,7 @@ Radish 长期只维护两条正式产品线：
 
 `Frontend/radish.client` 的 WebOS `/desktop` 继续作为 Web 内的历史兼容入口，不构成第三条产品线。`Clients/radish-tauri` 正式弃用，只保留历史代码与验证资产，不进入当前开发、UI、CI、构建、发布或验收门禁。Flutter Web 不进入路线，避免维护第二套 Web 前端。
 
-Flutter 当前不是功能空壳。Android MVP 已具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路；主要问题是页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。
+P1 启动时 Flutter 已不是功能空壳：Android MVP 具备认证、来源返回、发现、论坛、Docs、公开主页、通知、商城、订单、背包、钱包和经验等真实链路，但页面仍停留在早期 MVP / demo 级视觉，缺少可持续的主题、组件和宽屏交互系统。因此本专题采用“**保留业务 owner 与行为契约，重建视觉和自适应呈现**”，不从零重写数据层和状态机。P4 / P5 已完成首轮主题、壳层、高价值页面族、派生只读面和成组静态门禁；P6-B 两轮真实 AVD 已修正五组跨端契约、确认 medium OIDC / 冷启动 / 主题私域，并关闭 compact 真实输入法与根评论连续 CAS。项目所有者随后裁决双 AVD 足以给出 `Android UI AVD RC Go` 并进入下一阶段，P6-C 真机验收转为 Android 分发前后置门禁；P7-A 完成 iOS 工具链与 runtime owner readiness，P7-B 已生成 iOS 工程、建立安全认证存储、非敏感偏好、Android 幂等迁移及 UIScene OIDC callback，并通过 Android / iOS 原生 build 门禁。P7-C 随后在 iPhone compact 与 iPad medium / expanded 上完成 Safari OIDC、UIScene 冷 callback、Keychain / preferences、TLS、旋转、真实键盘、四主题和 fail-closed 真实验收，结论为 `Simulator Go`；P7-D1 已把经批准临时复用的生产 Gateway、distribution fail-closed、repository preflight 与无签名 Release 编译门禁关闭。项目所有者当前没有付费会员或可测试真机，P7-D2 / D3 暂缓；项目所有者随后确认转入 P8，P8-A / B readiness、P8-B1 platform foundation 与 P8-B2 macOS 本地运行验收均已关闭，下一顺位进入 P8-C Windows readiness。
 
 ## 2. 产品边界
 
@@ -50,14 +90,14 @@ Flutter 桌面端是正式长期目标，但不是立即把移动页面拉宽或
 
 - 不解析或运行时加载 Web CSS / `--rd-*` 文件；Flutter 使用显式 Dart 语义映射。
 - 不建立第二套主题权益状态机；服务端权益和激活状态仍是权威来源。
-- 不把 Web 页面、DOM 结构或像素值机械复制到 Flutter。
+- 不把 Web DOM、CSS 和运行时实现机械复制到 Flutter；代表设计可以用正式 Web 可编辑页面作为信息架构母版，但必须重新归一到 Flutter 的安全区、共享壳层、语义 token 与平台交互边界。
 - 不把所有 Web 路由都搬到 Flutter；Console、SEO、完整 Author 与低频治理默认留在 Web。
 - 不恢复 Tauri，不扩展 WebOS，不引入 Flutter Web。
 - 不在 UI 重构中改后端接口、权限、业务状态机、提交幂等或来源返回契约。
 - 不为“现代感”同时引入多套互相竞争的主题 / 组件框架。
 - 不在缺少授权时安装依赖、生成平台目录或启动服务。
 
-## 4. 当前 readiness 审计
+## 4. 初始 readiness 审计基线
 
 ### 4.1 当前 owner 与调用链
 
@@ -107,11 +147,11 @@ lib/app/app.dart
 
 | 窗口等级 | 典型设备 | 导航与布局 | 交互重点 |
 | --- | --- | --- | --- |
-| compact | 手机、窄窗口 | 底部主导航、单任务全屏、Bottom Sheet | 触控目标、安全区、系统返回、键盘避让 |
-| medium | 平板、折叠屏、小桌面窗口 | Navigation Rail、列表—详情双栏 | 横竖屏切换、鼠标悬停、焦点顺序、状态保留 |
-| expanded | 桌面、大平板、宽窗口 | 侧栏 + 双栏 / 三栏，内容阅读宽度受控 | 键盘快捷键、右键 / hover、滚轮、窗口缩放和多任务效率 |
+| compact | 手机、窄窗口 | Web 家族品牌栏、安全区内悬浮胶囊底栏、单任务全屏、Bottom Sheet | 触控目标、安全区、系统返回、键盘避让 |
+| medium | 平板、折叠屏、小桌面窗口 | Web 家族顶部栏、按需折叠页内栏、列表—详情双栏 | 横竖屏切换、鼠标悬停、焦点顺序、状态保留 |
+| expanded | 桌面、大平板、宽窗口 | Web 家族顶部全局栏、页面级双栏 / 三栏、受控阅读宽度 | 键盘快捷键、右键 / hover、滚轮、窗口缩放和多任务效率 |
 
-同一页面族共享任务和状态，但可以有不同组合：Forum 在 compact 是列表与详情分屏导航，在 expanded 可形成列表—正文—上下文三栏；Docs 在 compact 是目录 / 搜索 / 正文单任务切换，在 expanded 可并置目录与阅读面；Shop 与 Profile 不因宽屏自动变成 WebOS 多窗口工作台。
+同一页面族共享任务和状态，但可以有不同组合：Forum 在 compact 是列表与详情分屏导航，在 expanded 可形成本页目录—正文—互动上下文三栏；Docs 在 compact 是目录 / 搜索 / 正文单任务切换，在 expanded 可并置目录与阅读面；Shop 与 Profile 不因宽屏自动变成 WebOS 多窗口工作台。Flutter 不复制 Web DOM，但品牌栏、一级导航、主题身份和信息层级必须与正式 Web 同属一个视觉家族。
 
 ## 6. 高价值承接路径
 
@@ -149,7 +189,7 @@ lib/app/app.dart
 
 ## 7. 代表类型与设计分级
 
-Flutter 不复刻 Web 已有画板。进入页面代码前，按移动原生与桌面原生的结构差异重新分级：
+Flutter 不把 Web 画板未经适配地直接当成原生实现。进入页面代码前，按移动原生与桌面原生的结构差异重新分级；R1 可复用正式 Web 可编辑母版保留信息完整性，但必须在 Flutter 独立设计源完成壳层、token、字体与交互边界适配：
 
 | 等级 | 代表类型 | 设计要求 |
 | --- | --- | --- |
@@ -269,41 +309,83 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - 用自有 `RadishThemeTokens` 作为产品语义真相源，FlexColorScheme 只负责 Material 3 组件子主题；不引入 shadcn 或第二套组件系统。
 - Theme Controller 复用 Shop 权益读取 / 激活 / 停用契约，内置偏好与服务端权益分属清晰 owner，账号切换与迟到响应已隔离。
 - Shell 与 Discover / Forum Detail 覆盖 compact / medium / expanded、键盘切换、reduced-motion 与现有交互回归。
-- 字体依赖未安装；P3 已把字族方向冻结为 `Noto Sans SC + Noto Serif SC`，实际本地资产、许可证、包体积、回退链与 `pubspec` 影响留到 P4-A readiness 裁决。
+- 字体依赖未安装；P3 已把字族方向冻结为 `Noto Sans SC + Noto Serif SC`，P4-A 进一步完成本地资产、许可证、包体积、回退链与 `pubspec` 影响裁决。
 
 退出条件已满足：只保留一套全局主题 / 自适应基础，包版本、许可证、权益 owner、持久化、回滚面和验证结论见 [P2 实现记录](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19)。
 
-### P3：Flutter 代表设计（代表稿已完成，待确认）
+### P3：Flutter 代表设计（已确认，2026-08-23）
 
 - 新建并维护独立活动设计源 `Docs/frontend/design-sources/radish-flutter-native-ui-v1.pen`，不把 Flutter 画板追加进 Web / Console 活动源。
 - 按 R1 / R2 维护 Flutter 专用 compact / expanded 代表设计；medium 只补真实结构差异。
-- 吸收 Web 家族 UI 的语义和气质，不复制 Web 画板。
+- 以正式 Web 的品牌栏、导航语法、主题和信息层级为视觉基准，不复制 Web DOM；再按 Flutter 安全区、返回、触控、键鼠、焦点和窗口等级做原生适配。
 - 确认 typography、四主题、圆角、阴影、状态、导航、宽屏布局和 motion。
 
-当前已在独立设计源完成视觉基座、Discover / Forum Detail compact 与 expanded、主题选择器、medium rail 差分和权益关键状态，R3 继承路径也已形成，详见 [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)。
+当前已在独立设计源完成视觉基座、Discover / Forum Detail compact 与 expanded、主题选择器、medium 页内栏差分和权益关键状态，R3 继承路径也已形成。2026-08-23 三轮审阅后，Forum Expanded 的主题漏配已修复；第二轮按正式 Web 真实几何建立 Expanded Header、Mobile Header 与 Mobile Tab Bar 三个复用组件；第三轮进一步把 Web Discover / Forum Detail 的 PC / mobile 正式页面作为可编辑母版复制到 Flutter 源，保留完整信息架构与长内容，再映射回 Flutter 安全区、共享壳层、`theme` 轴、语义 token 和 Noto 字体层级。六张正式板最终按 Foundation、Discover Mobile / PC、Forum Mobile / PC、Theme / Medium 的顺序横向排布，便于连续审阅；Discover Expanded 继续采用 `904px` 主讨论区加社区洞察区，Forum Expanded 保留 `220 / 820 / 250` 社区导航—连续正文—线程索引并完整展开回帖，详见 [P3 代表设计记录](/records/f4-flutter-native-p3-representative-design-2026-08-19)。
 
-退出条件尚待项目所有者视觉确认：确认后代码实现不再临场决定视觉系统，并进入 P4。
+退出条件已满足：项目所有者已确认第三轮横向审阅稿，后续代码实现不再临场决定视觉系统；`P4-A readiness` 也已完成，设计确认与 readiness 结论均不自动授权字体资产、依赖或 lockfile 变更。
 
-### P4：主题与共享组件实现
+### P4-A：实施就绪审计（已完成，2026-08-23）
 
-- 基于 P2 已有 Theme Controller、四主题映射、ThemeExtension 和持久化 owner，按 P3 确认稿收口视觉细节。
-- 落地经确认的 typography、本地字体资产、density、surface、state 与共享状态 / 表单组件。
-- 巩固 Shell、Discover 与 Forum Detail 的代表实现，再为页面族扩展提供唯一组件基础。
+- 反查 Theme、Shared、Shell、Theme Selector、Discover 与 Forum Detail 的 owner、规模、可继承契约和阻断项。
+- 固定 Noto 官方简体中文区域子集变量 TTF 随包交付、平台默认回退与 OFL / SHA 留痕；不采用运行时网络字体或按当前文案裁字。
+- 裁决以精确版本 `lucide_icons_flutter 3.1.15` 替换零运行时引用的 `cupertino_icons`；字体资产不改 lockfile，图标依赖替换会改 `pubspec.yaml` / `pubspec.lock`。
+- 识别 Shell 与 Forum Detail 超过仓库文件硬上限，冻结先拆 owner 再改布局；Discover 改用既有 `PublicDiscover/GetFeed` 公开读模型，不新增后端 API 或 Flutter Chat。
+- 将 P4 拆为 B1 Theme / Shared、B2 Shell、B3 Discover、B4 Forum Detail 与 B5 成组静态门禁，避免一次授权扩大为全页面改造。
 
-退出条件：主题与权益测试、组件测试、analyze 和代表尺寸 widget tests 通过。
+退出条件已满足：设计到代码差分、字体 / 图标供应链裁决、包体积验证方法、实施拆批与停止线均已形成，详见 [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23)。
+
+### P4-B：主题、共享组件与代表实现
+
+- `B1 Theme Foundation + Shared Primitives`（已完成，2026-08-23）：已接入经校验的 Noto 本地字体和精确版本 Lucide 图标；typography、density、surface、motion、焦点、共享状态原语与主题预览—确认均已落地，详见 [P4-B1 实现记录](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23)。
+- `B2 Web-Family Adaptive Shell`（已完成，2026-08-23）：三档壳层、compact 安全区胶囊底栏、medium / expanded 顶部全局栏与独立通知 / 账户动作已落地，五入口及既有行为契约保持，详见 [P4-B2 实现记录](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23)。
+- `B3 Discover`（已完成，2026-08-23）：已迁移既有公开发现 cursor 读模型，完成 compact 连续信息流与 expanded `904px` 主轴 + 社区洞察；Forum / Docs 保持原生 handoff，Messages 只读说明 Web 边界，详见 [P4-B3 实现记录](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23)。
+- `B4 Forum Detail`（已完成，2026-08-23）：页面与测试已按真实职责拆分，compact 连续阅读、medium 单主轴与 expanded `220 / 820 / 250` 页面级三栏已落地；回答、评论、编辑、幂等、登录回流、定位和来源返回保持，详见 [P4-B4 实现记录](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23)。
+- `B5`（已完成，2026-08-23）：主题 / 权益、共享组件、Shell、Discover 与 Forum Detail 成组代表测试 `138 / 138`，全量 `241 / 241`、analyze 零问题；补拆 `5144` 行 Shell Smoke owner 后，P4 全部改动 Dart 文件低于 `1500` 行。真实 Gateway / Android RC Smoke 仍作为独立阶段验收并另行授权，详见 [P4-B5 门禁记录](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23)。
+
+退出条件：主题与权益测试、组件测试、代表尺寸 widget tests、全量 analyze / test 和文件边界检查通过；B1–B4 分批获得授权、实现和验证。
 
 ### P5：页面族成组重构
 
-- 先 Shell / Community，再 Docs / Commerce，最后派生只读面。
-- 每批保留业务状态和来源返回，按继承关系改呈现。
-- 单批不跨越多个高风险写入领域，不顺手扩新功能。
+- `P5-A readiness`（已完成，2026-08-23）：确认 P4 Shell / Notification / Discover / Forum Detail 作为继承基座，不重复实现；剩余页面拆为 B1 Forum Feed / Compose、B2 Identity / Revisit、C1 Docs、C2 Commerce Browse / Transaction、C3 Commerce Private、D1 Wallet / Experience、D2 Leaderboard、D3 Browse History 与 E 成组静态门禁，详见 [P5-A 审计记录](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23)。
+- `P5-B1`（已完成，2026-08-23）：Forum Feed / Compose 页面 / 测试 owner 已拆分，compact 全高 composer、medium bounded composer 与 expanded `904px` 连续主轴 + 社区洞察已落地；分页旧快照、结构化错误、分类、草稿、登录回流、`forum-post:` 幂等与 handoff 保持，详见 [P5-B1 实现记录](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23)。
+- `P5-B2 readiness`（已完成，2026-08-23）：Identity / Revisit 固定复用既有 Profile API 与 Shell recent targets；公开身份、统计、帖子、评论和我的轻回应拆为独立权威快照，页面 / 测试按真实职责拆分，三档结构采用连续信息流、受控单主轴和 expanded `904px` 主轴 + 身份上下文，资料编辑只使用 `GetMyProfile + UpdateMyProfile` 并补 dirty / busy / 离开保护，详见 [P5-B2 readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23)。
+- `P5-B2 Identity / Revisit`（已完成，2026-08-23）：五类 Profile 资源已落地独立快照 / 代际 / issue、局部 unavailable / stale、三列表去重与跨 target 隔离；页面与测试拆分后均低于文件硬上限，三档结构与权威编辑保护完成。Profile `52 / 52`、Shell Smoke `51 / 51`、全量 `274 / 274` 通过，详见 [P5-B2 实现记录](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23)。
+- `P5-C1 Docs Reader readiness`（已完成，2026-08-23）：冻结复用 `Wiki/GetList + Wiki/GetBySlug`、目录 query target 与正文 reader 独立权威快照、同 slug 刷新旧正文 stale、inline / handoff 共用 reader controller / surface、compact 单任务与 medium / expanded 目录—正文结构；改造前 Docs `16 / 16`，详见 [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23)。
+- `P5-C1 Docs Reader`（已完成，2026-08-23）：目录 query target、请求代际、结构化 issue 与旧页 stale 已落地；inline / handoff / linked-doc 共用 reader controller / surface，compact 单任务、medium 目录—正文与 expanded `280 / 904` 阅读结构完成。Docs `35 / 35`、Shell Smoke `51 / 51`、全量 `293 / 293` 与 analyze 零问题，详见 [P5-C1 实现记录](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23)。
+- `P5-C2 readiness`（已完成，2026-08-24）：冻结复用既有 Shop / Coin 契约、目录 / 详情 / 资格 / 余额独立权威状态、支付草稿 dirty / busy、单商品幂等生命周期、账号 / target 隔离、订单确认回流、三档结构与 owner / 测试拆分；改造前 Shop `25 / 25`，详见 [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24)。
+- `P5-C2 Commerce Browse / Transaction`（已完成，2026-08-24）：目录、详情、购买三个独立 owner、结构化 issue、refresh / append / stale、支付草稿 dirty / busy、登录回流、同意图幂等、product / account / generation 隔离与订单确认回流已落地；目录三档 `1 / 2 / 3` 列，详情完成 compact 单任务、medium 双区与 expanded `820 + 24 + 360`。Shop `35 / 35`、Shell Smoke `51 / 51`、全量 `303 / 303` 与 analyze 零问题，详见 [P5-C2 实现记录](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24)。
+- `P5-C3 readiness`（已完成，2026-08-24）：冻结只复用订单列表 / 详情、权益、道具、Coin 订单流水与主题 gateway 既有契约；订单目录 / 详情、权益、道具拆为四个只读 owner，权益 / 道具不再整批失败，账号 / target / generation 隔离与测试拆分明确。三档采用订单 `1 / 2 / 3` 列、详情 `820 + 24 + 360` 和背包 sequential / 双 lane；改造前 Shop 组合 `23 / 23`、Shell Smoke `51 / 51`，详见 [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24)。
+- `P5-C3 Commerce Private`（已完成，2026-08-24）：订单目录 / 详情、权益、道具四个只读 owner 与账号 / target / generation / dispose 隔离已落地；订单目录 `1 / 2 / 3` 列、详情 compact 连续 / medium 双区 / expanded `820 + 24 + 360`、背包 sequential / 双 lane 完成，权益与道具单边失败 / stale 独立。Shop `50 / 50`、Shell Smoke `51 / 51`、全量 `318 / 318` 与 analyze 零问题，详见 [P5-C3 实现记录](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24)。购买写入仍只属于 C2，C3 未扩取消、退款、权益激活 / 使用或道具使用。
+- `P5-D1 readiness`（已完成，2026-08-24）：冻结只复用 Coin / Experience 四个私域读取 endpoint、Wallet 余额 / 流水和 Experience 等级 / 流水四个独立只读 owner、account / query / credential generation / dispose 隔离、单边 unavailable / stale、append 稳定去重和页面 / 测试拆分。三档采用 compact 连续任务、medium 概要双列 + 完整流水、expanded `280–300 + 24 + <=904`；改造前模型 `4 / 4`、Commerce / Wallet route `20 / 20`、Shell Smoke `51 / 51`，详见 [P5-D1 readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24)。
+- `P5-D1`（已完成，2026-08-24）：四个独立只读 owner、局部 unavailable / stale、空快照、refresh 替换、append issue / 去重、account / query / credential generation / dispose 隔离和三档 surface 已落地。P5-D1 定向 `113 / 113`、全量 `356 / 356`、analyze 零问题，详见 [P5-D1 实现记录](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24)。
+- `P5-D2 readiness`（已完成，2026-08-24）：冻结只复用匿名经验榜第一页 20 条和既有 Public Profile handoff，补映射公共身份字段，建立单一首屏 owner、结构化 empty / unavailable / stale 与 generation / dispose 隔离；compact 连续紧凑排名、medium 受控密集列表、expanded `<=904 + 24 + 280–300` 榜首身份上下文，以及“严格 `#RRGGBB` 只作无文字装饰 accent”已固定。改造前 Leaderboard `4 / 4`、Shell Smoke `51 / 51`，详见 [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24)。
+- `P5-D2`（已完成，2026-08-24）：单一首屏 owner、结构化状态、PublicId 优先公共身份、三档排名 surface 和业务色无文字 accent 已落地；P5-D2 定向 `22 / 22`、Shell `51 / 51`、全量 `374 / 374`、analyze 零问题，详见 [P5-D2 实现记录](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24)。
+- `P5-D3 readiness`（已完成，2026-08-24）：冻结只复用登录态 `User/GetMyBrowseHistory` 与现有 Forum / Docs / Shop handoff；服务端账号完整历史和本机 Forum / Docs 各最多 `5` 条 recent shortcut 保持不同 owner。分页 snapshot 使用 `VoId` 稳定去重，补 account / credential generation / dispose 隔离和 typed target；三档采用 compact 连续历史、medium 时间顺序密集列表与 expanded `<=904 + 24 + 280–300` 数据来源上下文。改造前 Browse History `2 / 2`、Shell `51 / 51`，Flutter 合计 `53 / 53`；服务端契约 `3 / 3`，详见 [P5-D3 readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24)。
+- `P5-D3 implementation`（已完成，2026-08-27）：账号完整历史已拆为独立分页 owner，完成 ready / empty / unavailable / stale、append issue / retry、`VoId` 稳定去重、account / credential / repository generation / dispose 隔离，以及 Post / Wiki / Product typed target；compact 连续历史、medium 时间顺序密集列表与 expanded `<=904 + 24 + 280–300` 数据来源说明已落地，设备 recent shortcut 保持独立 owner。P5-D3 定向 `34 / 34`、Shell `51 / 51`、Flutter 全量 `406 / 406`、analyze 零问题，服务端既有契约 `3 / 3`，详见 [P5-D3 实现记录](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27)。
+- `P5-E readiness`（已完成，2026-08-27）：P4 / P5 `29` 个代表入口 `383 / 383`、Shell `51 / 51`、Flutter 全量 `406 / 406`、analyze 零问题，全 Flutter Dart owner 均低于 `1500` 行。审计确认只剩 Discover medium + 四主题、Forum Detail 四主题、Commerce C2 四主题 + compact 长商品信息三处直接证据；实施固定只在三个既有测试 owner 补 `13` 个 widget tests，预期成组 `396 / 396`、全量 `419 / 419`，默认不改运行时代码，详见 [P5-E readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27)。
+- `P5-E grouped static gate`（已完成，2026-08-27）：按确认方案补齐 Discover medium 四主题、Forum Detail medium 四主题、Commerce C2 medium 四主题与 compact 长商品信息 `13` 个独立 widget tests，没有修改 `lib/` 运行时代码。三个涉及入口 `56 / 56`、P4 / P5 `29` 个代表入口 `396 / 396`、Shell `51 / 51`、Flutter 全量 `419 / 419`、analyze 零问题，全 Flutter Dart owner 均低于 `1500` 行；P5 首轮静态门禁关闭，详见 [P5-E 实现记录](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27)。
+- `P6 Android UI RC readiness`（已完成，2026-08-27）：平台工程、旧 MVP RC 证据、构建 / Gateway / OIDC / 签名、本机工具链、设备、证据与清理边界已审计；Android JVM 单测 `7 / 7`。当前有 compact AVD 和完整构建链，但没有在线 Android 目标、medium AVD、正式签名或候选 APK。实施固定拆为 P6-A 本地候选装配、P6-B compact / medium AVD 运行态、P6-C 同哈希真机验收；只有三段通过才可给出 Android 新版 UI 本地 / 内部 RC Go，详见 [P6 readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27)。
+- `P6-A Android local RC candidate assembly`（已完成，2026-08-27）：Flutter analyze 零问题、全量 `419 / 419`、Android JVM `7 / 7` 与 release 构建通过；候选固定为 SHA-256 `d7b1b9d1f12e5943bae7ddffe3daffcf6071d63ddb79a186ae16e05946234200`、`26.8.2+1`、三 ABI、`development + https://localhost:5000`。包身份、权限、OIDC、SDK、AOT define 与 debug-signing 性质均已冻结；该哈希已被 P6-B 第一轮运行时修正取代，详见 [P6-A 记录](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27)与 [P6-B 第一轮记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)。
+- `P6-B Android AVD runtime acceptance`（已关闭，2026-08-30）：第一轮 compact / medium API 35 真实运行修正会话统一续签、公开资料 Public API、Forum revision、轻回应 `10` 字上限和 Profile 地址清空语义；第二轮确认首个 medium callback 因约 `15 分 55 秒` 超过 `15 分钟` TTL 而正确 fail closed，新尝试完成 OIDC、私域与冷启动，并修正评论卡片重建导致的输入法失焦。最终哈希 `b08d0f5e…2cc174` 在双 AVD 完成受影响复验，compact 根评论连续 CAS `1 -> 2 -> 3` 成立，详见 [第一轮记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)与[关闭记录](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30)。
+- `P6 Android AVD gate owner closure`（已完成，2026-08-30）：项目所有者确认 compact / medium 双 API 35 AVD 足以关闭本阶段 Android UI 开发门禁，当前结论为 `Android UI AVD RC Go`；P6-C 未执行且不写作通过，转为未来 Android 正式签名 / AAB / 分发前门禁，详见[裁决记录](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30)。
+- `P7-A iOS platform readiness`（已完成，2026-08-30）：本机 Flutter `3.44.0`、Xcode `26.6`、CocoaPods `1.16.2`、iOS `26.5` SDK / Simulator runtime 完整；实施前缺少 `ios/` 与真实 iOS runtime owner，详见 [P7-A readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)。
+- `P7-B iOS platform foundation`（已完成，2026-08-30）：iOS `13.0+` / `com.radish.client` / `Radish` / `radish` URL scheme 工程已生成；`flutter_secure_storage 10.3.1` 承担 session / OIDC attempt，`shared_preferences` 承担非敏感 recent / pending，Android 旧状态只在新 owner 缺失时迁移并回读确认后清除。Flutter `435 / 435`、analyze、Android JVM `7 / 7`、新 Debug APK、iOS 无签名 `Runner.app`、Swift callback parser 与 RunnerTests build-for-testing 均通过，详见 [P7-B 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)。
+- `P7-C iOS Simulator runtime acceptance`（已关闭，2026-08-31）：同一 source `ff54b12d`、`26.8.2+1`、Runner SHA-256 `2fd300a8…3fce52356` 的 ad-hoc Simulator 候选，在 iPhone compact `390 × 844` 与 iPad portrait medium `744 × 1133` / landscape expanded `1133 × 744` 上完成系统 Safari OIDC、UIScene 冷 callback、Keychain session / PKCE、preferences、TLS、旋转、真实键盘、四主题、logout 与非法 callback fail closed 验收；临时服务、证书、设备和截图已精确清理，详见 [P7-C 关闭记录](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31)。
+- `P7-D iOS device / signing / distribution readiness`（已完成，2026-09-01）：确认 bundle、version、device family、URL callback、Keychain entitlement、AppIcon、Release configuration、插件 privacy manifest 与 Xcode device SDK 具备继续产品化基础；仓库没有 Apple Team、签名材料、provisioning、archive / IPA 或上传配置。项目所有者随后确认近期只使用 Internal TestFlight；D1 minimal readiness 已关闭，但因当前没有付费会员或可测试真机，D2 development-signed 真机与 D3 TestFlight Internal Only 暂缓。账号删除、完整 Flutter UGC、StoreKit 与商店 metadata 继续后置 D4，详见 [P7-D readiness](/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01)、[范围裁决](/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01)与[暂缓记录](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)。
+- `P8-A desktop platform readiness`（已完成，2026-09-05）：确认仓库没有 Windows / macOS / Linux runner，三桌面端当前进入 `unsupported` 内存 fallback；expanded 页面族与基础快捷键可继承，但成组桌面输入 / 窗口证据未关闭。macOS 本机工具链完整；Windows11 ARM64 日常 VM 缺 Flutter 与 Visual Studio C++ Desktop workload，CleanBase 未启动；Debian 两 VM 待实时审计。P8 固定按 macOS、Windows、Linux、成组门禁推进，详见 [P8-A readiness](/records/f4-flutter-native-p8a-desktop-platform-readiness-2026-09-05)。
+- `P8-B macOS local platform foundation readiness`（已完成，2026-09-05）：固定 `com.radish.client`、macOS `10.15+` 工程下限、品牌 AppIcon、单窗口尺寸 / 恢复 / 退出、MethodChannel OIDC、Keychain / preferences、App Sandbox entitlement 与 desktop input 矩阵；拆为 B1 无服务工程 / 构建和 B2 本地 Gateway 运行两批，详见 [P8-B readiness](/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05)。
+- `P8-B1 macOS platform foundation implementation`（已完成，2026-09-05）：生成 `macos/`，macOS 脱离 `unsupported` 并接入安全 session / OIDC attempt、SharedPreferences、原生 HTTP(S) browser + `radish://oidc/*` callback、品牌身份与单窗口 owner；空 Keychain Sharing capability 因 Xcode `26.6` development-certificate 阻断且插件 macOS 分支不消费 groupId 而移除。Flutter `438 / 438`、RunnerTests `5 / 5`、Debug / Release 均通过；B1 的 Data Protection Keychain 配置随后由 B2 真实运行修正为无会员 ad-hoc 候选可用的本机登录 Keychain，详见 [P8-B1 implementation](/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05)。
+- `P8-B2 macOS local runtime acceptance`（已关闭，2026-09-05）：standalone signed Debug 候选在本地 development Gateway 完成 guest / TLS、系统浏览器 OIDC 热 / 冷 callback、Keychain session / attempt、preferences 重启恢复、logout、replay fail-closed、三档窗口、四主题、键鼠 / focus / scroll 和系统窗口生命周期。运行中修正 channel、resize 状态保持、URL opener、Keychain 幂等清理与 logout 独立清理；无付费会员的 ad-hoc 候选使用加密本机登录 Keychain、禁用同步，不回退 preferences。Flutter `443 / 443`、RunnerTests `5 / 5`、analyze 与 Debug / Release 构建通过，服务、注册、浏览器页、Keychain 与 preferences 均已清理，详见 [P8-B2 关闭记录](/records/f4-flutter-native-p8b2-macos-local-runtime-acceptance-closure-2026-09-05)。
+
+每批保留业务状态、幂等、来源返回和原生 handoff，按继承关系改呈现；单批不跨越多个高风险写入领域，不顺手扩新功能。
 
 退出条件：页面族的 compact / expanded、四主题、关键状态和交互回归通过。
 
-### P6：平台产品化与发布门禁
+### P6–P8：平台产品化与发布门禁
 
-- Android 先形成新版 UI RC；iOS 再进入独立平台验收。
-- desktop 在共享 UI 通过宽屏和输入门禁后，按 Windows、macOS、Linux 分别生成 / 补齐平台工程、构建、签名、更新和分发。
+- Android 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`；P6-C 真机验收转为 Android 分发前门禁，不写作已通过。
+- iOS 已完成 P7-A readiness、P7-B platform foundation、P7-C Simulator runtime acceptance 与 P7-D1 Internal TestFlight minimal readiness；项目所有者批准近期 Internal TestFlight 临时复用生产 `https://radishx.com` 并接受数据隔离风险，但当前没有付费会员或可测试真机，因此 D2 development-signed 真机与 D3 TestFlight Internal Only 暂缓，D4 External TestFlight / App Store 继续无限期后置。
+- P8-A、P8-B readiness、P8-B1 与 P8-B2 已关闭：macOS runner、真实 runtime owner 与本地 Gateway 运行矩阵均已落地并给出 `macOS local runtime acceptance Go`。Windows 与 Linux 的日常 / CleanBase VM 分工已冻结，工具链与平台工程分别进入 P8-C / D，最终由 P8-E 成组关闭输入、窗口、认证、持久化与构建门禁。
 - 平台工程与分发要求独立授权和记录，不因 Dart UI 可运行自动宣称产品完成。
 
 ## 12. P2 技术基座结果
@@ -316,7 +398,7 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 - `SharedPreferencesAsync` 内置偏好与 Shop 权益 gateway；
 - `<600 / 600–1023 / >=1024` 三档 Shell 与 `Ctrl/Cmd + 1..5`；
 - compact Bottom Sheet 与 medium / expanded Dialog 主题入口；
-- Discover 单列 / 双列结构和 Forum Detail 宽屏阅读导航 rail；
+- Discover 单列 / 双列结构和 Forum Detail 宽屏阅读 rail；现有全局 `NavigationBar` / `NavigationRail` 外观仍是 P4 待按修订稿收口的实现差分；
 - 评论定位 reduced-motion 和通知刷新 stale 保留。
 
 已验证：
@@ -326,6 +408,6 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 3. `390 / 800 / 1200` 结构、键盘切换、四主题、权益失效 / stale / 账号隔离与代表页回归通过；
 4. Android debug 构建因本机 Gradle daemon 无任务输出而中止，未记为通过；本批未启动服务或执行真实 smoke。
 
-## 13. 明日动作（2026-08-20）
+## 13. 当前动作（2026-09-05）
 
-第一顺位是 `P3` 视觉审核：复核独立 `radish-flutter-native-ui-v1.pen` 中的 typography 方向、组件密度、四主题视觉及 Discover / Forum Detail compact / expanded 代表稿。确认后进入 `P4-A` readiness，先反查现有 Dart owner 并说明本地字体资产、许可证、包体积、回退链、依赖与 lockfile 影响；具体资产或依赖变更另行取得授权。确认前不批量改造其他页面族，不生成新平台工程。
+P6-B 已完成真实服务、compact / medium API 35 AVD、系统浏览器 OIDC、私域读取、冷启动、四主题代表面、真实输入法和高风险 Forum CAS，并冻结历史 APK SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`。项目所有者已确认双 AVD 足以进入下一阶段；P7-A / B 已建立 iOS 工具链、工程与真实 runtime owner，P7-C 在专用 iPhone / iPad Simulator 上给出 `Simulator Go`。P7-D1 已关闭生产 Gateway 临时复用裁决、distribution fail-closed、version / privacy / entitlement preflight 和无签名 Release 编译。项目所有者当前没有 Apple Developer Program 付费会员或可测试真机，P7-D2 / D3 按外部前置条件暂缓。P8-A / B readiness、P8-B1 与 P8-B2 已关闭 desktop 共同阻断、三宿主事实及 macOS identity、runtime、OIDC、Keychain / preferences、三档窗口、四主题和 desktop 输入矩阵；下一步进入 P8-C Windows toolchain + platform foundation readiness。

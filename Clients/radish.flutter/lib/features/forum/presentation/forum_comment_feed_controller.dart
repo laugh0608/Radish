@@ -258,6 +258,7 @@ class ForumCommentFeedController extends ChangeNotifier {
   void updateLoadedRootComment({
     required String commentId,
     required String content,
+    required int contentRevision,
   }) {
     var updated = false;
     final nextComments = _state.comments.map((comment) {
@@ -268,6 +269,7 @@ class ForumCommentFeedController extends ChangeNotifier {
       updated = true;
       return comment.copyWith(
         content: content,
+        contentRevision: contentRevision,
         updateTime: DateTime.now().toUtc().toIso8601String(),
       );
     }).toList(growable: false);

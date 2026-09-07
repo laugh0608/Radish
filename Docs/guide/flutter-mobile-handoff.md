@@ -1,10 +1,10 @@
 # Flutter 移动端 handoff 与回流说明
 
-本文说明 Flutter Android MVP 已经成立的原生导航、外部来源、登录回流、公开链接、登录态轻写入与复访承接边界。完整客户端范围仍以 `Clients/radish.flutter/README.md` 为准。
+本文说明 Flutter Native 已成立的原生导航、外部来源、登录回流、公开链接、登录态轻写入与复访承接边界。Android 已有真实 AVD 运行证据；iOS 已完成 P7-B 平台 owner，并通过 P7-C iPhone / iPad Simulator 运行态，当前结论为 `Simulator Go`。P7-D1 已关闭仓库静态门禁，但项目所有者当前没有 Apple Developer Program 付费会员或可测试真机，P7-D2 / D3 暂缓，真机 / TestFlight 仍为 `No-Go`；完整客户端范围仍以 `Clients/radish.flutter/README.md` 为准。
 
 ## 总体边界
 
-Flutter 当前是条件式维护资产，不是与纯 Web 并行的产品主线，也不复刻 WebOS。已验收 MVP 包含公开内容阅读、原生返回、登录续接、个人复访、基础个人资料编辑、通知列表与单条已读、forum 评论 / 问答回答 / 轻回应 / 纯文本发帖写入、作者帖子正文编辑、作者根评论编辑、公开商品浏览、登录态单商品购买、订单 / 背包查看、胡萝卜资产与经验记录只读查看、公开详情链接复制和 docs 原生阅读链路；当前只修复阻断、安全与认证兼容问题，不默认新增功能、扩 iOS 或追平纯 Web。
+Flutter Native 是 Web 之外唯一正式原生安装包产品线，但保持次级优先、mobile-first、desktop stage-gated，也不复刻 WebOS。Android 已验收 MVP 包含公开内容阅读、原生返回、登录续接、个人复访、基础个人资料编辑、通知列表与单条已读、forum 评论 / 问答回答 / 轻回应 / 纯文本发帖写入、作者帖子正文编辑、作者根评论编辑、公开商品浏览、登录态单商品购买、订单 / 背包查看、胡萝卜资产与经验记录只读查看、公开详情链接复制和 docs 原生阅读链路；iOS Simulator 已验证相同 Dart UI 的系统浏览器 OIDC、Keychain / preferences、phone / tablet 三档、旋转、真实键盘和四主题，但没有真机、Apple Team、正式签名、provisioning、TestFlight 或 App Store 结论。
 
 当前不包含：
 
@@ -19,14 +19,35 @@ Flutter 当前是条件式维护资产，不是与纯 Web 并行的产品主线�
 - 系统分享 SDK、海报生成、分享统计
 - 桌面工作台多窗口能力
 
+## iOS 分发前置边界
+
+P7-D readiness 已确认：现有 iOS identity、OIDC scheme、Keychain entitlements、AppIcon 与 Release configuration 具备继续产品化的基础，但不能直接进入签名和上传。项目所有者随后把近期目标限制为 Internal TestFlight。
+
+- [P7-D1 minimal readiness](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-2026-09-01) 与[实施记录](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01)已关闭：项目所有者批准近期 Internal TestFlight 临时复用生产 `https://radishx.com` 并接受数据隔离风险；版本控制 define、distribution fail-closed、repository preflight 与无签名 Release 编译均已通过。该批准不等于独立 testing 环境，D2 / D3 仍须使用专用账号、可定位写入与精确清理。
+- testing / production distribution build 必须显式使用项目所有者确认的 HTTPS Gateway；localhost、保留示例域名、非法或缺失 define 必须 fail closed，开发证书 opt-in 不得进入分发候选。
+- Internal TestFlight 只允许 App Store Connect internal users，不创建 external group / public link；优先使用 `TestFlight Internal Only` build，不能把内部能力验证写作 App Store 合规。
+- Auth 账号删除、完整 Flutter UGC 举报 / 屏蔽、StoreKit / IAP、App Store privacy answers 与商店 metadata 统一后置 External TestFlight / App Store D4；重新进入 D4 时按当时规则重新 readiness。
+- Apple Team、证书、provisioning、真机、archive、upload、internal group 与 export compliance 仍是独立授权事项，不能由 Simulator `Go` 或本次路线裁决推导。
+- 项目所有者当前只有虚拟设备，没有有效付费会员或可测试真机；D2 / D3 因外部前置条件暂停。恢复时必须使用当时最新候选重新 preflight，并重新取得 Apple 外部状态、签名、真机与 upload 的分阶段授权。
+
 ## API 响应与失败态
 
 Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应信封，不引入移动端专属 BFF。
 
 - 成功响应必须能读取 `isSuccess / IsSuccess / success / Success` 和 `responseData / ResponseData / data / Data`。
 - HTTP `401 / 403 / 404 / 5xx`、空响应、非 JSON 响应和缺少成功标记的 2xx JSON 都应转成明确的 `RadishApiClientException`。
+- 携带 bearer token 的请求在发送前统一解析当前 session；access token 临近过期时先 refresh，首次 `401` 只允许强制 refresh 后重试一次，不建立业务 Repository 各自续签或无限重试。
+- 同一旧 access token 的并发 refresh 合并为一个请求，并以 session epoch 隔离迟到结果；只有授权端明确返回 `invalid_grant` 才清除本地会话，临时网络 / 服务失败保留已有会话并展示可恢复 issue。
 - 业务页面只在本地任务区域展示失败，例如购买面板、余额区域、订单刷新区或背包来源区；失败不应清空已加载详情、来源 tab、订单 / 背包上下文或登录恢复状态。
 - 接口返回格式异常、登录失效、权限不足和接口不存在属于可见错误态，不应被当作“无数据”或默认成功。
+
+## 统一登录边界
+
+- Flutter 使用系统浏览器承接 Gateway / Auth 的 OIDC Authorization Code + PKCE 登录，不在 App 内复制账号密码表单、Cookie 或授权页面。
+- App 只保存当前 pending login attempt 所需的 state / verifier 与最终 token session；两者必须进入 Android Keystore / iOS Keychain 支撑的安全存储，不得写入普通 `shared_preferences`。浏览器取消、回调 state 不匹配或尝试过期必须显示可恢复错误，不接受未知 callback。
+- Native authorization attempt 自打开系统浏览器起有效 `15` 分钟，用于覆盖系统浏览器交互、开发证书确认与 Activity / Flutter owner 重建；超时、redirect 不一致、state 不匹配和重放仍 fail closed，成功或校验失败后一次性消费。
+- Forum / Docs recent、recent profile 与 pending post-login target 属于非敏感设备偏好，Android / iOS 共用 Dart `shared_preferences` owner；Android 旧 MethodChannel / `SharedPreferences` 状态只在新 owner 缺失时迁移，写入并回读确认后才清除旧值。
+- 本地 Android 使用 `https://localhost:5000` 时，App API client 可按开发环境规则接受本地证书；iOS 只有显式传入 `RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES=true` 且 Gateway 为 loopback 时才允许。系统浏览器仍可能单独显示开发证书警告，该环境行为不改变 production 证书或统一登录边界。
 
 ## 榜单到公开主页
 
@@ -40,6 +61,7 @@ Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应
 
 原生公开主页是 Flutter 当前个人链路的复访承接点。
 
+- 公开资料、公开统计、公开帖子和公开评论分别使用现有 Public API，并统一传递 `identifier`；不得回退到要求本人或治理权限的旧 `userId` 私有路径。
 - 从发现页、forum 作者入口或榜单打开公开主页时，壳层会记录打开前 tab。
 - Android Back 优先返回原来源 tab，而不是强制停留在 profile tab。
 - 公开主页继续打开帖子、评论或轻回应详情后，详情页返回会回到公开主页；再次 Android Back 仍应回到最初来源 tab。
@@ -75,6 +97,7 @@ Flutter 通过 `HttpRadishApiClient` 复用 Radish API 的 `MessageModel` 响应
 
 - 读取接口为 `User/GetMyProfile`，保存接口为 `User/UpdateMyProfile`。
 - 当前可编辑展示名（接口字段仍兼容 `userName`）、邮箱、年龄和地址；保存成功后刷新原生公开资料摘要。
+- 地址更新语义固定为：字段省略或 `null` 保持原值，空字符串清空，非空字符串修剪后写入；Flutter 与 Web 编辑器都不得把用户主动清空折叠成“未提供”。
 - 编辑对话框覆盖加载、字段校验、保存中、保存失败提示和取消返回。
 - forum 作者展示名按 `DisplayName -> UserName 兼容字段 -> User-{id}` 口径回读当前资料，Console 用户详情也展示同一展示名称；`UserRealName` 不再作为当前资料展示来源。
 - 头像上传、密码修改、完整账号设置、关注管理和资料治理不进入当前 Flutter 边界。
@@ -91,6 +114,15 @@ Forum tab 当前开放已登录态的纯文本帖子发布。
 - 失败在发帖面板内展示错误，不重置标题、标签和正文输入，也不误触发详情跳转。
 - 发帖请求会生成 `forum-post:` 前缀的 `clientSubmissionId`；同一草稿失败后直接重试复用同一个 key，成功、草稿变化或账号变化后生成新 key。
 - 当前不扩展 Markdown / 富文本切换、附件、投票、抽奖、草稿箱、编辑、点赞或完整创作器。
+
+## Forum Detail 原生阅读布局
+
+Forum detail 保持“正文 -> 回答区（仅问题帖）-> 轻回应 -> 评论区”的同一连续阅读轴。
+
+- compact / medium 使用单主轴与“社区 / 本帖”紧凑入口，正文、互动和目标评论定位不拆成独立页面。
+- `1440px` expanded 代表尺寸使用 `220 / 820 / 250` 社区导航—连续正文—线程索引三栏；较窄 expanded 保留主阅读与线程索引，并把社区 / 来源上下文放回正文。
+- 三档布局共享同一 detail、comment、quick reply controller 和 handoff target，不复制数据状态或改变 Android Back 来源返回。
+- loading、empty、unavailable 与能力停止线复用 Flutter 共享状态原语；不因布局调整新增后端接口或 Web 治理能力。
 
 ## Forum 评论发布与回复
 
@@ -110,6 +142,7 @@ Forum detail 当前承接作者自己的帖子正文编辑和作者根评论编�
 
 - 作者帖子正文编辑复用 `Post/Update`，只开放当前移动端已有的正文编辑能力，不扩展富文本、附件、投票、抽奖或问答模式切换。
 - 作者根评论编辑复用 `Comment/Update`，只覆盖根评论；子评论编辑继续后置单独评审。
+- 帖子详情和评论节点必须消费服务端 `voContentRevision`；编辑提交当前 `expectedContentRevision`，成功后使用响应返回的新 revision 局部更新节点，冲突不得被本地覆盖或盲重试吞掉。
 - 编辑请求分别生成 `forum-post-edit:` 与 `forum-comment-edit:` 前缀的 `clientSubmissionId`；同一编辑目标、同一编辑内容失败后直接重试复用同一个 key。
 - 成功、编辑目标变化、编辑内容变化或账号变化后生成新 key。
 - 保存成功后局部刷新帖子正文或评论节点；失败时保留编辑输入和当前详情上下文。
@@ -132,7 +165,7 @@ Forum detail 当前在问题帖正文后开放已登录态的纯文本回答。
 Forum detail 当前按“正文 -> 回答区（仅问题帖）-> 轻回应 -> 评论区”展示。
 
 - 匿名态可读取最近轻回应。
-- 已登录态可发布一句轻回应。
+- 已登录态可发布一句最多 `10` 字的轻回应；Flutter 输入计数与服务端权威上限保持一致。
 - 从轻回应区点击“登录后发布”后，浏览器 OIDC 登录成功会回到当前帖子轻回应区，并提示可继续发布。
 - 发布成功只刷新轻回应墙与局部成功提示，不刷新正文或评论阅读位置。
 - 轻回应删除、举报、审核台能力、点赞、投票和编辑治理仍不进入当前 Flutter 边界。
@@ -143,6 +176,9 @@ Docs detail 当前承载公开文档的原生只读阅读。
 
 - `discover` 文档精选、docs 列表、docs 搜索结果和 profile 最近文档都可进入原生 docs detail，并按来源返回。
 - 公开文档正文中的 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 文档链接会继续打开原生 docs detail。
+- Docs tab 内联正文、直达 handoff 与文档内链 route 共用同一 reader controller / surface 契约；每个 route 保持独立 controller 和真实返回栈。
+- 同 slug 刷新保留旧正文并局部表达 refreshing / stale；切换 slug 立即清空上一篇正文，迟到响应不会回写当前 target。
+- compact 为目录 / 正文互斥单任务，medium 为 `200–280px` 目录 + 正文，expanded 为 `280px` 目录 + `24px` 间距 + `904px` 阅读轴；直达 handoff 不为布局额外请求目录。
 - 页内锚点、附件路径、外部链接和非 docs 链接仍按文本展示，不在 Flutter 内扩外部浏览器跳转或附件治理。
 - 16 位以上纯数字旧 long slug 不作为公开可见 slug 展示或复制，避免把兼容路径当作普通用户可读地址。
 
@@ -151,7 +187,7 @@ Docs detail 当前承载公开文档的原生只读阅读。
 Flutter 当前承接公开商城的移动浏览入口。
 
 - 发现页可进入原生公开商城列表。
-- 发现页商城精选商品和商城列表项可打开原生公开商品详情。
+- 发现页通过从属商城入口进入原生公开商城列表，商城列表项可打开原生公开商品详情。
 - Android Back 返回打开前来源：发现页来源回发现页，列表来源回商城列表。
 - 匿名态商品详情展示公开信息，并在点击购买时发起登录回流。
 

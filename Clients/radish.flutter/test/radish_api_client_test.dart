@@ -99,6 +99,60 @@ void main() {
       },
     );
   });
+
+  test('http api client refreshes and retries an authenticated 401 once',
+      () async {
+    var requestCount = 0;
+    final forceRefreshCalls = <bool>[];
+
+    await _withHttpServer(
+      handler: (request) async {
+        requestCount += 1;
+        final authorization =
+            request.headers.value(HttpHeaders.authorizationHeader);
+        if (authorization == 'Bearer access-old') {
+          request.response.statusCode = HttpStatus.unauthorized;
+          await request.response.close();
+          return;
+        }
+
+        expect(authorization, 'Bearer access-new');
+        request.response.headers.contentType = ContentType.json;
+        request.response.write(
+          jsonEncode({
+            'isSuccess': true,
+            'statusCode': 200,
+            'messageInfo': '查询成功',
+            'responseData': {'voCanBuy': true},
+          }),
+        );
+        await request.response.close();
+      },
+      run: (uri) async {
+        final client = HttpRadishApiClient(
+          environment: _localHttpEnvironment(uri),
+          bearerTokenResolver: ({
+            rejectedAccessToken,
+            required forceRefresh,
+          }) async {
+            forceRefreshCalls.add(forceRefresh);
+            return forceRefresh ? 'access-new' : rejectedAccessToken;
+          },
+        );
+
+        final result = await client.get<Map<String, Object?>>(
+          uri: uri,
+          bearerToken: 'access-old',
+          decode: (json) => Map<String, Object?>.from(json as Map),
+        );
+
+        expect(result['voCanBuy'], isTrue);
+      },
+    );
+
+    expect(requestCount, 2);
+    expect(forceRefreshCalls, [false, true]);
+  });
 }
 
 Future<void> _withHttpServer({

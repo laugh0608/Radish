@@ -10,6 +10,44 @@ enum ForumFeedStatus {
   error,
 }
 
+enum ForumFeedIssueKind { unavailable, invalidResponse, request }
+
+class ForumFeedIssue {
+  const ForumFeedIssue({
+    required this.kind,
+    required this.message,
+    this.code,
+    this.statusCode,
+  });
+
+  factory ForumFeedIssue.fromApi(RadishApiClientException error) {
+    final unavailable = error.statusCode == 503 || error.statusCode == null;
+    return ForumFeedIssue(
+      kind: unavailable
+          ? ForumFeedIssueKind.unavailable
+          : ForumFeedIssueKind.request,
+      message: error.message,
+      code: error.code,
+      statusCode: error.statusCode,
+    );
+  }
+
+  factory ForumFeedIssue.invalidResponse(FormatException error) {
+    return ForumFeedIssue(
+      kind: ForumFeedIssueKind.invalidResponse,
+      message: '论坛列表返回格式异常：${error.message}',
+      code: 'Forum.InvalidResponse',
+    );
+  }
+
+  final ForumFeedIssueKind kind;
+  final String message;
+  final String? code;
+  final int? statusCode;
+
+  bool get isUnavailable => kind == ForumFeedIssueKind.unavailable;
+}
+
 class ForumFeedState {
   const ForumFeedState({
     required this.status,
@@ -18,8 +56,8 @@ class ForumFeedState {
     required this.pageSize,
     this.isRefreshing = false,
     this.page,
-    this.errorMessage,
-    this.refreshIssueMessage,
+    this.error,
+    this.refreshIssue,
   });
 
   const ForumFeedState.initial()
@@ -36,8 +74,12 @@ class ForumFeedState {
   final int pageSize;
   final bool isRefreshing;
   final ForumPostPage? page;
-  final String? errorMessage;
-  final String? refreshIssueMessage;
+  final ForumFeedIssue? error;
+  final ForumFeedIssue? refreshIssue;
+
+  String? get errorMessage => error?.message;
+
+  String? get refreshIssueMessage => refreshIssue?.message;
 
   bool get isLoading => status == ForumFeedStatus.loading;
 
@@ -59,9 +101,9 @@ class ForumFeedState {
     bool? isRefreshing,
     ForumPostPage? page,
     bool clearPage = false,
-    String? errorMessage,
+    ForumFeedIssue? error,
     bool clearError = false,
-    String? refreshIssueMessage,
+    ForumFeedIssue? refreshIssue,
     bool clearRefreshIssue = false,
   }) {
     return ForumFeedState(
@@ -71,10 +113,9 @@ class ForumFeedState {
       pageSize: pageSize ?? this.pageSize,
       isRefreshing: isRefreshing ?? this.isRefreshing,
       page: clearPage ? null : (page ?? this.page),
-      errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
-      refreshIssueMessage: clearRefreshIssue
-          ? null
-          : (refreshIssueMessage ?? this.refreshIssueMessage),
+      error: clearError ? null : (error ?? this.error),
+      refreshIssue:
+          clearRefreshIssue ? null : (refreshIssue ?? this.refreshIssue),
     );
   }
 }
@@ -176,7 +217,7 @@ class ForumFeedController extends ChangeNotifier {
       }
 
       if (preserveCurrentPage) {
-        _setRefreshIssue(requestVersion, error.message);
+        _setRefreshIssue(requestVersion, ForumFeedIssue.fromApi(error));
         return;
       }
 
@@ -185,7 +226,7 @@ class ForumFeedController extends ChangeNotifier {
         sort: sort,
         pageIndex: pageIndex,
         isRefreshing: false,
-        errorMessage: error.message,
+        error: ForumFeedIssue.fromApi(error),
       );
       notifyListeners();
     } on FormatException catch (error) {
@@ -193,9 +234,9 @@ class ForumFeedController extends ChangeNotifier {
         return;
       }
 
-      final message = '论坛列表返回格式异常：${error.message}';
+      final issue = ForumFeedIssue.invalidResponse(error);
       if (preserveCurrentPage) {
-        _setRefreshIssue(requestVersion, message);
+        _setRefreshIssue(requestVersion, issue);
         return;
       }
 
@@ -204,13 +245,13 @@ class ForumFeedController extends ChangeNotifier {
         sort: sort,
         pageIndex: pageIndex,
         isRefreshing: false,
-        errorMessage: message,
+        error: issue,
       );
       notifyListeners();
     }
   }
 
-  void _setRefreshIssue(int requestVersion, String message) {
+  void _setRefreshIssue(int requestVersion, ForumFeedIssue issue) {
     if (requestVersion != _requestVersion) {
       return;
     }
@@ -218,7 +259,7 @@ class ForumFeedController extends ChangeNotifier {
     _state = _state.copyWith(
       status: ForumFeedStatus.ready,
       isRefreshing: false,
-      refreshIssueMessage: message,
+      refreshIssue: issue,
     );
     notifyListeners();
   }

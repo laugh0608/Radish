@@ -1,0 +1,5 @@
+{
+  "RADISH_ENVIRONMENT": "testing",
+  "RADISH_GATEWAY_BASE_URL": "https://radishx.com",
+  "RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES": "false"
+}

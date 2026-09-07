@@ -320,7 +320,7 @@ export const UserInfoCard = ({
         userName: editUserName.trim() || undefined,
         userEmail: editUserEmail.trim() || undefined,
         age: Number.isFinite(ageNumber) ? ageNumber : undefined,
-        address: editAddress.trim() || undefined,
+        address: editAddress.trim(),
       }, t);
       setIsEditOpen(false);
       await loadProfile(false, true);

@@ -264,7 +264,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
 
         var normalizedUserName = string.IsNullOrWhiteSpace(request.UserName) ? null : request.UserName.Trim();
         var normalizedUserEmail = string.IsNullOrWhiteSpace(request.UserEmail) ? null : request.UserEmail.Trim();
-        var normalizedAddress = string.IsNullOrWhiteSpace(request.Address) ? null : request.Address.Trim();
+        var normalizedAddress = request.Address?.Trim();
 
         ValidateProfileFields(normalizedUserEmail, normalizedAddress, request.Sex, request.Age);
 

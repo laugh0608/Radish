@@ -27,18 +27,12 @@ class MainActivity : FlutterActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "read" -> result.success(preferences.getString(SESSION_STORE_KEY, null))
-                "write" -> {
-                    val payload = call.arguments as? String
-                    if (payload.isNullOrBlank()) {
-                        result.error("invalid_payload", "Session payload must be a non-empty string.", null)
+                "clear" -> {
+                    val removed = preferences.edit().remove(SESSION_STORE_KEY).commit()
+                    if (!removed) {
+                        result.error("storage_failed", "Unable to clear legacy auth session.", null)
                         return@setMethodCallHandler
                     }
-
-                    preferences.edit().putString(SESSION_STORE_KEY, payload).apply()
-                    result.success(null)
-                }
-                "clear" -> {
-                    preferences.edit().remove(SESSION_STORE_KEY).apply()
                     result.success(null)
                 }
                 else -> result.notImplemented()
@@ -180,30 +174,8 @@ class MainActivity : FlutterActivity() {
                     pendingAuthCallbackPayload = null
                     result.success(payload)
                 }
-                "writeAuthorizationAttempt" -> {
-                    val payload = call.arguments as? String
-                    if (payload.isNullOrBlank()) {
-                        result.error("invalid_payload", "OIDC authorization attempt must be a non-empty string.", null)
-                        return@setMethodCallHandler
-                    }
-
-                    val persisted = preferences.edit()
-                        .putString(OIDC_AUTHORIZATION_ATTEMPT_KEY, payload)
-                        .commit()
-                    if (!persisted) {
-                        result.error("storage_failed", "Unable to persist OIDC authorization attempt.", null)
-                        return@setMethodCallHandler
-                    }
-                    result.success(null)
-                }
-                "takeAuthorizationAttempt" -> {
-                    val payload = preferences.getString(OIDC_AUTHORIZATION_ATTEMPT_KEY, null)
-                    val removed = preferences.edit().remove(OIDC_AUTHORIZATION_ATTEMPT_KEY).commit()
-                    if (!removed) {
-                        result.error("storage_failed", "Unable to consume OIDC authorization attempt.", null)
-                        return@setMethodCallHandler
-                    }
-                    result.success(payload)
+                "readAuthorizationAttempt" -> {
+                    result.success(preferences.getString(OIDC_AUTHORIZATION_ATTEMPT_KEY, null))
                 }
                 "clearAuthorizationAttempt" -> {
                     val removed = preferences.edit().remove(OIDC_AUTHORIZATION_ATTEMPT_KEY).commit()

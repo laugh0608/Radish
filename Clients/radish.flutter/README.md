@@ -2,19 +2,21 @@
 
 `radish.flutter` 是 Radish Flutter Native 原生安装包产品线的仓库落点，现有实现起源于 `Phase 2-3 Flutter 客户端 MVP`。
 
-当前只有 Android 平台工程和已验收 MVP。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
+当前已建立 Android、iOS 与 macOS 平台工程；Android 新版 UI 已按项目所有者裁决以双 AVD 形成 `Android UI AVD RC Go`，真机验收转为分发前后置门禁。iOS P7-B 平台基座已关闭，[P7-C Simulator runtime acceptance](../../Docs/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31.md)也已使用同一 ad-hoc 候选在 iPhone compact 与 iPad medium / expanded 给出 `Simulator Go`。[P7-D readiness](../../Docs/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01.md)后，[项目所有者已将近期目标限制为 Internal TestFlight](../../Docs/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01.md)；[P7-D1 implementation](../../Docs/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01.md)已关闭仓库门禁，但项目所有者当前没有 Apple Developer Program 付费会员或可测试真机，[P7-D2 / D3 已暂缓](../../Docs/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01.md)。[P8-A desktop readiness](../../Docs/records/f4-flutter-native-p8a-desktop-platform-readiness-2026-09-05.md)确认 desktop 共同阻断后，[P8-B macOS readiness](../../Docs/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05.md)冻结了两批边界，[P8-B1 platform foundation](../../Docs/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05.md)现已生成 macOS runner 并落地真实 runtime owner、OIDC、storage、sandbox、品牌身份与单窗口无服务构建；当前等待 P8-B2 本地运行启动授权。长期产品目标覆盖 Android、iOS、Windows、macOS 与 Linux，采用 mobile-first、desktop stage-gated 的同一自适应 Dart UI；Flutter Web 不进入路线。Tauri 已正式弃用，WebOS `/desktop` 只属于正式 Web 的历史兼容入口。
 
-现有业务链路继续作为产品化基线，但页面视觉仍需成组收口。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)和 [P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)已完成：业务 owner 与行为契约保留，四主题、权益 owner、三档 Shell 与 Discover / Forum Detail 代表实现已落地，Flutter 页面和 Web 页面分别维护设计源。当前先确认 P3 视觉方向，再进入 P4 字体资产与共享组件收口。
+现有业务链路继续作为产品化基线。[P1 全页面事实审计](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)、[P2 主题 / 自适应技术基座](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)、[P3 独立代表稿](../../Docs/records/f4-flutter-native-p3-representative-design-2026-08-19.md)、P4-A、[P4-B1–B5 成组静态门禁](../../Docs/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23.md)、P5-A、P5-B1–D3 与 [P5-E 成组静态门禁](../../Docs/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27.md)已完成主题、页面族、状态 owner 与三档 surface；P6-A / B 完成 Android 候选装配与双 AVD 运行态。[P6 Android AVD 门禁裁决](../../Docs/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30.md)允许以 `Android UI AVD RC Go` 进入下一阶段，[P7-A iOS readiness](../../Docs/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30.md)确认工具链完整；[P7-B platform foundation](../../Docs/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30.md)随后完成平台工程、安全认证存储、非敏感跨平台偏好、Android 幂等迁移与 iOS OIDC callback，并通过 Android / iOS 原生构建门禁。
 
 ## 当前范围
 
-- 当前为 Android 起步的原生客户端；iOS 与 Windows / macOS / Linux 在共享 UI 和平台门禁通过后分别产品化
+- 当前为 Android、iOS 与 macOS 已建立平台基座的原生客户端；macOS 仍待本地运行验收，Windows / Linux 在共享 UI 和平台门禁通过后分别产品化
 - `discover / forum / docs / profile` 四个高价值入口的首批真实只读页面
-- 最小登录、退出、会话恢复、Android 本地会话持久化与浏览器 OIDC 回调
+- 最小登录、退出、会话恢复与 Android / iOS / macOS 系统浏览器 OIDC 回调；session token 与 OIDC authorization attempt 通过 Android Keystore / Apple Keychain 支撑的安全存储持久化，Forum / Docs recent、recent profile 与 pending post-login target 使用非敏感跨平台偏好；Android 首次升级按“新 owner 缺失 -> 读取旧值 -> 写入并回读确认 -> 清除旧值”幂等迁移。请求前统一处理临近过期 token，同一 token 并发 refresh 合并，首次 `401` 只强制 refresh 后重试一次，只有 `invalid_grant` 清除会话
+- Native OIDC authorization attempt 自打开系统浏览器起有效 `15` 分钟，以覆盖系统浏览器交互、开发证书确认与 Activity / Flutter owner 重建；state、PKCE、redirect 绑定、超时与重放校验继续 fail closed，并保持一次性消费
 - forum feed、forum detail、问答回答、评论分页、子评论分页、评论发布 / 回复、作者编辑帖子正文 / 根评论、作者跳转与 detail 原地登录续接；回答失败重试复用 `forum-answer:` 提交意图 key，评论 / 回复失败重试复用 `forum-comment:` 提交意图 key，帖子 / 评论编辑失败重试复用 `forum-post-edit:` / `forum-comment-edit:` 提交意图 key
-- forum detail 轻回应发布后局部体验：发布成功后即时前插到轻回应墙并给出局部成功反馈，发布失败只在轻回应区提示；从轻回应区发起登录后会回到当前轻回应区继续发布
+- forum detail 轻回应发布后局部体验：输入与服务端统一为最多 `10` 字，发布成功后即时前插到轻回应墙并给出局部成功反馈，发布失败只在轻回应区提示；从轻回应区发起登录后会回到当前轻回应区继续发布
 - discover 论坛精选直达：`discover` 中的论坛精选帖子可直接打开原生 forum detail，并按发现页来源返回
 - `profile` 我的轻回应回看：已登录态可在我的主页查看最近轻回应、继续加载更多，并回到对应 forum detail
+- `profile` 基础资料编辑：展示名、邮箱、年龄与地址通过 `GetMyProfile / UpdateMyProfile` 维护；地址省略或 `null` 保持原值，空字符串清空，非空字符串修剪后保存
 - `profile` 最近阅读轻量多条列表：已登录态可在我的主页继续打开最近多条 forum 阅读目标，并从详情返回 profile
 - `profile` 最近公开帖子回看：公开主页与我的主页可继续加载更多公开帖子，并回到对应 forum detail
 - `profile` 最近公开评论回看：公开主页与我的主页可继续加载更多公开评论，并回到对应 forum detail / 评论上下文
@@ -22,12 +24,12 @@
 - docs 正文内链跳转：公开文档正文中的 `/docs/:slug`、完整公开 URL、`docs/:slug`、`./:slug` 与普通相对 slug 文档链接会继续打开原生 docs 详情；页内锚点、附件路径和非 docs 链接仍按文本展示
 - docs 关键词搜索复访：docs tab 可搜索公开文档，搜索结果继续复用原生列表、分页、刷新与详情打开路径
 - leaderboard 公开主页回流：经验榜用户可打开原生公开主页，并通过 Android 返回键回到榜单
-- shop 公开商品列表与商品详情：发现页可进入原生公开商城列表，列表项和商城精选商品可打开商品详情，并通过 Android 返回键回到原来源；匿名态购买会登录回流，登录态可在详情页查看当前胡萝卜余额并完成单商品购买
+- shop 公开商品列表与商品详情：发现页可通过从属上下文入口进入原生公开商城列表，列表项可打开商品详情，并通过 Android 返回键回到原来源；匿名态购买会登录回流，登录态可在详情页查看当前胡萝卜余额并完成单商品购买
 - 原生公开详情链接复制：forum detail、docs detail 与 shop detail 展示完整公开链接并支持复制；复制口径为当前 Gateway Base URL 加 Web 公开路由，不接入系统分享 SDK
 - 公开主页来源返回：从发现、论坛作者和榜单进入原生公开主页后，Android Back 会回到原来源；公开主页继续打开帖子 / 评论详情并返回后，仍保留原 profile 来源 tab
 - 已登录态通知列表：原生壳层会读取当前用户最近站内通知，展示标题、内容、类型、已读状态和时间；forum 通知可复用 forum detail handoff 打开 `postId / commentId`，未读 forum 通知打开详情前会尝试标记已读；系统等不可跳通知保持只读展示；未读通知支持单条显式标记已读
-- 已登录态最近访问入口：我的页可打开最近访问列表，承接公开帖子 / 文档 / 商品详情；forum / docs 记录优先使用 `targetSlug` / `PublicId` 打开和展示公开路径；当前不开放清空、删除或推荐系统
-- 已登录态纯文本发帖与帖子正文编辑：论坛页读取顶级分类，登录用户可发布纯文本帖子，成功后刷新列表并打开新帖子详情，详情公开链接使用 `Post.PublicId`；作者可在原生帖子详情编辑自己的帖子正文，失败重试复用 `forum-post-edit:` 提交意图 key；匿名态从发帖表单提交会登录回流并保留页面存活期间的草稿，发布失败也保留草稿输入并复用 `forum-post:` 提交意图 key；当前不开放富文本、附件、投票、抽奖、草稿箱、分类 / 标签编辑或子评论编辑
+- 已登录态账号浏览历史入口：我的页可打开服务端账号完整历史，按 `VoId` 稳定分页并承接公开帖子 / 文档 / 商品详情；Post / Wiki / Product 使用 typed target，设备 Forum / Docs recent shortcut 保持独立；当前不开放清空、删除、筛选或推荐治理
+- 已登录态纯文本发帖与帖子正文编辑：论坛页读取顶级分类，登录用户可发布纯文本帖子，成功后刷新列表并打开新帖子详情，详情公开链接使用 `Post.PublicId`；作者帖子正文与根评论编辑消费当前 `voContentRevision`、提交 `expectedContentRevision` 并使用响应 revision 局部更新，失败重试复用原提交意图 key；匿名态从发帖表单提交会登录回流并保留页面存活期间的草稿，发布失败也保留草稿输入并复用 `forum-post:` 提交意图 key；当前不开放富文本、附件、投票、抽奖、草稿箱、分类 / 标签编辑或子评论编辑
 - 已登录态问题回答：问题帖详情可展示已有回答，登录用户可发布纯文本回答，成功后局部更新回答区和回答数；匿名态从回答区发起登录会回到当前回答输入上下文，发布失败保留输入并复用 `forum-answer:` 提交意图 key；当前不开放回答采纳、回答编辑、富文本回答、附件回答或问题发帖模式
 - 已登录态单商品购买：商品详情支持当前胡萝卜余额读取、购买资格检查、支付口令输入和购买 `1` 件商品，成功后刷新余额并进入订单详情确认结果；匿名态购买会先登录并回到当前商品
 - 已登录态商城订单 / 背包入口：我的页可打开订单列表、订单详情和背包，订单详情可按订单 ID 查看扣款流水并进入背包发放确认，背包权益 / 道具可查看来源订单或来源商品；主题权益由壳层外观入口读取并调用既有激活 / 停用契约，其他权益与道具使用仍未开放
@@ -40,7 +42,7 @@
 
 ## 当前不含
 
-- iOS / Windows / macOS / Linux 平台工程、签名、更新与分发门禁
+- iOS 真机、Apple Team、正式签名、provisioning、archive、更新与分发门禁；macOS 本地运行、签名 / 公证 / 安装器 / 分发；Windows / Linux 平台工程
 - 聊天、完整通知中心、完整商城工作台、完整资产中心、完整创作器、购物车、退款、除主题选择外的权益使用、道具使用、回答采纳、编辑治理
 - “移动版 WebOS”
 
@@ -62,6 +64,7 @@ Flutter 不引入移动端专属 BFF，`HttpRadishApiClient` 直接消费 Gatewa
 
 - 成功响应需要可读取 `isSuccess / IsSuccess / success / Success` 和 `responseData / ResponseData / data / Data`。
 - HTTP `401 / 403 / 404 / 5xx`、空响应、非 JSON 响应和缺少成功标记的 2xx JSON 会被转成 `RadishApiClientException`。
+- 携带 bearer token 的请求通过单一 session resolver 处理续签；不得在业务 Repository 内各自 refresh，也不得对 `401` 无限重试。
 - 页面应把异常展示在当前任务区域，例如购买面板、余额区、订单详情刷新区或背包来源区，并保留已加载内容、来源返回和登录恢复上下文。
 
 ## 目录概览
@@ -69,6 +72,8 @@ Flutter 不引入移动端专属 BFF，`HttpRadishApiClient` 直接消费 Gatewa
 ```text
 Clients/radish.flutter/
 ├── android/
+├── ios/
+├── macos/
 ├── lib/
 │   ├── app/
 │   ├── core/
@@ -84,9 +89,18 @@ Clients/radish.flutter/
 
 1. `P1` 全页面事实审计已完成：页面唯一归属、状态与错误边界、compact / medium / expanded 结构和 R1 / R2 / R3 继承见[审计记录](../../Docs/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19.md)
 2. `P2` 技术基座已完成：四主题、权益 owner、偏好持久化、Adaptive Shell 与两个代表页见 [P2 实现记录](../../Docs/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19.md)
-3. `P3` 代表设计：独立 Flutter 设计源中的 typography 方向、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿已完成，等待视觉确认
-4. `P4–P5` 主题 / Shell 与页面族成组实现：先 Community，再 Docs / Commerce，最后派生只读面
-5. Android 先形成新版 UI RC；iOS 与 desktop 在共享 UI 门禁后再分别进入平台工程与分发验证
+3. `P3` 代表设计已确认：独立 Flutter 设计源已冻结 typography、共享组件密度、四主题视觉和 Discover / Forum Detail compact / expanded 代表稿
+4. `P4-A / P4-B1–B5` 已完成 readiness、Theme / Shared、Web-Family Adaptive Shell、统一公开 Discover cursor 流、Forum Detail 代表页与成组静态门禁
+5. `P5-A / P5-B1 / P5-B2 / P5-C1 / P5-C2 / P5-C3 / P5-D1 / P5-D2 / P5-D3 / P5-E` 已完成拆批、页面族与成组静态门禁
+6. `P6 Android UI RC readiness / P6-A 本地候选装配 / P6-B AVD 运行态` 已完成；最终 APK SHA-256 为 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`，项目所有者已裁决双 AVD 足以进入下一阶段，P6-C 真机转为 Android 分发前门禁
+7. `P7-A iOS platform readiness` 与 `P7-B iOS platform foundation` 已完成；`ios/`、安全认证存储、非敏感跨平台偏好、Android 幂等迁移、iOS OIDC callback 与显式平台选择均已落地，Android JVM / Debug APK、iOS 无签名 Simulator build 与 RunnerTests build-for-testing 已通过
+8. `P7-C Simulator runtime acceptance` 已关闭；同一 source `ff54b12d`、`26.8.2+1`、Runner SHA-256 `2fd300a8…3fce52356` 的 ad-hoc 候选已通过 iPhone compact 与 iPad medium / expanded 的 OIDC 冷回调、Keychain / preferences、TLS、旋转、真实输入、四主题和 fail-closed 矩阵，详见 [P7-C 关闭记录](../../Docs/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31.md)
+9. `P7-D iOS 真机、签名与分发 readiness` 已完成；项目所有者随后确认近期只使用 Internal TestFlight，不开放 external tester、public link、App Review 或 App Store
+10. `P7-D1 Internal TestFlight minimal readiness` 已实施关闭：生产 `https://radishx.com` 经批准临时作为唯一 Gateway，版本控制 define、distribution fail-closed、repository preflight、privacy inventory 与 iOS Release `--no-codesign` 通过
+11. 项目所有者当前没有 Apple Developer Program 付费会员或可测试真机，P7-D2 development-signed 真机与 P7-D3 TestFlight Internal Only 暂缓；项目所有者随后确认转入 P8 desktop readiness，账号删除、完整 Flutter UGC、StoreKit 与商店 metadata 继续后置 D4
+12. `P8-A desktop platform readiness` 已关闭：macOS 本机工具链完整，Windows11 ARM64 日常 VM 尚缺 Flutter / Dart、CMake / Ninja / clang-cl 与 Visual Studio C++ Desktop workload，CleanBase 未启动；Debian VM 待实时工具链审计。当前 desktop 仍为 `unsupported` 内存壳
+13. `P8-B macOS local platform foundation readiness` 已关闭：冻结 `com.radish.client`、macOS `10.15+` 工程下限、品牌 AppIcon、单窗口、MethodChannel OIDC、Keychain / preferences、App Sandbox entitlement 与 B1 无服务构建 / B2 本地运行边界
+14. `P8-B1 macOS platform foundation` 已关闭：`macos/`、显式平台选择、真实持久化 / auth owner、原生 OIDC callback、品牌身份、窗口和 Debug / Release 构建已落地；当前等待 P8-B2 本地运行启动授权
 
 ## Flutter 环境切换
 
@@ -96,13 +110,13 @@ Clients/radish.flutter/
 https://localhost:5000
 ```
 
-构建或运行时可通过 `--dart-define` 指定目标环境。当前保持 API / Auth / Gateway 同源，统一由 `RADISH_GATEWAY_BASE_URL` 派生，不额外引入 Flutter 专属 BFF。
+构建或运行时可通过 `--dart-define` 指定目标环境。当前保持 API / Auth / Gateway 同源，统一由 `RADISH_GATEWAY_BASE_URL` 派生，不额外引入 Flutter 专属 BFF。development 缺省保留本机入口；testing / production 必须显式提供合法 HTTPS origin，对缺失、非法、loopback / IP、保留示例域名或本地证书 opt-in fail closed。
 
 可用参数：
 
 - `RADISH_ENVIRONMENT`：环境名称，默认 `development`，常用值为 `development` / `testing` / `production`
-- `RADISH_GATEWAY_BASE_URL`：Gateway 基址，需包含 `https://` 或 `http://`，末尾 `/` 会自动收口
-- `RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES`：是否允许本机开发证书，默认仅 Android + `localhost` Gateway 自动开启
+- `RADISH_GATEWAY_BASE_URL`：Gateway 基址；development 可使用 HTTP(S)，testing / production 只能使用无 path / query / fragment 的 HTTPS origin
+- `RADISH_ALLOW_LOCAL_DEVELOPMENT_CERTIFICATES`：是否允许本机开发证书，默认仅 Android + `localhost` Gateway 自动开启；iOS / macOS 必须显式传入 `true`，且代码仍只对 loopback Gateway 生效
 
 本机 Android 开发态示例：
 
@@ -110,21 +124,63 @@ https://localhost:5000
 flutter run --dart-define=RADISH_ENVIRONMENT=development --dart-define=RADISH_GATEWAY_BASE_URL=https://localhost:5000
 ```
 
-测试环境 RC 构建示例：
+Internal TestFlight 仓库 preflight（在仓库根目录执行）：
 
-```powershell
-flutter build apk --release --dart-define=RADISH_ENVIRONMENT=testing --dart-define=RADISH_GATEWAY_BASE_URL=https://test-gateway.example
+```bash
+npm run check:flutter-ios-internal-testflight
 ```
 
-正式环境 RC 构建示例：
+当前经批准的 Internal TestFlight 无签名 Release 编译验证：
 
-```powershell
-flutter build apk --release --dart-define=RADISH_ENVIRONMENT=production --dart-define=RADISH_GATEWAY_BASE_URL=https://gateway.example
+```bash
+cd Clients/radish.flutter
+flutter build ios --release --no-codesign \
+  --dart-define-from-file=config/internal-testflight.json
 ```
+
+`config/internal-testflight.json` 当前固定 `testing + https://radishx.com + local cert=false`。该 Gateway 是经项目所有者批准临时复用的生产入口，不代表已经建立 testing 数据隔离；真实写入必须使用专用账号、可定位标记、原始值记录和精确清理。上述命令只生成不可安装、不可分发的无签名编译结果；signed archive、IPA、validation 与 upload 属于 D3 独立授权。
 
 ## 平台目录说明
 
-Android 平台目录已经生成。iOS / Windows / macOS / Linux 是长期产品目标，但当前不提前生成：先关闭共享 UI 的 expanded 布局、键鼠、焦点、滚动和窗口门禁，再逐个平台进入工程与分发批次。Tauri 和 WebOS 不再作为桌面安装包替代路线。
+Android、iOS 与 macOS 平台目录已经生成，Windows / Linux 尚未生成。P7-B / P8-B1 使用 `flutter_secure_storage 10.3.1`：Android 采用 RSA-OAEP + AES-GCM 并禁用应用数据自动备份，iOS / macOS 使用 Keychain 与 `first_unlock_this_device` 可访问级别，macOS 另显式使用 Data Protection Keychain；非敏感回访状态继续由 `shared_preferences` 承担。`RadishPlatformKind.macos` 已使用真实 session / auth / follow-up owner，Windows / Linux 仍为 `unsupported` 内存 shell。macOS 不声明空 Keychain Sharing entitlement：Xcode `26.6` 会要求 development certificate，且锁定插件 macOS 分支不消费 groupId；真实 Keychain 写入与重启恢复仍待 P8-B2。P8 后续按 macOS 运行态、Windows、Linux 与成组门禁推进；Tauri 和 WebOS 不作为桌面安装包替代路线。
+
+## macOS 原生构建验证
+
+修改 macOS 壳层、OIDC callback、安全存储、entitlements 或插件接线后，至少执行：
+
+```bash
+cd Clients/radish.flutter
+flutter build macos --debug
+flutter build macos --release
+
+xcodebuild test \
+  -workspace macos/Runner.xcworkspace \
+  -scheme Runner \
+  -configuration Debug \
+  -destination 'platform=macOS,arch=arm64' \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+这些命令只完成编译与原生单测；不会替代 P8-B2 的真实 Keychain、系统浏览器 callback、窗口与输入验收。当前本机产物使用 ad-hoc 签名，不构成 Developer ID、公证、安装器或分发证据。
+
+## iOS 原生构建验证
+
+修改 iOS 壳层、OIDC callback、安全存储、entitlements 或插件接线后，至少执行无签名 Simulator build 与 RunnerTests build-for-testing：
+
+```bash
+cd Clients/radish.flutter
+flutter build ios --simulator --debug --no-codesign
+
+cd ios
+xcodebuild build-for-testing -quiet \
+  -project Runner.xcodeproj \
+  -scheme Runner \
+  -sdk iphonesimulator \
+  -destination 'generic/platform=iOS Simulator' \
+  CODE_SIGNING_ALLOWED=NO
+```
+
+这两项只验证编译、插件与原生测试接线，不会启动服务或 Simulator。`--no-codesign` 产物不能用于验证 Simulator Keychain；P7-C 真实运行候选保留了 Xcode 默认 ad-hoc Simulator 签名，且没有 Apple Team。P7-D1 分发合规能力门禁已关闭；Apple Team、开发 / 分发证书、provisioning、真机与分发属于 P7-D2–D4，仍不进入仓库默认构建配置。项目所有者当前没有付费会员或可测试真机，D2 / D3 暂缓；不得用新的 Simulator 轮次改写该外部前置结论。
 
 ## Android 模拟器联调
 
@@ -185,7 +241,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ## Android 真机人工验证 checklist
 
-当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备通知列表、最近访问、纯文本发帖、单商品购买、商城订单 / 背包、胡萝卜资产和经验记录入口，可用于验证移动端登录态承接与来源返回；forum 通知仍可验证回到 forum detail 与 `commentId` 定位。
+当前 Android MVP 人工验证只覆盖已经具备真实入口、真实数据或可稳定手工触发的链路。已登录态当前具备通知列表、账号浏览历史、纯文本发帖、单商品购买、商城订单 / 背包、胡萝卜资产和经验记录入口，可用于验证移动端登录态承接与来源返回；forum 通知仍可验证回到 forum detail 与 `commentId` 定位。
 
 第十五批至第十七批已完成 `discover / forum / docs / profile` 主 tab 的刷新体验一致性收口。开发阶段可优先使用 Android Studio 模拟器 / AVD 做功能验证；若需要验证刷新失败局部提示，可在已有内容成功加载后临时断开 Gateway 或网络再点击刷新。该验证只记录为开发阶段人工检查，不替代正式 release 包发布前的真机 APK 安装验收。
 
@@ -232,7 +288,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 31. 在我的 profile 中打开“查看经验记录”，确认等级概要、升级进度、冻结状态、最近流水、空态 / 错误态和返回 profile 正常，不出现经验调整、冻结治理或管理员复核入口
 32. 关闭并重启应用，确认会话恢复或匿名回落符合当前 token 状态，复访入口仍符合最近状态
 
-当前结果：
+MVP 历史结果（P1–P5 前证据，不直接继承为新版 UI RC）：
 
 - Android 真机已确认 forum notification 回到 forum detail / 评论上下文逻辑正常
 - Android release APK 已完成一轮真机安装与本机 Gateway 联调复核，登录、基础读取与样式显示均正常
