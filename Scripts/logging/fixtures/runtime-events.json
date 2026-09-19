@@ -1,0 +1,255 @@
+[
+  {
+    "name": "production-debug-dropped-before-level-mapping",
+    "input": {
+      "level": "Debug"
+    },
+    "expected": null
+  },
+  {
+    "name": "production-explicit-diagnostic-dropped",
+    "input": {
+      "level": "Error",
+      "diagnostic": true
+    },
+    "expected": null
+  },
+  {
+    "name": "development-diagnostic-opt-in",
+    "options": {
+      "mode": "Development",
+      "diagnostics": true
+    },
+    "input": {
+      "level": "Trace",
+      "eventCode": "database.diagnostic"
+    },
+    "expected": {
+      "level": "Info",
+      "diagnostic": true,
+      "isFatal": false,
+      "redacted": false
+    }
+  },
+  {
+    "name": "development-diagnostic-off-by-default",
+    "options": {
+      "mode": "Development"
+    },
+    "input": {
+      "level": "Verbose"
+    },
+    "expected": null
+  },
+  {
+    "name": "minimum-level",
+    "options": {
+      "minimumLevel": "Warning"
+    },
+    "input": {
+      "level": "Information"
+    },
+    "expected": null
+  },
+  {
+    "name": "fatal-is-error",
+    "input": {
+      "level": "Fatal",
+      "eventCode": "runtime.failed"
+    },
+    "expected": {
+      "level": "Error",
+      "isFatal": true,
+      "diagnostic": false,
+      "redacted": false
+    }
+  },
+  {
+    "name": "critical-is-error",
+    "input": {
+      "level": "Critical",
+      "eventCode": "runtime.failed"
+    },
+    "expected": {
+      "level": "Error",
+      "isFatal": true
+    }
+  },
+  {
+    "name": "typed-safe-context",
+    "input": {
+      "level": "Warn",
+      "eventCode": "database.slow",
+      "sourceCategory": "database",
+      "properties": {
+        "durationMs": 1250.5,
+        "operation": "select",
+        "parameterCount": 2
+      }
+    },
+    "expected": {
+      "level": "Warning",
+      "redacted": false,
+      "properties": {
+        "durationMs": 1250.5,
+        "operation": "select",
+        "parameterCount": 2
+      }
+    }
+  },
+  {
+    "name": "nested-and-encoded-secrets-never-serialized",
+    "input": {
+      "eventCode": "http.failed",
+      "message": "password=SENTINEL_SECRET",
+      "exception": {
+        "message": "SENTINEL_SECRET",
+        "stack": "SENTINEL_SECRET"
+      },
+      "properties": {
+        "Authorization": "SENTINEL_SECRET",
+        "body": {
+          "data": [
+            "SENTINEL_SECRET"
+          ]
+        },
+        "url": "/x?code=%53ENTINEL_SECRET",
+        "outcome": "failed",
+        "statusCode": 500,
+        "method": "GET"
+      }
+    },
+    "expected": {
+      "redacted": true,
+      "properties": {
+        "method": "GET",
+        "outcome": "failed",
+        "statusCode": 500
+      }
+    }
+  },
+  {
+    "name": "safe-keys-do-not-permit-arbitrary-values",
+    "input": {
+      "properties": {
+        "durationMs": "SENTINEL_SECRET",
+        "count": {
+          "secret": "SENTINEL_SECRET"
+        },
+        "outcome": "SENTINEL_SECRET",
+        "method": [
+          "SENTINEL_SECRET"
+        ]
+      }
+    },
+    "expected": {
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "unknown-code-omits-raw-message",
+    "input": {
+      "eventCode": "SENTINEL_SECRET",
+      "message": "SENTINEL_SECRET"
+    },
+    "expected": {
+      "eventCode": "runtime.unclassified",
+      "normalizationStatus": "unclassified",
+      "redacted": true
+    }
+  },
+  {
+    "name": "source-and-id-spoofing",
+    "input": {
+      "service": "SENTINEL_SECRET",
+      "deploymentId": "SENTINEL_SECRET",
+      "tenantId": "SENTINEL_SECRET",
+      "eventId": "SENTINEL_SECRET",
+      "occurredAtUtc": "SENTINEL_SECRET"
+    },
+    "expected": {
+      "service": "api",
+      "deploymentId": "l1-test",
+      "redacted": true
+    }
+  },
+  {
+    "name": "correlation-is-not-a-credential-channel",
+    "input": {
+      "traceId": "SENTINEL_SECRET",
+      "spanId": "0000000000000000",
+      "operationId": "SENTINEL_SECRET"
+    },
+    "expected": {
+      "redacted": true
+    }
+  },
+  {
+    "name": "valid-correlation",
+    "input": {
+      "traceId": "0123456789abcdef0123456789abcdef",
+      "spanId": "0123456789abcdef",
+      "operationId": "01234567-89ab-cdef-0123-456789abcdef"
+    },
+    "expected": {
+      "traceId": "0123456789abcdef0123456789abcdef",
+      "spanId": "0123456789abcdef",
+      "operationId": "01234567-89ab-cdef-0123-456789abcdef",
+      "redacted": false
+    }
+  },
+  {
+    "name": "invalid-numeric-bounds",
+    "input": {
+      "properties": {
+        "statusCode": 999,
+        "count": -1,
+        "durationMs": 1e+100
+      }
+    },
+    "expected": {
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "newline-correlation-rejected",
+    "input": {
+      "spanId": "0123456789abcdef\n"
+    },
+    "expected": {
+      "redacted": true
+    }
+  },
+  {
+    "name": "integer-fields-reject-fractions",
+    "input": {
+      "properties": {
+        "count": 1.5,
+        "statusCode": 500.5,
+        "attempt": 0.5,
+        "parameterCount": 2.5
+      }
+    },
+    "expected": {
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "malformed-classification-marked-redacted",
+    "input": {
+      "eventCode": {
+        "secret": "SENTINEL_SECRET"
+      },
+      "sourceCategory": [
+        "SENTINEL_SECRET"
+      ]
+    },
+    "expected": {
+      "redacted": true,
+      "normalizationStatus": "unclassified"
+    }
+  }
+]

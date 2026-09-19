@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 1,
+  "maxEventBytes": 8192,
+  "services": [
+    "api",
+    "auth",
+    "gateway",
+    "dbmigrate",
+    "frontend",
+    "postgres",
+    "redis",
+    "log-collector"
+  ],
+  "categories": [
+    "application",
+    "lifecycle",
+    "http",
+    "database",
+    "job",
+    "infrastructure",
+    "pipeline"
+  ],
+  "levels": {
+    "Trace": {
+      "level": "Info",
+      "diagnostic": true,
+      "isFatal": false
+    },
+    "Verbose": {
+      "level": "Info",
+      "diagnostic": true,
+      "isFatal": false
+    },
+    "Debug": {
+      "level": "Info",
+      "diagnostic": true,
+      "isFatal": false
+    },
+    "Info": {
+      "level": "Info",
+      "diagnostic": false,
+      "isFatal": false
+    },
+    "Information": {
+      "level": "Info",
+      "diagnostic": false,
+      "isFatal": false
+    },
+    "Warn": {
+      "level": "Warning",
+      "diagnostic": false,
+      "isFatal": false
+    },
+    "Warning": {
+      "level": "Warning",
+      "diagnostic": false,
+      "isFatal": false
+    },
+    "Error": {
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": false
+    },
+    "Fatal": {
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": true
+    },
+    "Critical": {
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": true
+    }
+  },
+  "events": {
+    "runtime.unclassified": "Unregistered runtime event; raw content omitted.",
+    "runtime.started": "Service started.",
+    "runtime.stopped": "Service stopped.",
+    "runtime.failed": "Operation failed.",
+    "http.rejected": "Request rejected.",
+    "http.failed": "Request failed.",
+    "database.slow": "Database operation exceeded the duration threshold.",
+    "database.diagnostic": "Database diagnostic summary.",
+    "job.completed": "Background job completed.",
+    "job.retry": "Background job scheduled for retry.",
+    "job.failed": "Background job exhausted retries.",
+    "pipeline.rejected": "Log event rejected; raw content omitted."
+  },
+  "properties": {
+    "durationMs": {
+      "type": "number",
+      "min": 0,
+      "max": 31536000000
+    },
+    "count": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "statusCode": {
+      "type": "number",
+      "min": 100,
+      "max": 599,
+      "integer": true
+    },
+    "attempt": {
+      "type": "number",
+      "min": 0,
+      "max": 1000000,
+      "integer": true
+    },
+    "parameterCount": {
+      "type": "number",
+      "min": 0,
+      "max": 1000000,
+      "integer": true
+    },
+    "outcome": {
+      "type": "enum",
+      "values": [
+        "succeeded",
+        "failed",
+        "cancelled",
+        "retrying",
+        "rejected"
+      ]
+    },
+    "method": {
+      "type": "enum",
+      "values": [
+        "GET",
+        "HEAD",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS"
+      ]
+    },
+    "operation": {
+      "type": "enum",
+      "values": [
+        "select",
+        "insert",
+        "update",
+        "delete",
+        "connect",
+        "migrate",
+        "seed"
+      ]
+    }
+  }
+}

@@ -57,7 +57,7 @@
 
 ## 并行维护线
 
-- `2026-09-19` 根据项目所有者反馈整理[统一日志与跨容器汇聚专题方案](/features/unified-logging-governance-design)：已完成现状梳理，项目所有者已确认设计基线；下一步为 L1 契约与采集验证，运行时重构及新采集服务尚未启动。
+- `2026-09-19` 根据项目所有者反馈整理[统一日志与跨容器汇聚专题方案](/features/unified-logging-governance-design)：已确认设计并开始 L1，统一生成契约与隔离采集首轮实验已落地；[实测](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)发现 HTTP 413 丢弃、文件按 chunk 轮转和 Docker 长行分片。下一步关闭采集规范化及容量门禁，宿主 / 生产链路尚未切换。
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护。
 - WebOS 只处理阻断级兼容；Flutter 承接高价值原生路径，不机械追平 Web。
