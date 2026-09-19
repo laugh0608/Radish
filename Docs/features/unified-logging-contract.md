@@ -1,15 +1,15 @@
 # 统一日志事件契约与实现进度
 
-> 2026-09-19：L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。本页不表示宿主或生产采集链已经切换。
+> 2026-09-19：L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
 [`runtime-log-policy.v1.json`](../../Radish.Common/LogTool/Contracts/runtime-log-policy.v1.json) 维护版本、服务 / 分类注册表、原始级别映射、事件说明和属性类型约束。
 
 - .NET：作为 `Radish.Common` 嵌入资源，由 `RuntimeLogPolicy` 读取；不依赖业务层。
-- Node：`Frontend/scripts/logging/runtime-event.mjs` 读取同一文件；尚未接入静态服务器或复制到生产镜像。
+- Node：`Frontend/scripts/logging/runtime-event.mjs` 读取同一文件；静态服务器已接入候选输出，Dockerfile 随运行脚本复制此策略。
 - 两端运行同一组 [`runtime-events.json`](../../Scripts/logging/fixtures/runtime-events.json) 样本，不各写一份脱敏规则。
-- 尚未替换现有 Serilog、浏览器 logger、Flutter logger 或数据库 sink；旧运行行为仍见[日志系统](../guide/logging.md)。
+- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器 / Flutter logger 和数据库接收仍待迁移。旧默认行为见[日志系统](../guide/logging.md)。
 
 ## 2. 生成契约 v1 首批字段
 
@@ -37,7 +37,7 @@
 3. 即使键被允许，值也须通过类型和范围校验；例如 `count` 不能携带对象、`outcome` 不能携带任意字符串。
 4. 生产 stdout 序列化须使用 `RuntimeLogEvent.ToJsonLine()` / `serializeRuntimeLogEvent()`；最终 UTF-8 JSON 上限 **8 KiB**，超限拒绝序列化。此上限从原建议 32 KiB 下调，防止单条应用事件越过已观察到的 Docker 长行分片边界。
 5. 该限制不解决第三方容器的任意长行。采集层已选择拒收分片、把解析失败变为安全摘要；不重组敏感长行，也不保留 Docker `log` 原文。
-6. 后续生成 sink 负责将策略 / 序列化错误转入有限应急摘要，不能让日志错误破坏业务请求；本批尚未连接宿主 sink。
+6. .NET / Node 输出适配已将策略 / 序列化 / 写入错误转入限频应急摘要 `pipeline.output_failed`，不携带原始异常；每个输出实例至多每分钟一次，并累计失败数。应急介质也失败时不递归。
 
 ## 4. 采集协议校准结论
 
@@ -63,4 +63,23 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。下一步可在此契约上推进 L2 生成端；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口子项已落地，下一步治理 SQL / AOP / DbMigrate 与异常所有权；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+
+## 6. L2 候选生成入口
+
+`RadishLogging.Enabled` 默认 false；这是一项阶段性迁移开关，不是新增日志模式。API / Auth / Gateway 在配置加载完成后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例；启用时不再读取旧 Serilog sink / MinimumLevel 配置。DbMigrate 和裸输出旁路尚未纳入，禁止据此提前切换生产。
+
+| 配置 | 默认 / 约束 |
+| --- | --- |
+| `Enabled` | false；正式切换在 L6 统一收口 |
+| `Mode` | Production；Development 只允许在 Development 宿主 / Node `NODE_ENV=development` 使用 |
+| `MinimumLevel` | Info；只接受 Info / Warning / Error |
+| `Diagnostics` | false；Production 下 true 为配置错误 |
+| `DeploymentId / Release` | local / unversioned；部署接入须设置明确身份 |
+| `InstanceId` | .NET MachineName / Node hostname；采集器再按 Docker 标签校验 |
+
+Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagnostics / DeploymentId / Release / InstanceId` 环境变量；不会根据 test-latest 或 NODE_ENV 自动开启诊断。.NET 非敏感默认值仍放共享 appsettings，本地仅通过原有 appsettings.Local.json 覆盖。
+
+自有调用通过结构化属性 `EventCode`、`SourceCategory`、`Diagnostic` 标明意图，数值 / 枚举属性使用策略中的原名（如 `statusCode`）。ILogger 可用 BeginScope，存量 Serilog 可用 ForContext；消息模板不承担安全契约。未登记的普通 Info 归入诊断，未知 Warning / Error 则保留安全未分类摘要，后续调用点必须逐项迁移，不能长期依靠未分类摘要。
+
+新路径使用同一策略生成 JSONL stdout，不自建文件或数据库写入。应急事件写 stderr，仍用规范 JSON，但计数保存在进程内。静态服务器健康检查保持安静，拒绝 / 失败只记录受控 HTTP method 和 statusCode。详细验证与未关闭边界见[L2 入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)。

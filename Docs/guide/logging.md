@@ -1,6 +1,6 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志，提供完整的应用监控和审计能力。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。
 
 ## 架构概述
 

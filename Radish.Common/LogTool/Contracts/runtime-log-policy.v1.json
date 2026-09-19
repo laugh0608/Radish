@@ -86,7 +86,8 @@
     "job.failed": "Background job exhausted retries.",
     "pipeline.rejected": "Log event rejected; raw content omitted.",
     "infrastructure.postgres": "PostgreSQL runtime event; raw content omitted.",
-    "infrastructure.redis": "Redis runtime event; raw content omitted."
+    "infrastructure.redis": "Redis runtime event; raw content omitted.",
+    "pipeline.output_failed": "Log output failed; original content omitted."
   },
   "properties": {
     "durationMs": {

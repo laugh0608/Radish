@@ -13,9 +13,12 @@ namespace Radish.Extension.Log;
 
 public static class SerilogSetup
 {
-    public static IHostBuilder AddSerilogSetup(this IHostBuilder host)
+    public static IHostBuilder AddSerilogSetup(this IHostBuilder host, RuntimeLoggingSession runtimeLogging)
     {
         if (host == null) throw new ArgumentNullException(nameof(host));
+
+        if (runtimeLogging.Logger != null)
+            return host.UseSerilog(runtimeLogging.Logger, dispose: false);
 
         host.UseSerilog((context, services, loggerConfiguration) =>
         {

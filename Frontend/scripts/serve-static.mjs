@@ -2,13 +2,13 @@ import { createServer } from 'node:http';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { extname, join, normalize, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { createFrontendLogger } from './logging/runtime-output.mjs';
 
 const port = Number.parseInt(process.env.PORT ?? '80', 10);
 const defaultClientRoot = '/app/client';
 const defaultConsoleRoot = '/app/console';
 const requestBaseUrl = new URL('http://localhost');
 const runtimeConfigPaths = new Set(['/runtime-config.js', '/console/runtime-config.js']);
-const maxLogValueLength = 256;
 
 const mimeTypes = {
   '.css': 'text/css; charset=utf-8',
@@ -49,38 +49,12 @@ function writePlainText(response, statusCode, message) {
   response.end(message);
 }
 
-function toLogValue(value) {
-  const normalizedValue = Array.isArray(value) ? value.join(',') : String(value ?? '');
-  return JSON.stringify(normalizedValue.slice(0, maxLogValueLength));
-}
-
-function getRequestPathForLog(requestTarget) {
-  const queryIndex = requestTarget.indexOf('?');
-  return queryIndex >= 0 ? requestTarget.slice(0, queryIndex) : requestTarget;
-}
-
 function logRejectedRequest(logger, request) {
-  const forwardedFor = request.headers['x-forwarded-for'];
-  logger.warn(
-    '[frontend] Rejected invalid request target'
-      + ` method=${toLogValue(request.method)}`
-      + ` path=${toLogValue(getRequestPathForLog(request.url ?? ''))}`
-      + ` remote=${toLogValue(request.socket.remoteAddress)}`
-      + ` forwardedFor=${toLogValue(forwardedFor)}`
-  );
+  logger.warn('http.rejected', { method: request.method, statusCode: 400 });
 }
 
-function logRequestFailure(logger, request, error) {
-  const errorSummary = error instanceof Error
-    ? `${error.name}: ${error.message}`
-    : String(error);
-
-  logger.error(
-    '[frontend] Request handling failed'
-      + ` method=${toLogValue(request.method)}`
-      + ` path=${toLogValue(getRequestPathForLog(request.url ?? ''))}`
-      + ` error=${toLogValue(errorSummary)}`
-  );
+function logRequestFailure(logger, request) {
+  logger.error('http.failed', { method: request.method, statusCode: 500 });
 }
 
 function parseRequestPathname(requestTarget) {
@@ -105,8 +79,8 @@ function serveFile(response, filePath, logger) {
   const contentType = mimeTypes[extension] ?? 'application/octet-stream';
   const stream = createReadStream(filePath);
 
-  stream.once('error', (error) => {
-    logger.error(`[frontend] Static file read failed path=${toLogValue(filePath)} error=${toLogValue(error.message)}`);
+  stream.once('error', () => {
+    logger.error('http.failed', { statusCode: 500 });
 
     if (response.writableEnded) {
       return;
@@ -224,15 +198,15 @@ function handleRequest(request, response, options) {
 export function createStaticServer({
   clientRoot = defaultClientRoot,
   consoleRoot = defaultConsoleRoot,
-  logger = console,
+  logger = createFrontendLogger(),
 } = {}) {
   const options = { clientRoot, consoleRoot, logger };
 
   return createServer((request, response) => {
     try {
       handleRequest(request, response, options);
-    } catch (error) {
-      logRequestFailure(logger, request, error);
+    } catch {
+      logRequestFailure(logger, request);
 
       if (!response.writableEnded) {
         if (!response.headersSent) {
@@ -249,7 +223,14 @@ const isEntryPoint = process.argv[1]
   && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 if (isEntryPoint) {
-  createStaticServer().listen(port, '0.0.0.0', () => {
-    console.log(`Radish frontend server listening on ${port}`);
-  });
+  try {
+    const logger = createFrontendLogger();
+    const server = createStaticServer({ logger });
+    server.once('error', () => { logger.error('runtime.failed'); process.exitCode = 1; });
+    server.listen(port, '0.0.0.0', () => logger.info('runtime.started'));
+  } catch {
+    // 配置尚不可用时只输出固定应急说明，不能打印含环境变量值的异常。
+    process.stderr.write('Frontend startup failed; diagnostic content omitted.\n');
+    process.exitCode = 1;
+  }
 }

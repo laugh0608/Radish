@@ -77,6 +77,7 @@ builder.Configuration.ConfigureApplication();
 
 // 绑定 InternalApp 扩展中的环境变量
 builder.ConfigureApplication();
+using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "gateway");
 
 // ===== Razor Pages 配置 =====
 builder.Services.AddRazorPages();
@@ -123,7 +124,7 @@ builder.Services.AddHttpClient<PublicHeadSnapshotClient>(client =>
 });
 
 // ===== Serilog 日志配置 =====
-builder.Host.AddSerilogSetup();
+builder.Host.AddSerilogSetup(runtimeLogging);
 
 // ===== YARP 反向代理配置 =====
 builder.Services.AddReverseProxy()
@@ -135,6 +136,7 @@ if (!OperatingSystem.IsWindows())
 }
 
 var app = builder.Build();
+runtimeLogging.AttachLifetime(app.Lifetime);
 
 var enableHttpsRedirection = app.Configuration.GetValue<bool?>("GatewayRuntime:EnableHttpsRedirection") ??
     app.Environment.IsDevelopment();

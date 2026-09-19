@@ -12,6 +12,7 @@ public sealed class RuntimeLogPolicy
 {
     private static readonly JsonElement Contract = LoadContract();
     public static int MaxEventBytes => Contract.GetProperty("maxEventBytes").GetInt32();
+    public static bool IsRegisteredEventCode(string code) => Contract.GetProperty("events").TryGetProperty(code, out _);
     private static readonly Regex SourceToken = new("^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$", RegexOptions.CultureInvariant);
     private readonly RuntimeLogSource _source;
     private readonly string _mode;

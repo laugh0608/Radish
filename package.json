@@ -9,7 +9,7 @@
     "Frontend/radish.ui"
   ],
   "scripts": {
-    "check:logging-contract": "node --test Scripts/logging/runtime-event.test.mjs",
+    "check:logging-contract": "node --test Scripts/logging/runtime-event.test.mjs Scripts/logging/runtime-output.test.mjs",
     "check:docs": "./Scripts/check-docs.sh",
     "check:markdown-links:self-test": "node --test Scripts/check-markdown-links.test.mjs",
     "check:changed-files:self-test": "node --test Scripts/changed-files.test.mjs",

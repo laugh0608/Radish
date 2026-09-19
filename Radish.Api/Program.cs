@@ -166,6 +166,7 @@ builder.Host
     });
 // 2. 绑定 InternalApp 扩展中的环境变量
 builder.ConfigureApplication();
+using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "api");
 // 激活 Autofac 影响的 IControllerActivator 控制器激活器，这一行的意义就是把 Controller 类也就是控制器注册为 Service 服务
 builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
 // 注册跨域规则
@@ -555,10 +556,11 @@ builder.Services.AddScoped<ChatMessageReactionOperationCleanupJob>();
 builder.Services.AddScoped<WikiDraftPayloadCleanupJob>();
 
 // 注册 Serilog 服务
-builder.Host.AddSerilogSetup();
+builder.Host.AddSerilogSetup(runtimeLogging);
 
 // -------------- App 初始化阶段 ---------------
 var app = builder.Build();
+runtimeLogging.AttachLifetime(app.Lifetime);
 // -------------- App 初始化阶段 ---------------
 
 Log.Information("[JWT] 初始化验签模式: {Mode}, 目标: {Target}", jwtValidationMode, jwtValidationTarget);

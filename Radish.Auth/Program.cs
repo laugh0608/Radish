@@ -96,6 +96,7 @@ builder.Host
 
 // 2. 绑定 InternalApp 扩展中的环境变量
 builder.ConfigureApplication();
+using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "auth");
 
 #endregion
 
@@ -104,7 +105,7 @@ builder.ConfigureApplication();
 // 注册 AppSettingsTool（Serilog 依赖此配置）
 builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
 
-builder.Host.AddSerilogSetup();
+builder.Host.AddSerilogSetup(runtimeLogging);
 
 #endregion
 
@@ -363,6 +364,7 @@ builder.Services.AddOpenIddict()
 
 // -------------- App 初始化阶段 ---------------
 var app = builder.Build();
+runtimeLogging.AttachLifetime(app.Lifetime);
 // -------------- App 初始化阶段 ---------------
 
 // 宿主启动只读检查 schema；结构写入统一由 Radish.DbMigrate apply 负责。
