@@ -84,7 +84,9 @@
     "job.completed": "Background job completed.",
     "job.retry": "Background job scheduled for retry.",
     "job.failed": "Background job exhausted retries.",
-    "pipeline.rejected": "Log event rejected; raw content omitted."
+    "pipeline.rejected": "Log event rejected; raw content omitted.",
+    "infrastructure.postgres": "PostgreSQL runtime event; raw content omitted.",
+    "infrastructure.redis": "Redis runtime event; raw content omitted."
   },
   "properties": {
     "durationMs": {
@@ -148,6 +150,18 @@
         "connect",
         "migrate",
         "seed"
+      ]
+    },
+    "rejectionReason": {
+      "type": "enum",
+      "values": [
+        "unknown-source",
+        "fragment",
+        "oversize",
+        "invalid-schema",
+        "invalid-event",
+        "invalid-time",
+        "unparsed-native"
       ]
     }
   }

@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 2026-09-19：L1 首轮基础实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。本页描述已实现的生成契约，不表示宿主或生产采集链已经切换。
+> 2026-09-19：L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。本页不表示宿主或生产采集链已经切换。
 
 ## 1. 策略唯一来源
 
@@ -28,7 +28,7 @@
 | `traceId / spanId / operationId` | 可选、格式严格限制；trace / span 拒绝全零值 |
 | `normalizationStatus / redacted / truncated` | 未分类或裁剪行为可辨识；当前是省略未知数据，不把省略伪称字符串截断 |
 
-`containerId` 由后续采集层补充；`requestId / jobId / tenantId` 的权威上下文、异常类型 / 安全栈帧在宿主适配时补齐。目前未知异常整体省略，不回显 `Exception.Message / StackTrace / Data`。不能把首批字段子集称为最终全部 schema。
+`containerId` 现由采集规范化层从 Docker FullID 标签补充；instanceId 只保留与 FullID 匹配的完整 / 短 ID，否则使用受信 FullID 并标记裁剪。`requestId / jobId / tenantId` 的权威上下文、异常类型 / 安全栈帧在宿主适配时补齐。目前未知异常整体省略，不回显 `Exception.Message / StackTrace / Data`。不能把首批字段子集称为最终全部 schema。
 
 ## 3. 安全与模式
 
@@ -36,7 +36,7 @@
 2. Warning / Error 不自动放开载荷。普通 `message`、OAuth URL、Header、body、exception 和未登记键在生成前省略。
 3. 即使键被允许，值也须通过类型和范围校验；例如 `count` 不能携带对象、`outcome` 不能携带任意字符串。
 4. 生产 stdout 序列化须使用 `RuntimeLogEvent.ToJsonLine()` / `serializeRuntimeLogEvent()`；最终 UTF-8 JSON 上限 **8 KiB**，超限拒绝序列化。此上限从原建议 32 KiB 下调，防止单条应用事件越过已观察到的 Docker 长行分片边界。
-5. 该限制不解决第三方容器的任意长行。采集侧仍必须拒收 / 有界重组分片，并把解析失败变为安全摘要，绝不能直接保留 Docker `log` 原文。
+5. 该限制不解决第三方容器的任意长行。采集层已选择拒收分片、把解析失败变为安全摘要；不重组敏感长行，也不保留 Docker `log` 原文。
 6. 后续生成 sink 负责将策略 / 序列化错误转入有限应急摘要，不能让日志错误破坏业务请求；本批尚未连接宿主 sink。
 
 ## 4. 采集协议校准结论
@@ -47,7 +47,8 @@
 - 原建议的 **200 条 / 2 MiB HTTP 硬限制不可直接使用**。插件按 chunk 发送，413 属于不可重试失败，会丢弃 HTTP 支路中的整个 chunk。
 - 校准方向为：HTTP 使用有界流式大信封，内部按最多 200 条处理 / 提交；最后一次提交成功后才确认请求。部分提交后重试依赖事件唯一键。16 MiB / 32768 条的信封仅通过当前代表样本，尚需最坏情况上界及真实入库验证。
 - file 轮转按 chunk 生效，`rotate_max_size` 是触发阈值，不能视为严格单片上限；总容量预算要计入每片最大超出量。
-- 解析失败与分片不能继续使用实验配置里的 parser-only 路径；实验只输入合成数据，不得复制为生产配置。
+- 默认实验现使用 preflight / parser / normalize / UUID / finalize 链；原 parser-only 实验仅保留为 `--raw-transport`。两者都不是 production Compose 配置。
+- 文件打开失败有丢弃指标，恢复后可继续写新事件，但不会自动补写故障事件；HTTP 队列满的旧记录丢弃同样有指标。后续查询状态必须呈现这些介质缺口。
 
 这些是 L1 的实测修订，不改变“stdout → 独立 collector → 文件 + 内网 API → 日志库”的架构。
 
@@ -60,6 +61,6 @@ npm run check:logging-contract
 dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter FullyQualifiedName~RuntimeLogPolicyTests
 ```
 
-`node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。报告输出 `.tmp/logging-l1/collector-report.json`。`transport-observed-production-gate-blocked` 表示实验完成、仍禁止生产切换，不能当作发布成功。
+`node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-下一步仍在 L1：实现失败即裁剪的采集规范化、原生日志 / 长行适配与拒收计数，验证 HTTP 信封上界、队列满时丢弃可见性、API 完全不存在时的启动和文件权限故障；再进入 L2 宿主接入。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。下一步可在此契约上推进 L2 生成端；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
