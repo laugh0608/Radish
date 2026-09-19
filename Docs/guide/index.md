@@ -48,6 +48,7 @@
 - [数据库连接管理](/guide/database-connection)
 - [数据库结构变更协作口径](/guide/database-schema-change-governance)
 - [日志规范与实现说明](/guide/logging)
+- [全项目统一日志与跨容器汇聚专题（已确认方案）](/features/unified-logging-governance-design)
 - [Hangfire 定时任务指南](/guide/hangfire-scheduled-jobs)
 - [日志敏感数据与查询凭据保护](/guide/logging-sensitive-data)
 - [前端日志与敏感字段脱敏](/guide/frontend-logging)

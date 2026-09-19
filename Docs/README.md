@@ -42,6 +42,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [服务网关](./guide/gateway.md)
 - [部署指南](./deployment/guide.md)
 - [本地运行与排障手册](./guide/operations-runbook.md)
+- [全项目统一日志与跨容器汇聚专题（已确认方案）](./features/unified-logging-governance-design.md)
 - [文档篇幅治理](./guide/document-governance.md)
 
 ## 前端与交互

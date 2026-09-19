@@ -6,6 +6,8 @@
 
 本文说明 `radish.client`、`radish.console` 与 `@radish/http` 的前端日志入口、脱敏规则和后续维护要求。
 
+三级日志、公共实现收敛和 Node / Native 边界的重构目标见[统一日志专题方案](/features/unified-logging-governance-design)，目前尚未替换下文实现。
+
 ## 统一入口
 
 | workspace | 入口 |
