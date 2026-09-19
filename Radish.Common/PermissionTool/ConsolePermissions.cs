@@ -199,6 +199,7 @@ public static class ConsolePermissions
             ["/api/v1/Statistics/GetProductSalesRanking"] = new[] { DashboardView },
             ["/api/v1/Statistics/GetUserLevelDistribution"] = new[] { DashboardView },
             ["/hangfire(/.*)?"] = new[] { HangfireView },
+            ["/api/v1/HangfireSession/Create"] = new[] { HangfireView },
             ["/api/v1/ReliableOutbox/Replay"] = new[] { HangfireReplay },
             ["/api/v1/ReliableOutbox/GetDeadLetters"] = new[] { HangfireView },
         };

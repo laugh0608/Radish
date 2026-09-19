@@ -208,6 +208,7 @@ orleans.codegen.cs
 .codex-logs/
 .codex-build/
 .playwright-cli/
+/output/playwright/
 .dotnet-home/
 .dotnet-cli/
 .nuget/
@@ -310,6 +311,9 @@ DataBases/**
 
 # Deployment runtime data
 DeployData/**
+/Deploy/data/
+/Deploy/logs/
+/Deploy/backups/
 
 # Environment files
 .env

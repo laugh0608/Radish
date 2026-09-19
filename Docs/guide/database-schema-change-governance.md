@@ -32,7 +32,7 @@
 
 - 不在 Api / Gateway 启动时自动调用 `InitTables`。
 - 测试 / 生产数据库必须先备份，再运行同一 `DbMigrate apply` 迁移链；禁止宿主启动自动改 schema。
-- 生产环境固定使用 `Deploy/deploy-production.sh` 编排不可变镜像、停止写入、六库备份、显式 `apply`、独立 `verify` 和应用发布；不得用普通 `docker compose up -d` 代替该顺序。
+- 生产环境固定使用 `Deploy/deploy-production.sh` 编排不可变镜像、停止写入、六库备份、显式 `apply`、独立 `verify` 和应用发布；已有数据升级不得用普通 `docker compose up -d` 代替该顺序；首次空环境可通过 Compose 的一次性 DbMigrate 依赖完成初始化。
 - 默认只前滚；应用回退必须与数据库备份恢复配套，不能依赖未经演练的 Down SQL。
 - 每个发布候选至少覆盖旧基线升级、重复 apply、严格 verify、异常拒绝和备份恢复。
 

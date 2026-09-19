@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using System.Text;
 using System.IO;
 using System.Text.Json;
@@ -375,6 +376,19 @@ if (deploymentJwtValidationEnabled)
     jwtValidationMode = "local-certificate";
     jwtValidationTarget = $"{jwtIssuer} | {jwtSigningCertificate.Subject}";
 }
+
+builder.Services.AddScoped<IHangfireDashboardSessionService, HangfireDashboardSessionService>();
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(Path.GetFullPath(dataProtectionKeysPath)));
+}
+
+builder.Services.AddAuthentication()
+    .AddCookie(HangfireDashboardAuthentication.Scheme, options =>
+        HangfireDashboardAuthentication.Configure(options,
+            builder.Configuration["Hangfire:Dashboard:RoutePrefix"] ?? "/hangfire"));
 
 // 注册 JWT 认证服务（使用 Radish.Auth 作为 OIDC 授权服务器）
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

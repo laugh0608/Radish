@@ -246,18 +246,17 @@ docker compose -f Deploy/docker-compose.local.yaml up -d
 
 ```bash
 git clone https://github.com/laugh0608/Radish.git
-cd Radish
-mkdir -p DeployData/Postgres DeployData/Redis DeployData/AuthCerts
-mkdir -p DeployBackups DataBases Logs
-cp Deploy/.env.example Deploy/.env
-chmod 600 Deploy/.env
+cd Radish/Deploy
+cp .env.example .env
+chmod 600 .env
+# 编辑 .env：域名、密码、证书口令及镜像版本
+docker compose up -d
 ```
 
 测试环境使用 `RADISH_IMAGE_TRACK=test`，可按测试策略选择固定 `v*-test` tag；生产环境必须使用 `release` track、与发布记录一致的不可变 `v*-release` tag、`production` stage、关闭开发种子，并设置专用 `RADISH_BACKUP_PATH`。
 
 ```bash
-# 测试环境
-cd Deploy
+# 测试环境后续更新（当前位于 Deploy）
 docker compose config
 docker compose pull
 docker compose up -d
@@ -269,6 +268,48 @@ cd ..
 ```
 
 部署态由环境变量把 Main、Log、Message、Chat、OpenIddict 与 Hangfire 指向 PostgreSQL，并启用 Redis；公开地址、Gateway、Issuer、CORS 与 OIDC 回调统一服从 `RADISH_PUBLIC_URL`。TLS 在外部反向代理终止，容器内保持 HTTP。持久化目录、证书生成和生产 migration 的完整契约分别见[配置管理](/guide/configuration)、[OpenIddict 数据库与迁移](/guide/authentication-openiddict-database)和[生产数据库迁移与发布编排](/guide/production-database-migration-deployment)。
+
+### 持久化目录与整目录迁移
+
+默认镜像部署的全部宿主持久化路径都在 `Deploy/` 内，Compose 首次启动自动创建缺失目录：
+
+```text
+Deploy/
+├── .env
+├── docker-compose.yaml
+├── postgres-init/
+├── data/
+│   ├── postgres/       # 六个 PostgreSQL 数据库
+│   ├── redis/          # Redis AOF
+│   ├── auth-certs/     # OIDC 签名、加密证书
+│   └── app/            # 附件、分片、配置及 API/Auth Data Protection 密钥
+├── logs/               # 宿主日志
+└── backups/            # 生产发布脚本的逻辑备份
+```
+
+首次空环境可以直接使用上述 `docker compose up -d`。已有数据的生产升级继续使用备份、`apply`、独立 `verify` 和发布编排，不能把目录调整解释成取消迁移门禁。
+
+**旧部署迁入新布局**：先保留现有 `.env` 和镜像版本，再在原 Compose 配置下停止全部容器。以下复制示例仅适用于旧版默认路径；自定义路径以当前 `docker compose config` 的挂载源为准，不输出或共享含密码的解析配置。
+
+```bash
+# 当前位于 Deploy；先停止旧路径下的全部容器，包括 PostgreSQL / Redis。
+docker compose stop
+# 新目标必须尚不存在，避免混合两份 PostgreSQL 数据目录。
+test ! -e data && mkdir data
+cp -a ../DeployData/Postgres data/postgres
+cp -a ../DeployData/Redis data/redis
+cp -a ../DeployData/AuthCerts data/auth-certs
+cp -a ../DataBases data/app
+# 若旧 Logs / DeployBackups 存在且新目标不存在，再分别复制：
+# cp -a ../Logs logs
+# cp -a ../DeployBackups backups
+```
+
+保留 `.env` 内原有密码、库名、项目名、域名、证书口令；只将路径改为 `.env.example` 中的 `./data/postgres`、`./data/redis`、`./data/auth-certs`、`./data/app`、`./logs` 和 `./backups`。切换代码时先核对最终挂载，再按对应部署流程启动。旧 `.env` 的显式路径不会被新默认值自动覆盖，未搬迁前可继续保持旧挂载；旧 `DataBases / Logs` 可通过新增的 `RADISH_APP_DATA_PATH / RADISH_LOGS_PATH` 显式指定。完成附件、登录和数据核对前保留原目录。
+
+**整目录冷备份 / 搬机**：停止全部容器后，在父目录以可保留 UID/GID、权限与隐藏文件的方式打包整个 `Deploy`，包括 `.env`；恢复到目标机器时保留文件属主和权限。使用相同 PostgreSQL 主版本及兼容架构，固定五个应用镜像的版本或 digest 后再启动。`test-latest` 是可变别名，单独保存 `.env` 并不能固定它指向的镜像。不要在 PostgreSQL 运行中直接压缩数据目录；在线备份应使用逻辑备份或数据库支持的一致性备份方案。
+
+这一保证适用于默认本地存储和 `Deploy` 内路径。自定义到目录外的挂载、符号链接指向的数据、S3/对象存储及外部 TLS 反向代理配置需另行备份；压缩包含凭据与私钥，应按部署密钥保管。开发专用 `docker-compose.local.yaml` 仍按本地源码与开发证书布局运行，不属于此独立镜像部署布局。
 
 ### 最小回滚入口
 

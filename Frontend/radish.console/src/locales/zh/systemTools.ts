@@ -2,7 +2,7 @@ export const zhSystemTools = {
   'systemTools.hangfire.documentTitle': '定时任务',
   'systemTools.hangfire.eyebrow': '任务运维',
   'systemTools.hangfire.title': '定时任务',
-  'systemTools.hangfire.description': '通过受保护的 Console 入口查看 Hangfire Dashboard，当前仍保留外部运维面板承载。',
+  'systemTools.hangfire.description': '查看任务执行、失败记录和运行状态。',
   'systemTools.hangfire.status': '宿主任务看板',
   'systemTools.hangfire.open': '打开新窗口',
   'systemTools.hangfire.metrics.label': '定时任务入口状态',
@@ -18,4 +18,7 @@ export const zhSystemTools = {
   'systemTools.hangfire.panel.label': 'Hangfire Dashboard 外部面板',
   'systemTools.hangfire.panel.notice': '当前页面承载宿主任务看板，不在前端内重建任务队列、失败重试或运行审计模型。',
   'systemTools.hangfire.panel.title': 'Hangfire Dashboard',
+  'systemTools.hangfire.loading': '正在连接任务看板…',
+  'systemTools.hangfire.failed': '无法打开任务看板，请确认登录状态和访问权限后重试。',
+  'systemTools.hangfire.retry': '重试',
 } as const;

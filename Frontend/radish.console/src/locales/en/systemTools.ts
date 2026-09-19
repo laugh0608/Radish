@@ -2,7 +2,7 @@ export const enSystemTools = {
   'systemTools.hangfire.documentTitle': 'Scheduled tasks',
   'systemTools.hangfire.eyebrow': 'Task operations',
   'systemTools.hangfire.title': 'Scheduled tasks',
-  'systemTools.hangfire.description': 'Open the protected Hangfire Dashboard from Console. The host dashboard remains the operations surface.',
+  'systemTools.hangfire.description': 'View job execution, failures, and server status.',
   'systemTools.hangfire.status': 'Host task dashboard',
   'systemTools.hangfire.open': 'Open in new window',
   'systemTools.hangfire.metrics.label': 'Scheduled-task entry status',
@@ -18,4 +18,7 @@ export const enSystemTools = {
   'systemTools.hangfire.panel.label': 'External Hangfire Dashboard panel',
   'systemTools.hangfire.panel.notice': 'This page hosts the task dashboard. Console does not duplicate its queue, failed-retry, or execution-audit models.',
   'systemTools.hangfire.panel.title': 'Hangfire Dashboard',
+  'systemTools.hangfire.loading': 'Connecting to the job dashboard…',
+  'systemTools.hangfire.failed': 'Unable to open the dashboard. Check your sign-in and permissions, then retry.',
+  'systemTools.hangfire.retry': 'Retry',
 } as const;

@@ -117,7 +117,7 @@
 - 页面内 `usePermission(CONSOLE_PERMISSIONS.xxx)`
 - 入口守卫中的 `hasPermission(user, CONSOLE_PERMISSIONS.xxx)`
 - `ConsolePermissions.ApiPermissionMappings`
-- `InitialDataSeeder.Identity.cs` 中的 `ApiModule.LinkUrl`
+- `InitialDataSeeder.ApiPermissions.cs` 中的 `ApiModule.LinkUrl`
 - `InitialDataSeeder.ConsoleAuthorization.cs` 中的 `ConsoleResourceApiSeed`
 
 说明：

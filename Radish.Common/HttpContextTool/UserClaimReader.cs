@@ -5,6 +5,19 @@ namespace Radish.Common.HttpContextTool;
 
 public static class UserClaimReader
 {
+    /// <summary>读取已验证身份的 Token 到期时间；不从未验证的原始 Token 推导会话期限。</summary>
+    public static DateTimeOffset? GetTokenExpiresAtUtc(ClaimsPrincipal? principal)
+    {
+        if (!long.TryParse(GetFirstClaimValue(principal, UserClaimTypes.Expiration), out var seconds) ||
+            seconds < DateTimeOffset.MinValue.ToUnixTimeSeconds() ||
+            seconds > DateTimeOffset.MaxValue.ToUnixTimeSeconds())
+        {
+            return null;
+        }
+
+        return DateTimeOffset.FromUnixTimeSeconds(seconds);
+    }
+
     public static string GetUserName(ClaimsPrincipal? principal, string? token = null, string defaultValue = "")
     {
         var name = GetFirstClaimValue(principal, UserClaimTypes.Name)

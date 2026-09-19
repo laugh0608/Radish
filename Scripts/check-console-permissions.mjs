@@ -10,7 +10,7 @@ const frontendPermissionsPath = join(repoRoot, 'Frontend/radish.console/src/cons
 const routeMetaPath = join(repoRoot, 'Frontend/radish.console/src/router/routeMeta.ts');
 const consoleSourceRoot = join(repoRoot, 'Frontend/radish.console/src');
 const backendPermissionsPath = join(repoRoot, 'Radish.Common/PermissionTool/ConsolePermissions.cs');
-const identitySeederPath = join(repoRoot, 'Radish.DbMigrate/InitialDataSeeder.Identity.cs');
+const apiPermissionsSeederPath = join(repoRoot, 'Radish.DbMigrate/InitialDataSeeder.ApiPermissions.cs');
 const consoleAuthorizationSeederPath = join(repoRoot, 'Radish.DbMigrate/InitialDataSeeder.ConsoleAuthorization.cs');
 const entryOnlyPermissions = new Set(['console.access']);
 const compatibilityOnlyPermissions = new Set(['console.system-config.create', 'console.system-config.delete']);
@@ -204,7 +204,7 @@ try {
   const sourceFiles = getAllSourceFiles(consoleSourceRoot);
   const permissionReferences = parsePermissionReferences(sourceFiles, frontendPermissions);
   const mappings = parseApiPermissionMappings(readText(backendPermissionsPath), backendPermissions);
-  const seedUrls = parseSeedUrls(readText(identitySeederPath));
+  const seedUrls = parseSeedUrls(readText(apiPermissionsSeederPath));
   const consoleResourceApiSeedUrls = parseConsoleResourceApiSeedUrls(readText(consoleAuthorizationSeederPath));
 
   const frontendPermissionValues = unique([...frontendPermissions.values()]);

@@ -229,6 +229,7 @@ internal static partial class InitialDataSeeder
         new(61082, "/api/v1/SystemConfig/RestoreConfigDefault", "Action"),
         new(61083, "/api/v1/SystemConfig/DeleteConfig", "Action"),
         new(61090, "/hangfire(/.*)?", "View"),
+        new(61090, "/api/v1/HangfireSession/Create", "View"),
         new(61090, "/api/v1/ReliableOutbox/GetDeadLetters", "View"),
         new(61091, "/api/v1/ReliableOutbox/Replay", "Action")
     ];

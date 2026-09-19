@@ -2,7 +2,7 @@
 
 > 状态：当前运行说明
 >
-> 最后更新：2026-07-20
+> 最后更新：2026-09-19
 
 Hangfire 是 `Radish.Api` 的后台任务调度与执行设施。任务定义与注册以 `Radish.Api/Program.cs` 为准，Hangfire 自有存储只保存调度和执行状态，不进入业务库 `RadishSchemaVersion` ledger。
 
@@ -12,10 +12,16 @@ Hangfire 是 `Radish.Api` 的后台任务调度与执行设施。任务定义与
 - Gateway：`https://localhost:5000/hangfire`
 - Console：Gateway `/console/hangfire` 页面承载受保护的 Dashboard 外壳
 
-本地回环请求允许进入 Dashboard。远程请求必须完成认证，并满足以下任一条件：
+所有 Dashboard 请求均需认证（包括本地回环），并满足以下任一条件：
 
 - 当前用户为 `System / Admin`；
 - 当前角色具备 `console.hangfire.view`。
+
+Console 先通过 Bearer 认证调用 `POST /api/v1/HangfireSession/Create`，接口再次检查 `console.hangfire.view`，再签发独立的 `__Secure-radish.hangfire` Cookie。Cookie 为 `HttpOnly / Secure / SameSite=Strict`，路径限定为配置中的 Dashboard 路径，最长有效期 5 分钟且不超过原 Bearer 的到期时间，不自动滑动延长。页面打开期间在到期前重新通过 Bearer 兑换；离开后不再续期，新窗口独立打开的看板最多沿用剩余有效期。退出 Console 后的既有看板 Cookie 也受此短期上限约束。
+
+看板每次请求仍复核角色权限；该 Cookie 不参与普通 API 的默认 Bearer 认证，不把访问 Token 放入 URL。浏览器应从 HTTPS Gateway 的 Console 打开，API HTTP 直连仅适用于手动携带 Bearer 的诊断请求。Console 会检查 Cookie 是否能实际访问看板，认证、代理或续期失败显示重试提示。Hangfire 原有防伪校验继续启用。
+
+部署将 API 与 Auth 各自的 Data Protection 密钥存入 `Deploy/data/app/DataProtection/api` 和 `auth`；备份时与证书一起保留。
 
 Dashboard 只用于查看、诊断和按权限执行 Hangfire 自带操作，不代表项目已经实现独立任务编排平台。生产环境应继续通过 Gateway、可信代理和访问控制限制入口。
 

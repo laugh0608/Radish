@@ -332,3 +332,17 @@ test('external health failure stops the partially published application batch', 
     'DEPLOY_FAILED',
   )));
 });
+
+test('image deployment keeps every default writable bind mount within Deploy', () => {
+  const source = fs.readFileSync(composePath, 'utf8');
+  const mounts = [...source.matchAll(/^\s+- (\$\{[^}]+\}|\.\.?\/[^:]+):\//gm)]
+    .map(match => match[1].replace(/^\$\{[^:]+:-([^}]+)\}$/, '$1'));
+  assert.ok(mounts.length >= 12);
+  assert.ok(mounts.every(mount => mount.startsWith('./') && !mount.includes('../')), mounts.join('\n'));
+  const example = fs.readFileSync(path.join(repoRoot, 'Deploy', '.env.example'), 'utf8');
+  for (const name of ['POSTGRES_DATA', 'REDIS_DATA', 'AUTH_CERTS', 'APP_DATA', 'LOGS', 'BACKUP']) {
+    assert.match(example, new RegExp(`^RADISH_${name}_PATH=\\./`, 'm'));
+  }
+  assert.match(readComposeServiceBlock('api'), /DataProtection__KeysPath: \/app\/DataBases\/DataProtection\/api/);
+  assert.match(readComposeServiceBlock('auth'), /DataProtection__KeysPath: \/app\/DataBases\/DataProtection\/auth/);
+});

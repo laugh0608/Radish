@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.DataProtection;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -204,6 +205,13 @@ builder.Services.AddAuthHostHealthChecks(builder.Configuration, builder.Environm
 builder.Services.AddHostedService<OpenIddictSeedHostedService>();
 
 // 添加认证：Cookie（用于登录页面会话）
+var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
+{
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(Path.GetFullPath(dataProtectionKeysPath)));
+}
+
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
