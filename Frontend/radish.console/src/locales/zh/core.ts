@@ -1,4 +1,5 @@
 export const zhCore = {
+  'consolePage.context': '说明与权限边界',
   'lang.zh': '中文',
   'lang.en': 'EN',
   'lang.switch': '切换语言',

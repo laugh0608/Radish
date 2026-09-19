@@ -11,13 +11,13 @@
   top: 0;
   bottom: 0;
   z-index: 10;
-  padding: 0 16px;
+  padding: 0 8px;
   background: var(--console-bg-muted) !important;
   border-right: 1px solid var(--console-border-subtle);
 }
 
 .admin-logo {
-  height: 82px;
+  height: var(--console-header-height);
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -68,13 +68,13 @@
 }
 
 .admin-sider .ant-menu {
-  margin-top: 18px;
+  margin-top: 8px;
   background: transparent;
   border-inline-end: 0 !important;
 }
 
 .admin-sider .ant-menu-item-group-title {
-  padding: 14px 10px 6px;
+  padding: 10px 10px 4px;
   color: var(--console-text-muted);
   font-size: 11px;
   font-weight: 800;
@@ -82,9 +82,10 @@
 }
 
 .admin-sider .ant-menu-item {
-  width: 266px;
-  height: 42px;
-  margin: 5px 0;
+  width: 100%;
+  height: 34px;
+  line-height: 32px;
+  margin: 2px 0;
   padding-inline: 14px !important;
   color: var(--console-text-secondary);
   border: 1px solid transparent;
@@ -113,7 +114,7 @@
 }
 
 .admin-sider.ant-layout-sider-collapsed .ant-menu-item {
-  width: 60px;
+  width: 48px;
   padding-inline: 0 !important;
 }
 
@@ -147,26 +148,26 @@
 
 /* 根据侧边栏展开/折叠状态调整右侧布局的左边距 */
 .admin-layout > .ant-layout {
-  margin-left: 300px;
+  margin-left: var(--console-sidebar-width);
   transition: margin-left 0.2s;
   display: flex;
   flex-direction: column;
   flex: 1;
-  width: calc(100% - 300px);
+  width: calc(100% - var(--console-sidebar-width));
   background: var(--console-bg-app);
 }
 
 .admin-layout > .ant-layout.collapsed {
-  margin-left: 88px;
-  width: calc(100% - 88px);
+  margin-left: var(--console-sidebar-collapsed-width);
+  width: calc(100% - var(--console-sidebar-collapsed-width));
 }
 
 .admin-header {
   position: sticky;
   top: 0;
   z-index: 9;
-  height: 84px;
-  padding: 0 30px;
+  height: var(--console-header-height);
+  padding: 0 16px;
   background: var(--console-bg-surface);
   display: flex;
   align-items: center;
@@ -238,7 +239,7 @@
 
 .admin-content {
   margin: 0;
-  padding: 26px 30px 30px;
+  padding: 14px 16px 20px;
   background: transparent;
   min-height: 280px;
   flex: 1;
@@ -246,7 +247,7 @@
 }
 
 .admin-breadcrumb {
-  margin-bottom: 26px;
+  margin-bottom: 12px;
   color: var(--console-text-secondary);
   font-size: 14px;
   font-weight: 650;

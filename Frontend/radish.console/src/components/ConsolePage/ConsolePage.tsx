@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import type { ReactNode } from 'react';
 import './ConsolePage.css';
 
@@ -113,8 +114,9 @@ export function ConsoleResourceList({
   mobileToolbar,
   desktopList,
   mobileList,
-    context,
+  context,
 }: ConsoleResourceListProps) {
+  const { t } = useTranslation();
   return (
     <div className="console-resource-list">
       <div className="console-resource-list__main">
@@ -125,7 +127,10 @@ export function ConsoleResourceList({
           <div className="console-resource-list__mobile">{mobileList}</div>
         </section>
       </div>
-      {context ? <aside className="admin-table-aside console-resource-list__context">{context}</aside> : null}
+      {context ? <details className="admin-table-aside console-resource-list__context">
+        <summary className="console-resource-context-summary">{t('consolePage.context')}</summary>
+        {context}
+      </details> : null}
     </div>
   );
 }

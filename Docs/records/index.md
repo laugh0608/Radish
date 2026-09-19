@@ -41,6 +41,8 @@
 
 ## 四、宿主运行、部署与发布记录
 
+- [test-latest 部署反馈修复（2026-09-19）](/records/test-deployment-maintenance-2026-09-19)
+
 - [m14-host-runtime-checklist](/records/m14-host-runtime-checklist)
 - [m14-host-maintenance-record-example](/records/m14-host-maintenance-record-example)
 - [m14-deployment-review-record-template](/records/m14-deployment-review-record-template)

@@ -1,16 +1,15 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { createOidcAuthorizationUrl } from '@radish/http';
-import { AntButton, message } from '@radish/ui';
-import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
-import { ClientBackLink } from '@/components/ClientBackLink';
-import './Login.css';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
-import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
+import { createOidcAuthorizationUrl } from '@radish/http';
+import { AntButton } from '@radish/ui';
+import { getAuthServerBaseUrl, getRedirectUri } from '@/config/env';
+import { ClientBackLink } from '@/components/ClientBackLink';
+import { useDocumentTitle } from '@/hooks/useDocumentTitle';
 import { normalizeLanguage } from '@/locales/language';
-import { log } from '@/utils/logger';
 import { rememberConsoleAuthReturnPath } from '@/services/authReturnPath';
+import { log } from '@/utils/logger';
+import './Login.css';
 
 interface LoginLocationState {
   returnLocation?: {
@@ -25,13 +24,15 @@ export function Login() {
   const location = useLocation();
   const language = normalizeLanguage(i18n.resolvedLanguage ?? i18n.language) ?? 'zh';
   useDocumentTitle(t('console.login.title'));
-  const [loading, setLoading] = useState(false);
-  const hasAutoLoginTriggeredRef = useRef(false);
+  const [failed, setFailed] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const authorizationRef = useRef<Promise<string> | null>(null);
 
-  const handleLogin = useCallback(() => {
-    setLoading(true);
+  useEffect(() => {
+    let cancelled = false;
 
-    void createOidcAuthorizationUrl({
+    // StrictMode 重放 effect 时复用同一次 PKCE 创建，避免覆盖 state / verifier。
+    const authorization = authorizationRef.current ??= createOidcAuthorizationUrl({
       clientId: 'radish-console',
       authServerBaseUrl: getAuthServerBaseUrl(),
       redirectUri: getRedirectUri(),
@@ -40,92 +41,53 @@ export function Login() {
         culture: language,
         ui_locales: language,
       },
-    }).then((authorizeUrl) => {
+    });
+
+    void authorization.then((authorizeUrl) => {
+      if (cancelled) {
+        return;
+      }
+
       const locationState = location.state as LoginLocationState | null;
       if (locationState?.returnLocation) {
         rememberConsoleAuthReturnPath(locationState.returnLocation);
       }
-      window.location.href = authorizeUrl;
+      window.location.replace(authorizeUrl);
     }).catch((error: unknown) => {
+      if (cancelled) {
+        return;
+      }
+
       log.error('Login', '启动 OIDC 登录失败', error);
-      setLoading(false);
-      message.error(t('console.login.startFailed'));
+      setFailed(true);
     });
-  }, [language, location.state, t]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
+    return () => {
+      cancelled = true;
+    };
+  }, [attempt, language, location.state]);
 
-    if (hasAutoLoginTriggeredRef.current) {
-      return;
-    }
-
-    const shouldAutoLogin = new URL(window.location.href).searchParams.get('auto') === '1';
-    if (!shouldAutoLogin) {
-      return;
-    }
-
-    hasAutoLoginTriggeredRef.current = true;
-    handleLogin();
-  }, [handleLogin]);
+  const retryLogin = () => {
+    authorizationRef.current = null;
+    setFailed(false);
+    setAttempt((current) => current + 1);
+  };
 
   return (
-    <div className="login-container">
-      <div className="login-language-switcher">
-        <LanguageSwitcher />
-      </div>
-      <div className="login-box">
-        {/* 左侧信息区域 */}
-        <div className="login-info">
-          <h2>Radish Console</h2>
-          <p>{t('console.login.description')}</p>
-          <p>{t('console.login.summary')}</p>
-
-          <div className="login-info-features">
-            <div className="login-info-feature">
-              <div className="login-info-feature-icon">+</div>
-              <span>{t('console.login.feature.oidc')}</span>
-            </div>
-            <div className="login-info-feature">
-              <div className="login-info-feature-icon">+</div>
-              <span>{t('console.login.feature.permission')}</span>
-            </div>
-            <div className="login-info-feature">
-              <div className="login-info-feature-icon">+</div>
-              <span>{t('console.login.feature.monitoring')}</span>
-            </div>
-            <div className="login-info-feature">
-              <div className="login-info-feature-icon">+</div>
-              <span>{t('console.login.feature.application')}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* 右侧登录表单区域 */}
-        <div className="login-form">
-          <div className="login-header">
-            <h1>{t('console.login.title')}</h1>
-            <p>{t('console.login.hint')}</p>
-          </div>
-
-          <div className="login-content">
-            <AntButton
-              type="primary"
-              size="large"
-              block
-              onClick={handleLogin}
-              loading={loading}
-            >
-              {t('console.login.action')}
+    <main className="console-login-transition">
+      {failed ? (
+        <>
+          <p role="alert">{t('console.login.startFailed')}</p>
+          <div className="console-login-transition__actions">
+            <AntButton type="primary" onClick={retryLogin}>
+              {t('console.login.retry')}
             </AntButton>
-            <div className="login-client-back">
-              <ClientBackLink />
-            </div>
+            <ClientBackLink />
           </div>
-        </div>
-      </div>
-    </div>
+        </>
+      ) : (
+        <p role="status" aria-live="polite">{t('console.login.redirecting')}</p>
+      )}
+    </main>
   );
 }

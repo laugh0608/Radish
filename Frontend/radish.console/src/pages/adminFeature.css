@@ -2,7 +2,7 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--console-page-gap);
   min-width: 0;
   max-width: 100%;
 }
@@ -10,7 +10,7 @@
 .admin-feature-card {
   min-width: 0;
   max-width: 100%;
-  padding: 20px;
+  padding: var(--console-panel-padding);
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
   border-radius: var(--console-radius-panel);
@@ -288,7 +288,7 @@
 .admin-table-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-  gap: 20px;
+  gap: var(--console-page-gap);
   align-items: start;
 }
 
@@ -335,7 +335,7 @@
 .admin-table-panel,
 .admin-table-toolbar,
 .admin-table-aside {
-  padding: 20px;
+  padding: var(--console-panel-padding);
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
   border-radius: var(--console-radius-panel);
@@ -399,7 +399,7 @@
 .admin-overview-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
-  gap: 20px;
+  gap: var(--console-page-gap);
   align-items: start;
 }
 
@@ -411,7 +411,7 @@
 
 .admin-overview-main {
   display: grid;
-  gap: 20px;
+  gap: var(--console-page-gap);
 }
 
 .admin-overview-aside {
@@ -423,7 +423,7 @@
 
 .admin-overview-panel,
 .admin-overview-aside {
-  padding: 20px;
+  padding: var(--console-panel-padding);
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
   border-radius: var(--console-radius-panel);
@@ -515,7 +515,7 @@
 .admin-settings-layout {
   display: grid;
   grid-template-columns: minmax(160px, 220px) minmax(0, 1fr) minmax(260px, 320px);
-  gap: 20px;
+  gap: var(--console-page-gap);
   align-items: start;
 }
 
@@ -535,7 +535,7 @@
 .admin-settings-nav,
 .admin-settings-aside,
 .admin-setting-section {
-  padding: 20px;
+  padding: var(--console-panel-padding);
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
   border-radius: var(--console-radius-panel);
@@ -583,7 +583,7 @@
 
 .admin-settings-main {
   display: grid;
-  gap: 20px;
+  gap: var(--console-page-gap);
 }
 
 .admin-setting-section__title {
@@ -624,7 +624,7 @@
 
 .governance-workbench {
   display: grid;
-  gap: 20px;
+  gap: var(--console-page-gap);
   grid-template-areas: "queue detail actions";
   grid-template-columns: minmax(360px, 520px) minmax(0, 1fr) minmax(300px, 360px);
   align-items: start;
@@ -635,7 +635,7 @@
 .governance-workbench__actions {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: var(--console-page-gap);
   min-width: 0;
 }
 

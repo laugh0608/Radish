@@ -1,4 +1,9 @@
 :root {
+  --console-sidebar-width: 224px;
+  --console-sidebar-collapsed-width: 64px;
+  --console-header-height: 56px;
+  --console-page-gap: 12px;
+  --console-panel-padding: 12px;
   --console-font-sans: var(--rd-font-sans);
   --console-bg-app: var(--rd-bg-app);
   --console-bg-surface: var(--rd-bg-surface);
@@ -63,5 +68,21 @@ body {
     scroll-behavior: auto !important;
     transition-delay: 0ms !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* Console 的桌面工作区使用紧凑控件，移动触控尺寸独立保留。 */
+@media (min-width: 769px) {
+  .admin-layout .radish-button {
+    min-height: 32px;
+    padding: 5px 10px;
+    line-height: 20px;
+    white-space: nowrap;
+    box-shadow: none;
+  }
+
+  .admin-layout .ant-table-wrapper .ant-table .ant-table-thead > tr > th.ant-table-cell,
+  .admin-layout .ant-table-wrapper .ant-table .ant-table-tbody > tr > td.ant-table-cell {
+    padding: 10px 12px;
   }
 }

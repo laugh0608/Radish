@@ -98,6 +98,8 @@ Console 使用普通 `<a href>` 或 `window.location.assign()` 返回 `backTo`�
 
 ### 3.4 OIDC 往返保持
 
+`/console/login` 只承担 OIDC 自动跳转，不再展示独立登录卡片或要求再次点击登录。直接进入该地址与携带旧 `auto=1` 参数的入口行为一致；首次渲染即为简短跳转状态，启动失败才提供重试与返回社区。授权跳转使用 history replace，避免后退再次进入自动跳转页；React StrictMode 重放不重复创建 PKCE，离开页面后不执行迟到的跳转。
+
 首次进入 Console 可能经过 `/console/login -> Auth -> /console/callback`。为避免授权往返丢失产品来源：
 
 - Console 在 Router 处理前读取并校验 `backTo`；
