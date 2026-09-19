@@ -144,9 +144,9 @@ public class PostRepository : BaseRepository<Post>, IPostRepository
 
     private async Task ApplyPostLikeCountDeltaAsync(long postId, int delta)
     {
-        var tableName = RepositorySqlHelper.QuoteIdentifier(DbProtectedClient.EntityMaintenance.GetEntityInfo<Post>().DbTableName);
-        var idColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.Id));
-        var likeCountColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Post.LikeCount));
+        var tableName = RepositorySqlHelper.GetTableIdentifier<Post>(DbProtectedClient);
+        var idColumn = RepositorySqlHelper.GetColumnIdentifier<Post>(DbProtectedClient, nameof(Post.Id));
+        var likeCountColumn = RepositorySqlHelper.GetColumnIdentifier<Post>(DbProtectedClient, nameof(Post.LikeCount));
 
         if (delta > 0)
         {
