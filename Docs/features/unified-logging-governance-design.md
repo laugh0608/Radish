@@ -342,9 +342,10 @@ L2–L6 是一个完整重构目标的交付切片，不能把“只降低 SQL �
 
 代码落地按批次执行定向后端测试、前端测试 / type-check / lint / build、Compose 契约、身份 / 权限 / 时间 / 文档与仓库卫生检查。真实服务、隔离数据库和采集容器启动在当批给出版本、端口、影响、清理方式并获授权；本次文档检查不替代这些运行态证据。
 
-## 13. 本轮交付与后续执行
+## 13. 当前交付与后续执行
 
-- 本轮已做：仓库现状审计、方案设计、容器采集官方能力核对、文档及索引更新。
-- 本轮未做：运行时重构、镜像依赖新增、服务启动、数据库迁移、线上日志采集、告警发送或发布部署。
-- 已确认的架构边界：一个独立采集容器；生产宿主统一标准流出口；文件 + API 内网入库两条集中持久化支路；统一日志查询与 Console 内告警；保留独立审计权威性。
-- 精确镜像版本、批次大小、缓存预算和文件轮转行为进入 L1 实测冻结；这些不是留给生产现场临时决定的配置问题。
+- 已完成方案确认、现状审计、统一事件策略及 .NET / Node 生成契约；实现入口见[事件契约](./unified-logging-contract.md)。
+- L1 已取得本机 Linux arm64 的传输、安全裁剪及故障可见性证据；固定版本 / digest、HTTP 候选上限、队列与轮转限制见[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)及[采集边界记录](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。这不代表全部平台或磁盘故障门禁关闭。
+- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)。`RadishLogging.Enabled` 默认 false，SQL / AOP / DbMigrate / seed / Rust 与业务事件分类继续治理。
+- 真实内网入库、新日志表、Console 查询与告警、旧链路退出尚未完成；没有切换 production Compose、发布镜像、改写线上数据或发送告警。
+- 已确认的架构仍为独立 collector、统一标准流出口、文件与内网 API 两条持久化支路、Console 查询 / 提醒及独立审计权威性；下一步顺位由[当前规划](../planning/current.md)维护。

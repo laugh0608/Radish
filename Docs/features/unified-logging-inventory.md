@@ -4,7 +4,7 @@
 >
 > 数量表基于日志专题梳理时的源码快照；后续提交整理已将 API 权限种子从 `InitialDataSeeder.Identity.cs` 按职责移到 `InitialDataSeeder.ApiPermissions.cs`，数量不作实时门禁。
 >
-> 本页为[统一日志专题](./unified-logging-governance-design.md)的代码证据附录，不是线上配置审计，也不代表下列缺口已修复。
+> 本页保留[统一日志专题](./unified-logging-governance-design.md)实施前的审计快照，不是当前实现清单或线上配置审计。当天后续 L1 / L2 入口改动以[事件契约与实现进度](./unified-logging-contract.md)为准；下表数量和旧入口描述不随实现逐项改写。
 
 ## 1. 入口、分发与存储
 
@@ -92,6 +92,6 @@
 
 - 已完成静态检索和代表链路阅读；未逐条人工审阅全部业务日志调用，也未宣称完成全量运行覆盖。
 - 未连接线上 Docker / 数据库，未确认服务器实际 LogLevel、日志体积、留存期或外部反代配置。
-- 官方文档已核对 Forward、HTTP、文件、缓冲等能力；精确版本与配置兼容性尚未实测。
+- 官方文档已核对 Forward、HTTP、文件、缓冲等能力；审计时尚未实测精确版本与配置兼容性；后续已取得的固定候选实验及未关闭门禁见[事件契约](./unified-logging-contract.md)。
 - 宿主完全启动前的崩溃、容器被 OOM kill、Docker daemon 本身的错误不一定产生应用事件；需要状态 / 外部监测补充，不能靠解析标准流包办。
 - 上一批论坛、Hangfire、部署目录和 Console 密度修复继续保留；其测试结果不算本日志重构验收证据。

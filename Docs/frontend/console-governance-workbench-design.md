@@ -4,7 +4,7 @@
 >
 > 首次日期：2026-05-24（Asia/Shanghai）
 >
-> 最近更新：2026-08-12（Asia/Shanghai）
+> 最近更新：2026-09-19（Asia/Shanghai）
 >
 > 适用范围：`radish.console` 公共壳层、侧栏、顶栏、工具条、表格 CRUD、治理工作台、设置策略、文档治理、权限矩阵、运维任务和移动端 Console 任务流。后续按设计稿编号和页面类型逐步对齐，不直接重写 Console 全站。
 >
@@ -68,11 +68,13 @@
 >
 > `2026-08-09` 更新：R1-C02 正式实现与 Gateway 验收已经关闭；[R2-C03 readiness](/records/f4-r-r2-c03-console-settings-permissions-readiness-audit-2026-08-09)确认设置与权限矩阵继续保持 R2，并复用 Console 五项真实入口。Mobile 权限矩阵固定只读，System Config 默认只读且只允许 Low 风险写入，Medium 设置与角色授权写入保持 PC-only；本类型不新增隐藏全局导航的任务壳层。内建角色保护、只读矩阵路由、授权单调版本 / 原子 CAS、系统设置结构化冲突与配置—审计共同提交先进入代码能力门禁，关闭前不修改 Pencil。
 
+> 2026-09-19 密度修订：当前代码尺寸与列表优先规则以[Console 样式规范](./console-style-guide.md)为准；历史 Pencil 代表稿保留原样，不作为恢复旧留白或旧尺寸的依据。
+
 ## 目标
 
 把 Console 从零散后台页面收束为一套可复用的高密度管理产品结构：
 
-- 公共壳层：浅色图标侧栏、84 高顶栏、状态 chip、主操作、页面工具条。
+- 公共壳层：浅色图标侧栏、56px 顶栏、状态 chip、主操作、页面工具条。
 - 治理工作台：举报队列、目标快照、回看状态、审核动作、手动禁言 / 封禁、治理日志。
 - 经验治理：用户经验概览、异常观察、经验流水、复核结论、冻结 / 解冻、管理员调整、等级配置。
 - 后台功能页：总览调度、表格 CRUD、设置策略、商业订单、文档治理、权限矩阵和运维任务。
@@ -100,7 +102,7 @@ Console 代表设计使用 `R1-C01 / R1-C02` 与 `R2-C03`。旧 `console-governa
 | 编号 | 画板 | 用途 |
 | --- | --- | --- |
 | `P00` | `Console Shell Common Components` | 公共 Console 壳层规范：`ConsoleShell`、`ConsoleSidebar`、`ConsoleTopbar`、`PageToolbar`、`MobileShell` |
-| `P01` | `Console Shell Foundation - Layout System` | Console 专用纸感壳层、侧栏、84 高命令栏、指标、表格样板、动作层级和状态槽 |
+| `P01` | `Console Shell Foundation - Layout System` | 历史纸感壳层、侧栏、84px 命令栏、指标与表格样板；当前实现尺寸已按 2026-09-19 密度修订覆盖 |
 | `P02` | `Console Content Moderation - Cases and Appeals Desk` | 案件 / 申诉队列、目标与原决定证据、复核动作、纠正执行和事件留痕工作台 |
 | `P03` | `Console Experience Governance - Ledger Desk` | 经验观察候选、用户摘要、趋势证据、流水定位和复核动作 |
 | `P04` | `Console Governance Overview - Dispatch Center` | 文档、内容、经验等跨模块治理负载和今日分派中心；完整内部调度中心后置 |
@@ -132,7 +134,7 @@ Console 代表设计使用 `R1-C01 / R1-C02` 与 `R2-C03`。旧 `console-governa
 - `P07 / P08 / P14-P18` 移动端保持单列任务流，图标和文字上下排列的底部 tab 与共享基座一致；底栏统一为 64px 高浮动胶囊，左右 inset，不贴边。
 - `P09-P13` 覆盖真实 Console 的主要后台页面类型，不只停留在内容 / 经验治理。
 - `P09-P13` 侧栏必须使用浅色图标导航，不能分叉为黑色运维侧栏。
-- `P13` 作为运维工具代表页，必须沿用 Console 纸色 shell、浅色图标侧栏和 84 高命令栏；当前发布前只承接系统设置和受保护 Hangfire iframe 外壳，完整任务队列、配置覆盖、失败重试和运行审计后置到独立专题。
+- `P13` 作为运维工具代表页，必须沿用 Console 纸色 shell、浅色图标侧栏和 56px 命令栏；当前发布前只承接系统设置和受保护 Hangfire iframe 外壳，完整任务队列、配置覆盖、失败重试和运行审计后置到独立专题。
 
 Console 允许比公开 Web 和私域 Web 更高信息密度，但不得自行分叉以下共享规则：
 
@@ -143,9 +145,9 @@ Console 允许比公开 Web 和私域 Web 更高信息密度，但不得自行�
 
 ## 公共壳层规范
 
-`P00` 是后续 `radish.console` 视觉实现的公共输入，不是普通业务页：
+`P00` 保留为历史公共输入；以下公共壳层规范已按当前 `radish.console` 代码修订，不表示历史画板已重绘：
 
-- `ConsoleShell`：PC 固定为 `300px` 浅色侧栏 + `84px` 顶栏 + 主内容容器；页面 padding 和背景由壳层统一提供。
+- `ConsoleShell`：PC 当前为 `224px` 浅色侧栏（折叠 `64px`）+ `56px` 顶栏 + 主内容容器；页面 padding 和背景由壳层统一提供。
 - `ConsoleSidebar`：承载真实路由分组、图标、badge、active、搜索入口；PC 页面必须保留图标。
 - `ConsoleTopbar`：承载面包屑、页面标题、状态 chip、主操作和二级工具区；避免营销式大标题。
 - `PageToolbar`：承载筛选、批处理、导出、刷新等业务动作；属于页面内容，但高度、按钮和状态样式沿用公共规则。
@@ -241,7 +243,7 @@ D14 后 `radish.console` 页面级视觉结构优先复用以下组件：
 - 角色权限首批：`RoleList` 与 `RolePermissionPage` 已迁入语义页头、指标和上下文工具区，资源树、权限预览、保存载荷和路由守卫保持不变。
 - 治理工作台成组收口：`ModerationPage` 与 `ExperienceAdminPage` 已迁入语义页头、状态 chip 和工作台指标，内容治理局部硬编码颜色已转为 Console token；`ExperienceObservationSummary`、`ExperienceTransactionSection`、`ExperienceGovernanceReviewSection`、治理表单、表格列渲染和内容治理内部提示 / 筛选区已完成目标 inline 样式与硬编码色收口，举报审核、手动治理、治理日志、经验复核、调经验、冻结 / 解冻和等级配置 API 保持不变。
 - 权限矩阵成组收口：`RoleList`、`RolePermissionPage` 与 `RoleForm` 已完成外层语义迁移和目标 inline 样式收口，资源树缩进改由结构 CSS 和移动端缩进规则承载。
-- 系统工具 / 运维外壳：`SystemConfigList` 继续作为内部系统设置代表页，`HangfirePage` 已从路由临时组件迁入独立页面并接入 Console 语义页头、指标和状态组件；iframe 宿主地址、权限守卫和侧栏元数据保持不变。
+- 系统工具 / 运维外壳：`SystemConfigList` 继续作为内部系统设置代表页，`HangfirePage` 已从路由临时组件迁入独立页面并接入 Console 语义页头、指标和状态组件；该阶段未改变 iframe 宿主地址、权限守卫和侧栏元数据；当前认证衔接已补短期 Cookie 兑换 / 续期，见[定时任务指南](/guide/hangfire-scheduled-jobs)。
 - 阶段静态收口：`routerComponents` 的认证中、无 Console 权限和懒加载状态已迁出 inline 样式；商品、分类、贴纸和贴纸分组表单的上传预览、隐藏输入、宽度规则、弱提示文本和弹窗 footer 样式已迁入 `adminForm.css`；订单 / 商品详情、文档治理抽屉和贴纸批量上传提示色已迁入 CSS 与 Console token。
 - 阶段运行态复核：Gateway 下 Console 登录回流、商品详情、文档详情 / 版本治理、订单空态和表情分组空态已覆盖 PC `1920x1080` 与 mobile `390x844` CSS 视图；D32 已用本地安全测试数据补齐 `OrderDetail`、分组表情列表和批量上传弹窗，并收口贴纸弹窗 AntD `Alert.message` 告警。
 - 表格可读性首批：分类、标签、贴纸分组、分组表情、角色和文档版本治理表格的操作列按钮组已补 `wrap`；贴纸排序输入宽度样式已迁入页面 CSS。Gateway 中宽 PC / 移动 CSS 视口真实扫描待宿主恢复后补验。

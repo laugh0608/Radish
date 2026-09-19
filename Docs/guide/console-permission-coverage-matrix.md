@@ -55,7 +55,7 @@
 | Coins | `/coins` | `console.coins.view` | `console.coins.adjust` | `Coin/GetBalanceByUserId`、`Coin/AdminGetTransactions`、`AdminAdjustBalance` | ✅ | 查询返回权威目标身份 / 余额版本；调账绑定该快照并携带幂等键、显式确认，版本或结果不确定时冻结写入；流水支持稳定分页和按业务类型 / 业务 ID 定位订单扣款 |
 | Experience | `/experience` | `console.experience.view` | `console.experience.adjust/freeze/recalculate` | `Experience/GetUserExperience/.+`、`GetUserDailyStats/.+`、`GetUserTransactions/.+`、`GetUserGovernanceActions/.+`、`GetLevelConfigs`、`AdminAdjustExperience`、`AdminFreezeExperience`、`AdminUnfreezeExperience`、`AdminRecordGovernanceReview`、`RecalculateLevelConfigs` | ✅ | `GetLevelConfigs` 为公开接口；每日统计、经验流水与治理留痕共同支撑 Console 经验治理回看与人工复核 |
 | SystemConfig | `/system-config` | `console.system-config.view` | `console.system-config.create/edit/delete` | `SystemConfig/GetSystemConfigs`、`GetConfigCategories`、`GetConfigById`、`UpdateConfig`、`RestoreConfigDefault`、`GetConfigChangeLogs`、`CreateConfig`、`DeleteConfig` | ✅ | Low / Medium 写入已具备结构化 400 / 409、持久化点 CAS、配置—审计共同提交和显式 Medium 确认；Mobile 只编辑 Low。Create / Delete 仅兼容旧路由，不扩为动态设置能力 |
-| Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `/hangfire(/.*)?` | ✅ | 特殊入口，走 `HangfireAuthorizationFilter` |
+| Hangfire | `/hangfire` | `console.hangfire.view` | 无 | `HangfireSession/Create`、`/hangfire(/.*)?` | ✅ | Bearer 兑换短期看板 Cookie；看板请求由 `HangfireAuthorizationFilter` 复核认证与授权 |
 
 ## 3. `authOnly` 路由矩阵
 

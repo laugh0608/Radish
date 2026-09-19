@@ -1,12 +1,12 @@
 # 日志敏感数据与查询凭据保护
 
-> 最后更新：2026-07-18（Asia/Shanghai）
+> 最后更新：2026-09-19（Asia/Shanghai）
 >
 > 本页说明应用日志、网关日志与审计日志中的敏感数据边界；日志输出、存储、查询和归档仍以 [日志系统](/guide/logging) 为准，前端规则见 [前端日志与敏感字段脱敏](/guide/frontend-logging)。
 
 ## 基本原则
 
-全项目统一处理与跨介质验证的后续设计见[统一日志专题方案](/features/unified-logging-governance-design)。当前覆盖边界仍以下文及现有代码为准。
+全项目重构见[统一日志专题方案](/features/unified-logging-governance-design)。`RadishLogging.Enabled=true` 的候选入口采用白名单事件重建，规则见[事件契约](/features/unified-logging-contract)；默认旧链路仍按下文处理。浏览器、审计与裸输出旁路尚未因候选入口自动完成治理。
 
 - 日志只记录诊断所需的最少上下文，不记录访问令牌、刷新令牌、授权头、Cookie、支付凭据、密码或完整敏感请求体。
 - 结构化属性优先记录稳定标识、状态码、阶段、耗时和有限错误摘要；不要为了排障解构完整用户、认证响应或第三方载荷。
@@ -15,7 +15,7 @@
 
 ## 查询参数凭据统一脱敏
 
-所有调用 `AddSerilogSetup()` 的宿主都会注册 `SensitiveQueryStringLogEnricher`。它在日志事件进入控制台、文件或数据库 sink 前遍历字符串标量属性，并对 URL / 查询字符串中的下列参数名做大小写不敏感替换：
+API / Auth / Gateway 在 `RadishLogging.Enabled=false` 的旧 `AddSerilogSetup` 路径注册 `SensitiveQueryStringLogEnricher`；候选路径与旧 sinks 互斥，直接按统一契约省略任意消息、异常正文与未登记字段，不依赖此 Enricher。旧路径中，该 Enricher 在日志事件进入控制台、文件或数据库 sink 前遍历字符串标量属性，并对 URL / 查询字符串中的下列参数名做大小写不敏感替换：
 
 - `access_token`
 - `refresh_token`

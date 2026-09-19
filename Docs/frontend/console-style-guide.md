@@ -79,7 +79,7 @@ E7-A 后的后台首页和移动入口口径：
 
 | 页面职责 | 首选结构 | 主要复用 |
 |----------|----------|----------|
-| 高频对象管理 | 指标条、工具条、表格、右侧摘要 | `admin-feature-metrics`、`admin-feature-toolbar`、`admin-feature-main` |
+| 高频对象管理 | 紧凑指标条、工具条、表格、按需展开的说明 / 上下文 | `admin-feature-metrics`、`admin-feature-toolbar`、`admin-feature-main` |
 | 设置 / 个人资料 / 策略 | 左侧分组导航、中间设置列、右侧影响范围 | `admin-settings-layout`、`admin-setting-section`、`admin-settings-aside` |
 | 调度总览 | 高频任务路径、独立指标快照、最近资源、完整功能面板 | `ConsolePageHeader`、`ConsoleMetricGrid`、页面局部调度区 |
 | 详情页 | 标题卡、指标、详情分区、右侧摘要 | `admin-detail-*` |

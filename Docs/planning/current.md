@@ -6,9 +6,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P8-C Windows toolchain + platform foundation readiness`
-- **下一项工作**：只读审计 Windows 日常开发 VM 与 CleanBase VM 的工具链、平台工程输入、运行边界与精确清理方案。
-- **状态复核日期**：`2026-09-06`；本次只做仓库审阅与文档整理，未新增平台运行或分发验收。
+- **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
+- **下一项工作**：继续 SQL / AOP / DbMigrate 与异常记录责任治理，具体见下方明日事项；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-09-19`；已回顾当日 7 个提交并核对文档，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,6 +29,7 @@
 
 ## 最近结论
 
+- `2026-09-19` 完成部署反馈修复及统一日志 L1 / L2 入口子项；[日终回顾](../records/day-end-doc-review-2026-09-19.md)汇总 7 个提交及文档校准。L2 仍未完成，`RadishLogging.Enabled` 默认 false。
 - `2026-09-06` 完成[项目全面审阅](/records/project-review-2026-09-06)：确认类型检查入口漏检、Outbox 租约归属保护缺口、Web 构建预加载负担及 Flutter 通用 CI 覆盖缺口。条件性安全风险、维护热点与证据范围均已记录；本批仅整理文档，尚未修复代码或调整工程顺位。
 - `2026-09-05` [P8-B2 macOS 本地运行验收](/records/f4-flutter-native-p8b2-macos-local-runtime-acceptance-closure-2026-09-05)关闭：standalone signed Debug 候选在本地 Gateway 完成 OIDC、Keychain / preferences、重启恢复、三档窗口、四主题和桌面输入验收；临时服务、注册与数据已精确清理。
 - `2026-09-01` 项目所有者确认[当前无付费 Apple 会员或测试真机](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)，P7-D2 / D3 暂缓；恢复需满足当时最新候选、会员 / Team / App ID、设备与分阶段授权条件。
@@ -40,7 +41,18 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 下一事项：P8-C Windows readiness
+## 明日事项：2026-09-20
+
+继续[统一日志专题](../features/unified-logging-governance-design.md)，从已提交的 [L2 入口层](../records/unified-logging-l2-producer-entry-2026-09-19.md)往下推进：
+
+1. **SQL**：拆开普通开发诊断与慢查询开关；不输出参数值、连接串和业务正文，保留 PostgreSQL 参数规范化及 Log 库递归排除。
+2. **AOP / 事务 / 异常**：移除裸终端与逐方法重复输出，明确最终处理边界记录一次 Error；不改变异常传播、回滚或重试语义。补齐顶层启动失败的安全记录边界。
+3. **DbMigrate**：区分 doctor / verify 命令结果与运行诊断，保留退出码、迁移顺序和审计事实；再按调用链处理 seed / 后台任务 / Rust 与业务事件码。
+4. **验证与收口**：围绕慢查询独立性、单次异常所有权、CLI 结果不变及标记秘密不可输出补定向测试，同步契约与本批记录，再按范围提交。
+
+本次仅记录明日工作，不安排自动运行。生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。明日若需安装依赖或启动真实宿主 / 隔离容器，按当批具体范围单独授权，不沿用今日运行授权。
+
+## 后续平台事项：P8-C Windows readiness
 
 1. 只读确认日常开发 VM 与 CleanBase VM 的系统版本、架构、磁盘 / 快照状态与角色，不修改干净基线。
 2. 审计 Flutter `3.44.x`、Visual Studio C++ Desktop workload / ATL、CMake / Ninja、Git 与 Windows SDK 的现状和缺口。
@@ -51,8 +63,8 @@
 ## 审阅改进候选
 
 - 候选排序、影响面与完成标准统一维护在[工程改进候选清单](/planning/engineering-improvement-candidates)。
-- 当前仅完成审阅及文档整理；类型检查、Outbox、管理端安全边界、Web 加载、Flutter CI 与结构治理均未因本次文档更新取得实施授权。
-- 候选不自动替代 P8-C。选定批次后再确认方案与顺位；不以本次审阅启动全仓重构或主动生产数据采集。
+- 上述工程改进候选仍仅完成审阅；类型检查、Outbox、管理端安全边界、Web 加载、Flutter CI 与结构治理均未因本次文档更新取得实施授权。
+- 候选不自动替代当前日志专题或后续 P8-C。选定批次后再确认方案与顺位；不以本次审阅启动全仓重构或主动生产数据采集。
 - 类型检查的已知覆盖限制和补充命令见[验证基线说明](/guide/validation-baseline)。
 
 ## 并行维护线

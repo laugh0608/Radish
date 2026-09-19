@@ -159,6 +159,8 @@
 
 因此当前 `frontend` 已具备“同一个镜像按运行时环境复用”的能力；当前工作流已补齐统一推送规则，且 `frontend` GHCR 首次真实产物已可通过 `docker pull` 获取，当前剩余重点转为上线前外部交付复核。
 
+当前统一日志 collector 仍处于隔离验证阶段，尚未加入生产 Compose；`RadishLogging.Enabled` 默认关闭。`Deploy/logging` 脚本和 Frontend 镜像中的生成适配不表示部署已切换为集中入库，进度与门禁见[统一日志契约](/features/unified-logging-contract)。
+
 ## 构建服务镜像
 以下内容主要用于 `CI`、本地容器验证或手动验证镜像入口。测试部署与生产部署默认应直接拉取 `GHCR` 里的预构建镜像，而不是在部署机执行 `docker build` 或 `docker compose build`。
 
@@ -168,7 +170,7 @@
 - `Radish.Api/Dockerfile`：发布 API，并把仓库 `Docs/` 一并带入镜像，确保固定文档能力在容器内可用。
 - `Radish.Auth/Dockerfile`：发布 OIDC 服务，并把仓库 `Certs/` 带入镜像，便于本地 / 内部开发版使用默认开发证书。
 - `Radish.Gateway/Dockerfile`：发布网关服务，作为默认对外入口。
-- `Frontend/Dockerfile`：使用 `node:24-bookworm-slim` 构建 client / console，以 `node:24-alpine` 作为最终运行层，只保留静态产物与内置静态服务器，并移除运行时不需要的 npm / npx / Corepack / Yarn 入口，统一托管 `/` 与 `/console/`。
+- `Frontend/Dockerfile`：使用 `node:24-bookworm-slim` 构建 client / console，以 `node:24-alpine` 作为最终运行层，只保留静态产物、内置静态服务器及统一日志运行适配 / 策略，并移除运行时不需要的 npm / npx / Corepack / Yarn 入口，统一托管 `/` 与 `/console/`。
 
 常用单镜像构建命令如下：
 

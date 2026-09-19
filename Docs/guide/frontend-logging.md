@@ -2,11 +2,11 @@
 
 > 状态：实施后维护
 >
-> 最后更新：2026-06-19（Asia/Shanghai）
+> 最后更新：2026-09-19（Asia/Shanghai）
 
 本文说明 `radish.client`、`radish.console` 与 `@radish/http` 的前端日志入口、脱敏规则和后续维护要求。
 
-三级日志、公共实现收敛和 Node / Native 边界的重构目标见[统一日志专题方案](/features/unified-logging-governance-design)，目前尚未替换下文实现。
+三级日志与公共实现收敛见[统一日志专题方案](/features/unified-logging-governance-design)。下文三个浏览器 workspace 的实现尚未替换，不自动上传浏览器日志；Node 容器宿主已先接入候选统一输出，见下节。
 
 ## 统一入口
 
@@ -31,3 +31,9 @@
 - 新增前端日志工具或调整 `@radish/http` 错误输出时，必须补对应 workspace 的敏感字段脱敏测试。
 - 新增高风险请求字段时，应同步扩展脱敏字段列表和测试用例。
 - 安全边界见 [密码传输与请求签名临时评审](/guide/password-transport-and-request-signature)。
+
+## Node 静态宿主
+
+`Frontend/scripts/serve-static.mjs` 通过 `logging/runtime-output.mjs` 记录生命周期和请求失败，统一路径由 `RadishLogging__Enabled=true` 显式启用，默认关闭；配置、三级及开发诊断限制见[事件契约](/features/unified-logging-contract)。Node 运行适配与唯一 JSON 策略随 Frontend 镜像复制，浏览器包不使用这个服务器输出入口。
+
+请求拒绝 / 失败调用点不再传路径、IP、转发头或异常原文；健康检查不逐次输出。候选路径序列化单行 JSON，失败进入有限安全应急摘要；旧终端路径只显示固定事件码。此变化不代表浏览器 logger、Native 或全部业务日志已完成重构。

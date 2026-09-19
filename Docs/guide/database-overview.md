@@ -10,7 +10,7 @@
 
 ## 1. 当前逻辑库划分
 
-共享配置 [`appsettings.Shared.json`](</D:/Code/Radish/appsettings.Shared.json>) 当前定义了四个逻辑库连接：
+共享配置 [`appsettings.Shared.json`](../../appsettings.Shared.json) 当前定义了四个逻辑库连接：
 
 | ConnId | 默认本地类型 | 默认连接串名 | 主要职责 |
 | --- | --- | --- | --- |
@@ -98,6 +98,11 @@
 - 表级：`[MultiTenant(Tables)]`
 - 库级：`[MultiTenant(DataBases)]`
 
+### 手写 SQL 的物理标识符
+
+- 论坛互动人查询及帖子 / 评论点赞更新通过 `RepositorySqlHelper.GetTableIdentifier<T>` / `GetColumnIdentifier<T>` 读取实体表列映射，再遵循 PostgreSQL `PgSqlIsAutoToLower` 配置生成带引号的标识符，不能直接把 C# `nameof` 当作物理列名。
+- 结构迁移仍须通过数据库元数据确认真实表列名；不要用统一改名或重建生产表掩盖查询映射问题。相关修复不修改现有表或数据，SQLite / PostgreSQL 测试范围见[部署反馈记录](../records/test-deployment-maintenance-2026-09-19.md)。
+
 ### Service / Repository 分层
 
 - Repository 返回实体
@@ -110,7 +115,7 @@
 因此当你需要进一步确认领域模型时，建议顺序是：
 
 1. 先看本页确认逻辑库边界
-2. 再看 [`Radish.Model`](</D:/Code/Radish/Radish.Model>) 中的实体与 ViewModel
+2. 再看 [`Radish.Model`](../../Radish.Model) 中的实体与 ViewModel
 3. 最后回到对应领域专题文档核对业务语义
 
 ## 相关文档
