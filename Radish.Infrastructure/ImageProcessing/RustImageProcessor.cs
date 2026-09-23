@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using Radish.Common.LogTool;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
 using Serilog;
@@ -111,15 +112,14 @@ public class RustImageProcessor : IImageProcessor
         string outputPath,
         WatermarkOptions options)
     {
+        // 图片水印是正常的 C# 路由，不是 Rust 能力降级。
+        if (options.Type != WatermarkType.Text)
+        {
+            return await _fallbackProcessor.AddWatermarkAsync(sourceStream, outputPath, options);
+        }
+
         try
         {
-            // 只支持文字水印
-            if (options.Type != WatermarkType.Text)
-            {
-                Log.Warning("Rust processor only supports text watermark, falling back to C# implementation");
-                return await _fallbackProcessor.AddWatermarkAsync(sourceStream, outputPath, options);
-            }
-
             // 保存源图片到临时文件（Rust 需要文件路径）
             var tempInputPath = Path.Combine(Path.GetTempPath(), $"radish_input_{Guid.NewGuid()}.tmp");
             try
@@ -149,26 +149,25 @@ public class RustImageProcessor : IImageProcessor
 
                 if (result != 0)
                 {
-                    Log.Error("Rust watermark failed with code {Code}, falling back to C# implementation", result);
-                    return await _fallbackProcessor.AddWatermarkAsync(sourceStream, outputPath, options);
+                    WriteNativeEvent("native.fallback", "watermark", "native-result");
                 }
-
-                // 获取输出文件信息
-                var fileInfo = new FileInfo(outputPath);
-                if (!fileInfo.Exists)
+                else
                 {
-                    return ImageProcessResult.Fail("Rust watermark succeeded but output file not found");
+                    var fileInfo = new FileInfo(outputPath);
+                    if (!fileInfo.Exists)
+                    {
+                        WriteNativeEvent("native.failed", "watermark", "output-missing");
+                        return ImageProcessResult.Fail("Rust watermark succeeded but output file not found");
+                    }
+
+                    await using var outputStream = File.OpenRead(outputPath);
+                    var imageInfo = await _fallbackProcessor.GetImageInfoAsync(outputStream);
+                    return ImageProcessResult.Ok(
+                        outputPath: outputPath,
+                        fileSize: fileInfo.Length,
+                        width: imageInfo?.Width ?? 0,
+                        height: imageInfo?.Height ?? 0);
                 }
-
-                // 获取图片尺寸（使用 C# ImageSharp）
-                var imageInfo = await _fallbackProcessor.GetImageInfoAsync(File.OpenRead(outputPath));
-
-                return ImageProcessResult.Ok(
-                    outputPath: outputPath,
-                    fileSize: fileInfo.Length,
-                    width: imageInfo?.Width ?? 0,
-                    height: imageInfo?.Height ?? 0
-                );
             }
             finally
             {
@@ -181,21 +180,22 @@ public class RustImageProcessor : IImageProcessor
                     }
                     catch (Exception ex)
                     {
-                        Log.Warning(ex, "Failed to delete temporary file: {Path}", tempInputPath);
+                        WriteNativeEvent("native.cleanup_failed", "watermark", "temporary-file", ex);
                     }
                 }
             }
         }
         catch (DllNotFoundException ex)
         {
-            Log.Warning(ex, "Rust library not found, falling back to C# implementation");
-            return await _fallbackProcessor.AddWatermarkAsync(sourceStream, outputPath, options);
+            WriteNativeEvent("native.fallback", "watermark", "library-unavailable", ex);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Rust watermark error, falling back to C# implementation");
-            return await _fallbackProcessor.AddWatermarkAsync(sourceStream, outputPath, options);
+            WriteNativeEvent("native.fallback", "watermark", "exception", ex);
         }
+
+        // 恢复实现只调用一次；其失败结果 / 异常继续交给调用方最终处理。
+        return await _fallbackProcessor.AddWatermarkAsync(sourceStream, outputPath, options);
     }
 
     /// <summary>
@@ -237,6 +237,17 @@ public class RustImageProcessor : IImageProcessor
 
     #endregion
 
+    private static void WriteNativeEvent(string eventCode, string operation, string reason, Exception? exception = null)
+    {
+        var logger = Log.ForContext("EventCode", eventCode)
+            .ForContext("SourceCategory", "infrastructure")
+            .ForContext("nativeOperation", operation)
+            .ForContext("nativeReason", reason);
+        if (exception != null) logger = logger.ForContext("failureKind", RuntimeFailureSummary.Classify(exception));
+        if (eventCode == "native.failed") logger.Error("Native operation failed");
+        else logger.Warning("Native capability degraded");
+    }
+
     #region Utility Methods
 
     /// <summary>
@@ -256,17 +267,17 @@ public class RustImageProcessor : IImageProcessor
                 return buffer.ToString();
             }
 
-            Log.Warning("Rust hash calculation failed with code {Code}", result);
+            WriteNativeEvent("native.failed", "hash", "native-result");
             return null;
         }
         catch (DllNotFoundException ex)
         {
-            Log.Warning(ex, "Rust library not found for hash calculation");
+            WriteNativeEvent("native.failed", "hash", "library-unavailable", ex);
             return null;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "Rust hash calculation error");
+            WriteNativeEvent("native.failed", "hash", "exception", ex);
             return null;
         }
     }

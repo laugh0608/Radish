@@ -32,18 +32,19 @@ public class ImageProcessorFactory
             // 检查 Rust 库是否可用
             if (RustImageProcessor.IsRustLibraryAvailable())
             {
-                Log.Information("Using Rust image processor (high performance mode)");
                 return new RustImageProcessor(_options);
             }
             else
             {
-                Log.Warning("Rust library not available, falling back to C# image processor");
-                Log.Warning("To use Rust extensions, build the library: cd Radish.Core/radish-lib && ./build.sh");
+                Log.ForContext("EventCode", "native.fallback")
+                    .ForContext("SourceCategory", "infrastructure")
+                    .ForContext("nativeOperation", "availability")
+                    .ForContext("nativeReason", "library-unavailable")
+                    .Warning("Native processor unavailable; using managed processor");
                 return new CSharpImageProcessor(_options);
             }
         }
 
-        Log.Information("Using C# image processor (ImageSharp)");
         return new CSharpImageProcessor(_options);
     }
 

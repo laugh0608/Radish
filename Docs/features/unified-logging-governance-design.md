@@ -346,6 +346,6 @@ L2–L6 是一个完整重构目标的交付切片，不能把“只降低 SQL �
 
 - 已完成方案确认、现状审计、统一事件策略及 .NET / Node 生成契约；实现入口见[事件契约](./unified-logging-contract.md)。
 - L1 已取得本机 Linux arm64 的传输、安全裁剪及故障可见性证据；固定版本 / digest、HTTP 候选上限、队列与轮转限制见[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)及[采集边界记录](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。这不代表全部平台或磁盘故障门禁关闭。
-- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)。`RadishLogging.Enabled` 默认 false，SQL / AOP / 事务、API 已处理异常及 DbMigrate 入口 / Runner / Doctor 已按[生成端批次](../records/unified-logging-l2-producer-governance-2026-09-23.md)推进；[seed / 具体 migration 与 Auth seed](../records/unified-logging-l2-seed-migration-2026-09-23.md)也已完成；后台任务、Rust 与业务事件分类继续治理。
+- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)。`RadishLogging.Enabled` 默认 false，SQL / AOP / 事务、API 已处理异常及 DbMigrate 入口 / Runner / Doctor 已按[生成端批次](../records/unified-logging-l2-producer-governance-2026-09-23.md)推进；[seed / 具体 migration 与 Auth seed](../records/unified-logging-l2-seed-migration-2026-09-23.md)也已完成；[Outbox / Rust 调用边界](../records/unified-logging-l2-outbox-native-2026-09-23.md)已完成实现与 .NET 回归；原生验证、其余后台任务、Hangfire 边界与业务事件分类继续治理。
 - 真实内网入库、新日志表、Console 查询与告警、旧链路退出尚未完成；没有切换 production Compose、发布镜像、改写线上数据或发送告警。
 - 已确认的架构仍为独立 collector、统一标准流出口、文件与内网 API 两条持久化支路、Console 查询 / 提醒及独立审计权威性；下一步顺位由[当前规划](../planning/current.md)维护。

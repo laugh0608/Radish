@@ -203,11 +203,13 @@ dotnet test --filter "FullyQualifiedName~WatermarkPerformance_CSharpVsRust"
 
 ## 故障排查
 
+Rust FFI 的显式错误只通过返回码交给 .NET，不在 stderr 打印路径、水印或底层错误。宿主的安全事件区分能力降级、清理失败和直接操作失败；下面是字段示意，不要求旧 sink 与候选 JSONL 显示格式一致。`native-result` 只能说明原生操作失败，不能单凭它断言字体缺失，仍需核对构建资产。详细边界见[日志契约](../features/unified-logging-contract.md)。
+
 ### 问题 1：Rust 库未找到
 
 **症状**：
 ```
-[WRN] Rust library not found, falling back to C# implementation
+Warning native.fallback nativeOperation=watermark nativeReason=library-unavailable
 ```
 
 **解决方案**：
@@ -222,7 +224,7 @@ dotnet test --filter "FullyQualifiedName~WatermarkPerformance_CSharpVsRust"
 
 **症状**：
 ```
-[ERR] Rust watermark error: Failed to load font
+Warning native.fallback nativeOperation=watermark nativeReason=native-result
 ```
 
 **解决方案**：

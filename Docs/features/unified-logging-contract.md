@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，下一步治理后台任务 / Rust 与剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出已按第 9 节推进，下一步治理其余后台任务、原生验证与剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -106,3 +106,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `dbmigrate.schema.applied` 只在 ledger 事务提交后生成，使用登记的 `migrationId`、`databaseScope` 和耗时；重复 apply 无新提交时不生成。新增迁移 ID 需同步共享 JSON 策略，测试对注册表逐项验证；checksum source、账本写入和迁移顺序保持原义。
 - `auth.schema.adopted` 在 OpenIddict history 事务提交后生成。`auth.seed.completed` 仅在整组 seed 成功后记录 `createdCount / updatedCount / removedCount / durationMs`；计数包含 scope 与 client 管理器成功完成的操作，updatedCount 不声称是数据库实际变更行数。客户端、权限、回调与旧 shop 清理逻辑保持不变；失败不报完成，不另记重复 Error。
 - 旧 sink 和候选 sink 均只接收这些安全摘要；`RadishLogging.Enabled=false` 保持不变。验证及限制见[本批记录](../records/unified-logging-l2-seed-migration-2026-09-23.md)。
+
+## 9. L2 Outbox 与 Rust 调用边界
+
+- Outbox 空分派保持安静，实际分派一批后仅生成 `outbox.dispatched`，包含 count / durationMs。分派数量不等同于成功处理数量；逐消息成功仍以 Outbox 状态为准，不增加逐条运行日志。
+- `ReliableOutboxRepository` 在条件更新确实影响行后记录 `outbox.retrying`（Warning）或 `outbox.dead_letter`（Error）；使用本次真正选择的 Pending / DeadLetter 状态，不在 Job 根据旧快照猜测重试是否耗尽。无效状态、重复执行和未影响行的写入不生成状态事件。`ReliableOutboxExecutionJob` 不再追加携带异常及业务标识的 Error。
+- `attempt / databaseScope / outcome` 均为受控属性，Service 通过逻辑上下文补充安全 `failureKind`。`operationId` 由固定前缀、规范库名与 Outbox ID 的 SHA-256 前 16 字节转换为 Guid，同一部署同一库同一任务重试 / 重放可关联；部署之间须同时使用日志 source 区分。它不是凭据，也不替代权威审计键。载荷、任务类型原文、机器名、用户标识和异常文本不进入本批日志。
+- 重试间隔、抖动、MaxAttempts、租约、审计错误码及永久失败摘要和内容治理失败记录保持原义。瞬时失败的固定审计提示改为查看错误码和安全摘要，不再误导读者寻找已禁止输出的完整异常。本批没有修复既有租约归属保护问题；日志不是额外数据库事务，也不保证跨重放全局只记录一次失败。领取 / 写库 / 内容治理记录自身抛出的异常仍传播，Hangfire 的最终处理与框架输出需后续治理。
+- Rust FFI 移除显式 stderr 打印，只返回既有 ABI 错误码：watermark 为 0 / -1，hash 为 0 / -1 / -2。.NET 使用受控 `nativeOperation / nativeReason / failureKind` 生成安全事件，不输出文件路径、水印、哈希、异常文本或原生错误正文。
+- `native.fallback` 与 `native.cleanup_failed` 是 Warning；直接 hash 失败或 native 声称成功却无输出文件使用 `native.failed` Error。图片水印本来就走 C#，无需降级警告；正常工厂创建也不逐次打印 Info。水印 fallback 只调用一次，其结果 / 异常继续交给业务调用方最终处理。
+- 本批不改变 FFI 参数、返回值、业务失败结果或部署开关；不宣称已解决 Rust panic / 非法指针边界，或 AttachmentService 等上层业务日志。原生构建与 stderr 测试当前受依赖缓存限制，证据与待办见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)。

@@ -141,7 +141,13 @@
     "dbmigrate.seed.preference_unresolved": "Existing time preference could not be corrected.",
     "dbmigrate.schema.applied": "Schema migration committed and recorded in the ledger.",
     "auth.schema.adopted": "Existing OpenIddict schema adopted into migration history.",
-    "auth.seed.completed": "OpenIddict seed configuration applied."
+    "auth.seed.completed": "OpenIddict seed configuration applied.",
+    "outbox.dispatched": "Due outbox tasks dispatched.",
+    "outbox.retrying": "Outbox failure persisted with a scheduled retry.",
+    "outbox.dead_letter": "Outbox failure persisted as a dead letter.",
+    "native.fallback": "Native capability unavailable; using managed implementation.",
+    "native.failed": "Native operation failed.",
+    "native.cleanup_failed": "Native temporary resource cleanup failed."
   },
   "properties": {
     "durationMs": {
@@ -358,6 +364,24 @@
       "min": 0,
       "max": 9007199254740991,
       "integer": true
+    },
+    "nativeOperation": {
+      "type": "enum",
+      "values": [
+        "availability",
+        "watermark",
+        "hash"
+      ]
+    },
+    "nativeReason": {
+      "type": "enum",
+      "values": [
+        "native-result",
+        "library-unavailable",
+        "exception",
+        "temporary-file",
+        "output-missing"
+      ]
     }
   }
 }

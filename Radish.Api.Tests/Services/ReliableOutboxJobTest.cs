@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Api.Services;
 using Radish.IRepository;
@@ -27,8 +26,7 @@ public class ReliableOutboxJobTest
         var job = new ReliableOutboxExecutionJob(
             outboxService.Object,
             processor.Object,
-            Mock.Of<IContentModerationCaseRepository>(),
-            Mock.Of<ILogger<ReliableOutboxExecutionJob>>());
+            Mock.Of<IContentModerationCaseRepository>());
 
         await job.ExecuteAsync(ReliableOutboxSources.Main, 10, CancellationToken.None);
 
@@ -58,8 +56,7 @@ public class ReliableOutboxJobTest
         var job = new ReliableOutboxExecutionJob(
             outboxService.Object,
             processor.Object,
-            Mock.Of<IContentModerationCaseRepository>(),
-            Mock.Of<ILogger<ReliableOutboxExecutionJob>>());
+            Mock.Of<IContentModerationCaseRepository>());
 
         await job.ExecuteAsync(ReliableOutboxSources.Main, 10, CancellationToken.None);
 
@@ -90,8 +87,7 @@ public class ReliableOutboxJobTest
         var job = new ReliableOutboxExecutionJob(
             outboxService.Object,
             processor.Object,
-            Mock.Of<IContentModerationCaseRepository>(),
-            Mock.Of<ILogger<ReliableOutboxExecutionJob>>());
+            Mock.Of<IContentModerationCaseRepository>());
 
         await job.ExecuteAsync(ReliableOutboxSources.Main, 10, CancellationToken.None);
 
@@ -134,8 +130,7 @@ public class ReliableOutboxJobTest
         var job = new ReliableOutboxExecutionJob(
             outboxService.Object,
             processor.Object,
-            moderationCaseRepository.Object,
-            Mock.Of<ILogger<ReliableOutboxExecutionJob>>());
+            moderationCaseRepository.Object);
 
         await job.ExecuteAsync(ReliableOutboxSources.Main, 10, CancellationToken.None);
 

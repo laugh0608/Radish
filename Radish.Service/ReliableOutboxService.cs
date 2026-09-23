@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Radish.Common.LogTool;
+using Serilog.Context;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
@@ -88,11 +90,12 @@ public sealed class ReliableOutboxService : IReliableOutboxService
             retryAtUtc = failedAtUtc.Add(RetryDelays[message.AttemptCount]).Add(jitter);
         }
 
+        using var failureScope = LogContext.PushProperty("failureKind", RuntimeFailureSummary.Classify(exception));
         await _repository.MarkFailedAsync(
             sourceDatabase,
             outboxId,
             permanent ? "PermanentFailure" : exception.GetType().Name,
-            permanent ? exception.Message : "任务执行失败，完整异常请查看服务端日志",
+            permanent ? exception.Message : "任务执行失败，请结合错误码和运行日志安全摘要排查",
             failedAtUtc,
             retryAtUtc);
     }
