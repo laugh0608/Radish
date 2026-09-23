@@ -152,11 +152,6 @@ public partial class ExperienceService
                     0,
                     "System",
                     now));
-            Log.Information(
-                "用户 {UserId} 的临时经验冻结已到期并追加自动解冻事件，经验版本 {ExpectedVersion} -> {ResultVersion}",
-                userExp.UserId,
-                userExp.Version,
-                result.Experience.Version);
             return result.Experience;
         }
         catch (ExperienceGovernanceStateConflictException)

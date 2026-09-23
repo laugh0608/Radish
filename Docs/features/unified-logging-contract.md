@@ -135,4 +135,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 抽奖保持 batchSize 1–100 钳制和 PostId 去重；单项异常消费后继续，当前批次一次 Error，成功计数沿用服务正常返回次数。扫描异常不消费、不输出本地 Error，仍交给 Hangfire；后续周期能否成功不在当前批次作保证。
 - 神评 / 沙发保持统计窗口、排名、快照、先奖励后批量插入和幂等业务键。移除各层仅记录再重抛的 catch，异常仍由 Hangfire 接管；完整执行后才输出本 Job 的批次摘要。`processedCount` 是成功返回的 AddRange 调用所提交的记录数，`updatedCount` 是取消旧当前标记的更新返回行数，`rewardCount` 是服务报告新发放的币 / 经验操作数，不是金额。只有旧标记退役也有摘要。中途异常不生成完成摘要，不宣称此前动作已回滚。
 - 保留奖励保持两阶段顺序、按原 DateTime.Now 计算完整周数、最多 3 周及既有失败处理。每项异常继续、阶段查询异常返回 0 后继续下一阶段、顶层异常返回 (0, 0) 均不变；跨阶段已成功的奖励仍计入 rewardCount。现有“已发放过”文本判定与空 FailureReason 行为保持不变，本批不改结果类型或结算时钟。
-- `CoinRewardService` 的点赞加成 / 保留奖励方法以及 `OrderService.CancelOrderBySystemAsync` 移除重复的重抛日志；共享订单取消 helper 不再复制取消原因到运行日志。金额、返回理由、事务边界及数据库字段不变。**这不代表整条业务调用链已完成治理**：CoinService、ExperienceService、库存服务及其他业务入口仍有原文 / 重复日志，需按调用链另批处理。验证与剩余边界见[批次记录](../records/unified-logging-l2-business-jobs-2026-09-23.md)。
+- `CoinRewardService` 的点赞加成 / 保留奖励方法以及 `OrderService.CancelOrderBySystemAsync` 移除重复的重抛日志；共享订单取消 helper 不再复制取消原因到运行日志。金额、返回理由、事务边界及数据库字段不变。**这不代表整条业务调用链已完成治理**：币 / 经验的实际发放后续见第 12 节，库存服务及其他业务入口仍需按调用链处理。验证与剩余边界见[批次记录](../records/unified-logging-l2-business-jobs-2026-09-23.md)。
+
+## 12. L2 币 / 经验奖励实际发放链
+
+- `GrantCoinAsync / GrantCoinOnceAsync` 不记录逐项开始、成功或重复的最终 Error。币奖励失败继续抛给调用方；唯一键竞争仍回查既有成功流水，未找到时原异常继续传播。正常初始化竞争、幂等命中保持安静，流水号和结果保持原义。
+- `GrantExperienceAsync / GrantExperienceOnceAsync` 保留原异常消费边界：分别返回 false 或 Skip，消费处用 `reward.failed` Error 与固定 `failureKind`，不输出用户、金额、类型、业务键、流水、备注、原始异常。唯一键竞争未回查到流水仍返回“奖励业务键冲突”，输出 `reward.conflict` Warning；命中既有流水不输出。奖励键规范化和用户查询等原本位于 catch 之前的异常继续传播，不扩张 catch 范围。
+- 经验初始化失败后仍按原逻辑回查，恢复成功安静；回查无记录时仅初始化层输出一次安全 Error 并返回 null，上层不重复报错。非法参数、用户不存在、冻结、每日上限等既有业务返回路径不逐项打印 Warning。单次成功和等级变化不复制到运行日志；经验流水、每日统计、升级 Outbox、自动解冻的权威治理记录保持不变。
+- 两服务的乐观锁 helper 只在即将继续重试时输出 `reward.retrying` Warning，包含固定 `rewardDomain`、attempt 和 delayMs；耗尽不重复记录 Error。币保持 3 次重试、100 / 200 / 400ms；经验保持 6 次重试、指数上限 1000ms 内的随机抖动。该共享 helper 也作用于现有其他调用方，未改重试捕获类型、延迟或事务。
+- 等级配置缓存读取 / 写入 / 失效异常输出 `reward.cache_fallback` Warning；分别用固定 `rewardOperation` 区分，保留数据库回退和忽略缓存写入 / 清除失败的原有行为。安全日志不求值异常正文，不把缓存故障误报为奖励已失败。
+- 币批量发放在消费异常的批次层汇总一次 `reward.batch_failed` Error，部分成功和返回流水列表不变。经验单项已经消费的异常由单项记录 Error，批次只汇总正常返回结果，不再重复 Error；若异常确实逃逸至批次 catch，则由批次汇总。`reward.batch_completed` 是结果汇总 Info，允许 outcome 为 partial / failed，**不表示全部发放成功**。processedCount 是成功返回数，rejectedCount 是 false 返回数（可能是业务拒绝或已消费异常），failedCount 仅统计批次自身捕获的异常；空批次安静。
+- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账、账户查询、人工调账 / 治理、其余 CoinRewardService 入口及其外层消费者仍需治理。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。

@@ -172,7 +172,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
         catch (Exception ex) when (IsUniqueConstraintConflict(ex, "UserBalance.UserId"))
         {
             // 并发情况下，其他请求可能已经创建了记录，重新查询
-            Log.Warning("用户 {UserId} 余额记录已存在（并发创建），重新查询", userId);
             var existingBalance = await _userBalanceRepository.QueryFirstAsync(
                 b => b.UserId == userId && !b.IsDeleted);
 
@@ -201,40 +200,25 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
         long? businessId = null,
         string? remark = null)
     {
-        try
+        // 1. 参数校验
+        if (amount <= 0)
         {
-            // 1. 参数校验
-            if (amount <= 0)
-            {
-                throw new ArgumentException("发放金额必须大于 0", nameof(amount));
-            }
-
-            if (string.IsNullOrWhiteSpace(transactionType))
-            {
-                throw new ArgumentException("交易类型不能为空", nameof(transactionType));
-            }
-
-            await EnsureUserExistsAsync(userId);
-
-            Log.Information("开始发放萝卜币：用户={UserId}, 金额={Amount}, 类型={TransactionType}",
-                userId, amount, transactionType);
-
-            // 2. 使用乐观锁重试策略执行发放操作（最多重试 3 次，指数退避）
-            var transactionNo = await ExecuteWithRetryAsync(async () =>
-                await GrantCoinInternalAsync(userId, amount, transactionType, businessType, businessId, remark)
-            );
-
-            Log.Information("萝卜币发放成功：用户={UserId}, 金额={Amount}, 流水号={TransactionNo}",
-                userId, amount, transactionNo);
-
-            return transactionNo;
+            throw new ArgumentException("发放金额必须大于 0", nameof(amount));
         }
-        catch (Exception ex)
+
+        if (string.IsNullOrWhiteSpace(transactionType))
         {
-            Log.Error(ex, "发放萝卜币失败：用户={UserId}, 金额={Amount}, 类型={TransactionType}",
-                userId, amount, transactionType);
-            throw;
+            throw new ArgumentException("交易类型不能为空", nameof(transactionType));
         }
+
+        await EnsureUserExistsAsync(userId);
+
+        // 2. 使用乐观锁重试策略执行发放操作（最多重试 3 次，指数退避）
+        var transactionNo = await ExecuteWithRetryAsync(async () =>
+            await GrantCoinInternalAsync(userId, amount, transactionType, businessType, businessId, remark)
+        );
+
+        return transactionNo;
     }
 
     /// <summary>
@@ -299,13 +283,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
                 return CoinGrantOnceResult.Existing(existingReward.TransactionNo);
             }
 
-            Log.Warning(ex, "奖励业务键 {RewardBusinessKey} 已被占用但未找到成功流水", normalizedRewardBusinessKey);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "按业务键发放萝卜币失败：用户={UserId}, 金额={Amount}, 类型={TransactionType}, RewardBusinessKey={RewardBusinessKey}",
-                userId, amount, transactionType, normalizedRewardBusinessKey);
             throw;
         }
     }
@@ -577,6 +554,8 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     public async Task<List<string>> BatchGrantCoinAsync(List<CoinGrantInfo> grantInfos)
     {
         var transactionNos = new List<string>();
+        var failedCount = 0;
+        string? failureKind = null;
 
         foreach (var grantInfo in grantInfos)
         {
@@ -595,11 +574,13 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "批量发放萝卜币失败：用户={UserId}, 金额={Amount}",
-                    grantInfo.UserId, grantInfo.Amount);
+                failedCount++;
+                var kind = Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex);
+                failureKind = failureKind == null || failureKind == kind ? kind : "other";
             }
         }
 
+        RewardRuntimeLog.Batch("coin", transactionNos.Count, 0, failedCount, failureKind);
         return transactionNos;
     }
 
@@ -1052,15 +1033,13 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
                 if (retryCount > MaxRetryCount)
                 {
-                    Log.Error(ex, "乐观锁冲突重试 {MaxRetryCount} 次后仍然失败", MaxRetryCount);
                     throw;
                 }
 
                 // 指数退避：100ms * 2^(retryCount-1)
                 var delayMs = BaseRetryDelayMs * (int)Math.Pow(2, retryCount - 1);
-                Log.Warning("乐观锁冲突，第 {RetryCount} 次重试（延迟 {DelayMs}ms）: {Message}",
-                    retryCount, delayMs, ex.Message);
 
+                RewardRuntimeLog.Retry("coin", retryCount, delayMs);
                 await Task.Delay(delayMs);
             }
         }

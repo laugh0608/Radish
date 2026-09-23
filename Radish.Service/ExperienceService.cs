@@ -217,14 +217,11 @@ namespace Radish.Service;
     {
         if (userId <= 0)
         {
-            Log.Warning("经验值发放失败：userId 无效（{UserId}），amount={Amount}, expType={ExpType}",
-                userId, amount, expType);
             return false;
         }
 
         if (amount <= 0)
         {
-            Log.Warning("经验值发放失败：金额必须大于 0，userId={UserId}, amount={Amount}", userId, amount);
             return false;
         }
 
@@ -237,8 +234,7 @@ namespace Radish.Service;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "经验值发放失败：userId={UserId}, amount={Amount}, expType={ExpType}",
-                userId, amount, expType);
+            RewardRuntimeLog.Failure("experience", "grant", ex);
             return false;
         }
     }
@@ -257,21 +253,17 @@ namespace Radish.Service;
 
         if (userId <= 0)
         {
-            Log.Warning("经验值一次性发放失败：userId 无效（{UserId}），amount={Amount}, expType={ExpType}",
-                userId, amount, expType);
             return ExperienceGrantOnceResult.Skip("userId 无效");
         }
 
         if (amount <= 0)
         {
-            Log.Warning("经验值一次性发放失败：金额必须大于 0，userId={UserId}, amount={Amount}", userId, amount);
             return ExperienceGrantOnceResult.Skip("金额必须大于 0");
         }
 
         var user = await _userRepository.QueryFirstAsync(item => item.Id == userId && !item.IsDeleted);
         if (user == null)
         {
-            Log.Warning("经验值一次性发放失败：用户不存在（userId={UserId}）", userId);
             return ExperienceGrantOnceResult.Skip("用户不存在");
         }
 
@@ -313,13 +305,12 @@ namespace Radish.Service;
                 return ExperienceGrantOnceResult.Existing();
             }
 
-            Log.Warning(ex, "经验奖励业务键 {RewardBusinessKey} 已被占用但未找到既有流水", normalizedRewardBusinessKey);
+            RewardRuntimeLog.Conflict(ex);
             return ExperienceGrantOnceResult.Skip("奖励业务键冲突");
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "经验值一次性发放失败：userId={UserId}, amount={Amount}, expType={ExpType}, RewardBusinessKey={RewardBusinessKey}",
-                userId, amount, expType, normalizedRewardBusinessKey);
+            RewardRuntimeLog.Failure("experience", "grant-once", ex);
             return ExperienceGrantOnceResult.Skip("发放失败");
         }
     }
@@ -361,7 +352,6 @@ namespace Radish.Service;
             userExp = await InitializeUserExperienceAsync(userId);
             if (userExp == null)
             {
-                Log.Error("用户 {UserId} 经验值记录初始化失败", userId);
                 return false;
             }
         }
@@ -375,7 +365,6 @@ namespace Radish.Service;
 
         if (IsFreezeActive(userExp, nowUtc))
         {
-            Log.Warning("用户 {UserId} 经验值已冻结，无法获得经验值", userId);
             return false;
         }
 
@@ -383,8 +372,6 @@ namespace Radish.Service;
         var dailyStats = await GetOrCreateDailyStatsAsync(userId, businessDate);
         if (!CheckDailyLimit(dailyStats, amount, expType))
         {
-            Log.Warning("用户 {UserId} 经验值已达每日上限，expType={ExpType}, 当日已获得={ExpEarned}",
-                userId, expType, dailyStats.ExpEarned);
             return false;
         }
 
@@ -443,17 +430,9 @@ namespace Radish.Service;
 
         await _expTransactionRepository.AddAsync(transaction);
 
-        // 7. 记录日志
-        Log.Information(
-            "经验值发放成功：userId={UserId}, amount={Amount}, expType={ExpType}, " +
-            "oldLevel={OldLevel}, newLevel={NewLevel}, oldExp={OldExp}, newExp={NewExp}",
-            userId, amount, expType, oldLevel, newLevel, oldTotalExp, newTotalExp);
-
         // 8. 如果升级，触发升级事件（异步处理）
         if (newLevel > oldLevel)
         {
-            Log.Information("用户 {UserId} 从 Lv.{OldLevel} 升级到 Lv.{NewLevel}", userId, oldLevel, newLevel);
-
             var reliableOutboxService = _reliableOutboxService
                 ?? throw new InvalidOperationException("可靠 Outbox 服务未注册");
             await reliableOutboxService.AddAsync(
@@ -482,6 +461,9 @@ namespace Radish.Service;
     public async Task<int> BatchGrantExperienceAsync(List<ExpGrantInfo> grantInfos)
     {
         int successCount = 0;
+        var rejectedCount = 0;
+        var failedCount = 0;
+        string? failureKind = null;
 
         foreach (var info in grantInfos)
         {
@@ -499,13 +481,20 @@ namespace Radish.Service;
                 {
                     successCount++;
                 }
+                else
+                {
+                    rejectedCount++;
+                }
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "批量发放经验值失败：userId={UserId}, amount={Amount}", info.UserId, info.Amount);
+                failedCount++;
+                var kind = Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex);
+                failureKind = failureKind == null || failureKind == kind ? kind : "other";
             }
         }
 
+        RewardRuntimeLog.Batch("experience", successCount, rejectedCount, failedCount, failureKind);
         return successCount;
     }
 
@@ -525,7 +514,6 @@ namespace Radish.Service;
     {
         if (userId <= 0)
         {
-            Log.Warning("初始化用户经验值记录失败：userId 无效（{UserId}）", userId);
             return null;
         }
 
@@ -533,8 +521,6 @@ namespace Radish.Service;
         var existing = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
         if (existing != null)
         {
-            Log.Information("用户 {UserId} 经验值记录已存在（Version={Version}），跳过初始化",
-                userId, existing.Version);
             return existing;
         }
 
@@ -553,8 +539,6 @@ namespace Radish.Service;
                 },
                 e => e.Id == deletedExp.Id);
 
-            Log.Information("恢复用户 {UserId} 的经验值记录（ID={ExpId}）", userId, deletedExp.Id);
-
             // 重新查询恢复后的记录
             return await _userExpRepository.QueryByIdAsync(deletedExp.Id);
         }
@@ -562,7 +546,6 @@ namespace Radish.Service;
         var userExists = await _userRepository.QueryExistsAsync(u => u.Id == userId);
         if (!userExists)
         {
-            Log.Warning("初始化用户经验值记录失败：用户不存在（userId={UserId}）", userId);
             return null;
         }
 
@@ -581,24 +564,20 @@ namespace Radish.Service;
         try
         {
             await _userExpRepository.AddAsync(userExp);
-            Log.Information("用户 {UserId} 经验值记录初始化成功（独立事务）", userId);
             return userExp;
         }
         catch (Exception ex)
         {
             // 并发竞争：其他线程已经初始化了记录
-            Log.Information(ex, "用户 {UserId} 经验值记录初始化时检测到并发，尝试查询已存在的记录", userId);
 
             existing = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId);
             if (existing != null)
             {
-                Log.Information("用户 {UserId} 经验值记录已存在（Version={Version}），跳过初始化",
-                    userId, existing.Version);
                 return existing;
             }
 
+            RewardRuntimeLog.Failure("experience", "initialize", ex);
             // 如果仍然查询不到，说明有其他问题
-            Log.Error(ex, "用户 {UserId} 经验值记录初始化失败且无法查询到已存在记录", userId);
             return null;
         }
     }
@@ -733,10 +712,10 @@ namespace Radish.Service;
     /// <summary>
     /// 执行带重试的异步操作（乐观锁冲突时自动重试）
     /// </summary>
-	    private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
-	    {
-	        var retryCount = 0;
-	        Exception? lastException = null;
+    private async Task<T> ExecuteWithRetryAsync<T>(Func<Task<T>> action)
+    {
+        var retryCount = 0;
+        Exception? lastException = null;
 
         while (retryCount <= MaxRetryCount)
         {
@@ -744,31 +723,27 @@ namespace Radish.Service;
             {
                 return await action();
             }
-	            catch (ConcurrencyException ex)
-	            {
-	                lastException = ex;
-	                retryCount++;
+            catch (ConcurrencyException ex)
+            {
+                lastException = ex;
+                retryCount++;
 
                 if (retryCount > MaxRetryCount)
                 {
-                    Log.Error(ex, "乐观锁冲突重试 {MaxRetryCount} 次后仍然失败", MaxRetryCount);
                     throw;
-	                }
+                }
 
-	                var exponentialDelayMs = BaseRetryDelayMs * (int)Math.Pow(2, retryCount - 1);
-	                var cappedDelayMs = Math.Min(exponentialDelayMs, MaxRetryDelayMs);
-	                var delayMs = Random.Shared.Next(0, cappedDelayMs + 1);
-	                Log.Warning("乐观锁冲突，第 {RetryCount} 次重试（延迟 {DelayMs}ms）: {Message}",
-	                    retryCount, delayMs, ex.Message);
-
-	                await Task.Delay(delayMs);
-	            }
+                var exponentialDelayMs = BaseRetryDelayMs * (int)Math.Pow(2, retryCount - 1);
+                var cappedDelayMs = Math.Min(exponentialDelayMs, MaxRetryDelayMs);
+                var delayMs = Random.Shared.Next(0, cappedDelayMs + 1);
+                RewardRuntimeLog.Retry("experience", retryCount, delayMs);
+                await Task.Delay(delayMs);
+            }
         }
 
         // 理论上不会执行到这里，但为了类型安全
         throw lastException ?? new ConcurrencyException("重试失败");
     }
-
 
     /// <summary>
     /// 获取或创建每日统计记录
@@ -818,8 +793,6 @@ namespace Radish.Service;
         // 检查总经验值上限
         if (dailyStats.ExpEarned + amount > dailyLimits.MaxDailyExp)
         {
-            Log.Warning("用户每日总经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                dailyStats.UserId, dailyStats.ExpEarned, dailyLimits.MaxDailyExp);
             return false;
         }
 
@@ -830,8 +803,6 @@ namespace Radish.Service;
             case "FIRST_POST":
                 if (dailyStats.ExpFromPost + amount > dailyLimits.MaxExpFromPost)
                 {
-                    Log.Warning("用户每日发帖经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromPost, dailyLimits.MaxExpFromPost);
                     return false;
                 }
                 break;
@@ -840,8 +811,6 @@ namespace Radish.Service;
             case "FIRST_COMMENT":
                 if (dailyStats.ExpFromComment + amount > dailyLimits.MaxExpFromComment)
                 {
-                    Log.Warning("用户每日评论经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromComment, dailyLimits.MaxExpFromComment);
                     return false;
                 }
                 break;
@@ -853,8 +822,6 @@ namespace Radish.Service;
             case "GIVE_LIKE":
                 if (dailyStats.ExpFromLike + amount > dailyLimits.MaxExpFromLike)
                 {
-                    Log.Warning("用户每日点赞经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromLike, dailyLimits.MaxExpFromLike);
                     return false;
                 }
                 break;
@@ -863,8 +830,6 @@ namespace Radish.Service;
             case "SOFA_COMMENT":
                 if (dailyStats.ExpFromHighlight + amount > dailyLimits.MaxExpFromHighlight)
                 {
-                    Log.Warning("用户每日神评/沙发经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromHighlight, dailyLimits.MaxExpFromHighlight);
                     return false;
                 }
                 break;
@@ -874,8 +839,6 @@ namespace Radish.Service;
             case "CONTINUOUS_LOGIN":
                 if (dailyStats.ExpFromLogin + amount > dailyLimits.MaxExpFromLogin)
                 {
-                    Log.Warning("用户每日登录经验值已达上限：userId={UserId}, current={Current}, max={Max}",
-                        dailyStats.UserId, dailyStats.ExpFromLogin, dailyLimits.MaxExpFromLogin);
                     return false;
                 }
                 break;

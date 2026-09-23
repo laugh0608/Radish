@@ -158,7 +158,13 @@
     "job.cleanup.capacity_warning": "Notification inbox capacity requires attention.",
     "job.batch.completed": "Business job batch completed.",
     "job.batch.warning": "Business job batch contains rejected results.",
-    "job.batch.failed": "Business job batch consumed failures; counts describe partial work."
+    "job.batch.failed": "Business job batch consumed failures; counts describe partial work.",
+    "reward.retrying": "Reward concurrency retry scheduled.",
+    "reward.failed": "Reward operation consumed a failure.",
+    "reward.conflict": "Reward key conflict has no existing transaction.",
+    "reward.cache_fallback": "Reward level configuration cache operation failed.",
+    "reward.batch_completed": "Reward batch returned results.",
+    "reward.batch_failed": "Reward batch consumed failures."
   },
   "properties": {
     "durationMs": {
@@ -483,6 +489,30 @@
       "type": "number",
       "min": 0,
       "max": 9007199254740991,
+      "integer": true
+    },
+    "rewardDomain": {
+      "type": "enum",
+      "values": [
+        "coin",
+        "experience"
+      ]
+    },
+    "rewardOperation": {
+      "type": "enum",
+      "values": [
+        "grant",
+        "grant-once",
+        "initialize",
+        "cache-read",
+        "cache-write",
+        "cache-invalidate"
+      ]
+    },
+    "delayMs": {
+      "type": "number",
+      "min": 0,
+      "max": 60000,
       "integer": true
     }
   }

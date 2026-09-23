@@ -102,7 +102,7 @@ public partial class ExperienceService
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "读取等级配置缓存失败，将回退到数据库查询");
+                RewardRuntimeLog.CacheFallback("cache-read", ex);
             }
         }
 
@@ -118,7 +118,7 @@ public partial class ExperienceService
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "写入等级配置缓存失败");
+                RewardRuntimeLog.CacheFallback("cache-write", ex);
             }
         }
 
@@ -133,7 +133,7 @@ public partial class ExperienceService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "清除等级配置缓存失败");
+            RewardRuntimeLog.CacheFallback("cache-invalidate", ex);
         }
     }
 
