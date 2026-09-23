@@ -333,7 +333,9 @@ SELECT 'Error', COUNT(*) FROM ErrorLog_20251201;
 
 `doctor / verify / help` 报告继续写 stdout；CLI 诊断写 stderr，使用统一 JSONL 策略，不连接旧文件 / 数据库 sink。诊断入口记录命令类别、阶段、变更数量和耗时；原始 argv、连接串和 provider 异常消息不进入诊断。doctor / verify 的报告保留判定、问题分类和退出成功 / 失败语义，连接目标及异常原文改为安全说明。
 
-本批覆盖 Program、Runner 与 Doctor；seed、具体 migration 内既有输出及其他调用链继续按专题治理，尚不能开启全项目生产切换。
+Seed 不再捕获或回放 `Console.Out`。每阶段记录受控 `seedStep`、`outcome` 和耗时；缺失资源、冲突、未解决回填使用安全警告，不附路径、邮箱或业务载荷。阶段失败摘要为 Info，异常原样交给顶层记录一次 Error。
+
+具体迁移由 ledger 在事务提交后生成 `dbmigrate.schema.applied`，仅包含登记的迁移 ID、库范围及耗时；重复执行无新提交时不重复记录。新增 migration 时同步登记共享策略中的 `migrationId`，注册表测试防止遗漏。Auth schema adoption 同样在提交后记录，Auth seed 完成时汇总新增、更新和移除数。日志不替代迁移账本或权威审计；其他调用链仍待治理，生产切换保持关闭。
 
 ### SQLite 连接初始化
 

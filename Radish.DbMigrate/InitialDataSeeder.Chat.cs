@@ -19,7 +19,6 @@ internal static partial class InitialDataSeeder
         chatDb.CodeFirst.InitTables<ChannelMessage>();
         chatDb.CodeFirst.InitTables<ChannelMember>();
         chatDb.CodeFirst.InitTables<DirectConversation>();
-        Console.WriteLine("[Radish.DbMigrate] 已同步 Chat 库 Channel/ChannelMessage/ChannelMember/DirectConversation 表结构。");
 
         var defaultChannels = new[]
         {
@@ -69,11 +68,8 @@ WHERE Id = @id",
                     new SugarParameter("@modifyId", 0),
                     new SugarParameter("@id", channelMeta.Id));
 
-                Console.WriteLine($"[Radish.DbMigrate] 默认频道 Id={channelMeta.Id} 已存在，已纠正为 TenantId={channelMeta.TenantId}, Slug={channelMeta.Slug}。");
                 continue;
             }
-
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认频道 Id={channelMeta.Id}, Name={channelMeta.Name}, TenantId={channelMeta.TenantId}...");
 
             await chatDb.Insertable(new Channel
             {

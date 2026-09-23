@@ -77,8 +77,9 @@ internal static class AuthOpenIddictSchemaAdoption
             cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
-        Console.WriteLine(
-            $"[Radish.DbMigrate] OpenIddict 既有 EnsureCreated schema 已采用 baseline：{knownMigrations[0]}。");
+        Serilog.Log.ForContext("EventCode", "auth.schema.adopted")
+            .ForContext("SourceCategory", "database").ForContext("count", 1)
+            .Information("OpenIddict schema baseline adopted");
     }
 
     private static IReadOnlyDictionary<string, ExpectedTable> BuildExpectedSchema(AuthOpenIddictDbContext db)

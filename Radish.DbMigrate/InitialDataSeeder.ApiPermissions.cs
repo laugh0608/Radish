@@ -1146,8 +1146,6 @@ internal static partial class InitialDataSeeder
             var apiExists = await db.Queryable<ApiModule>().AnyAsync(m => m.Id == item.ApiModuleId);
             if (!apiExists)
             {
-                Console.WriteLine($"[Radish.DbMigrate] 创建 ApiModule Id={item.ApiModuleId}, LinkUrl={item.LinkUrl}...");
-
                 var options = new ApiModuleInitializationOptions(item.ApiModuleName, item.LinkUrl)
                 {
                     ControllerName = item.ControllerName,
@@ -1164,10 +1162,6 @@ internal static partial class InitialDataSeeder
                 };
 
                 await db.Insertable(module).ExecuteCommandAsync();
-            }
-            else
-            {
-                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={item.ApiModuleId} 的 ApiModule，跳过创建。");
             }
 
             foreach (var roleId in item.Roles)

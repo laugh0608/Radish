@@ -63,11 +63,11 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口子项已落地，下一步治理 seed / 具体 migration / 后台任务 / Rust 与剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，下一步治理后台任务 / Rust 与剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
-`RadishLogging.Enabled` 默认 false；这是一项阶段性迁移开关，不是新增日志模式。API / Auth / Gateway 在配置加载完成后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例；启用时不再读取旧 Serilog sink / MinimumLevel 配置。DbMigrate 已将命令报告与诊断分开；seed、具体 migration 与其他裸输出旁路尚未收口，禁止据此提前切换生产。
+`RadishLogging.Enabled` 默认 false；这是一项阶段性迁移开关，不是新增日志模式。API / Auth / Gateway 在配置加载完成后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例；启用时不再读取旧 Serilog sink / MinimumLevel 配置。DbMigrate 已将命令报告与诊断分开；seed / 具体 migration 已接入安全事件，其他裸输出旁路尚未收口，禁止据此提前切换生产。
 
 | 配置 | 默认 / 约束 |
 | --- | --- |
@@ -93,7 +93,16 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - API 已处理 5xx 只生成一次 `http.failed`；正常业务 4xx 不逐条记录 Warning，返回契约不变。响应已开始和非 API 等无法处理路径仍由框架拥有记录责任。
 - 顶层 `RuntimeProcess` 捕获配置加载前及运行失败，输出 stderr 的 `runtime.failed` Fatal，退出 1；正常结束为 0。该终止事件使用独立 `bootstrap / unversioned` 来源，不读取可能损坏的配置，不附带异常原文。HostAbortedException 作为工具控制信号继续传播。
 - DbMigrate 诊断固定使用同一 JSONL 生成策略写 stderr，候选开关仍控制 Web 宿主切换；CLI 的 doctor / verify / help 报告使用 stdout，保留成功 / 失败判定。阶段事件使用登记的 `dbmigrate.*` 代码与变更数量；`command` 只允许 apply / doctor / verify / init / seed / help。
-- CLI 连接目标和探测失败消息使用安全说明，不显示连接串或第三方异常文本；具体 migration 与 seed 的输出仍待下一批治理。权威 schema ledger 与业务审计写入没有迁移到运行日志。
+- CLI 连接目标和探测失败消息使用安全说明，不显示连接串或第三方异常文本；具体 migration 与 seed 的输出规则见下节。权威 schema ledger 与业务审计写入没有迁移到运行日志。
 - 完整异常安全类型 / 栈帧、后台任务、Rust、完整业务事件分类及框架来源治理仍未全部完成。本批不声明 L2 或 L1–L6 整体关闭。
 
 `failureKind` 只允许固定异常类别；`schemaIndex` 只允许 Runner 中登记的仓库自有索引名，便于保留迁移动作对象而不开放自由文本属性。宿主 `HostedServiceStartupFaulted`（EventId 11）仅在 `RuntimeProcess` 正在接管时抑制重复输出；未进入该边界时不静默丢弃。
+
+## 8. L2 seed / migration 生成端治理
+
+- `InitialDataSeeder` 不再接管全局 `Console.Out`，不捕获或回放逐行明细。`dbmigrate.seed.step_finished` 每阶段一次，`seedStep` 仅接受固定枚举，`outcome` 为 succeeded / failed，`durationMs` 为数值；失败仍记录 Info 阶段结果，原异常交给 `RuntimeProcess` 唯一最终错误边界。
+- 逐用户 / 逐行正常过程输出移除。默认资源缺失、前置 schema / API 权限缺失、身份冲突、未解决库存快照和偏好纠正失败使用登记的 Warning；必要修复、回收和回填只记录固定事件与数量。邮箱、名称、路径、回调 URI、SQL 与异常文本均不进入这些事件。
+- `dbmigrate.seed.completed.count` 表示成功完成的配置阶段数，不表示新增行数；保留开发默认账号开关、阶段顺序和失败即停止的行为。阶段成功不保证不存在已报告的缺失资源警告。
+- `dbmigrate.schema.applied` 只在 ledger 事务提交后生成，使用登记的 `migrationId`、`databaseScope` 和耗时；重复 apply 无新提交时不生成。新增迁移 ID 需同步共享 JSON 策略，测试对注册表逐项验证；checksum source、账本写入和迁移顺序保持原义。
+- `auth.schema.adopted` 在 OpenIddict history 事务提交后生成。`auth.seed.completed` 仅在整组 seed 成功后记录 `createdCount / updatedCount / removedCount / durationMs`；计数包含 scope 与 client 管理器成功完成的操作，updatedCount 不声称是数据库实际变更行数。客户端、权限、回调与旧 shop 清理逻辑保持不变；失败不报完成，不另记重复 Error。
+- 旧 sink 和候选 sink 均只接收这些安全摘要；`RadishLogging.Enabled=false` 保持不变。验证及限制见[本批记录](../records/unified-logging-l2-seed-migration-2026-09-23.md)。

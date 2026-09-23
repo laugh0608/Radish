@@ -28,13 +28,9 @@ internal sealed class WikiAuthorCollaborationSchemaMigration : ISchemaMigration
     public void Apply(ISqlSugarClient db, IServiceProvider services)
     {
         _ = services;
-        Console.WriteLine("[Radish.DbMigrate] Wiki authoring: 检查 WikiDocument 作者列与索引。");
         EnsureWikiDocumentAuthoringColumns(db);
-        Console.WriteLine("[Radish.DbMigrate] Wiki authoring: 检查草稿表。");
         EnsureTable<WikiDocumentDraft>(db, DraftTable);
-        Console.WriteLine("[Radish.DbMigrate] Wiki authoring: 检查协作者表。");
         EnsureTable<WikiDocumentCollaborator>(db, CollaboratorTable);
-        Console.WriteLine("[Radish.DbMigrate] Wiki authoring: 检查审核事件表。");
         EnsureTable<WikiDocumentReviewEvent>(db, ReviewEventTable);
         EnsureAuthoringIndexes(db);
 
@@ -43,7 +39,6 @@ internal sealed class WikiAuthorCollaborationSchemaMigration : ISchemaMigration
             return;
         }
 
-        Console.WriteLine("[Radish.DbMigrate] Wiki authoring: 回填可安全归属的历史文档所有者。");
         var users = db.Queryable<User>()
             .Where(user => !user.IsDeleted)
             .Select(user => new { user.Id, user.TenantId })
@@ -64,7 +59,6 @@ internal sealed class WikiAuthorCollaborationSchemaMigration : ISchemaMigration
                 .Where(document => document.Id == candidate.Id && document.OwnerUserId == null)
                 .ExecuteCommand();
         }
-        Console.WriteLine("[Radish.DbMigrate] Wiki authoring: schema 与所有者回填完成。");
     }
 
     public IReadOnlyList<string> Verify(ISqlSugarClient db, IServiceProvider services)

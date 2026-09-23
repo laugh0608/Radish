@@ -42,7 +42,6 @@ internal static partial class InitialDataSeeder
     {
         // 兼容旧库直接执行 seed：先确保 UserTimePreference 表结构存在
         db.CodeFirst.InitTables<UserTimePreference>();
-        Console.WriteLine("[Radish.DbMigrate] 已同步 UserTimePreference 表结构（自动补齐缺失表/列）。");
 
         const long systemUserId = 20000;
         const long adminUserId = 20001;
@@ -68,7 +67,7 @@ internal static partial class InitialDataSeeder
 
             if (existingPreference != null)
             {
-                var updated = await db.Updateable<UserTimePreference>()
+                await db.Updateable<UserTimePreference>()
                     .SetColumns(p => new UserTimePreference
                     {
                         TenantId = publicTenantId,
@@ -79,13 +78,8 @@ internal static partial class InitialDataSeeder
                     .Where(p => p.UserId == item.UserId)
                     .ExecuteCommandAsync();
 
-                Console.WriteLine(updated > 0
-                    ? $"[Radish.DbMigrate] 用户 Id={item.UserId} 的时区偏好已存在，已纠正为 {defaultTimeZoneId}（TenantId={publicTenantId}）。"
-                    : $"[Radish.DbMigrate] 用户 Id={item.UserId} 的时区偏好已存在，跳过创建。");
                 continue;
             }
-
-            Console.WriteLine($"[Radish.DbMigrate] 创建用户 Id={item.UserId} ({item.UserName}) 的时区偏好：{defaultTimeZoneId}...");
 
             try
             {
@@ -113,9 +107,7 @@ internal static partial class InitialDataSeeder
                     .Where(p => p.UserId == item.UserId)
                     .ExecuteCommandAsync();
 
-                Console.WriteLine(updated > 0
-                    ? $"[Radish.DbMigrate] 检测到用户 Id={item.UserId} 的旧时区偏好记录，已自动纠正为 {defaultTimeZoneId}（TenantId={publicTenantId}）。"
-                    : $"[Radish.DbMigrate] 用户 Id={item.UserId} 的时区偏好命中唯一键，但未能完成自动纠正，请检查现有数据。" );
+                if (updated <= 0) WriteSeedEvent("dbmigrate.seed.preference_unresolved", warning: true);
             }
         }
     }
@@ -141,7 +133,6 @@ internal static partial class InitialDataSeeder
         var exists = await db.Queryable<UserRole>().AnyAsync(ur => ur.UserId == systemUserId && ur.RoleId == systemRoleId);
         if (!exists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 绑定用户 Id={systemUserId} (system) 到角色 Id={systemRoleId} (System)...");
             await db.Insertable(new UserRole
             {
                 Id = userRoleId1,
@@ -151,16 +142,11 @@ internal static partial class InitialDataSeeder
                 CreateBy = "System",
             }).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在用户 Id={systemUserId} 与角色 Id={systemRoleId} 的绑定，跳过创建。");
-        }
 
         // admin 用户 -> Admin 角色
         exists = await db.Queryable<UserRole>().AnyAsync(ur => ur.UserId == adminUserId && ur.RoleId == adminRoleId);
         if (!exists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 绑定用户 Id={adminUserId} (admin) 到角色 Id={adminRoleId} (Admin)...");
             await db.Insertable(new UserRole
             {
                 Id = userRoleId2,
@@ -170,16 +156,11 @@ internal static partial class InitialDataSeeder
                 CreateBy = "System",
             }).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在用户 Id={adminUserId} 与角色 Id={adminRoleId} 的绑定，跳过创建。");
-        }
 
         // test 用户 -> Test 角色
         exists = await db.Queryable<UserRole>().AnyAsync(ur => ur.UserId == testUserId && ur.RoleId == testRoleId);
         if (!exists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 绑定用户 Id={testUserId} (test) 到角色 Id={testRoleId} (Test)...");
             await db.Insertable(new UserRole
             {
                 Id = userRoleId3,
@@ -188,10 +169,6 @@ internal static partial class InitialDataSeeder
                 IsDeleted = false,
                 CreateBy = "System",
             }).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在用户 Id={testUserId} 与角色 Id={testRoleId} 的绑定，跳过创建。");
         }
     }
 
@@ -257,18 +234,11 @@ internal static partial class InitialDataSeeder
                     .Where(p => p.Id == existing.Id)
                     .ExecuteCommandAsync();
 
-                Console.WriteLine(
-                    $"[Radish.DbMigrate] 已恢复角色 Id={roleId} 与 ApiModule Id={apiModuleId} 的权限记录。");
                 return;
             }
 
-            Console.WriteLine(
-                $"[Radish.DbMigrate] 已存在角色 Id={roleId} 与 ApiModule Id={apiModuleId} 的权限记录，跳过创建。");
             return;
         }
-
-        Console.WriteLine(
-            $"[Radish.DbMigrate] 创建角色 Id={roleId} ({roleName}) 对 ApiModule Id={apiModuleId} 的访问权限...");
 
         // 为种子权限使用固定、靠后的 Id 段，避免与历史数据的主键冲突
         var roleOffset = roleId switch
@@ -320,7 +290,7 @@ internal static partial class InitialDataSeeder
         }
 
         await db.Updateable(redundantPermissions).ExecuteCommandAsync();
-        Console.WriteLine($"[Radish.DbMigrate] 已回收 Test 角色的多余 API 权限，共 {redundantPermissions.Count} 条。");
+        WriteSeedEvent("dbmigrate.seed.permissions_revoked", redundantPermissions.Count);
     }
 
     /// <summary>初始化角色相关数据</summary>
@@ -335,8 +305,6 @@ internal static partial class InitialDataSeeder
         var systemExists = await db.Queryable<Role>().AnyAsync(r => r.Id == systemRoleId);
         if (!systemExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={systemRoleId}, RoleName=System...");
-
             var systemRole = new Role("System")
             {
                 Id = systemRoleId,
@@ -349,17 +317,11 @@ internal static partial class InitialDataSeeder
 
             await db.Insertable(systemRole).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={systemRoleId} 的 System 角色，跳过创建。");
-        }
 
         // Admin 角色
         var adminExists = await db.Queryable<Role>().AnyAsync(r => r.Id == adminRoleId);
         if (!adminExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={adminRoleId}, RoleName=Admin...");
-
             var adminRole = new Role("Admin")
             {
                 Id = adminRoleId,
@@ -372,17 +334,11 @@ internal static partial class InitialDataSeeder
 
             await db.Insertable(adminRole).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={adminRoleId} 的 Admin 角色，跳过创建。");
-        }
 
         // Test 角色
         var testExists = await db.Queryable<Role>().AnyAsync(r => r.Id == testRoleId);
         if (!testExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认角色 Id={testRoleId}, RoleName=Test...");
-
             var testRole = new Role("Test")
             {
                 Id = testRoleId,
@@ -394,10 +350,6 @@ internal static partial class InitialDataSeeder
             };
 
             await db.Insertable(testRole).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={testRoleId} 的 Test 角色，跳过创建。");
         }
     }
 
@@ -411,8 +363,6 @@ internal static partial class InitialDataSeeder
         var radishTenantExists = await db.Queryable<Tenant>().AnyAsync(t => t.Id == radishTenantId);
         if (!radishTenantExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认租户 Id={radishTenantId}, TenantName=Radish...");
-
             var radishTenant = new Tenant("Radish", TenantTypeEnum.None)
             {
                 Id = radishTenantId,
@@ -423,16 +373,10 @@ internal static partial class InitialDataSeeder
 
             await db.Insertable(radishTenant).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={radishTenantId} 的 Radish 租户，跳过创建。");
-        }
 
         var testTenantExists = await db.Queryable<Tenant>().AnyAsync(t => t.Id == testTenantId);
         if (!testTenantExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认租户 Id={testTenantId}, TenantName=Test...");
-
             var testTenant = new Tenant("Test", TenantTypeEnum.None)
             {
                 Id = testTenantId,
@@ -442,10 +386,6 @@ internal static partial class InitialDataSeeder
             };
 
             await db.Insertable(testTenant).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={testTenantId} 的 Test 租户，跳过创建。");
         }
     }
 
@@ -459,8 +399,6 @@ internal static partial class InitialDataSeeder
         var devDeptExists = await db.Queryable<Department>().AnyAsync(d => d.Id == devDeptId);
         if (!devDeptExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认部门 Id={devDeptId}, DepartmentName=Development...");
-
             var devDept = new Department("Development")
             {
                 Id = devDeptId,
@@ -473,16 +411,10 @@ internal static partial class InitialDataSeeder
 
             await db.Insertable(devDept).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={devDeptId} 的 Development 部门，跳过创建。");
-        }
 
         var testDeptExists = await db.Queryable<Department>().AnyAsync(d => d.Id == testDeptId);
         if (!testDeptExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认部门 Id={testDeptId}, DepartmentName=Test...");
-
             var testDept = new Department("Test")
             {
                 Id = testDeptId,
@@ -494,10 +426,6 @@ internal static partial class InitialDataSeeder
             };
 
             await db.Insertable(testDept).ExecuteCommandAsync();
-        }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={testDeptId} 的 Test 部门，跳过创建。");
         }
     }
 
@@ -525,8 +453,6 @@ internal static partial class InitialDataSeeder
         var userExists = await db.Queryable<User>().AnyAsync(u => u.Id == seed.Id);
         if (!userExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认用户 Id={seed.Id}, Email={seed.Email}...");
-
             var userOptions = new UserInitializationOptions(seed.Email, PasswordHasher.HashPassword(seed.Password))
             {
                 UserName = seed.DisplayName,
@@ -558,18 +484,12 @@ internal static partial class InitialDataSeeder
                 {
                     throw;
                 }
-
-                Console.WriteLine($"[Radish.DbMigrate] 检测到 {seed.Key} 用户旧记录，已自动纠正开发默认身份信息。");
             }
 
             return;
         }
 
-        var corrected = await CorrectDefaultUserIdentityAsync(db, seed, publicTenantId, devDeptId);
-
-        Console.WriteLine(corrected > 0
-            ? $"[Radish.DbMigrate] 已纠正 {seed.Key} 用户身份信息：Email={seed.Email}, DisplayName={seed.DisplayName}, PublicIndex={seed.PublicIndex}。"
-            : $"[Radish.DbMigrate] 已存在 Id={seed.Id} 的 {seed.Key} 用户，且身份信息正确，跳过。");
+        await CorrectDefaultUserIdentityAsync(db, seed, publicTenantId, devDeptId);
     }
 
     private static Task<int> CorrectDefaultUserIdentityAsync(
@@ -602,7 +522,7 @@ internal static partial class InitialDataSeeder
         var defaultAvatarsPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Uploads", "DefaultAvatars");
         if (!Directory.Exists(defaultAvatarsPath))
         {
-            Console.WriteLine($"[Radish.DbMigrate] 默认头像目录不存在，跳过：{defaultAvatarsPath}");
+            WriteSeedEvent("dbmigrate.seed.asset_missing", warning: true);
             return;
         }
 
@@ -621,14 +541,13 @@ internal static partial class InitialDataSeeder
                                  a.BusinessId == seed.UserId);
             if (existingAvatar != null)
             {
-                Console.WriteLine($"[Radish.DbMigrate] 用户 {seed.UserName} 已存在头像，保留现状。");
                 continue;
             }
 
             var filePath = Path.Combine(defaultAvatarsPath, seed.FileName);
             if (!File.Exists(filePath))
             {
-                Console.WriteLine($"[Radish.DbMigrate] 默认头像文件不存在，跳过用户 {seed.UserName}：{filePath}");
+                WriteSeedEvent("dbmigrate.seed.asset_missing", warning: true);
                 continue;
             }
 
@@ -639,7 +558,6 @@ internal static partial class InitialDataSeeder
 
             if (existingAttachment != null)
             {
-                Console.WriteLine($"[Radish.DbMigrate] 默认头像附件 Id={seed.AttachmentId} 已存在，补齐用户 {seed.UserName} 的头像关联。");
                 await db.Updateable<Attachment>()
                     .SetColumns(a => new Attachment
                     {
@@ -668,8 +586,6 @@ internal static partial class InitialDataSeeder
 
                 continue;
             }
-
-            Console.WriteLine($"[Radish.DbMigrate] 为用户 {seed.UserName} 补充默认头像：{seed.FileName}");
 
             await db.Insertable(new Attachment
             {

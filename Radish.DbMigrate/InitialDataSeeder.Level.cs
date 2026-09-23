@@ -16,9 +16,6 @@ internal static partial class InitialDataSeeder
         // 使用动态计算器生成所有等级的经验值配置
         var levelExpData = calculator.CalculateAllLevels();
 
-        Console.WriteLine($"[Radish.DbMigrate] 使用 {calculator.GetFormulaType()} 公式计算经验值");
-        Console.WriteLine($"[Radish.DbMigrate] 配置摘要: {calculator.GetConfigSummary()}");
-
         // 11 级修仙体系配置（等级名称、颜色、描述）
         var levelMetadata = new[]
         {
@@ -43,8 +40,6 @@ internal static partial class InitialDataSeeder
                 // 从计算器获取该等级的经验值数据
                 var (expRequired, expCumulative) = levelExpData[meta.Level];
 
-                Console.WriteLine($"[Radish.DbMigrate] 创建等级配置 Lv.{meta.Level} ({meta.Name}) - 需要经验: {expRequired}, 累计: {expCumulative}");
-
                 var levelConfig = new LevelConfig
                 {
                     Level = meta.Level,
@@ -60,10 +55,6 @@ internal static partial class InitialDataSeeder
                 };
 
                 await db.Insertable(levelConfig).ExecuteCommandAsync();
-            }
-            else
-            {
-                Console.WriteLine($"[Radish.DbMigrate] 已存在 Lv.{meta.Level} ({meta.Name}) 的等级配置，跳过创建。");
             }
         }
     }

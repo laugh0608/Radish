@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Configuration;
 using OpenIddict.Abstractions;
@@ -24,27 +26,32 @@ public class OpenIddictSeedHostedService : IHostedService
     private readonly IOpenIddictApplicationManager _applicationManager;
     private readonly IOpenIddictScopeManager _scopeManager;
     private readonly IConfiguration _configuration;
+    private readonly ILogger<OpenIddictSeedHostedService> _logger;
 
     public OpenIddictSeedHostedService(
         IOpenIddictApplicationManager applicationManager,
         IOpenIddictScopeManager scopeManager,
-        IConfiguration configuration)
+        IConfiguration configuration,
+        ILogger<OpenIddictSeedHostedService> logger)
     {
         _applicationManager = applicationManager;
         _scopeManager = scopeManager;
         _configuration = configuration;
+        _logger = logger;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        Console.WriteLine("[OpenIddictSeed] StartAsync 开始执行");
+        var started = Stopwatch.GetTimestamp();
+        var createdCount = 0;
+        var updatedCount = 0;
+        var removedCount = 0;
+
         var publicBaseUri = GetPublicBaseUri();
-        Console.WriteLine($"[OpenIddictSeed] 当前公开回调基址: {publicBaseUri}");
 
         // 初始化 radish-api Scope
         if (await _scopeManager.FindByNameAsync(UserScopes.RadishApi, cancellationToken) is null)
         {
-            Console.WriteLine("[OpenIddictSeed] 创建 radish-api scope");
             var descriptor = new OpenIddictScopeDescriptor
             {
                 Name = UserScopes.RadishApi,
@@ -54,17 +61,13 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.Resources.Add(UserScopes.RadishApi);
 
             await _scopeManager.CreateAsync(descriptor, cancellationToken);
-        }
-        else
-        {
-            Console.WriteLine("[OpenIddictSeed] radish-api scope 已存在");
+            createdCount++;
         }
 
         // 初始化前端 Web 客户端：radish-client
         var existingClient = await _applicationManager.FindByClientIdAsync("radish-client", cancellationToken);
         if (existingClient is null)
         {
-            Console.WriteLine("[OpenIddictSeed] 创建 radish-client 客户端");
             var descriptor = new OpenIddictApplicationDescriptor
             {
                 ClientId = "radish-client",
@@ -90,8 +93,6 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.RedirectUris.Add(TauriLoopbackRedirectUri);
             descriptor.PostLogoutRedirectUris.Add(TauriLoopbackPostLogoutRedirectUri);
 
-            Console.WriteLine($"[OpenIddictSeed] PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
-
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
@@ -109,11 +110,10 @@ public class OpenIddictSeedHostedService : IHostedService
             ApplyOfficialMetadata(descriptor, "Radish 官方客户端，承载社区主站、WebOS 与 Flutter 原生壳层。");
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
-            Console.WriteLine("[OpenIddictSeed] radish-client 客户端创建完成");
+            createdCount++;
         }
         else
         {
-            Console.WriteLine("[OpenIddictSeed] radish-client 客户端已存在，更新配置");
             // 如果客户端已存在，更新配置（确保包含所有访问方式的 URL）
             var descriptor = new OpenIddictApplicationDescriptor();
             await _applicationManager.PopulateAsync(descriptor, existingClient, cancellationToken);
@@ -140,14 +140,12 @@ public class OpenIddictSeedHostedService : IHostedService
             // Tauri 桌面客户端：系统浏览器登出后通过本机 loopback 回到桌面壳
             descriptor.PostLogoutRedirectUris.Add(TauriLoopbackPostLogoutRedirectUri);
 
-            Console.WriteLine($"[OpenIddictSeed] 更新后 PostLogoutRedirectUris 数量: {descriptor.PostLogoutRedirectUris.Count}");
-
             // 确保扩展属性存在
             ApplyOfficialMetadata(descriptor, "Radish 官方客户端，承载社区主站、WebOS 与 Flutter 原生壳层。");
             EnsurePublicClientRequirements(descriptor);
 
             await _applicationManager.UpdateAsync(existingClient, descriptor, cancellationToken);
-            Console.WriteLine("[OpenIddictSeed] radish-client 客户端更新完成");
+            updatedCount++;
         }
 
         // 初始化 Scalar 文档客户端：radish-scalar（用于 /scalar OAuth 调试）
@@ -177,6 +175,7 @@ public class OpenIddictSeedHostedService : IHostedService
             ApplyOfficialMetadata(descriptor, "Radish 官方 API 文档与调试入口。");
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
+            createdCount++;
         }
         else
         {
@@ -196,6 +195,7 @@ public class OpenIddictSeedHostedService : IHostedService
             ApplyOfficialMetadata(descriptor, "Radish 官方 API 文档与调试入口。");
 
             await _applicationManager.UpdateAsync(existingScalar, descriptor, cancellationToken);
+            updatedCount++;
         }
 
         // 初始化后台管理控制台客户端：radish-console
@@ -225,6 +225,7 @@ public class OpenIddictSeedHostedService : IHostedService
             ApplyOfficialMetadata(descriptor, "Radish 官方管理控制台，面向后台运营与系统管理。");
 
             await _applicationManager.CreateAsync(descriptor, cancellationToken);
+            createdCount++;
         }
         else
         {
@@ -251,14 +252,23 @@ public class OpenIddictSeedHostedService : IHostedService
             EnsureConsolePermissions(descriptor);
 
             await _applicationManager.UpdateAsync(existingConsole, descriptor, cancellationToken);
+            updatedCount++;
         }
 
         var existingShop = await _applicationManager.FindByClientIdAsync("radish-shop", cancellationToken);
         if (existingShop is not null)
         {
             await _applicationManager.DeleteAsync(existingShop, cancellationToken);
-            Console.WriteLine("[OpenIddictSeed] 已移除遗留的 radish-shop 客户端种子。");
+            removedCount++;
         }
+
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["EventCode"] = "auth.seed.completed", ["SourceCategory"] = "database"
+        });
+        _logger.LogInformation(
+            "OpenIddict seed completed; created={createdCount}; updated={updatedCount}; removed={removedCount}; duration={durationMs} ms",
+            createdCount, updatedCount, removedCount, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
     }
 
     private Uri GetPublicBaseUri()

@@ -238,7 +238,6 @@ internal static partial class InitialDataSeeder
     {
         await EnsureConsoleAuthorizationTablesAsync(db);
         db.CodeFirst.InitTables<ConsoleResource, RoleConsoleResource, ConsoleResourceApiModule>();
-        Console.WriteLine("[Radish.DbMigrate] 已同步 Console 授权相关表结构。");
 
         foreach (var spec in ConsoleResourceSeeds)
         {
@@ -319,7 +318,7 @@ internal static partial class InitialDataSeeder
 
             if (!apiModuleMap.TryGetValue(spec.LinkUrl, out var apiModule))
             {
-                Console.WriteLine($"[Radish.DbMigrate] Console 资源映射缺少 ApiModule：{spec.LinkUrl}");
+                WriteSeedEvent("dbmigrate.seed.permission_missing", warning: true);
                 continue;
             }
 
@@ -462,7 +461,7 @@ internal static partial class InitialDataSeeder
         }
 
         await db.Updateable(assignments).ExecuteCommandAsync();
-        Console.WriteLine($"[Radish.DbMigrate] 已回收 Test 角色的 Console 资源授权，共 {assignments.Count} 条。");
+        WriteSeedEvent("dbmigrate.seed.permissions_revoked", assignments.Count);
     }
 
     private static async Task EnsureConsoleAuthorizationTablesAsync(ISqlSugarClient db)
@@ -502,7 +501,6 @@ internal static partial class InitialDataSeeder
         }
 
         var backupTableName = $"{tableName}__legacy_{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-        Console.WriteLine($"[Radish.DbMigrate] 检测到 SQLite 旧表结构：{tableName} 的软删除列仍为 NOT NULL，开始自动重建。");
 
         await db.Ado.ExecuteCommandAsync($"ALTER TABLE {QuoteIdentifier(tableName)} RENAME TO {QuoteIdentifier(backupTableName)}");
         db.CodeFirst.InitTables<TEntity>();
@@ -521,7 +519,7 @@ internal static partial class InitialDataSeeder
         }
 
         await db.Ado.ExecuteCommandAsync($"DROP TABLE {QuoteIdentifier(backupTableName)}");
-        Console.WriteLine($"[Radish.DbMigrate] 已完成 {tableName} 表结构修复。");
+        WriteSeedEvent("dbmigrate.seed.schema_repaired", 1);
     }
 
     private static Dictionary<string, SqliteColumnInfo> GetSqliteTableColumns(ISqlSugarClient db, string tableName)

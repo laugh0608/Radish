@@ -124,7 +124,24 @@
     "dbmigrate.apply": "Apply checks, schema migration, seed and strict verification started.",
     "dbmigrate.started": "Migration command started.",
     "dbmigrate.completed": "Migration command completed.",
-    "dbmigrate.index.failed": "Schema index creation failed."
+    "dbmigrate.index.failed": "Schema index creation failed.",
+    "dbmigrate.seed.step_finished": "Seed stage finished; outcome describes completion.",
+    "dbmigrate.seed.completed": "All configured seed stages completed.",
+    "dbmigrate.seed.developer_defaults_enabled": "Development account seeds enabled.",
+    "dbmigrate.seed.developer_defaults_skipped": "Development account seeds skipped by deployment policy.",
+    "dbmigrate.seed.asset_missing": "Default seed asset is missing; related seed work skipped.",
+    "dbmigrate.seed.schema_repaired": "Legacy seed schema repaired.",
+    "dbmigrate.seed.product_retired": "Seeded product retired by availability policy.",
+    "dbmigrate.seed.schema_missing": "Seed prerequisite schema is missing; related work skipped.",
+    "dbmigrate.seed.stock_backfilled": "Historical order stock type snapshots backfilled.",
+    "dbmigrate.seed.stock_unresolved": "Historical order stock types remain unresolved.",
+    "dbmigrate.seed.permission_missing": "Seed resource API permission is missing.",
+    "dbmigrate.seed.permissions_revoked": "Obsolete test role permissions revoked.",
+    "dbmigrate.seed.identity_conflict": "Seed identity conflict prevented creation.",
+    "dbmigrate.seed.preference_unresolved": "Existing time preference could not be corrected.",
+    "dbmigrate.schema.applied": "Schema migration committed and recorded in the ledger.",
+    "auth.schema.adopted": "Existing OpenIddict schema adopted into migration history.",
+    "auth.seed.completed": "OpenIddict seed configuration applied."
   },
   "properties": {
     "durationMs": {
@@ -253,6 +270,94 @@
         "invalid-operation",
         "other"
       ]
+    },
+    "seedStep": {
+      "type": "enum",
+      "values": [
+        "Roles",
+        "Tenants",
+        "Departments",
+        "ApiPermissions",
+        "ConsoleAuthorization",
+        "ForumCategories",
+        "ForumTags",
+        "WikiDocuments",
+        "ChatChannels",
+        "Levels",
+        "ShopCategories",
+        "ShopProducts",
+        "ShopOrderSnapshots",
+        "ShopImages",
+        "Stickers",
+        "DeveloperUsers",
+        "DeveloperTimePreferences",
+        "DeveloperUserRoles"
+      ]
+    },
+    "databaseScope": {
+      "type": "enum",
+      "values": [
+        "main",
+        "log",
+        "message",
+        "chat"
+      ]
+    },
+    "migrationId": {
+      "type": "enum",
+      "values": [
+        "20260712_000_baseline",
+        "20260712_001_experience_natural_dates",
+        "20260713_001_shop_order_fulfillment_safety",
+        "20260713_002_shop_entitlement_operation",
+        "20260713_003_user_active_benefit",
+        "20260714_001_shop_entitlement_operation_subject_nullability",
+        "20260718_001_chat_direct_conversation",
+        "20260718_002_chat_attachment_privacy",
+        "20260718_002_chat_reliable_message",
+        "20260718_003_chat_message_search",
+        "20260718_003_notification_inbox_governance",
+        "20260718_004_notification_delivery_cleanup",
+        "20260719_004_chat_message_reaction",
+        "20260719_005_chat_message_pin",
+        "20260719_006_chat_read_receipt",
+        "20260720_007_wiki_author_collaboration",
+        "20260721_008_content_moderation_case",
+        "20260725_009_content_moderation_appeal",
+        "20260725_010_chat_moderation_relief",
+        "20260725_011_user_block_authority",
+        "20260725_011_user_block_notification_suppression",
+        "20260725_012_wiki_attachment_authority",
+        "20260726_013_forum_content_revision",
+        "20260727_014_content_reward",
+        "20260727_014_content_reward_audit_projection",
+        "20260727_015_forum_answer_lifecycle",
+        "20260728_016_forum_answer_lifecycle_strict",
+        "20260729_017_forum_post_bookmark",
+        "20260805_018_chat_channel_discoverability",
+        "20260809_019_console_role_governance",
+        "20260809_020_product_review",
+        "20260813_021_wiki_document_governance",
+        "20260813_022_experience_authoritative_governance"
+      ]
+    },
+    "createdCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "updatedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "removedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
     }
   }
 }
