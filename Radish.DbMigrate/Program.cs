@@ -1,3 +1,5 @@
+using Microsoft.Extensions.Logging;
+using Serilog;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,14 +19,30 @@ using Radish.DbMigrate;
 // dotnet run --project Radish.DbMigrate/Radish.DbMigrate.csproj -- seed
 //  - 高级命令。执行基础数据灌入（例如默认角色/管理员/租户等）
 
-var builder = DbMigrateBootstrap.CreateBuilder();
-
-using var host = builder.Build();
-Radish.Common.CoreTool.InternalApp.ConfigureApplication(host);
-
-var services = host.Services;
-var configuration = builder.Configuration;
-
-await DbMigrateRunner.RunAsync(services, configuration, builder.Environment.EnvironmentName, args);
-
-return;
+return await Radish.Extension.Log.RuntimeProcess.RunAsync("dbmigrate", async () =>
+{
+    var builder = DbMigrateBootstrap.CreateBuilder(configureServices: false);
+    using var runtimeLogging = new Radish.Extension.Log.RuntimeLoggingSession(
+        builder.Configuration, builder.Environment.EnvironmentName, "dbmigrate", Console.Error);
+    // CLI 诊断独立输出到 stderr；doctor / verify / help 的命令结果继续使用 stdout。
+    using var fallbackLogger = runtimeLogging.Logger == null
+        ? DbMigrateCommand.CreateLogger(builder.Configuration, builder.Environment.EnvironmentName, Console.Error)
+        : null;
+    var logger = runtimeLogging.Logger ?? fallbackLogger!;
+    var previousLogger = Log.Logger;
+    Log.Logger = logger;
+    try
+    {
+        builder.Logging.ClearProviders();
+        builder.Services.AddSerilog(logger, dispose: false);
+        DbMigrateBootstrap.ConfigureServices(builder);
+        using var host = builder.Build();
+        Radish.Common.CoreTool.InternalApp.ConfigureApplication(host);
+        await DbMigrateCommand.RunAsync(args, logger, () => DbMigrateRunner.RunAsync(
+            host.Services, builder.Configuration, builder.Environment.EnvironmentName, args));
+    }
+    finally
+    {
+        Log.Logger = previousLogger;
+    }
+});

@@ -3,6 +3,10 @@ using System.Data;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Radish.Common.OptionTool;
 using Radish.Common;
 using Radish.Common.CacheTool;
 using Radish.Common.CoreTool;
@@ -36,6 +40,8 @@ public static class SqlSugarSetup
     public static void AddSqlSugarSetup(this IServiceCollection services)
     {
         if (services == null) throw new ArgumentNullException(nameof(services));
+
+        services.AddLogging();
 
         // 默认添加主数据库连接
         if (!string.IsNullOrEmpty(AppSettingsTool.RadishApp("MainDb")))
@@ -88,7 +94,13 @@ public static class SqlSugarSetup
         // 参考：https://www.donet5.com/Home/Doc?typeId=1181
         services.AddSingleton<ISqlSugarClient>(o =>
         {
-            // return new SqlSugarScope(BaseDbConfig.AllConfigs);
+            var loggingOptions = App.GetConfig<SqlAopLogOptions>() ?? new SqlAopLogOptions();
+            if (loggingOptions.SlowQueryThresholdMs <= 0 || loggingOptions.SlowConnectionThresholdMs <= 0)
+                throw new InvalidOperationException("SQL logging duration thresholds must be positive.");
+            var diagnosticsEnabled = o.GetService<IHostEnvironment>()?.IsDevelopment() == true &&
+                App.Configuration["RadishLogging:Mode"] == "Development" &&
+                App.Configuration.GetValue<bool>("RadishLogging:Diagnostics");
+            var sqlLogging = new SqlSugarAop(o.GetRequiredService<ILogger<SqlSugarAop>>(), loggingOptions, diagnosticsEnabled);
             return new SqlSugarScope(BaseDbConfig.AllConfigs, db =>
             {
                 BaseDbConfig.AllConfigs.ForEach(config =>
@@ -108,11 +120,11 @@ public static class SqlSugarSetup
                     dbProvider.Aop.OnLogExecuting = (s, parameters) =>
                     {
                         PostgreSqlDateTimeParameterNormalizer.Normalize(config, parameters);
-                        if (!SqlSugarConst.LogConfigId.Equals(configId, StringComparison.OrdinalIgnoreCase))
+                        if (diagnosticsEnabled && loggingOptions.Enabled &&
+                            !SqlSugarConst.LogConfigId.Equals(configId, StringComparison.OrdinalIgnoreCase))
                         {
-                            SqlSugarAop.OnLogExecuting(dbProvider, ResolveSqlAopUser(), ExtractTableName(s),
-                                ResolveOperateName(dbProvider), s, parameters,
-                                config);
+                            sqlLogging.Executing(ResolveSqlAopUser(), ExtractTableName(s),
+                                ResolveOperateName(dbProvider), parameters?.Length ?? 0);
                         }
                     };
 
@@ -126,28 +138,12 @@ public static class SqlSugarSetup
                                 return;
                             }
 
-                            SqlSugarAop.OnCommandExecuted(
-                                dbProvider,
-                                ResolveSqlAopUser(),
-                                ExtractTableName(s),
-                                operate,
-                                s,
-                                parameters,
-                                config,
-                                dbProvider.Ado.SqlExecutionTime);
+                            sqlLogging.Executed(operate, parameters?.Length ?? 0, dbProvider.Ado.SqlExecutionTime);
                         };
 
                         dbProvider.Aop.OnGetDataReadered = (s, parameters, elapsed) =>
                         {
-                            SqlSugarAop.OnQueryExecuted(
-                                dbProvider,
-                                ResolveSqlAopUser(),
-                                ExtractTableName(s),
-                                ResolveOperateName(dbProvider),
-                                s,
-                                parameters,
-                                config,
-                                elapsed);
+                            sqlLogging.Executed(ResolveOperateName(dbProvider), parameters?.Length ?? 0, elapsed);
                         };
 
                         dbProvider.Aop.CheckConnectionExecuted = (connection, elapsed) =>
@@ -157,18 +153,10 @@ public static class SqlSugarSetup
                                 ApplySqlitePragmas(connection, config);
                             }
 
-                            SqlSugarAop.OnConnectionChecked(config, connection, elapsed);
+                            sqlLogging.ConnectionChecked(elapsed);
                         };
 
-                        dbProvider.Aop.OnError = ex =>
-                        {
-                            Log.Warning(
-                                ex,
-                                "[SqlSugar] 数据库执行异常，ConnId: {ConnId}, DbType: {DbType}, Message: {Message}",
-                                config.ConfigId,
-                                config.DbType,
-                                ex.Message);
-                        };
+                        // 不在数据库回调记录异常；恢复 / 最终失败的调用边界拥有记录责任。
                     }
                 });
             });

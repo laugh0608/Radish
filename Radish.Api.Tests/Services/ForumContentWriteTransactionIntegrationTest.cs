@@ -85,7 +85,7 @@ public sealed class ForumContentWriteTransactionIntegrationTest
             new Mock<ICommentService>(MockBehavior.Strict).Object);
         var proxy = new ProxyGenerator().CreateInterfaceProxyWithTarget<IForumContentWriteService>(
             target,
-            new TranAop(unitOfWork, NullLogger<TranAop>.Instance));
+            new TranAop(unitOfWork));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             proxy.PublishPostAsync(

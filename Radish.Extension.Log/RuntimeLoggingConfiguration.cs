@@ -21,7 +21,9 @@ public static class RuntimeLoggingConfiguration
             section["InstanceId"] ?? Environment.MachineName, section["Release"] ?? "unversioned");
         var policy = new RuntimeLogPolicy(source, mode, section["MinimumLevel"] ?? "Info", section.GetValue<bool>("Diagnostics"));
         var writer = new RuntimeLogOutput(policy, source, output ?? Console.Out, emergency ?? Console.Error, mode);
-        logger.MinimumLevel.Verbose().Enrich.FromLogContext().WriteTo.Sink(new RuntimeSerilogSink(writer));
+        logger.MinimumLevel.Verbose().Enrich.FromLogContext()
+            .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
+            .WriteTo.Sink(new RuntimeSerilogSink(writer));
         return writer;
     }
 }

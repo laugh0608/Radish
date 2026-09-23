@@ -1,8 +1,8 @@
 # 全项目统一日志、跨容器汇聚与 Console 运维中心
 
-> 状态：项目所有者已于 2026-09-19 确认方案；作为重构基线；L1 契约及采集安全 / 故障可见性子项已实施，L2 生成入口已接入候选开关，生产切换门禁尚未关闭。
+> 状态：项目所有者已于 2026-09-19 确认方案；作为重构基线；L1 契约及采集安全 / 故障可见性子项已实施，L2 入口及 SQL / AOP / 事务 / DbMigrate 入口子项已实施，生产切换门禁尚未关闭。
 >
-> 更新：2026-09-19（Asia/Shanghai）。范围来自项目所有者本轮反馈：统一文件、终端和日志库，开发 / 生产两种模式，Info / Warning / Error 三级，跨服务容器集中查询，Console 内告警与提醒。
+> 更新：2026-09-23（Asia/Shanghai）。范围来自项目所有者本轮反馈：统一文件、终端和日志库，开发 / 生产两种模式，Info / Warning / Error 三级，跨服务容器集中查询，Console 内告警与提醒。
 
 本文是本次重构的设计入口；代码现状与迁移清单见[日志现状审计](./unified-logging-inventory.md)。首批生成契约与采集修订见[事件契约与实现进度](./unified-logging-contract.md)。现有宿主实现仍以[日志系统](../guide/logging.md)及其代码为准，不能把本文目标当作已上线功能。专题不改变既有发布、生产部署和服务启动授权边界。
 
@@ -346,6 +346,6 @@ L2–L6 是一个完整重构目标的交付切片，不能把“只降低 SQL �
 
 - 已完成方案确认、现状审计、统一事件策略及 .NET / Node 生成契约；实现入口见[事件契约](./unified-logging-contract.md)。
 - L1 已取得本机 Linux arm64 的传输、安全裁剪及故障可见性证据；固定版本 / digest、HTTP 候选上限、队列与轮转限制见[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)及[采集边界记录](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。这不代表全部平台或磁盘故障门禁关闭。
-- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)。`RadishLogging.Enabled` 默认 false，SQL / AOP / DbMigrate / seed / Rust 与业务事件分类继续治理。
+- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)。`RadishLogging.Enabled` 默认 false，SQL / AOP / 事务、API 已处理异常及 DbMigrate 入口 / Runner / Doctor 已按[生成端批次](../records/unified-logging-l2-producer-governance-2026-09-23.md)推进；seed、具体 migration、后台任务、Rust 与业务事件分类继续治理。
 - 真实内网入库、新日志表、Console 查询与告警、旧链路退出尚未完成；没有切换 production Compose、发布镜像、改写线上数据或发送告警。
 - 已确认的架构仍为独立 collector、统一标准流出口、文件与内网 API 两条持久化支路、Console 查询 / 提醒及独立审计权威性；下一步顺位由[当前规划](../planning/current.md)维护。

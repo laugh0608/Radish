@@ -44,7 +44,6 @@ public class UnitOfWorkManage : IUnitOfWorkManage
 
         uow.Db.Open();
         uow.Tenant.BeginTran();
-        _logger.LogDebug("UnitOfWork Begin");
         return uow;
     }
 
@@ -80,7 +79,6 @@ public class UnitOfWorkManage : IUnitOfWorkManage
                 }
                 catch (Exception commitException)
                 {
-                    _logger.LogError(commitException, "UnitOfWork commit failed; rolling back the transaction.");
                     RollbackAfterCommitFailure(commitException);
                     throw;
                 }
@@ -105,15 +103,9 @@ public class UnitOfWorkManage : IUnitOfWorkManage
                 {
                     GetDbClient().CommitTran();
 
-                    _logger.LogDebug($"Commit Transaction");
-                    Console.WriteLine($"Commit Transaction");
                 }
                 catch (Exception commitException)
                 {
-                    _logger.LogError(
-                        commitException,
-                        "Transaction commit failed for {Method}; rolling back the transaction.",
-                        method.GetFullName());
                     RollbackAfterCommitFailure(commitException);
                     throw;
                 }
@@ -152,8 +144,6 @@ public class UnitOfWorkManage : IUnitOfWorkManage
             if (result == method.GetFullName())
             {
                 GetDbClient().RollbackTran();
-                _logger.LogDebug($"Rollback Transaction");
-                Console.WriteLine($"Rollback Transaction");
                 while (!TranStack.TryPop(out _))
                 {
                     Thread.Sleep(1);
@@ -200,10 +190,6 @@ public class UnitOfWorkManage : IUnitOfWorkManage
             }
             catch (Exception rollbackException)
             {
-                _logger.LogError(
-                    rollbackException,
-                    "Rollback to savepoint {SavepointName} failed after operation failure.",
-                    savepointName);
                 throw new AggregateException(
                     $"Operation and rollback to savepoint {savepointName} both failed.",
                     operationException,
@@ -222,9 +208,6 @@ public class UnitOfWorkManage : IUnitOfWorkManage
         }
         catch (Exception rollbackException)
         {
-            _logger.LogError(
-                rollbackException,
-                "Transaction rollback also failed after commit failure.");
             throw new AggregateException(
                 "Transaction commit and rollback both failed.",
                 commitException,

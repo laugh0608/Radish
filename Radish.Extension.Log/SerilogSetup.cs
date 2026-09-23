@@ -33,6 +33,7 @@ public static class SerilogSetup
             loggerConfiguration
                 .ReadFrom.Configuration(AppSettingsTool.Configuration)
                 .MinimumLevel.Is(minimumLevel)
+                .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
                 .Enrich.FromLogContext()
                 .Enrich.With<SensitiveQueryStringLogEnricher>()
                 .WriteToConsole(options)

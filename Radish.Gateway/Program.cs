@@ -12,224 +12,227 @@ using Radish.Extension.Log;
 using Serilog;
 using Yarp.ReverseProxy;
 
-var builder = WebApplication.CreateBuilder(args);
-
-static string ResolveSharedConfigPath(string basePath, string contentRootPath)
+return await RuntimeProcess.RunAsync("gateway", async () =>
 {
-    var candidates = new[]
-    {
-        Path.Combine(basePath, "appsettings.Shared.json"),
-        Path.Combine(contentRootPath, "appsettings.Shared.json")
-    };
+    var builder = WebApplication.CreateBuilder(args);
 
-    foreach (var candidate in candidates)
+    static string ResolveSharedConfigPath(string basePath, string contentRootPath)
     {
-        if (File.Exists(candidate))
+        var candidates = new[]
         {
-            return candidate;
+            Path.Combine(basePath, "appsettings.Shared.json"),
+            Path.Combine(contentRootPath, "appsettings.Shared.json")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        var currentDir = new DirectoryInfo(contentRootPath);
+        while (currentDir != null)
+        {
+            var candidate = Path.Combine(currentDir.FullName, "appsettings.Shared.json");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            currentDir = currentDir.Parent;
+        }
+
+        return Path.Combine(contentRootPath, "appsettings.Shared.json");
+    }
+
+    static void RemoveHttpSysDelegationRegistrations(IServiceCollection services)
+    {
+        for (var index = services.Count - 1; index >= 0; index--)
+        {
+            var descriptor = services[index];
+            var serviceTypeName = descriptor.ServiceType.FullName ?? string.Empty;
+            var implementationTypeName = descriptor.ImplementationType?.FullName ?? string.Empty;
+            var implementationFactoryMethodName = descriptor.ImplementationFactory?.Method.Name ?? string.Empty;
+            var implementationFactoryReturnTypeName = descriptor.ImplementationFactory?.Method.ReturnType.FullName ?? string.Empty;
+
+            if (serviceTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal) ||
+                implementationTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal) ||
+                implementationFactoryMethodName.Contains("HttpSysDelegation", StringComparison.Ordinal) ||
+                implementationFactoryReturnTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal))
+            {
+                services.RemoveAt(index);
+            }
         }
     }
 
-    var currentDir = new DirectoryInfo(contentRootPath);
-    while (currentDir != null)
+    // ===== 配置管理 =====
+    var basePath = AppContext.BaseDirectory;
+    var sharedConfigPath = ResolveSharedConfigPath(basePath, builder.Environment.ContentRootPath);
+    builder.Configuration.Sources.Clear();
+    builder.Configuration.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
+    builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
+    builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
+    builder.Configuration.AddEnvironmentVariables();
+    builder.Configuration.ConfigureApplication();
+
+    // 绑定 InternalApp 扩展中的环境变量
+    builder.ConfigureApplication();
+    using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "gateway");
+
+    // ===== Razor Pages 配置 =====
+    builder.Services.AddRazorPages();
+
+    // ===== CORS 配置 =====
+    var corsSection = builder.Configuration.GetSection("Cors");
+    var allowedOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
+
+    builder.Services.AddCors(options =>
     {
-        var candidate = Path.Combine(currentDir.FullName, "appsettings.Shared.json");
-        if (File.Exists(candidate))
+        options.AddPolicy("GatewayCorsPolicy", policyBuilder =>
         {
-            return candidate;
-        }
-
-        currentDir = currentDir.Parent;
-    }
-
-    return Path.Combine(contentRootPath, "appsettings.Shared.json");
-}
-
-static void RemoveHttpSysDelegationRegistrations(IServiceCollection services)
-{
-    for (var index = services.Count - 1; index >= 0; index--)
-    {
-        var descriptor = services[index];
-        var serviceTypeName = descriptor.ServiceType.FullName ?? string.Empty;
-        var implementationTypeName = descriptor.ImplementationType?.FullName ?? string.Empty;
-        var implementationFactoryMethodName = descriptor.ImplementationFactory?.Method.Name ?? string.Empty;
-        var implementationFactoryReturnTypeName = descriptor.ImplementationFactory?.Method.ReturnType.FullName ?? string.Empty;
-
-        if (serviceTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal) ||
-            implementationTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal) ||
-            implementationFactoryMethodName.Contains("HttpSysDelegation", StringComparison.Ordinal) ||
-            implementationFactoryReturnTypeName.Contains("Yarp.ReverseProxy.Delegation", StringComparison.Ordinal))
-        {
-            services.RemoveAt(index);
-        }
-    }
-}
-
-// ===== 配置管理 =====
-var basePath = AppContext.BaseDirectory;
-var sharedConfigPath = ResolveSharedConfigPath(basePath, builder.Environment.ContentRootPath);
-builder.Configuration.Sources.Clear();
-builder.Configuration.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false);
-builder.Configuration.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: false);
-builder.Configuration.AddEnvironmentVariables();
-builder.Configuration.ConfigureApplication();
-
-// 绑定 InternalApp 扩展中的环境变量
-builder.ConfigureApplication();
-using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "gateway");
-
-// ===== Razor Pages 配置 =====
-builder.Services.AddRazorPages();
-
-// ===== CORS 配置 =====
-var corsSection = builder.Configuration.GetSection("Cors");
-var allowedOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
-
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("GatewayCorsPolicy", policyBuilder =>
-    {
-        policyBuilder
-            .WithOrigins(allowedOrigins)
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .AllowCredentials();
+            policyBuilder
+                .WithOrigins(allowedOrigins)
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .AllowCredentials();
+        });
     });
-});
 
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
-                               ForwardedHeaders.XForwardedProto |
-                               ForwardedHeaders.XForwardedHost;
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
+    {
+        options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                                   ForwardedHeaders.XForwardedProto |
+                                   ForwardedHeaders.XForwardedHost;
 
-    options.KnownIPNetworks.Clear();
-    options.KnownProxies.Clear();
-});
+        options.KnownIPNetworks.Clear();
+        options.KnownProxies.Clear();
+    });
 
-// ===== 健康检查配置 =====
-var apiBaseUrl = builder.Configuration["DownstreamServices:ApiService:BaseUrl"];
-var authBaseUrl = builder.Configuration["DownstreamServices:AuthService:BaseUrl"];
-var gatewayHealthTargets = GatewayHostHealthChecks.CreateHealthTargets(builder.Configuration);
-var healthCheckTags = GatewayHostHealthChecks.CreateTags(builder.Configuration);
-builder.Services.AddGatewayHostHealthChecks(builder.Configuration, healthCheckTags);
+    // ===== 健康检查配置 =====
+    var apiBaseUrl = builder.Configuration["DownstreamServices:ApiService:BaseUrl"];
+    var authBaseUrl = builder.Configuration["DownstreamServices:AuthService:BaseUrl"];
+    var gatewayHealthTargets = GatewayHostHealthChecks.CreateHealthTargets(builder.Configuration);
+    var healthCheckTags = GatewayHostHealthChecks.CreateTags(builder.Configuration);
+    builder.Services.AddGatewayHostHealthChecks(builder.Configuration, healthCheckTags);
 
-// ===== AppSettings 工具初始化 =====
-builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
-builder.Services.AddMemoryCache();
-builder.Services.AddHttpClient<PublicHeadSnapshotClient>(client =>
-{
-    client.Timeout = TimeSpan.FromSeconds(3);
-});
+    // ===== AppSettings 工具初始化 =====
+    builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
+    builder.Services.AddMemoryCache();
+    builder.Services.AddHttpClient<PublicHeadSnapshotClient>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(3);
+    });
 
-// ===== Serilog 日志配置 =====
-builder.Host.AddSerilogSetup(runtimeLogging);
+    // ===== Serilog 日志配置 =====
+    builder.Host.AddSerilogSetup(runtimeLogging);
 
-// ===== YARP 反向代理配置 =====
-builder.Services.AddReverseProxy()
-    .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+    // ===== YARP 反向代理配置 =====
+    builder.Services.AddReverseProxy()
+        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-if (!OperatingSystem.IsWindows())
-{
-    RemoveHttpSysDelegationRegistrations(builder.Services);
-}
-
-var app = builder.Build();
-runtimeLogging.AttachLifetime(app.Lifetime);
-
-var enableHttpsRedirection = app.Configuration.GetValue<bool?>("GatewayRuntime:EnableHttpsRedirection") ??
-    app.Environment.IsDevelopment();
-
-// 绑定 InternalApp 扩展中的服务
-app.ConfigureApplication();
-
-// ===== 中间件配置 =====
-app.UseForwardedHeaders();
-
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/Error");
-    app.UseHsts();
-}
-
-if (enableHttpsRedirection)
-{
-    app.UseHttpsRedirection();
-}
-
-app.UseStaticFiles();
-
-// 启用 WebSocket 支持（用于 Vite HMR）
-app.UseWebSockets();
-
-app.UseCors("GatewayCorsPolicy");
-
-app.UsePublicHeadSnapshotHtml();
-
-app.UseRouting();
-
-// ===== YARP 端点映射 =====
-app.MapReverseProxy();
-
-// ===== 端点映射 =====
-app.MapRazorPages();
-
-// 健康检查端点
-app.MapHealthChecks("/health", new HealthCheckOptions
-{
-    Predicate = GatewayHostHealthChecks.IsMinimal,
-});
-app.MapHealthChecks("/healthz", new HealthCheckOptions
-{
-    ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, healthCheckTags),
-});
-
-// 默认路由到门户页
-app.MapFallbackToPage("/Index");
-
-// ===== 启动日志 =====
-app.Lifetime.ApplicationStarted.Register(() =>
-{
     if (!OperatingSystem.IsWindows())
     {
-        Log.Information("当前运行环境非 Windows，Gateway 已跳过 YARP HttpSys delegation 注册");
+        RemoveHttpSysDelegationRegistrations(builder.Services);
     }
 
-    var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+    var app = builder.Build();
+    runtimeLogging.AttachLifetime(app.Lifetime);
 
-    Log.Information("====================================");
-    Log.Information("   ____           _ _     _");
-    Log.Information("  |  _ \\ __ _  __| (_)___| |__");
-    Log.Information("  | |_) / _` |/ _` | / __| '_ \\");
-    Log.Information("  |  _ < (_| | (_| | \\__ \\ | | |");
-    Log.Information("  |_| \\\\__,_|\\__,_|_|___/_| |_|");
-    Log.Information("        Radish.Gateway --by luobo");
-    Log.Information("====================================");
-    Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
-    Log.Information("监听地址: {Urls}", urls);
-    Log.Information("HTTPS 重定向: {HttpsRedirection}", enableHttpsRedirection ? "启用" : "禁用");
-    Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
-    if (!string.IsNullOrEmpty(apiBaseUrl))
+    var enableHttpsRedirection = app.Configuration.GetValue<bool?>("GatewayRuntime:EnableHttpsRedirection") ??
+        app.Environment.IsDevelopment();
+
+    // 绑定 InternalApp 扩展中的服务
+    app.ConfigureApplication();
+
+    // ===== 中间件配置 =====
+    app.UseForwardedHeaders();
+
+    if (app.Environment.IsDevelopment())
     {
-        Log.Information("下游 API 服务: {ApiUrl}", apiBaseUrl);
+        app.UseDeveloperExceptionPage();
+    }
+    else
+    {
+        app.UseExceptionHandler("/Error");
+        app.UseHsts();
     }
 
-    foreach (var target in gatewayHealthTargets)
+    if (enableHttpsRedirection)
     {
-        var scope = target.Tags.Contains("minimal") ? "最小探活" : "扩展观测";
-        Log.Information("{Scope}[{TargetName}]: {TargetUrl} | failureStatus={FailureStatus}",
-            scope,
-            target.Name,
-            target.Url,
-            target.FailureStatus);
+        app.UseHttpsRedirection();
     }
+
+    app.UseStaticFiles();
+
+    // 启用 WebSocket 支持（用于 Vite HMR）
+    app.UseWebSockets();
+
+    app.UseCors("GatewayCorsPolicy");
+
+    app.UsePublicHeadSnapshotHtml();
+
+    app.UseRouting();
+
+    // ===== YARP 端点映射 =====
+    app.MapReverseProxy();
+
+    // ===== 端点映射 =====
+    app.MapRazorPages();
+
+    // 健康检查端点
+    app.MapHealthChecks("/health", new HealthCheckOptions
+    {
+        Predicate = GatewayHostHealthChecks.IsMinimal,
+    });
+    app.MapHealthChecks("/healthz", new HealthCheckOptions
+    {
+        ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, healthCheckTags),
+    });
+
+    // 默认路由到门户页
+    app.MapFallbackToPage("/Index");
+
+    // ===== 启动日志 =====
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            Log.Information("当前运行环境非 Windows，Gateway 已跳过 YARP HttpSys delegation 注册");
+        }
+
+        var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+
+        Log.Information("====================================");
+        Log.Information("   ____           _ _     _");
+        Log.Information("  |  _ \\ __ _  __| (_)___| |__");
+        Log.Information("  | |_) / _` |/ _` | / __| '_ \\");
+        Log.Information("  |  _ < (_| | (_| | \\__ \\ | | |");
+        Log.Information("  |_| \\\\__,_|\\__,_|_|___/_| |_|");
+        Log.Information("        Radish.Gateway --by luobo");
+        Log.Information("====================================");
+        Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
+        Log.Information("监听地址: {Urls}", urls);
+        Log.Information("HTTPS 重定向: {HttpsRedirection}", enableHttpsRedirection ? "启用" : "禁用");
+        Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
+        if (!string.IsNullOrEmpty(apiBaseUrl))
+        {
+            Log.Information("下游 API 服务: {ApiUrl}", apiBaseUrl);
+        }
+
+        foreach (var target in gatewayHealthTargets)
+        {
+            var scope = target.Tags.Contains("minimal") ? "最小探活" : "扩展观测";
+            Log.Information("{Scope}[{TargetName}]: {TargetUrl} | failureStatus={FailureStatus}",
+                scope,
+                target.Name,
+                target.Url,
+                target.FailureStatus);
+        }
+    });
+
+    await app.RunAsync();
+
+    Log.Information("Radish.Gateway 已关闭");
 });
-
-app.Run();
-
-Log.Information("Radish.Gateway 已关闭");

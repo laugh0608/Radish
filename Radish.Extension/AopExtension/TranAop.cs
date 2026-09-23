@@ -1,7 +1,6 @@
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using Castle.DynamicProxy;
-using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Repository.UnitOfWorks;
 
@@ -11,13 +10,11 @@ namespace Radish.Extension.AopExtension;
 /// <remarks>继承 IInterceptor 接口</remarks>
 public class TranAop : IInterceptor
 {
-    private readonly ILogger<TranAop> _logger;
     private readonly IUnitOfWorkManage _unitOfWorkManage;
 
-    public TranAop(IUnitOfWorkManage unitOfWorkManage, ILogger<TranAop> logger)
+    public TranAop(IUnitOfWorkManage unitOfWorkManage)
     {
         _unitOfWorkManage = unitOfWorkManage;
-        _logger = logger;
     }
 
     /// <summary>实例化 IInterceptor 唯一方法</summary>
@@ -59,7 +56,6 @@ public class TranAop : IInterceptor
             catch (Exception ex)
             {
                 var resolvedException = UnwrapException(ex);
-                _logger.LogError(resolvedException, resolvedException.ToString());
                 AfterException(method);
                 ExceptionDispatchInfo.Capture(resolvedException).Throw();
                 throw;
@@ -78,8 +74,6 @@ public class TranAop : IInterceptor
             case Propagation.Required:
                 if (_unitOfWorkManage.TranCount <= 0)
                 {
-                    _logger.LogDebug($"Begin Transaction");
-                    Console.WriteLine($"Begin Transaction");
                     _unitOfWorkManage.BeginTran(method);
                 }
 
@@ -92,15 +86,11 @@ public class TranAop : IInterceptor
 
                 break;
             case Propagation.Nested:
-                _logger.LogDebug($"Begin Transaction");
-                Console.WriteLine($"Begin Transaction");
                 _unitOfWorkManage.BeginTran(method);
                 break;
             case Propagation.RequiresNew:
                 // TODO: 实现真正的独立事务（需要使用独立的数据库连接或保存点）
                 // 当前实现：总是开启新事务，类似 Nested
-                _logger.LogDebug($"Begin Independent Transaction (RequiresNew)");
-                Console.WriteLine($"Begin Independent Transaction (RequiresNew)");
                 _unitOfWorkManage.BeginTran(method);
                 break;
             default:
@@ -118,33 +108,12 @@ public class TranAop : IInterceptor
         _unitOfWorkManage.RollbackTran(method);
     }
 
-    /// <summary>获取变量的默认值</summary>
-    /// <param name="type"></param>
-    /// <returns></returns>
-    public object? GetDefaultValue(Type type)
-    {
-        return type.IsValueType ? Activator.CreateInstance(type) : null;
-    }
-
-    private async Task SuccessAction(IInvocation invocation)
-    {
-        await Task.Run(() =>
-        {
-            //...
-        });
-    }
-
     public static bool IsAsyncMethod(MethodInfo method)
     {
         return
             method.ReturnType == typeof(Task) ||
             method.ReturnType.IsGenericType && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>)
             ;
-    }
-
-    private async Task TestActionAsync(IInvocation invocation)
-    {
-        await Task.CompletedTask;
     }
 
     internal async Task InterceptAsync(Task task, MethodInfo method)
@@ -157,7 +126,6 @@ public class TranAop : IInterceptor
         catch (Exception ex)
         {
             var resolvedException = UnwrapException(ex);
-            _logger.LogError(resolvedException, resolvedException.ToString());
             AfterException(method);
             ExceptionDispatchInfo.Capture(resolvedException).Throw();
             throw;
@@ -175,7 +143,6 @@ public class TranAop : IInterceptor
         catch (Exception ex)
         {
             var resolvedException = UnwrapException(ex);
-            _logger.LogError(resolvedException, resolvedException.ToString());
             AfterException(method);
             ExceptionDispatchInfo.Capture(resolvedException).Throw();
             throw;

@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续 SQL / AOP / DbMigrate 与异常记录责任治理，具体见下方明日事项；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-09-19`；已回顾当日 7 个提交并核对文档，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：继续 seed / 具体 migration / 后台任务 / Rust 与业务事件分类治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-09-23`；已完成日志 L2 的 SQL / AOP / 事务、API 异常与 DbMigrate 入口治理子项；未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,6 +29,8 @@
 
 ## 最近结论
 
+- `2026-09-23` 完成[日志 L2 生成端治理批次](../records/unified-logging-l2-producer-governance-2026-09-23.md)：普通 SQL 诊断与慢链路独立、事务异常去重、API 最终错误与顶层失败安全记录、DbMigrate 命令报告和诊断分离。L2 整体仍未关闭。
+
 - `2026-09-19` 完成部署反馈修复及统一日志 L1 / L2 入口子项；[日终回顾](../records/day-end-doc-review-2026-09-19.md)汇总 7 个提交及文档校准。L2 仍未完成，`RadishLogging.Enabled` 默认 false。
 - `2026-09-06` 完成[项目全面审阅](/records/project-review-2026-09-06)：确认类型检查入口漏检、Outbox 租约归属保护缺口、Web 构建预加载负担及 Flutter 通用 CI 覆盖缺口。条件性安全风险、维护热点与证据范围均已记录；本批仅整理文档，尚未修复代码或调整工程顺位。
 - `2026-09-05` [P8-B2 macOS 本地运行验收](/records/f4-flutter-native-p8b2-macos-local-runtime-acceptance-closure-2026-09-05)关闭：standalone signed Debug 候选在本地 Gateway 完成 OIDC、Keychain / preferences、重启恢复、三档窗口、四主题和桌面输入验收；临时服务、注册与数据已精确清理。
@@ -41,16 +43,16 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 明日事项：2026-09-20
+## 下一批事项：L2 剩余生成端治理
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)，从已提交的 [L2 入口层](../records/unified-logging-l2-producer-entry-2026-09-19.md)往下推进：
+继续[统一日志专题](../features/unified-logging-governance-design.md)。SQL / AOP / 事务、API 已处理异常及 DbMigrate Program / Runner / Doctor 已完成本批治理，证据见[2026-09-23 记录](../records/unified-logging-l2-producer-governance-2026-09-23.md)。
 
-1. **SQL**：拆开普通开发诊断与慢查询开关；不输出参数值、连接串和业务正文，保留 PostgreSQL 参数规范化及 Log 库递归排除。
-2. **AOP / 事务 / 异常**：移除裸终端与逐方法重复输出，明确最终处理边界记录一次 Error；不改变异常传播、回滚或重试语义。补齐顶层启动失败的安全记录边界。
-3. **DbMigrate**：区分 doctor / verify 命令结果与运行诊断，保留退出码、迁移顺序和审计事实；再按调用链处理 seed / 后台任务 / Rust 与业务事件码。
-4. **验证与收口**：围绕慢查询独立性、单次异常所有权、CLI 结果不变及标记秘密不可输出补定向测试，同步契约与本批记录，再按范围提交。
+1. **seed / migration**：按调用链治理 DbMigrate 具体 migration、InitialDataSeeder 与 Auth seed 的裸输出；保留 schema ledger、迁移顺序与权威审计。
+2. **后台任务 / Rust**：区分无工作量、实际处理摘要、重试与最终失败；Rust 由宿主负责记录，保持错误契约和 ABI 边界。
+3. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。
+4. **验证与收口**：每组调用链补安全输出、异常所有权与原有行为回归，按影响面更新契约和记录。
 
-本次仅记录明日工作，不安排自动运行。生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。明日若需安装依赖或启动真实宿主 / 隔离容器，按当批具体范围单独授权，不沿用今日运行授权。
+生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。若下一批需安装依赖或启动真实宿主 / 隔离容器，按当批具体范围单独授权。
 
 ## 后续平台事项：P8-C Windows readiness
 
@@ -69,7 +71,7 @@
 
 ## 并行维护线
 
-- `2026-09-19` 根据项目所有者反馈整理[统一日志与跨容器汇聚专题方案](/features/unified-logging-governance-design)：已确认设计并开始 L1，统一生成契约与隔离采集首轮实验已落地；[实测](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)发现 HTTP 413 丢弃、文件按 chunk 轮转和 Docker 长行分片。[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)已通过本机验证，[L2 生成入口](../records/unified-logging-l2-producer-entry-2026-09-19.md)已接入候选开关，下一步治理 SQL / AOP / DbMigrate 与异常所有权；正式传输上界及发布平台门禁未关闭，生产默认链路未切换。
+- `2026-09-19` 根据项目所有者反馈整理[统一日志与跨容器汇聚专题方案](/features/unified-logging-governance-design)：已确认设计并开始 L1，统一生成契约与隔离采集首轮实验已落地；[实测](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)发现 HTTP 413 丢弃、文件按 chunk 轮转和 Docker 长行分片。[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)已通过本机验证，[L2 生成入口](../records/unified-logging-l2-producer-entry-2026-09-19.md)已接入候选开关，[SQL / AOP / DbMigrate 入口与异常所有权子项](../records/unified-logging-l2-producer-governance-2026-09-23.md)已推进，继续 seed / 后台任务 / Rust 等生成端治理；正式传输上界及发布平台门禁未关闭，生产默认链路未切换。
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护。
 - WebOS 只处理阻断级兼容；Flutter 承接高价值原生路径，不机械追平 Web。

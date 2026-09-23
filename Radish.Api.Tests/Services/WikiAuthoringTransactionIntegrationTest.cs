@@ -84,7 +84,7 @@ public sealed class WikiAuthoringTransactionIntegrationTest
             userRepository);
         var proxy = new ProxyGenerator().CreateInterfaceProxyWithTarget<IWikiDocumentService>(
             target,
-            new TranAop(unitOfWork, NullLogger<TranAop>.Instance));
+            new TranAop(unitOfWork));
 
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             proxy.AdminReviewDraftAsync(

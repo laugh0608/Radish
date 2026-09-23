@@ -8,9 +8,11 @@ public static class ApiExceptionHandlerExtensions
 {
     public static IApplicationBuilder UseApiExceptionHandler(this IApplicationBuilder app)
     {
-        return app.UseExceptionHandler(exceptionApp =>
+        return app.UseExceptionHandler(new ExceptionHandlerOptions
         {
-            exceptionApp.Run(async context =>
+            // API 最终边界已记录一次；避免框架再记录同一异常与原始消息。
+            SuppressDiagnosticsCallback = _ => true,
+            ExceptionHandler = async context =>
             {
                 var exception = context.Features.Get<IExceptionHandlerFeature>()?.Error;
                 if (exception == null)
@@ -25,7 +27,7 @@ public static class ApiExceptionHandlerExtensions
                 }
 
                 Rethrow(exception);
-            });
+            }
         });
     }
 

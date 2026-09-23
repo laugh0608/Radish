@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 2026-09-19：L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-09-23。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -28,7 +28,7 @@
 | `traceId / spanId / operationId` | 可选、格式严格限制；trace / span 拒绝全零值 |
 | `normalizationStatus / redacted / truncated` | 未分类或裁剪行为可辨识；当前是省略未知数据，不把省略伪称字符串截断 |
 
-`containerId` 现由采集规范化层从 Docker FullID 标签补充；instanceId 只保留与 FullID 匹配的完整 / 短 ID，否则使用受信 FullID 并标记裁剪。`requestId / jobId / tenantId` 的权威上下文、异常类型 / 安全栈帧在宿主适配时补齐。目前未知异常整体省略，不回显 `Exception.Message / StackTrace / Data`。不能把首批字段子集称为最终全部 schema。
+`containerId` 现由采集规范化层从 Docker FullID 标签补充；instanceId 只保留与 FullID 匹配的完整 / 短 ID，否则使用受信 FullID 并标记裁剪。`requestId / jobId / tenantId` 的权威上下文、异常类型 / 安全栈帧在宿主适配时补齐。当前最终处理边界只提供固定枚举 `failureKind`；未知异常归为 other，不回显 `Exception.Message / StackTrace / Data`。不能把首批字段子集称为最终全部 schema。
 
 ## 3. 安全与模式
 
@@ -63,11 +63,11 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口子项已落地，下一步治理 SQL / AOP / DbMigrate 与异常所有权；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口子项已落地，下一步治理 seed / 具体 migration / 后台任务 / Rust 与剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
-`RadishLogging.Enabled` 默认 false；这是一项阶段性迁移开关，不是新增日志模式。API / Auth / Gateway 在配置加载完成后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例；启用时不再读取旧 Serilog sink / MinimumLevel 配置。DbMigrate 和裸输出旁路尚未纳入，禁止据此提前切换生产。
+`RadishLogging.Enabled` 默认 false；这是一项阶段性迁移开关，不是新增日志模式。API / Auth / Gateway 在配置加载完成后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例；启用时不再读取旧 Serilog sink / MinimumLevel 配置。DbMigrate 已将命令报告与诊断分开；seed、具体 migration 与其他裸输出旁路尚未收口，禁止据此提前切换生产。
 
 | 配置 | 默认 / 约束 |
 | --- | --- |
@@ -83,3 +83,17 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 自有调用通过结构化属性 `EventCode`、`SourceCategory`、`Diagnostic` 标明意图，数值 / 枚举属性使用策略中的原名（如 `statusCode`）。ILogger 可用 BeginScope，存量 Serilog 可用 ForContext；消息模板不承担安全契约。未登记的普通 Info 归入诊断，未知 Warning / Error 则保留安全未分类摘要，后续调用点必须逐项迁移，不能长期依靠未分类摘要。
 
 新路径使用同一策略生成 JSONL stdout，不自建文件或数据库写入。应急事件写 stderr，仍用规范 JSON，但计数保存在进程内。静态服务器健康检查保持安静，拒绝 / 失败只记录受控 HTTP method 和 statusCode。详细验证与未关闭边界见[L2 入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)。
+
+## 7. L2 SQL、异常与 CLI 生成端治理
+
+2026-09-23 本批推进 SQL / AOP / 事务、API 已处理异常与 DbMigrate Program / Runner / Doctor；[批次记录](../records/unified-logging-l2-producer-governance-2026-09-23.md)维护验证证据。
+
+- SQL 的普通开发诊断与慢链路分开；`SqlAopLog.Enabled` 默认 false，独立慢操作 / 连接默认 true，阈值分别 1000 / 500ms。普通诊断额外要求 Development 宿主、Development 日志模式和 Diagnostics。CRUD 与表 / 用户排除不影响慢链路。
+- SQL 不再接受正文或参数值作为日志输入；事件只包含安全操作枚举、参数数与耗时。SQL `OnError`、Service AOP、事务和 UnitOfWork 的重复异常输出移除；数据库规范化、提交、回滚、保存点语义保留。
+- API 已处理 5xx 只生成一次 `http.failed`；正常业务 4xx 不逐条记录 Warning，返回契约不变。响应已开始和非 API 等无法处理路径仍由框架拥有记录责任。
+- 顶层 `RuntimeProcess` 捕获配置加载前及运行失败，输出 stderr 的 `runtime.failed` Fatal，退出 1；正常结束为 0。该终止事件使用独立 `bootstrap / unversioned` 来源，不读取可能损坏的配置，不附带异常原文。HostAbortedException 作为工具控制信号继续传播。
+- DbMigrate 诊断固定使用同一 JSONL 生成策略写 stderr，候选开关仍控制 Web 宿主切换；CLI 的 doctor / verify / help 报告使用 stdout，保留成功 / 失败判定。阶段事件使用登记的 `dbmigrate.*` 代码与变更数量；`command` 只允许 apply / doctor / verify / init / seed / help。
+- CLI 连接目标和探测失败消息使用安全说明，不显示连接串或第三方异常文本；具体 migration 与 seed 的输出仍待下一批治理。权威 schema ledger 与业务审计写入没有迁移到运行日志。
+- 完整异常安全类型 / 栈帧、后台任务、Rust、完整业务事件分类及框架来源治理仍未全部完成。本批不声明 L2 或 L1–L6 整体关闭。
+
+`failureKind` 只允许固定异常类别；`schemaIndex` 只允许 Runner 中登记的仓库自有索引名，便于保留迁移动作对象而不开放自由文本属性。宿主 `HostedServiceStartupFaulted`（EventId 11）仅在 `RuntimeProcess` 正在接管时抑制重复输出；未进入该边界时不静默丢弃。

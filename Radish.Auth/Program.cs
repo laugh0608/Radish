@@ -34,418 +34,421 @@ using Radish.Auth.Models;
 using Radish.Auth.Resources;
 
 // -------------- 容器构建阶段 ---------------
-var builder = WebApplication.CreateBuilder(args);
-// -------------- 容器构建阶段 ---------------
-
-static string ResolveSharedConfigPath(string basePath, string contentRootPath)
+return await RuntimeProcess.RunAsync("auth", async () =>
 {
-    var candidates = new[]
-    {
-        Path.Combine(basePath, "appsettings.Shared.json"),
-        Path.Combine(contentRootPath, "appsettings.Shared.json")
-    };
+    var builder = WebApplication.CreateBuilder(args);
+    // -------------- 容器构建阶段 ---------------
 
-    foreach (var candidate in candidates)
+    static string ResolveSharedConfigPath(string basePath, string contentRootPath)
     {
-        if (File.Exists(candidate))
+        var candidates = new[]
         {
-            return candidate;
-        }
-    }
+            Path.Combine(basePath, "appsettings.Shared.json"),
+            Path.Combine(contentRootPath, "appsettings.Shared.json")
+        };
 
-    var currentDir = new DirectoryInfo(contentRootPath);
-    while (currentDir != null)
-    {
-        var candidate = Path.Combine(currentDir.FullName, "appsettings.Shared.json");
-        if (File.Exists(candidate))
+        foreach (var candidate in candidates)
         {
-            return candidate;
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
         }
 
-        currentDir = currentDir.Parent;
+        var currentDir = new DirectoryInfo(contentRootPath);
+        while (currentDir != null)
+        {
+            var candidate = Path.Combine(currentDir.FullName, "appsettings.Shared.json");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+
+            currentDir = currentDir.Parent;
+        }
+
+        return Path.Combine(contentRootPath, "appsettings.Shared.json");
     }
 
-    return Path.Combine(contentRootPath, "appsettings.Shared.json");
-}
+    // 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
+    // 这样避免 "sub" 被映射为 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
+    JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
-// 🔧 禁用 JWT 默认的 claim type 映射，保持 OIDC 标准 claims（sub, name, role 等）原样
-// 这样避免 "sub" 被映射为 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
-JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
+    #region 配置加载
 
-#region 配置加载
+    // 使用 Autofac 配置 Host 与容器
+    builder.Host
+        .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+        .ConfigureContainer<ContainerBuilder>(containerBuilder =>
+        {
+            containerBuilder.RegisterModule(new AutofacModuleRegister());
+            containerBuilder.RegisterModule(new AutofacPropertyModuleReg(typeof(Program).Assembly));
+        })
+        .ConfigureAppConfiguration((hostingContext, config) =>
+        {
+            hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
+            var basePath = AppContext.BaseDirectory;
+            var sharedConfigPath = ResolveSharedConfigPath(basePath, hostingContext.HostingEnvironment.ContentRootPath);
+            config.Sources.Clear();
+            config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: true);
+            config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
+            config.AddEnvironmentVariables();
+        });
 
-// 使用 Autofac 配置 Host 与容器
-builder.Host
-    .UseServiceProviderFactory(new AutofacServiceProviderFactory())
-    .ConfigureContainer<ContainerBuilder>(containerBuilder =>
+    // 2. 绑定 InternalApp 扩展中的环境变量
+    builder.ConfigureApplication();
+    using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "auth");
+
+    #endregion
+
+    #region Serilog 日志
+
+    // 注册 AppSettingsTool（Serilog 依赖此配置）
+    builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
+
+    builder.Host.AddSerilogSetup(runtimeLogging);
+
+    #endregion
+
+    #region 服务注册
+
+    builder.Services.AddSingleton(TimeProvider.System);
+    builder.Services.AddSingleton<BusinessCalendar>();
+
+    // AutoMapper
+    builder.Services.AddAutoMapperSetup(builder.Configuration);
+
+    // SqlSugar（业务数据仍使用 SqlSugar）
+    builder.Services.AddSqlSugarSetup();
+
+    // 配置 Snowflake ID
+    var snowflakeSection = builder.Configuration.GetSection("Snowflake");
+    SnowFlakeSingle.WorkId = snowflakeSection.GetValue<int>("WorkId");
+    SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
+
+    // Redis / 内存缓存
+    builder.Services.AddCacheSetup();
+
+    // 速率限制
+    builder.Services.AddRateLimitSetup();
+
+    // CORS
+    var corsOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
+    builder.Services.AddCors(options =>
     {
-        containerBuilder.RegisterModule(new AutofacModuleRegister());
-        containerBuilder.RegisterModule(new AutofacPropertyModuleReg(typeof(Program).Assembly));
-    })
-    .ConfigureAppConfiguration((hostingContext, config) =>
-    {
-        hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
-        var basePath = AppContext.BaseDirectory;
-        var sharedConfigPath = ResolveSharedConfigPath(basePath, hostingContext.HostingEnvironment.ContentRootPath);
-        config.Sources.Clear();
-        config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: true);
-        config.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
-        config.AddJsonFile("appsettings.Local.json", optional: true, reloadOnChange: true);
-        config.AddEnvironmentVariables();
+        options.AddDefaultPolicy(policy =>
+        {
+            policy.WithOrigins(corsOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        });
     });
 
-// 2. 绑定 InternalApp 扩展中的环境变量
-builder.ConfigureApplication();
-using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "auth");
+    // 本地化配置：统一使用 zh / en，与前端保持一致
+    // 不设置 ResourcesPath，让它在类型相同的目录查找资源文件
+    builder.Services.AddLocalization();
 
-#endregion
-
-#region Serilog 日志
-
-// 注册 AppSettingsTool（Serilog 依赖此配置）
-builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
-
-builder.Host.AddSerilogSetup(runtimeLogging);
-
-#endregion
-
-#region 服务注册
-
-builder.Services.AddSingleton(TimeProvider.System);
-builder.Services.AddSingleton<BusinessCalendar>();
-
-// AutoMapper
-builder.Services.AddAutoMapperSetup(builder.Configuration);
-
-// SqlSugar（业务数据仍使用 SqlSugar）
-builder.Services.AddSqlSugarSetup();
-
-// 配置 Snowflake ID
-var snowflakeSection = builder.Configuration.GetSection("Snowflake");
-SnowFlakeSingle.WorkId = snowflakeSection.GetValue<int>("WorkId");
-SnowFlakeSingle.DatacenterId = snowflakeSection.GetValue<int>("DataCenterId");
-
-// Redis / 内存缓存
-builder.Services.AddCacheSetup();
-
-// 速率限制
-builder.Services.AddRateLimitSetup();
-
-// CORS
-var corsOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
+    builder.Services.Configure<RequestLocalizationOptions>(options =>
     {
-        policy.WithOrigins(corsOrigins)
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
-});
+        var supportedCultures = new[]
+        {
+            new CultureInfo("zh"),
+            new CultureInfo("en")
+        };
 
-// 本地化配置：统一使用 zh / en，与前端保持一致
-// 不设置 ResourcesPath，让它在类型相同的目录查找资源文件
-builder.Services.AddLocalization();
+        options.DefaultRequestCulture = new RequestCulture("zh");
+        options.SupportedCultures = supportedCultures;
+        options.SupportedUICultures = supportedCultures;
 
-builder.Services.Configure<RequestLocalizationOptions>(options =>
-{
-    var supportedCultures = new[]
-    {
-        new CultureInfo("zh"),
-        new CultureInfo("en")
-    };
-
-    options.DefaultRequestCulture = new RequestCulture("zh");
-    options.SupportedCultures = supportedCultures;
-    options.SupportedUICultures = supportedCultures;
-
-    // 语言提供者优先级：Query String > Cookie > Accept-Language
-    options.RequestCultureProviders.Clear();
-    options.RequestCultureProviders.Add(new QueryStringRequestCultureProvider());
-    options.RequestCultureProviders.Add(new CookieRequestCultureProvider());
-    options.RequestCultureProviders.Add(new AcceptLanguageHeaderRequestCultureProvider());
-});
-
-// 配置强类型 Options
-builder.Services.AddAllOptionRegister();
-builder.Services.Configure<AuthorizationConsentOptions>(builder.Configuration.GetSection("AuthorizationConsent"));
-builder.Services.Configure<IdleSessionOptions>(builder.Configuration.GetSection("OpenIddict:Server:IdleSession"));
-
-// 配置 ForwardedHeaders，让 Auth Server 能识别通过 Gateway 转发的原始请求信息
-builder.Services.Configure<ForwardedHeadersOptions>(options =>
-{
-    AuthForwardedHeadersPolicy.Configure(options);
-});
-
-// 配置 Antiforgery，确保在 Gateway 代理场景下 Cookie 能正确设置
-// SameSite=None 需要 Secure=true，通过 ForwardedHeaders 识别原始 HTTPS 请求
-builder.Services.AddAntiforgery(options =>
-{
-    options.Cookie.Name = ".Radish.Auth.Antiforgery";
-    options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-});
-
-// 添加控制器 + 视图（用于登录页）
-builder.Services.AddControllersWithViews()
-    .AddDataAnnotationsLocalization(options =>
-    {
-        options.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(Errors));
-    })
-    .AddJsonOptions(options =>
-    {
-        // 🚀 配置 JSON 序列化使用 camelCase 命名策略（保持与 API 一致）
-        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        // 语言提供者优先级：Query String > Cookie > Accept-Language
+        options.RequestCultureProviders.Clear();
+        options.RequestCultureProviders.Add(new QueryStringRequestCultureProvider());
+        options.RequestCultureProviders.Add(new CookieRequestCultureProvider());
+        options.RequestCultureProviders.Add(new AcceptLanguageHeaderRequestCultureProvider());
     });
 
-var authHealthCheckTags = AuthHostHealthChecks.Tags;
-builder.Services.AddAuthHostHealthChecks(builder.Configuration, builder.Environment);
+    // 配置强类型 Options
+    builder.Services.AddAllOptionRegister();
+    builder.Services.Configure<AuthorizationConsentOptions>(builder.Configuration.GetSection("AuthorizationConsent"));
+    builder.Services.Configure<IdleSessionOptions>(builder.Configuration.GetSection("OpenIddict:Server:IdleSession"));
 
-// OpenIddict 初始化种子数据（使用 EF Core 存储）
-builder.Services.AddHostedService<OpenIddictSeedHostedService>();
-
-// 添加认证：Cookie（用于登录页面会话）
-var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
-if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
-{
-    builder.Services.AddDataProtection()
-        .PersistKeysToFileSystem(new DirectoryInfo(Path.GetFullPath(dataProtectionKeysPath)));
-}
-
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+    // 配置 ForwardedHeaders，让 Auth Server 能识别通过 Gateway 转发的原始请求信息
+    builder.Services.Configure<ForwardedHeadersOptions>(options =>
     {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
+        AuthForwardedHeadersPolicy.Configure(options);
+    });
 
-        // Cookie 配置：确保在 Gateway 代理场景下能正确传递和清除
-        options.Cookie.Name = ".Radish.Auth.Session";
-        options.Cookie.HttpOnly = true;
-        // SameSite=None 允许跨站请求携带 Cookie（Gateway 代理场景必需）
-        // 注意：SameSite=None 必须配合 Secure=true
+    // 配置 Antiforgery，确保在 Gateway 代理场景下 Cookie 能正确设置
+    // SameSite=None 需要 Secure=true，通过 ForwardedHeaders 识别原始 HTTPS 请求
+    builder.Services.AddAntiforgery(options =>
+    {
+        options.Cookie.Name = ".Radish.Auth.Antiforgery";
         options.Cookie.SameSite = SameSiteMode.None;
-        // 必须使用 Always，因为 SameSite=None 要求 Secure=true
-        // ForwardedHeaders 中间件会根据 X-Forwarded-Proto 识别原始 HTTPS 请求
         options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-
-        // 会话过期时间
-        options.ExpireTimeSpan = TimeSpan.FromHours(2);
-        options.SlidingExpiration = true;
     });
 
-// OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
-var openIddictDatabase = AuthOpenIddictPersistence.AddAuthOpenIddictDbContext(
-    builder.Services,
-    builder.Configuration);
+    // 添加控制器 + 视图（用于登录页）
+    builder.Services.AddControllersWithViews()
+        .AddDataAnnotationsLocalization(options =>
+        {
+            options.DataAnnotationLocalizerProvider = (_, factory) => factory.Create(typeof(Errors));
+        })
+        .AddJsonOptions(options =>
+        {
+            // 🚀 配置 JSON 序列化使用 camelCase 命名策略（保持与 API 一致）
+            options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        });
 
-var openIddictCertificateSection = builder.Configuration.GetSection("OpenIddict:Encryption");
+    var authHealthCheckTags = AuthHostHealthChecks.Tags;
+    builder.Services.AddAuthHostHealthChecks(builder.Configuration, builder.Environment);
 
-string ResolveCertificatePath(string? relativePath)
-{
-    if (string.IsNullOrWhiteSpace(relativePath))
+    // OpenIddict 初始化种子数据（使用 EF Core 存储）
+    builder.Services.AddHostedService<OpenIddictSeedHostedService>();
+
+    // 添加认证：Cookie（用于登录页面会话）
+    var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
+    if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))
     {
-        return string.Empty;
+        builder.Services.AddDataProtection()
+            .PersistKeysToFileSystem(new DirectoryInfo(Path.GetFullPath(dataProtectionKeysPath)));
     }
 
-    if (Path.IsPathRooted(relativePath))
+    builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+        .AddCookie(options =>
+        {
+            options.LoginPath = "/Account/Login";
+            options.LogoutPath = "/Account/Logout";
+
+            // Cookie 配置：确保在 Gateway 代理场景下能正确传递和清除
+            options.Cookie.Name = ".Radish.Auth.Session";
+            options.Cookie.HttpOnly = true;
+            // SameSite=None 允许跨站请求携带 Cookie（Gateway 代理场景必需）
+            // 注意：SameSite=None 必须配合 Secure=true
+            options.Cookie.SameSite = SameSiteMode.None;
+            // 必须使用 Always，因为 SameSite=None 要求 Secure=true
+            // ForwardedHeaders 中间件会根据 X-Forwarded-Proto 识别原始 HTTPS 请求
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+
+            // 会话过期时间
+            options.ExpireTimeSpan = TimeSpan.FromHours(2);
+            options.SlidingExpiration = true;
+        });
+
+    // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
+    var openIddictDatabase = AuthOpenIddictPersistence.AddAuthOpenIddictDbContext(
+        builder.Services,
+        builder.Configuration);
+
+    var openIddictCertificateSection = builder.Configuration.GetSection("OpenIddict:Encryption");
+
+    string ResolveCertificatePath(string? relativePath)
     {
-        return relativePath;
+        if (string.IsNullOrWhiteSpace(relativePath))
+        {
+            return string.Empty;
+        }
+
+        if (Path.IsPathRooted(relativePath))
+        {
+            return relativePath;
+        }
+
+        return Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, relativePath));
     }
 
-    return Path.GetFullPath(Path.Combine(builder.Environment.ContentRootPath, relativePath));
-}
-
-X509Certificate2 LoadOpenIddictCertificate(string certificateType)
-{
-    var certificatePath =
-        ResolveCertificatePath(openIddictCertificateSection.GetValue<string>($"{certificateType}CertificatePath"));
-    var certificatePassword = openIddictCertificateSection.GetValue<string>($"{certificateType}CertificatePassword");
-
-    if (string.IsNullOrWhiteSpace(certificatePath) || string.IsNullOrWhiteSpace(certificatePassword))
+    X509Certificate2 LoadOpenIddictCertificate(string certificateType)
     {
-        throw new InvalidOperationException($"OpenIddict {certificateType} 证书配置缺失，请检查 appsettings.");
+        var certificatePath =
+            ResolveCertificatePath(openIddictCertificateSection.GetValue<string>($"{certificateType}CertificatePath"));
+        var certificatePassword = openIddictCertificateSection.GetValue<string>($"{certificateType}CertificatePassword");
+
+        if (string.IsNullOrWhiteSpace(certificatePath) || string.IsNullOrWhiteSpace(certificatePassword))
+        {
+            throw new InvalidOperationException($"OpenIddict {certificateType} 证书配置缺失，请检查 appsettings.");
+        }
+
+        if (!File.Exists(certificatePath))
+        {
+            throw new FileNotFoundException($"未找到 {certificateType} 证书文件：{certificatePath}", certificatePath);
+        }
+
+        return X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
     }
 
-    if (!File.Exists(certificatePath))
+    // OpenIddict 配置
+    var disableTransportSecurityRequirement =
+        OpenIddictTransportSecurityPolicy.ShouldDisableTransportSecurityRequirement(
+            builder.Configuration,
+            builder.Environment);
+
+    builder.Services.AddOpenIddict()
+        // 注册 OpenIddict Core 服务（使用 EF Core 存储）
+        .AddCore(options =>
+        {
+            options.UseEntityFrameworkCore()
+                   .UseDbContext<AuthOpenIddictDbContext>();
+        })
+        // 注册 OpenIddict Server 服务
+        .AddServer(options =>
+        {
+            // 显式设置 Issuer 为配置中的地址
+            var issuer = builder.Configuration.GetValue<string>("OpenIddict:Server:Issuer");
+            if (!string.IsNullOrEmpty(issuer))
+            {
+                options.SetIssuer(new Uri(issuer));
+            }
+
+            // 启用 OIDC 端点
+            options.SetAuthorizationEndpointUris("/connect/authorize")
+                   .SetTokenEndpointUris("/connect/token")
+                   .SetEndSessionEndpointUris("/connect/endsession")
+                   .SetUserInfoEndpointUris("/connect/userinfo")
+                   .SetIntrospectionEndpointUris("/connect/introspect")
+                   .SetRevocationEndpointUris("/connect/revoke");
+
+            // 启用授权流程
+            options.AllowAuthorizationCodeFlow()
+                   .AllowRefreshTokenFlow()
+                   .AllowClientCredentialsFlow();
+
+            // 注册允许的 Scopes
+            options.RegisterScopes(UserScopes.OpenId, UserScopes.Profile, UserScopes.Email, UserScopes.OfflineAccess, UserScopes.RadishApi);
+
+            // 从配置读取并设置令牌生命周期（分钟）
+            var serverSection = builder.Configuration.GetSection("OpenIddict:Server");
+            var accessMinutes = serverSection.GetValue<int?>("AccessTokenLifetime") ?? 60;
+            var refreshMinutes = serverSection.GetValue<int?>("RefreshTokenLifetime") ?? 43200;
+            var codeMinutes = serverSection.GetValue<int?>("AuthorizationCodeLifetime") ?? 5;
+
+            options.SetAccessTokenLifetime(TimeSpan.FromMinutes(accessMinutes));
+            options.SetRefreshTokenLifetime(TimeSpan.FromMinutes(refreshMinutes));
+            options.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(codeMinutes));
+
+            options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(handler =>
+                handler.SetOrder(OpenIddictServerHandlers.Exchange.ValidateAuthentication.Descriptor.Order + 1_000)
+                    .UseScopedHandler<ValidateIdleSessionTokenRequestHandler>());
+
+            options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
+                handler.SetOrder(OpenIddictServerHandlers.PrepareRefreshTokenPrincipal.Descriptor.Order + 1_000)
+                    .UseScopedHandler<AttachIdleSessionRefreshTokenHandler>());
+
+            // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
+            var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;
+            if (useDevelopmentKeys)
+            {
+                options.AddDevelopmentEncryptionCertificate()
+                       .AddDevelopmentSigningCertificate();
+            }
+            else
+            {
+                options.AddSigningCertificate(LoadOpenIddictCertificate("Signing"))
+                       .AddEncryptionCertificate(LoadOpenIddictCertificate("Encryption"));
+            }
+
+            // 重要：禁用 access_token 加密，只生成签名 JWT，方便 Api 直接用 JwtBearer 验签
+            options.DisableAccessTokenEncryption();
+
+            // 注册 ASP.NET Core 宿主
+            var aspNetCoreOptions = options.UseAspNetCore()
+                .EnableAuthorizationEndpointPassthrough()
+                .EnableEndSessionEndpointPassthrough()
+                .EnableUserInfoEndpointPassthrough();
+
+            if (disableTransportSecurityRequirement)
+            {
+                aspNetCoreOptions.DisableTransportSecurityRequirement();
+            }
+        });
+
+    #endregion
+
+    // -------------- App 初始化阶段 ---------------
+    var app = builder.Build();
+    runtimeLogging.AttachLifetime(app.Lifetime);
+    // -------------- App 初始化阶段 ---------------
+
+    // 宿主启动只读检查 schema；结构写入统一由 Radish.DbMigrate apply 负责。
+    using (var scope = app.Services.CreateScope())
     {
-        throw new FileNotFoundException($"未找到 {certificateType} 证书文件：{certificatePath}", certificatePath);
+        var db = scope.ServiceProvider.GetRequiredService<AuthOpenIddictDbContext>();
+        AuthOpenIddictPersistence.EnsureReady(db, openIddictDatabase);
     }
 
-    return X509CertificateLoader.LoadPkcs12FromFile(certificatePath, certificatePassword);
-}
+    #region 中间件管道
 
-// OpenIddict 配置
-var disableTransportSecurityRequirement =
-    OpenIddictTransportSecurityPolicy.ShouldDisableTransportSecurityRequirement(
-        builder.Configuration,
-        builder.Environment);
+    // 3. 绑定 InternalApp 扩展中的服务
+    app.ConfigureApplication();
+    // 4. 启动 InternalApp 扩展中的 App
+    app.UseApplicationSetup();
 
-builder.Services.AddOpenIddict()
-    // 注册 OpenIddict Core 服务（使用 EF Core 存储）
-    .AddCore(options =>
+    // ForwardedHeaders 必须在其他中间件之前
+    app.UseForwardedHeaders();
+
+    // HTTPS 重定向（由 Gateway 处理，Auth 服务本身不需要）
+    // app.UseHttpsRedirection();
+
+    // 静态文件
+    app.UseStaticFiles();
+
+    // 配置请求本地化（必须在 UseRouting 之前，确保在路由和控制器执行前设置 Culture）
+    var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
+    app.UseRequestLocalization(localizationOptions.Value);
+
+    // 路由
+    app.UseRouting();
+
+    // CORS
+    app.UseCors();
+
+    // 认证
+    app.UseAuthentication();
+
+    // 授权
+    app.UseAuthorization();
+
+    // 速率限制（在授权之后，路由之前）
+    app.UseRateLimitSetup();
+
+    // 控制器路由
+    app.MapControllers();
+    app.MapHealthChecks("/health", new HealthCheckOptions
     {
-        options.UseEntityFrameworkCore()
-               .UseDbContext<AuthOpenIddictDbContext>();
-    })
-    // 注册 OpenIddict Server 服务
-    .AddServer(options =>
+        Predicate = AuthHostHealthChecks.IsMinimal,
+    });
+    app.MapHealthChecks("/healthz", new HealthCheckOptions
     {
-        // 显式设置 Issuer 为配置中的地址
-        var issuer = builder.Configuration.GetValue<string>("OpenIddict:Server:Issuer");
-        if (!string.IsNullOrEmpty(issuer))
-        {
-            options.SetIssuer(new Uri(issuer));
-        }
-
-        // 启用 OIDC 端点
-        options.SetAuthorizationEndpointUris("/connect/authorize")
-               .SetTokenEndpointUris("/connect/token")
-               .SetEndSessionEndpointUris("/connect/endsession")
-               .SetUserInfoEndpointUris("/connect/userinfo")
-               .SetIntrospectionEndpointUris("/connect/introspect")
-               .SetRevocationEndpointUris("/connect/revoke");
-
-        // 启用授权流程
-        options.AllowAuthorizationCodeFlow()
-               .AllowRefreshTokenFlow()
-               .AllowClientCredentialsFlow();
-
-        // 注册允许的 Scopes
-        options.RegisterScopes(UserScopes.OpenId, UserScopes.Profile, UserScopes.Email, UserScopes.OfflineAccess, UserScopes.RadishApi);
-
-        // 从配置读取并设置令牌生命周期（分钟）
-        var serverSection = builder.Configuration.GetSection("OpenIddict:Server");
-        var accessMinutes = serverSection.GetValue<int?>("AccessTokenLifetime") ?? 60;
-        var refreshMinutes = serverSection.GetValue<int?>("RefreshTokenLifetime") ?? 43200;
-        var codeMinutes = serverSection.GetValue<int?>("AuthorizationCodeLifetime") ?? 5;
-
-        options.SetAccessTokenLifetime(TimeSpan.FromMinutes(accessMinutes));
-        options.SetRefreshTokenLifetime(TimeSpan.FromMinutes(refreshMinutes));
-        options.SetAuthorizationCodeLifetime(TimeSpan.FromMinutes(codeMinutes));
-
-        options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(handler =>
-            handler.SetOrder(OpenIddictServerHandlers.Exchange.ValidateAuthentication.Descriptor.Order + 1_000)
-                .UseScopedHandler<ValidateIdleSessionTokenRequestHandler>());
-
-        options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
-            handler.SetOrder(OpenIddictServerHandlers.PrepareRefreshTokenPrincipal.Descriptor.Order + 1_000)
-                .UseScopedHandler<AttachIdleSessionRefreshTokenHandler>());
-
-        // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
-        var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;
-        if (useDevelopmentKeys)
-        {
-            options.AddDevelopmentEncryptionCertificate()
-                   .AddDevelopmentSigningCertificate();
-        }
-        else
-        {
-            options.AddSigningCertificate(LoadOpenIddictCertificate("Signing"))
-                   .AddEncryptionCertificate(LoadOpenIddictCertificate("Encryption"));
-        }
-
-        // 重要：禁用 access_token 加密，只生成签名 JWT，方便 Api 直接用 JwtBearer 验签
-        options.DisableAccessTokenEncryption();
-
-        // 注册 ASP.NET Core 宿主
-        var aspNetCoreOptions = options.UseAspNetCore()
-            .EnableAuthorizationEndpointPassthrough()
-            .EnableEndSessionEndpointPassthrough()
-            .EnableUserInfoEndpointPassthrough();
-
-        if (disableTransportSecurityRequirement)
-        {
-            aspNetCoreOptions.DisableTransportSecurityRequirement();
-        }
+        ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, authHealthCheckTags),
     });
 
-#endregion
+    // 启动提示（使用 Serilog，与 Gateway/API 风格统一）
+    app.Lifetime.ApplicationStarted.Register(() =>
+    {
+        var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
+        var oidcRuntimeSummary = AuthOidcRuntimeProfile.BuildStartupSummary(builder.Configuration, builder.Environment);
 
-// -------------- App 初始化阶段 ---------------
-var app = builder.Build();
-runtimeLogging.AttachLifetime(app.Lifetime);
-// -------------- App 初始化阶段 ---------------
+        Log.Information("====================================");
+        Log.Information("  ____            _ _     _          _         _   _     ");
+        Log.Information(" |  _ \\ __ _  __| (_)___| |__      / \\  _   _| |_| |__  ");
+        Log.Information(" | |_) / _` |/ _` | / __| '_ \\    / _ \\| | | | __| '_ \\ ");
+        Log.Information(" |  _ < (_| | (_| | \\__ \\ | | |  / ___ \\ |_| | |_| | | |");
+        Log.Information(" |_| \\_\\__,_|\\__,_|_|___/_| |_| /_/   \\_\\__,_|\\__|_| |_|");
+        Log.Information("");
+        Log.Information("  OIDC Authentication Server --by luobo");
+        Log.Information("====================================");
+        Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
+        Log.Information("监听地址: {Urls}", urls);
+        Log.Information("CORS 允许来源: {Origins}", string.Join(", ", corsOrigins));
+        Log.Information("OIDC Issuer: {Issuer}", oidcRuntimeSummary.IssuerSummary);
+        Log.Information("OIDC 密钥模式: {KeyMode}", oidcRuntimeSummary.KeyMode);
+        Log.Information("OIDC Signing 证书: {SigningCertificate}", oidcRuntimeSummary.SigningCertificateSummary);
+        Log.Information("OIDC Encryption 证书: {EncryptionCertificate}", oidcRuntimeSummary.EncryptionCertificateSummary);
+    });
 
-// 宿主启动只读检查 schema；结构写入统一由 Radish.DbMigrate apply 负责。
-using (var scope = app.Services.CreateScope())
-{
-    var db = scope.ServiceProvider.GetRequiredService<AuthOpenIddictDbContext>();
-    AuthOpenIddictPersistence.EnsureReady(db, openIddictDatabase);
-}
+    #endregion
 
-#region 中间件管道
-
-// 3. 绑定 InternalApp 扩展中的服务
-app.ConfigureApplication();
-// 4. 启动 InternalApp 扩展中的 App
-app.UseApplicationSetup();
-
-// ForwardedHeaders 必须在其他中间件之前
-app.UseForwardedHeaders();
-
-// HTTPS 重定向（由 Gateway 处理，Auth 服务本身不需要）
-// app.UseHttpsRedirection();
-
-// 静态文件
-app.UseStaticFiles();
-
-// 配置请求本地化（必须在 UseRouting 之前，确保在路由和控制器执行前设置 Culture）
-var localizationOptions = app.Services.GetRequiredService<IOptions<RequestLocalizationOptions>>();
-app.UseRequestLocalization(localizationOptions.Value);
-
-// 路由
-app.UseRouting();
-
-// CORS
-app.UseCors();
-
-// 认证
-app.UseAuthentication();
-
-// 授权
-app.UseAuthorization();
-
-// 速率限制（在授权之后，路由之前）
-app.UseRateLimitSetup();
-
-// 控制器路由
-app.MapControllers();
-app.MapHealthChecks("/health", new HealthCheckOptions
-{
-    Predicate = AuthHostHealthChecks.IsMinimal,
+    // -------------- App 运行阶段 ---------------
+    await app.RunAsync();
+    // -------------- App 运行阶段 ---------------
 });
-app.MapHealthChecks("/healthz", new HealthCheckOptions
-{
-    ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, authHealthCheckTags),
-});
-
-// 启动提示（使用 Serilog，与 Gateway/API 风格统一）
-app.Lifetime.ApplicationStarted.Register(() =>
-{
-    var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
-    var oidcRuntimeSummary = AuthOidcRuntimeProfile.BuildStartupSummary(builder.Configuration, builder.Environment);
-
-    Log.Information("====================================");
-    Log.Information("  ____            _ _     _          _         _   _     ");
-    Log.Information(" |  _ \\ __ _  __| (_)___| |__      / \\  _   _| |_| |__  ");
-    Log.Information(" | |_) / _` |/ _` | / __| '_ \\    / _ \\| | | | __| '_ \\ ");
-    Log.Information(" |  _ < (_| | (_| | \\__ \\ | | |  / ___ \\ |_| | |_| | | |");
-    Log.Information(" |_| \\_\\__,_|\\__,_|_|___/_| |_| /_/   \\_\\__,_|\\__|_| |_|");
-    Log.Information("");
-    Log.Information("  OIDC Authentication Server --by luobo");
-    Log.Information("====================================");
-    Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
-    Log.Information("监听地址: {Urls}", urls);
-    Log.Information("CORS 允许来源: {Origins}", string.Join(", ", corsOrigins));
-    Log.Information("OIDC Issuer: {Issuer}", oidcRuntimeSummary.IssuerSummary);
-    Log.Information("OIDC 密钥模式: {KeyMode}", oidcRuntimeSummary.KeyMode);
-    Log.Information("OIDC Signing 证书: {SigningCertificate}", oidcRuntimeSummary.SigningCertificateSummary);
-    Log.Information("OIDC Encryption 证书: {EncryptionCertificate}", oidcRuntimeSummary.EncryptionCertificateSummary);
-});
-
-#endregion
-
-// -------------- App 运行阶段 ---------------
-app.Run();
-// -------------- App 运行阶段 ---------------

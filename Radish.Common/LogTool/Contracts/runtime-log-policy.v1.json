@@ -87,7 +87,44 @@
     "pipeline.rejected": "Log event rejected; raw content omitted.",
     "infrastructure.postgres": "PostgreSQL runtime event; raw content omitted.",
     "infrastructure.redis": "Redis runtime event; raw content omitted.",
-    "pipeline.output_failed": "Log output failed; original content omitted."
+    "pipeline.output_failed": "Log output failed; original content omitted.",
+    "dbmigrate.index.created": "Schema index created.",
+    "dbmigrate.comment.likes_updated": "Comment like counts corrected.",
+    "dbmigrate.comment.likes_deduplicated": "Duplicate comment likes removed.",
+    "dbmigrate.post.likes_updated": "Post like counts corrected.",
+    "dbmigrate.post.likes_deduplicated": "Duplicate post likes removed.",
+    "dbmigrate.order.ledger_updated": "Consumable order grants backfilled.",
+    "dbmigrate.inventory.normalized": "Inventory entries normalized.",
+    "dbmigrate.inventory.merged": "Duplicate inventory entries merged.",
+    "dbmigrate.order.grants_deduplicated": "Duplicate order grants removed.",
+    "dbmigrate.experience.keys_updated": "Experience reward business keys backfilled.",
+    "dbmigrate.coin.keys_updated": "Coin reward business keys backfilled.",
+    "dbmigrate.tokens.converted": "Legacy attachment tokens converted to hashes.",
+    "dbmigrate.submission.schema_updated": "Content submission schema updated.",
+    "dbmigrate.inventory.schema_updated": "Inventory grant ledger schema updated.",
+    "dbmigrate.bootstrap.updated": "Bootstrap state nullable schema corrected.",
+    "dbmigrate.identity.public_index_missing": "PublicIndex column still missing; manual action required.",
+    "dbmigrate.identity.public_id_missing": "PublicId column still missing; manual action required.",
+    "dbmigrate.identity.updated": "Public identity schema updated.",
+    "dbmigrate.oidc.applied": "OpenIddict migrations applied.",
+    "dbmigrate.schema.ready": "Business schema is ready.",
+    "dbmigrate.schema.tables_missing": "Schema tables missing; initializing.",
+    "dbmigrate.schema.columns_missing": "Schema columns missing; initializing.",
+    "dbmigrate.schema.file_missing": "Main database file missing; initializing.",
+    "dbmigrate.schema.checking": "Checking schema readiness.",
+    "dbmigrate.ledger.applied": "Ordered schema migrations applied.",
+    "dbmigrate.ledger.applying": "Applying ordered schema migrations.",
+    "dbmigrate.seed.policy": "No default sticker data is seeded.",
+    "dbmigrate.seed.started": "Initial data seed started.",
+    "dbmigrate.environment": "Migration environment resolved.",
+    "dbmigrate.schema.initialized": "Business schema initialization completed.",
+    "dbmigrate.table.initialized": "Business table initialized.",
+    "dbmigrate.schema.initializing": "Initializing business schema.",
+    "dbmigrate.database.creating": "Ensuring databases exist.",
+    "dbmigrate.apply": "Apply checks, schema migration, seed and strict verification started.",
+    "dbmigrate.started": "Migration command started.",
+    "dbmigrate.completed": "Migration command completed.",
+    "dbmigrate.index.failed": "Schema index creation failed."
   },
   "properties": {
     "durationMs": {
@@ -150,7 +187,8 @@
         "delete",
         "connect",
         "migrate",
-        "seed"
+        "seed",
+        "other"
       ]
     },
     "rejectionReason": {
@@ -163,6 +201,57 @@
         "invalid-event",
         "invalid-time",
         "unparsed-native"
+      ]
+    },
+    "command": {
+      "type": "enum",
+      "values": [
+        "apply",
+        "doctor",
+        "verify",
+        "init",
+        "seed",
+        "help"
+      ]
+    },
+    "schemaIndex": {
+      "type": "enum",
+      "values": [
+        "idx_benefit_tenant_source_order",
+        "idx_category_parent_enabled_deleted_sort",
+        "idx_coin_reward_business_key",
+        "idx_content_submission_client",
+        "idx_content_submission_expires",
+        "idx_content_submission_fingerprint",
+        "idx_content_submission_result",
+        "idx_exp_reward_business_key",
+        "idx_file_access_token_attachment_active",
+        "idx_inventory_grant_inventory",
+        "idx_inventory_grant_tenant_source_order",
+        "idx_inventory_tenant_user_type_value",
+        "idx_post_forum_category_list",
+        "idx_post_forum_list",
+        "idx_user_email_active",
+        "idx_user_public_id",
+        "idx_user_public_index",
+        "idx_usercommentlike_comment_active",
+        "idx_usercommentlike_tenant_user_comment",
+        "idx_userpostlike_post_active",
+        "idx_userpostlike_tenant_user_post"
+      ]
+    },
+    "failureKind": {
+      "type": "enum",
+      "values": [
+        "aggregate",
+        "database",
+        "cancelled",
+        "timeout",
+        "io",
+        "access-denied",
+        "argument",
+        "invalid-operation",
+        "other"
       ]
     }
   }
