@@ -7,7 +7,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续其余后台任务 / Hangfire 边界与业务事件治理，并补 Rust 原生回归，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
+- **下一项工作**：继续其余后台任务 / Hangfire 边界与业务事件治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
 - **状态复核日期**：`2026-09-23`；已完成日志 L2 的 SQL / AOP / 事务、API 异常、DbMigrate 入口及 seed / migration、Auth seed 治理子项；本批推进 Outbox / Rust 调用边界；未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
@@ -29,7 +29,7 @@
 
 ## 最近结论
 
-- `2026-09-23` 完成[Outbox / Rust 调用边界实现与 .NET 回归](../records/unified-logging-l2-outbox-native-2026-09-23.md)：按真实 Outbox 状态区分重试与死信，移除 Rust 显式裸输出及宿主原文日志。Rust 原生测试因依赖缓存不全待下载授权，不宣称原生验证关闭。
+- `2026-09-23` 完成[Outbox / Rust 调用边界实现与 .NET 回归](../records/unified-logging-l2-outbox-native-2026-09-23.md)：按真实 Outbox 状态区分重试与死信，移除 Rust 显式裸输出及宿主原文日志。获准下载后 Rust 原生 7 项、真实动态库 .NET 定向 13 项通过；发现既有 `.tmp` 输入触发 C# 水印回退，已留痕待独立确认修复范围。
 
 - `2026-09-23` 完成[日志 L2 seed / migration 治理](../records/unified-logging-l2-seed-migration-2026-09-23.md)：移除 seed 全局输出捕获和原文回放，阶段摘要、迁移提交及 Auth seed 统一记录安全事件；保留数据操作、迁移顺序、校验和和失败传播。
 
@@ -52,7 +52,7 @@
 继续[统一日志专题](../features/unified-logging-governance-design.md)。SQL / AOP / 事务、API 已处理异常及 DbMigrate Program / Runner / Doctor 已完成本批治理，证据见[入口记录](../records/unified-logging-l2-producer-governance-2026-09-23.md)；seed / 具体 migration 与 Auth seed 见[后续记录](../records/unified-logging-l2-seed-migration-2026-09-23.md)。
 
 1. **其余后台任务 / Hangfire**：继续清理、商城、抽奖、神评与保留奖励等任务的批次摘要、重试和最终失败边界；Outbox 状态日志已治理，领取 / 写库等抛出链仍需纳入框架最终处理。
-2. **Rust 原生验证**：FFI 显式输出及 .NET 宿主摘要已改，待允许下载缺失 Cargo 缓存后执行原生返回码 / stderr 测试；保持错误契约与 ABI。
+2. **Rust 既有回退问题**：本机返回码 / stderr 与真实动态库验证已补完；`.tmp` 输入触发水印回退的既有问题见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)，不自动扩大日志批次范围。
 3. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。
 4. **验证与收口**：每组调用链补安全输出、异常所有权与原有行为回归，按影响面更新契约和记录。
 

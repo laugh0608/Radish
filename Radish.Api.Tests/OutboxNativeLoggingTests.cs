@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
@@ -33,6 +34,77 @@ namespace Radish.Api.Tests;
 public sealed class OutboxNativeLoggingTests
 {
     private const string Secret = "OUTBOX_NATIVE_PRIVATE_SENTINEL";
+
+    [Fact]
+    [Trait("Runtime", "Native")]
+    public async Task NativeLibraryIntegration_ShouldExerciseRealAbiAndHostFailurePaths()
+    {
+        var libraryPath = Environment.GetEnvironmentVariable("RADISH_TEST_NATIVE_LIBRARY");
+        Assert.SkipWhen(string.IsNullOrWhiteSpace(libraryPath), "未指定 RADISH_TEST_NATIVE_LIBRARY，跳过真实 Rust 动态库验证");
+        Assert.True(Path.IsPathFullyQualified(libraryPath!));
+        // 显式加载本次构建产物；句柄由测试进程持有，不向产品目录复制动态库。
+        var library = NativeLibrary.Load(libraryPath!);
+        NativeLibrary.SetDllImportResolver(typeof(RustImageProcessor).Assembly,
+            (name, _, _) => name == "radish_lib" ? library : IntPtr.Zero);
+        Assert.True(RustImageProcessor.IsRustLibraryAvailable());
+
+        var directory = Path.Combine(Path.GetTempPath(), $"radish-native-interop-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(directory);
+        using var output = new StringWriter();
+        using var logger = CreateLogger(output, true);
+        var previous = Log.Logger;
+        try
+        {
+            Log.Logger = logger;
+            var hashPath = Path.Combine(directory, "hash.txt");
+            await File.WriteAllTextAsync(hashPath, "abc", TestContext.Current.CancellationToken);
+            Assert.Equal("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad",
+                RustImageProcessor.CalculateFileSha256(hashPath));
+            Assert.Equal("", output.ToString());
+
+            Assert.Null(RustImageProcessor.CalculateFileSha256(Path.Combine(directory, Secret)));
+            using (var failed = JsonDocument.Parse(output.ToString()))
+            {
+                Assert.Equal("native.failed", failed.RootElement.GetProperty("eventCode").GetString());
+                Assert.Equal("native-result", failed.RootElement.GetProperty("properties").GetProperty("nativeReason").GetString());
+            }
+            output.GetStringBuilder().Clear();
+
+            var inputPath = Path.Combine(directory, "input.png");
+            var outputPath = Path.Combine(directory, "output.png");
+            using var inputImage = new Image<Rgba32>(128, 128);
+            await inputImage.SaveAsPngAsync(inputPath, TestContext.Current.CancellationToken);
+            var watermark = Marshal.GetDelegateForFunctionPointer<NativeWatermark>(NativeLibrary.GetExport(library, "add_text_watermark"));
+            Assert.Equal(0, watermark(inputPath, outputPath, "native", 12, 0.5f, 0));
+            using var resultImage = await Image.LoadAsync(outputPath, TestContext.Current.CancellationToken);
+            Assert.Equal(128, resultImage.Width);
+            Assert.Equal(128, resultImage.Height);
+
+            // 当前 wrapper 使用 .tmp 输入；验证这一既有路径确实返回原生错误并安全回退。
+            using var invalidInput = new MemoryStream(Encoding.UTF8.GetBytes(Secret));
+            var processor = new RustImageProcessor(Options.Create(new FileStorageOptions()));
+            var result = await processor.AddWatermarkAsync(invalidInput, Path.Combine(directory, "invalid.png"),
+                new WatermarkOptions { Type = WatermarkType.Text, Text = Secret });
+            Assert.False(result.Success);
+            Assert.Single(Lines(output));
+            using var fallback = JsonDocument.Parse(output.ToString());
+            Assert.Equal("native.fallback", fallback.RootElement.GetProperty("eventCode").GetString());
+            Assert.Equal("native-result", fallback.RootElement.GetProperty("properties").GetProperty("nativeReason").GetString());
+            Assert.DoesNotContain(Secret, output.ToString());
+        }
+        finally
+        {
+            Log.Logger = previous;
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+    private delegate int NativeWatermark(
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string inputPath,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string outputPath,
+        [MarshalAs(UnmanagedType.LPUTF8Str)] string text,
+        uint fontSize, float opacity, byte position);
 
     [Theory]
     [InlineData(false, "main")]

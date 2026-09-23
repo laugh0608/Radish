@@ -1,6 +1,6 @@
 # 日志 L2 Outbox / Rust 调用边界记录
 
-> 日期：2026-09-23（Asia/Shanghai）。承接[seed / migration 批次](./unified-logging-l2-seed-migration-2026-09-23.md)。实现规则见[日志契约第 9 节](../features/unified-logging-contract.md)。本记录只关闭已验证的 .NET 子项，不关闭 Rust 原生门禁或 L2 整体。
+> 日期：2026-09-23（Asia/Shanghai）。承接[seed / migration 批次](./unified-logging-l2-seed-migration-2026-09-23.md)。实现规则见[日志契约第 9 节](../features/unified-logging-contract.md)。本记录关闭已验证的 .NET 子项及本机 Rust 返回码 / 安全输出验证，不关闭跨平台原生验收或 L2 整体。
 
 ## 改动与边界
 
@@ -26,18 +26,25 @@ git diff --check
 - .NET 首轮测试发现两个 mock 使用小写库名而 Dispatcher 传入常量 `Main / Chat`，已修正测试替身；最终回归通过。
 - 初次沙盒测试遇到 MSBuild 命名管道权限错误，后续仅对无 restore 的构建 / 测试最小范围提权；失败进程已退出。未启动业务宿主、数据库容器或浏览器 Smoke。
 
-## Rust 原生验证待办
+## Rust 原生验证补完
 
-已尝试：
+首轮 `cargo test --offline` 因缺少 `aligned 0.4.3` 等缓存停止。项目所有者随后明确回复“允许下载”，本次按既有 Cargo.toml 和本地锁定解析下载依赖，使用 `--locked` 保持解析不变；没有改依赖声明或提交锁文件。
+
+当前 Xcode 工具链因许可未确认而无法链接；使用已安装且可运行的独立 Command Line Tools，并仅对本次命令设置 `DEVELOPER_DIR`，没有代接受许可或修改全局 xcode-select。
 
 ```bash
-cargo test --offline --manifest-path Lib/radish.lib/Cargo.toml --target-dir /private/tmp/radish-l2-native-target
+DEVELOPER_DIR=/Library/Developer/CommandLineTools cargo test --locked --offline --manifest-path Lib/radish.lib/Cargo.toml --target-dir /private/tmp/radish-l2-native-target
+DEVELOPER_DIR=/Library/Developer/CommandLineTools cargo build --locked --offline --manifest-path Lib/radish.lib/Cargo.toml --target-dir /private/tmp/radish-l2-native-target
+RADISH_TEST_NATIVE_LIBRARY=/private/tmp/radish-l2-native-target/debug/libradish_lib.dylib dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter 'FullyQualifiedName~OutboxNativeLoggingTests'
 ```
 
-离线缓存缺少 `aligned 0.4.3` 等包，Cargo 在编译前停止。未下载依赖、未改 Cargo.toml 或提交锁文件；已询问项目所有者是否允许本任务下载现有声明所需依赖，尚待答复。
+- Rust：7 通过、0 失败。包含真实 FFI 子进程 stderr 捕获、无效 UTF-8 / 不存在文件、buffer-too-small 和已知 SHA-256 值；错误码保持 0 / -1 / -2。
+- 动态库构建成功；保留原有 `watermark.rs` 未使用 `RgbaImage` 导入警告，没有借验证批次扩展清理。
+- .NET 真实库定向：13 通过、0 跳过。新增 Native trait 用例明确加载指定绝对路径的产物，验证原生可用、hash 成功与原生错误、有效 PNG 直接水印成功，以及 wrapper 原生返回码触发的安全 fallback。没有配置 `RADISH_TEST_NATIVE_LIBRARY` 时只跳过该真实库用例，不把库缺失当作原生成功。
+- 动态库解析仅存在于测试进程，临时测试文件在 finally 清理。Cargo 产物位于 `/private/tmp/radish-l2-native-target`；没有复制动态库到产品部署目录，没有启动业务宿主。
 
-源文件已补真实 FFI 子进程 stderr 捕获、无效 UTF-8 / 不存在文件、buffer-too-small、已知 SHA-256 值等测试；尚未编译执行，不能称原生测试通过。当前 .NET 失败路径测试不替代原生库加载后的全链路验证。
+## 新发现与后续边界
 
-获准后按现有声明下载并执行 Cargo 测试，再构建临时动态库验证 .NET P/Invoke 的原生返回码路径；产物限定 `/private/tmp`，不复制到产品部署目录，不启动宿主。随后继续其余后台任务与 Hangfire 最终失败边界。
+复测相同有效 PNG 字节：直接调用原生水印时 `.png` 输入返回 0，`.tmp` 输入返回 -1。现有 .NET wrapper 写入 `.tmp`，而 Rust 使用按扩展名识别格式的 `image::open`，会触发 C# fallback。这是既有图片处理边界问题；本批记录证据，没有改变解码逻辑，也不宣称 wrapper 原生水印加速成功。后续修复应以内容识别格式并补真实 wrapper 成功路径回归，先确认该运行行为调整范围。
 
-`RadishLogging.Enabled=false` 保持不变；没有新增生产运行、发布或部署证据。
+日志顺位继续其余后台任务与 Hangfire 最终失败边界。`RadishLogging.Enabled=false` 保持不变；没有新增生产运行、发布或部署证据。

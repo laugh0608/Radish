@@ -205,6 +205,10 @@ dotnet test --filter "FullyQualifiedName~WatermarkPerformance_CSharpVsRust"
 
 Rust FFI 的显式错误只通过返回码交给 .NET，不在 stderr 打印路径、水印或底层错误。宿主的安全事件区分能力降级、清理失败和直接操作失败；下面是字段示意，不要求旧 sink 与候选 JSONL 显示格式一致。`native-result` 只能说明原生操作失败，不能单凭它断言字体缺失，仍需核对构建资产。详细边界见[日志契约](../features/unified-logging-contract.md)。
 
+### 已知边界：临时输入扩展名
+
+2026-09-23 真实动态库复测发现：相同有效 PNG 的 `.png` 输入可以成功加水印，`.tmp` 输入返回 -1。当前 .NET wrapper 使用 `.tmp`，Rust 的 `image::open` 按扩展名识别，因而会回退到 C#；库加载成功不等于水印实际走了原生成功路径。该问题尚待独立确认修复范围，验证证据见[日志原生调用记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)。
+
 ### 问题 1：Rust 库未找到
 
 **症状**：
