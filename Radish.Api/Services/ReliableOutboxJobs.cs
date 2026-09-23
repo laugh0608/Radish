@@ -24,7 +24,7 @@ public sealed class ReliableOutboxDispatcherJob
         _logger = logger;
     }
 
-    [AutomaticRetry(Attempts = 0)]
+    [AutomaticRetry(Attempts = 0, LogEvents = false)]
     public async Task<int> DispatchAsync(int batchSize = 50)
     {
         var started = Stopwatch.GetTimestamp();
@@ -78,7 +78,7 @@ public sealed class ReliableOutboxExecutionJob
         _contentModerationCaseRepository = contentModerationCaseRepository;
     }
 
-    [AutomaticRetry(Attempts = 0)]
+    [AutomaticRetry(Attempts = 0, LogEvents = false)]
     public async Task ExecuteAsync(string sourceDatabase, long outboxId, CancellationToken cancellationToken)
     {
         var message = await _outboxService.QueryByIdAsync(sourceDatabase, outboxId);

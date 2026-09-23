@@ -83,7 +83,7 @@
     "database.diagnostic": "Database diagnostic summary.",
     "job.completed": "Background job completed.",
     "job.retry": "Background job scheduled for retry.",
-    "job.failed": "Background job exhausted retries.",
+    "job.failed": "Job state election selected failure without automatic retry.",
     "pipeline.rejected": "Log event rejected; raw content omitted.",
     "infrastructure.postgres": "PostgreSQL runtime event; raw content omitted.",
     "infrastructure.redis": "Redis runtime event; raw content omitted.",
@@ -147,7 +147,15 @@
     "outbox.dead_letter": "Outbox failure persisted as a dead letter.",
     "native.fallback": "Native capability unavailable; using managed implementation.",
     "native.failed": "Native operation failed.",
-    "native.cleanup_failed": "Native temporary resource cleanup failed."
+    "native.cleanup_failed": "Native temporary resource cleanup failed.",
+    "job.retrying": "Job state election selected an automatic retry.",
+    "hangfire.runtime_failed": "Hangfire infrastructure operation failed.",
+    "hangfire.runtime_warning": "Hangfire runtime requires attention.",
+    "hangfire.diagnostic": "Hangfire development diagnostic.",
+    "job.cleanup.completed": "Cleanup batch completed.",
+    "job.cleanup.warning": "Cleanup batch completed with warnings.",
+    "job.cleanup.failed": "Cleanup batch consumed failures; counts describe partial work.",
+    "job.cleanup.capacity_warning": "Notification inbox capacity requires attention."
   },
   "properties": {
     "durationMs": {
@@ -186,7 +194,8 @@
         "failed",
         "cancelled",
         "retrying",
-        "rejected"
+        "rejected",
+        "partial"
       ]
     },
     "method": {
@@ -382,6 +391,78 @@
         "temporary-file",
         "output-missing"
       ]
+    },
+    "jobKind": {
+      "type": "enum",
+      "values": [
+        "file-deleted",
+        "file-temp",
+        "file-recycle",
+        "file-orphan",
+        "wiki-drafts",
+        "chat-reactions",
+        "notification-inbox"
+      ]
+    },
+    "processedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "movedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "missingCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "skippedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "removedDirectoryCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "failedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "directoryFailureCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "relationCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "groupCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "notificationCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
     }
   }
 }

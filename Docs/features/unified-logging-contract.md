@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出已按第 9 节推进，下一步治理其余后台任务与剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，下一步治理其余后台任务与剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -112,7 +112,17 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Outbox 空分派保持安静，实际分派一批后仅生成 `outbox.dispatched`，包含 count / durationMs。分派数量不等同于成功处理数量；逐消息成功仍以 Outbox 状态为准，不增加逐条运行日志。
 - `ReliableOutboxRepository` 在条件更新确实影响行后记录 `outbox.retrying`（Warning）或 `outbox.dead_letter`（Error）；使用本次真正选择的 Pending / DeadLetter 状态，不在 Job 根据旧快照猜测重试是否耗尽。无效状态、重复执行和未影响行的写入不生成状态事件。`ReliableOutboxExecutionJob` 不再追加携带异常及业务标识的 Error。
 - `attempt / databaseScope / outcome` 均为受控属性，Service 通过逻辑上下文补充安全 `failureKind`。`operationId` 由固定前缀、规范库名与 Outbox ID 的 SHA-256 前 16 字节转换为 Guid，同一部署同一库同一任务重试 / 重放可关联；部署之间须同时使用日志 source 区分。它不是凭据，也不替代权威审计键。载荷、任务类型原文、机器名、用户标识和异常文本不进入本批日志。
-- 重试间隔、抖动、MaxAttempts、租约、审计错误码及永久失败摘要和内容治理失败记录保持原义。瞬时失败的固定审计提示改为查看错误码和安全摘要，不再误导读者寻找已禁止输出的完整异常。本批没有修复既有租约归属保护问题；日志不是额外数据库事务，也不保证跨重放全局只记录一次失败。领取 / 写库 / 内容治理记录自身抛出的异常仍传播，Hangfire 的最终处理与框架输出需后续治理。
+- 重试间隔、抖动、MaxAttempts、租约、审计错误码及永久失败摘要和内容治理失败记录保持原义。瞬时失败的固定审计提示改为查看错误码和安全摘要，不再误导读者寻找已禁止输出的完整异常。本批没有修复既有租约归属保护问题；日志不是额外数据库事务，也不保证跨重放全局只记录一次失败。领取 / 写库 / 内容治理记录自身抛出的异常仍传播，其 Hangfire 处理边界见第 10 节。
 - Rust FFI 移除显式 stderr 打印，只返回既有 ABI 错误码：watermark 为 0 / -1，hash 为 0 / -1 / -2。.NET 使用受控 `nativeOperation / nativeReason / failureKind` 生成安全事件，不输出文件路径、水印、哈希、异常文本或原生错误正文。
 - `native.fallback` 与 `native.cleanup_failed` 是 Warning；直接 hash 失败或 native 声称成功却无输出文件使用 `native.failed` Error。图片水印本来就走 C#，无需降级警告；正常工厂创建也不逐次打印 Info。水印 fallback 只调用一次，其结果 / 异常继续交给业务调用方最终处理。
 - 本批不改变 FFI 参数、返回值、业务失败结果或部署开关；不宣称已解决 Rust panic / 非法指针边界，或 AttachmentService 等上层业务日志。本机原生构建、返回码 / stderr 和真实动态库 .NET 回归已通过；发现既有 `.tmp` 输入触发水印回退，未据此声明 wrapper 原生水印加速成功。证据与后续边界见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)。
+
+## 10. L2 Hangfire 与清理任务
+
+- API 的 `HangfireRuntimeStateFilter` 在既有 AutomaticRetry 状态选举之后观察候选结果：失败转为 Scheduled / Enqueued 时记录 `job.retrying` Warning，保留 Failed 或转为 Deleted 时记录 `job.failed` Error；普通调度、成功和无 FailedState 的停机重入队不生成失败事件。不修改次数、延迟、候选状态、异常传播或 Hangfire 存储审计。
+- 这是**存储提交前的处理决定**，不是状态已提交或跨重放恰好一次的证据。存储提交失败、进程中断或状态选举重入可产生新的事件。`operationId` 由固定前缀与 Hangfire Job ID 的 SHA-256 前 16 字节转换为 Guid，同一部署 / 存储内可关联；不输出 Job ID、参数、任务类型原文或异常正文。
+- 默认全局 AutomaticRetry 与当前清理 / Outbox 的方法属性关闭 `LogEvents`；`HangfireRuntimeLogProvider` 同时抑制该来源的重复输出。其他 Hangfire Warning / Error / Fatal 分别保留安全 `hangfire.runtime_warning / hangfire.runtime_failed`，异常仅映射 `failureKind`；不求值框架消息工厂。框架 Info 及以下降为 Debug 诊断，候选生产模式不输出。该 provider 在 AddHangfire 配置回调中接入，旧 sink 同样只能收到安全摘要。
+- 通知收件箱、Wiki 草稿正文、Chat 回应幂等事实只在有清理数量时生成 `job.cleanup.completed`；收件箱只删除关系也属于有效变更。容量告警按本批用户数量聚合为 `job.cleanup.capacity_warning`，不输出 tenant / user 标识。仓储异常继续抛给 Hangfire，不在 Job 重复记录 Error。
+- 文件软删除、临时文件、回收站和孤立附件清理使用局部批次计数。成功一次 Info，缺失文件 / 空目录清理异常一次 Warning，已消费的主流程 / 单项异常一次 Error；混合结果为 partial。空批次或仅引用保护跳过保持安静。原有“单项失败继续、外层失败返回 0”、保留期、分片目录排除和引用保护保持不变，不新增重试。
+- 文件 `processedCount` 沿用原返回计数口径：软删除 / 孤立附件可包含源文件缺失的已处理记录；`movedCount` 才表示实际移动的主文件与缩略图数量。两者不可互换。`missingCount / failedCount / directoryFailureCount / skippedCount / removedDirectoryCount` 分别记录缺失、已消费异常、目录异常、引用保护与删除空目录数量；不包含路径、文件名或附件身份。
+- 该批只覆盖上述任务与 Hangfire 日志适配，不代表商城、抽奖、神评、保留奖励以及 ChunkedUploadService / FileAccessTokenService 内清理分支已完成生成端治理。完整安全栈帧与其他框架来源仍后置；生产候选开关继续关闭。验证范围见[批次记录](../records/unified-logging-l2-hangfire-cleanup-2026-09-23.md)。

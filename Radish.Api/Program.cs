@@ -531,6 +531,7 @@ return await RuntimeProcess.RunAsync("api", async () =>
         config.SetDataCompatibilityLevel(CompatibilityLevel.Version_180);
         config.UseSimpleAssemblyNameTypeSerializer();
         config.UseRecommendedSerializerSettings();
+        HangfireRuntimeLogging.Configure(config);
     });
 
     var configuredHangfireWorkerCount = builder.Configuration.GetValue<int?>("Hangfire:Server:WorkerCount");

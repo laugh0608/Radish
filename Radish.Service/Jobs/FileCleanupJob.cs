@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using Radish.Common.LogTool;
 using Radish.Common.CoreTool;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
@@ -91,10 +93,9 @@ public class FileCleanupJob
     /// <returns>清理的文件数量</returns>
     public async Task<int> CleanupDeletedFilesAsync(int retentionDays = 30)
     {
+        using var summary = new FileCleanupSummary("file-deleted");
         try
         {
-            Log.Information("[FileCleanup] 开始清理软删除文件，保留天数：{RetentionDays}", retentionDays);
-
             var cutoffDate = GetUtcNow().AddDays(-retentionDays);
 
             // 查询需要清理的附件（软删除且超过保留期）
@@ -106,7 +107,6 @@ public class FileCleanupJob
 
             if (deletedAttachments == null || deletedAttachments.Count == 0)
             {
-                Log.Information("[FileCleanup] 没有需要清理的软删除文件");
                 return 0;
             }
 
@@ -117,29 +117,28 @@ public class FileCleanupJob
                 try
                 {
                     // 移动文件到回收站（而不是直接删除）
-                    await MoveToRecycleBinAsync(attachment.StoragePath, "deleted");
+                    await MoveToRecycleBinAsync(summary, attachment.StoragePath, "deleted");
 
                     // 如果有缩略图，也移动到回收站
                     if (!string.IsNullOrWhiteSpace(attachment.ThumbnailPath))
                     {
-                        await MoveToRecycleBinAsync(attachment.ThumbnailPath, "deleted");
+                        await MoveToRecycleBinAsync(summary, attachment.ThumbnailPath, "deleted");
                     }
 
                     cleanedCount++;
-                    Log.Information("[FileCleanup] 已将文件移至回收站：{FilePath}", attachment.StoragePath);
+                    summary.ProcessedCount++;
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[FileCleanup] 移动文件到回收站失败：{FilePath}", attachment.StoragePath);
+                    summary.RecordFailure(ex);
                 }
             }
 
-            Log.Information("[FileCleanup] 软删除文件清理完成，共处理 {Count} 个文件", cleanedCount);
             return cleanedCount;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[FileCleanup] 清理软删除文件时发生异常");
+            summary.RecordFailure(ex);
             return 0;
         }
     }
@@ -155,13 +154,11 @@ public class FileCleanupJob
     /// <returns>清理的文件数量</returns>
     public async Task<int> CleanupTempFilesAsync(int retentionHours = 2)
     {
+        using var summary = new FileCleanupSummary("file-temp");
         try
         {
-            Log.Information("[FileCleanup] 开始清理临时文件，保留小时数：{RetentionHours}", retentionHours);
-
             if (!Directory.Exists(_tempPath))
             {
-                Log.Information("[FileCleanup] 临时文件目录不存在：{TempPath}", _tempPath);
                 return 0;
             }
 
@@ -188,6 +185,7 @@ public class FileCleanupJob
                         // 移动到回收站（保持数据安全）
                         var relativePath = Path.GetRelativePath(_tempPath, filePath);
                         var moved = await MoveToRecycleBinAsync(
+                            summary,
                             relativePath,
                             "temp",
                             _tempPath,
@@ -195,25 +193,24 @@ public class FileCleanupJob
                         if (moved)
                         {
                             cleanedCount++;
-                            Log.Information("[FileCleanup] 已将临时文件移至回收站：{FilePath}", relativePath);
+                            summary.ProcessedCount++;
                         }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[FileCleanup] 移动临时文件到回收站失败：{FilePath}", filePath);
+                    summary.RecordFailure(ex);
                 }
             }
 
             // 清理空目录
-            CleanupEmptyDirectories(_tempPath);
+            CleanupEmptyDirectories(_tempPath, summary);
 
-            Log.Information("[FileCleanup] 临时文件清理完成，共处理 {Count} 个文件", cleanedCount);
             return cleanedCount;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[FileCleanup] 清理临时文件时发生异常");
+            summary.RecordFailure(ex);
             return 0;
         }
     }
@@ -229,13 +226,11 @@ public class FileCleanupJob
     /// <returns>清理的文件数量</returns>
     public async Task<int> CleanupRecycleBinAsync(int retentionDays = 90)
     {
+        using var summary = new FileCleanupSummary("file-recycle");
         try
         {
-            Log.Information("[FileCleanup] 开始清理回收站，保留天数：{RetentionDays}", retentionDays);
-
             if (!Directory.Exists(_recycleBinPath))
             {
-                Log.Information("[FileCleanup] 回收站目录不存在");
                 return 0;
             }
 
@@ -257,24 +252,23 @@ public class FileCleanupJob
                         // 永久删除文件
                         File.Delete(filePath);
                         cleanedCount++;
-                        Log.Information("[FileCleanup] 已永久删除回收站文件：{FilePath}", filePath);
+                        summary.ProcessedCount++;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[FileCleanup] 删除回收站文件失败：{FilePath}", filePath);
+                    summary.RecordFailure(ex);
                 }
             }
 
             // 清理空目录
-            CleanupEmptyDirectories(_recycleBinPath);
+            CleanupEmptyDirectories(_recycleBinPath, summary);
 
-            Log.Information("[FileCleanup] 回收站清理完成，共删除 {Count} 个文件", cleanedCount);
             return cleanedCount;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[FileCleanup] 清理回收站时发生异常");
+            summary.RecordFailure(ex);
             return 0;
         }
     }
@@ -290,10 +284,9 @@ public class FileCleanupJob
     /// <returns>清理的文件数量</returns>
     public async Task<int> CleanupOrphanAttachmentsAsync(int retentionHours = 24)
     {
+        using var summary = new FileCleanupSummary("file-orphan");
         try
         {
-            Log.Information("[FileCleanup] 开始清理孤立附件，保留小时数：{RetentionHours}", retentionHours);
-
             var cutoffTime = GetUtcNow().AddHours(-retentionHours);
 
             // 查询孤立附件（未关联业务对象且超过保留期）
@@ -304,7 +297,6 @@ public class FileCleanupJob
 
             if (orphanAttachments == null || orphanAttachments.Count == 0)
             {
-                Log.Information("[FileCleanup] 没有需要清理的孤立附件");
                 return 0;
             }
 
@@ -316,14 +308,10 @@ public class FileCleanupJob
                 .ToList();
 
             var skippedCount = orphanAttachments.Count - safeToCleanupAttachments.Count;
-            if (skippedCount > 0)
-            {
-                Log.Information("[FileCleanup] 跳过 {Count} 个已被业务引用的附件，避免误清理", skippedCount);
-            }
+            summary.SkippedCount = skippedCount;
 
             if (safeToCleanupAttachments.Count == 0)
             {
-                Log.Information("[FileCleanup] 孤立附件均被业务引用，跳过清理");
                 return 0;
             }
 
@@ -334,12 +322,12 @@ public class FileCleanupJob
                 try
                 {
                     // 移动文件到回收站
-                    await MoveToRecycleBinAsync(attachment.StoragePath, "orphan");
+                    await MoveToRecycleBinAsync(summary, attachment.StoragePath, "orphan");
 
                     // 如果有缩略图，也移动到回收站
                     if (!string.IsNullOrWhiteSpace(attachment.ThumbnailPath))
                     {
-                        await MoveToRecycleBinAsync(attachment.ThumbnailPath, "orphan");
+                        await MoveToRecycleBinAsync(summary, attachment.ThumbnailPath, "orphan");
                     }
 
                     // 标记为已删除（保留数据库记录）
@@ -348,20 +336,19 @@ public class FileCleanupJob
                     await _attachmentRepository.UpdateAsync(attachment);
 
                     cleanedCount++;
-                    Log.Information("[FileCleanup] 已将孤立附件移至回收站：{FilePath}", attachment.StoragePath);
+                    summary.ProcessedCount++;
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[FileCleanup] 移动孤立附件到回收站失败：{FilePath}", attachment.StoragePath);
+                    summary.RecordFailure(ex);
                 }
             }
 
-            Log.Information("[FileCleanup] 孤立附件清理完成，共处理 {Count} 个文件", cleanedCount);
             return cleanedCount;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[FileCleanup] 清理孤立附件时发生异常");
+            summary.RecordFailure(ex);
             return 0;
         }
     }
@@ -378,6 +365,7 @@ public class FileCleanupJob
     /// <param name="sourceBasePath">源文件基础路径（可选，用于临时文件等非标准路径）</param>
     /// <param name="targetRelativePath">回收站内的相对路径；默认与源相对路径一致。</param>
     private async Task<bool> MoveToRecycleBinAsync(
+        FileCleanupSummary summary,
         string relativePath,
         string category,
         string? sourceBasePath = null,
@@ -390,7 +378,7 @@ public class FileCleanupJob
 
         if (!File.Exists(sourceFullPath))
         {
-            Log.Warning("[FileCleanup] 文件不存在，跳过：{FilePath}", sourceFullPath);
+            summary.MissingCount++;
             return false;
         }
 
@@ -423,6 +411,7 @@ public class FileCleanupJob
 
         // 移动文件
         await Task.Run(() => File.Move(sourceFullPath, targetPath));
+        summary.MovedCount++;
         return true;
     }
 
@@ -430,7 +419,7 @@ public class FileCleanupJob
     /// 清理空目录
     /// </summary>
     /// <param name="rootPath">根目录</param>
-    private void CleanupEmptyDirectories(string rootPath)
+    private void CleanupEmptyDirectories(string rootPath, FileCleanupSummary summary)
     {
         try
         {
@@ -450,18 +439,72 @@ public class FileCleanupJob
                         Directory.GetDirectories(dir).Length == 0)
                     {
                         Directory.Delete(dir);
-                        Log.Debug("[FileCleanup] 已删除空目录：{Directory}", dir);
+                        summary.RemovedDirectoryCount++;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Warning(ex, "[FileCleanup] 删除空目录失败：{Directory}", dir);
+                    summary.RecordDirectoryFailure(ex);
                 }
             }
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "[FileCleanup] 清理空目录时发生异常");
+            summary.RecordDirectoryFailure(ex);
+        }
+    }
+
+    /// <summary>局部批次计数；不保留异常对象、路径或附件身份，也不改变原有返回计数。</summary>
+    private sealed class FileCleanupSummary(string jobKind) : IDisposable
+    {
+        private readonly long _started = Stopwatch.GetTimestamp();
+        private string? _failureKind;
+        public int ProcessedCount { get; set; }
+        public int MovedCount { get; set; }
+        public int MissingCount { get; set; }
+        public int SkippedCount { get; set; }
+        public int RemovedDirectoryCount { get; set; }
+        private int FailedCount { get; set; }
+        private int DirectoryFailureCount { get; set; }
+
+        public void RecordFailure(Exception exception)
+        {
+            FailedCount++;
+            SetFailureKind(exception);
+        }
+
+        public void RecordDirectoryFailure(Exception exception)
+        {
+            DirectoryFailureCount++;
+            SetFailureKind(exception);
+        }
+
+        private void SetFailureKind(Exception exception)
+        {
+            var kind = RuntimeFailureSummary.Classify(exception);
+            _failureKind = _failureKind == null || _failureKind == kind ? kind : "other";
+        }
+
+        public void Dispose()
+        {
+            // 只有引用保护 / 分片排除或空目录扫描而无变更时不逐轮打印。
+            if (ProcessedCount + MovedCount + MissingCount + RemovedDirectoryCount + FailedCount + DirectoryFailureCount == 0) return;
+            var warned = MissingCount > 0 || DirectoryFailureCount > 0;
+            var changed = MovedCount > 0 || RemovedDirectoryCount > 0 || ProcessedCount > 0;
+            var outcome = FailedCount > 0 ? (changed ? "partial" : "failed") : warned ? "partial" : "succeeded";
+            var code = FailedCount > 0 ? "job.cleanup.failed" : warned ? "job.cleanup.warning" : "job.cleanup.completed";
+            var logger = Log.ForContext("EventCode", code).ForContext("SourceCategory", "job")
+                .ForContext("jobKind", jobKind).ForContext("outcome", outcome)
+                .ForContext("processedCount", ProcessedCount).ForContext("movedCount", MovedCount)
+                .ForContext("missingCount", MissingCount).ForContext("skippedCount", SkippedCount)
+                .ForContext("removedDirectoryCount", RemovedDirectoryCount).ForContext("failedCount", FailedCount)
+                .ForContext("directoryFailureCount", DirectoryFailureCount)
+                .ForContext("durationMs", Stopwatch.GetElapsedTime(_started).TotalMilliseconds);
+            if (_failureKind != null) logger = logger.ForContext("failureKind", _failureKind);
+            // 这里已消费异常并按原契约返回；不会再交给 Hangfire 自动重试。
+            if (FailedCount > 0) logger.Error("File cleanup finished with failures");
+            else if (warned) logger.Warning("File cleanup finished with warnings");
+            else logger.Information("File cleanup completed");
         }
     }
 

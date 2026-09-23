@@ -1,4 +1,5 @@
 using Hangfire;
+using System.Diagnostics;
 using Radish.IRepository;
 
 namespace Radish.Api.Services;
@@ -20,17 +21,21 @@ public sealed class ChatMessageReactionOperationCleanupJob
         _logger = logger;
     }
 
-    [AutomaticRetry(Attempts = 2, DelaysInSeconds = [60, 300])]
+    [AutomaticRetry(Attempts = 2, DelaysInSeconds = [60, 300], LogEvents = false)]
     public async Task<int> ExecuteAsync(int batchSize = 500)
     {
+        var started = Stopwatch.GetTimestamp();
         var deletedCount = await _repository.DeleteExpiredOperationsAsync(
             _timeProvider.GetUtcNow().UtcDateTime,
             batchSize);
         if (deletedCount > 0)
         {
-            _logger.LogInformation(
-                "[ChatReactionOperationCleanup] 已清理 {DeletedCount} 条过期幂等事实",
-                deletedCount);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "job.cleanup.completed", ["SourceCategory"] = "job", ["jobKind"] = "chat-reactions"
+            });
+            _logger.LogInformation("Cleanup completed; count={count}; duration={durationMs} ms",
+                deletedCount, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
 
         return deletedCount;
