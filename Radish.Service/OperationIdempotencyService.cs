@@ -106,13 +106,6 @@ public class OperationIdempotencyService : IOperationIdempotencyService
         }
         catch (Exception ex) when (IsUniqueConstraintConflict(ex))
         {
-            Log.Warning(
-                ex,
-                "幂等记录并发创建冲突，转为读取既有记录：用户={UserId}, 操作={OperationType}, Key={IdempotencyKey}",
-                request.UserId,
-                request.OperationType,
-                key);
-
             existing = await QueryRecordAsync(request.TenantId, request.UserId, request.OperationType, key);
             if (existing != null)
             {
@@ -129,7 +122,10 @@ public class OperationIdempotencyService : IOperationIdempotencyService
         var record = await _recordRepository.QueryByIdAsync(request.RecordId);
         if (record == null)
         {
-            Log.Warning("幂等记录完成成功时未找到记录：RecordId={RecordId}", request.RecordId);
+            Log.ForContext("EventCode", "idempotency.completion_missing")
+                .ForContext("SourceCategory", "application")
+                .ForContext("completionKind", "success")
+                .Warning("Idempotency completion record is missing");
             return;
         }
 
@@ -159,7 +155,10 @@ public class OperationIdempotencyService : IOperationIdempotencyService
         var record = await _recordRepository.QueryByIdAsync(recordId);
         if (record == null)
         {
-            Log.Warning("幂等记录完成失败时未找到记录：RecordId={RecordId}", recordId);
+            Log.ForContext("EventCode", "idempotency.completion_missing")
+                .ForContext("SourceCategory", "application")
+                .ForContext("completionKind", "failure")
+                .Warning("Idempotency completion record is missing");
             return;
         }
 

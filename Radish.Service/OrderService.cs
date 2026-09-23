@@ -77,9 +77,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
         try
         {
-            Log.Information("用户 {UserId} 开始购买商品 {ProductId}, 数量={Quantity}",
-                userId, dto.ProductId, dto.Quantity);
-
             // 1. 检查是否可以购买
             var (canBuy, reason) = await _productService.CheckCanBuyAsync(userId, dto.ProductId, dto.Quantity);
             if (!canBuy)
@@ -128,8 +125,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             if (!verifyResult.IsSuccess)
             {
-                Log.Warning("商城购买失败：支付口令验证失败，用户={UserId}, 商品={ProductId}, 原因={Reason}",
-                    userId, dto.ProductId, verifyResult.ErrorMessage);
                 return new PurchaseResultDto
                 {
                     Success = false,
@@ -211,7 +206,10 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "扣除萝卜币失败，订单 {OrderId}", orderId);
+                Log.ForContext("EventCode", "order.purchase_failed")
+                    .ForContext("SourceCategory", "application").ForContext("purchaseStage", "payment")
+                    .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                    .Error("Purchase payment failure consumed");
 
                 // 恢复库存
                 if (product.StockType == StockType.Limited)
@@ -252,7 +250,10 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "发放权益失败，订单 {OrderId}", orderId);
+                Log.ForContext("EventCode", "order.purchase_failed")
+                    .ForContext("SourceCategory", "application").ForContext("purchaseStage", "fulfillment")
+                    .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                    .Error("Purchase fulfillment failure consumed");
                 order.Status = OrderStatus.Failed;
                 order.FailureStage = OrderFailureStage.Fulfillment;
                 order.FailReason = $"发放权益失败：{ex.Message}";
@@ -302,9 +303,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                     order.CompletedTime!.Value);
             }
 
-            Log.Information("用户 {UserId} 购买商品 {ProductId} 成功，订单号={OrderNo}",
-                userId, dto.ProductId, order.OrderNo);
-
             var purchaseResult = new PurchaseResultDto
             {
                 Success = order.Status == OrderStatus.Completed,
@@ -327,7 +325,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "用户 {UserId} 购买商品 {ProductId} 失败", userId, dto.ProductId);
             throw new BusinessException("购买失败，请稍后重试", ex);
         }
     }

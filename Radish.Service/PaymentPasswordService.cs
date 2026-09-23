@@ -274,121 +274,107 @@ public class PaymentPasswordService : IPaymentPasswordService
     /// <returns>验证结果</returns>
     public async Task<PaymentPasswordVerifyResult> VerifyPaymentPasswordAsync(long userId, VerifyPaymentPasswordRequest request)
     {
-        try
+        if (string.IsNullOrWhiteSpace(request.Password))
         {
-            if (string.IsNullOrWhiteSpace(request.Password))
+            return new PaymentPasswordVerifyResult
             {
-                return new PaymentPasswordVerifyResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = PaymentPasscodeRules.EmptyErrorMessage,
-                    ErrorCode = PaymentPasscodeErrorCodes.Required,
-                    MessageKey = "error.payment_password.required",
-                    RemainingAttempts = MaxFailedAttempts
-                };
-            }
-
-            var paymentPassword = await _paymentPasswordRepository.GetByUserIdAsync(userId);
-
-            if (paymentPassword == null || string.IsNullOrEmpty(paymentPassword.PasswordHash))
-            {
-                return new PaymentPasswordVerifyResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = "用户未设置支付口令",
-                    ErrorCode = PaymentPasscodeErrorCodes.NotConfigured,
-                    MessageKey = "error.payment_password.not_configured",
-                    RemainingAttempts = 0
-                };
-            }
-
-            if (HasLegacyPasscode(paymentPassword))
-            {
-                return CreateUpgradeRequiredResult();
-            }
-
-            var nowUtc = GetUtcNow();
-
-            // 检查是否被锁定
-            if (paymentPassword.LockedUntil.HasValue && paymentPassword.LockedUntil.Value > nowUtc)
-            {
-                var remainingMinutes = (int)(paymentPassword.LockedUntil.Value - nowUtc).TotalMinutes;
-                return new PaymentPasswordVerifyResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = $"账户已被锁定，请{remainingMinutes}分钟后重试",
-                    ErrorCode = PaymentPasscodeErrorCodes.Locked,
-                    MessageKey = "error.payment_password.locked",
-                    IsLocked = true,
-                    LockedRemainingMinutes = remainingMinutes,
-                    RemainingAttempts = 0
-                };
-            }
-
-            // 验证密码
-            var isPasswordCorrect = VerifyStoredPassword(request.Password, paymentPassword);
-
-            if (isPasswordCorrect)
-            {
-                if (PaymentPasscodeRules.CanVerifyAndUpgrade(paymentPassword.PasscodeVersion))
-                {
-                    await UpgradePaymentPasswordHashAsync(paymentPassword, request.Password);
-                }
-
-                // 密码正确，重置失败次数并更新最后使用时间
-                await _paymentPasswordRepository.ResetFailedAttemptsAsync(userId, nowUtc);
-                await _paymentPasswordRepository.UpdateLastUsedTimeAsync(userId, nowUtc);
-
-                _logger.LogInformation("支付口令验证成功，用户ID: {UserId}, 业务类型: {BusinessType}",
-                    userId, request.BusinessType ?? "UNKNOWN");
-
-                return new PaymentPasswordVerifyResult
-                {
-                    IsSuccess = true,
-                    RemainingAttempts = MaxFailedAttempts
-                };
-            }
-            else
-            {
-                // 密码错误，增加失败次数
-                var newFailedAttempts = paymentPassword.FailedAttempts + 1;
-                DateTime? lockedUntil = null;
-
-                if (newFailedAttempts >= MaxFailedAttempts)
-                {
-                    lockedUntil = nowUtc.AddMinutes(LockoutMinutes);
-                }
-
-                await _paymentPasswordRepository.UpdateFailedAttemptsAsync(userId, newFailedAttempts, lockedUntil, nowUtc);
-
-                var remainingAttempts = Math.Max(0, MaxFailedAttempts - newFailedAttempts);
-                var errorMessage = lockedUntil.HasValue
-                    ? $"支付口令错误次数过多，账户已被锁定{LockoutMinutes}分钟"
-                    : $"支付口令错误，还可尝试{remainingAttempts}次";
-
-                _logger.LogWarning("支付口令验证失败，用户ID: {UserId}, 失败次数: {FailedAttempts}, 业务类型: {BusinessType}",
-                    userId, newFailedAttempts, request.BusinessType ?? "UNKNOWN");
-
-                return new PaymentPasswordVerifyResult
-                {
-                    IsSuccess = false,
-                    ErrorMessage = errorMessage,
-                    ErrorCode = lockedUntil.HasValue
-                        ? PaymentPasscodeErrorCodes.Locked
-                        : PaymentPasscodeErrorCodes.Invalid,
-                    MessageKey = lockedUntil.HasValue
-                        ? "error.payment_password.locked"
-                        : "error.payment_password.invalid",
-                    RemainingAttempts = remainingAttempts,
-                    IsLocked = lockedUntil.HasValue,
-                    LockedRemainingMinutes = lockedUntil.HasValue ? LockoutMinutes : 0
-                };
-            }
+                IsSuccess = false,
+                ErrorMessage = PaymentPasscodeRules.EmptyErrorMessage,
+                ErrorCode = PaymentPasscodeErrorCodes.Required,
+                MessageKey = "error.payment_password.required",
+                RemainingAttempts = MaxFailedAttempts
+            };
         }
-        catch (Exception ex)
+
+        var paymentPassword = await _paymentPasswordRepository.GetByUserIdAsync(userId);
+
+        if (paymentPassword == null || string.IsNullOrEmpty(paymentPassword.PasswordHash))
         {
-            _logger.LogError(ex, "验证支付口令失败，用户ID: {UserId}", userId);
-            throw;
+            return new PaymentPasswordVerifyResult
+            {
+                IsSuccess = false,
+                ErrorMessage = "用户未设置支付口令",
+                ErrorCode = PaymentPasscodeErrorCodes.NotConfigured,
+                MessageKey = "error.payment_password.not_configured",
+                RemainingAttempts = 0
+            };
+        }
+
+        if (HasLegacyPasscode(paymentPassword))
+        {
+            return CreateUpgradeRequiredResult();
+        }
+
+        var nowUtc = GetUtcNow();
+
+        // 检查是否被锁定
+        if (paymentPassword.LockedUntil.HasValue && paymentPassword.LockedUntil.Value > nowUtc)
+        {
+            var remainingMinutes = (int)(paymentPassword.LockedUntil.Value - nowUtc).TotalMinutes;
+            return new PaymentPasswordVerifyResult
+            {
+                IsSuccess = false,
+                ErrorMessage = $"账户已被锁定，请{remainingMinutes}分钟后重试",
+                ErrorCode = PaymentPasscodeErrorCodes.Locked,
+                MessageKey = "error.payment_password.locked",
+                IsLocked = true,
+                LockedRemainingMinutes = remainingMinutes,
+                RemainingAttempts = 0
+            };
+        }
+
+        // 验证密码
+        var isPasswordCorrect = VerifyStoredPassword(request.Password, paymentPassword);
+
+        if (isPasswordCorrect)
+        {
+            if (PaymentPasscodeRules.CanVerifyAndUpgrade(paymentPassword.PasscodeVersion))
+            {
+                await UpgradePaymentPasswordHashAsync(paymentPassword, request.Password);
+            }
+
+            // 密码正确，重置失败次数并更新最后使用时间
+            await _paymentPasswordRepository.ResetFailedAttemptsAsync(userId, nowUtc);
+            await _paymentPasswordRepository.UpdateLastUsedTimeAsync(userId, nowUtc);
+
+            return new PaymentPasswordVerifyResult
+            {
+                IsSuccess = true,
+                RemainingAttempts = MaxFailedAttempts
+            };
+        }
+        else
+        {
+            // 密码错误，增加失败次数
+            var newFailedAttempts = paymentPassword.FailedAttempts + 1;
+            DateTime? lockedUntil = null;
+
+            if (newFailedAttempts >= MaxFailedAttempts)
+            {
+                lockedUntil = nowUtc.AddMinutes(LockoutMinutes);
+            }
+
+            await _paymentPasswordRepository.UpdateFailedAttemptsAsync(userId, newFailedAttempts, lockedUntil, nowUtc);
+
+            var remainingAttempts = Math.Max(0, MaxFailedAttempts - newFailedAttempts);
+            var errorMessage = lockedUntil.HasValue
+                ? $"支付口令错误次数过多，账户已被锁定{LockoutMinutes}分钟"
+                : $"支付口令错误，还可尝试{remainingAttempts}次";
+
+            return new PaymentPasswordVerifyResult
+            {
+                IsSuccess = false,
+                ErrorMessage = errorMessage,
+                ErrorCode = lockedUntil.HasValue
+                    ? PaymentPasscodeErrorCodes.Locked
+                    : PaymentPasscodeErrorCodes.Invalid,
+                MessageKey = lockedUntil.HasValue
+                    ? "error.payment_password.locked"
+                    : "error.payment_password.invalid",
+                RemainingAttempts = remainingAttempts,
+                IsLocked = lockedUntil.HasValue,
+                LockedRemainingMinutes = lockedUntil.HasValue ? LockoutMinutes : 0
+            };
         }
     }
 
@@ -710,9 +696,6 @@ public class PaymentPasswordService : IPaymentPasswordService
         paymentPassword.ModifyId = 0;
 
         await _paymentPasswordRepository.UpdateAsync(paymentPassword);
-
-        _logger.LogInformation("支付口令哈希已自动升级，用户ID: {UserId}, 版本: {PasscodeVersion}",
-            paymentPassword.UserId, PaymentPasscodeRules.CurrentPasscodeVersion);
     }
 
     /// <summary>

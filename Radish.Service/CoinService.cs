@@ -325,33 +325,18 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
         long? businessId = null,
         string? remark = null)
     {
-        try
+        if (amount <= 0)
         {
-            if (amount <= 0)
-            {
-                throw new ArgumentException("扣除金额必须大于 0", nameof(amount));
-            }
-
-            await EnsureUserExistsAsync(userId);
-
-            Log.Information("开始扣除萝卜币：用户={UserId}, 金额={Amount}, 业务={BusinessType}, 业务ID={BusinessId}",
-                userId, amount, businessType, businessId);
-
-            var result = await ExecuteWithRetryAsync(async () =>
-                await ConsumeCoinInternalAsync(userId, amount, businessType, businessId, remark)
-            );
-
-            Log.Information("萝卜币扣除成功：用户={UserId}, 金额={Amount}, 交易ID={TransactionId}, 流水号={TransactionNo}",
-                userId, amount, result.transactionId, result.transactionNo);
-
-            return result;
+            throw new ArgumentException("扣除金额必须大于 0", nameof(amount));
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "扣除萝卜币失败：用户={UserId}, 金额={Amount}, 业务={BusinessType}, 业务ID={BusinessId}",
-                userId, amount, businessType, businessId);
-            throw;
-        }
+
+        await EnsureUserExistsAsync(userId);
+
+        var result = await ExecuteWithRetryAsync(async () =>
+            await ConsumeCoinInternalAsync(userId, amount, businessType, businessId, remark)
+        );
+
+        return result;
     }
 
     /// <summary>
@@ -626,9 +611,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
             EnsureTransferPaymentPasscodeIsValid(paymentPassword);
 
-            Log.Information("用户转账：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
-                fromUserId, toUserId, amount);
-
             // 2. 验证支付口令
             var verifyRequest = new VerifyPaymentPasswordRequest
             {
@@ -640,8 +622,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
             if (!verifyResult.IsSuccess)
             {
-                Log.Warning("转账失败：支付口令验证失败，用户={FromUserId}, 原因={Reason}",
-                    fromUserId, verifyResult.ErrorMessage);
                 throw CreatePaymentVerificationException(verifyResult);
             }
 
@@ -668,17 +648,11 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
             await CompleteTransferIdempotencyAsync(idempotencyResult, transactionNo);
 
-            Log.Information("用户转账成功：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}, 流水号={TransactionNo}",
-                fromUserId, toUserId, amount, transactionNo);
-
             return transactionNo;
         }
         catch (Exception ex)
         {
             var transferException = NormalizeTransferException(ex);
-            Log.Error(transferException, "用户转账失败：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
-                fromUserId, toUserId, amount);
-
             if (idempotencyResult?.Status == OperationIdempotencyBeginStatus.Started &&
                 idempotencyResult.RecordId.HasValue &&
                 _operationIdempotencyService != null)
@@ -686,6 +660,10 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
                 if (completedTransactionNo != null)
                 {
                     await CompleteTransferIdempotencyAsync(idempotencyResult, completedTransactionNo);
+                    Log.ForContext("EventCode", "coin.transfer_completion_recovered")
+                        .ForContext("SourceCategory", "application")
+                        .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                        .Warning("Transfer completion recording recovered after retry");
                     return completedTransactionNo;
                 }
 

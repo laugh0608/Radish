@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放与服务内清理见第 11–13 节，下一步治理剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，下一步治理剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -145,7 +145,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 两服务的乐观锁 helper 只在即将继续重试时输出 `reward.retrying` Warning，包含固定 `rewardDomain`、attempt 和 delayMs；耗尽不重复记录 Error。币保持 3 次重试、100 / 200 / 400ms；经验保持 6 次重试、指数上限 1000ms 内的随机抖动。该共享 helper 也作用于现有其他调用方，未改重试捕获类型、延迟或事务。
 - 等级配置缓存读取 / 写入 / 失效异常输出 `reward.cache_fallback` Warning；分别用固定 `rewardOperation` 区分，保留数据库回退和忽略缓存写入 / 清除失败的原有行为。安全日志不求值异常正文，不把缓存故障误报为奖励已失败。
 - 币批量发放在消费异常的批次层汇总一次 `reward.batch_failed` Error，部分成功和返回流水列表不变。经验单项已经消费的异常由单项记录 Error，批次只汇总正常返回结果，不再重复 Error；若异常确实逃逸至批次 catch，则由批次汇总。`reward.batch_completed` 是结果汇总 Info，允许 outcome 为 partial / failed，**不表示全部发放成功**。processedCount 是成功返回数，rejectedCount 是 false 返回数（可能是业务拒绝或已消费异常），failedCount 仅统计批次自身捕获的异常；空批次安静。
-- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账、账户查询、人工调账 / 治理、其余 CoinRewardService 入口及其外层消费者仍需治理。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
+- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账及直接消费边界的后续治理见第 14 节；账户查询、人工调账 / 治理、其余 CoinRewardService 入口及其外层消费者仍需治理。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
 
 ## 13. L2 服务内清理分支
 
@@ -157,3 +157,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 同一目录 / 配额 helper 被前台上传流程调用时，已消费失败使用 `upload.cleanup.failed` Error，cleanupOperation 仅为 directory / quota-release / quota-complete；正常目录删除不逐条记录。上述生成端在旧与候选 sink 均不传递会话 / 用户 / 令牌标识、路径、文件名、附件身份或异常原文。
 - 保留 keyed lock、跨租户条件更新、30 分钟孤立目录宽限、每次 500 个目录查询、8 天终态结算重放窗口、最多 2000 条以及批次结算去重；不改变文件生命周期、配额、令牌规则、调度与外部返回。摘要不是权威审计，也不保证崩溃时落盘或跨批次恰好一次。
 - 本节不覆盖上传创建 / 合并业务日志、令牌创建 / 验证 / 主动撤销、配额申请 / 重置及 AttachmentService 等其他入口；不据此宣称完整附件业务链收口。生产候选开关仍关闭，验证范围见[批次记录](../records/unified-logging-l2-service-cleanup-2026-09-23.md)。
+
+## 14. L2 币扣除 / 转账及直接消费边界
+
+- `ConsumeCoinAsync` 移除逐项开始 / 成功与仅记录再重抛的 catch。扣币流水、余额变动审计、业务字段、返回交易 ID / 流水号、余额校验、事务属性及既有乐观锁重试保持不变；异常由调用方消费或继续传播。共享重试事件仍遵循第 12 节。
+- `TransferAsync` 不输出用户、金额、流水号、支付验证理由或异常正文。支付拒绝及幂等成功 / 终态失败重放保持原有结果且不逐条输出。异常规范化、资产写入后的终态失败占键、CompleteFailure 分支、Controller 的 BusinessException 映射均保持不变。
+- 资金操作返回流水后，首次幂等完成写入抛错，仍只重试完成记录一次；第二次调用正常返回时输出 `coin.transfer_completion_recovered` Warning，只有安全 failureKind。该事件表示调用恢复返回，不证明记录持久化成功：底层缺失记录本来就可能正常返回。第二次仍抛错则不输出恢复事件，交给外层最终错误边界；不再执行资金写入。
+- `OperationIdempotencyService` 唯一键竞争回查成功保持安静，回查无记录仍传播原异常。完成成功 / 失败时记录缺失使用 `idempotency.completion_missing` Warning，completionKind 仅为 success / failure，不输出记录 ID、幂等键、摘要、用户或异常。保存点、24 小时保留、响应及错误审计字段、缺失时直接返回等原行为不变；这些共享方法的其他调用方同样继承安全输出。
+- `PaymentPasswordService.VerifyPaymentPasswordAsync` 及其哈希升级 helper 移除逐次成功 / 失败和重复重抛日志；仍保留验证算法、旧版本升级、成功重置计数 / 使用时间、失败累加、5 次失败锁定 30 分钟、返回错误码与剩余次数。无新增口令或安全遥测；设置 / 修改 / 人工解锁等其他入口后续治理。
+- `OrderService.PurchaseAsync` 的扣币 / 权益 catch 消费异常时记录 `order.purchase_failed` Error，purchaseStage 仅为 payment / fulfillment。保留库存恢复、订单失败阶段 / FailReason、幂等结果与返回值；外层仍包装 BusinessException 后抛出，不另记重复 Error。移除逐次开始 / 成功与支付业务拒绝日志，避免权益失败却打印购买成功。
+- 旧与候选 sink 均收到安全生成端事件。审计仍可能保留既有错误说明，本批不改变数据库或 API 契约。商城库存、权益、余额查询等依赖及其其他入口尚未全部治理，不能以直接消费层完成宣称全链路异常唯一归属。真实数据库事务 / 并发、Redis 或支付场景运行验收不由 mock 回归替代；生产候选开关继续关闭。证据见[本批记录](../records/unified-logging-l2-coin-movement-2026-09-23.md)。

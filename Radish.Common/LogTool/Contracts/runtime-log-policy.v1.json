@@ -166,7 +166,10 @@
     "reward.batch_completed": "Reward batch returned results.",
     "reward.batch_failed": "Reward batch consumed failures.",
     "job.cleanup.interrupted": "Cleanup was interrupted; counts describe earlier progress.",
-    "upload.cleanup.failed": "Upload cleanup operation consumed a failure."
+    "upload.cleanup.failed": "Upload cleanup operation consumed a failure.",
+    "coin.transfer_completion_recovered": "Transfer completion recording returned after retry.",
+    "idempotency.completion_missing": "Idempotency completion record is missing.",
+    "order.purchase_failed": "Purchase stage consumed a failure."
   },
   "properties": {
     "durationMs": {
@@ -532,6 +535,20 @@
       "min": 0,
       "max": 9007199254740991,
       "integer": true
+    },
+    "completionKind": {
+      "type": "enum",
+      "values": [
+        "success",
+        "failure"
+      ]
+    },
+    "purchaseStage": {
+      "type": "enum",
+      "values": [
+        "payment",
+        "fulfillment"
+      ]
     }
   }
 }
