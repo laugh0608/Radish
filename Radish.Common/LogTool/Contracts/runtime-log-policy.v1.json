@@ -155,7 +155,10 @@
     "job.cleanup.completed": "Cleanup batch completed.",
     "job.cleanup.warning": "Cleanup batch completed with warnings.",
     "job.cleanup.failed": "Cleanup batch consumed failures; counts describe partial work.",
-    "job.cleanup.capacity_warning": "Notification inbox capacity requires attention."
+    "job.cleanup.capacity_warning": "Notification inbox capacity requires attention.",
+    "job.batch.completed": "Business job batch completed.",
+    "job.batch.warning": "Business job batch contains rejected results.",
+    "job.batch.failed": "Business job batch consumed failures; counts describe partial work."
   },
   "properties": {
     "durationMs": {
@@ -401,7 +404,13 @@
         "file-orphan",
         "wiki-drafts",
         "chat-reactions",
-        "notification-inbox"
+        "notification-inbox",
+        "shop-timeouts",
+        "shop-benefits",
+        "shop-stats",
+        "post-lottery",
+        "comment-highlight",
+        "retention-rewards"
       ]
     },
     "processedCount": {
@@ -459,6 +468,18 @@
       "integer": true
     },
     "notificationCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "rewardCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "rejectedCount": {
       "type": "number",
       "min": 0,
       "max": 9007199254740991,

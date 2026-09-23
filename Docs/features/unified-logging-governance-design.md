@@ -1,6 +1,6 @@
 # 全项目统一日志、跨容器汇聚与 Console 运维中心
 
-> 状态：项目所有者已于 2026-09-19 确认方案；作为重构基线；L1 契约及采集安全 / 故障可见性子项已实施，L2 入口及 SQL / AOP / 事务 / DbMigrate、seed / migration / Auth seed、Outbox / Rust、Hangfire / 清理任务子项已实施，生产切换门禁尚未关闭。
+> 状态：项目所有者已于 2026-09-19 确认方案；作为重构基线；L1 契约及采集安全 / 故障可见性子项已实施，L2 入口及 SQL / AOP / 事务 / DbMigrate、seed / migration / Auth seed、Outbox / Rust、Hangfire / 清理任务及后台业务 Job 子项已实施，生产切换门禁尚未关闭。
 >
 > 更新：2026-09-23（Asia/Shanghai）。范围来自项目所有者本轮反馈：统一文件、终端和日志库，开发 / 生产两种模式，Info / Warning / Error 三级，跨服务容器集中查询，Console 内告警与提醒。
 

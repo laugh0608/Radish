@@ -3,6 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-09-23 日志 L2 后台业务任务](./unified-logging-l2-business-jobs-2026-09-23.md)
 - [2026-09-23 日志 L2 Hangfire / 清理任务](./unified-logging-l2-hangfire-cleanup-2026-09-23.md)
 - [2026-09-23 日志 L2 Outbox / Rust 调用边界](./unified-logging-l2-outbox-native-2026-09-23.md)
 - [2026-09-23 日志 L2 seed / migration 治理](./unified-logging-l2-seed-migration-2026-09-23.md)

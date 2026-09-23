@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续商城、抽奖、神评、保留奖励等后台任务与业务事件治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-09-23`；已完成日志 L2 的 SQL / AOP / 事务、API 异常、DbMigrate 及 seed / migration、Auth seed、Outbox / Rust、Hangfire / 清理任务治理子项；未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：继续币 / 经验奖励实际发放链与服务内清理分支的日志治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-09-23`；已完成日志 L2 的 SQL / AOP / 事务、API 异常、DbMigrate 及 seed / migration、Auth seed、Outbox / Rust、Hangfire / 清理任务及后台业务 Job 治理子项；未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -28,6 +28,8 @@
 正式产品线只保留 Web 与 Flutter Native；Web 优先，Flutter mobile-first、desktop stage-gated。WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 
 ## 最近结论
+
+- `2026-09-23` 完成[后台业务任务日志治理](../records/unified-logging-l2-business-jobs-2026-09-23.md)：商城、抽奖、神评与保留奖励采用安全批次摘要，保留业务结果、结算顺序和幂等键；102 项 .NET 回归通过。底层币 / 经验服务与其他调用入口仍待治理，不宣称整条业务链已收口。
 
 - `2026-09-23` 完成[Hangfire / 清理任务日志治理](../records/unified-logging-l2-hangfire-cleanup-2026-09-23.md)：按实际重试判定区分 Warning / Error，框架输出只保留安全摘要；文件、收件箱、Wiki 草稿与 Chat 回应清理改为批次统计。保留原有清理、重试与失败传播行为；状态判定事件不冒充已提交审计。
 
@@ -53,7 +55,7 @@
 
 继续[统一日志专题](../features/unified-logging-governance-design.md)。SQL / AOP / 事务、API 已处理异常及 DbMigrate Program / Runner / Doctor 已完成本批治理，证据见[入口记录](../records/unified-logging-l2-producer-governance-2026-09-23.md)；seed / 具体 migration 与 Auth seed 见[后续记录](../records/unified-logging-l2-seed-migration-2026-09-23.md)。
 
-1. **其余后台任务**：继续商城、抽奖、神评与保留奖励等任务的批次摘要、重试和最终失败边界；补齐 ChunkedUploadService / FileAccessTokenService 内清理分支。Outbox 状态日志、Hangfire 重试判定及文件 / 收件箱 / Wiki 草稿 / Chat 回应清理已治理，具体边界见[契约第 10 节](../features/unified-logging-contract.md)。
+1. **业务调用链与服务内清理**：优先治理 CoinService / ExperienceService 的奖励实际发放、重试与最终失败边界，再补 ChunkedUploadService / FileAccessTokenService 内清理分支。商城、抽奖、神评、保留奖励 Job 层及部分直接包装已治理；批次计数和未覆盖边界见[契约第 11 节](../features/unified-logging-contract.md)。
 2. **Rust 既有回退问题**：本机返回码 / stderr 与真实动态库验证已补完；`.tmp` 输入触发水印回退的既有问题见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)，不自动扩大日志批次范围。
 3. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。
 4. **验证与收口**：每组调用链补安全输出、异常所有权与原有行为回归，按影响面更新契约和记录。

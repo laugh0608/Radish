@@ -339,43 +339,34 @@ public class CoinRewardService : ICoinRewardService
         string highlightType,
         int? likeCountAfter = null)
     {
-        try
+        if (likeIncrement <= 0)
         {
-            if (likeIncrement <= 0)
-            {
-                return CoinRewardResult.Failure("点赞增量必须大于 0");
-            }
-
-            if (!likeCountAfter.HasValue || likeCountAfter.Value <= 0)
-            {
-                return CoinRewardResult.Failure("点赞结算快照必须大于 0");
-            }
-
-            // 根据类型计算加成金额
-            var normalizedHighlightType = NormalizeHighlightType(highlightType);
-            var bonusPerLike = normalizedHighlightType == "GodComment" ? GOD_COMMENT_LIKE_BONUS : SOFA_LIKE_BONUS;
-            var totalBonus = likeIncrement * bonusPerLike;
-
-            var grant = await _coinService.GrantCoinOnceAsync(
-                userId: userId,
-                amount: totalBonus,
-                transactionType: "HIGHLIGHT_REWARD",
-                rewardBusinessKey: $"coin:highlight-like-bonus:{GetHighlightTypeKey(normalizedHighlightType)}:highlight:{highlightId}:to-like:{likeCountAfter.Value}",
-                businessType: $"{normalizedHighlightType}_LIKE_BONUS",
-                businessId: highlightId,
-                remark: $"{normalizedHighlightType} 点赞加成奖励（新增 {likeIncrement} 个点赞）"
-            );
-
-            return grant.Granted
-                ? CoinRewardResult.Success(grant.TransactionNo, totalBonus)
-                : CoinRewardResult.Failure("点赞加成奖励已发放过");
+            return CoinRewardResult.Failure("点赞增量必须大于 0");
         }
-        catch (Exception ex)
+
+        if (!likeCountAfter.HasValue || likeCountAfter.Value <= 0)
         {
-            Log.Error(ex, "发放点赞加成奖励失败：HighlightId={HighlightId}, 类型={HighlightType}",
-                highlightId, highlightType);
-            throw;
+            return CoinRewardResult.Failure("点赞结算快照必须大于 0");
         }
+
+        // 根据类型计算加成金额
+        var normalizedHighlightType = NormalizeHighlightType(highlightType);
+        var bonusPerLike = normalizedHighlightType == "GodComment" ? GOD_COMMENT_LIKE_BONUS : SOFA_LIKE_BONUS;
+        var totalBonus = likeIncrement * bonusPerLike;
+
+        var grant = await _coinService.GrantCoinOnceAsync(
+            userId: userId,
+            amount: totalBonus,
+            transactionType: "HIGHLIGHT_REWARD",
+            rewardBusinessKey: $"coin:highlight-like-bonus:{GetHighlightTypeKey(normalizedHighlightType)}:highlight:{highlightId}:to-like:{likeCountAfter.Value}",
+            businessType: $"{normalizedHighlightType}_LIKE_BONUS",
+            businessId: highlightId,
+            remark: $"{normalizedHighlightType} 点赞加成奖励（新增 {likeIncrement} 个点赞）"
+        );
+
+        return grant.Granted
+            ? CoinRewardResult.Success(grant.TransactionNo, totalBonus)
+            : CoinRewardResult.Failure("点赞加成奖励已发放过");
     }
 
     /// <summary>
@@ -387,48 +378,34 @@ public class CoinRewardService : ICoinRewardService
         int week,
         string highlightType)
     {
-        try
+        if (week < 1 || week > 3)
         {
-            if (week < 1 || week > 3)
-            {
-                return CoinRewardResult.Failure("保留周数必须在 1-3 之间");
-            }
-
-            // 检查是否已发放过该周的保留奖励
-            var normalizedHighlightType = NormalizeHighlightType(highlightType);
-            var businessType = $"{normalizedHighlightType}_RETENTION_W{week}";
-
-            // 根据类型确定保留奖励金额
-            var retentionReward = normalizedHighlightType == "GodComment" ? GOD_COMMENT_RETENTION : SOFA_RETENTION;
-
-            var grant = await _coinService.GrantCoinOnceAsync(
-                userId: userId,
-                amount: retentionReward,
-                transactionType: "HIGHLIGHT_REWARD",
-                rewardBusinessKey: $"coin:highlight-retention:{GetHighlightTypeKey(normalizedHighlightType)}:highlight:{highlightId}:week:{week}:author:{userId}",
-                businessType: businessType,
-                businessId: highlightId,
-                remark: $"{normalizedHighlightType} 保留奖励（第 {week} 周）"
-            );
-
-            if (!grant.Granted)
-            {
-                Log.Debug("第 {Week} 周保留奖励已发放过：HighlightId={HighlightId}, Type={Type}",
-                    week, highlightId, normalizedHighlightType);
-                return CoinRewardResult.Failure($"第 {week} 周保留奖励已发放过");
-            }
-
-            Log.Information("{HighlightType} 保留奖励发放成功：HighlightId={HighlightId}, 用户={UserId}, 周数={Week}, 奖励={Amount}",
-                normalizedHighlightType, highlightId, userId, week, retentionReward);
-
-            return CoinRewardResult.Success(grant.TransactionNo, retentionReward);
+            return CoinRewardResult.Failure("保留周数必须在 1-3 之间");
         }
-        catch (Exception ex)
+
+        // 检查是否已发放过该周的保留奖励
+        var normalizedHighlightType = NormalizeHighlightType(highlightType);
+        var businessType = $"{normalizedHighlightType}_RETENTION_W{week}";
+
+        // 根据类型确定保留奖励金额
+        var retentionReward = normalizedHighlightType == "GodComment" ? GOD_COMMENT_RETENTION : SOFA_RETENTION;
+
+        var grant = await _coinService.GrantCoinOnceAsync(
+            userId: userId,
+            amount: retentionReward,
+            transactionType: "HIGHLIGHT_REWARD",
+            rewardBusinessKey: $"coin:highlight-retention:{GetHighlightTypeKey(normalizedHighlightType)}:highlight:{highlightId}:week:{week}:author:{userId}",
+            businessType: businessType,
+            businessId: highlightId,
+            remark: $"{normalizedHighlightType} 保留奖励（第 {week} 周）"
+        );
+
+        if (!grant.Granted)
         {
-            Log.Error(ex, "发放保留奖励失败：HighlightId={HighlightId}, 类型={HighlightType}, 周数={Week}",
-                highlightId, highlightType, week);
-            throw;
+            return CoinRewardResult.Failure($"第 {week} 周保留奖励已发放过");
         }
+
+        return CoinRewardResult.Success(grant.TransactionNo, retentionReward);
     }
 
     #endregion

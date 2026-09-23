@@ -361,25 +361,17 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     [UseTran]
     public async Task<bool> CancelOrderBySystemAsync(long orderId, string reason)
     {
-        try
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+        if (order == null)
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
-            if (order == null)
-            {
-                throw new InvalidOperationException("订单不存在");
-            }
+            throw new InvalidOperationException("订单不存在");
+        }
 
-            return await CancelPendingOrderAsync(
-                order,
-                string.IsNullOrWhiteSpace(reason) ? "系统取消" : reason.Trim(),
-                "System",
-                0);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "系统取消订单 {OrderId} 失败", orderId);
-            throw;
-        }
+        return await CancelPendingOrderAsync(
+            order,
+            string.IsNullOrWhiteSpace(reason) ? "系统取消" : reason.Trim(),
+            "System",
+            0);
     }
 
     #endregion
@@ -869,13 +861,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 throw new InvalidOperationException("取消订单失败，库存回补未完成");
             }
         }
-
-        Log.Information(
-            "订单 {OrderId} 已取消，用户={UserId}，数量={Quantity}，原因={Reason}",
-            order.Id,
-            order.UserId,
-            order.Quantity,
-            cancelReason);
 
         return true;
     }

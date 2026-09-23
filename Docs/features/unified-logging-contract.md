@@ -125,4 +125,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 通知收件箱、Wiki 草稿正文、Chat 回应幂等事实只在有清理数量时生成 `job.cleanup.completed`；收件箱只删除关系也属于有效变更。容量告警按本批用户数量聚合为 `job.cleanup.capacity_warning`，不输出 tenant / user 标识。仓储异常继续抛给 Hangfire，不在 Job 重复记录 Error。
 - 文件软删除、临时文件、回收站和孤立附件清理使用局部批次计数。成功一次 Info，缺失文件 / 空目录清理异常一次 Warning，已消费的主流程 / 单项异常一次 Error；混合结果为 partial。空批次或仅引用保护跳过保持安静。原有“单项失败继续、外层失败返回 0”、保留期、分片目录排除和引用保护保持不变，不新增重试。
 - 文件 `processedCount` 沿用原返回计数口径：软删除 / 孤立附件可包含源文件缺失的已处理记录；`movedCount` 才表示实际移动的主文件与缩略图数量。两者不可互换。`missingCount / failedCount / directoryFailureCount / skippedCount / removedDirectoryCount` 分别记录缺失、已消费异常、目录异常、引用保护与删除空目录数量；不包含路径、文件名或附件身份。
-- 该批只覆盖上述任务与 Hangfire 日志适配，不代表商城、抽奖、神评、保留奖励以及 ChunkedUploadService / FileAccessTokenService 内清理分支已完成生成端治理。完整安全栈帧与其他框架来源仍后置；生产候选开关继续关闭。验证范围见[批次记录](../records/unified-logging-l2-hangfire-cleanup-2026-09-23.md)。
+- 该批只覆盖上述任务与 Hangfire 日志适配；商城、抽奖、神评和保留奖励的后续治理见第 11 节，ChunkedUploadService / FileAccessTokenService 内清理分支仍未覆盖。完整安全栈帧与其他框架来源仍后置；生产候选开关继续关闭。验证范围见[批次记录](../records/unified-logging-l2-hangfire-cleanup-2026-09-23.md)。
+
+## 11. L2 后台业务任务批次摘要
+
+- `ShopJob / PostLotteryJob / CommentHighlightJob / RetentionRewardJob` 的开始、空扫描、逐项成功和业务明细改为批次摘要。`job.batch.completed` 为 Info，非异常拒绝结果为 `job.batch.warning` Warning，当前层已消费的异常为 `job.batch.failed` Error；有成功工作同时有失败时 outcome 为 partial。空扫描、只有幂等跳过以及商城取消锁被占用均不逐轮输出。
+- 所有属性只接受固定 jobKind、数字计数与 failureKind，不输出订单 / 评论 / 作者标识、金额、交易号、日期原文、奖励业务键、失败原因或异常正文。旧与候选 sink 使用相同的安全生成端；返回对象、数据库快照和审计仍保留原有内容。
+- 商城取消保留“每次正常返回都计入返回值”的原口径，`processedCount` 记录正常返回次数，`updatedCount` 单独记录服务返回 true 的次数；不能把 processedCount 全部解释为实际取消。单项 InvalidOperationException 沿用拒绝后继续的路径并聚合 Warning，不假定其全部属于状态竞争；其他异常消费后汇总 Error，外层失败仍返回 0。权益只统计返回 true 的变更；日报返回统计不变，运行日志只记录被统计的订单数量，不复制收入明细。
+- 抽奖保持 batchSize 1–100 钳制和 PostId 去重；单项异常消费后继续，当前批次一次 Error，成功计数沿用服务正常返回次数。扫描异常不消费、不输出本地 Error，仍交给 Hangfire；后续周期能否成功不在当前批次作保证。
+- 神评 / 沙发保持统计窗口、排名、快照、先奖励后批量插入和幂等业务键。移除各层仅记录再重抛的 catch，异常仍由 Hangfire 接管；完整执行后才输出本 Job 的批次摘要。`processedCount` 是成功返回的 AddRange 调用所提交的记录数，`updatedCount` 是取消旧当前标记的更新返回行数，`rewardCount` 是服务报告新发放的币 / 经验操作数，不是金额。只有旧标记退役也有摘要。中途异常不生成完成摘要，不宣称此前动作已回滚。
+- 保留奖励保持两阶段顺序、按原 DateTime.Now 计算完整周数、最多 3 周及既有失败处理。每项异常继续、阶段查询异常返回 0 后继续下一阶段、顶层异常返回 (0, 0) 均不变；跨阶段已成功的奖励仍计入 rewardCount。现有“已发放过”文本判定与空 FailureReason 行为保持不变，本批不改结果类型或结算时钟。
+- `CoinRewardService` 的点赞加成 / 保留奖励方法以及 `OrderService.CancelOrderBySystemAsync` 移除重复的重抛日志；共享订单取消 helper 不再复制取消原因到运行日志。金额、返回理由、事务边界及数据库字段不变。**这不代表整条业务调用链已完成治理**：CoinService、ExperienceService、库存服务及其他业务入口仍有原文 / 重复日志，需按调用链另批处理。验证与剩余边界见[批次记录](../records/unified-logging-l2-business-jobs-2026-09-23.md)。
