@@ -271,7 +271,7 @@ public class ChunkedUploadService : IChunkedUploadService
                         AttachmentErrorCodes.UploadSessionStateConflict);
                 }
 
-                await TryCompleteReservationAsync(userId, session.SessionId, existingAttachment.VoId);
+                await TryCompleteReservationAsync(userId, session.SessionId);
                 CleanupSessionFiles(session.SessionId);
                 return existingAttachment;
             }
@@ -363,14 +363,14 @@ public class ChunkedUploadService : IChunkedUploadService
                 }
                 else
                 {
-                    await TryCompleteReservationAsync(userId, session.SessionId, persistedAttachment.VoId);
+                    await TryCompleteReservationAsync(userId, session.SessionId);
                 }
 
                 Log.Error(exception, "[ChunkedUpload] 合并失败: {SessionId}", session.SessionId);
                 throw;
             }
 
-            await TryCompleteReservationAsync(userId, session.SessionId, persistedAttachment.VoId);
+            await TryCompleteReservationAsync(userId, session.SessionId);
             CleanupSessionFiles(session.SessionId);
             Log.Information(
                 "[ChunkedUpload] 合并完成: {SessionId}, 附件ID: {AttachmentId}",
@@ -423,9 +423,9 @@ public class ChunkedUploadService : IChunkedUploadService
 
     public async Task CleanupExpiredSessionsAsync()
     {
+        using var summary = new ServiceCleanupSummary("upload-sessions");
         var now = GetUtcNow();
         var expiredSessions = await _sessionRepository.QueryExpiredAcrossTenantsAsync(now);
-        var cleanedCount = 0;
         var settlementAttemptedSessionIds = new HashSet<string>(StringComparer.Ordinal);
 
         foreach (var session in expiredSessions)
@@ -441,36 +441,32 @@ public class ChunkedUploadService : IChunkedUploadService
                         session.UserId,
                         expiredBeforeUtc,
                         expiredBeforeUtc);
+                    summary.ProcessedCount++;
                     if (!markedExpired)
                     {
+                        summary.SkippedCount++;
                         continue;
                     }
 
-                    CleanupSessionFiles(session.SessionId);
-                    await TryReleaseReservationAsync(session.UserId, session.SessionId);
+                    summary.UpdatedCount++;
+                    CleanupSessionFiles(session.SessionId, summary);
+                    await TryReleaseReservationAsync(session.UserId, session.SessionId, summary);
                     settlementAttemptedSessionIds.Add(session.SessionId);
-                    cleanedCount++;
                 }
             }
             catch (Exception exception)
             {
-                Log.Error(
-                    exception,
-                    "[ChunkedUpload] 单个过期会话清理失败，后续批次将重试: {SessionId}",
-                    session.SessionId);
+                summary.RecordFailure(exception);
             }
         }
 
-        await ReconcileSessionDirectoriesAsync(now);
-        await ReplayTerminalQuotaSettlementsAsync(now, settlementAttemptedSessionIds);
+        await ReconcileSessionDirectoriesAsync(now, summary);
+        await ReplayTerminalQuotaSettlementsAsync(now, settlementAttemptedSessionIds, summary);
 
-        if (cleanedCount > 0)
-        {
-            Log.Information("[ChunkedUpload] 清理过期会话: {Count} 个", cleanedCount);
-        }
+        summary.Completed = true;
     }
 
-    private async Task ReconcileSessionDirectoriesAsync(DateTime now)
+    private async Task ReconcileSessionDirectoriesAsync(DateTime now, ServiceCleanupSummary summary)
     {
         if (!Directory.Exists(_tempChunkPath))
         {
@@ -486,7 +482,7 @@ public class ChunkedUploadService : IChunkedUploadService
         }
         catch (Exception exception)
         {
-            Log.Error(exception, "[ChunkedUpload] 枚举分片临时目录失败");
+            summary.RecordFailure(exception);
             return;
         }
 
@@ -516,7 +512,7 @@ public class ChunkedUploadService : IChunkedUploadService
                     var lastWriteTimeUtc = Directory.GetLastWriteTimeUtc(sessionDirectory);
                     if (lastWriteTimeUtc <= now.Subtract(OrphanDirectoryGracePeriod))
                     {
-                        CleanupSessionFiles(sessionId);
+                        CleanupSessionFiles(sessionId, summary);
                     }
 
                     continue;
@@ -529,22 +525,20 @@ public class ChunkedUploadService : IChunkedUploadService
 
                 using (await AsyncKeyedLock.AcquireAsync(GetSessionLockKey(sessionId)))
                 {
-                    CleanupSessionFiles(sessionId);
+                    CleanupSessionFiles(sessionId, summary);
                 }
             }
             catch (Exception exception)
             {
-                Log.Error(
-                    exception,
-                    "[ChunkedUpload] 临时目录对账失败，后续批次将重试: {SessionId}",
-                    sessionId);
+                summary.RecordFailure(exception);
             }
         }
     }
 
     private async Task ReplayTerminalQuotaSettlementsAsync(
         DateTime now,
-        ISet<string> settlementAttemptedSessionIds)
+        ISet<string> settlementAttemptedSessionIds,
+        ServiceCleanupSummary summary)
     {
         var sessions = await _sessionRepository.QueryTerminalForSettlementAcrossTenantsAsync(
             now.Subtract(QuotaSettlementReplayWindow),
@@ -561,11 +555,11 @@ public class ChunkedUploadService : IChunkedUploadService
                 await TryCompleteReservationAsync(
                     session.UserId,
                     session.SessionId,
-                    session.AttachmentId.Value);
+                    summary);
             }
             else
             {
-                await TryReleaseReservationAsync(session.UserId, session.SessionId);
+                await TryReleaseReservationAsync(session.UserId, session.SessionId, summary);
             }
         }
     }
@@ -756,7 +750,7 @@ public class ChunkedUploadService : IChunkedUploadService
         return candidate;
     }
 
-    private void CleanupSessionFiles(string sessionId)
+    private void CleanupSessionFiles(string sessionId, ServiceCleanupSummary? summary = null)
     {
         try
         {
@@ -764,45 +758,41 @@ public class ChunkedUploadService : IChunkedUploadService
             if (Directory.Exists(sessionDirectory))
             {
                 Directory.Delete(sessionDirectory, recursive: true);
-                Log.Information("[ChunkedUpload] 清理会话文件: {SessionId}", sessionId);
+                if (summary != null) summary.RemovedDirectoryCount++;
             }
         }
         catch (Exception exception)
         {
-            Log.Error(exception, "[ChunkedUpload] 清理会话文件失败: {SessionId}", sessionId);
+            if (summary != null) summary.RecordFailure(exception);
+            else ServiceCleanupSummary.RecordStandaloneFailure("directory", exception);
         }
     }
 
-    private async Task TryReleaseReservationAsync(long userId, string sessionId)
+    private async Task TryReleaseReservationAsync(long userId, string sessionId, ServiceCleanupSummary? summary = null)
     {
         try
         {
             await _rateLimitService.FailUploadAsync(userId, sessionId);
+            if (summary != null) summary.SettlementCount++;
         }
         catch (Exception exception)
         {
-            Log.Error(
-                exception,
-                "[ChunkedUpload] 释放上传预留失败: {SessionId}, 用户: {UserId}",
-                sessionId,
-                userId);
+            if (summary != null) summary.RecordFailure(exception);
+            else ServiceCleanupSummary.RecordStandaloneFailure("quota-release", exception);
         }
     }
 
-    private async Task TryCompleteReservationAsync(long userId, string sessionId, long attachmentId)
+    private async Task TryCompleteReservationAsync(long userId, string sessionId, ServiceCleanupSummary? summary = null)
     {
         try
         {
             await _rateLimitService.CompleteUploadAsync(userId, sessionId);
+            if (summary != null) summary.SettlementCount++;
         }
         catch (Exception exception)
         {
-            Log.Error(
-                exception,
-                "[ChunkedUpload] 附件 {AttachmentId} 已持久化，但上传配额结算失败: {SessionId}, 用户: {UserId}",
-                attachmentId,
-                sessionId,
-                userId);
+            if (summary != null) summary.RecordFailure(exception);
+            else ServiceCleanupSummary.RecordStandaloneFailure("quota-complete", exception);
         }
     }
 

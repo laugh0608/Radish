@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，下一步治理其余后台任务与剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放与服务内清理见第 11–13 节，下一步治理剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -125,7 +125,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 通知收件箱、Wiki 草稿正文、Chat 回应幂等事实只在有清理数量时生成 `job.cleanup.completed`；收件箱只删除关系也属于有效变更。容量告警按本批用户数量聚合为 `job.cleanup.capacity_warning`，不输出 tenant / user 标识。仓储异常继续抛给 Hangfire，不在 Job 重复记录 Error。
 - 文件软删除、临时文件、回收站和孤立附件清理使用局部批次计数。成功一次 Info，缺失文件 / 空目录清理异常一次 Warning，已消费的主流程 / 单项异常一次 Error；混合结果为 partial。空批次或仅引用保护跳过保持安静。原有“单项失败继续、外层失败返回 0”、保留期、分片目录排除和引用保护保持不变，不新增重试。
 - 文件 `processedCount` 沿用原返回计数口径：软删除 / 孤立附件可包含源文件缺失的已处理记录；`movedCount` 才表示实际移动的主文件与缩略图数量。两者不可互换。`missingCount / failedCount / directoryFailureCount / skippedCount / removedDirectoryCount` 分别记录缺失、已消费异常、目录异常、引用保护与删除空目录数量；不包含路径、文件名或附件身份。
-- 该批只覆盖上述任务与 Hangfire 日志适配；商城、抽奖、神评和保留奖励的后续治理见第 11 节，ChunkedUploadService / FileAccessTokenService 内清理分支仍未覆盖。完整安全栈帧与其他框架来源仍后置；生产候选开关继续关闭。验证范围见[批次记录](../records/unified-logging-l2-hangfire-cleanup-2026-09-23.md)。
+- 该批只覆盖上述任务与 Hangfire 日志适配；商城、抽奖、神评和保留奖励的后续治理见第 11 节，ChunkedUploadService / FileAccessTokenService 内清理分支的后续治理见第 13 节。完整安全栈帧与其他框架来源仍后置；生产候选开关继续关闭。验证范围见[批次记录](../records/unified-logging-l2-hangfire-cleanup-2026-09-23.md)。
 
 ## 11. L2 后台业务任务批次摘要
 
@@ -146,3 +146,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 等级配置缓存读取 / 写入 / 失效异常输出 `reward.cache_fallback` Warning；分别用固定 `rewardOperation` 区分，保留数据库回退和忽略缓存写入 / 清除失败的原有行为。安全日志不求值异常正文，不把缓存故障误报为奖励已失败。
 - 币批量发放在消费异常的批次层汇总一次 `reward.batch_failed` Error，部分成功和返回流水列表不变。经验单项已经消费的异常由单项记录 Error，批次只汇总正常返回结果，不再重复 Error；若异常确实逃逸至批次 catch，则由批次汇总。`reward.batch_completed` 是结果汇总 Info，允许 outcome 为 partial / failed，**不表示全部发放成功**。processedCount 是成功返回数，rejectedCount 是 false 返回数（可能是业务拒绝或已消费异常），failedCount 仅统计批次自身捕获的异常；空批次安静。
 - 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账、账户查询、人工调账 / 治理、其余 CoinRewardService 入口及其外层消费者仍需治理。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
+
+## 13. L2 服务内清理分支
+
+- `ChunkedUploadService.CleanupExpiredSessionsAsync` 与 `FileAccessTokenService.CleanupExpiredTokensAsync` 采用局部批次摘要；`jobKind` 为 upload-sessions / file-tokens。有实际变更且正常结束时记录 `job.cleanup.completed` Info；空扫描、仅竞争跳过或仅成功结算重放保持安静。
+- 令牌 `updatedCount` 只统计 `TryRevokeByIdAsync` 返回 true 的次数；`processedCount` 是正常返回次数，`skippedCount` 是 false 返回次数。查询条件仍为到期且未撤销，撤销顺序、时间及异常传播不变，不再把查询条数称为撤销成功数。
+- 分片 `updatedCount` 是成功标记 Expired 的次数，`processedCount` 是该条件更新正常返回的次数，`skippedCount` 是返回 false 的次数；`removedDirectoryCount` 是删除调用正常完成的目录数。目录清理或配额释放失败不抹掉已完成的状态更新，也不能把状态更新当作全部清理成功。
+- `settlementCount` 仅表示配额完成 / 释放方法正常返回的次数，**不是实际变更数**；现有 Task 接口不区分新结算、幂等命中与禁用。成功结算重放本身不触发摘要；底层 `UploadRateLimitService.CompleteUploadAsync / FailUploadAsync` 的逐项成功日志移除，保留内存与 Redis 原子操作及返回语义。
+- 分片单项、目录枚举 / 删除及配额 helper 原来消费的异常继续消费，并按批次汇总一次 `job.cleanup.failed` Error；failedCount 是捕获次数，含多种失败时 failureKind 为 other。此前有实际状态 / 目录变更时 outcome 为 partial，否则为 failed。目录对账、终态查询和令牌操作原本向外传播的异常不增加本地 Error；若中断前已有变更且没有已消费异常，记录 `job.cleanup.interrupted` Info，明确只描述此前进度。若此前另有已消费异常，仍汇总这些异常，不把后续传播异常计入 failedCount。
+- 同一目录 / 配额 helper 被前台上传流程调用时，已消费失败使用 `upload.cleanup.failed` Error，cleanupOperation 仅为 directory / quota-release / quota-complete；正常目录删除不逐条记录。上述生成端在旧与候选 sink 均不传递会话 / 用户 / 令牌标识、路径、文件名、附件身份或异常原文。
+- 保留 keyed lock、跨租户条件更新、30 分钟孤立目录宽限、每次 500 个目录查询、8 天终态结算重放窗口、最多 2000 条以及批次结算去重；不改变文件生命周期、配额、令牌规则、调度与外部返回。摘要不是权威审计，也不保证崩溃时落盘或跨批次恰好一次。
+- 本节不覆盖上传创建 / 合并业务日志、令牌创建 / 验证 / 主动撤销、配额申请 / 重置及 AttachmentService 等其他入口；不据此宣称完整附件业务链收口。生产候选开关仍关闭，验证范围见[批次记录](../records/unified-logging-l2-service-cleanup-2026-09-23.md)。

@@ -164,7 +164,9 @@
     "reward.conflict": "Reward key conflict has no existing transaction.",
     "reward.cache_fallback": "Reward level configuration cache operation failed.",
     "reward.batch_completed": "Reward batch returned results.",
-    "reward.batch_failed": "Reward batch consumed failures."
+    "reward.batch_failed": "Reward batch consumed failures.",
+    "job.cleanup.interrupted": "Cleanup was interrupted; counts describe earlier progress.",
+    "upload.cleanup.failed": "Upload cleanup operation consumed a failure."
   },
   "properties": {
     "durationMs": {
@@ -416,7 +418,9 @@
         "shop-stats",
         "post-lottery",
         "comment-highlight",
-        "retention-rewards"
+        "retention-rewards",
+        "upload-sessions",
+        "file-tokens"
       ]
     },
     "processedCount": {
@@ -513,6 +517,20 @@
       "type": "number",
       "min": 0,
       "max": 60000,
+      "integer": true
+    },
+    "cleanupOperation": {
+      "type": "enum",
+      "values": [
+        "directory",
+        "quota-release",
+        "quota-complete"
+      ]
+    },
+    "settlementCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
       "integer": true
     }
   }

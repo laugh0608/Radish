@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续服务内清理分支与其余业务事件的日志治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-09-23`；已完成日志 L2 的 SQL / AOP / 事务、API 异常、DbMigrate 及 seed / migration、Auth seed、Outbox / Rust、Hangfire / 清理任务、后台业务 Job 及币 / 经验实际发放链治理子项；未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：继续币扣除 / 转账等剩余业务调用链的日志治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-09-23`；已完成日志 L2 的 SQL / AOP / 事务、API 异常、DbMigrate 及 seed / migration、Auth seed、Outbox / Rust、Hangfire / 清理任务、后台业务 Job、币 / 经验实际发放链及服务内清理治理子项；未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -28,6 +28,8 @@
 正式产品线只保留 Web 与 Flutter Native；Web 优先，Flutter mobile-first、desktop stage-gated。WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 
 ## 最近结论
+
+- `2026-09-23` 完成[服务内清理日志治理](../records/unified-logging-l2-service-cleanup-2026-09-23.md)：分片会话和过期令牌按实际变更记录安全摘要，保留目录 / 配额 / 令牌行为和异常传播；幂等结算重放安静，上传及令牌其他业务入口仍待治理。
 
 - `2026-09-23` 完成[币 / 经验奖励实际发放链日志治理](../records/unified-logging-l2-reward-services-2026-09-23.md)：重试、异常消费、初始化与缓存降级使用安全事件，保留奖励结果及审计。130 项 .NET 回归通过，1 项 PostgreSQL 集成测试因缺少连接配置跳过；未切换生产链路。
 
@@ -57,7 +59,7 @@
 
 继续[统一日志专题](../features/unified-logging-governance-design.md)。SQL / AOP / 事务、API 已处理异常及 DbMigrate Program / Runner / Doctor 已完成本批治理，证据见[入口记录](../records/unified-logging-l2-producer-governance-2026-09-23.md)；seed / 具体 migration 与 Auth seed 见[后续记录](../records/unified-logging-l2-seed-migration-2026-09-23.md)。
 
-1. **服务内清理与其余业务链**：先补 ChunkedUploadService / FileAccessTokenService 内清理分支，再按调用链治理币扣除 / 转账、账户查询、人工治理、其他奖励入口与外层消费者。后台 Job 及币 / 经验实际发放路径已完成本批治理；计数、异常所有权与未覆盖边界见[契约第 11–12 节](../features/unified-logging-contract.md)。
+1. **剩余业务调用链**：优先治理币扣除 / 转账及其外层消费者，再处理账户查询、人工治理、其他奖励入口和附件 / 令牌其余入口。后台 Job、币 / 经验实际发放路径及服务内清理已完成本批治理；计数、异常所有权与未覆盖边界见[契约第 11–13 节](../features/unified-logging-contract.md)。
 2. **Rust 既有回退问题**：本机返回码 / stderr 与真实动态库验证已补完；`.tmp` 输入触发水印回退的既有问题见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)，不自动扩大日志批次范围。
 3. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。
 4. **验证与收口**：每组调用链补安全输出、异常所有权与原有行为回归，按影响面更新契约和记录。

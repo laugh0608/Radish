@@ -7,6 +7,7 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
+using Radish.Service.Internal;
 using Serilog;
 
 namespace Radish.Service;
@@ -249,6 +250,7 @@ public class FileAccessTokenService : IFileAccessTokenService
 
     public async Task CleanupExpiredTokensAsync()
     {
+        using var summary = new ServiceCleanupSummary("file-tokens");
         var now = GetUtcNow();
         var expiredTokens = await _tokenRepository.QueryAsync(token =>
             token.ExpiresAt <= now &&
@@ -256,13 +258,13 @@ public class FileAccessTokenService : IFileAccessTokenService
 
         foreach (var token in expiredTokens)
         {
-            await _tokenRepository.TryRevokeByIdAsync(token.Id, now);
+            var revoked = await _tokenRepository.TryRevokeByIdAsync(token.Id, now);
+            summary.ProcessedCount++;
+            if (revoked) summary.UpdatedCount++;
+            else summary.SkippedCount++;
         }
 
-        if (expiredTokens.Count > 0)
-        {
-            Log.Information("[FileAccessToken] 清理过期令牌: {Count} 个", expiredTokens.Count);
-        }
+        summary.Completed = true;
     }
 
     private async Task EnsureCanManageTokenAsync(
