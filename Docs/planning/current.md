@@ -7,7 +7,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续账户查询 / 人工治理及商城依赖的日志治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
+- **下一项工作**：继续账户查询 / 人工治理及商城依赖的日志治理，具体见下方明天事项；Native P8-C readiness 保留为后续平台事项。
 - **状态复核日期**：`2026-09-23`；已完成日志 L2 的 SQL / AOP / 事务、API 异常、DbMigrate 及 seed / migration、Auth seed、Outbox / Rust、Hangfire / 清理任务、后台业务 Job、币 / 经验实际发放链、服务内清理及币扣除 / 转账直接调用治理子项；未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
@@ -29,21 +29,7 @@
 
 ## 最近结论
 
-- `2026-09-23` 完成[币扣除 / 转账及直接消费边界日志治理](../records/unified-logging-l2-coin-movement-2026-09-23.md)：保留资金流水、幂等重放 / 恢复、支付验证和订单补偿；已消费失败使用安全事件，传播异常不重复记录。库存 / 权益等依赖仍待治理，生产候选开关关闭。
-
-- `2026-09-23` 完成[服务内清理日志治理](../records/unified-logging-l2-service-cleanup-2026-09-23.md)：分片会话和过期令牌按实际变更记录安全摘要，保留目录 / 配额 / 令牌行为和异常传播；幂等结算重放安静，上传及令牌其他业务入口仍待治理。
-
-- `2026-09-23` 完成[币 / 经验奖励实际发放链日志治理](../records/unified-logging-l2-reward-services-2026-09-23.md)：重试、异常消费、初始化与缓存降级使用安全事件，保留奖励结果及审计。130 项 .NET 回归通过，1 项 PostgreSQL 集成测试因缺少连接配置跳过；未切换生产链路。
-
-- `2026-09-23` 完成[后台业务任务日志治理](../records/unified-logging-l2-business-jobs-2026-09-23.md)：商城、抽奖、神评与保留奖励采用安全批次摘要，保留业务结果、结算顺序和幂等键；102 项 .NET 回归通过。底层币 / 经验服务与其他调用入口仍待治理，不宣称整条业务链已收口。
-
-- `2026-09-23` 完成[Hangfire / 清理任务日志治理](../records/unified-logging-l2-hangfire-cleanup-2026-09-23.md)：按实际重试判定区分 Warning / Error，框架输出只保留安全摘要；文件、收件箱、Wiki 草稿与 Chat 回应清理改为批次统计。保留原有清理、重试与失败传播行为；状态判定事件不冒充已提交审计。
-
-- `2026-09-23` 完成[Outbox / Rust 调用边界实现与 .NET 回归](../records/unified-logging-l2-outbox-native-2026-09-23.md)：按真实 Outbox 状态区分重试与死信，移除 Rust 显式裸输出及宿主原文日志。获准下载后 Rust 原生 7 项、真实动态库 .NET 定向 13 项通过；发现既有 `.tmp` 输入触发 C# 水印回退，已留痕待独立确认修复范围。
-
-- `2026-09-23` 完成[日志 L2 seed / migration 治理](../records/unified-logging-l2-seed-migration-2026-09-23.md)：移除 seed 全局输出捕获和原文回放，阶段摘要、迁移提交及 Auth seed 统一记录安全事件；保留数据操作、迁移顺序、校验和和失败传播。
-
-- `2026-09-23` 完成[日志 L2 生成端治理批次](../records/unified-logging-l2-producer-governance-2026-09-23.md)：普通 SQL 诊断与慢链路独立、事务异常去重、API 最终错误与顶层失败安全记录、DbMigrate 命令报告和诊断分离。L2 整体仍未关闭。
+- `2026-09-23` 完成日志 L2 的 9 个开发 / 验证提交；代码与文档对照、各批次证据及未覆盖边界见[日终回顾](../records/day-end-doc-review-2026-09-23.md)。SQL / seed / Outbox / Rust、Hangfire / 后台任务、奖励、服务内清理及币扣除 / 转账直接消费边界已推进；L2 尚未关闭，生产链路未切换。
 
 - `2026-09-19` 完成部署反馈修复及统一日志 L1 / L2 入口子项；[日终回顾](../records/day-end-doc-review-2026-09-19.md)汇总 7 个提交及文档校准。L2 仍未完成，`RadishLogging.Enabled` 默认 false。
 - `2026-09-06` 完成[项目全面审阅](/records/project-review-2026-09-06)：确认类型检查入口漏检、Outbox 租约归属保护缺口、Web 构建预加载负担及 Flutter 通用 CI 覆盖缺口。条件性安全风险、维护热点与证据范围均已记录；本批仅整理文档，尚未修复代码或调整工程顺位。
@@ -57,14 +43,15 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 下一批事项：L2 剩余生成端治理
+## 明天事项（2026-09-24）：L2 剩余生成端治理
 
 继续[统一日志专题](../features/unified-logging-governance-design.md)。SQL / AOP / 事务、API 已处理异常及 DbMigrate Program / Runner / Doctor 已完成本批治理，证据见[入口记录](../records/unified-logging-l2-producer-governance-2026-09-23.md)；seed / 具体 migration 与 Auth seed 见[后续记录](../records/unified-logging-l2-seed-migration-2026-09-23.md)。
 
-1. **剩余业务调用链**：优先治理账户查询 / 人工调账与治理，再处理商城库存 / 权益依赖、其他奖励入口和附件 / 令牌其余入口。后台 Job、币 / 经验发放、服务内清理及币扣除 / 转账直接消费边界已完成本批治理；计数、异常所有权与未覆盖边界见[契约第 11–14 节](../features/unified-logging-contract.md)。
-2. **Rust 既有回退问题**：本机返回码 / stderr 与真实动态库验证已补完；`.tmp` 输入触发水印回退的既有问题见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)，不自动扩大日志批次范围。
-3. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。
-4. **验证与收口**：每组调用链补安全输出、异常所有权与原有行为回归，按影响面更新契约和记录。
+1. **明日首项：账户查询、人工调账与治理日志**。先核对 CoinService 的余额 / 交易 / 统计查询、AdminAdjustBalanceAsync，以及经验调整 / 冻结 / 解冻的直接调用边界，按组治理身份、金额、操作员、理由及重复异常输出。保留权限、幂等、余额 / 经验计算、事务、返回对象和权威审计；新增旧 / 候选 sink 安全输出、异常所有权与原有行为回归。若发现需要改变上述业务规则，先单独确认范围。
+2. **后续顺位**：商城库存 / 权益依赖、其他奖励入口和附件 / 令牌其余入口；不要求明天一次完成所有剩余链路。已完成边界与计数口径见[契约第 11–14 节](../features/unified-logging-contract.md)。
+3. **Rust 既有回退问题**：本机返回码 / stderr 与真实动态库验证已补完；`.tmp` 输入触发水印回退的既有问题见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)，不自动扩大日志批次范围。
+4. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。
+5. **验证与收口**：每组调用链补安全输出、异常所有权与原有行为回归，按影响面更新契约和记录。
 
 生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。若下一批需安装依赖或启动真实宿主 / 隔离容器，按当批具体范围单独授权。
 
@@ -85,7 +72,7 @@
 
 ## 并行维护线
 
-- `2026-09-19` 根据项目所有者反馈整理[统一日志与跨容器汇聚专题方案](/features/unified-logging-governance-design)：已确认设计并开始 L1，统一生成契约与隔离采集首轮实验已落地；[实测](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)发现 HTTP 413 丢弃、文件按 chunk 轮转和 Docker 长行分片。[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)已通过本机验证；L2 生成入口与已完成子项统一见[事件契约](../features/unified-logging-contract.md)，继续其余后台任务与业务 / 框架来源治理。正式传输上界及发布平台门禁未关闭，生产默认链路未切换。
+- `2026-09-19` 根据项目所有者反馈整理[统一日志与跨容器汇聚专题方案](/features/unified-logging-governance-design)：已确认设计并开始 L1，统一生成契约与隔离采集首轮实验已落地；[实测](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)发现 HTTP 413 丢弃、文件按 chunk 轮转和 Docker 长行分片。[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)已通过本机验证；L2 生成入口与已完成子项统一见[事件契约](../features/unified-logging-contract.md)，继续剩余业务调用链与框架来源治理。正式传输上界及发布平台门禁未关闭，生产默认链路未切换。
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护。
 - WebOS 只处理阻断级兼容；Flutter 承接高价值原生路径，不机械追平 Web。

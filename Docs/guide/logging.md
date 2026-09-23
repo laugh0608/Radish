@@ -1,6 +1,6 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理的生成端安全摘要同时作用于旧 / 候选 sink；Hangfire 重试决定与清理批次的具体口径见该契约第 10 节。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理的生成端安全摘要同时作用于旧 / 候选 sink；Hangfire、后台业务、奖励、清理及资产操作的具体口径见该契约第 10–14 节。
 
 ## 架构概述
 
@@ -166,82 +166,38 @@ SQL 生成规则同时适用于旧 sink 和统一候选入口。普通 SQL 诊�
 
 ## 应用日志
 
-### 使用方法
+### 生成安全事件
 
-**推荐方式**：直接使用 Serilog 静态方法
-
-```csharp
-using Serilog;
-
-// 信息日志
-Log.Information("User {UserId} logged in from {IpAddress}", userId, ipAddress);
-
-// 警告日志
-Log.Warning("Cache miss for key {CacheKey}", cacheKey);
-
-// 错误日志
-Log.Error(ex, "Failed to process order {OrderId}", orderId);
-
-// 调试日志
-Log.Debug("Processing request with parameters: {@Parameters}", parameters);
-```
-
-**依赖注入方式**（仅在需要与外部框架集成时使用）：
+新调用优先注入 `ILogger<T>`，存量 Serilog 调用使用同一宿主管线。先在共享 `runtime-log-policy.v1.json` 登记事件及允许的属性，再在拥有处理责任的边界输出。下面以已消费的订单支付失败为例，省略业务处理：
 
 ```csharp
-public class MyService
+using var scope = logger.BeginScope(new Dictionary<string, object>
 {
-    private readonly ILogger<MyService> _logger;
-
-    public MyService(ILogger<MyService> logger)
-    {
-        _logger = logger;
-    }
-
-    public void DoWork()
-    {
-        _logger.LogInformation("Work started");
-    }
-}
+    ["EventCode"] = "order.purchase_failed",
+    ["SourceCategory"] = "application",
+    ["purchaseStage"] = "payment",
+    ["failureKind"] = RuntimeFailureSummary.Classify(exception)
+});
+logger.LogError("Purchase payment failure consumed");
 ```
 
-### 结构化日志
-
-使用 `@` 前缀记录复杂对象：
+存量 Serilog 的等价写法：
 
 ```csharp
-var user = new { Id = 123, Name = "Alice", Email = "alice@example.com" };
-Log.Information("User created: {@User}", user);
+Log.ForContext("EventCode", "order.purchase_failed")
+    .ForContext("SourceCategory", "application")
+    .ForContext("purchaseStage", "payment")
+    .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
+    .Error("Purchase payment failure consumed");
 ```
 
-输出：
-```json
-{
-  "Timestamp": "2025-12-20T15:30:00.123Z",
-  "Level": "Information",
-  "MessageTemplate": "User created: {@User}",
-  "User": {
-    "Id": 123,
-    "Name": "Alice",
-    "Email": "alice@example.com"
-  }
-}
-```
+`RuntimeFailureSummary` 位于 `Radish.Common.LogTool`。两种写法只选一种，不重复输出；上例仅适用于当前层消费异常的分支，继续传播时由最终边界记录。不要传入原始 exception 参数、用户 / 金额 / 备注、令牌、SQL 或任意请求对象；`{@Object}` 解构也不能绕过生成端契约。
 
-### 日志上下文
+### 上下文与批次口径
 
-使用 `LogContext` 为一组操作添加上下文信息：
-
-```csharp
-using Serilog.Context;
-
-using (LogContext.PushProperty("TenantId", tenantId))
-using (LogContext.PushProperty("TraceId", traceId))
-{
-    Log.Information("Processing tenant request");
-    // 所有日志都会包含 TenantId 和 TraceId
-}
-```
+- `BeginScope`、`ForContext` 或 `LogContext` 仅承载已登记的安全字段。候选 `traceId / spanId / operationId` 需符合规范，权威 tenant / request / job 上下文尚未完整接入，不能随意添加身份字段并假定会被安全持久化。
+- 正常单项成功、业务拒绝、空扫描及纯幂等重放按专题保持安静；批次摘要明确区分查询数、正常返回数、实际更新数和已消费失败数。
+- 各批次边界及保留行为以[统一事件契约](../features/unified-logging-contract.md)为准；日志不证明数据库事务已提交，也不替代业务审计。
 
 ### 数据库持久化
 
@@ -366,7 +322,7 @@ public class AuditSqlLog : BaseLog
     // - Id: long (Snowflake ID)
     // - DateTime: DateTime
     // - Level: string
-    // - Message: string (包含完整的 SQL 语句)
+    // - Message: string (安全操作与耗时摘要，不包含 SQL 正文)
     // - MessageTemplate: string
     // - Properties: string (JSON 格式的附加属性)
 }
@@ -633,8 +589,8 @@ dotnet run --project Radish.Api
 # 查看最新的应用日志
 tail -f Logs/Radish.Api/Log.txt
 
-# 搜索特定用户的日志
-grep "UserId: 20000" Logs/Radish.Api/Log.txt
+# 搜索受控失败事件的静态说明（旧文本 sink）
+rg "Purchase payment failure consumed" Logs/Radish.Api/Log.txt
 
 # 查看今天的错误日志
 grep "Error" Logs/Radish.Api/Log20251220.txt
