@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-09-23。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-09-28。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -145,7 +145,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 两服务的乐观锁 helper 只在即将继续重试时输出 `reward.retrying` Warning，包含固定 `rewardDomain`、attempt 和 delayMs；耗尽不重复记录 Error。币保持 3 次重试、100 / 200 / 400ms；经验保持 6 次重试、指数上限 1000ms 内的随机抖动。该共享 helper 也作用于现有其他调用方，未改重试捕获类型、延迟或事务。
 - 等级配置缓存读取 / 写入 / 失效异常输出 `reward.cache_fallback` Warning；分别用固定 `rewardOperation` 区分，保留数据库回退和忽略缓存写入 / 清除失败的原有行为。安全日志不求值异常正文，不把缓存故障误报为奖励已失败。
 - 币批量发放在消费异常的批次层汇总一次 `reward.batch_failed` Error，部分成功和返回流水列表不变。经验单项已经消费的异常由单项记录 Error，批次只汇总正常返回结果，不再重复 Error；若异常确实逃逸至批次 catch，则由批次汇总。`reward.batch_completed` 是结果汇总 Info，允许 outcome 为 partial / failed，**不表示全部发放成功**。processedCount 是成功返回数，rejectedCount 是 false 返回数（可能是业务拒绝或已消费异常），failedCount 仅统计批次自身捕获的异常；空批次安静。
-- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账及直接消费边界的后续治理见第 14 节；账户查询、人工调账 / 治理、其余 CoinRewardService 入口及其外层消费者仍需治理。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
+- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账及直接消费边界的后续治理见第 14 节；币账户查询、人工调账及经验调整 / 冻结 / 解冻的后续治理见第 15 节；经验其余查询 / 人工治理、其余 CoinRewardService 入口及其外层消费者仍需治理。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
 
 ## 13. L2 服务内清理分支
 
@@ -166,4 +166,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `OperationIdempotencyService` 唯一键竞争回查成功保持安静，回查无记录仍传播原异常。完成成功 / 失败时记录缺失使用 `idempotency.completion_missing` Warning，completionKind 仅为 success / failure，不输出记录 ID、幂等键、摘要、用户或异常。保存点、24 小时保留、响应及错误审计字段、缺失时直接返回等原行为不变；这些共享方法的其他调用方同样继承安全输出。
 - `PaymentPasswordService.VerifyPaymentPasswordAsync` 及其哈希升级 helper 移除逐次成功 / 失败和重复重抛日志；仍保留验证算法、旧版本升级、成功重置计数 / 使用时间、失败累加、5 次失败锁定 30 分钟、返回错误码与剩余次数。无新增口令或安全遥测；设置 / 修改 / 人工解锁等其他入口后续治理。
 - `OrderService.PurchaseAsync` 的扣币 / 权益 catch 消费异常时记录 `order.purchase_failed` Error，purchaseStage 仅为 payment / fulfillment。保留库存恢复、订单失败阶段 / FailReason、幂等结果与返回值；外层仍包装 BusinessException 后抛出，不另记重复 Error。移除逐次开始 / 成功与支付业务拒绝日志，避免权益失败却打印购买成功。
-- 旧与候选 sink 均收到安全生成端事件。审计仍可能保留既有错误说明，本批不改变数据库或 API 契约。商城库存、权益、余额查询等依赖及其其他入口尚未全部治理，不能以直接消费层完成宣称全链路异常唯一归属。真实数据库事务 / 并发、Redis 或支付场景运行验收不由 mock 回归替代；生产候选开关继续关闭。证据见[本批记录](../records/unified-logging-l2-coin-movement-2026-09-23.md)。
+- 旧与候选 sink 均收到安全生成端事件。审计仍可能保留既有错误说明，本批不改变数据库或 API 契约。余额查询的后续治理见第 15 节；商城库存、权益及其其他入口尚未全部治理，不能以直接消费层完成宣称全链路异常唯一归属。真实数据库事务 / 并发、Redis 或支付场景运行验收不由 mock 回归替代；生产候选开关继续关闭。证据见[本批记录](../records/unified-logging-l2-coin-movement-2026-09-23.md)。
+
+## 15. L2 币账户查询与人工调账 / 经验治理
+
+- `CoinService.GetBalanceAsync / GetBalancesAsync / GetTransactionsAsync / GetTransactionByNoAsync / GetStatisticsAsync` 移除逐次查询、初始化提示与重复重抛日志。查询筛选、分页、用户展示名、统计日期范围 / 分类、缺失余额初始化及异常对象传播保持不变。
+- `AdminAdjustBalanceAsync` 移除金额、操作员、理由、流水号等运行日志和重复重抛日志；权限、参数校验、幂等重放、余额版本、计算、公开事务边界、CoinTransaction / BalanceChangeLog 与返回值均保留。
+- CoinController 的余额 / 交易查询和人工调账仍按既有契约将 InvalidOperationException 转为业务响应；最终消费点分别输出 `coin.balance_query_rejected / coin.transaction_query_rejected / coin.adjustment_rejected` Warning，只带固定 `failureKind`。这类异常可能包括业务拒绝和存储失败，不能将 Warning 一律解释为正常业务拒绝。ArgumentException 与 4xx BusinessException 保持安静；人工调账消费的 5xx BusinessException 记录一次安全 `http.failed` Error，其余上抛失败交给既有 API 最终边界。
+- `ExperienceService.AdminAdjustExperienceAsync / FreezeExperienceAsync / UnfreezeExperienceAsync` 移除逐次成功日志。经验扣减归零、版本冲突转换、幂等重放、升级 Outbox、冻结状态、权威经验流水及治理动作保持不变；成功操作的身份与理由仍保存在权威记录中。
+- 旧 / 候选输出均在 Development / Production 验证；通过真实 Service、Controller、TranAop 与内存 HTTP 管道确认回滚调用及单次安全 Error。mock 仓储与事务管理器不代表真实数据库事务 / 并发验收。
+- 本节仅关闭上述入口。经验账户 / 统计 / 流水查询、人工复核 / 等级治理、商城库存 / 权益、其余奖励与口令治理仍有后续工作；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。

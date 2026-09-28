@@ -1,6 +1,5 @@
 using Radish.Model;
 using Radish.Model.ViewModels;
-using Serilog;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -17,85 +16,69 @@ public partial class CoinService
         string? businessType = null,
         long? businessId = null)
     {
-        try
+        if (pageIndex <= 0 || pageSize <= 0 || pageSize > 100)
         {
-            if (pageIndex <= 0 || pageSize <= 0 || pageSize > 100)
-            {
-                throw new ArgumentException("分页参数无效");
-            }
-
-            await EnsureUserExistsAsync(userId);
-            var whereExpression = Expressionable.Create<CoinTransaction>()
-                .And(transaction => transaction.FromUserId == userId || transaction.ToUserId == userId);
-
-            if (!string.IsNullOrWhiteSpace(transactionType))
-            {
-                whereExpression.And(transaction => transaction.TransactionType == transactionType);
-            }
-
-            if (!string.IsNullOrWhiteSpace(status))
-            {
-                whereExpression.And(transaction => transaction.Status == status);
-            }
-
-            if (!string.IsNullOrWhiteSpace(businessType))
-            {
-                whereExpression.And(transaction => transaction.BusinessType == businessType);
-            }
-
-            if (businessId.HasValue)
-            {
-                whereExpression.And(transaction => transaction.BusinessId == businessId.Value);
-            }
-
-            var (transactions, totalCount) = await _coinTransactionRepository.QueryPageAsync(
-                whereExpression.ToExpression(),
-                pageIndex,
-                pageSize,
-                transaction => transaction.CreateTime,
-                OrderByType.Desc,
-                transaction => transaction.Id,
-                OrderByType.Desc);
-            var transactionVos = Mapper.Map<List<CoinTransactionVo>>(transactions);
-            await FillCoinTransactionUserNamesAsync(transactionVos);
-
-            return new PageModel<CoinTransactionVo>
-            {
-                Page = pageIndex,
-                PageSize = pageSize,
-                DataCount = totalCount,
-                PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
-                Data = transactionVos
-            };
+            throw new ArgumentException("分页参数无效");
         }
-        catch (Exception ex)
+
+        await EnsureUserExistsAsync(userId);
+        var whereExpression = Expressionable.Create<CoinTransaction>()
+            .And(transaction => transaction.FromUserId == userId || transaction.ToUserId == userId);
+
+        if (!string.IsNullOrWhiteSpace(transactionType))
         {
-            Log.Error(ex, "获取用户 {UserId} 交易记录失败", userId);
-            throw;
+            whereExpression.And(transaction => transaction.TransactionType == transactionType);
         }
+
+        if (!string.IsNullOrWhiteSpace(status))
+        {
+            whereExpression.And(transaction => transaction.Status == status);
+        }
+
+        if (!string.IsNullOrWhiteSpace(businessType))
+        {
+            whereExpression.And(transaction => transaction.BusinessType == businessType);
+        }
+
+        if (businessId.HasValue)
+        {
+            whereExpression.And(transaction => transaction.BusinessId == businessId.Value);
+        }
+
+        var (transactions, totalCount) = await _coinTransactionRepository.QueryPageAsync(
+            whereExpression.ToExpression(),
+            pageIndex,
+            pageSize,
+            transaction => transaction.CreateTime,
+            OrderByType.Desc,
+            transaction => transaction.Id,
+            OrderByType.Desc);
+        var transactionVos = Mapper.Map<List<CoinTransactionVo>>(transactions);
+        await FillCoinTransactionUserNamesAsync(transactionVos);
+
+        return new PageModel<CoinTransactionVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling(totalCount / (double)pageSize),
+            Data = transactionVos
+        };
     }
 
     /// <summary>按流水号读取交易详情。</summary>
     public async Task<CoinTransactionVo?> GetTransactionByNoAsync(string transactionNo)
     {
-        try
+        var transaction = await _coinTransactionRepository.QueryFirstAsync(
+            item => item.TransactionNo == transactionNo);
+        if (transaction == null)
         {
-            var transaction = await _coinTransactionRepository.QueryFirstAsync(
-                item => item.TransactionNo == transactionNo);
-            if (transaction == null)
-            {
-                return null;
-            }
+            return null;
+        }
 
-            var transactionVo = Mapper.Map<CoinTransactionVo>(transaction);
-            await FillCoinTransactionUserNamesAsync([transactionVo]);
-            return transactionVo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "根据交易流水号 {TransactionNo} 获取交易详情失败", transactionNo);
-            throw;
-        }
+        var transactionVo = Mapper.Map<CoinTransactionVo>(transaction);
+        await FillCoinTransactionUserNamesAsync([transactionVo]);
+        return transactionVo;
     }
 
     private async Task FillCoinTransactionUserNamesAsync(IReadOnlyCollection<CoinTransactionVo> transactionVos)

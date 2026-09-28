@@ -5,7 +5,6 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
-using Serilog;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -23,85 +22,72 @@ public partial class CoinService
         int expectedVersion,
         string idempotencyKey)
     {
-        try
+        if (deltaAmount == 0)
         {
-            if (deltaAmount == 0)
-            {
-                throw new ArgumentException("调整金额不能为 0", nameof(deltaAmount));
-            }
-
-            if (deltaAmount == long.MinValue)
-            {
-                throw new ArgumentException("调整金额超出有效范围", nameof(deltaAmount));
-            }
-
-            var normalizedReason = reason?.Trim();
-            if (string.IsNullOrWhiteSpace(normalizedReason))
-            {
-                throw new ArgumentException("调整原因不能为空", nameof(reason));
-            }
-
-            if (normalizedReason.Length > 200)
-            {
-                throw new ArgumentException("调整原因不能超过 200 个字符", nameof(reason));
-            }
-
-            if (operatorId <= 0)
-            {
-                throw new ArgumentException("操作员 ID 无效", nameof(operatorId));
-            }
-
-            if (expectedVersion < 0)
-            {
-                throw new ArgumentException("余额版本号无效", nameof(expectedVersion));
-            }
-
-            await EnsureUserExistsAsync(userId);
-            if (_operationIdempotencyService == null)
-            {
-                throw new InvalidOperationException("管理员调账幂等服务不可用");
-            }
-
-            var normalizedOperatorName = string.IsNullOrWhiteSpace(operatorName)
-                ? $"User_{operatorId}"
-                : operatorName.Trim();
-            var tenantId = GetCurrentTenantId();
-            var idempotencyResult = await BeginAdminAdjustmentIdempotencyAsync(
-                tenantId,
-                operatorId,
-                userId,
-                deltaAmount,
-                normalizedReason,
-                expectedVersion,
-                idempotencyKey);
-            var replayTransactionNo = ResolveAdminAdjustmentIdempotencyResult(idempotencyResult);
-            if (replayTransactionNo != null)
-            {
-                return replayTransactionNo;
-            }
-
-            Log.Information("管理员调整余额：用户={UserId}, 金额={DeltaAmount}, 操作员={OperatorName}, 原因={Reason}",
-                userId, deltaAmount, normalizedOperatorName, normalizedReason);
-
-            var result = await AdminAdjustBalanceInternalAsync(
-                tenantId,
-                userId,
-                deltaAmount,
-                normalizedReason,
-                operatorId,
-                normalizedOperatorName,
-                expectedVersion);
-            await CompleteAdminAdjustmentIdempotencyAsync(idempotencyResult, result.transactionId, result.transactionNo);
-
-            Log.Information("管理员调整余额成功：用户={UserId}, 金额={DeltaAmount}, 流水号={TransactionNo}",
-                userId, deltaAmount, result.transactionNo);
-            return result.transactionNo;
+            throw new ArgumentException("调整金额不能为 0", nameof(deltaAmount));
         }
-        catch (Exception ex)
+
+        if (deltaAmount == long.MinValue)
         {
-            Log.Error(ex, "管理员调整余额失败：用户={UserId}, 金额={DeltaAmount}", userId, deltaAmount);
-            throw;
+            throw new ArgumentException("调整金额超出有效范围", nameof(deltaAmount));
         }
+
+        var normalizedReason = reason?.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedReason))
+        {
+            throw new ArgumentException("调整原因不能为空", nameof(reason));
+        }
+
+        if (normalizedReason.Length > 200)
+        {
+            throw new ArgumentException("调整原因不能超过 200 个字符", nameof(reason));
+        }
+
+        if (operatorId <= 0)
+        {
+            throw new ArgumentException("操作员 ID 无效", nameof(operatorId));
+        }
+
+        if (expectedVersion < 0)
+        {
+            throw new ArgumentException("余额版本号无效", nameof(expectedVersion));
+        }
+
+        await EnsureUserExistsAsync(userId);
+        if (_operationIdempotencyService == null)
+        {
+            throw new InvalidOperationException("管理员调账幂等服务不可用");
+        }
+
+        var normalizedOperatorName = string.IsNullOrWhiteSpace(operatorName)
+            ? $"User_{operatorId}"
+            : operatorName.Trim();
+        var tenantId = GetCurrentTenantId();
+        var idempotencyResult = await BeginAdminAdjustmentIdempotencyAsync(
+            tenantId,
+            operatorId,
+            userId,
+            deltaAmount,
+            normalizedReason,
+            expectedVersion,
+            idempotencyKey);
+        var replayTransactionNo = ResolveAdminAdjustmentIdempotencyResult(idempotencyResult);
+        if (replayTransactionNo != null)
+        {
+            return replayTransactionNo;
+        }
+
+        var result = await AdminAdjustBalanceInternalAsync(
+            tenantId,
+            userId,
+            deltaAmount,
+            normalizedReason,
+            operatorId,
+            normalizedOperatorName,
+            expectedVersion);
+        await CompleteAdminAdjustmentIdempotencyAsync(idempotencyResult, result.transactionId, result.transactionNo);
+
+        return result.transactionNo;
     }
 
     private async Task<(long transactionId, string transactionNo)> AdminAdjustBalanceInternalAsync(

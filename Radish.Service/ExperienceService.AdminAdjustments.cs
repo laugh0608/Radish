@@ -6,7 +6,6 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
-using Serilog;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -156,13 +155,6 @@ public partial class ExperienceService
             transaction.Id,
             result);
 
-        Log.Information(
-            "管理员 {OperatorName}({OperatorId}) 调整用户 {UserId} 经验成功，经验版本 {ExpectedVersion} -> {ResultVersion}",
-            normalizedOperatorName,
-            operatorId,
-            userId,
-            expectedVersion,
-            writeResult.Experience.Version);
         return result;
     }
 

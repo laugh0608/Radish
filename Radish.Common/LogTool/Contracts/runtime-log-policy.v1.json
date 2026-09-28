@@ -169,7 +169,10 @@
     "upload.cleanup.failed": "Upload cleanup operation consumed a failure.",
     "coin.transfer_completion_recovered": "Transfer completion recording returned after retry.",
     "idempotency.completion_missing": "Idempotency completion record is missing.",
-    "order.purchase_failed": "Purchase stage consumed a failure."
+    "order.purchase_failed": "Purchase stage consumed a failure.",
+    "coin.balance_query_rejected": "Balance query rejected.",
+    "coin.transaction_query_rejected": "Transaction query rejected.",
+    "coin.adjustment_rejected": "Balance adjustment rejected."
   },
   "properties": {
     "durationMs": {

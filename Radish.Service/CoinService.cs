@@ -68,29 +68,20 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     /// </summary>
     public async Task<UserBalanceVo?> GetBalanceAsync(long userId)
     {
-        try
+        var user = await EnsureUserExistsAsync(userId);
+
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
+
+        if (userBalance == null)
         {
-            var user = await EnsureUserExistsAsync(userId);
-
-            var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
-
-            if (userBalance == null)
-            {
-                // 如果用户余额记录不存在，自动创建初始记录
-                Log.Information("用户 {UserId} 余额记录不存在，自动创建初始记录", userId);
-                userBalance = await InitializeUserBalanceAsync(userId);
-            }
-
-            var balanceVo = Mapper.Map<UserBalanceVo>(userBalance);
-            balanceVo.VoUserName = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
-                ?? User.NormalizeDisplayName(user.UserName, user.Id);
-            return balanceVo;
+            // 如果用户余额记录不存在，自动创建初始记录
+            userBalance = await InitializeUserBalanceAsync(userId);
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 余额信息失败", userId);
-            throw;
-        }
+
+        var balanceVo = Mapper.Map<UserBalanceVo>(userBalance);
+        balanceVo.VoUserName = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+            ?? User.NormalizeDisplayName(user.UserName, user.Id);
+        return balanceVo;
     }
 
     /// <summary>
@@ -98,22 +89,14 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     /// </summary>
     public async Task<Dictionary<long, UserBalanceVo>> GetBalancesAsync(List<long> userIds)
     {
-        try
-        {
-            var userBalances = await _userBalanceRepository.QueryAsync(
-                u => userIds.Contains(u.UserId) && !u.IsDeleted
-            );
+        var userBalances = await _userBalanceRepository.QueryAsync(
+            u => userIds.Contains(u.UserId) && !u.IsDeleted
+        );
 
-            return userBalances.ToDictionary(
-                u => u.UserId,
-                u => Mapper.Map<UserBalanceVo>(u)
-            );
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "批量获取用户余额信息失败");
-            throw;
-        }
+        return userBalances.ToDictionary(
+            u => u.UserId,
+            u => Mapper.Map<UserBalanceVo>(u)
+        );
     }
 
     /// <summary>
@@ -843,61 +826,49 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     /// </summary>
     public async Task<CoinStatisticsVo> GetStatisticsAsync(long userId, string timeRange = "month")
     {
-        try
-        {
-            // 1. 计算时间范围
-            var (startDate, endDate) = CalculateDateRange(timeRange);
+        // 1. 计算时间范围
+        var (startDate, endDate) = CalculateDateRange(timeRange);
 
-            Log.Information("获取用户统计数据：用户={UserId}, 时间范围={TimeRange}, 开始日期={StartDate}, 结束日期={EndDate}",
-                userId, timeRange, startDate, endDate);
+        // 2. 查询时间范围内的交易记录
+        var transactions = await _coinTransactionRepository.QueryAsync(
+            t => (t.FromUserId == userId || t.ToUserId == userId) &&
+                 t.Status == "SUCCESS" &&
+                 t.CreateTime >= startDate &&
+                 t.CreateTime <= endDate
+        );
 
-            // 2. 查询时间范围内的交易记录
-            var transactions = await _coinTransactionRepository.QueryAsync(
-                t => (t.FromUserId == userId || t.ToUserId == userId) &&
-                     t.Status == "SUCCESS" &&
-                     t.CreateTime >= startDate &&
-                     t.CreateTime <= endDate
-            );
-
-            // 3. 计算趋势数据（按日期分组）
-            var trendData = transactions
-                .GroupBy(t => t.CreateTime.Date)
-                .Select(g => new TrendDataItem
-                {
-                    VoDate = g.Key.ToString("yyyy-MM-dd"),
-                    VoIncome = g.Where(t => t.ToUserId == userId).Sum(t => t.Amount),
-                    VoExpense = g.Where(t => t.FromUserId == userId).Sum(t => t.Amount)
-                })
-                .OrderBy(t => t.VoDate)
-                .ToList();
-
-            // 4. 补充缺失的日期（确保每天都有数据）
-            var completeTrendData = FillMissingDates(trendData, startDate, endDate);
-
-            // 5. 计算分类统计数据
-            var categoryStats = transactions
-                .GroupBy(t => GetTransactionCategory(t, userId))
-                .Select(g => new CategoryStatItem
-                {
-                    VoCategory = g.Key,
-                    VoAmount = g.Sum(t => t.Amount),
-                    VoCount = g.Count()
-                })
-                .OrderByDescending(c => c.VoAmount)
-                .ToList();
-
-            return new CoinStatisticsVo
+        // 3. 计算趋势数据（按日期分组）
+        var trendData = transactions
+            .GroupBy(t => t.CreateTime.Date)
+            .Select(g => new TrendDataItem
             {
-                VoTrendData = completeTrendData,
-                VoCategoryStats = categoryStats
-            };
-        }
-        catch (Exception ex)
+                VoDate = g.Key.ToString("yyyy-MM-dd"),
+                VoIncome = g.Where(t => t.ToUserId == userId).Sum(t => t.Amount),
+                VoExpense = g.Where(t => t.FromUserId == userId).Sum(t => t.Amount)
+            })
+            .OrderBy(t => t.VoDate)
+            .ToList();
+
+        // 4. 补充缺失的日期（确保每天都有数据）
+        var completeTrendData = FillMissingDates(trendData, startDate, endDate);
+
+        // 5. 计算分类统计数据
+        var categoryStats = transactions
+            .GroupBy(t => GetTransactionCategory(t, userId))
+            .Select(g => new CategoryStatItem
+            {
+                VoCategory = g.Key,
+                VoAmount = g.Sum(t => t.Amount),
+                VoCount = g.Count()
+            })
+            .OrderByDescending(c => c.VoAmount)
+            .ToList();
+
+        return new CoinStatisticsVo
         {
-            Log.Error(ex, "获取用户统计数据失败：用户={UserId}, 时间范围={TimeRange}",
-                userId, timeRange);
-            throw;
-        }
+            VoTrendData = completeTrendData,
+            VoCategoryStats = categoryStats
+        };
     }
 
     /// <summary>
