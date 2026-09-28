@@ -178,7 +178,11 @@
     "order.purchase_interrupted": "Purchase interrupted before returning a result.",
     "order.cancellation_rejected": "Order cancellation rejected.",
     "order.fulfillment_retry_rejected": "Order fulfillment retry rejected.",
-    "reward.existence_check_failed": "Reward existence check failed; existing assumed."
+    "reward.existence_check_failed": "Reward existence check failed; existing assumed.",
+    "experience.leaderboard_incomplete": "Experience leaderboard omitted missing users.",
+    "experience.rank_query_failed": "Experience rank query failed; zero returned.",
+    "experience.governance_snapshot_invalid": "Experience governance snapshot could not be read.",
+    "experience.calculator_cache_fallback": "Experience calculator cache operation failed."
   },
   "properties": {
     "durationMs": {

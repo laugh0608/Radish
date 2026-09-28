@@ -137,35 +137,25 @@ namespace Radish.Service;
     /// </summary>
     public async Task<UserExperienceVo?> GetUserExperienceAsync(long userId)
     {
-        try
+        if (userId <= 0)
         {
-            if (userId <= 0)
-            {
-                Log.Warning("获取用户经验值信息失败：userId 无效（{UserId}）", userId);
-                return null;
-            }
+            return null;
+        }
 
-            var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
+        var userExp = await _userExpRepository.QueryFirstAsync(e => e.UserId == userId && !e.IsDeleted);
 
+        if (userExp == null)
+        {
+            // 如果用户经验值记录不存在，自动创建初始记录
+            userExp = await InitializeUserExperienceAsync(userId);
             if (userExp == null)
             {
-                // 如果用户经验值记录不存在，自动创建初始记录
-                Log.Information("用户 {UserId} 经验值记录不存在，自动创建初始记录", userId);
-                userExp = await InitializeUserExperienceAsync(userId);
-                if (userExp == null)
-                {
-                    return null;
-                }
+                return null;
             }
+        }
 
-            userExp = await NormalizeFreezeStateAsync(userExp);
-            return await MapToVoAsync(userExp);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 经验值信息失败", userId);
-            throw;
-        }
+        userExp = await NormalizeFreezeStateAsync(userExp);
+        return await MapToVoAsync(userExp);
     }
 
     /// <summary>
@@ -173,31 +163,23 @@ namespace Radish.Service;
     /// </summary>
     public async Task<Dictionary<long, UserExperienceVo>> GetUserExperiencesAsync(List<long> userIds)
     {
-        try
+        var userExps = await _userExpRepository.QueryAsync(
+            e => userIds.Contains(e.UserId) && !e.IsDeleted
+        );
+
+        var result = new Dictionary<long, UserExperienceVo>();
+
+        foreach (var userExp in userExps)
         {
-            var userExps = await _userExpRepository.QueryAsync(
-                e => userIds.Contains(e.UserId) && !e.IsDeleted
-            );
-
-            var result = new Dictionary<long, UserExperienceVo>();
-
-            foreach (var userExp in userExps)
+            var normalizedUserExp = await NormalizeFreezeStateAsync(userExp);
+            var vo = await MapToVoAsync(normalizedUserExp);
+            if (vo != null)
             {
-                var normalizedUserExp = await NormalizeFreezeStateAsync(userExp);
-                var vo = await MapToVoAsync(normalizedUserExp);
-                if (vo != null)
-                {
-                    result[normalizedUserExp.UserId] = vo;
-                }
+                result[normalizedUserExp.UserId] = vo;
             }
+        }
 
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "批量获取用户经验值信息失败");
-            throw;
-        }
+        return result;
     }
 
     #endregion

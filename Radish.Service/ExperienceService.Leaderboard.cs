@@ -17,92 +17,93 @@ public partial class ExperienceService
         int pageSize = 50,
         long? currentUserId = null)
     {
-        try
+        // 限制每页数量
+        if (pageSize > 100) pageSize = 100;
+        if (pageSize < 1) pageSize = 50;
+        if (pageIndex < 1) pageIndex = 1;
+        var now = GetUtcNow();
+
+        // 查询排行榜（按 TotalExp 降序，CurrentLevel 降序）
+        var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
+            whereExpression: e =>
+                (!e.ExpFrozen || (e.FrozenUntil != null && e.FrozenUntil <= now)) &&
+                e.UserId > 0 &&
+                !e.IsDeleted,
+            pageIndex: pageIndex,
+            pageSize: pageSize,
+            orderByExpression: e => e.TotalExp,
+            orderByType: OrderByType.Desc
+        );
+
+        // 获取用户信息
+        var userIds = pagedData.Select(e => e.UserId).ToList();
+        var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
+        await EnsureLeaderboardUserPublicIdsAsync(users);
+        var userDict = users.ToDictionary(u => u.Id);
+
+        // 获取等级配置
+        var levels = pagedData.Select(e => e.CurrentLevel).Distinct().ToList();
+        var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
+        var levelConfigDict = levelConfigs.ToDictionary(l => l.Level);
+
+        // 计算起始排名
+        var startRank = (pageIndex - 1) * pageSize + 1;
+
+        // 映射为 LeaderboardItemVo
+        var leaderboard = new List<LeaderboardItemVo>();
+        var rank = startRank;
+        var skippedCount = 0;
+        for (int i = 0; i < pagedData.Count; i++)
         {
-            // 限制每页数量
-            if (pageSize > 100) pageSize = 100;
-            if (pageSize < 1) pageSize = 50;
-            if (pageIndex < 1) pageIndex = 1;
-            var now = GetUtcNow();
-
-            // 查询排行榜（按 TotalExp 降序，CurrentLevel 降序）
-            var (pagedData, totalCount) = await _userExpRepository.QueryPageAsync(
-                whereExpression: e =>
-                    (!e.ExpFrozen || (e.FrozenUntil != null && e.FrozenUntil <= now)) &&
-                    e.UserId > 0 &&
-                    !e.IsDeleted,
-                pageIndex: pageIndex,
-                pageSize: pageSize,
-                orderByExpression: e => e.TotalExp,
-                orderByType: OrderByType.Desc
-            );
-
-            // 获取用户信息
-            var userIds = pagedData.Select(e => e.UserId).ToList();
-            var users = await _userRepository.QueryAsync(u => userIds.Contains(u.Id));
-            await EnsureLeaderboardUserPublicIdsAsync(users);
-            var userDict = users.ToDictionary(u => u.Id);
-
-            // 获取等级配置
-            var levels = pagedData.Select(e => e.CurrentLevel).Distinct().ToList();
-            var levelConfigs = await _levelConfigRepository.QueryAsync(l => levels.Contains(l.Level));
-            var levelConfigDict = levelConfigs.ToDictionary(l => l.Level);
-
-            // 计算起始排名
-            var startRank = (pageIndex - 1) * pageSize + 1;
-
-            // 映射为 LeaderboardItemVo
-            var leaderboard = new List<LeaderboardItemVo>();
-            var rank = startRank;
-            for (int i = 0; i < pagedData.Count; i++)
+            var exp = pagedData[i];
+            if (!userDict.TryGetValue(exp.UserId, out var user))
             {
-                var exp = pagedData[i];
-                if (!userDict.TryGetValue(exp.UserId, out var user))
-                {
-                    Log.Warning("排行榜跳过不存在的用户：userId={UserId}", exp.UserId);
-                    continue;
-                }
-
-                var item = new LeaderboardItemVo
-                {
-                    VoRank = rank,
-                    VoUserId = exp.UserId,
-                    VoUserPublicId = user.PublicId,
-                    VoUserPublicIndex = user.PublicIndex,
-                    VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
-                    VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
-                    VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                    VoCurrentLevel = exp.CurrentLevel,
-                    VoCurrentLevelName = levelConfigDict.ContainsKey(exp.CurrentLevel)
-                        ? levelConfigDict[exp.CurrentLevel].LevelName
-                        : $"Lv.{exp.CurrentLevel}",
-                    VoThemeColor = levelConfigDict.ContainsKey(exp.CurrentLevel)
-                        ? levelConfigDict[exp.CurrentLevel].ThemeColor
-                        : "#9E9E9E",
-                    VoTotalExp = exp.TotalExp,
-                    VoIsCurrentUser = currentUserId.HasValue && exp.UserId == currentUserId.Value
-                };
-
-                leaderboard.Add(item);
-                rank++;
+                skippedCount++;
+                continue;
             }
 
-            var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
-
-            return new PageModel<LeaderboardItemVo>
+            var item = new LeaderboardItemVo
             {
-                Page = pageIndex,
-                PageSize = pageSize,
-                DataCount = totalCount,
-                PageCount = pageCount,
-                Data = leaderboard
+                VoRank = rank,
+                VoUserId = exp.UserId,
+                VoUserPublicId = user.PublicId,
+                VoUserPublicIndex = user.PublicIndex,
+                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
+                VoUserDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
+                VoCurrentLevel = exp.CurrentLevel,
+                VoCurrentLevelName = levelConfigDict.ContainsKey(exp.CurrentLevel)
+                    ? levelConfigDict[exp.CurrentLevel].LevelName
+                    : $"Lv.{exp.CurrentLevel}",
+                VoThemeColor = levelConfigDict.ContainsKey(exp.CurrentLevel)
+                    ? levelConfigDict[exp.CurrentLevel].ThemeColor
+                    : "#9E9E9E",
+                VoTotalExp = exp.TotalExp,
+                VoIsCurrentUser = currentUserId.HasValue && exp.UserId == currentUserId.Value
             };
+
+            leaderboard.Add(item);
+            rank++;
         }
-        catch (Exception ex)
+
+        if (skippedCount > 0)
         {
-            Log.Error(ex, "获取排行榜失败");
-            throw;
+            Log.ForContext("EventCode", "experience.leaderboard_incomplete")
+                .ForContext("SourceCategory", "application")
+                .ForContext("skippedCount", skippedCount)
+                .Warning("Experience leaderboard omitted missing users");
         }
+
+        var pageCount = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+        return new PageModel<LeaderboardItemVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = pageCount,
+            Data = leaderboard
+        };
     }
 
     private async Task EnsureLeaderboardUserPublicIdsAsync(List<User> users)
@@ -204,7 +205,10 @@ public partial class ExperienceService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "获取用户 {UserId} 排名失败", userId);
+            Log.ForContext("EventCode", "experience.rank_query_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                .Error("Experience rank query failed; zero returned");
             return 0;
         }
     }

@@ -4,6 +4,7 @@ using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
 using System.Text.Json;
 using SqlSugar;
+using Serilog;
 
 namespace Radish.Service;
 
@@ -91,8 +92,12 @@ public partial class ExperienceService
                 .ToList()
                 ?? [];
         }
-        catch
+        catch (Exception ex)
         {
+            Log.ForContext("EventCode", "experience.governance_snapshot_invalid")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                .Warning("Experience governance snapshot could not be read");
             return [];
         }
     }

@@ -31,7 +31,6 @@ public class ExperienceCalculator : IExperienceCalculator
     {
         if (level < 0 || level > _options.MaxLevel)
         {
-            Log.Warning("等级 {Level} 超出范围 [0, {MaxLevel}]", level, _options.MaxLevel);
             return 0;
         }
 
@@ -89,14 +88,13 @@ public class ExperienceCalculator : IExperienceCalculator
                     var cached = JsonSerializer.Deserialize<Dictionary<int, (long ExpRequired, long ExpCumulative)>>(cachedData);
                     if (cached != null)
                     {
-                        Log.Information("从缓存加载经验值配置");
                         return cached;
                     }
                 }
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "从缓存读取经验值配置失败，将重新计算");
+                LogCacheFallback("cache-read", ex);
             }
         }
 
@@ -122,11 +120,10 @@ public class ExperienceCalculator : IExperienceCalculator
                 };
                 var serialized = JsonSerializer.Serialize(result);
                 _cache.SetString(_cacheKey, serialized, cacheOptions);
-                Log.Information("经验值配置已缓存，过期时间 {Minutes} 分钟", GetCacheExpirationMinutes());
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "缓存经验值配置失败");
+                LogCacheFallback("cache-write", ex);
             }
         }
 
@@ -223,14 +220,20 @@ public class ExperienceCalculator : IExperienceCalculator
             try
             {
                 _cache.Remove(_cacheKey);
-                Log.Information("经验值配置缓存已清除");
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "清除经验值配置缓存失败");
+                LogCacheFallback("cache-invalidate", ex);
             }
         }
     }
+
+    private static void LogCacheFallback(string operation, Exception exception) =>
+        Log.ForContext("EventCode", "experience.calculator_cache_fallback")
+            .ForContext("SourceCategory", "application")
+            .ForContext("rewardOperation", operation)
+            .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(exception))
+            .Warning("Experience calculator cache operation failed");
 
     private TimeSpan GetCacheExpiration()
     {

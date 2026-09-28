@@ -145,7 +145,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 两服务的乐观锁 helper 只在即将继续重试时输出 `reward.retrying` Warning，包含固定 `rewardDomain`、attempt 和 delayMs；耗尽不重复记录 Error。币保持 3 次重试、100 / 200 / 400ms；经验保持 6 次重试、指数上限 1000ms 内的随机抖动。该共享 helper 也作用于现有其他调用方，未改重试捕获类型、延迟或事务。
 - 等级配置缓存读取 / 写入 / 失效异常输出 `reward.cache_fallback` Warning；分别用固定 `rewardOperation` 区分，保留数据库回退和忽略缓存写入 / 清除失败的原有行为。安全日志不求值异常正文，不把缓存故障误报为奖励已失败。
 - 币批量发放在消费异常的批次层汇总一次 `reward.batch_failed` Error，部分成功和返回流水列表不变。经验单项已经消费的异常由单项记录 Error，批次只汇总正常返回结果，不再重复 Error；若异常确实逃逸至批次 catch，则由批次汇总。`reward.batch_completed` 是结果汇总 Info，允许 outcome 为 partial / failed，**不表示全部发放成功**。processedCount 是成功返回数，rejectedCount 是 false 返回数（可能是业务拒绝或已消费异常），failedCount 仅统计批次自身捕获的异常；空批次安静。
-- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账及直接消费边界的后续治理见第 14 节；币账户查询、人工调账及经验调整 / 冻结 / 解冻的后续治理见第 15 节；其余 CoinRewardService 入口及直接消费者见第 17 节，经验其余查询 / 人工治理仍需推进。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
+- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账及直接消费边界的后续治理见第 14 节；币账户查询、人工调账及经验调整 / 冻结 / 解冻的后续治理见第 15 节；其余 CoinRewardService 入口及直接消费者见第 17 节，经验其余查询 / 人工治理见第 18 节。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
 
 ## 13. L2 服务内清理分支
 
@@ -175,7 +175,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - CoinController 的余额 / 交易查询和人工调账仍按既有契约将 InvalidOperationException 转为业务响应；最终消费点分别输出 `coin.balance_query_rejected / coin.transaction_query_rejected / coin.adjustment_rejected` Warning，只带固定 `failureKind`。这类异常可能包括业务拒绝和存储失败，不能将 Warning 一律解释为正常业务拒绝。ArgumentException 与 4xx BusinessException 保持安静；人工调账消费的 5xx BusinessException 记录一次安全 `http.failed` Error，其余上抛失败交给既有 API 最终边界。
 - `ExperienceService.AdminAdjustExperienceAsync / FreezeExperienceAsync / UnfreezeExperienceAsync` 移除逐次成功日志。经验扣减归零、版本冲突转换、幂等重放、升级 Outbox、冻结状态、权威经验流水及治理动作保持不变；成功操作的身份与理由仍保存在权威记录中。
 - 旧 / 候选输出均在 Development / Production 验证；通过真实 Service、Controller、TranAop 与内存 HTTP 管道确认回滚调用及单次安全 Error。mock 仓储与事务管理器不代表真实数据库事务 / 并发验收。
-- 本节仅关闭上述入口。商城库存 / 订单履约的后续治理见第 16 节，其余奖励入口见第 17 节；经验账户 / 统计 / 流水查询、人工复核 / 等级治理与口令治理仍有后续工作；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。
+- 本节仅关闭上述入口。商城库存 / 订单履约的后续治理见第 16 节，其余奖励入口见第 17 节；经验账户 / 统计 / 流水查询、人工复核 / 等级治理见第 18 节，口令治理仍有后续工作；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。
 
 ## 16. L2 商城库存与订单履约依赖
 
@@ -192,3 +192,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 六类入口的直接消费者 `ReliableTaskProcessor` 保持原有异常传播；由 `ReliableOutboxExecutionJob` 调用既有失败状态写入，在仓储真正更新后输出 `outbox.retrying` Warning 或 `outbox.dead_letter` Error，遵循第 9 节。成功与幂等重放不逐条输出，Pending 等非 Processing 状态重复执行不增加失败事件。该责任只涵盖向外传播的异常，不将下游经验服务已经消费的失败再记一次。
 - `CheckRewardExistsAsync` 查询失败仍返回 true，保留避免重复发放的既有兜底；消费点只记录一次 `reward.existence_check_failed` Error，仅携带安全 failureKind，不携带业务类型、身份、日期或异常正文。true 不证明已有成功流水，现有查询筛选与可选日期范围未改变。
 - 本批没有修改奖励流水写入、事务、结算时钟、Outbox 租约、重试计划、通知或经验发放规则。内存 SQLite 验证了真实 Outbox 状态更新，币发放及其他业务依赖使用 mock；不代表真实币账本事务 / 并发或 PostgreSQL 验收。旧 / 候选输出均覆盖 Development / Production，生产候选开关继续关闭。证据见[本批记录](../records/unified-logging-l2-reward-entries-2026-09-28.md)。
+
+## 18. L2 经验查询、人工复核与等级治理
+
+- 经验账户单个 / 批量查询、流水、每日统计、治理留痕、等级配置和排行榜移除仅记录再重抛的 catch；无效用户、每日统计更新的无效参数及初始化提示不逐次打印业务明细。筛选、分页钳制、统计窗口、冻结归一化、公开身份补全、初始化与返回语义均保留，未处理异常交给既有 API 最终边界。
+- `GetUserRankAsync` 仍在消费异常后返回 0，只在该点输出 `experience.rank_query_failed` Error 和安全 failureKind。0 也可能表示无用户、未上榜或冻结，不意味着查询一定成功。
+- 排行榜缺失用户仍跳过，改为每次查询至多一个 `experience.leaderboard_incomplete` Warning，仅含 skippedCount。返回 DataCount 沿用仓储总数，VoRank 只按实际返回用户递增；本批不改变排名或分页规则。
+- 人工复核和等级整批重算不再把操作员、用户、版本和审计 ID 复制到运行日志；复核证据、版本推进、幂等结果、重算预览指纹、仓储审计、冲突映射及缓存清除顺序保持不变。缓存失败继续采用第 12 节的安全 Warning；已落库重算不因缓存清除失败被误报为未写入。
+- `ExperienceCalculator` 移除缓存命中 / 写入 / 清除成功与无效等级明细；缓存读取 / 写入 / 清除异常分别以 `experience.calculator_cache_fallback` Warning 和固定 rewardOperation / failureKind 记录。公式、缓存键、序列化、过期设置及回退计算保持原样。
+- 治理快照列表反序列化异常仍返回空列表，但每个解析失败字段记录一次 `experience.governance_snapshot_invalid` Warning，仅含 failureKind，不读取异常正文或输出快照。空值和 JSON null 沿用空列表返回且安静；多个损坏字段可产生多次独立解析告警。
+- 旧 / 候选输出均覆盖 Development / Production，真实 Service、Controller 与内存 API 错误管道验证最终异常归属；mock 仓储不代表真实事务、并发或运行态验收。生产候选开关保持关闭，L2 尚未整体完成，证据见[本批记录](../records/unified-logging-l2-experience-governance-2026-09-28.md)。
