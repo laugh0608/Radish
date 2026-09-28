@@ -4,7 +4,6 @@ using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
-using Serilog;
 
 namespace Radish.Service;
 
@@ -108,42 +107,29 @@ public class LeaderboardService : ILeaderboardService
             _ => pageSize
         };
 
-        try
+        return type switch
         {
-            return type switch
-            {
-                LeaderboardType.Experience => await GetExperienceLeaderboardAsync(
-                    safePageIndex,
-                    safePageSize,
-                    currentUserId),
-                LeaderboardType.PostCount => await GetPostCountLeaderboardAsync(
-                    safePageIndex,
-                    safePageSize,
-                    currentUserId),
-                LeaderboardType.CommentCount => await GetCommentCountLeaderboardAsync(
-                    safePageIndex,
-                    safePageSize,
-                    currentUserId),
-                LeaderboardType.Popularity => await GetPopularityLeaderboardAsync(
-                    safePageIndex,
-                    safePageSize,
-                    currentUserId),
-                LeaderboardType.HotProduct => await GetHotProductLeaderboardAsync(
-                    safePageIndex,
-                    safePageSize),
-                _ => throw new InvalidOperationException("公开排行榜类型策略与服务分派不一致。")
-            };
-        }
-        catch (Exception ex)
-        {
-            Log.Error(
-                ex,
-                "获取公开排行榜失败: type={Type}, pageIndex={PageIndex}, pageSize={PageSize}",
-                type,
+            LeaderboardType.Experience => await GetExperienceLeaderboardAsync(
                 safePageIndex,
-                safePageSize);
-            throw;
-        }
+                safePageSize,
+                currentUserId),
+            LeaderboardType.PostCount => await GetPostCountLeaderboardAsync(
+                safePageIndex,
+                safePageSize,
+                currentUserId),
+            LeaderboardType.CommentCount => await GetCommentCountLeaderboardAsync(
+                safePageIndex,
+                safePageSize,
+                currentUserId),
+            LeaderboardType.Popularity => await GetPopularityLeaderboardAsync(
+                safePageIndex,
+                safePageSize,
+                currentUserId),
+            LeaderboardType.HotProduct => await GetHotProductLeaderboardAsync(
+                safePageIndex,
+                safePageSize),
+            _ => throw new InvalidOperationException("公开排行榜类型策略与服务分派不一致。")
+        };
     }
 
     /// <inheritdoc />
@@ -170,27 +156,19 @@ public class LeaderboardService : ILeaderboardService
             return 0;
         }
 
-        try
+        var now = DateTime.Now;
+        return type switch
         {
-            var now = DateTime.Now;
-            return type switch
-            {
-                LeaderboardType.Experience =>
-                    await _leaderboardRepository.GetUserExperienceRankAsync(userId, now),
-                LeaderboardType.PostCount =>
-                    await _leaderboardRepository.GetUserPostCountRankAsync(userId),
-                LeaderboardType.CommentCount =>
-                    await _leaderboardRepository.GetUserCommentCountRankAsync(userId),
-                LeaderboardType.Popularity =>
-                    await _leaderboardRepository.GetUserPopularityRankAsync(userId),
-                _ => throw new InvalidOperationException("用户排名类型策略与服务分派不一致。")
-            };
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户公开排名失败: type={Type}, userId={UserId}", type, userId);
-            throw;
-        }
+            LeaderboardType.Experience =>
+                await _leaderboardRepository.GetUserExperienceRankAsync(userId, now),
+            LeaderboardType.PostCount =>
+                await _leaderboardRepository.GetUserPostCountRankAsync(userId),
+            LeaderboardType.CommentCount =>
+                await _leaderboardRepository.GetUserCommentCountRankAsync(userId),
+            LeaderboardType.Popularity =>
+                await _leaderboardRepository.GetUserPopularityRankAsync(userId),
+            _ => throw new InvalidOperationException("用户排名类型策略与服务分派不一致。")
+        };
     }
 
     /// <inheritdoc />

@@ -279,3 +279,10 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 直接生产消费者 PublicDiscoverController 保持 `no-store`、响应内容与无 catch 的传播边界；API 最终边界仅对 5xx 输出一次安全 `http.failed`，4xx 安静。仓储无本批需要新增或修改的日志生成点，不新增事件码或查询摘要。
 - 七个来源任务启动顺序与 Task.WhenAll、单来源失败导致整页失败、公开租户 / 24 小时窗口、来源资格、稳定排序、游标与分页、纯文本映射和 Pulse 聚合不变，不引入部分成功或跨请求缓存。
 - 旧 / 候选输出覆盖 Development / Production；新增 mock 故障测试和既有临时 SQLite 仓储回归不替代 PostgreSQL / 真实宿主与浏览器验收。生产开关继续关闭，L2 尚未整体完成；证据见[本批记录](../records/unified-logging-l2-public-discover-2026-09-28.md)。
+
+## 28. L2 公开排行榜与用户排名
+
+- `LeaderboardService.GetLeaderboardAsync / GetUserRankAsync` 移除仅记录再重抛的 catch，不再复制用户、榜单类型、分页参数或异常原文；异常本身继续原样传播，不转换为排名 0 或部分成功。
+- 唯一直接生产消费者 LeaderboardController 不新增 catch；正常结果、类型拒绝、个人排名不支持及未登录结果保持原样。上抛故障由 API 最终边界记录一次安全 `http.failed`；4xx BusinessException 安静，5xx 记录 Error，不新增事件码。
+- 五类公开榜单白名单、四类用户排名、分页规范化、稳定排名、资格复核后的短暂名次空洞、元数据排序、用户展示与当前用户标记均保持不变。头像 / 经验 / 等级及商品图标依赖失败继续上抛；既有 DateTime.Now 参数语义不因日志治理改变。
+- 旧 / 候选输出覆盖 Development / Production；新增真实 Service / Controller 与 mock 依赖、内存 HTTP 管道验证异常归属，既有临时 SQLite 仓储测试验证资格与排名。PostgreSQL 用例明确排除，本批不代表生产数据库或浏览器验收。生产开关继续关闭，L2 尚未整体完成；证据见[本批记录](../records/unified-logging-l2-leaderboard-2026-09-28.md)。
