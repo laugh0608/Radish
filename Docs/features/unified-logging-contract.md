@@ -253,3 +253,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 下载计数捕获异常输出 `attachment.download_count_failed` Error，仍继续返回已取得文件流；不被下载外层重复记录。计数更新返回 false 与附件不存在仍按既有语义安静，不修改计量并发算法。
 - 原图 / 缩略图、下载文件名与 MIME、令牌下载、Chat / Wiki 权限及用户角色判断保持不变。上述日志不含附件 / 用户身份、业务类型、文件路径或异常正文。底层存储的其他布尔 / 空值语义未改变，真实权限故障和并发仍需单独验收。
 - 此批关闭上述已有日志生成点，不据此宣称完整附件系统或 L2 已收口；生产候选开关保持关闭。旧 / 候选输出覆盖 Development / Production，证据见[本批记录](../records/unified-logging-l2-attachment-access-2026-09-28.md)。
+
+## 25. L2 支付口令设置、修改与管理查询
+
+- `PaymentPasswordService` 的状态、设置、修改、管理员重置 / 解锁、统计与过期锁定清理移除仅记录再重抛的 catch；正常设置 / 修改 / 管理操作不再输出用户、操作员、强度及原因明细。六位口令校验、Argon2id 与旧版本升级、失败计数 / 锁定、写入顺序与返回语义保持不变。
+- 管理员重置继续保存 ModifyBy / ModifyId / ModifyTime / Remark；通用审计中间件、安全记录查询的用户范围、分页上界、管理员路径过滤及 DTO 映射未改变。本批不新增审计机制或事务保证，不把运行日志当作权威审计。
+- 安全建议消费异常时使用 `payment.suggestions_failed` Error，仅带固定 failureKind，继续返回原有建议回退文字；状态查询调用建议失败时仍成功返回状态，不重复记录同一异常。
+- 手动清理过期锁定仅在清理数量为正时输出 `payment.locks_cleared` Info，包含 processedCount；零进展保持安静。该入口不是新增后台任务，UTC 时间参数、仓储操作和原数量响应不变。
+- PaymentPasswordController 设置 / 修改消费的 4xx BusinessException 保持安静；5xx 在该消费点输出安全 `http.failed` Error，仅带状态和 failureKind。其余上抛异常继续由 API 最终边界处理一次，原错误码、消息及响应保持不变。
+- 旧 / 候选输出覆盖 Development / Production；mock 仓储、真实 Service / Controller 与内存 HTTP 管道不替代真实数据库、审计中间件运行或并发验收。生产候选开关继续关闭，L2 尚未整体完成，证据见[本批记录](../records/unified-logging-l2-payment-password-2026-09-28.md)。

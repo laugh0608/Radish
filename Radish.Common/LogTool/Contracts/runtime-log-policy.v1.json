@@ -168,6 +168,8 @@
     "job.cleanup.interrupted": "Cleanup was interrupted; counts describe earlier progress.",
     "upload.session.update_failed": "Upload session state update failed.",
     "upload.session.update_recovered": "Upload session state update recovered after retry.",
+    "payment.locks_cleared": "Expired payment locks cleared.",
+    "payment.suggestions_failed": "Payment security suggestions consumed a failure.",
     "attachment.delete_rejected": "Attachment soft delete changed no rows.",
     "attachment.delete_failed": "Attachment soft delete consumed a failure.",
     "attachment.download_unavailable": "Attachment download stream is unavailable.",
