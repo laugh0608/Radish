@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using Radish.Common.CoreTool;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IService;
@@ -131,12 +132,6 @@ public class ChunkedUploadService : IChunkedUploadService
             throw;
         }
 
-        Log.Information(
-            "[ChunkedUpload] 创建上传会话: {SessionId}, 文件: {FileName}, 大小: {Size}, 分片数: {Chunks}",
-            sessionId,
-            session.FileName,
-            session.TotalSize,
-            session.TotalChunks);
         return MapToVo(session);
     }
 
@@ -234,11 +229,6 @@ public class ChunkedUploadService : IChunkedUploadService
                 throw;
             }
 
-            Log.Information(
-                "[ChunkedUpload] 上传分片: {SessionId}, 分片: {ChunkIndex}/{TotalChunks}",
-                sessionId,
-                chunkIndex,
-                session.TotalChunks);
             return MapToVo(session);
         }
     }
@@ -341,15 +331,10 @@ public class ChunkedUploadService : IChunkedUploadService
                 {
                     // 附件已经持久化，不能把非幂等操作伪装成失败并诱导客户端重新合并。
                     // 清理分片后，即使会话状态回写暂时失败，也不会再次生成重复附件。
-                    Log.Error(
-                        exception,
-                        "[ChunkedUpload] 附件 {AttachmentId} 已持久化，但完成会话回写失败: {SessionId}",
-                        persistedAttachment.VoId,
-                        session.SessionId);
-                    await TryUpdateSessionAsync(session);
+                    await TryUpdateSessionAsync(session, exception);
                 }
             }
-            catch (Exception exception)
+            catch
             {
                 session.Status = "Failed";
                 session.ErrorMessage = "分片合并或附件处理失败";
@@ -366,16 +351,11 @@ public class ChunkedUploadService : IChunkedUploadService
                     await TryCompleteReservationAsync(userId, session.SessionId);
                 }
 
-                Log.Error(exception, "[ChunkedUpload] 合并失败: {SessionId}", session.SessionId);
                 throw;
             }
 
             await TryCompleteReservationAsync(userId, session.SessionId);
             CleanupSessionFiles(session.SessionId);
-            Log.Information(
-                "[ChunkedUpload] 合并完成: {SessionId}, 附件ID: {AttachmentId}",
-                session.SessionId,
-                persistedAttachment.VoId);
             return persistedAttachment;
         }
     }
@@ -417,7 +397,6 @@ public class ChunkedUploadService : IChunkedUploadService
             await UpdateSessionOrThrowAsync(session);
             CleanupSessionFiles(sessionId);
             await TryReleaseReservationAsync(userId, sessionId);
-            Log.Information("[ChunkedUpload] 取消会话: {SessionId}", sessionId);
         }
     }
 
@@ -796,7 +775,7 @@ public class ChunkedUploadService : IChunkedUploadService
         }
     }
 
-    private async Task TryUpdateSessionAsync(UploadSession session)
+    private async Task TryUpdateSessionAsync(UploadSession session, Exception? initialFailure = null)
     {
         try
         {
@@ -804,7 +783,18 @@ public class ChunkedUploadService : IChunkedUploadService
         }
         catch (Exception exception)
         {
-            Log.Error(exception, "[ChunkedUpload] 更新失败会话状态失败: {SessionId}", session.SessionId);
+            Log.ForContext("EventCode", "upload.session.update_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
+                .Error("Upload session state update failed");
+            return;
+        }
+        if (initialFailure != null)
+        {
+            Log.ForContext("EventCode", "upload.session.update_recovered")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(initialFailure))
+                .Warning("Upload session state update recovered after retry");
         }
     }
 

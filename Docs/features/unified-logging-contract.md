@@ -227,3 +227,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `UploadRateLimitService` 移除预留被拒的用户 / 文件大小 Warning 和重置计数的用户 Info；并发、分钟频率、日容量的拒绝仍由结果或 429 告知调用方。Redis Lua、内存 keyed lock、预留重放、业务日结算、失败释放及当前用户重置规则不变。
 - 两个 Service 未新增 catch；存储 / 缓存异常继续上抛。令牌 Controller 的既有 500 BusinessException 包装和按 ID 撤销的直接传播保持原样，API 最终边界记录一次安全 `http.failed`；正常拒绝与 4xx 保持安静。普通上传申请配额发生在上传 try 之前，分片申请发生在创建会话 try 之前，异常也继续交给上层。
 - 此批只关闭令牌与配额 Service 的上述生成点，未新增配额重置生产入口；AttachmentService、普通上传后续处理及分片上传 / 合并的其他日志仍待治理。旧 / 候选输出覆盖 Development / Production，生产候选开关继续关闭。证据与限制见[本批记录](../records/unified-logging-l2-file-token-quota-2026-09-28.md)。
+
+## 22. L2 分片上传与会话回写
+
+- `ChunkedUploadService` 移除创建会话、逐片上传、合并成功与取消的明细 Info；不再输出会话 ID、文件名、分片索引及附件身份。参数校验、用户归属、keyed lock、分片回滚和成功重放保持不变。
+- 合并主流程失败仍按原顺序尝试写入 Failed 状态、清理目录及释放 / 结算配额，然后原异常重抛；本层不再重复记录该异常。Controller 的既有 500 包装与 API 最终安全日志保持原样。
+- 附件已持久化但 Completed 状态首次回写失败时，保留原有的一次补写；按最终结果仅输出一次事件：恢复为 `upload.session.update_recovered` Warning，仍失败为 `upload.session.update_failed` Error。只带固定 failureKind，不携带异常正文、会话或附件身份。无论补写结果如何，既有成功响应、配额结算和目录清理不变。
+- 合并失败后的 Failed 状态补写异常单独消费，输出一次 `upload.session.update_failed`；它与原始合并异常是两次不同故障，不替代原异常传播。前台目录 / 配额 helper 及后台清理摘要继续按第 13 节执行，不新增重试。
+- 本批覆盖分片编排层；底层 AttachmentService 和普通上传 Controller 的剩余日志尚待治理，不宣称端到端上传链路已收口。旧 / 候选输出覆盖 Development / Production；使用 mock 附件服务、mock 仓储和真实临时分片文件，不能替代真实数据库或图片处理验收。生产候选开关保持关闭，证据见[本批记录](../records/unified-logging-l2-chunked-upload-2026-09-28.md)。

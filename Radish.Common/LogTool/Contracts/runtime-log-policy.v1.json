@@ -166,6 +166,8 @@
     "reward.batch_completed": "Reward batch returned results.",
     "reward.batch_failed": "Reward batch consumed failures.",
     "job.cleanup.interrupted": "Cleanup was interrupted; counts describe earlier progress.",
+    "upload.session.update_failed": "Upload session state update failed.",
+    "upload.session.update_recovered": "Upload session state update recovered after retry.",
     "upload.cleanup.failed": "Upload cleanup operation consumed a failure.",
     "coin.transfer_completion_recovered": "Transfer completion recording returned after retry.",
     "idempotency.completion_missing": "Idempotency completion record is missing.",
