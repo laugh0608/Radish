@@ -156,7 +156,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 分片单项、目录枚举 / 删除及配额 helper 原来消费的异常继续消费，并按批次汇总一次 `job.cleanup.failed` Error；failedCount 是捕获次数，含多种失败时 failureKind 为 other。此前有实际状态 / 目录变更时 outcome 为 partial，否则为 failed。目录对账、终态查询和令牌操作原本向外传播的异常不增加本地 Error；若中断前已有变更且没有已消费异常，记录 `job.cleanup.interrupted` Info，明确只描述此前进度。若此前另有已消费异常，仍汇总这些异常，不把后续传播异常计入 failedCount。
 - 同一目录 / 配额 helper 被前台上传流程调用时，已消费失败使用 `upload.cleanup.failed` Error，cleanupOperation 仅为 directory / quota-release / quota-complete；正常目录删除不逐条记录。上述生成端在旧与候选 sink 均不传递会话 / 用户 / 令牌标识、路径、文件名、附件身份或异常原文。
 - 保留 keyed lock、跨租户条件更新、30 分钟孤立目录宽限、每次 500 个目录查询、8 天终态结算重放窗口、最多 2000 条以及批次结算去重；不改变文件生命周期、配额、令牌规则、调度与外部返回。摘要不是权威审计，也不保证崩溃时落盘或跨批次恰好一次。
-- 本节不覆盖上传创建 / 合并业务日志、令牌创建 / 验证 / 主动撤销、配额申请 / 重置及 AttachmentService 等其他入口；不据此宣称完整附件业务链收口。生产候选开关仍关闭，验证范围见[批次记录](../records/unified-logging-l2-service-cleanup-2026-09-23.md)。
+- 本节不覆盖上传创建 / 合并业务日志及 AttachmentService 等其他入口；令牌创建 / 验证 / 主动撤销与配额申请 / 重置的后续治理见第 21 节；不据此宣称完整附件业务链收口。生产候选开关仍关闭，验证范围见[批次记录](../records/unified-logging-l2-service-cleanup-2026-09-23.md)。
 
 ## 14. L2 币扣除 / 转账及直接消费边界
 
@@ -219,3 +219,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 道具使用与改名卡接口消费一般异常或 5xx BusinessException 时记录 `inventory.use_failed / inventory.rename_failed` Error，仅带 failureKind。接口仍按原契约返回 400 和失败结果；不因错误事件变成新的 5xx 响应。4xx BusinessException、正常失败结果与成功重放保持安静；经验发放层已经消费并记录的失败不重复报错。
 - 改名效果原本将 ArgumentException / InvalidOperationException 包装为默认 400 BusinessException；前者保持安静，后者在包装点记录一次 `inventory.rename_rejected` Warning。保留 InnerException、原消息、展示名变更审计与事务，不记录新旧展示名。IO 等未包装异常由道具接口消费，旧改名卡路由复用同一处理边界。
 - 本批不改变系统赠送或背包加减的既有调用 / 事务边界，不宣称所有商城与用户资料入口完成。旧 / 候选输出均覆盖 Development / Production，生产候选开关继续关闭。验证及限制见[本批记录](../records/unified-logging-l2-shop-entitlements-2026-09-28.md)。
+
+## 21. L2 文件访问令牌与上传配额
+
+- `FileAccessTokenService` 移除创建、成功消费、主动撤销（记录 ID / 兼容原始令牌入口）的逐项 Info；空值、候选失效、当前 Wiki ACL 拒绝及原子消费未命中的正常拒绝不再输出 Warning。不再生成 TokenHashPreview，令牌原文、哈希及其片段、附件身份均不进入这些运行日志。
+- 原始令牌仅创建响应返回、持久化只存哈希、有效期 / 用户 / IP / 次数限制、附件可用性、当前 Wiki 读写权限、原子消费与撤销规则保持不变。冲突、权限拒绝及令牌查询摘要契约不变，清理批次摘要继续按第 13 节执行。
+- `UploadRateLimitService` 移除预留被拒的用户 / 文件大小 Warning 和重置计数的用户 Info；并发、分钟频率、日容量的拒绝仍由结果或 429 告知调用方。Redis Lua、内存 keyed lock、预留重放、业务日结算、失败释放及当前用户重置规则不变。
+- 两个 Service 未新增 catch；存储 / 缓存异常继续上抛。令牌 Controller 的既有 500 BusinessException 包装和按 ID 撤销的直接传播保持原样，API 最终边界记录一次安全 `http.failed`；正常拒绝与 4xx 保持安静。普通上传申请配额发生在上传 try 之前，分片申请发生在创建会话 try 之前，异常也继续交给上层。
+- 此批只关闭令牌与配额 Service 的上述生成点，未新增配额重置生产入口；AttachmentService、普通上传后续处理及分片上传 / 合并的其他日志仍待治理。旧 / 候选输出覆盖 Development / Production，生产候选开关继续关闭。证据与限制见[本批记录](../records/unified-logging-l2-file-token-quota-2026-09-28.md)。

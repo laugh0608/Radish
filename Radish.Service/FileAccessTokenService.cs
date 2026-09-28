@@ -8,7 +8,6 @@ using Radish.Model;
 using Radish.Model.Models;
 using Radish.Model.ViewModels;
 using Radish.Service.Internal;
-using Serilog;
 
 namespace Radish.Service;
 
@@ -69,11 +68,6 @@ public class FileAccessTokenService : IFileAccessTokenService
         };
 
         tokenEntity.Id = await _tokenRepository.AddAsync(tokenEntity);
-        Log.Information(
-            "[FileAccessToken] 创建令牌记录 {TokenId}, 附件: {AttachmentId}, 有效期: {Hours}小时",
-            tokenEntity.Id,
-            dto.AttachmentId,
-            dto.ValidHours);
 
         return MapCreatedVo(tokenEntity, rawToken, publicBaseUrl, now);
     }
@@ -87,7 +81,6 @@ public class FileAccessTokenService : IFileAccessTokenService
     {
         if (string.IsNullOrWhiteSpace(rawToken))
         {
-            Log.Warning("[FileAccessToken] 令牌为空");
             return null;
         }
 
@@ -102,7 +95,6 @@ public class FileAccessTokenService : IFileAccessTokenService
             (!string.IsNullOrWhiteSpace(candidate.AuthorizedIp) && candidate.AuthorizedIp != normalizedIp) ||
             (candidate.MaxAccessCount > 0 && candidate.AccessCount >= candidate.MaxAccessCount))
         {
-            Log.Warning("[FileAccessToken] 令牌校验失败: {TokenHashPreview}", MaskHash(tokenHash));
             return null;
         }
 
@@ -118,24 +110,15 @@ public class FileAccessTokenService : IFileAccessTokenService
                 userId,
                 roleNames))
         {
-            Log.Warning(
-                "[FileAccessToken] Wiki 附件当前访问策略拒绝令牌消费: {TokenId}",
-                candidate.Id);
             return null;
         }
 
         var consumedToken = await _tokenRepository.TryConsumeAsync(tokenHash, userId, normalizedIp, now);
         if (consumedToken == null)
         {
-            Log.Warning("[FileAccessToken] 令牌消费失败: {TokenHashPreview}", MaskHash(tokenHash));
             return null;
         }
 
-        Log.Information(
-            "[FileAccessToken] 令牌记录 {TokenId} 消费成功, 附件: {AttachmentId}, 访问次数: {Count}",
-            consumedToken.Id,
-            consumedToken.AttachmentId,
-            consumedToken.AccessCount);
         return consumedToken.AttachmentId;
     }
 
@@ -165,8 +148,6 @@ public class FileAccessTokenService : IFileAccessTokenService
         {
             throw new BusinessException("令牌已撤销", 409, "FileToken.AlreadyRevoked", "error.file_token.already_revoked");
         }
-
-        Log.Information("[FileAccessToken] 撤销令牌记录 {TokenId}", tokenId);
     }
 
     public async Task RevokeTokenAsync(
@@ -196,8 +177,6 @@ public class FileAccessTokenService : IFileAccessTokenService
         {
             throw new BusinessException("令牌已撤销", 409, "FileToken.AlreadyRevoked", "error.file_token.already_revoked");
         }
-
-        Log.Information("[FileAccessToken] 通过兼容入口撤销令牌记录 {TokenId}", tokenEntity.Id);
     }
 
     public async Task<FileAccessTokenSummaryVo?> GetTokenInfoAsync(
@@ -416,13 +395,6 @@ public class FileAccessTokenService : IFileAccessTokenService
             VoToken = rawToken,
             VoAccessUrl = $"{baseUrl}/api/v1/Attachment/DownloadByToken?token={Uri.EscapeDataString(rawToken)}"
         };
-    }
-
-    private static string MaskHash(string tokenHash)
-    {
-        return tokenHash.Length <= 10
-            ? "<invalid-hash>"
-            : $"{tokenHash[..6]}***{tokenHash[^4..]}";
     }
 
     private static BusinessException ValidationError(string message, string code)
