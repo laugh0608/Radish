@@ -11,7 +11,6 @@ using Radish.Model.ViewModels;
 using Radish.Service.Base;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
-using Serilog;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -52,98 +51,66 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     /// <summary>获取用户所有权益</summary>
     public async Task<List<UserBenefitVo>> GetUserBenefitsAsync(long userId, bool includeExpired = false)
     {
-        try
+        var now = GetUtcNow();
+        var benefits = await _userBenefitRepository.QueryAsync(b => b.UserId == userId && !b.IsDeleted);
+        if (!includeExpired)
         {
-            var now = GetUtcNow();
-            var benefits = await _userBenefitRepository.QueryAsync(b => b.UserId == userId && !b.IsDeleted);
-            if (!includeExpired)
-            {
-                benefits = benefits
-                    .Where(benefit => IsUsableAt(benefit, now))
-                    .ToList();
-            }
-            var selections = await _userBenefitCustomRepository.GetActiveSelectionsAsync(userId);
-            var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
-            FillBenefitState(benefits, benefitVos, selections, now);
-            return benefitVos;
+            benefits = benefits
+                .Where(benefit => IsUsableAt(benefit, now))
+                .ToList();
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 权益列表失败", userId);
-            throw;
-        }
+        var selections = await _userBenefitCustomRepository.GetActiveSelectionsAsync(userId);
+        var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
+        FillBenefitState(benefits, benefitVos, selections, now);
+        return benefitVos;
     }
 
     /// <summary>获取用户指定类型的权益</summary>
     public async Task<List<UserBenefitVo>> GetUserBenefitsByTypeAsync(long userId, BenefitType benefitType, bool includeExpired = false)
     {
-        try
+        var now = GetUtcNow();
+        var benefits = await _userBenefitRepository.QueryAsync(b =>
+            b.UserId == userId &&
+            b.BenefitType == benefitType &&
+            !b.IsDeleted);
+        if (!includeExpired)
         {
-            var now = GetUtcNow();
-            var benefits = await _userBenefitRepository.QueryAsync(b =>
-                b.UserId == userId &&
-                b.BenefitType == benefitType &&
-                !b.IsDeleted);
-            if (!includeExpired)
-            {
-                benefits = benefits
-                    .Where(benefit => IsUsableAt(benefit, now))
-                    .ToList();
-            }
-            var selections = await _userBenefitCustomRepository.GetActiveSelectionsAsync(userId);
-            var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
-            FillBenefitState(benefits, benefitVos, selections, now);
-            return benefitVos;
+            benefits = benefits
+                .Where(benefit => IsUsableAt(benefit, now))
+                .ToList();
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 类型 {BenefitType} 权益列表失败", userId, benefitType);
-            throw;
-        }
+        var selections = await _userBenefitCustomRepository.GetActiveSelectionsAsync(userId);
+        var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
+        FillBenefitState(benefits, benefitVos, selections, now);
+        return benefitVos;
     }
 
     /// <summary>获取用户当前激活的权益</summary>
     public async Task<List<UserBenefitVo>> GetActiveBenefitsAsync(long userId)
     {
-        try
-        {
-            var benefits = await GetUserBenefitsAsync(userId);
-            return benefits.Where(benefit => benefit.VoStatus == UserBenefitStatus.Active).ToList();
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 激活权益列表失败", userId);
-            throw;
-        }
+        var benefits = await GetUserBenefitsAsync(userId);
+        return benefits.Where(benefit => benefit.VoStatus == UserBenefitStatus.Active).ToList();
     }
 
     /// <summary>检查用户是否拥有指定权益</summary>
     public async Task<bool> HasBenefitAsync(long userId, BenefitType benefitType, string? benefitValue = null)
     {
-        try
-        {
-            var now = GetUtcNow();
-            Expression<Func<UserBenefit, bool>> where = b =>
-                b.UserId == userId &&
-                b.BenefitType == benefitType &&
-                !b.IsDeleted &&
-                b.RevokedAt == null;
+        var now = GetUtcNow();
+        Expression<Func<UserBenefit, bool>> where = b =>
+            b.UserId == userId &&
+            b.BenefitType == benefitType &&
+            !b.IsDeleted &&
+            b.RevokedAt == null;
 
-            if (!string.IsNullOrWhiteSpace(benefitValue))
-            {
-                where = where.And(b => b.BenefitValue == benefitValue);
-            }
-
-            var benefits = await _userBenefitRepository.QueryAsync(where);
-            return benefits.Any(benefit =>
-                benefit.EffectiveAt <= now &&
-                IsUsableAt(benefit, now));
-        }
-        catch (Exception ex)
+        if (!string.IsNullOrWhiteSpace(benefitValue))
         {
-            Log.Error(ex, "检查用户 {UserId} 是否拥有权益 {BenefitType} 失败", userId, benefitType);
-            throw;
+            where = where.And(b => b.BenefitValue == benefitValue);
         }
+
+        var benefits = await _userBenefitRepository.QueryAsync(where);
+        return benefits.Any(benefit =>
+            benefit.EffectiveAt <= now &&
+            IsUsableAt(benefit, now));
     }
 
     #endregion
@@ -345,43 +312,32 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         DurationType durationType = DurationType.Permanent,
         int? durationDays = null)
     {
-        try
+        var now = GetUtcNow();
+        var benefit = new UserBenefit
         {
-            var now = GetUtcNow();
-            var benefit = new UserBenefit
-            {
-                UserId = userId,
-                BenefitType = benefitType,
-                BenefitValue = benefitValue,
-                BenefitName = benefitName,
-                BenefitIconAttachmentId = benefitIconAttachmentId,
-                SourceType = "System",
-                DurationType = durationType,
-                EffectiveAt = now,
-                IsExpired = false,
-                IsActive = false,
-                CreateTime = now,
-                CreateBy = "System",
-                CreateId = 0
-            };
+            UserId = userId,
+            BenefitType = benefitType,
+            BenefitValue = benefitValue,
+            BenefitName = benefitName,
+            BenefitIconAttachmentId = benefitIconAttachmentId,
+            SourceType = "System",
+            DurationType = durationType,
+            EffectiveAt = now,
+            IsExpired = false,
+            IsActive = false,
+            CreateTime = now,
+            CreateBy = "System",
+            CreateId = 0
+        };
 
-            if (durationType == DurationType.Days && durationDays.HasValue)
-            {
-                benefit.ExpiresAt = now.AddDays(durationDays.Value);
-            }
-
-            var benefitId = await _userBenefitRepository.AddAsync(benefit);
-
-            Log.Information("系统赠送权益成功：用户={UserId}, 权益ID={BenefitId}, 类型={BenefitType}",
-                userId, benefitId, benefitType);
-
-            return benefitId;
-        }
-        catch (Exception ex)
+        if (durationType == DurationType.Days && durationDays.HasValue)
         {
-            Log.Error(ex, "系统赠送权益失败：用户={UserId}, 类型={BenefitType}", userId, benefitType);
-            throw;
+            benefit.ExpiresAt = now.AddDays(durationDays.Value);
         }
+
+        var benefitId = await _userBenefitRepository.AddAsync(benefit);
+
+        return benefitId;
     }
 
     #endregion
@@ -419,8 +375,6 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         }
 
         var result = await _userBenefitCustomRepository.ActivateAsync(userId, benefitId, userId, "User", now);
-        Log.Information("权益选择完成：用户={UserId}, 权益ID={BenefitId}, Changed={Changed}",
-            userId, benefitId, result.Changed);
         return await BuildActionResultAsync(result, ShopEntitlementOperationTypes.Activate, now);
     }
 
@@ -430,8 +384,6 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     {
         var now = GetUtcNow();
         var result = await _userBenefitCustomRepository.DeactivateAsync(userId, benefitId, userId, "User", now);
-        Log.Information("权益停用完成：用户={UserId}, 权益ID={BenefitId}, Changed={Changed}",
-            userId, benefitId, result.Changed);
         return await BuildActionResultAsync(result, ShopEntitlementOperationTypes.Deactivate, now);
     }
 
@@ -456,8 +408,6 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             operatorId,
             operatorName,
             now);
-        Log.Information("管理员撤销权益完成：权益ID={BenefitId}, 操作者={OperatorId}, Changed={Changed}",
-            benefitId, operatorId, result.Changed);
         return await BuildActionResultAsync(result, ShopEntitlementOperationTypes.Revoke, now);
     }
 

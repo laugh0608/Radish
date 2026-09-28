@@ -209,4 +209,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `OrderService` 的用户订单、详情、按订单号查询、购买计数、管理列表 / 详情与备注移除重复重抛日志；备注正常保存不再复制操作员与订单身份。用户隔离、订单快照、查询口径、备注规范化、ModifyBy / ModifyId / ModifyTime 和 false 返回均保持原样。
 - ShopController 的五个商品写入入口与订单备注消费 InvalidOperationException 时输出 `product.management_rejected / order.remark_rejected` Warning，仅带安全 failureKind；原 400 / 409 响应不变。这些异常可能来自存储，不能一律理解为正常业务冲突。
 - 上述入口消费的 4xx BusinessException 保持安静；消费的 5xx BusinessException 使用安全 `http.failed` Error，带状态码与 failureKind。其他上抛异常由既有 API 最终边界处理，不再被 Service 重复记录。业务错误码、响应消息及状态未改变。
-- 本批只关闭上述商品与订单入口；系统赠送、权益查询 / 激活 / 停用 / 撤销、背包查询 / 使用 / 加减等仍按后续批次治理，不宣称完整商城链路收口。旧 / 候选输出均覆盖 Development / Production，mock 仓储及内存 HTTP 管道不替代真实数据库或运行态验收。生产候选开关继续关闭，证据见[本批记录](../records/unified-logging-l2-shop-management-2026-09-28.md)。
+- 本批只关闭上述商品与订单入口；系统赠送、权益查询 / 激活 / 停用 / 撤销、背包查询 / 使用 / 加减的后续治理见第 20 节，不宣称完整商城链路收口。旧 / 候选输出均覆盖 Development / Production，mock 仓储及内存 HTTP 管道不替代真实数据库或运行态验收。生产候选开关继续关闭，证据见[本批记录](../records/unified-logging-l2-shop-management-2026-09-28.md)。
+
+## 20. L2 系统赠送、权益操作与背包使用
+
+- `UserBenefitService` 的权益列表 / 按类型 / 当前激活 / 是否拥有查询及系统赠送移除仅记录再重抛的 catch；激活、停用、撤销不再复制用户与权益身份。有效期、撤销状态、激活选择、Changed 返回、原因规范化、仓储权威操作记录及事务属性保持不变。
+- `UserInventoryService` 的列表 / 按类型 / 数量查询、加减道具移除重复异常及成功明细；道具使用不再将操作 ID、用户、背包项与数量写入运行日志。保持原合并规则、条件扣减、首次 / 持久化成功重放、效果业务键、权威操作流水和幂等完成顺序。
+- ShopController 消费激活 / 停用 / 撤销的 InvalidOperationException 时记录 `benefit.activation_rejected / benefit.deactivation_rejected / benefit.revocation_rejected` Warning，仅带 failureKind。原 400 / 400 / 409 响应不变；异常也可能来自持久化，不能一律视为正常拒绝。其他异常继续交给 API 最终边界。
+- 道具使用与改名卡接口消费一般异常或 5xx BusinessException 时记录 `inventory.use_failed / inventory.rename_failed` Error，仅带 failureKind。接口仍按原契约返回 400 和失败结果；不因错误事件变成新的 5xx 响应。4xx BusinessException、正常失败结果与成功重放保持安静；经验发放层已经消费并记录的失败不重复报错。
+- 改名效果原本将 ArgumentException / InvalidOperationException 包装为默认 400 BusinessException；前者保持安静，后者在包装点记录一次 `inventory.rename_rejected` Warning。保留 InnerException、原消息、展示名变更审计与事务，不记录新旧展示名。IO 等未包装异常由道具接口消费，旧改名卡路由复用同一处理边界。
+- 本批不改变系统赠送或背包加减的既有调用 / 事务边界，不宣称所有商城与用户资料入口完成。旧 / 候选输出均覆盖 Development / Production，生产候选开关继续关闭。验证及限制见[本批记录](../records/unified-logging-l2-shop-entitlements-2026-09-28.md)。
