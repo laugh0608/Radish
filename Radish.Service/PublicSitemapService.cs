@@ -12,6 +12,7 @@ using Radish.Model;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Serilog;
+using Radish.Common.LogTool;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -125,7 +126,9 @@ public class PublicSitemapService : IPublicSitemapService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "生成公开 sitemap 失败，CacheKey={CacheKey}", cacheKey);
+            Log.ForContext("EventCode", "sitemap.generation_failed")
+                .ForContext("SourceCategory", "business")
+                .Error("Sitemap generation failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return LastSuccessfulXml.TryGetValue(cacheKey, out var lastSuccessfulXml)
                 ? lastSuccessfulXml
                 : buildFallbackXml();
@@ -140,7 +143,9 @@ public class PublicSitemapService : IPublicSitemapService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "读取 sitemap 缓存失败，CacheKey={CacheKey}", cacheKey);
+            Log.ForContext("EventCode", "sitemap.cache_read_failed")
+                .ForContext("SourceCategory", "business")
+                .Warning("Sitemap cache read failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return null;
         }
     }
@@ -153,7 +158,9 @@ public class PublicSitemapService : IPublicSitemapService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "写入 sitemap 缓存失败，CacheKey={CacheKey}", cacheKey);
+            Log.ForContext("EventCode", "sitemap.cache_write_failed")
+                .ForContext("SourceCategory", "business")
+                .Warning("Sitemap cache write failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
         }
     }
 
@@ -187,7 +194,9 @@ public class PublicSitemapService : IPublicSitemapService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "生成 sitemap index 时统计 {Section} 分片失败", section);
+            Log.ForContext("EventCode", "sitemap.section_count_failed")
+                .ForContext("SourceCategory", "business")
+                .Warning("Sitemap section count failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return;
         }
 

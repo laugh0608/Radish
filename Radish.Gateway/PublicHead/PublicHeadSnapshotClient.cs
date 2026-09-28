@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Caching.Memory;
+using Radish.Common.LogTool;
 
 namespace Radish.Gateway.PublicHead;
 
@@ -46,7 +47,11 @@ public sealed class PublicHeadSnapshotClient
 
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("公开 head 快照请求失败，Url={Url}, StatusCode={StatusCode}", requestUrl, response.StatusCode);
+                using var scope = _logger.BeginScope(new Dictionary<string, object>
+                {
+                    ["EventCode"] = "public_head.snapshot_unavailable", ["SourceCategory"] = "http"
+                });
+                _logger.LogWarning("Public head snapshot response is unavailable. status={statusCode}", (int)response.StatusCode);
                 return null;
             }
 
@@ -54,7 +59,11 @@ public sealed class PublicHeadSnapshotClient
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            _logger.LogWarning(ex, "公开 head 快照请求异常，Url={Url}", requestUrl);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "public_head.snapshot_request_failed", ["SourceCategory"] = "http"
+            });
+            _logger.LogWarning("Public head snapshot request failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return null;
         }
     }
@@ -79,7 +88,11 @@ public sealed class PublicHeadSnapshotClient
             using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                _logger.LogWarning("前端入口 HTML 请求失败，Url={Url}, StatusCode={StatusCode}", requestUrl, response.StatusCode);
+                using var scope = _logger.BeginScope(new Dictionary<string, object>
+                {
+                    ["EventCode"] = "public_head.html_unavailable", ["SourceCategory"] = "http"
+                });
+                _logger.LogWarning("Frontend HTML response is unavailable. status={statusCode}", (int)response.StatusCode);
                 return null;
             }
 
@@ -94,7 +107,11 @@ public sealed class PublicHeadSnapshotClient
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            _logger.LogWarning(ex, "前端入口 HTML 请求异常，Url={Url}", requestUrl);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "public_head.html_request_failed", ["SourceCategory"] = "http"
+            });
+            _logger.LogWarning("Frontend HTML request failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return null;
         }
     }

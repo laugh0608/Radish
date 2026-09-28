@@ -262,3 +262,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 手动清理过期锁定仅在清理数量为正时输出 `payment.locks_cleared` Info，包含 processedCount；零进展保持安静。该入口不是新增后台任务，UTC 时间参数、仓储操作和原数量响应不变。
 - PaymentPasswordController 设置 / 修改消费的 4xx BusinessException 保持安静；5xx 在该消费点输出安全 `http.failed` Error，仅带状态和 failureKind。其余上抛异常继续由 API 最终边界处理一次，原错误码、消息及响应保持不变。
 - 旧 / 候选输出覆盖 Development / Production；mock 仓储、真实 Service / Controller 与内存 HTTP 管道不替代真实数据库、审计中间件运行或并发验收。生产候选开关继续关闭，L2 尚未整体完成，证据见[本批记录](../records/unified-logging-l2-payment-password-2026-09-28.md)。
+
+## 26. L2 公开 head 快照、sitemap 与 Gateway 消费
+
+- `PublicHeadSnapshotService` 的缓存读取 / 解析与写入失败分别使用 `public_head.cache_read_failed / public_head.cache_write_failed` Warning，仅带固定 failureKind，不再输出缓存键、快照、URL 或异常原文。缓存命中、缺失和未知路由保持安静；20 分钟 TTL、公开可见性筛选、快照字段及查询异常传播不变。
+- `PublicSitemapService` 的缓存读取 / 写入异常分别使用 `sitemap.cache_read_failed / sitemap.cache_write_failed` Warning；生成异常使用 `sitemap.generation_failed` Error；索引单个栏目统计失败使用 `sitemap.section_count_failed` Warning。仅带 failureKind，不输出缓存键或栏目参数。30 分钟 TTL、查询 / 分片规则、上次成功 XML / 空 XML 回退及部分索引生成保持原样，各消费点只记录自身故障。
+- API 两个公开 Controller 无新增 catch；head 查询异常继续由 API 最终边界记录一次 `http.failed`。缺失资源仍为 404，正常快照 / XML 的内容与响应类型不变。
+- Gateway 获取快照 / 前端 HTML 的非成功响应分别使用 `public_head.snapshot_unavailable / public_head.html_unavailable` Warning，仅含整数 statusCode；快照 404 仍安静。原本捕获的 HttpRequestException / TaskCanceledException 使用 `public_head.snapshot_request_failed / public_head.html_request_failed` Warning，仅带 failureKind，继续返回 null；不扩大捕获范围。
+- Gateway 注入 / 响应写入被捕获的异常使用 `public_head.injection_failed` Warning，仅带 failureKind，继续调用后续处理；日志作用域在调用后续处理前结束。五分钟入口 HTML 缓存、十分钟注入缓存、请求与转发头规则、缺失回退及 JSON 解析异常原传播边界未改变。
+- 同一跨宿主故障可能分别产生 API 的处理失败和 Gateway 的不可用响应事件，二者描述不同边界，不宣称分布式全链只产生一条日志。旧 / 候选输出覆盖 Development / Production，生产开关继续关闭；本批未治理全部 HttpClient / YARP 框架日志，证据与限制见[本批记录](../records/unified-logging-l2-public-metadata-2026-09-28.md)。
