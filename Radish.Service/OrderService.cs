@@ -325,6 +325,12 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         }
         catch (Exception ex)
         {
+            // 包装后的业务异常默认返回 400，API 边界不会为其记录 Error。
+            // 此处负责未被支付 / 履约分支消费的失败，也包括独立的补偿或后续写入失败。
+            Log.ForContext("EventCode", "order.purchase_interrupted")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                .Error("Purchase interrupted before returning a result");
             throw new BusinessException("购买失败，请稍后重试", ex);
         }
     }
@@ -333,25 +339,17 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     [UseTran]
     public async Task<bool> CancelOrderAsync(long userId, long orderId, string? reason = null)
     {
-        try
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
+        if (order == null)
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
-            if (order == null)
-            {
-                throw new InvalidOperationException("订单不存在");
-            }
+            throw new InvalidOperationException("订单不存在");
+        }
 
-            return await CancelPendingOrderAsync(
-                order,
-                string.IsNullOrWhiteSpace(reason) ? "用户取消" : reason.Trim(),
-                "User",
-                userId);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "取消订单 {OrderId} 失败", orderId);
-            throw;
-        }
+        return await CancelPendingOrderAsync(
+            order,
+            string.IsNullOrWhiteSpace(reason) ? "用户取消" : reason.Trim(),
+            "User",
+            userId);
     }
 
     /// <summary>系统取消订单</summary>
@@ -601,54 +599,41 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     [UseTran]
     public async Task<bool> RetryGrantBenefitAsync(long orderId)
     {
-        try
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+        if (order == null)
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
-            if (order == null)
-            {
-                throw new BusinessException(
-                    "订单不存在",
-                    (int)HttpStatusCodeEnum.NotFound,
-                    "Order.NotFound",
-                    "error.order.not_found");
-            }
-
-            if (order.Status != OrderStatus.Failed)
-            {
-                throw BuildRetryRejected("只能重试发放失败的订单");
-            }
-
-            if (order.FailureStage != OrderFailureStage.Fulfillment)
-            {
-                throw BuildRetryRejected("支付阶段失败的订单不能重试发放");
-            }
-
-            await EnsureValidPaymentEvidenceAsync(order);
-
-            var fulfillmentResult = await _userBenefitService.GrantOrderFulfillmentAsync(order);
-            order.GrantedBenefitId = fulfillmentResult.GrantedBenefitId;
-            order.GrantedInventoryId = fulfillmentResult.GrantedInventoryId;
-            order.BenefitExpiresAt = fulfillmentResult.ExpiresAt;
-            order.Status = OrderStatus.Completed;
-            order.FailureStage = OrderFailureStage.None;
-            order.CompletedTime = GetUtcNow();
-            order.FailReason = null;
-            order.ModifyTime = GetUtcNow();
-
-            var result = await _orderRepository.UpdateAsync(order);
-
-            if (result)
-            {
-                Log.Information("订单 {OrderId} 权益重新发放成功", orderId);
-            }
-
-            return result;
+            throw new BusinessException(
+                "订单不存在",
+                (int)HttpStatusCodeEnum.NotFound,
+                "Order.NotFound",
+                "error.order.not_found");
         }
-        catch (Exception ex)
+
+        if (order.Status != OrderStatus.Failed)
         {
-            Log.Error(ex, "重新发放订单 {OrderId} 权益失败", orderId);
-            throw;
+            throw BuildRetryRejected("只能重试发放失败的订单");
         }
+
+        if (order.FailureStage != OrderFailureStage.Fulfillment)
+        {
+            throw BuildRetryRejected("支付阶段失败的订单不能重试发放");
+        }
+
+        await EnsureValidPaymentEvidenceAsync(order);
+
+        var fulfillmentResult = await _userBenefitService.GrantOrderFulfillmentAsync(order);
+        order.GrantedBenefitId = fulfillmentResult.GrantedBenefitId;
+        order.GrantedInventoryId = fulfillmentResult.GrantedInventoryId;
+        order.BenefitExpiresAt = fulfillmentResult.ExpiresAt;
+        order.Status = OrderStatus.Completed;
+        order.FailureStage = OrderFailureStage.None;
+        order.CompletedTime = GetUtcNow();
+        order.FailReason = null;
+        order.ModifyTime = GetUtcNow();
+
+        var result = await _orderRepository.UpdateAsync(order);
+
+        return result;
     }
 
     #endregion

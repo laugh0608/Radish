@@ -135,7 +135,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 抽奖保持 batchSize 1–100 钳制和 PostId 去重；单项异常消费后继续，当前批次一次 Error，成功计数沿用服务正常返回次数。扫描异常不消费、不输出本地 Error，仍交给 Hangfire；后续周期能否成功不在当前批次作保证。
 - 神评 / 沙发保持统计窗口、排名、快照、先奖励后批量插入和幂等业务键。移除各层仅记录再重抛的 catch，异常仍由 Hangfire 接管；完整执行后才输出本 Job 的批次摘要。`processedCount` 是成功返回的 AddRange 调用所提交的记录数，`updatedCount` 是取消旧当前标记的更新返回行数，`rewardCount` 是服务报告新发放的币 / 经验操作数，不是金额。只有旧标记退役也有摘要。中途异常不生成完成摘要，不宣称此前动作已回滚。
 - 保留奖励保持两阶段顺序、按原 DateTime.Now 计算完整周数、最多 3 周及既有失败处理。每项异常继续、阶段查询异常返回 0 后继续下一阶段、顶层异常返回 (0, 0) 均不变；跨阶段已成功的奖励仍计入 rewardCount。现有“已发放过”文本判定与空 FailureReason 行为保持不变，本批不改结果类型或结算时钟。
-- `CoinRewardService` 的点赞加成 / 保留奖励方法以及 `OrderService.CancelOrderBySystemAsync` 移除重复的重抛日志；共享订单取消 helper 不再复制取消原因到运行日志。金额、返回理由、事务边界及数据库字段不变。**这不代表整条业务调用链已完成治理**：币 / 经验的实际发放后续见第 12 节，库存服务及其他业务入口仍需按调用链处理。验证与剩余边界见[批次记录](../records/unified-logging-l2-business-jobs-2026-09-23.md)。
+- `CoinRewardService` 的点赞加成 / 保留奖励方法以及 `OrderService.CancelOrderBySystemAsync` 移除重复的重抛日志；共享订单取消 helper 不再复制取消原因到运行日志。金额、返回理由、事务边界及数据库字段不变。**这不代表整条业务调用链已完成治理**：币 / 经验的实际发放后续见第 12 节，库存 / 订单履约依赖的后续治理见第 16 节；其他业务入口仍需按调用链处理。验证与剩余边界见[批次记录](../records/unified-logging-l2-business-jobs-2026-09-23.md)。
 
 ## 12. L2 币 / 经验奖励实际发放链
 
@@ -165,8 +165,8 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 资金操作返回流水后，首次幂等完成写入抛错，仍只重试完成记录一次；第二次调用正常返回时输出 `coin.transfer_completion_recovered` Warning，只有安全 failureKind。该事件表示调用恢复返回，不证明记录持久化成功：底层缺失记录本来就可能正常返回。第二次仍抛错则不输出恢复事件，交给外层最终错误边界；不再执行资金写入。
 - `OperationIdempotencyService` 唯一键竞争回查成功保持安静，回查无记录仍传播原异常。完成成功 / 失败时记录缺失使用 `idempotency.completion_missing` Warning，completionKind 仅为 success / failure，不输出记录 ID、幂等键、摘要、用户或异常。保存点、24 小时保留、响应及错误审计字段、缺失时直接返回等原行为不变；这些共享方法的其他调用方同样继承安全输出。
 - `PaymentPasswordService.VerifyPaymentPasswordAsync` 及其哈希升级 helper 移除逐次成功 / 失败和重复重抛日志；仍保留验证算法、旧版本升级、成功重置计数 / 使用时间、失败累加、5 次失败锁定 30 分钟、返回错误码与剩余次数。无新增口令或安全遥测；设置 / 修改 / 人工解锁等其他入口后续治理。
-- `OrderService.PurchaseAsync` 的扣币 / 权益 catch 消费异常时记录 `order.purchase_failed` Error，purchaseStage 仅为 payment / fulfillment。保留库存恢复、订单失败阶段 / FailReason、幂等结果与返回值；外层仍包装 BusinessException 后抛出，不另记重复 Error。移除逐次开始 / 成功与支付业务拒绝日志，避免权益失败却打印购买成功。
-- 旧与候选 sink 均收到安全生成端事件。审计仍可能保留既有错误说明，本批不改变数据库或 API 契约。余额查询的后续治理见第 15 节；商城库存、权益及其其他入口尚未全部治理，不能以直接消费层完成宣称全链路异常唯一归属。真实数据库事务 / 并发、Redis 或支付场景运行验收不由 mock 回归替代；生产候选开关继续关闭。证据见[本批记录](../records/unified-logging-l2-coin-movement-2026-09-23.md)。
+- `OrderService.PurchaseAsync` 的扣币 / 权益 catch 消费异常时记录 `order.purchase_failed` Error，purchaseStage 仅为 payment / fulfillment。保留库存恢复、订单失败阶段 / FailReason、幂等结果与返回值；外层仍包装 BusinessException 后抛出；默认 400 导致最终 API 边界不记 Error 的责任补齐见第 16 节。移除逐次开始 / 成功与支付业务拒绝日志，避免权益失败却打印购买成功。
+- 旧与候选 sink 均收到安全生成端事件。审计仍可能保留既有错误说明，本批不改变数据库或 API 契约。余额查询的后续治理见第 15 节；商城库存 / 订单履约的后续治理见第 16 节，商城其他入口尚未全部治理，不能以直接消费层完成宣称全链路异常唯一归属。真实数据库事务 / 并发、Redis 或支付场景运行验收不由 mock 回归替代；生产候选开关继续关闭。证据见[本批记录](../records/unified-logging-l2-coin-movement-2026-09-23.md)。
 
 ## 15. L2 币账户查询与人工调账 / 经验治理
 
@@ -175,4 +175,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - CoinController 的余额 / 交易查询和人工调账仍按既有契约将 InvalidOperationException 转为业务响应；最终消费点分别输出 `coin.balance_query_rejected / coin.transaction_query_rejected / coin.adjustment_rejected` Warning，只带固定 `failureKind`。这类异常可能包括业务拒绝和存储失败，不能将 Warning 一律解释为正常业务拒绝。ArgumentException 与 4xx BusinessException 保持安静；人工调账消费的 5xx BusinessException 记录一次安全 `http.failed` Error，其余上抛失败交给既有 API 最终边界。
 - `ExperienceService.AdminAdjustExperienceAsync / FreezeExperienceAsync / UnfreezeExperienceAsync` 移除逐次成功日志。经验扣减归零、版本冲突转换、幂等重放、升级 Outbox、冻结状态、权威经验流水及治理动作保持不变；成功操作的身份与理由仍保存在权威记录中。
 - 旧 / 候选输出均在 Development / Production 验证；通过真实 Service、Controller、TranAop 与内存 HTTP 管道确认回滚调用及单次安全 Error。mock 仓储与事务管理器不代表真实数据库事务 / 并发验收。
-- 本节仅关闭上述入口。经验账户 / 统计 / 流水查询、人工复核 / 等级治理、商城库存 / 权益、其余奖励与口令治理仍有后续工作；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。
+- 本节仅关闭上述入口。商城库存 / 订单履约的后续治理见第 16 节；经验账户 / 统计 / 流水查询、人工复核 / 等级治理、其余奖励与口令治理仍有后续工作；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。
+
+## 16. L2 商城库存与订单履约依赖
+
+- `ProductService.CheckCanBuyAsync / DeductStockAsync / RestoreStockAsync / IncreaseSoldCountAsync` 移除重复重抛日志；商品配置不完整只输出固定 `product.configuration_rejected` Warning，不携带商品、配置值或理由。购买校验、限购口径、库存扣减 / 回补、已售数量、租户 / 版本条件及返回结果保持不变。
+- 扣库存继续沿用“InvalidOperationException 消息含乐观锁冲突”的既有重试判断、最多 5 次尝试和 50 / 100 / 200 / 400ms 退避。仅即将重试时记录 `product.stock_retrying` Warning，属性只含 attempt / delayMs；耗尽继续传播，不在底层额外打印 Error 或“已耗尽”事件。
+- `UserBenefitService.GrantOrderFulfillmentAsync` 及权益 / 消耗品 helper 移除逐次开始、成功、重放和重抛日志。保留订单快照校验、来源唯一键回查、原异常传播、固定到期日、背包订单发放接口与事务属性；不会用当前商品替代历史履约快照。空订单的原有 ArgumentNullException 校验不再被日志取字段导致的 NullReferenceException 覆盖。
+- `OrderService.CancelOrderAsync / RetryGrantBenefitAsync` 移除重复日志；取消原因、条件取消、库存回补、支付证据、失败阶段、履约资源与订单状态写入保持原样。ShopController 消费的 InvalidOperationException 分别记录 `order.cancellation_rejected / order.fulfillment_retry_rejected` Warning，只带 failureKind；它们可能包含存储或补偿失败，不能一律视为正常业务拒绝。重新发放的 4xx BusinessException 安静，消费的 5xx 使用安全 `http.failed` Error，其余上抛异常交给 API 最终边界。
+- 购买支付 / 履约分支继续使用 `order.purchase_failed`。外层包装为默认 400 BusinessException，API 最终边界不会再记录 Error，因此包装点使用 `order.purchase_interrupted` Error 负责尚未被分支消费的失败，仅带 failureKind。支付失败后回补库存另抛错、履约失败后订单写入另抛错是独立失败，允许分别记录分支事件与中断事件；不改变默认 400、InnerException、补偿顺序或订单 FailReason。
+- 旧 / 候选输出均覆盖 Development / Production，使用真实 ProductService / UserBenefitService / OrderService、Controller 与内存 HTTP 管道、mock 仓储验证；不代表真实数据库并发、事务或库存运行态验收。本节不涵盖商品管理 / 浏览、订单查询 / 备注、系统赠送、权益查询 / 激活 / 撤销及背包使用等其他入口。生产候选开关继续关闭，证据见[本批记录](../records/unified-logging-l2-shop-fulfillment-2026-09-28.md)。

@@ -7,12 +7,14 @@ using Radish.Api.Filters;
 using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -353,6 +355,9 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            Log.ForContext("EventCode", "order.cancellation_rejected")
+                .ForContext("SourceCategory", "http")
+                .Warning("Order cancellation rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return MessageModel<bool>.Message(false, ex.Message, false);
         }
     }
@@ -924,6 +929,12 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
+            }
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -931,8 +942,11 @@ public class ShopController : ControllerBase
                 ex.MessageKey ?? "error.order.retry_rejected",
                 false);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            Log.ForContext("EventCode", "order.fulfillment_retry_rejected")
+                .ForContext("SourceCategory", "http")
+                .Warning("Order fulfillment retry rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 "当前订单不能重新发放，请刷新后核对订单状态与支付证据",

@@ -172,7 +172,12 @@
     "order.purchase_failed": "Purchase stage consumed a failure.",
     "coin.balance_query_rejected": "Balance query rejected.",
     "coin.transaction_query_rejected": "Transaction query rejected.",
-    "coin.adjustment_rejected": "Balance adjustment rejected."
+    "coin.adjustment_rejected": "Balance adjustment rejected.",
+    "product.configuration_rejected": "Product configuration rejected purchase.",
+    "product.stock_retrying": "Stock update will retry after a conflict.",
+    "order.purchase_interrupted": "Purchase interrupted before returning a result.",
+    "order.cancellation_rejected": "Order cancellation rejected.",
+    "order.fulfillment_retry_rejected": "Order fulfillment retry rejected."
   },
   "properties": {
     "durationMs": {

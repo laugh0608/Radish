@@ -220,77 +220,71 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     /// <summary>检查用户是否可以购买商品</summary>
     public async Task<(bool canBuy, string? reason)> CheckCanBuyAsync(long userId, long productId, int quantity = 1)
     {
-        try
+        if (quantity < 1)
         {
-            if (quantity < 1)
-            {
-                return (false, "购买数量必须大于 0");
-            }
-
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-
-            if (product == null)
-            {
-                return (false, "商品不存在");
-            }
-
-            if (!product.IsEnabled)
-            {
-                return (false, "商品已下架");
-            }
-
-            if (!product.IsOnSale)
-            {
-                return (false, "商品未上架");
-            }
-
-            if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
-            {
-                return (false, $"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，当前不可购买");
-            }
-
-            var productConfigurationError = GetInvalidProductConfigurationMessage(
-                product.ProductType,
-                product.BenefitType,
-                product.ConsumableType,
-                product.BenefitValue,
-                product.IconAttachmentId);
-            if (productConfigurationError == null &&
-                product.ProductType == ProductType.Benefit &&
-                product.BenefitType == BenefitType.Badge &&
-                !await IsPublicAttachmentAvailableAsync(product.IconAttachmentId!.Value))
-            {
-                productConfigurationError = "徽章图标附件不存在、不可公开或已失效";
-            }
-            if (productConfigurationError != null)
-            {
-                Log.Warning("商品 {ProductId} 配置不完整，拒绝购买：{Reason}", productId, productConfigurationError);
-                return (false, "商品配置不完整，请联系管理员");
-            }
-
-            // 检查库存
-            if (product.StockType == StockType.Limited && product.Stock < quantity)
-            {
-                return (false, "库存不足");
-            }
-
-            // 检查限购
-            if (product.LimitPerUser > 0)
-            {
-                var purchasedCount = await GetUserPurchaseCountAsync(userId, productId);
-                if (purchasedCount + quantity > product.LimitPerUser)
-                {
-                    return (false, $"该商品每人限购 {product.LimitPerUser} 件，您已购买 {purchasedCount} 件");
-                }
-            }
-
-            return (true, null);
+            return (false, "购买数量必须大于 0");
         }
-        catch (Exception ex)
+
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+
+        if (product == null)
         {
-            Log.Error(ex, "检查用户 {UserId} 是否可购买商品 {ProductId} 失败", userId, productId);
-            throw;
+            return (false, "商品不存在");
         }
+
+        if (!product.IsEnabled)
+        {
+            return (false, "商品已下架");
+        }
+
+        if (!product.IsOnSale)
+        {
+            return (false, "商品未上架");
+        }
+
+        if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
+        {
+            return (false, $"{ShopProductAvailabilityPolicy.GetUnavailableProductDisplayName(product.BenefitType, product.ConsumableType)}暂未开放，当前不可购买");
+        }
+
+        var productConfigurationError = GetInvalidProductConfigurationMessage(
+            product.ProductType,
+            product.BenefitType,
+            product.ConsumableType,
+            product.BenefitValue,
+            product.IconAttachmentId);
+        if (productConfigurationError == null &&
+            product.ProductType == ProductType.Benefit &&
+            product.BenefitType == BenefitType.Badge &&
+            !await IsPublicAttachmentAvailableAsync(product.IconAttachmentId!.Value))
+        {
+            productConfigurationError = "徽章图标附件不存在、不可公开或已失效";
+        }
+        if (productConfigurationError != null)
+        {
+            Log.ForContext("EventCode", "product.configuration_rejected")
+                .ForContext("SourceCategory", "application")
+                .Warning("Product configuration rejected purchase");
+            return (false, "商品配置不完整，请联系管理员");
+        }
+
+        // 检查库存
+        if (product.StockType == StockType.Limited && product.Stock < quantity)
+        {
+            return (false, "库存不足");
+        }
+
+        // 检查限购
+        if (product.LimitPerUser > 0)
+        {
+            var purchasedCount = await GetUserPurchaseCountAsync(userId, productId);
+            if (purchasedCount + quantity > product.LimitPerUser)
+            {
+                return (false, $"该商品每人限购 {product.LimitPerUser} 件，您已购买 {purchasedCount} 件");
+            }
+        }
+
+        return (true, null);
     }
 
     public Task<List<ShopProductCapabilityVo>> GetProductCapabilitiesAsync()
@@ -361,114 +355,90 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     /// <summary>扣减库存</summary>
     public async Task<bool> DeductStockAsync(long productId, int quantity)
     {
-        try
+        return await ExecuteWithRetryAsync(async () =>
         {
-            return await ExecuteWithRetryAsync(async () =>
+            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+            if (product == null)
             {
-                var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-                if (product == null)
+                throw new InvalidOperationException("商品不存在");
+            }
+
+            if (product.StockType == StockType.Unlimited)
+            {
+                return true; // 无限库存不需要扣减
+            }
+
+            if (product.Stock < quantity)
+            {
+                throw new InvalidOperationException("库存不足");
+            }
+
+            var currentVersion = product.Version;
+            product.Stock -= quantity;
+            product.Version++;
+            product.ModifyTime = DateTime.Now;
+
+            var affected = await _productRepository.UpdateColumnsAsync(
+                p => new Product
                 {
-                    throw new InvalidOperationException("商品不存在");
-                }
+                    Stock = product.Stock,
+                    Version = product.Version,
+                    ModifyTime = product.ModifyTime
+                },
+                p => p.Id == productId && p.Version == currentVersion && p.TenantId == product.TenantId);
 
-                if (product.StockType == StockType.Unlimited)
-                {
-                    return true; // 无限库存不需要扣减
-                }
+            if (affected == 0)
+            {
+                throw new InvalidOperationException("乐观锁冲突，请重试");
+            }
 
-                if (product.Stock < quantity)
-                {
-                    throw new InvalidOperationException("库存不足");
-                }
-
-                var currentVersion = product.Version;
-                product.Stock -= quantity;
-                product.Version++;
-                product.ModifyTime = DateTime.Now;
-
-                var affected = await _productRepository.UpdateColumnsAsync(
-                    p => new Product
-                    {
-                        Stock = product.Stock,
-                        Version = product.Version,
-                        ModifyTime = product.ModifyTime
-                    },
-                    p => p.Id == productId && p.Version == currentVersion && p.TenantId == product.TenantId);
-
-                if (affected == 0)
-                {
-                    throw new InvalidOperationException("乐观锁冲突，请重试");
-                }
-
-                return true;
-            });
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "扣减商品 {ProductId} 库存失败", productId);
-            throw;
-        }
+            return true;
+        });
     }
 
     /// <summary>恢复库存</summary>
     public async Task<bool> RestoreStockAsync(long productId, int quantity, StockType stockType)
     {
-        try
+        if (stockType == StockType.Unlimited)
         {
-            if (stockType == StockType.Unlimited)
-            {
-                return true;
-            }
-
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-            if (product == null)
-            {
-                return false;
-            }
-
-            var affected = await _productRepository.UpdateColumnsAsync(
-                p => new Product
-                {
-                    Stock = p.Stock + quantity,
-                    ModifyTime = DateTime.Now
-                },
-                p => p.Id == productId && p.TenantId == product.TenantId);
-
-            return affected > 0;
+            return true;
         }
-        catch (Exception ex)
+
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+        if (product == null)
         {
-            Log.Error(ex, "恢复商品 {ProductId} 库存失败", productId);
-            throw;
+            return false;
         }
+
+        var affected = await _productRepository.UpdateColumnsAsync(
+            p => new Product
+            {
+                Stock = p.Stock + quantity,
+                ModifyTime = DateTime.Now
+            },
+            p => p.Id == productId && p.TenantId == product.TenantId);
+
+        return affected > 0;
     }
 
     /// <summary>增加已售数量</summary>
     public async Task<bool> IncreaseSoldCountAsync(long productId, int quantity)
     {
-        try
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+        if (product == null)
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-            if (product == null)
+            return false;
+        }
+
+        var affected = await _productRepository.UpdateColumnsAsync(
+            p => new Product
             {
-                return false;
-            }
+                SoldCount = p.SoldCount + quantity,
+                ModifyTime = DateTime.Now
+            },
+            p => p.Id == productId && p.TenantId == product.TenantId);
 
-            var affected = await _productRepository.UpdateColumnsAsync(
-                p => new Product
-                {
-                    SoldCount = p.SoldCount + quantity,
-                    ModifyTime = DateTime.Now
-                },
-                p => p.Id == productId && p.TenantId == product.TenantId);
-
-            return affected > 0;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "增加商品 {ProductId} 已售数量失败", productId);
-            throw;
-        }
+        return affected > 0;
     }
 
     #endregion
@@ -974,12 +944,13 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             {
                 if (i == MaxRetryCount - 1)
                 {
-                    Log.Warning("乐观锁冲突重试次数已达上限");
                     throw;
                 }
 
                 var delay = BaseRetryDelayMs * (int)Math.Pow(2, i);
-                Log.Debug("乐观锁冲突，第 {RetryCount} 次重试，延迟 {Delay}ms", i + 1, delay);
+                Log.ForContext("EventCode", "product.stock_retrying")
+                    .ForContext("SourceCategory", "application")
+                    .Warning("Stock update retry {attempt}; delay={delayMs}", i + 1, delay);
                 await Task.Delay(delay);
             }
         }

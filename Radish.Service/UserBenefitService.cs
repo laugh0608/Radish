@@ -235,31 +235,19 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     [UseTran(Propagation = Propagation.Required)]
     public async Task<OrderFulfillmentResultDto> GrantOrderFulfillmentAsync(Order order)
     {
-        try
+        EnsureValidOrderSnapshot(order);
+
+        if (order.ProductType == ProductType.Benefit && order.BenefitType.HasValue)
         {
-            EnsureValidOrderSnapshot(order);
-
-            Log.Information("开始发放权益：用户={UserId}, 商品={ProductId}, 订单={OrderId}",
-                order.UserId, order.ProductId, order.Id);
-
-            if (order.ProductType == ProductType.Benefit && order.BenefitType.HasValue)
-            {
-                return await GrantBenefitItemAsync(order);
-            }
-
-            if (order.ProductType == ProductType.Consumable && order.ConsumableType.HasValue)
-            {
-                return await GrantConsumableItemAsync(order);
-            }
-
-            throw new InvalidOperationException($"不支持的商品类型：{order.ProductType}");
+            return await GrantBenefitItemAsync(order);
         }
-        catch (Exception ex)
+
+        if (order.ProductType == ProductType.Consumable && order.ConsumableType.HasValue)
         {
-            Log.Error(ex, "发放权益失败：用户={UserId}, 商品={ProductId}, 订单={OrderId}",
-                order.UserId, order.ProductId, order.Id);
-            throw;
+            return await GrantConsumableItemAsync(order);
         }
+
+        throw new InvalidOperationException($"不支持的商品类型：{order.ProductType}");
     }
 
     /// <summary>发放权益类商品</summary>
@@ -320,9 +308,6 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             throw;
         }
 
-        Log.Information("权益发放成功：用户={UserId}, 权益ID={BenefitId}, 类型={BenefitType}",
-            order.UserId, benefitId, order.BenefitType);
-
         return new OrderFulfillmentResultDto
         {
             GrantedBenefitId = benefitId,
@@ -343,15 +328,6 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
             order.Quantity,
             order.Id,
             order.ProductId);
-
-        Log.Information(
-            grantResult.CreatedGrantRecord
-                ? "消耗品发放成功：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}, 数量={Quantity}"
-                : "消耗品订单已发放，复用既有背包项：用户={UserId}, 道具ID={ItemId}, 类型={ConsumableType}, 当前数量={Quantity}",
-            order.UserId,
-            grantResult.InventoryId,
-            order.ConsumableType,
-            grantResult.CreatedGrantRecord ? grantResult.QuantityDelta : grantResult.CurrentQuantity);
 
         return new OrderFulfillmentResultDto
         {
