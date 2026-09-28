@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，下一步治理剩余业务事件；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -164,7 +164,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `TransferAsync` 不输出用户、金额、流水号、支付验证理由或异常正文。支付拒绝及幂等成功 / 终态失败重放保持原有结果且不逐条输出。异常规范化、资产写入后的终态失败占键、CompleteFailure 分支、Controller 的 BusinessException 映射均保持不变。
 - 资金操作返回流水后，首次幂等完成写入抛错，仍只重试完成记录一次；第二次调用正常返回时输出 `coin.transfer_completion_recovered` Warning，只有安全 failureKind。该事件表示调用恢复返回，不证明记录持久化成功：底层缺失记录本来就可能正常返回。第二次仍抛错则不输出恢复事件，交给外层最终错误边界；不再执行资金写入。
 - `OperationIdempotencyService` 唯一键竞争回查成功保持安静，回查无记录仍传播原异常。完成成功 / 失败时记录缺失使用 `idempotency.completion_missing` Warning，completionKind 仅为 success / failure，不输出记录 ID、幂等键、摘要、用户或异常。保存点、24 小时保留、响应及错误审计字段、缺失时直接返回等原行为不变；这些共享方法的其他调用方同样继承安全输出。
-- `PaymentPasswordService.VerifyPaymentPasswordAsync` 及其哈希升级 helper 移除逐次成功 / 失败和重复重抛日志；仍保留验证算法、旧版本升级、成功重置计数 / 使用时间、失败累加、5 次失败锁定 30 分钟、返回错误码与剩余次数。无新增口令或安全遥测；设置 / 修改 / 人工解锁等其他入口后续治理。
+- `PaymentPasswordService.VerifyPaymentPasswordAsync` 及其哈希升级 helper 移除逐次成功 / 失败和重复重抛日志；仍保留验证算法、旧版本升级、成功重置计数 / 使用时间、失败累加、5 次失败锁定 30 分钟、返回错误码与剩余次数。无新增口令或安全遥测；设置 / 修改 / 人工解锁等其他入口的已完成治理见第 25 节。
 - `OrderService.PurchaseAsync` 的扣币 / 权益 catch 消费异常时记录 `order.purchase_failed` Error，purchaseStage 仅为 payment / fulfillment。保留库存恢复、订单失败阶段 / FailReason、幂等结果与返回值；外层仍包装 BusinessException 后抛出；默认 400 导致最终 API 边界不记 Error 的责任补齐见第 16 节。移除逐次开始 / 成功与支付业务拒绝日志，避免权益失败却打印购买成功。
 - 旧与候选 sink 均收到安全生成端事件。审计仍可能保留既有错误说明，本批不改变数据库或 API 契约。余额查询的后续治理见第 15 节；商城库存 / 订单履约的后续治理见第 16 节，商城其他入口尚未全部治理，不能以直接消费层完成宣称全链路异常唯一归属。真实数据库事务 / 并发、Redis 或支付场景运行验收不由 mock 回归替代；生产候选开关继续关闭。证据见[本批记录](../records/unified-logging-l2-coin-movement-2026-09-23.md)。
 
@@ -175,7 +175,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - CoinController 的余额 / 交易查询和人工调账仍按既有契约将 InvalidOperationException 转为业务响应；最终消费点分别输出 `coin.balance_query_rejected / coin.transaction_query_rejected / coin.adjustment_rejected` Warning，只带固定 `failureKind`。这类异常可能包括业务拒绝和存储失败，不能将 Warning 一律解释为正常业务拒绝。ArgumentException 与 4xx BusinessException 保持安静；人工调账消费的 5xx BusinessException 记录一次安全 `http.failed` Error，其余上抛失败交给既有 API 最终边界。
 - `ExperienceService.AdminAdjustExperienceAsync / FreezeExperienceAsync / UnfreezeExperienceAsync` 移除逐次成功日志。经验扣减归零、版本冲突转换、幂等重放、升级 Outbox、冻结状态、权威经验流水及治理动作保持不变；成功操作的身份与理由仍保存在权威记录中。
 - 旧 / 候选输出均在 Development / Production 验证；通过真实 Service、Controller、TranAop 与内存 HTTP 管道确认回滚调用及单次安全 Error。mock 仓储与事务管理器不代表真实数据库事务 / 并发验收。
-- 本节仅关闭上述入口。商城库存 / 订单履约的后续治理见第 16 节，其余奖励入口见第 17 节；经验账户 / 统计 / 流水查询、人工复核 / 等级治理见第 18 节，口令治理仍有后续工作；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。
+- 本节仅关闭上述入口。商城库存 / 订单履约的后续治理见第 16 节，其余奖励入口见第 17 节；经验账户 / 统计 / 流水查询、人工复核 / 等级治理见第 18 节，口令设置 / 修改 / 管理查询见第 25 节；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。
 
 ## 16. L2 商城库存与订单履约依赖
 
@@ -184,7 +184,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `UserBenefitService.GrantOrderFulfillmentAsync` 及权益 / 消耗品 helper 移除逐次开始、成功、重放和重抛日志。保留订单快照校验、来源唯一键回查、原异常传播、固定到期日、背包订单发放接口与事务属性；不会用当前商品替代历史履约快照。空订单的原有 ArgumentNullException 校验不再被日志取字段导致的 NullReferenceException 覆盖。
 - `OrderService.CancelOrderAsync / RetryGrantBenefitAsync` 移除重复日志；取消原因、条件取消、库存回补、支付证据、失败阶段、履约资源与订单状态写入保持原样。ShopController 消费的 InvalidOperationException 分别记录 `order.cancellation_rejected / order.fulfillment_retry_rejected` Warning，只带 failureKind；它们可能包含存储或补偿失败，不能一律视为正常业务拒绝。重新发放的 4xx BusinessException 安静，消费的 5xx 使用安全 `http.failed` Error，其余上抛异常交给 API 最终边界。
 - 购买支付 / 履约分支继续使用 `order.purchase_failed`。外层包装为默认 400 BusinessException，API 最终边界不会再记录 Error，因此包装点使用 `order.purchase_interrupted` Error 负责尚未被分支消费的失败，仅带 failureKind。支付失败后回补库存另抛错、履约失败后订单写入另抛错是独立失败，允许分别记录分支事件与中断事件；不改变默认 400、InnerException、补偿顺序或订单 FailReason。
-- 旧 / 候选输出均覆盖 Development / Production，使用真实 ProductService / UserBenefitService / OrderService、Controller 与内存 HTTP 管道、mock 仓储验证；不代表真实数据库并发、事务或库存运行态验收。本节不涵盖商品管理 / 浏览、订单查询 / 备注、系统赠送、权益查询 / 激活 / 撤销及背包使用等其他入口。生产候选开关继续关闭，证据见[本批记录](../records/unified-logging-l2-shop-fulfillment-2026-09-28.md)。
+- 旧 / 候选输出均覆盖 Development / Production，使用真实 ProductService / UserBenefitService / OrderService、Controller 与内存 HTTP 管道、mock 仓储验证；不代表真实数据库并发、事务或库存运行态验收。本节不涵盖商品管理 / 浏览、订单查询 / 备注、系统赠送、权益查询 / 激活 / 撤销及背包使用等其他入口，这些入口的后续治理见第 19–20 节。生产候选开关继续关闭，证据见[本批记录](../records/unified-logging-l2-shop-fulfillment-2026-09-28.md)。
 
 ## 17. L2 其余奖励入口与直接消费者
 
@@ -226,7 +226,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 原始令牌仅创建响应返回、持久化只存哈希、有效期 / 用户 / IP / 次数限制、附件可用性、当前 Wiki 读写权限、原子消费与撤销规则保持不变。冲突、权限拒绝及令牌查询摘要契约不变，清理批次摘要继续按第 13 节执行。
 - `UploadRateLimitService` 移除预留被拒的用户 / 文件大小 Warning 和重置计数的用户 Info；并发、分钟频率、日容量的拒绝仍由结果或 429 告知调用方。Redis Lua、内存 keyed lock、预留重放、业务日结算、失败释放及当前用户重置规则不变。
 - 两个 Service 未新增 catch；存储 / 缓存异常继续上抛。令牌 Controller 的既有 500 BusinessException 包装和按 ID 撤销的直接传播保持原样，API 最终边界记录一次安全 `http.failed`；正常拒绝与 4xx 保持安静。普通上传申请配额发生在上传 try 之前，分片申请发生在创建会话 try 之前，异常也继续交给上层。
-- 此批只关闭令牌与配额 Service 的上述生成点，未新增配额重置生产入口；AttachmentService、普通上传后续处理及分片上传 / 合并的其他日志仍待治理。旧 / 候选输出覆盖 Development / Production，生产候选开关继续关闭。证据与限制见[本批记录](../records/unified-logging-l2-file-token-quota-2026-09-28.md)。
+- 此批只关闭令牌与配额 Service 的上述生成点，未新增配额重置生产入口；分片上传 / 合并及 AttachmentService、普通上传后续处理的已完成治理见第 22–24 节。旧 / 候选输出覆盖 Development / Production，生产候选开关继续关闭。证据与限制见[本批记录](../records/unified-logging-l2-file-token-quota-2026-09-28.md)。
 
 ## 22. L2 分片上传与会话回写
 
@@ -234,7 +234,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 合并主流程失败仍按原顺序尝试写入 Failed 状态、清理目录及释放 / 结算配额，然后原异常重抛；本层不再重复记录该异常。Controller 的既有 500 包装与 API 最终安全日志保持原样。
 - 附件已持久化但 Completed 状态首次回写失败时，保留原有的一次补写；按最终结果仅输出一次事件：恢复为 `upload.session.update_recovered` Warning，仍失败为 `upload.session.update_failed` Error。只带固定 failureKind，不携带异常正文、会话或附件身份。无论补写结果如何，既有成功响应、配额结算和目录清理不变。
 - 合并失败后的 Failed 状态补写异常单独消费，输出一次 `upload.session.update_failed`；它与原始合并异常是两次不同故障，不替代原异常传播。前台目录 / 配额 helper 及后台清理摘要继续按第 13 节执行，不新增重试。
-- 本批覆盖分片编排层；底层 AttachmentService 和普通上传 Controller 的剩余日志尚待治理，不宣称端到端上传链路已收口。旧 / 候选输出覆盖 Development / Production；使用 mock 附件服务、mock 仓储和真实临时分片文件，不能替代真实数据库或图片处理验收。生产候选开关保持关闭，证据见[本批记录](../records/unified-logging-l2-chunked-upload-2026-09-28.md)。
+- 本批覆盖分片编排层；底层 AttachmentService 和普通上传 Controller 的后续治理见第 23–24 节，不据此宣称完整附件系统已收口。旧 / 候选输出覆盖 Development / Production；使用 mock 附件服务、mock 仓储和真实临时分片文件，不能替代真实数据库或图片处理验收。生产候选开关保持关闭，证据见[本批记录](../records/unified-logging-l2-chunked-upload-2026-09-28.md)。
 
 ## 23. L2 附件上传与图片处理
 
@@ -243,7 +243,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 普通上传 Controller 消费 5xx BusinessException 或空附件结果时输出一次安全 `http.failed`，4xx 保持安静；未消费异常仍由 API 最终边界记录。上传成功后的配额结算异常、失败后的配额释放异常继续消费，复用 `upload.cleanup.failed` 与固定 cleanupOperation，不再记录附件 / 用户 / uploadId / 异常正文。响应状态、消息及成功语义保持原样。
 - 去重记录存在而物理文件缺失时，以 `attachment.dedup_source_missing` Warning 保留可见性，原软删除及继续上传不变。文件替换仍最多尝试 3 次、两次间隔 100ms；最终恢复输出一次 `attachment.replace_recovered` Warning（count 为此前失败次数），持续失败原异常上抛，不逐次重复输出。
 - 失败上传的主文件、缩略图与预登记派生路径仍逐项尝试清理；删除未成功且仍存在、以及捕获异常，按本次 cleanup 调用合并为一个 `attachment.cleanup_failed` Error，failedCount 为失败路径数，混合 failureKind 为 other。临时图片文件删除异常单独消费为 `attachment.temp_cleanup_failed` Error。不改变清理顺序、继续执行或原错误传播。
-- 下载 / 删除 / 下载计数生成点仍待下一组治理；Rust 原生能力回退事件保持既有边界，不以此批证明真实动态库、权限故障或重试恢复时序。生产候选开关继续关闭，证据与限制见[本批记录](../records/unified-logging-l2-attachment-upload-2026-09-28.md)。
+- 下载 / 删除 / 下载计数生成点的后续治理见第 24 节；Rust 原生能力回退事件保持既有边界，不以此批证明真实动态库、权限故障或重试恢复时序。生产候选开关继续关闭，证据与限制见[本批记录](../records/unified-logging-l2-attachment-upload-2026-09-28.md)。
 
 ## 24. L2 附件下载、删除与下载计数
 
