@@ -235,3 +235,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 附件已持久化但 Completed 状态首次回写失败时，保留原有的一次补写；按最终结果仅输出一次事件：恢复为 `upload.session.update_recovered` Warning，仍失败为 `upload.session.update_failed` Error。只带固定 failureKind，不携带异常正文、会话或附件身份。无论补写结果如何，既有成功响应、配额结算和目录清理不变。
 - 合并失败后的 Failed 状态补写异常单独消费，输出一次 `upload.session.update_failed`；它与原始合并异常是两次不同故障，不替代原异常传播。前台目录 / 配额 helper 及后台清理摘要继续按第 13 节执行，不新增重试。
 - 本批覆盖分片编排层；底层 AttachmentService 和普通上传 Controller 的剩余日志尚待治理，不宣称端到端上传链路已收口。旧 / 候选输出覆盖 Development / Production；使用 mock 附件服务、mock 仓储和真实临时分片文件，不能替代真实数据库或图片处理验收。生产候选开关保持关闭，证据见[本批记录](../records/unified-logging-l2-chunked-upload-2026-09-28.md)。
+
+## 23. L2 附件上传与图片处理
+
+- `AttachmentService.UploadFileAsync` 移除上传开始 / 成功、去重命中与跳过、水印配置跳过的明细；图片缩略图、水印、多尺寸和 EXIF helper 不再记录成功明细、结果中的 ErrorMessage 或包装再抛的异常。文件名、路径、哈希和水印文本不进入上述日志。
+- LocalFileStorage 上传异常仍按既有规则尝试删除写入目标并返回 StorageFailed，仅移除重复原文日志；该结果由唯一生产调用方 AttachmentService 映射为原有 500 BusinessException。其他大小 / 类型 / 内容拒绝仍保留原错误码、状态和参数。
+- 普通上传 Controller 消费 5xx BusinessException 或空附件结果时输出一次安全 `http.failed`，4xx 保持安静；未消费异常仍由 API 最终边界记录。上传成功后的配额结算异常、失败后的配额释放异常继续消费，复用 `upload.cleanup.failed` 与固定 cleanupOperation，不再记录附件 / 用户 / uploadId / 异常正文。响应状态、消息及成功语义保持原样。
+- 去重记录存在而物理文件缺失时，以 `attachment.dedup_source_missing` Warning 保留可见性，原软删除及继续上传不变。文件替换仍最多尝试 3 次、两次间隔 100ms；最终恢复输出一次 `attachment.replace_recovered` Warning（count 为此前失败次数），持续失败原异常上抛，不逐次重复输出。
+- 失败上传的主文件、缩略图与预登记派生路径仍逐项尝试清理；删除未成功且仍存在、以及捕获异常，按本次 cleanup 调用合并为一个 `attachment.cleanup_failed` Error，failedCount 为失败路径数，混合 failureKind 为 other。临时图片文件删除异常单独消费为 `attachment.temp_cleanup_failed` Error。不改变清理顺序、继续执行或原错误传播。
+- 下载 / 删除 / 下载计数生成点仍待下一组治理；Rust 原生能力回退事件保持既有边界，不以此批证明真实动态库、权限故障或重试恢复时序。生产候选开关继续关闭，证据与限制见[本批记录](../records/unified-logging-l2-attachment-upload-2026-09-28.md)。

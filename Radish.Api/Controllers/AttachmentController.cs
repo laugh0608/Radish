@@ -8,6 +8,7 @@ using Radish.Api.Resources;
 using Radish.Api.ErrorHandling;
 using Radish.Api.Authorization;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Common.PermissionTool;
@@ -216,6 +217,7 @@ public class AttachmentController : ControllerBase
                     await TryRecordUploadFailedAsync(userId, uploadId);
                 }
 
+                LogUploadFailure();
                 return UploadFailure(
                     StatusCodes.Status500InternalServerError,
                     "文件处理失败，请稍后重试",
@@ -225,7 +227,7 @@ public class AttachmentController : ControllerBase
             // 记录上传完成
             if (_rateLimitOptions.Enable)
             {
-                await TryRecordUploadCompleteAsync(userId, uploadId, attachment.VoId);
+                await TryRecordUploadCompleteAsync(userId, uploadId);
             }
 
             return new MessageModel
@@ -243,7 +245,7 @@ public class AttachmentController : ControllerBase
                 await TryRecordUploadFailedAsync(userId, uploadId);
             }
 
-            LogUploadBusinessFailure(ex);
+            LogUploadFailure(ex);
             var errorCode = ex.ErrorCode ?? AttachmentErrorCodes.ProcessingFailed;
             return UploadFailure(ex.StatusCode, ex.Message, errorCode, ex.MessageKey, ex.MessageArguments);
         }
@@ -358,6 +360,7 @@ public class AttachmentController : ControllerBase
                     await TryRecordUploadFailedAsync(userId, uploadId);
                 }
 
+                LogUploadFailure();
                 return UploadFailure(
                     StatusCodes.Status500InternalServerError,
                     "文件处理失败，请稍后重试",
@@ -367,7 +370,7 @@ public class AttachmentController : ControllerBase
             // 记录上传完成
             if (_rateLimitOptions.Enable)
             {
-                await TryRecordUploadCompleteAsync(userId, uploadId, attachment.VoId);
+                await TryRecordUploadCompleteAsync(userId, uploadId);
             }
 
             return new MessageModel
@@ -385,7 +388,7 @@ public class AttachmentController : ControllerBase
                 await TryRecordUploadFailedAsync(userId, uploadId);
             }
 
-            LogUploadBusinessFailure(ex);
+            LogUploadFailure(ex);
             var errorCode = ex.ErrorCode ?? AttachmentErrorCodes.ProcessingFailed;
             return UploadFailure(ex.StatusCode, ex.Message, errorCode, ex.MessageKey, ex.MessageArguments);
         }
@@ -402,29 +405,21 @@ public class AttachmentController : ControllerBase
 
     #endregion
 
-    private void LogUploadBusinessFailure(BusinessException exception)
+    private void LogUploadFailure(BusinessException? exception = null)
     {
-        var traceId = ControllerContext.HttpContext?.TraceIdentifier;
-        if (exception.StatusCode >= StatusCodes.Status500InternalServerError)
+        var statusCode = exception?.StatusCode ?? StatusCodes.Status500InternalServerError;
+        if (statusCode < StatusCodes.Status500InternalServerError) return;
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
         {
-            _logger.LogError(
-                exception,
-                "Attachment upload server error {ErrorCode}; TraceId: {TraceId}",
-                exception.ErrorCode,
-                traceId);
-            return;
-        }
-
-        _logger.LogWarning(
-            "Attachment upload business error {ErrorCode}; TraceId: {TraceId}",
-            exception.ErrorCode,
-            traceId);
+            ["EventCode"] = "http.failed", ["SourceCategory"] = "http"
+        });
+        _logger.LogError("Attachment upload failed with {statusCode}; kind={failureKind}",
+            statusCode, exception == null ? "other" : RuntimeFailureSummary.Classify(exception));
     }
 
     private async Task TryRecordUploadCompleteAsync(
         long userId,
-        string uploadId,
-        long attachmentId)
+        string uploadId)
     {
         try
         {
@@ -433,12 +428,7 @@ public class AttachmentController : ControllerBase
         catch (Exception exception)
         {
             // 附件已经持久化，限流缓存异常不能把已成功的非幂等上传伪装成失败。
-            _logger.LogError(
-                exception,
-                "Attachment {AttachmentId} persisted but upload accounting failed for {UploadId}; UserId: {UserId}",
-                attachmentId,
-                uploadId,
-                userId);
+            LogUploadAccountingFailure("quota-complete", exception);
         }
     }
 
@@ -450,12 +440,18 @@ public class AttachmentController : ControllerBase
         }
         catch (Exception exception)
         {
-            _logger.LogError(
-                exception,
-                "Failed to clear upload accounting for failed request {UploadId}; UserId: {UserId}",
-                uploadId,
-                userId);
+            LogUploadAccountingFailure("quota-release", exception);
         }
+    }
+
+    private void LogUploadAccountingFailure(string operation, Exception exception)
+    {
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
+        {
+            ["EventCode"] = "upload.cleanup.failed", ["SourceCategory"] = "application"
+        });
+        _logger.LogError("Upload accounting failed: {cleanupOperation}; kind={failureKind}",
+            operation, RuntimeFailureSummary.Classify(exception));
     }
 
     #region Query
