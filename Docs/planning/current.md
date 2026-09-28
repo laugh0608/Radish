@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续统计报表查询与直接消费者的日志治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-09-28`；已完成日志 L2 的 SQL / AOP / 事务、API 异常、DbMigrate 及 seed / migration、Auth seed、Outbox / Rust、Hangfire / 清理任务、后台业务 Job、币 / 经验实际发放链、服务内清理、币扣除 / 转账直接调用及币账户查询 / 人工调账 / 经验调整与冻结治理、商城库存 / 订单履约依赖、其余奖励入口与直接消费者、经验查询 / 人工复核 / 等级治理、商品管理 / 浏览与订单查询 / 备注、系统赠送 / 权益操作 / 背包使用、文件访问令牌 / 上传配额、分片上传 / 会话回写、附件上传 / 图片处理、附件下载 / 删除 / 计数、支付口令设置 / 修改 / 管理查询、公开 head / sitemap 及 Gateway 直接消费、公开发现流、公开排行榜与用户排名子项；未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：继续用户关注通知入队与直接调用链的日志治理，具体见下方下一批事项；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-09-28`；已完成日志 L2 的 SQL / AOP / 事务、API 异常、DbMigrate 及 seed / migration、Auth seed、Outbox / Rust、Hangfire / 清理任务、后台业务 Job、币 / 经验实际发放链、服务内清理、币扣除 / 转账直接调用及币账户查询 / 人工调账 / 经验调整与冻结治理、商城库存 / 订单履约依赖、其余奖励入口与直接消费者、经验查询 / 人工复核 / 等级治理、商品管理 / 浏览与订单查询 / 备注、系统赠送 / 权益操作 / 背包使用、文件访问令牌 / 上传配额、分片上传 / 会话回写、附件上传 / 图片处理、附件下载 / 删除 / 计数、支付口令设置 / 修改 / 管理查询、公开 head / sitemap 及 Gateway 直接消费、公开发现流、公开排行榜与用户排名、统计报表子项；未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,7 +29,7 @@
 
 ## 最近结论
 
-- `2026-09-28` 完成日志 L2 十四批生成端治理：[币账户与人工调整](../records/unified-logging-l2-account-governance-2026-09-28.md)、[商城库存与订单履约](../records/unified-logging-l2-shop-fulfillment-2026-09-28.md)、[其余奖励入口](../records/unified-logging-l2-reward-entries-2026-09-28.md)、[经验查询与治理](../records/unified-logging-l2-experience-governance-2026-09-28.md)、[商品管理与订单查询](../records/unified-logging-l2-shop-management-2026-09-28.md)、[权益与背包使用](../records/unified-logging-l2-shop-entitlements-2026-09-28.md)、[文件令牌与上传配额](../records/unified-logging-l2-file-token-quota-2026-09-28.md)、[分片上传与会话回写](../records/unified-logging-l2-chunked-upload-2026-09-28.md)、[附件上传与图片处理](../records/unified-logging-l2-attachment-upload-2026-09-28.md)、[附件下载与删除](../records/unified-logging-l2-attachment-access-2026-09-28.md)、[支付口令管理与查询](../records/unified-logging-l2-payment-password-2026-09-28.md)、[公开 head 与 sitemap](../records/unified-logging-l2-public-metadata-2026-09-28.md)、[公开发现流](../records/unified-logging-l2-public-discover-2026-09-28.md)、[公开排行榜与用户排名](../records/unified-logging-l2-leaderboard-2026-09-28.md)。保留业务规则与权威审计，按调用链收敛重复日志并补齐安全失败事件；L2 尚未关闭。
+- `2026-09-28` 完成日志 L2 十五批生成端治理：[币账户与人工调整](../records/unified-logging-l2-account-governance-2026-09-28.md)、[商城库存与订单履约](../records/unified-logging-l2-shop-fulfillment-2026-09-28.md)、[其余奖励入口](../records/unified-logging-l2-reward-entries-2026-09-28.md)、[经验查询与治理](../records/unified-logging-l2-experience-governance-2026-09-28.md)、[商品管理与订单查询](../records/unified-logging-l2-shop-management-2026-09-28.md)、[权益与背包使用](../records/unified-logging-l2-shop-entitlements-2026-09-28.md)、[文件令牌与上传配额](../records/unified-logging-l2-file-token-quota-2026-09-28.md)、[分片上传与会话回写](../records/unified-logging-l2-chunked-upload-2026-09-28.md)、[附件上传与图片处理](../records/unified-logging-l2-attachment-upload-2026-09-28.md)、[附件下载与删除](../records/unified-logging-l2-attachment-access-2026-09-28.md)、[支付口令管理与查询](../records/unified-logging-l2-payment-password-2026-09-28.md)、[公开 head 与 sitemap](../records/unified-logging-l2-public-metadata-2026-09-28.md)、[公开发现流](../records/unified-logging-l2-public-discover-2026-09-28.md)、[公开排行榜与用户排名](../records/unified-logging-l2-leaderboard-2026-09-28.md)、[统计报表](../records/unified-logging-l2-statistics-2026-09-28.md)。保留业务规则与权威审计，按调用链收敛重复日志并补齐安全失败事件；L2 尚未关闭。
 
 - `2026-09-23` 完成日志 L2 的 9 个开发 / 验证提交；代码与文档对照、各批次证据及未覆盖边界见[日终回顾](../records/day-end-doc-review-2026-09-23.md)。SQL / seed / Outbox / Rust、Hangfire / 后台任务、奖励、服务内清理及币扣除 / 转账直接消费边界已推进；L2 尚未关闭，生产链路未切换。
 
@@ -47,9 +47,9 @@
 
 ## 下一批事项：L2 剩余生成端治理
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–28 节](../features/unified-logging-contract.md)；9 月 28 日十四批覆盖币账户、经验治理、奖励入口、已列明商城调用链及文件令牌 / 上传配额、分片上传编排、附件上传 / 图片处理及下载 / 删除 / 计数、支付口令设置 / 修改 / 管理查询、公开 head / sitemap 与 Gateway 直接消费、公开发现流、公开排行榜与用户排名；其余业务与框架来源仍需推进。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–29 节](../features/unified-logging-contract.md)；9 月 28 日十五批覆盖币账户、经验治理、奖励入口、已列明商城调用链及文件令牌 / 上传配额、分片上传编排、附件上传 / 图片处理及下载 / 删除 / 计数、支付口令设置 / 修改 / 管理查询、公开 head / sitemap 与 Gateway 直接消费、公开发现流、公开排行榜与用户排名、统计报表；其余业务与框架来源仍需推进。
 
-1. **首项：统计报表**。已发现 StatisticsService 的仪表盘、订单趋势、商品销量与等级分布查询仍记录异常后重抛，StatisticsController 随后包装为 500；核对直接调用链并收敛日志，保留统计口径、范围规范化、日期边界、权限与错误契约。若需改变业务规则，先单独确认范围。
+1. **首项：用户关注通知入队**。已发现 UserFollowService 的关注通知入队失败仍携带关注者 / 目标用户身份记录 Warning 后重抛；核对直接消费者、事务和可靠 Outbox 边界后治理，保留关注规则、幂等键、通知内容、原异常传播与返回契约。若需改变业务规则，先单独确认范围。
 2. **后续顺位**：按生成端剩余清单复核尚未治理的业务入口与框架来源，不将已完成的若干调用链视为 L2 整体完成，不一次扩成全仓改造。
 3. **Rust 既有回退问题**：本机返回码 / stderr 与真实动态库验证已补完；`.tmp` 输入触发水印回退的既有问题见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)，不自动扩大日志批次范围。
 4. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。

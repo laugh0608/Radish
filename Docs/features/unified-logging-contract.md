@@ -286,3 +286,10 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 唯一直接生产消费者 LeaderboardController 不新增 catch；正常结果、类型拒绝、个人排名不支持及未登录结果保持原样。上抛故障由 API 最终边界记录一次安全 `http.failed`；4xx BusinessException 安静，5xx 记录 Error，不新增事件码。
 - 五类公开榜单白名单、四类用户排名、分页规范化、稳定排名、资格复核后的短暂名次空洞、元数据排序、用户展示与当前用户标记均保持不变。头像 / 经验 / 等级及商品图标依赖失败继续上抛；既有 DateTime.Now 参数语义不因日志治理改变。
 - 旧 / 候选输出覆盖 Development / Production；新增真实 Service / Controller 与 mock 依赖、内存 HTTP 管道验证异常归属，既有临时 SQLite 仓储测试验证资格与排名。PostgreSQL 用例明确排除，本批不代表生产数据库或浏览器验收。生产开关继续关闭，L2 尚未整体完成；证据见[本批记录](../records/unified-logging-l2-leaderboard-2026-09-28.md)。
+
+## 29. L2 统计报表
+
+- `StatisticsService` 的仪表盘、订单趋势、商品销量排行与用户等级分布移除仅记录再重抛的 catch，不再输出查询参数或异常原文；Service 仍传播同一异常，不返回空报表或部分成功。
+- 唯一直接生产消费者 StatisticsController 保留四个入口的现有包装：所有异常（包括原 4xx / 5xx BusinessException）均包装为 `500 / System.UnexpectedError / error.system.unexpected_error`，保留 InnerException 和各入口固定提示。API 最终边界只记录一次安全 `http.failed`，不新增事件码，不借日志治理调整响应状态。
+- DashboardView 权限、用户软删除筛选、仓储聚合口径、天数 / 条数规范化、DateTime.Today 的本地日历边界、逐日顺序与排他结束时间、等级 0 补足及等级名称回退均保持原样。
+- 旧 / 候选输出覆盖 Development / Production；真实 Service / Controller、mock 仓储与内存 HTTP 管道验证异常归属和结果，不替代真实数据库聚合、权限中间件或浏览器验收。生产开关继续关闭，L2 尚未整体完成；证据见[本批记录](../records/unified-logging-l2-statistics-2026-09-28.md)。
