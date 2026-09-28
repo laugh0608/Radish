@@ -244,3 +244,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 去重记录存在而物理文件缺失时，以 `attachment.dedup_source_missing` Warning 保留可见性，原软删除及继续上传不变。文件替换仍最多尝试 3 次、两次间隔 100ms；最终恢复输出一次 `attachment.replace_recovered` Warning（count 为此前失败次数），持续失败原异常上抛，不逐次重复输出。
 - 失败上传的主文件、缩略图与预登记派生路径仍逐项尝试清理；删除未成功且仍存在、以及捕获异常，按本次 cleanup 调用合并为一个 `attachment.cleanup_failed` Error，failedCount 为失败路径数，混合 failureKind 为 other。临时图片文件删除异常单独消费为 `attachment.temp_cleanup_failed` Error。不改变清理顺序、继续执行或原错误传播。
 - 下载 / 删除 / 下载计数生成点仍待下一组治理；Rust 原生能力回退事件保持既有边界，不以此批证明真实动态库、权限故障或重试恢复时序。生产候选开关继续关闭，证据与限制见[本批记录](../records/unified-logging-l2-attachment-upload-2026-09-28.md)。
+
+## 24. L2 附件下载、删除与下载计数
+
+- `AttachmentService.DeleteFileAsync` 的附件缺失与软删除成功保持安静；更新未产生正数结果时输出 `attachment.delete_rejected` Warning，捕获异常时输出 `attachment.delete_failed` Error，仅带安全 failureKind。返回 false、软删除字段与审计、单项删除接口的原响应不变，不新增物理删除。
+- 批量删除仍逐项调用单项方法、失败继续、返回成功数量；已消费的单项故障各记录一次，不在 Controller 重复报错。权限预检或资产查询原本上抛的异常继续由 API 最终边界处理，不能把部分成功数量当作全部删除成功。
+- 下载缺失 / 已删除 / 禁用 / 权限拒绝保持安静；存储返回空流时输出 `attachment.download_unavailable` Warning。LocalFileStorage 的既有空值契约同时覆盖缺失与捕获故障，本事件只说明不可用，不推断具体原因。Service 捕获查询、权限依赖、存储等异常时输出一次 `attachment.download_failed` Error，仍返回空结果及接口原有 404。
+- 下载计数捕获异常输出 `attachment.download_count_failed` Error，仍继续返回已取得文件流；不被下载外层重复记录。计数更新返回 false 与附件不存在仍按既有语义安静，不修改计量并发算法。
+- 原图 / 缩略图、下载文件名与 MIME、令牌下载、Chat / Wiki 权限及用户角色判断保持不变。上述日志不含附件 / 用户身份、业务类型、文件路径或异常正文。底层存储的其他布尔 / 空值语义未改变，真实权限故障和并发仍需单独验收。
+- 此批关闭上述已有日志生成点，不据此宣称完整附件系统或 L2 已收口；生产候选开关保持关闭。旧 / 候选输出覆盖 Development / Production，证据见[本批记录](../records/unified-logging-l2-attachment-access-2026-09-28.md)。

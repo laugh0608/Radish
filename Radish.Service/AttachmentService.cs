@@ -287,7 +287,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
             if (attachment == null)
             {
-                Log.Warning("附件不存在：{AttachmentId}", attachmentId);
                 return false;
             }
 
@@ -304,18 +303,22 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             if (dbDeleted > 0)
             {
-                Log.Information("附件软删除成功：{AttachmentId}，物理文件将通过定时任务清理", attachmentId);
                 return true;
             }
             else
             {
-                Log.Warning("附件软删除失败：{AttachmentId}", attachmentId);
+                Log.ForContext("EventCode", "attachment.delete_rejected")
+                    .ForContext("SourceCategory", "application")
+                    .Warning("Attachment soft delete changed no rows");
                 return false;
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "删除附件时发生异常：{AttachmentId}", attachmentId);
+            Log.ForContext("EventCode", "attachment.delete_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Attachment soft delete consumed a failure");
             return false;
         }
     }
@@ -588,7 +591,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "更新下载次数失败：{AttachmentId}", attachmentId);
+            Log.ForContext("EventCode", "attachment.download_count_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Attachment download counter consumed a failure");
         }
     }
 
@@ -624,7 +630,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var tenantId = requestTenantId ?? App.CurrentUser.TenantId;
             if (!await CanReadAttachmentAsync(attachment, tenantId, requestUserId, requestUserRoles))
             {
-                Log.Warning("用户 {UserId} 尝试访问无权限附件：{AttachmentId}（业务类型：{BusinessType}）", requestUserId, attachmentId, attachment.BusinessType);
                 return (null, null);
             }
 
@@ -633,7 +638,9 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var stream = await _fileStorage.DownloadAsync(filePath);
             if (stream == null)
             {
-                Log.Warning("文件流获取失败：{StoragePath}", filePath);
+                Log.ForContext("EventCode", "attachment.download_unavailable")
+                    .ForContext("SourceCategory", "application")
+                    .Warning("Attachment download stream is unavailable");
                 return (null, null);
             }
 
@@ -644,7 +651,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "获取下载流时发生异常：{AttachmentId}", attachmentId);
+            Log.ForContext("EventCode", "attachment.download_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Attachment download consumed a failure");
             return (null, null);
         }
     }
