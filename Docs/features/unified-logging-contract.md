@@ -145,7 +145,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 两服务的乐观锁 helper 只在即将继续重试时输出 `reward.retrying` Warning，包含固定 `rewardDomain`、attempt 和 delayMs；耗尽不重复记录 Error。币保持 3 次重试、100 / 200 / 400ms；经验保持 6 次重试、指数上限 1000ms 内的随机抖动。该共享 helper 也作用于现有其他调用方，未改重试捕获类型、延迟或事务。
 - 等级配置缓存读取 / 写入 / 失效异常输出 `reward.cache_fallback` Warning；分别用固定 `rewardOperation` 区分，保留数据库回退和忽略缓存写入 / 清除失败的原有行为。安全日志不求值异常正文，不把缓存故障误报为奖励已失败。
 - 币批量发放在消费异常的批次层汇总一次 `reward.batch_failed` Error，部分成功和返回流水列表不变。经验单项已经消费的异常由单项记录 Error，批次只汇总正常返回结果，不再重复 Error；若异常确实逃逸至批次 catch，则由批次汇总。`reward.batch_completed` 是结果汇总 Info，允许 outcome 为 partial / failed，**不表示全部发放成功**。processedCount 是成功返回数，rejectedCount 是 false 返回数（可能是业务拒绝或已消费异常），failedCount 仅统计批次自身捕获的异常；空批次安静。
-- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账及直接消费边界的后续治理见第 14 节；币账户查询、人工调账及经验调整 / 冻结 / 解冻的后续治理见第 15 节；经验其余查询 / 人工治理、其余 CoinRewardService 入口及其外层消费者仍需治理。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
+- 本节仅关闭已列明发放入口、内部重试 / 初始化、缓存与批次路径的日志治理；币扣除 / 转账及直接消费边界的后续治理见第 14 节；币账户查询、人工调账及经验调整 / 冻结 / 解冻的后续治理见第 15 节；其余 CoinRewardService 入口及直接消费者见第 17 节，经验其余查询 / 人工治理仍需推进。不会以该批宣称全业务异常已唯一归属、真实数据库并发 / 结算已验收或生产可切换。[验证记录](../records/unified-logging-l2-reward-services-2026-09-23.md)保留证据与未执行边界。
 
 ## 13. L2 服务内清理分支
 
@@ -175,7 +175,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - CoinController 的余额 / 交易查询和人工调账仍按既有契约将 InvalidOperationException 转为业务响应；最终消费点分别输出 `coin.balance_query_rejected / coin.transaction_query_rejected / coin.adjustment_rejected` Warning，只带固定 `failureKind`。这类异常可能包括业务拒绝和存储失败，不能将 Warning 一律解释为正常业务拒绝。ArgumentException 与 4xx BusinessException 保持安静；人工调账消费的 5xx BusinessException 记录一次安全 `http.failed` Error，其余上抛失败交给既有 API 最终边界。
 - `ExperienceService.AdminAdjustExperienceAsync / FreezeExperienceAsync / UnfreezeExperienceAsync` 移除逐次成功日志。经验扣减归零、版本冲突转换、幂等重放、升级 Outbox、冻结状态、权威经验流水及治理动作保持不变；成功操作的身份与理由仍保存在权威记录中。
 - 旧 / 候选输出均在 Development / Production 验证；通过真实 Service、Controller、TranAop 与内存 HTTP 管道确认回滚调用及单次安全 Error。mock 仓储与事务管理器不代表真实数据库事务 / 并发验收。
-- 本节仅关闭上述入口。商城库存 / 订单履约的后续治理见第 16 节；经验账户 / 统计 / 流水查询、人工复核 / 等级治理、其余奖励与口令治理仍有后续工作；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。
+- 本节仅关闭上述入口。商城库存 / 订单履约的后续治理见第 16 节，其余奖励入口见第 17 节；经验账户 / 统计 / 流水查询、人工复核 / 等级治理与口令治理仍有后续工作；生产候选开关继续关闭，L2 尚未整体完成。证据见[本批记录](../records/unified-logging-l2-account-governance-2026-09-28.md)。
 
 ## 16. L2 商城库存与订单履约依赖
 
@@ -185,3 +185,10 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `OrderService.CancelOrderAsync / RetryGrantBenefitAsync` 移除重复日志；取消原因、条件取消、库存回补、支付证据、失败阶段、履约资源与订单状态写入保持原样。ShopController 消费的 InvalidOperationException 分别记录 `order.cancellation_rejected / order.fulfillment_retry_rejected` Warning，只带 failureKind；它们可能包含存储或补偿失败，不能一律视为正常业务拒绝。重新发放的 4xx BusinessException 安静，消费的 5xx 使用安全 `http.failed` Error，其余上抛异常交给 API 最终边界。
 - 购买支付 / 履约分支继续使用 `order.purchase_failed`。外层包装为默认 400 BusinessException，API 最终边界不会再记录 Error，因此包装点使用 `order.purchase_interrupted` Error 负责尚未被分支消费的失败，仅带 failureKind。支付失败后回补库存另抛错、履约失败后订单写入另抛错是独立失败，允许分别记录分支事件与中断事件；不改变默认 400、InnerException、补偿顺序或订单 FailReason。
 - 旧 / 候选输出均覆盖 Development / Production，使用真实 ProductService / UserBenefitService / OrderService、Controller 与内存 HTTP 管道、mock 仓储验证；不代表真实数据库并发、事务或库存运行态验收。本节不涵盖商品管理 / 浏览、订单查询 / 备注、系统赠送、权益查询 / 激活 / 撤销及背包使用等其他入口。生产候选开关继续关闭，证据见[本批记录](../records/unified-logging-l2-shop-fulfillment-2026-09-28.md)。
+
+## 17. L2 其余奖励入口与直接消费者
+
+- `CoinRewardService` 的帖子点赞、评论点赞、评论发布、评论被回复、神评与沙发奖励移除逐项成功和仅记录再重抛的 catch；每日点赞奖励上限查询同样不再重复报错或逐次打印用户限额。金额计算、部分新发放结果、返回流水号、失败理由、业务键与业务日期保持不变；点赞者每日 50 的上限不阻止作者奖励。
+- 六类入口的直接消费者 `ReliableTaskProcessor` 保持原有异常传播；由 `ReliableOutboxExecutionJob` 调用既有失败状态写入，在仓储真正更新后输出 `outbox.retrying` Warning 或 `outbox.dead_letter` Error，遵循第 9 节。成功与幂等重放不逐条输出，Pending 等非 Processing 状态重复执行不增加失败事件。该责任只涵盖向外传播的异常，不将下游经验服务已经消费的失败再记一次。
+- `CheckRewardExistsAsync` 查询失败仍返回 true，保留避免重复发放的既有兜底；消费点只记录一次 `reward.existence_check_failed` Error，仅携带安全 failureKind，不携带业务类型、身份、日期或异常正文。true 不证明已有成功流水，现有查询筛选与可选日期范围未改变。
+- 本批没有修改奖励流水写入、事务、结算时钟、Outbox 租约、重试计划、通知或经验发放规则。内存 SQLite 验证了真实 Outbox 状态更新，币发放及其他业务依赖使用 mock；不代表真实币账本事务 / 并发或 PostgreSQL 验收。旧 / 候选输出均覆盖 Development / Production，生产候选开关继续关闭。证据见[本批记录](../records/unified-logging-l2-reward-entries-2026-09-28.md)。

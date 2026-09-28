@@ -177,7 +177,8 @@
     "product.stock_retrying": "Stock update will retry after a conflict.",
     "order.purchase_interrupted": "Purchase interrupted before returning a result.",
     "order.cancellation_rejected": "Order cancellation rejected.",
-    "order.fulfillment_retry_rejected": "Order fulfillment retry rejected."
+    "order.fulfillment_retry_rejected": "Order fulfillment retry rejected.",
+    "reward.existence_check_failed": "Reward existence check failed; existing assumed."
   },
   "properties": {
     "durationMs": {
