@@ -271,3 +271,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Gateway 获取快照 / 前端 HTML 的非成功响应分别使用 `public_head.snapshot_unavailable / public_head.html_unavailable` Warning，仅含整数 statusCode；快照 404 仍安静。原本捕获的 HttpRequestException / TaskCanceledException 使用 `public_head.snapshot_request_failed / public_head.html_request_failed` Warning，仅带 failureKind，继续返回 null；不扩大捕获范围。
 - Gateway 注入 / 响应写入被捕获的异常使用 `public_head.injection_failed` Warning，仅带 failureKind，继续调用后续处理；日志作用域在调用后续处理前结束。五分钟入口 HTML 缓存、十分钟注入缓存、请求与转发头规则、缺失回退及 JSON 解析异常原传播边界未改变。
 - 同一跨宿主故障可能分别产生 API 的处理失败和 Gateway 的不可用响应事件，二者描述不同边界，不宣称分布式全链只产生一条日志。旧 / 候选输出覆盖 Development / Production，生产开关继续关闭；本批未治理全部 HttpClient / YARP 框架日志，证据与限制见[本批记录](../records/unified-logging-l2-public-metadata-2026-09-28.md)。
+
+## 27. L2 公开发现流
+
+- `PublicDiscoverService` 移除逐请求生成完成 Info 和仅供日志使用的 Stopwatch；不再输出租户、候选数、页大小、游标版本与耗时明细。正常空页、成功续页、参数与游标拒绝保持安静。
+- 非 BusinessException 仍包装为原有 `503 / PublicDiscover.SourceUnavailable / error.public_discover.source_unavailable`，删除包装前的原文 Error；既有包装未保留 InnerException，本批不修改该契约，也不伪称最终日志能够诊断原始数据库故障类别。BusinessException 仍原样上抛。
+- 直接生产消费者 PublicDiscoverController 保持 `no-store`、响应内容与无 catch 的传播边界；API 最终边界仅对 5xx 输出一次安全 `http.failed`，4xx 安静。仓储无本批需要新增或修改的日志生成点，不新增事件码或查询摘要。
+- 七个来源任务启动顺序与 Task.WhenAll、单来源失败导致整页失败、公开租户 / 24 小时窗口、来源资格、稳定排序、游标与分页、纯文本映射和 Pulse 聚合不变，不引入部分成功或跨请求缓存。
+- 旧 / 候选输出覆盖 Development / Production；新增 mock 故障测试和既有临时 SQLite 仓储回归不替代 PostgreSQL / 真实宿主与浏览器验收。生产开关继续关闭，L2 尚未整体完成；证据见[本批记录](../records/unified-logging-l2-public-discover-2026-09-28.md)。

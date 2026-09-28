@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Text;
@@ -10,7 +9,6 @@ using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
-using Serilog;
 
 namespace Radish.Service;
 
@@ -65,7 +63,6 @@ public sealed class PublicDiscoverService : IPublicDiscoverService
             cursorState?.LastKindOrder,
             cursorState?.LastSourceId,
             pageSize + 1);
-        var stopwatch = Stopwatch.StartNew();
 
         try
         {
@@ -122,22 +119,6 @@ public sealed class PublicDiscoverService : IPublicDiscoverService
 
             var channelPulse = channelPulseTask.Result;
             var mainPulse = mainPulseTask.Result;
-            Log.Information(
-                "公开发现流生成完成，TenantId={TenantId}, CursorVersion={CursorVersion}, PageSize={PageSize}, " +
-                "ChannelCandidates={ChannelCandidates}, MemberCandidates={MemberCandidates}, " +
-                "HighlightCandidates={HighlightCandidates}, PostCandidates={PostCandidates}, " +
-                "QuestionCandidates={QuestionCandidates}, Returned={Returned}, HasMore={HasMore}, ElapsedMs={ElapsedMs}",
-                PublicTenantId,
-                cursorState?.Version ?? CursorVersion,
-                pageSize,
-                channelTask.Result.Count,
-                memberActivityTask.Result.Count,
-                highlightedCommentTask.Result.Count,
-                postTask.Result.Count,
-                questionTask.Result.Count,
-                items.Count,
-                hasMore,
-                stopwatch.ElapsedMilliseconds);
             return new PublicDiscoverFeedVo
             {
                 VoItems = items,
@@ -158,15 +139,8 @@ public sealed class PublicDiscoverService : IPublicDiscoverService
         {
             throw;
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            Log.Error(
-                exception,
-                "公开发现来源查询失败，TenantId={TenantId}, CursorVersion={CursorVersion}, PageSize={PageSize}, ElapsedMs={ElapsedMs}",
-                PublicTenantId,
-                cursorState?.Version ?? CursorVersion,
-                pageSize,
-                stopwatch.ElapsedMilliseconds);
             throw new BusinessException(
                 "公开发现内容暂时不可用，请稍后重试",
                 StatusCodes.Status503ServiceUnavailable,
