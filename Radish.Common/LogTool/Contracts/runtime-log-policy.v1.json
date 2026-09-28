@@ -182,7 +182,9 @@
     "experience.leaderboard_incomplete": "Experience leaderboard omitted missing users.",
     "experience.rank_query_failed": "Experience rank query failed; zero returned.",
     "experience.governance_snapshot_invalid": "Experience governance snapshot could not be read.",
-    "experience.calculator_cache_fallback": "Experience calculator cache operation failed."
+    "experience.calculator_cache_fallback": "Experience calculator cache operation failed.",
+    "product.management_rejected": "Product management request rejected.",
+    "order.remark_rejected": "Order remark request rejected."
   },
   "properties": {
     "durationMs": {

@@ -657,6 +657,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -666,6 +667,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.BadRequest,
                 ex.Message,
@@ -693,6 +695,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -702,6 +705,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.BadRequest,
                 ex.Message,
@@ -729,6 +733,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -738,6 +743,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 ex.Message,
@@ -762,6 +768,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -771,6 +778,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 ex.Message,
@@ -795,6 +803,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -804,6 +813,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledManagementFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 ex.Message,
@@ -982,6 +992,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledManagementFailure(ex, "order.remark_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -989,8 +1000,9 @@ public class ShopController : ControllerBase
                 ex.MessageKey ?? "error.order.remark_failed",
                 false);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            LogHandledManagementFailure(ex, "order.remark_rejected");
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 "订单备注保存失败，请刷新后重试",
@@ -1003,6 +1015,26 @@ public class ShopController : ControllerBase
     #endregion
 
     #region 私有方法
+
+    private static void LogHandledManagementFailure(Exception exception, string rejectionEventCode)
+    {
+        if (exception is BusinessException businessException)
+        {
+            if (businessException.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}",
+                        businessException.StatusCode, RuntimeFailureSummary.Classify(exception));
+            }
+            return;
+        }
+
+        Log.ForContext("EventCode", rejectionEventCode)
+            .ForContext("SourceCategory", "application")
+            .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
+            .Warning("Shop management request rejected");
+    }
 
     /// <summary>获取当前用户 ID</summary>
     private long GetCurrentUserId() => Current.UserId;

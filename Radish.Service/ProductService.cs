@@ -90,48 +90,32 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     /// <summary>获取所有启用的商品分类</summary>
     public async Task<List<ProductCategoryVo>> GetCategoriesAsync()
     {
-        try
-        {
-            var categories = await _categoryRepository.QueryAsync(c => c.IsEnabled);
-            var categoryVos = Mapper.Map<List<ProductCategoryVo>>(categories.OrderBy(c => c.SortOrder).ToList());
+        var categories = await _categoryRepository.QueryAsync(c => c.IsEnabled);
+        var categoryVos = Mapper.Map<List<ProductCategoryVo>>(categories.OrderBy(c => c.SortOrder).ToList());
 
-            // 统计每个分类下的商品数量
-            foreach (var category in categoryVos)
-            {
-                category.VoProductCount = await _productRepository.QueryCountAsync(
-                    PublicVisibleProductExpression.And(p => p.CategoryId == category.VoId));
-            }
-
-            FillProductCategoryUrls(categoryVos);
-            return categoryVos;
-        }
-        catch (Exception ex)
+        // 统计每个分类下的商品数量
+        foreach (var category in categoryVos)
         {
-            Log.Error(ex, "获取商品分类列表失败");
-            throw;
+            category.VoProductCount = await _productRepository.QueryCountAsync(
+                PublicVisibleProductExpression.And(p => p.CategoryId == category.VoId));
         }
+
+        FillProductCategoryUrls(categoryVos);
+        return categoryVos;
     }
 
     /// <summary>获取分类详情</summary>
     public async Task<ProductCategoryVo?> GetCategoryAsync(string categoryId)
     {
-        try
-        {
-            var category = await _categoryRepository.QueryFirstAsync(c => c.Id == categoryId);
-            if (category == null) return null;
+        var category = await _categoryRepository.QueryFirstAsync(c => c.Id == categoryId);
+        if (category == null) return null;
 
-            var vo = Mapper.Map<ProductCategoryVo>(category);
-            vo.VoProductCount = await _productRepository.QueryCountAsync(
-                PublicVisibleProductExpression.And(p => p.CategoryId == categoryId));
+        var vo = Mapper.Map<ProductCategoryVo>(category);
+        vo.VoProductCount = await _productRepository.QueryCountAsync(
+            PublicVisibleProductExpression.And(p => p.CategoryId == categoryId));
 
-            FillProductCategoryUrl(vo);
-            return vo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取分类 {CategoryId} 详情失败", categoryId);
-            throw;
-        }
+        FillProductCategoryUrl(vo);
+        return vo;
     }
 
     #endregion
@@ -146,75 +130,59 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         int pageIndex = 1,
         int pageSize = 20)
     {
-        try
+        // 构建查询条件
+        Expression<Func<Product, bool>> where = PublicVisibleProductExpression;
+
+        if (!string.IsNullOrWhiteSpace(categoryId))
         {
-            // 构建查询条件
-            Expression<Func<Product, bool>> where = PublicVisibleProductExpression;
-
-            if (!string.IsNullOrWhiteSpace(categoryId))
-            {
-                where = where.And(p => p.CategoryId == categoryId);
-            }
-
-            if (productType.HasValue)
-            {
-                where = where.And(p => p.ProductType == productType.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                where = where.And(p => p.Name.Contains(keyword) || (p.Description != null && p.Description.Contains(keyword)));
-            }
-
-            var (products, totalCount) = await _productRepository.QueryPageAsync(
-                whereExpression: where,
-                pageIndex: pageIndex,
-                pageSize: pageSize,
-                orderByExpression: p => p.SortOrder,
-                orderByType: OrderByType.Asc);
-
-            var productVos = Mapper.Map<List<ProductListItemVo>>(products);
-            FillProductListItemUrls(productVos);
-
-            return new PageModel<ProductListItemVo>
-            {
-                Page = pageIndex,
-                PageSize = pageSize,
-                DataCount = totalCount,
-                PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
-                Data = productVos
-            };
+            where = where.And(p => p.CategoryId == categoryId);
         }
-        catch (Exception ex)
+
+        if (productType.HasValue)
         {
-            Log.Error(ex, "获取商品列表失败");
-            throw;
+            where = where.And(p => p.ProductType == productType.Value);
         }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            where = where.And(p => p.Name.Contains(keyword) || (p.Description != null && p.Description.Contains(keyword)));
+        }
+
+        var (products, totalCount) = await _productRepository.QueryPageAsync(
+            whereExpression: where,
+            pageIndex: pageIndex,
+            pageSize: pageSize,
+            orderByExpression: p => p.SortOrder,
+            orderByType: OrderByType.Asc);
+
+        var productVos = Mapper.Map<List<ProductListItemVo>>(products);
+        FillProductListItemUrls(productVos);
+
+        return new PageModel<ProductListItemVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
+            Data = productVos
+        };
     }
 
     /// <summary>获取商品详情</summary>
     public async Task<ProductVo?> GetProductDetailAsync(long productId)
     {
-        try
-        {
-            var product = await _productRepository.QueryFirstAsync(
-                SupportedPublicProductExpression.And(p => p.Id == productId && p.IsEnabled && !p.IsDeleted));
-            if (product == null) return null;
+        var product = await _productRepository.QueryFirstAsync(
+            SupportedPublicProductExpression.And(p => p.Id == productId && p.IsEnabled && !p.IsDeleted));
+        if (product == null) return null;
 
-            var vo = Mapper.Map<ProductVo>(product);
+        var vo = Mapper.Map<ProductVo>(product);
 
-            // 填充分类名称
-            var category = await _categoryRepository.QueryFirstAsync(c => c.Id == product.CategoryId);
-            vo.VoCategoryName = category?.Name;
-            FillProductUrl(vo);
+        // 填充分类名称
+        var category = await _categoryRepository.QueryFirstAsync(c => c.Id == product.CategoryId);
+        vo.VoCategoryName = category?.Name;
+        FillProductUrl(vo);
 
-            return vo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取商品 {ProductId} 详情失败", productId);
-            throw;
-        }
+        return vo;
     }
 
     /// <summary>检查用户是否可以购买商品</summary>
@@ -448,159 +416,129 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     /// <summary>创建商品</summary>
     public async Task<long> CreateProductAsync(CreateProductDto dto, long operatorId, string operatorName)
     {
-        try
-        {
-            await EnsureValidProductConfigurationAsync(
-                dto.ProductType,
-                dto.BenefitType,
-                dto.ConsumableType,
-                dto.BenefitValue,
-                dto.IconAttachmentId);
+        await EnsureValidProductConfigurationAsync(
+            dto.ProductType,
+            dto.BenefitType,
+            dto.ConsumableType,
+            dto.BenefitValue,
+            dto.IconAttachmentId);
 
-            var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
-            var product = Mapper.Map<Product>(dto);
-            product.TenantId = tenantId;
-            product.CreateId = operatorId;
-            product.CreateBy = operatorName;
-            product.CreateTime = DateTime.Now;
-            product.IsOnSale = false;
-            product.OnSaleTime = null;
-            product.OffSaleTime = null;
+        var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
+        var product = Mapper.Map<Product>(dto);
+        product.TenantId = tenantId;
+        product.CreateId = operatorId;
+        product.CreateBy = operatorName;
+        product.CreateTime = DateTime.Now;
+        product.IsOnSale = false;
+        product.OnSaleTime = null;
+        product.OffSaleTime = null;
 
-            var productId = await _productRepository.AddAsync(product);
-            Log.Information("创建商品成功：{ProductId}, 名称={Name}, 操作员={Operator}",
-                productId, dto.Name, operatorName);
+        var productId = await _productRepository.AddAsync(product);
 
-            return productId;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "创建商品失败：{Name}", dto.Name);
-            throw;
-        }
+        return productId;
     }
 
     /// <summary>更新商品</summary>
     public async Task<bool> UpdateProductAsync(UpdateProductDto dto, long operatorId, string operatorName)
     {
-        try
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
+        if (product == null)
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == dto.Id);
-            if (product == null)
-            {
-                throw CreateProductNotFoundException();
-            }
-
-            EnsureExpectedProductVersion(product, dto.ExpectedVersion);
-            EnsureSupportedOnSaleProduct(
-                dto.ProductType,
-                dto.BenefitType,
-                dto.ConsumableType,
-                product.IsOnSale);
-            await EnsureValidProductConfigurationAsync(
-                dto.ProductType,
-                dto.BenefitType,
-                dto.ConsumableType,
-                dto.BenefitValue,
-                dto.IconAttachmentId);
-
-            Mapper.Map(dto, product);
-            product.ModifyId = operatorId;
-            product.ModifyBy = operatorName;
-            product.ModifyTime = DateTime.Now;
-            product.Version += 1;
-
-            var affected = await _productRepository.UpdateColumnsAsync(
-                p => new Product
-                {
-                    Name = product.Name,
-                    Description = product.Description,
-                    IconAttachmentId = product.IconAttachmentId,
-                    CoverAttachmentId = product.CoverAttachmentId,
-                    CategoryId = product.CategoryId,
-                    ProductType = product.ProductType,
-                    BenefitType = product.BenefitType,
-                    ConsumableType = product.ConsumableType,
-                    BenefitValue = product.BenefitValue,
-                    Price = product.Price,
-                    OriginalPrice = product.OriginalPrice,
-                    StockType = product.StockType,
-                    Stock = product.Stock,
-                    LimitPerUser = product.LimitPerUser,
-                    DurationType = product.DurationType,
-                    DurationDays = product.DurationDays,
-                    ExpiresAt = product.ExpiresAt,
-                    SortOrder = product.SortOrder,
-                    Version = product.Version,
-                    ModifyId = product.ModifyId,
-                    ModifyBy = product.ModifyBy,
-                    ModifyTime = product.ModifyTime
-                },
-                p => p.Id == dto.Id && p.TenantId == product.TenantId && p.Version == dto.ExpectedVersion && !p.IsDeleted);
-            if (affected <= 0)
-            {
-                throw CreateProductVersionConflictException();
-            }
-
-            Log.Information("更新商品成功：{ProductId}, 操作员={Operator}", dto.Id, operatorName);
-
-            return true;
+            throw CreateProductNotFoundException();
         }
-        catch (Exception ex)
+
+        EnsureExpectedProductVersion(product, dto.ExpectedVersion);
+        EnsureSupportedOnSaleProduct(
+            dto.ProductType,
+            dto.BenefitType,
+            dto.ConsumableType,
+            product.IsOnSale);
+        await EnsureValidProductConfigurationAsync(
+            dto.ProductType,
+            dto.BenefitType,
+            dto.ConsumableType,
+            dto.BenefitValue,
+            dto.IconAttachmentId);
+
+        Mapper.Map(dto, product);
+        product.ModifyId = operatorId;
+        product.ModifyBy = operatorName;
+        product.ModifyTime = DateTime.Now;
+        product.Version += 1;
+
+        var affected = await _productRepository.UpdateColumnsAsync(
+            p => new Product
+            {
+                Name = product.Name,
+                Description = product.Description,
+                IconAttachmentId = product.IconAttachmentId,
+                CoverAttachmentId = product.CoverAttachmentId,
+                CategoryId = product.CategoryId,
+                ProductType = product.ProductType,
+                BenefitType = product.BenefitType,
+                ConsumableType = product.ConsumableType,
+                BenefitValue = product.BenefitValue,
+                Price = product.Price,
+                OriginalPrice = product.OriginalPrice,
+                StockType = product.StockType,
+                Stock = product.Stock,
+                LimitPerUser = product.LimitPerUser,
+                DurationType = product.DurationType,
+                DurationDays = product.DurationDays,
+                ExpiresAt = product.ExpiresAt,
+                SortOrder = product.SortOrder,
+                Version = product.Version,
+                ModifyId = product.ModifyId,
+                ModifyBy = product.ModifyBy,
+                ModifyTime = product.ModifyTime
+            },
+            p => p.Id == dto.Id && p.TenantId == product.TenantId && p.Version == dto.ExpectedVersion && !p.IsDeleted);
+        if (affected <= 0)
         {
-            Log.Error(ex, "更新商品失败：{ProductId}", dto.Id);
-            throw;
+            throw CreateProductVersionConflictException();
         }
+
+        return true;
     }
 
     /// <summary>上架商品</summary>
     public async Task<bool> PutOnSaleAsync(long productId, int expectedVersion)
     {
-        try
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+        if (product == null)
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-            if (product == null)
-            {
-                throw CreateProductNotFoundException();
-            }
-
-            if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
-            {
-                throw CreateProductSaleUnsupportedException(product.BenefitType, product.ConsumableType);
-            }
-
-            await EnsureValidProductConfigurationAsync(
-                product.ProductType,
-                product.BenefitType,
-                product.ConsumableType,
-                product.BenefitValue,
-                product.IconAttachmentId);
-            EnsureExpectedProductVersion(product, expectedVersion);
-
-            var affected = await _productRepository.UpdateColumnsAsync(
-                p => new Product
-                {
-                    IsOnSale = true,
-                    ModerationTargetActionId = null,
-                    OnSaleTime = DateTime.Now,
-                    Version = p.Version + 1,
-                    ModifyTime = DateTime.Now
-                },
-                p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
-            if (affected <= 0)
-            {
-                throw CreateProductVersionConflictException();
-            }
-
-            Log.Information("商品 {ProductId} 上架成功", productId);
-
-            return true;
+            throw CreateProductNotFoundException();
         }
-        catch (Exception ex)
+
+        if (ShopProductAvailabilityPolicy.IsUnavailablePublicProduct(product.ProductType, product.BenefitType, product.ConsumableType))
         {
-            Log.Error(ex, "上架商品 {ProductId} 失败", productId);
-            throw;
+            throw CreateProductSaleUnsupportedException(product.BenefitType, product.ConsumableType);
         }
+
+        await EnsureValidProductConfigurationAsync(
+            product.ProductType,
+            product.BenefitType,
+            product.ConsumableType,
+            product.BenefitValue,
+            product.IconAttachmentId);
+        EnsureExpectedProductVersion(product, expectedVersion);
+
+        var affected = await _productRepository.UpdateColumnsAsync(
+            p => new Product
+            {
+                IsOnSale = true,
+                ModerationTargetActionId = null,
+                OnSaleTime = DateTime.Now,
+                Version = p.Version + 1,
+                ModifyTime = DateTime.Now
+            },
+            p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
+        if (affected <= 0)
+        {
+            throw CreateProductVersionConflictException();
+        }
+
+        return true;
     }
 
     private static void EnsureSupportedOnSaleProduct(
@@ -751,40 +689,30 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     /// <summary>下架商品</summary>
     public async Task<bool> TakeOffSaleAsync(long productId, int expectedVersion)
     {
-        try
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+        if (product == null)
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-            if (product == null)
-            {
-                throw CreateProductNotFoundException();
-            }
-
-            EnsureExpectedProductVersion(product, expectedVersion);
-
-            var affected = await _productRepository.UpdateColumnsAsync(
-                p => new Product
-                {
-                    IsOnSale = false,
-                    ModerationTargetActionId = null,
-                    OffSaleTime = DateTime.Now,
-                    Version = p.Version + 1,
-                    ModifyTime = DateTime.Now
-                },
-                p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
-            if (affected <= 0)
-            {
-                throw CreateProductVersionConflictException();
-            }
-
-            Log.Information("商品 {ProductId} 下架成功", productId);
-
-            return true;
+            throw CreateProductNotFoundException();
         }
-        catch (Exception ex)
+
+        EnsureExpectedProductVersion(product, expectedVersion);
+
+        var affected = await _productRepository.UpdateColumnsAsync(
+            p => new Product
+            {
+                IsOnSale = false,
+                ModerationTargetActionId = null,
+                OffSaleTime = DateTime.Now,
+                Version = p.Version + 1,
+                ModifyTime = DateTime.Now
+            },
+            p => p.Id == productId && p.TenantId == product.TenantId && p.Version == expectedVersion && !p.IsDeleted);
+        if (affected <= 0)
         {
-            Log.Error(ex, "下架商品 {ProductId} 失败", productId);
-            throw;
+            throw CreateProductVersionConflictException();
         }
+
+        return true;
     }
 
     /// <summary>获取商品列表（管理后台）</summary>
@@ -796,135 +724,107 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         int pageIndex = 1,
         int pageSize = 20)
     {
-        try
+        Expression<Func<Product, bool>> where = p => !p.IsDeleted;
+
+        if (!string.IsNullOrWhiteSpace(categoryId))
         {
-            Expression<Func<Product, bool>> where = p => !p.IsDeleted;
-
-            if (!string.IsNullOrWhiteSpace(categoryId))
-            {
-                where = where.And(p => p.CategoryId == categoryId);
-            }
-
-            if (productType.HasValue)
-            {
-                where = where.And(p => p.ProductType == productType.Value);
-            }
-
-            if (isOnSale.HasValue)
-            {
-                where = where.And(p => p.IsOnSale == isOnSale.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(keyword))
-            {
-                where = where.And(p => p.Name.Contains(keyword));
-            }
-
-            var (products, totalCount) = await _productRepository.QueryPageAsync(
-                whereExpression: where,
-                pageIndex: pageIndex,
-                pageSize: pageSize,
-                orderByExpression: p => p.CreateTime,
-                orderByType: OrderByType.Desc,
-                thenByExpression: p => p.Id,
-                thenByType: OrderByType.Desc);
-
-            var productVos = Mapper.Map<List<ProductVo>>(products);
-            await FillProductCategoryNamesAsync(productVos);
-            FillProductUrls(productVos);
-
-            return new PageModel<ProductVo>
-            {
-                Page = pageIndex,
-                PageSize = pageSize,
-                DataCount = totalCount,
-                PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
-                Data = productVos
-            };
+            where = where.And(p => p.CategoryId == categoryId);
         }
-        catch (Exception ex)
+
+        if (productType.HasValue)
         {
-            Log.Error(ex, "获取商品列表（管理后台）失败");
-            throw;
+            where = where.And(p => p.ProductType == productType.Value);
         }
+
+        if (isOnSale.HasValue)
+        {
+            where = where.And(p => p.IsOnSale == isOnSale.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(keyword))
+        {
+            where = where.And(p => p.Name.Contains(keyword));
+        }
+
+        var (products, totalCount) = await _productRepository.QueryPageAsync(
+            whereExpression: where,
+            pageIndex: pageIndex,
+            pageSize: pageSize,
+            orderByExpression: p => p.CreateTime,
+            orderByType: OrderByType.Desc,
+            thenByExpression: p => p.Id,
+            thenByType: OrderByType.Desc);
+
+        var productVos = Mapper.Map<List<ProductVo>>(products);
+        await FillProductCategoryNamesAsync(productVos);
+        FillProductUrls(productVos);
+
+        return new PageModel<ProductVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
+            Data = productVos
+        };
     }
 
     /// <summary>获取商品详情（管理后台）</summary>
     public async Task<ProductVo?> GetProductDetailForAdminAsync(long productId)
     {
-        try
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+        if (product == null)
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-            if (product == null)
-            {
-                return null;
-            }
+            return null;
+        }
 
-            var productVo = Mapper.Map<ProductVo>(product);
-            await FillProductCategoryNamesAsync([productVo]);
-            FillProductUrl(productVo);
-            return productVo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取商品 {ProductId} 详情（管理后台）失败", productId);
-            throw;
-        }
+        var productVo = Mapper.Map<ProductVo>(product);
+        await FillProductCategoryNamesAsync([productVo]);
+        FillProductUrl(productVo);
+        return productVo;
     }
 
     /// <summary>删除商品（管理后台）</summary>
     public async Task<bool> DeleteProductAsync(long productId, long operatorId, string operatorName)
     {
-        try
+        var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
+        if (product == null)
         {
-            var product = await _productRepository.QueryFirstAsync(p => p.Id == productId && !p.IsDeleted);
-            if (product == null)
-            {
-                throw CreateProductNotFoundException();
-            }
-
-            var relatedOrderCount = await _orderRepository.QueryCountAsync(
-                order => order.ProductId == productId
-                    && !order.IsDeleted
-                    && order.TenantId == product.TenantId);
-            if (relatedOrderCount > 0)
-            {
-                throw new BusinessException(
-                    "商品已有订单记录，不能删除；请下架商品以保留历史订单快照",
-                    409,
-                    "Product.DeleteOrderConflict",
-                    "error.product.delete_order_conflict");
-            }
-
-            product.IsDeleted = true;
-            product.IsOnSale = false;
-            product.ModerationTargetActionId = null;
-            product.OffSaleTime = DateTime.Now;
-            product.ModifyTime = DateTime.Now;
-            product.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
-            product.ModifyId = operatorId;
-
-            var result = await _productRepository.UpdateAsync(product);
-            if (!result)
-            {
-                throw new BusinessException(
-                    "商品删除失败，请刷新后重试",
-                    409,
-                    "Product.OperationRejected",
-                    "error.product.operation_rejected");
-            }
-
-            Log.Information("商品 {ProductId} 删除成功，操作员={OperatorName}({OperatorId})",
-                productId,
-                product.ModifyBy,
-                operatorId);
-            return true;
+            throw CreateProductNotFoundException();
         }
-        catch (Exception ex)
+
+        var relatedOrderCount = await _orderRepository.QueryCountAsync(
+            order => order.ProductId == productId
+                && !order.IsDeleted
+                && order.TenantId == product.TenantId);
+        if (relatedOrderCount > 0)
         {
-            Log.Error(ex, "删除商品 {ProductId} 失败", productId);
-            throw;
+            throw new BusinessException(
+                "商品已有订单记录，不能删除；请下架商品以保留历史订单快照",
+                409,
+                "Product.DeleteOrderConflict",
+                "error.product.delete_order_conflict");
         }
+
+        product.IsDeleted = true;
+        product.IsOnSale = false;
+        product.ModerationTargetActionId = null;
+        product.OffSaleTime = DateTime.Now;
+        product.ModifyTime = DateTime.Now;
+        product.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
+        product.ModifyId = operatorId;
+
+        var result = await _productRepository.UpdateAsync(product);
+        if (!result)
+        {
+            throw new BusinessException(
+                "商品删除失败，请刷新后重试",
+                409,
+                "Product.OperationRejected",
+                "error.product.operation_rejected");
+        }
+
+        return true;
     }
 
     #endregion

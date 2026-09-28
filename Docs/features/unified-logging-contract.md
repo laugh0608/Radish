@@ -202,3 +202,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `ExperienceCalculator` 移除缓存命中 / 写入 / 清除成功与无效等级明细；缓存读取 / 写入 / 清除异常分别以 `experience.calculator_cache_fallback` Warning 和固定 rewardOperation / failureKind 记录。公式、缓存键、序列化、过期设置及回退计算保持原样。
 - 治理快照列表反序列化异常仍返回空列表，但每个解析失败字段记录一次 `experience.governance_snapshot_invalid` Warning，仅含 failureKind，不读取异常正文或输出快照。空值和 JSON null 沿用空列表返回且安静；多个损坏字段可产生多次独立解析告警。
 - 旧 / 候选输出均覆盖 Development / Production，真实 Service、Controller 与内存 API 错误管道验证最终异常归属；mock 仓储不代表真实事务、并发或运行态验收。生产候选开关保持关闭，L2 尚未整体完成，证据见[本批记录](../records/unified-logging-l2-experience-governance-2026-09-28.md)。
+
+## 19. L2 商品管理 / 浏览与订单查询 / 备注
+
+- `ProductService` 的分类、公开商品列表 / 详情、管理列表 / 详情以及创建 / 更新 / 上下架 / 删除移除仅记录再重抛的 catch 和逐项成功明细。公开可用性筛选、资源校验、分类与附件补全、分页排序、租户 / 版本条件、软删除及已有订单禁止删除等规则保持不变。
+- `OrderService` 的用户订单、详情、按订单号查询、购买计数、管理列表 / 详情与备注移除重复重抛日志；备注正常保存不再复制操作员与订单身份。用户隔离、订单快照、查询口径、备注规范化、ModifyBy / ModifyId / ModifyTime 和 false 返回均保持原样。
+- ShopController 的五个商品写入入口与订单备注消费 InvalidOperationException 时输出 `product.management_rejected / order.remark_rejected` Warning，仅带安全 failureKind；原 400 / 409 响应不变。这些异常可能来自存储，不能一律理解为正常业务冲突。
+- 上述入口消费的 4xx BusinessException 保持安静；消费的 5xx BusinessException 使用安全 `http.failed` Error，带状态码与 failureKind。其他上抛异常由既有 API 最终边界处理，不再被 Service 重复记录。业务错误码、响应消息及状态未改变。
+- 本批只关闭上述商品与订单入口；系统赠送、权益查询 / 激活 / 停用 / 撤销、背包查询 / 使用 / 加减等仍按后续批次治理，不宣称完整商城链路收口。旧 / 候选输出均覆盖 Development / Production，mock 仓储及内存 HTTP 管道不替代真实数据库或运行态验收。生产候选开关继续关闭，证据见[本批记录](../records/unified-logging-l2-shop-management-2026-09-28.md)。
