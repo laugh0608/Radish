@@ -259,7 +259,7 @@ public sealed class ProducerLoggingTests
         context.Request.Path = "/api/test";
         context.Response.Body = new MemoryStream();
         Assert.True(await handler.TryHandleAsync(context,
-            new Radish.Common.Exceptions.BusinessException("public business message", status), default));
+            new Radish.Common.Exceptions.BusinessException("public business message", status), TestContext.Current.CancellationToken));
         Assert.Equal(status, context.Response.StatusCode);
         Assert.Equal(events, Lines(output).Length);
     }
