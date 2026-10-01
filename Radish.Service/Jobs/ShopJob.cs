@@ -5,7 +5,6 @@ using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Shared.CustomEnum;
 using Radish.Common.TimeTool;
-using Serilog;
 
 namespace Radish.Service.Jobs;
 
@@ -50,15 +49,13 @@ public class ShopJob
     {
         if (!await TimeoutOrderCancellationLock.WaitAsync(0))
         {
-            Log.Warning("[ShopJob] 上一轮超时订单处理仍在执行，跳过本轮");
             return 0;
         }
 
+        var summary = new BusinessJobSummary("shop-timeouts");
         try
         {
             var effectiveTimeoutMinutes = timeoutMinutes > 0 ? timeoutMinutes : 30;
-
-            Log.Information("[ShopJob] 开始处理超时订单，超时时间：{TimeoutMinutes} 分钟", effectiveTimeoutMinutes);
 
             var cutoffTime = GetUtcNow().AddMinutes(-effectiveTimeoutMinutes);
 
@@ -72,7 +69,6 @@ public class ShopJob
 
             if (timeoutOrderIds.Count == 0)
             {
-                Log.Information("[ShopJob] 没有需要取消的超时订单");
                 return 0;
             }
 
@@ -83,32 +79,33 @@ public class ShopJob
                 try
                 {
                     var reason = $"订单超时自动取消（超过 {effectiveTimeoutMinutes} 分钟未支付）";
-                    await _orderService.CancelOrderBySystemAsync(orderId, reason);
+                    var changed = await _orderService.CancelOrderBySystemAsync(orderId, reason);
+                    summary.ProcessedCount++;
+                    if (changed) summary.UpdatedCount++;
                     cancelledCount++;
-
-                    Log.Information("[ShopJob] 已取消超时订单：{OrderId}", orderId);
                 }
-                catch (InvalidOperationException ex)
+                catch (InvalidOperationException)
                 {
-                    Log.Warning(ex, "[ShopJob] 订单状态已变化，跳过超时取消：{OrderId}", orderId);
+                    summary.RejectedCount++;
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[ShopJob] 取消订单失败：{OrderId}", orderId);
+                    summary.RecordFailure(ex);
                 }
             }
 
-            Log.Information("[ShopJob] 超时订单处理完成，共取消 {Count} 个订单", cancelledCount);
             return cancelledCount;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[ShopJob] 处理超时订单时发生异常");
+            summary.RecordFailure(ex);
+
             return 0;
         }
         finally
         {
             TimeoutOrderCancellationLock.Release();
+            summary.Write();
         }
     }
 
@@ -122,15 +119,13 @@ public class ShopJob
     /// <returns>标记的权益数量</returns>
     public async Task<int> MarkExpiredBenefitsAsync()
     {
+        var summary = new BusinessJobSummary("shop-benefits");
         try
         {
-            Log.Information("[ShopJob] 开始处理过期权益");
-
             var expiredBenefitIds = await _userBenefitService.GetDueBenefitIdsAsync();
 
             if (expiredBenefitIds.Count == 0)
             {
-                Log.Information("[ShopJob] 没有需要标记的过期权益");
                 return 0;
             }
 
@@ -143,22 +138,26 @@ public class ShopJob
                     if (await _userBenefitService.ExpireBenefitAsync(benefitId))
                     {
                         markedCount++;
-                        Log.Information("[ShopJob] 已物化权益过期：{BenefitId}", benefitId);
+                        summary.UpdatedCount++;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "[ShopJob] 标记权益过期失败：{BenefitId}", benefitId);
+                    summary.RecordFailure(ex);
                 }
             }
 
-            Log.Information("[ShopJob] 过期权益处理完成，共标记 {Count} 个权益", markedCount);
             return markedCount;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[ShopJob] 处理过期权益时发生异常");
+            summary.RecordFailure(ex);
+
             return 0;
+        }
+        finally
+        {
+            summary.Write();
         }
     }
 
@@ -172,10 +171,9 @@ public class ShopJob
     /// <returns>统计结果</returns>
     public async Task<ShopDailyStats> GenerateDailyStatsAsync()
     {
+        var summary = new BusinessJobSummary("shop-stats");
         try
         {
-            Log.Information("[ShopJob] 开始生成每日商城统计");
-
             var today = _businessCalendar.GetCurrentDate();
             var (startUtc, endUtc) = _businessCalendar.GetUtcRange(today);
 
@@ -193,23 +191,21 @@ public class ShopJob
                 TotalRevenue = todayOrders?.Where(o => o.Status == OrderStatus.Completed).Sum(o => o.TotalPrice) ?? 0
             };
 
-            Log.Information("[ShopJob] 每日统计完成：日期={Date}，总订单={TotalOrders}，完成={Completed}，取消={Cancelled}，失败={Failed}，收入={Revenue}",
-                stats.Date.ToString("yyyy-MM-dd"),
-                stats.TotalOrders,
-                stats.CompletedOrders,
-                stats.CancelledOrders,
-                stats.FailedOrders,
-                stats.TotalRevenue);
-
+            summary.ProcessedCount = stats.TotalOrders;
             return stats;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[ShopJob] 生成每日统计时发生异常");
+            summary.RecordFailure(ex);
+
             return new ShopDailyStats
             {
                 Date = _businessCalendar.GetCurrentDate().ToDateTime(TimeOnly.MinValue)
             };
+        }
+        finally
+        {
+            summary.Write();
         }
     }
 

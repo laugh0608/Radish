@@ -139,17 +139,21 @@ public sealed class AuthOpenIddictMigrationTest
         {
             var environment = BuildDbMigrateEnvironment(adminConnectionString!, databaseNames);
 
-            var firstOutput = await RunDbMigrateAsync(environment, cancellationToken);
-            var secondOutput = await RunDbMigrateAsync(environment, cancellationToken);
-
-            Assert.Contains("OpenIddict provider=PostgreSql, applied=1", firstOutput, StringComparison.Ordinal);
-            Assert.Contains("OpenIddict provider=PostgreSql, applied=0", secondOutput, StringComparison.Ordinal);
+            await RunDbMigrateAsync(environment, cancellationToken);
 
             var openIddictConnectionString = environment["OpenIddict__Database__ConnectionString"];
             var database = new RuntimeDatabaseConfig(DataBaseType.PostgreSql, openIddictConnectionString);
             await using var db = CreatePostgreSqlDbContext(openIddictConnectionString);
+            var firstApplied = (await db.Database.GetAppliedMigrationsAsync(cancellationToken)).ToArray();
+            Assert.Single(firstApplied);
+            AuthOpenIddictPersistence.EnsureReady(db, database);
             AssertModelIsCurrent(db, database);
-            Assert.Single(await db.Database.GetAppliedMigrationsAsync(cancellationToken));
+
+            await RunDbMigrateAsync(environment, cancellationToken);
+
+            Assert.Equal(firstApplied, (await db.Database.GetAppliedMigrationsAsync(cancellationToken)).ToArray());
+            AuthOpenIddictPersistence.EnsureReady(db, database);
+            AssertModelIsCurrent(db, database);
         }
         finally
         {

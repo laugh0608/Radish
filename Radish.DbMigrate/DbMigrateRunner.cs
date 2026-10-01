@@ -8,6 +8,7 @@ using Radish.Model;
 using Radish.Model.Models;
 using Radish.Shared.CustomEnum;
 using SqlSugar;
+using Serilog;
 
 namespace Radish.DbMigrate;
 
@@ -47,15 +48,15 @@ internal static class DbMigrateRunner
 
     private static async Task RunApplyAsync(IServiceProvider services, IConfiguration configuration, string environment)
     {
-        Console.WriteLine("[Radish.DbMigrate] 默认执行 apply：检查环境、迁移 schema、填充初始数据并严格验证。");
+        WriteProgress("dbmigrate.apply");
         DbMigrateDoctor.Run(services, configuration, environment, strict: false, failOnErrors: true);
 
         var db = services.GetRequiredService<ISqlSugarClient>();
         await EnsureBusinessSchemaAsync(services, configuration, environment, db);
         await ApplyOpenIddictMigrationsAsync(services, configuration);
 
-        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
-        Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
+        WriteProgress("dbmigrate.seed.started");
+        WriteProgress("dbmigrate.seed.policy");
         await InitialDataSeeder.SeedAsync(db, services);
 
         DbMigrateDoctor.Run(services, configuration, environment, strict: true);
@@ -63,7 +64,7 @@ internal static class DbMigrateRunner
 
     private static async Task RunInitAsync(IServiceProvider services, IConfiguration configuration, string environment)
     {
-        Console.WriteLine($"[Radish.DbMigrate] Environment: {environment}");
+        WriteProgress("dbmigrate.environment");
 
         var db = services.GetRequiredService<ISqlSugarClient>();
         var mainDbConnId = AppSettingsTool.RadishApp("MainDb");
@@ -78,13 +79,13 @@ internal static class DbMigrateRunner
             }
         }
 
-        Console.WriteLine("[Radish.DbMigrate] 创建数据库（如不存在）...");
+        WriteProgress("dbmigrate.database.creating");
         foreach (var _ in BaseDbConfig.AllConfigs)
         {
             db.DbMaintenance.CreateDatabase();
         }
 
-        Console.WriteLine("[Radish.DbMigrate] 初始化业务表结构（Code First）...");
+        WriteProgress("dbmigrate.schema.initializing");
 
         foreach (var config in BaseDbConfig.AllConfigs)
         {
@@ -101,26 +102,26 @@ internal static class DbMigrateRunner
 
             foreach (var type in entityTypesForConfig)
             {
-                Console.WriteLine($"  -> Init table for entity: {type.FullName} (ConnId={config.ConfigId})");
                 conn.CodeFirst.InitTables(type);
+                WriteProgress("dbmigrate.table.initialized", diagnostic: true);
             }
         }
 
         EnsureSupplementalIndexes(db, mainDbConnId);
         EnsureSchemaBaseline(services, db);
 
-        Console.WriteLine("[Radish.DbMigrate] Init 完成。");
+        WriteProgress("dbmigrate.schema.initialized");
     }
 
     private static async Task RunSeedAsync(IServiceProvider services, IConfiguration configuration, string environment)
     {
-        Console.WriteLine($"[Radish.DbMigrate] Environment: {environment}");
+        WriteProgress("dbmigrate.environment");
 
         var db = services.GetRequiredService<ISqlSugarClient>();
         await EnsureBusinessSchemaAsync(services, configuration, environment, db);
 
-        Console.WriteLine("[Radish.DbMigrate] 开始执行初始数据 Seed...");
-        Console.WriteLine("[Radish.DbMigrate] 表情包种子策略：当前不预置默认分组/表情，仅确保表结构可用。");
+        WriteProgress("dbmigrate.seed.started");
+        WriteProgress("dbmigrate.seed.policy");
         await InitialDataSeeder.SeedAsync(db, services);
     }
 
@@ -146,7 +147,7 @@ internal static class DbMigrateRunner
 
         if (hasAppliedBaseline)
         {
-            Console.WriteLine("[Radish.DbMigrate] Main 已由 schema ledger 接管，开始应用有序 migration...");
+            WriteProgress("dbmigrate.ledger.applying");
             EnsureSchemaBaseline(services, db, mainDbConnId, migrationScopes);
 
             var migratedInspectionResult = DbMigrateInspection.InspectSeedReadiness(services, mainDbConnId);
@@ -157,35 +158,34 @@ internal static class DbMigrateRunner
                     FormatMissingSchema(migratedInspectionResult));
             }
 
-            Console.WriteLine("[Radish.DbMigrate] ✓ 有序 migration 已应用，数据库表结构可用于 Seed");
+            WriteProgress("dbmigrate.ledger.applied");
             return;
         }
 
-        Console.WriteLine("[Radish.DbMigrate] 检查数据库表结构...");
+        WriteProgress("dbmigrate.schema.checking");
         var inspectionResult = DbMigrateInspection.InspectSeedReadiness(services, mainDbConnId);
 
         if (inspectionResult.DatabaseFileMissing || inspectionResult.MissingTables.Count > 0 || inspectionResult.MissingColumns.Count > 0)
         {
             if (inspectionResult.DatabaseFileMissing)
             {
-                Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到主库文件缺失 ({inspectionResult.DatabaseFilePath ?? "<unknown>"})，自动执行 init...");
+                WriteProgress("dbmigrate.schema.file_missing", warning: true);
             }
             else if (inspectionResult.MissingColumns.Count > 0)
             {
-                Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺列 ({string.Join(", ", inspectionResult.MissingColumns)})，自动执行 init...");
+                WriteProgress("dbmigrate.schema.columns_missing", warning: true);
             }
             else
             {
-                Console.WriteLine($"[Radish.DbMigrate] ⚠️  检测到表结构缺失 ({string.Join(", ", inspectionResult.MissingTables)})，自动执行 init...");
+                WriteProgress("dbmigrate.schema.tables_missing", warning: true);
             }
 
             await RunInitAsync(services, configuration, environment);
-            Console.WriteLine();
             return;
         }
         else
         {
-            Console.WriteLine("[Radish.DbMigrate] ✓ 数据库表结构已存在");
+            WriteProgress("dbmigrate.schema.ready");
         }
 
         if (!hasAppliedBaseline)
@@ -256,14 +256,7 @@ internal static class DbMigrateRunner
         var db = scope.ServiceProvider.GetRequiredService<AuthOpenIddictDbContext>();
         var database = AuthOpenIddictPersistence.ResolveDatabase(configuration);
         var applied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database);
-        Console.WriteLine(
-            $"[Radish.DbMigrate] OpenIddict provider={database.DbType}, applied={applied.Count}。");
-        if (applied.Count == 0)
-        {
-            return;
-        }
-
-        Console.WriteLine($"[Radish.DbMigrate] OpenIddict 已应用：{string.Join(", ", applied)}。");
+        WriteProgress("dbmigrate.oidc.applied", count: applied.Count);
     }
 
     private static void EnsureSupplementalIndexes(ISqlSugarClient db, string? mainDbConnId)
@@ -315,33 +308,29 @@ internal static class DbMigrateRunner
             !db.DbMaintenance.IsAnyColumn(tableName, publicIndexColumnName, false))
         {
             db.CodeFirst.InitTables<User>();
-            Console.WriteLine("[Radish.DbMigrate] 已同步 User 公共身份字段。");
+            WriteProgress("dbmigrate.identity.updated");
         }
 
         if (!db.DbMaintenance.IsAnyColumn(tableName, publicIdColumnName, false))
         {
-            Console.WriteLine("[Radish.DbMigrate] User.PublicId 字段仍未补齐，请按 B6 要求删除本地 SQLite 后重新初始化。");
+            WriteProgress("dbmigrate.identity.public_id_missing", warning: true);
         }
 
         if (!db.DbMaintenance.IsAnyColumn(tableName, publicIndexColumnName, false))
         {
-            Console.WriteLine("[Radish.DbMigrate] User.PublicIndex 字段仍未补齐，请按 B6 要求删除本地 SQLite 后重新初始化。");
+            WriteProgress("dbmigrate.identity.public_index_missing", warning: true);
         }
 
         if (!db.DbMaintenance.IsAnyIndex(publicIdIndexName))
         {
             var created = db.DbMaintenance.CreateIndex(tableName, [nameof(User.PublicId)], publicIdIndexName, true);
-            Console.WriteLine(created
-                ? $"[Radish.DbMigrate] 已补齐唯一索引 {publicIdIndexName}。"
-                : $"[Radish.DbMigrate] 唯一索引 {publicIdIndexName} 创建未生效，请检查数据库状态。");
+            WriteIndexResult(created, publicIdIndexName);
         }
 
         if (!db.DbMaintenance.IsAnyIndex(publicIndexIndexName))
         {
             var created = db.DbMaintenance.CreateIndex(tableName, [nameof(User.PublicIndex)], publicIndexIndexName, true);
-            Console.WriteLine(created
-                ? $"[Radish.DbMigrate] 已补齐唯一索引 {publicIndexIndexName}。"
-                : $"[Radish.DbMigrate] 唯一索引 {publicIndexIndexName} 创建未生效，请检查数据库状态。");
+            WriteIndexResult(created, publicIndexIndexName);
         }
     }
 
@@ -381,7 +370,7 @@ internal static class DbMigrateRunner
             ALTER TABLE {QuoteIdentifier(tableName)}
             ALTER COLUMN {QuoteIdentifier(columnName)} DROP NOT NULL
             """);
-        Console.WriteLine($"[Radish.DbMigrate] 已修复 SystemBootstrapState.{expectedColumnName} 可空约束。");
+        WriteProgress("dbmigrate.bootstrap.updated");
     }
 
     private static bool IsPostgreSqlColumnNotNull(ISqlSugarClient db, string tableName, string columnName)
@@ -464,9 +453,7 @@ internal static class DbMigrateRunner
             indexName,
             false);
 
-        Console.WriteLine(created
-            ? $"[Radish.DbMigrate] 已补齐索引 {indexName}。"
-            : $"[Radish.DbMigrate] 索引 {indexName} 创建未生效，请检查数据库状态。");
+        WriteIndexResult(created, indexName);
     }
 
     private static void EnsureForumIndexes(ISqlSugarClient db)
@@ -528,7 +515,7 @@ internal static class DbMigrateRunner
         if (!db.DbMaintenance.IsAnyTable(grantRecordTableName, false))
         {
             db.CodeFirst.InitTables<UserInventoryGrantRecord>();
-            Console.WriteLine("[Radish.DbMigrate] 已补齐用户背包发放流水表。");
+            WriteProgress("dbmigrate.inventory.schema_updated");
         }
 
         NormalizeUserBenefitPurchaseSources(db);
@@ -589,7 +576,7 @@ internal static class DbMigrateRunner
         if (!db.DbMaintenance.IsAnyTable(tableName, false))
         {
             db.CodeFirst.InitTables<ContentSubmissionRecord>();
-            Console.WriteLine("[Radish.DbMigrate] 已补齐论坛内容提交意图记录表。");
+            WriteProgress("dbmigrate.submission.schema_updated");
         }
 
         EnsureIndex(
@@ -630,7 +617,7 @@ internal static class DbMigrateRunner
         var updatedCount = FileAccessTokenSecurityMigration.Apply(db);
         if (updatedCount > 0)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已将 {updatedCount} 条历史文件访问 token 原位转换为 hash。");
+            WriteProgress("dbmigrate.tokens.converted", count: updatedCount);
         }
 
         EnsureIndex(
@@ -691,7 +678,7 @@ internal static class DbMigrateRunner
 
         if (updatedCount > 0)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已回填 {updatedCount} 条萝卜币奖励业务键。");
+            WriteProgress("dbmigrate.coin.keys_updated", count: updatedCount);
         }
     }
 
@@ -739,7 +726,7 @@ internal static class DbMigrateRunner
 
         if (updatedCount > 0)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已回填 {updatedCount} 条经验奖励业务键。");
+            WriteProgress("dbmigrate.experience.keys_updated", count: updatedCount);
         }
     }
 
@@ -782,7 +769,7 @@ internal static class DbMigrateRunner
         db.Deleteable<UserBenefit>()
             .Where(benefit => duplicateIds.Contains(benefit.Id))
             .ExecuteCommand();
-        Console.WriteLine($"[Radish.DbMigrate] 已清理 {duplicateIds.Count} 条重复订单权益发放记录。");
+        WriteProgress("dbmigrate.order.grants_deduplicated", count: duplicateIds.Count);
     }
 
     private static void NormalizeUserInventoryItems(ISqlSugarClient db)
@@ -839,12 +826,12 @@ internal static class DbMigrateRunner
             db.Deleteable<UserInventory>()
                 .Where(item => duplicateIds.Contains(item.Id))
                 .ExecuteCommand();
-            Console.WriteLine($"[Radish.DbMigrate] 已合并 {duplicateIds.Count} 条重复背包聚合项。");
+            WriteProgress("dbmigrate.inventory.merged", count: duplicateIds.Count);
         }
 
         if (updatedCount > 0)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已规整 {updatedCount} 条背包聚合项。");
+            WriteProgress("dbmigrate.inventory.normalized", count: updatedCount);
         }
     }
 
@@ -902,7 +889,7 @@ internal static class DbMigrateRunner
         }
 
         db.Insertable(records).ExecuteCommand();
-        Console.WriteLine($"[Radish.DbMigrate] 已回填 {records.Count} 条消耗品订单发放流水。");
+        WriteProgress("dbmigrate.order.ledger_updated", count: records.Count);
     }
 
     private static void NormalizePostLikeRelations(ISqlSugarClient db)
@@ -930,7 +917,7 @@ internal static class DbMigrateRunner
             db.Deleteable<UserPostLike>()
                 .Where(like => duplicateIds.Contains(like.Id))
                 .ExecuteCommand();
-            Console.WriteLine($"[Radish.DbMigrate] 已清理 {duplicateIds.Count} 条重复帖子点赞关系。");
+            WriteProgress("dbmigrate.post.likes_deduplicated", count: duplicateIds.Count);
         }
 
         var activeLikeCounts = db.Queryable<UserPostLike>()
@@ -965,7 +952,7 @@ internal static class DbMigrateRunner
 
         if (updatedCount > 0)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已校准 {updatedCount} 条帖子点赞计数。");
+            WriteProgress("dbmigrate.post.likes_updated", count: updatedCount);
         }
     }
 
@@ -994,7 +981,7 @@ internal static class DbMigrateRunner
             db.Deleteable<UserCommentLike>()
                 .Where(like => duplicateIds.Contains(like.Id))
                 .ExecuteCommand();
-            Console.WriteLine($"[Radish.DbMigrate] 已清理 {duplicateIds.Count} 条重复评论点赞关系。");
+            WriteProgress("dbmigrate.comment.likes_deduplicated", count: duplicateIds.Count);
         }
 
         var activeLikeCounts = db.Queryable<UserCommentLike>()
@@ -1029,7 +1016,7 @@ internal static class DbMigrateRunner
 
         if (updatedCount > 0)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 已校准 {updatedCount} 条评论点赞计数。");
+            WriteProgress("dbmigrate.comment.likes_updated", count: updatedCount);
         }
     }
 
@@ -1046,9 +1033,7 @@ internal static class DbMigrateRunner
         }
 
         var created = db.DbMaintenance.CreateIndex(tableName, columns, indexName, unique);
-        Console.WriteLine(created
-            ? $"[Radish.DbMigrate] 已补齐{(unique ? "唯一" : string.Empty)}索引 {indexName}。"
-            : $"[Radish.DbMigrate] {(unique ? "唯一" : string.Empty)}索引 {indexName} 创建未生效，请检查数据库状态。");
+        WriteIndexResult(created, indexName);
     }
 
     private static string NormalizeInventoryItemValue(string? itemValue)
@@ -1151,6 +1136,23 @@ internal static class DbMigrateRunner
         }
 
         return false;
+    }
+
+    private static void WriteProgress(string code, int? count = null, bool warning = false, bool diagnostic = false)
+    {
+        var logger = Log.ForContext("EventCode", code).ForContext("SourceCategory", "database")
+            .ForContext("Diagnostic", diagnostic);
+        if (count.HasValue) logger = logger.ForContext("count", count.Value);
+        if (warning) logger.Warning("Migration event {EventCode}", code);
+        else logger.Information("Migration event {EventCode}", code);
+    }
+
+    private static void WriteIndexResult(bool created, string indexName)
+    {
+        var logger = Log.ForContext("EventCode", created ? "dbmigrate.index.created" : "dbmigrate.index.failed")
+            .ForContext("SourceCategory", "database").ForContext("schemaIndex", indexName);
+        if (created) logger.Information("Schema index created");
+        else logger.Warning("Schema index creation failed");
     }
 
     private static void PrintHelp()

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Caching.Memory;
+using Radish.Common.LogTool;
 
 namespace Radish.Gateway.PublicHead;
 
@@ -73,7 +74,13 @@ public sealed class PublicHeadSnapshotMiddleware
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "公开详情页 HTML head 注入失败，Path={Path}", context.Request.Path);
+            using (_logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "public_head.injection_failed", ["SourceCategory"] = "http"
+            }))
+            {
+                _logger.LogWarning("Public head HTML injection or response failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
             await _next(context);
         }
     }

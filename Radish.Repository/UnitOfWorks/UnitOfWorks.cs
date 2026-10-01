@@ -20,7 +20,6 @@ public class UnitOfWorks : IDisposable
     {
         if (this.IsTran && !this.IsCommit)
         {
-            Logger.LogDebug("UnitOfWork RollbackTran");
             this.Tenant.RollbackTran();
         }
 
@@ -33,7 +32,6 @@ public class UnitOfWorks : IDisposable
     {
         if (this.IsTran && !this.IsCommit)
         {
-            Logger.LogDebug("UnitOfWork CommitTran");
             this.Tenant.CommitTran();
             this.IsCommit = true;
         }

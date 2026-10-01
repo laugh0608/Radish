@@ -1,6 +1,5 @@
 using Radish.Model;
 using Radish.Model.ViewModels;
-using Serilog;
 
 namespace Radish.Service;
 
@@ -13,18 +12,10 @@ public partial class ExperienceService
     /// </summary>
     public async Task<List<LevelConfigVo>> GetLevelConfigsAsync()
     {
-        try
-        {
-            var levelConfigs = await GetLevelConfigsCacheAsync();
-            var configVos = Mapper.Map<List<LevelConfigVo>>(levelConfigs);
-            FillLevelConfigUrls(configVos);
-            return configVos;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取等级配置失败");
-            throw;
-        }
+        var levelConfigs = await GetLevelConfigsCacheAsync();
+        var configVos = Mapper.Map<List<LevelConfigVo>>(levelConfigs);
+        FillLevelConfigUrls(configVos);
+        return configVos;
     }
 
     /// <summary>
@@ -32,23 +23,15 @@ public partial class ExperienceService
     /// </summary>
     public async Task<LevelConfigVo?> GetLevelConfigAsync(int level)
     {
-        try
+        var levelConfig = (await GetLevelConfigsCacheAsync()).FirstOrDefault(l => l.Level == level);
+        if (levelConfig == null)
         {
-            var levelConfig = (await GetLevelConfigsCacheAsync()).FirstOrDefault(l => l.Level == level);
-            if (levelConfig == null)
-            {
-                return null;
-            }
+            return null;
+        }
 
-            var configVo = Mapper.Map<LevelConfigVo>(levelConfig);
-            FillLevelConfigUrl(configVo);
-            return configVo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取等级 {Level} 配置失败", level);
-            throw;
-        }
+        var configVo = Mapper.Map<LevelConfigVo>(levelConfig);
+        FillLevelConfigUrl(configVo);
+        return configVo;
     }
 
     /// <summary>
@@ -102,7 +85,7 @@ public partial class ExperienceService
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "读取等级配置缓存失败，将回退到数据库查询");
+                RewardRuntimeLog.CacheFallback("cache-read", ex);
             }
         }
 
@@ -118,7 +101,7 @@ public partial class ExperienceService
             }
             catch (Exception ex)
             {
-                Log.Warning(ex, "写入等级配置缓存失败");
+                RewardRuntimeLog.CacheFallback("cache-write", ex);
             }
         }
 
@@ -133,7 +116,7 @@ public partial class ExperienceService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "清除等级配置缓存失败");
+            RewardRuntimeLog.CacheFallback("cache-invalidate", ex);
         }
     }
 

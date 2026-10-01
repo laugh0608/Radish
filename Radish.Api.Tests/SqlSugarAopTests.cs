@@ -15,94 +15,6 @@ namespace Radish.Api.Tests;
 
 public class SqlSugarAopTests
 {
-    [Fact(DisplayName = "MarkdownContent 参数应省略正文预览")]
-    public void FormatParameters_ShouldOmitMarkdownContentPreview()
-    {
-        var parameters = new[]
-        {
-            new SugarParameter("@MarkdownContent", "# 标题\n这里是正文内容"),
-            new SugarParameter("@Title", "文档标题")
-        };
-
-        var formatted = InvokePrivate<string>("FormatParameters", new object[] { parameters, new SqlAopLogOptions() });
-
-        formatted.ShouldContain("@MarkdownContent=<text len=");
-        formatted.ShouldContain("omitted>");
-        formatted.ShouldContain("@Title=文档标题");
-        formatted.ShouldNotContain("preview=");
-        formatted.ShouldNotContain("这里是正文内容");
-    }
-
-    [Fact(DisplayName = "Token 与 TokenHash 参数应强制省略凭据预览")]
-    public void FormatParameters_ShouldOmitTokenCredentials()
-    {
-        const string rawToken = "abcdef0123456789abcdef0123456789";
-        const string tokenHash = "zD2f1sKnJZJuWjm49Xv3vnGvD0fEBcK1POsLfdDkQHY";
-        var parameters = new[]
-        {
-            new SugarParameter("@Token0", rawToken),
-            new SugarParameter("@TokenHash1", tokenHash)
-        };
-
-        var formatted = InvokePrivate<string>("FormatParameters", new object[] { parameters, new SqlAopLogOptions() });
-
-        formatted.ShouldContain("@Token0=<text len=32 omitted>");
-        formatted.ShouldContain("@TokenHash1=<text len=43 omitted>");
-        formatted.ShouldNotContain(rawToken);
-        formatted.ShouldNotContain(tokenHash);
-    }
-
-    [Fact(DisplayName = "SQL 模板中的 MarkdownContent 正文应被省略")]
-    public void SanitizeSqlText_ShouldOmitInlineMarkdownContent()
-    {
-        const string sql = "UPDATE `WikiDocument` SET `MarkdownContent`='# 标题\n这里是正文内容',`Title`='文档标题' WHERE `Id`=1";
-
-        var sanitized = InvokePrivate<string>("SanitizeSqlText", new object[] { sql, new SqlAopLogOptions() });
-
-        sanitized.ShouldContain("`MarkdownContent`='<text len=");
-        sanitized.ShouldContain("omitted>'");
-        sanitized.ShouldContain("`Title`='文档标题'");
-        sanitized.ShouldNotContain("这里是正文内容");
-    }
-
-    [Fact(DisplayName = "超长 SQL 字符串字面量应被统一省略")]
-    public void SanitizeSqlText_ShouldOmitLargeStringLiteral()
-    {
-        var largeLiteral = new string('a', 300);
-        var sql = $"INSERT INTO `Demo` (`Payload`) VALUES ('{largeLiteral}')";
-
-        var sanitized = InvokePrivate<string>("SanitizeSqlText", new object[] { sql, new SqlAopLogOptions() });
-
-        sanitized.ShouldContain("'<text len=300 omitted>'");
-        sanitized.ShouldNotContain(largeLiteral);
-    }
-
-    [Fact(DisplayName = "配置 SkipTables 后应跳过指定表日志")]
-    public void ShouldLog_ShouldRespectSkipTables()
-    {
-        var options = new SqlAopLogOptions
-        {
-            SkipTables = ["WikiDocument", "WikiDocumentRevision"]
-        };
-
-        var shouldLog = InvokePrivate<bool>("ShouldLog", new object[] { options, "System", "WikiDocumentRevision", "Update" });
-
-        shouldLog.ShouldBeFalse();
-    }
-
-    [Fact(DisplayName = "配置关闭 Query 后不记录查询日志")]
-    public void ShouldLog_ShouldRespectQuerySwitch()
-    {
-        var options = new SqlAopLogOptions
-        {
-            LogQuery = false
-        };
-
-        var shouldLog = InvokePrivate<bool>("ShouldLog", new object[] { options, "System", "AnyTable", "Query" });
-
-        shouldLog.ShouldBeFalse();
-    }
-
     [Fact(DisplayName = "PostgreSQL 参数中的本地时间应规范化为 UTC")]
     public void NormalizeDateTimeParametersForPostgreSql_ShouldConvertLocalDateTimeToUtc()
     {
@@ -223,16 +135,6 @@ public class SqlSugarAopTests
         {
             Directory.Delete(tempRoot, recursive: true);
         }
-    }
-
-    private static T InvokePrivate<T>(string methodName, params object[] args)
-    {
-        var method = typeof(SqlSugarAop).GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Static);
-        method.ShouldNotBeNull();
-
-        var result = method.Invoke(null, args);
-        result.ShouldBeOfType<T>();
-        return (T)result;
     }
 
 }

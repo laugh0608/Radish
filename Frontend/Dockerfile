@@ -28,7 +28,9 @@ RUN rm -rf \
 
 COPY --from=build /src/Frontend/radish.client/dist ./client
 COPY --from=build /src/Frontend/radish.console/dist ./console
-COPY --from=build /src/Frontend/scripts/serve-static.mjs ./serve-static.mjs
+COPY --from=build /src/Frontend/scripts/serve-static.mjs ./Frontend/scripts/serve-static.mjs
+COPY --from=build /src/Frontend/scripts/logging ./Frontend/scripts/logging
+COPY Radish.Common/LogTool/Contracts/runtime-log-policy.v1.json ./Radish.Common/LogTool/Contracts/runtime-log-policy.v1.json
 
 EXPOSE 80
-CMD ["node", "/app/serve-static.mjs"]
+CMD ["node", "/app/Frontend/scripts/serve-static.mjs"]

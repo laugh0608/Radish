@@ -7,7 +7,6 @@ using Radish.Common.OptionTool;
 using Radish.Common.TimeTool;
 using Radish.IService;
 using Radish.Service.Internal;
-using Serilog;
 using StackExchange.Redis;
 
 namespace Radish.Service;
@@ -183,15 +182,6 @@ public class UploadRateLimitService : IUploadRateLimitService
             ? await AcquireInMemoryAsync(userId, uploadId, fileSize, lifetime)
             : await AcquireInRedisAsync(userId, uploadId, fileSize, lifetime);
 
-        if (!result.IsAllowed)
-        {
-            Log.Warning(
-                "[UploadRateLimit] 用户 {UserId} 上传预留被拒绝: {FailureKind}; 文件大小: {FileSize}",
-                userId,
-                result.FailureKind,
-                fileSize);
-        }
-
         return result;
     }
 
@@ -203,18 +193,9 @@ public class UploadRateLimitService : IUploadRateLimitService
             return;
         }
 
-        var completedSize = _redisDatabase == null
+        _ = _redisDatabase == null
             ? await CompleteInMemoryAsync(userId, uploadId)
             : await CompleteInRedisAsync(userId, uploadId);
-
-        if (completedSize.HasValue)
-        {
-            Log.Information(
-                "[UploadRateLimit] 用户 {UserId} 完成上传: {UploadId}, 大小: {Size}",
-                userId,
-                uploadId,
-                FormatFileSize(completedSize.Value));
-        }
     }
 
     public async Task FailUploadAsync(long userId, string uploadId)
@@ -225,14 +206,9 @@ public class UploadRateLimitService : IUploadRateLimitService
             return;
         }
 
-        var removed = _redisDatabase == null
+        _ = _redisDatabase == null
             ? await FailInMemoryAsync(userId, uploadId)
             : await FailInRedisAsync(userId, uploadId);
-
-        if (removed)
-        {
-            Log.Information("[UploadRateLimit] 用户 {UserId} 释放上传预留: {UploadId}", userId, uploadId);
-        }
     }
 
     public async Task<UploadStatistics> GetUploadStatisticsAsync(long userId)
@@ -277,8 +253,6 @@ public class UploadRateLimitService : IUploadRateLimitService
                 }
             }
         }
-
-        Log.Information("[UploadRateLimit] 重置用户 {UserId} 的限流计数", userId);
     }
 
     private async Task<UploadRateLimitCheckResult> AcquireInRedisAsync(

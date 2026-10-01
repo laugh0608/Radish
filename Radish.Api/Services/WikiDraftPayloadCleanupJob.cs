@@ -1,4 +1,5 @@
 using Hangfire;
+using System.Diagnostics;
 using Radish.IRepository;
 
 namespace Radish.Api.Services;
@@ -20,9 +21,10 @@ public sealed class WikiDraftPayloadCleanupJob
         _logger = logger;
     }
 
-    [AutomaticRetry(Attempts = 2, DelaysInSeconds = [60, 300])]
+    [AutomaticRetry(Attempts = 2, DelaysInSeconds = [60, 300], LogEvents = false)]
     public async Task<int> ExecuteAsync(int retentionDays = 90, int batchSize = 200)
     {
+        var started = Stopwatch.GetTimestamp();
         var nowUtc = _timeProvider.GetUtcNow().UtcDateTime;
         var effectiveRetentionDays = Math.Max(1, retentionDays);
         var purgedCount = await _repository.PurgeTerminalDraftPayloadsAsync(
@@ -31,10 +33,12 @@ public sealed class WikiDraftPayloadCleanupJob
             nowUtc);
         if (purgedCount > 0)
         {
-            _logger.LogInformation(
-                "[WikiDraftPayloadCleanup] 已清理 {PurgedCount} 份终态草稿正文，保留 {RetentionDays} 天",
-                purgedCount,
-                effectiveRetentionDays);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "job.cleanup.completed", ["SourceCategory"] = "job", ["jobKind"] = "wiki-drafts"
+            });
+            _logger.LogInformation("Cleanup completed; count={count}; duration={durationMs} ms",
+                purgedCount, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
 
         return purgedCount;

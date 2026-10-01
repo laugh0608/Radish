@@ -159,7 +159,7 @@ RouteGuard / usePermission
 
 - `Radish.Common/PermissionTool/ConsolePermissions.cs`
 - `Radish.Service/UserService.cs`
-- `Radish.DbMigrate/InitialDataSeeder.Identity.cs`
+- `Radish.DbMigrate/InitialDataSeeder.ApiPermissions.cs`
 - `Radish.Api/Filters/HangfireAuthorizationFilter.cs`
 
 ### 4.3 当前缺口

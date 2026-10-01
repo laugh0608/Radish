@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using Radish.Common.AttributeTool;
 using Radish.Common.CoreTool;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Infrastructure.FileStorage;
@@ -93,7 +94,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             // 1. 基础校验
             if (file == null || file.Length == 0)
             {
-                Log.Warning("上传文件为空");
                 throw new BusinessException(
                     "文件不能为空",
                     StatusCodes.Status400BadRequest,
@@ -115,8 +115,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                     AttachmentErrorCodes.UnsupportedMediaType,
                     AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.UnsupportedMediaType));
             }
-
-            Log.Information("开始上传文件：{FileName}, 大小：{FileSize} bytes", fileName, file.Length);
 
             // 2. 计算文件哈希（用于去重）
             string? fileHash = null;
@@ -157,23 +155,17 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                         var physicalFileExists = await _fileStorage.ExistsAsync(existingAttachment.StoragePath);
                         if (physicalFileExists)
                         {
-                            Log.Information("文件已存在，返回已有记录：{FileHash}", fileHash);
                             return Mapper.Map<AttachmentVo>(existingAttachment);
                         }
                         else
                         {
                             // 物理文件不存在，软删除旧记录并继续上传
-                            Log.Warning("文件记录存在但物理文件缺失，软删除旧记录：{AttachmentId}, {FileHash}", existingAttachment.Id, fileHash);
+                            Log.ForContext("EventCode", "attachment.dedup_source_missing")
+                                .ForContext("SourceCategory", "application")
+                                .Warning("Attachment deduplication source is missing");
                             await _attachmentRepository.SoftDeleteByIdAsync(existingAttachment.Id, "System");
                         }
                     }
-                }
-                else
-                {
-                    Log.Information(
-                        _fileStorageOptions.Deduplication.Enable
-                            ? "当前上传包含图片处理语义，跳过去重检查"
-                            : "文件去重已禁用，跳过去重检查");
                 }
             }
 
@@ -190,7 +182,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             if (!uploadResult.Success)
             {
-                Log.Error("文件上传失败：{FailureKind}, {ErrorMessage}", uploadResult.FailureKind, uploadResult.ErrorMessage);
                 throw CreateUploadFailureException(uploadResult);
             }
 
@@ -203,10 +194,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 if (_fileStorageOptions.Watermark?.Enable == true)
                 {
                     await AddWatermarkAsync(uploadResult.StoragePath, optionsDto.WatermarkText);
-                }
-                else
-                {
-                    Log.Information("水印功能未在配置文件中启用，跳过水印处理");
                 }
             }
 
@@ -263,8 +250,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             attachment.Id = attachmentId;
             attachmentPersisted = true;
 
-            Log.Information("文件上传成功：{AttachmentId}, 路径：{StoragePath}", attachmentId, uploadResult.StoragePath);
-
             return Mapper.Map<AttachmentVo>(attachment);
         }
         catch (BusinessException)
@@ -276,9 +261,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             throw;
         }
-        catch (Exception ex)
+        catch
         {
-            Log.Error(ex, "上传文件时发生异常：{FileName}", file?.FileName);
             if (!attachmentPersisted)
             {
                 await CleanupFailedUploadAsync(successfulUpload, generatedPaths);
@@ -303,7 +287,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId);
             if (attachment == null)
             {
-                Log.Warning("附件不存在：{AttachmentId}", attachmentId);
                 return false;
             }
 
@@ -320,18 +303,22 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             if (dbDeleted > 0)
             {
-                Log.Information("附件软删除成功：{AttachmentId}，物理文件将通过定时任务清理", attachmentId);
                 return true;
             }
             else
             {
-                Log.Warning("附件软删除失败：{AttachmentId}", attachmentId);
+                Log.ForContext("EventCode", "attachment.delete_rejected")
+                    .ForContext("SourceCategory", "application")
+                    .Warning("Attachment soft delete changed no rows");
                 return false;
             }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "删除附件时发生异常：{AttachmentId}", attachmentId);
+            Log.ForContext("EventCode", "attachment.delete_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Attachment soft delete consumed a failure");
             return false;
         }
     }
@@ -604,7 +591,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "更新下载次数失败：{AttachmentId}", attachmentId);
+            Log.ForContext("EventCode", "attachment.download_count_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Attachment download counter consumed a failure");
         }
     }
 
@@ -640,7 +630,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var tenantId = requestTenantId ?? App.CurrentUser.TenantId;
             if (!await CanReadAttachmentAsync(attachment, tenantId, requestUserId, requestUserRoles))
             {
-                Log.Warning("用户 {UserId} 尝试访问无权限附件：{AttachmentId}（业务类型：{BusinessType}）", requestUserId, attachmentId, attachment.BusinessType);
                 return (null, null);
             }
 
@@ -649,7 +638,9 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var stream = await _fileStorage.DownloadAsync(filePath);
             if (stream == null)
             {
-                Log.Warning("文件流获取失败：{StoragePath}", filePath);
+                Log.ForContext("EventCode", "attachment.download_unavailable")
+                    .ForContext("SourceCategory", "application")
+                    .Warning("Attachment download stream is unavailable");
                 return (null, null);
             }
 
@@ -660,7 +651,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "获取下载流时发生异常：{AttachmentId}", attachmentId);
+            Log.ForContext("EventCode", "attachment.download_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Attachment download consumed a failure");
             return (null, null);
         }
     }
@@ -770,7 +764,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             if (!result.Success)
             {
-                Log.Warning("缩略图生成失败：{ErrorMessage}", result.ErrorMessage);
                 throw CreateProcessingFailedException();
             }
         }
@@ -780,7 +773,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "生成缩略图时发生异常：{SourcePath}", sourcePath);
             throw CreateProcessingFailedException(ex);
         }
     }
@@ -841,11 +833,9 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 {
                     // 替换原文件（添加重试机制）
                     ReplaceFileWithRetry(tempPath, fullPath, 3);
-                    Log.Information("水印已添加：{FilePath}, 文本：{WatermarkText}", filePath, watermarkText);
                 }
                 else
                 {
-                    Log.Warning("水印添加失败：{ErrorMessage}", result.ErrorMessage);
                     throw CreateProcessingFailedException();
                 }
             }
@@ -856,7 +846,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "添加水印时发生异常：{FilePath}", filePath);
             throw CreateProcessingFailedException(ex);
         }
         finally
@@ -882,11 +871,17 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
                 // 移动文件
                 File.Move(sourcePath, targetPath);
+                if (i > 0)
+                {
+                    Log.ForContext("EventCode", "attachment.replace_recovered")
+                        .ForContext("SourceCategory", "application")
+                        .ForContext("count", i)
+                        .Warning("Attachment file replacement recovered after retry");
+                }
                 return; // 成功，退出重试循环
             }
-            catch (IOException ex) when (i < maxRetries - 1)
+            catch (IOException) when (i < maxRetries - 1)
             {
-                Log.Warning("文件替换失败，正在重试 ({0}/{1}): {2}", i + 1, maxRetries, ex.Message);
                 Thread.Sleep(100); // 等待 100ms 后重试
             }
         }
@@ -919,7 +914,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 {
                     // 替换原文件（添加重试机制）
                     ReplaceFileWithRetry(tempPath, fullPath, 3);
-                    Log.Information("EXIF 信息已移除：{FilePath}", filePath);
                 }
                 else
                 {
@@ -933,7 +927,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "移除 EXIF 信息时发生异常：{FilePath}", filePath);
             throw CreateProcessingFailedException(ex);
         }
         finally
@@ -987,10 +980,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             if (results.Count != sizes.Count || results.Any(sizeResult => !sizeResult.Success))
             {
-                Log.Warning(
-                    "多尺寸图片生成失败：{SuccessCount}/{ExpectedCount}",
-                    results.Count(sizeResult => sizeResult.Success),
-                    sizes.Count);
                 foreach (var sizeResult in results)
                 {
                     DeletePhysicalFileIfExists(sizeResult.OutputPath);
@@ -1017,8 +1006,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                     .Replace("\\", "/");
 
                 result[sizeName] = finalRelativePath;
-
-                Log.Information("生成 {SizeName} 尺寸成功：{Path}", sizeName, finalRelativePath);
             }
         }
         catch (BusinessException)
@@ -1027,7 +1014,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "生成多尺寸图片时发生异常：{SourcePath}", sourcePath);
             throw CreateProcessingFailedException(ex);
         }
 
@@ -1053,6 +1039,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             .Distinct(StringComparer.Ordinal)
             .ToArray();
 
+        var failedCount = 0;
+        string? failureKind = null;
         foreach (var path in paths)
         {
             try
@@ -1060,16 +1048,24 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                 var deleted = await _fileStorage.DeleteAsync(path!);
                 if (!deleted && await _fileStorage.ExistsAsync(path!))
                 {
-                    Log.Warning("失败上传文件未能清理：{StoragePath}", path);
+                    failedCount++;
+                    failureKind = "other";
                 }
             }
             catch (Exception cleanupException)
             {
-                Log.Warning(
-                    cleanupException,
-                    "清理失败上传文件时发生异常：{StoragePath}",
-                    path);
+                failedCount++;
+                var kind = RuntimeFailureSummary.Classify(cleanupException);
+                failureKind = failureKind == null || failureKind == kind ? kind : "other";
             }
+        }
+        if (failedCount > 0)
+        {
+            Log.ForContext("EventCode", "attachment.cleanup_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failedCount", failedCount)
+                .ForContext("failureKind", failureKind)
+                .Error("Attachment cleanup did not complete");
         }
     }
 
@@ -1086,7 +1082,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         }
         catch (Exception exception)
         {
-            Log.Warning(exception, "清理图片处理临时文件失败：{Path}", path);
+            Log.ForContext("EventCode", "attachment.temp_cleanup_failed")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
+                .Error("Attachment temporary file cleanup failed");
         }
     }
 

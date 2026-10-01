@@ -7,7 +7,6 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
-using Serilog;
 
 namespace Radish.Service;
 
@@ -81,13 +80,6 @@ public partial class ExperienceService
             result.VoAction.VoActionId,
             result);
 
-        Log.Information(
-            "管理员 {OperatorName}({OperatorId}) 记录用户 {UserId} 经验治理复核结论，经验版本 {ExpectedVersion} -> {ResultVersion}",
-            normalizedOperatorName,
-            operatorId,
-            request.UserId,
-            request.ExpectedVersion,
-            result.VoExperience.VoVersion);
         return result;
     }
 
@@ -155,12 +147,6 @@ public partial class ExperienceService
         await InvalidateLevelConfigsCacheAsync();
         var levelVos = Mapper.Map<List<LevelConfigVo>>(writeResult.LevelConfigs);
         FillLevelConfigUrls(levelVos);
-        Log.Information(
-            "管理员 {OperatorName}({OperatorId}) 完成等级配置整批重算，变更 {ChangedLevelCount} 级，审计 {AuditId}",
-            normalizedOperatorName,
-            operatorId,
-            writeResult.Audit.ChangedLevelCount,
-            writeResult.Audit.Id);
         return new ExperienceLevelRecalculationResultVo
         {
             VoLevels = levelVos,

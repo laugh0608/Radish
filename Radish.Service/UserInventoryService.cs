@@ -62,60 +62,36 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     /// <summary>获取用户背包列表</summary>
     public async Task<List<UserInventoryVo>> GetUserInventoryAsync(long userId)
     {
-        try
-        {
-            var items = await _inventoryRepository.QueryAsync(i => i.UserId == userId && i.Quantity > 0);
-            var itemVos = Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
-            FillInventoryUrls(itemVos);
-            return itemVos;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 背包列表失败", userId);
-            throw;
-        }
+        var items = await _inventoryRepository.QueryAsync(i => i.UserId == userId && i.Quantity > 0);
+        var itemVos = Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
+        FillInventoryUrls(itemVos);
+        return itemVos;
     }
 
     /// <summary>获取用户指定类型的道具</summary>
     public async Task<List<UserInventoryVo>> GetUserInventoryByTypeAsync(long userId, ConsumableType consumableType)
     {
-        try
-        {
-            var items = await _inventoryRepository.QueryAsync(
-                i => i.UserId == userId && i.ConsumableType == consumableType && i.Quantity > 0);
-            var itemVos = Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
-            FillInventoryUrls(itemVos);
-            return itemVos;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 类型 {ConsumableType} 道具列表失败", userId, consumableType);
-            throw;
-        }
+        var items = await _inventoryRepository.QueryAsync(
+            i => i.UserId == userId && i.ConsumableType == consumableType && i.Quantity > 0);
+        var itemVos = Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
+        FillInventoryUrls(itemVos);
+        return itemVos;
     }
 
     /// <summary>获取用户指定道具的数量</summary>
     public async Task<int> GetItemQuantityAsync(long userId, ConsumableType consumableType, string? itemValue = null)
     {
-        try
-        {
-            Expression<Func<UserInventory, bool>> where = i =>
-                i.UserId == userId && i.ConsumableType == consumableType;
+        Expression<Func<UserInventory, bool>> where = i =>
+            i.UserId == userId && i.ConsumableType == consumableType;
 
-            if (!string.IsNullOrWhiteSpace(itemValue))
-            {
-                Expression<Func<UserInventory, bool>> valueFilter = i => i.ItemValue == itemValue;
-                where = where.And(valueFilter);
-            }
-
-            var items = await _inventoryRepository.QueryAsync(where);
-            return items.Sum(i => i.Quantity);
-        }
-        catch (Exception ex)
+        if (!string.IsNullOrWhiteSpace(itemValue))
         {
-            Log.Error(ex, "获取用户 {UserId} 道具 {ConsumableType} 数量失败", userId, consumableType);
-            throw;
+            Expression<Func<UserInventory, bool>> valueFilter = i => i.ItemValue == itemValue;
+            where = where.And(valueFilter);
         }
+
+        var items = await _inventoryRepository.QueryAsync(where);
+        return items.Sum(i => i.Quantity);
     }
 
     #endregion
@@ -296,13 +272,6 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
             ResponsePayload = resultPayload
         });
 
-        Log.Information(
-            "用户 {UserId} 使用道具 {InventoryId}，操作={OperationId}, 类型={ConsumableType}, 数量={Quantity}",
-            userId,
-            inventoryId,
-            operationId,
-            item.ConsumableType,
-            quantity);
         return result;
     }
 
@@ -343,6 +312,13 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         }
         catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
+            if (ex is InvalidOperationException)
+            {
+                Log.ForContext("EventCode", "inventory.rename_rejected")
+                    .ForContext("SourceCategory", "application")
+                    .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                    .Warning("Inventory rename effect rejected");
+            }
             throw new BusinessException(ex.Message, ex);
         }
 
@@ -537,23 +513,9 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     /// <summary>扣减道具数量</summary>
     public async Task<bool> DeductItemAsync(long userId, long inventoryId, int quantity = 1)
     {
-        try
-        {
-            var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, quantity);
+        var deduction = await _userInventoryRepository.TryDeductItemAsync(userId, inventoryId, quantity);
 
-            if (deduction.Success)
-            {
-                Log.Information("扣减道具成功：用户={UserId}, 道具={InventoryId}, 扣减={Quantity}, 剩余={Remaining}",
-                    userId, inventoryId, quantity, deduction.RemainingQuantity);
-            }
-
-            return deduction.Success;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "扣减道具失败：用户={UserId}, 道具={InventoryId}", userId, inventoryId);
-            throw;
-        }
+        return deduction.Success;
     }
 
     /// <summary>增加道具数量</summary>
@@ -566,58 +528,44 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         int quantity = 1,
         long? sourceProductId = null)
     {
-        try
+        var normalizedItemValue = NormalizeItemValue(itemValue);
+
+        // 检查是否已有相同道具
+        var existingItem = await _inventoryRepository.QueryFirstAsync(
+            i => i.UserId == userId &&
+                 i.ConsumableType == consumableType &&
+                 i.ItemValue == normalizedItemValue &&
+                 !i.IsDeleted);
+
+        if (existingItem != null)
         {
-            var normalizedItemValue = NormalizeItemValue(itemValue);
+            // 增加数量
+            existingItem.Quantity += quantity;
+            existingItem.ModifyTime = DateTime.Now;
+            await _inventoryRepository.UpdateAsync(existingItem);
 
-            // 检查是否已有相同道具
-            var existingItem = await _inventoryRepository.QueryFirstAsync(
-                i => i.UserId == userId &&
-                     i.ConsumableType == consumableType &&
-                     i.ItemValue == normalizedItemValue &&
-                     !i.IsDeleted);
-
-            if (existingItem != null)
-            {
-                // 增加数量
-                existingItem.Quantity += quantity;
-                existingItem.ModifyTime = DateTime.Now;
-                await _inventoryRepository.UpdateAsync(existingItem);
-
-                Log.Information("道具数量增加：用户={UserId}, 道具={ItemId}, 新数量={Quantity}",
-                    userId, existingItem.Id, existingItem.Quantity);
-
-                return existingItem.Id;
-            }
-            else
-            {
-                // 创建新道具
-                var newItem = new UserInventory
-                {
-                    UserId = userId,
-                    ConsumableType = consumableType,
-                    ItemValue = normalizedItemValue,
-                    ItemName = itemName,
-                    ItemIconAttachmentId = itemIconAttachmentId,
-                    Quantity = quantity,
-                    SourceProductId = sourceProductId,
-                    CreateTime = DateTime.Now,
-                    CreateBy = "System",
-                    CreateId = userId
-                };
-
-                var itemId = await _inventoryRepository.AddAsync(newItem);
-
-                Log.Information("道具添加成功：用户={UserId}, 道具={ItemId}, 类型={ConsumableType}",
-                    userId, itemId, consumableType);
-
-                return itemId;
-            }
+            return existingItem.Id;
         }
-        catch (Exception ex)
+        else
         {
-            Log.Error(ex, "添加道具失败：用户={UserId}, 类型={ConsumableType}", userId, consumableType);
-            throw;
+            // 创建新道具
+            var newItem = new UserInventory
+            {
+                UserId = userId,
+                ConsumableType = consumableType,
+                ItemValue = normalizedItemValue,
+                ItemName = itemName,
+                ItemIconAttachmentId = itemIconAttachmentId,
+                Quantity = quantity,
+                SourceProductId = sourceProductId,
+                CreateTime = DateTime.Now,
+                CreateBy = "System",
+                CreateId = userId
+            };
+
+            var itemId = await _inventoryRepository.AddAsync(newItem);
+
+            return itemId;
         }
     }
 

@@ -2,7 +2,6 @@ using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
-using Serilog;
 
 namespace Radish.Service.Jobs;
 
@@ -33,32 +32,33 @@ public class RetentionRewardJob
     /// <returns>发放结果（神评数量, 沙发数量）</returns>
     public async Task<(int godCommentCount, int sofaCount)> ExecuteAsync()
     {
+        var summary = new BusinessJobSummary("retention-rewards");
         try
         {
-            Log.Information("[RetentionReward] 开始执行保留奖励发放");
-
             // 1. 发放神评保留奖励
-            var godCommentCount = await GrantGodCommentRetentionRewardAsync();
+            var godCommentCount = await GrantGodCommentRetentionRewardAsync(summary);
 
             // 2. 发放沙发保留奖励
-            var sofaCount = await GrantSofaRetentionRewardAsync();
-
-            Log.Information("[RetentionReward] 保留奖励发放完成，神评：{GodCount} 个，沙发：{SofaCount} 个",
-                godCommentCount, sofaCount);
+            var sofaCount = await GrantSofaRetentionRewardAsync(summary);
 
             return (godCommentCount, sofaCount);
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[RetentionReward] 执行保留奖励发放时发生异常");
+            summary.RecordFailure(ex);
+
             return (0, 0);
+        }
+        finally
+        {
+            summary.Write();
         }
     }
 
     /// <summary>
     /// 发放神评保留奖励
     /// </summary>
-    private async Task<int> GrantGodCommentRetentionRewardAsync()
+    private async Task<int> GrantGodCommentRetentionRewardAsync(BusinessJobSummary summary)
     {
         try
         {
@@ -68,11 +68,8 @@ public class RetentionRewardJob
 
             if (!currentGodComments.Any())
             {
-                Log.Information("[RetentionReward] 没有找到当前的神评");
                 return 0;
             }
-
-            Log.Information("[RetentionReward] 找到 {Count} 个当前神评", currentGodComments.Count);
 
             var rewardCount = 0;
 
@@ -98,27 +95,17 @@ public class RetentionRewardJob
                         if (result.IsSuccess)
                         {
                             rewardCount++;
-                            Log.Information("[RetentionReward] 神评保留奖励发放成功：HighlightId={HighlightId}, AuthorId={AuthorId}, Week={Week}, Amount={Amount}",
-                                highlight.Id, highlight.AuthorId, week, result.Amount);
+                            summary.RewardCount++;
                         }
                         else if (result.FailureReason?.Contains("已发放过") == false)
                         {
-                            // 只记录非重复的失败
-                            Log.Warning("[RetentionReward] 神评保留奖励发放失败：HighlightId={HighlightId}, Week={Week}, Reason={Reason}",
-                                highlight.Id, week, result.FailureReason);
+                            summary.RejectedCount++; // 不输出服务返回的失败正文
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "[RetentionReward] 发放神评保留奖励时发生异常：HighlightId={HighlightId}, Week={Week}",
-                            highlight.Id, week);
+                        summary.RecordFailure(ex);
                     }
-                }
-
-                if (totalWeeks > 3)
-                {
-                    Log.Debug("[RetentionReward] 神评已保留超过3周：HighlightId={HighlightId}, TotalWeeks={Weeks}",
-                        highlight.Id, totalWeeks);
                 }
             }
 
@@ -126,7 +113,8 @@ public class RetentionRewardJob
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[RetentionReward] 发放神评保留奖励时发生异常");
+            summary.RecordFailure(ex);
+
             return 0;
         }
     }
@@ -134,7 +122,7 @@ public class RetentionRewardJob
     /// <summary>
     /// 发放沙发保留奖励
     /// </summary>
-    private async Task<int> GrantSofaRetentionRewardAsync()
+    private async Task<int> GrantSofaRetentionRewardAsync(BusinessJobSummary summary)
     {
         try
         {
@@ -144,11 +132,8 @@ public class RetentionRewardJob
 
             if (!currentSofas.Any())
             {
-                Log.Information("[RetentionReward] 没有找到当前的沙发");
                 return 0;
             }
-
-            Log.Information("[RetentionReward] 找到 {Count} 个当前沙发", currentSofas.Count);
 
             var rewardCount = 0;
 
@@ -174,27 +159,17 @@ public class RetentionRewardJob
                         if (result.IsSuccess)
                         {
                             rewardCount++;
-                            Log.Information("[RetentionReward] 沙发保留奖励发放成功：HighlightId={HighlightId}, AuthorId={AuthorId}, Week={Week}, Amount={Amount}",
-                                highlight.Id, highlight.AuthorId, week, result.Amount);
+                            summary.RewardCount++;
                         }
                         else if (result.FailureReason?.Contains("已发放过") == false)
                         {
-                            // 只记录非重复的失败
-                            Log.Warning("[RetentionReward] 沙发保留奖励发放失败：HighlightId={HighlightId}, Week={Week}, Reason={Reason}",
-                                highlight.Id, week, result.FailureReason);
+                            summary.RejectedCount++; // 不输出服务返回的失败正文
                         }
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "[RetentionReward] 发放沙发保留奖励时发生异常：HighlightId={HighlightId}, Week={Week}",
-                            highlight.Id, week);
+                        summary.RecordFailure(ex);
                     }
-                }
-
-                if (totalWeeks > 3)
-                {
-                    Log.Debug("[RetentionReward] 沙发已保留超过3周：HighlightId={HighlightId}, TotalWeeks={Weeks}",
-                        highlight.Id, totalWeeks);
                 }
             }
 
@@ -202,7 +177,8 @@ public class RetentionRewardJob
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[RetentionReward] 发放沙发保留奖励时发生异常");
+            summary.RecordFailure(ex);
+
             return 0;
         }
     }

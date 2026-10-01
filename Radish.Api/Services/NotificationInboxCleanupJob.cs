@@ -1,4 +1,5 @@
 using Hangfire;
+using System.Diagnostics;
 using Radish.IRepository;
 
 namespace Radish.Api.Services;
@@ -20,33 +21,34 @@ public sealed class NotificationInboxCleanupJob
         _logger = logger;
     }
 
-    [AutomaticRetry(Attempts = 2, DelaysInSeconds = [60, 300])]
+    [AutomaticRetry(Attempts = 2, DelaysInSeconds = [60, 300], LogEvents = false)]
     public async Task<NotificationInboxCleanupResult> ExecuteAsync(
         int batchSize = 200,
         int softRelationLimitPerUser = 5000)
     {
+        var started = Stopwatch.GetTimestamp();
         var result = await _repository.CleanupAsync(
             _timeProvider.GetUtcNow().UtcDateTime,
             batchSize,
             softRelationLimitPerUser);
 
-        if (result.DeletedGroupCount > 0 || result.DeletedNotificationCount > 0)
+        using var scope = _logger.BeginScope(new Dictionary<string, object>
         {
+            ["SourceCategory"] = "job", ["jobKind"] = "notification-inbox"
+        });
+        if (result.DeletedRelationCount > 0 || result.DeletedGroupCount > 0 || result.DeletedNotificationCount > 0)
+        {
+            using var completed = _logger.BeginScope(new Dictionary<string, object> { ["EventCode"] = "job.cleanup.completed" });
             _logger.LogInformation(
-                "[NotificationInboxCleanup] 清理完成：Relations={RelationCount}, Groups={GroupCount}, Notifications={NotificationCount}",
-                result.DeletedRelationCount,
-                result.DeletedGroupCount,
-                result.DeletedNotificationCount);
+                "Inbox cleanup completed; relations={relationCount}; groups={groupCount}; notifications={notificationCount}; duration={durationMs} ms",
+                result.DeletedRelationCount, result.DeletedGroupCount, result.DeletedNotificationCount,
+                Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
 
-        foreach (var warning in result.CapacityWarnings)
+        if (result.CapacityWarnings.Count > 0)
         {
-            _logger.LogWarning(
-                "[NotificationInboxCleanup] 用户事件关系超过软上限且无可静默清理项：TenantId={TenantId}, UserId={UserId}, RelationCount={RelationCount}, SoftLimit={SoftLimit}",
-                warning.TenantId,
-                warning.UserId,
-                warning.RelationCount,
-                softRelationLimitPerUser);
+            using var warning = _logger.BeginScope(new Dictionary<string, object> { ["EventCode"] = "job.cleanup.capacity_warning" });
+            _logger.LogWarning("Inbox capacity needs attention; count={count}", result.CapacityWarnings.Count);
         }
 
         return result;

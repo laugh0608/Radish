@@ -4,7 +4,7 @@
 
 ## 当前结论
 
-- 生产发布统一使用仓库根目录下的 `Deploy/deploy-production.sh`；直接执行 `docker compose up -d` 不再是生产发布默认入口。
+- 生产发布统一使用仓库根目录下的 `Deploy/deploy-production.sh`；已有数据库的生产升级不使用 `docker compose up -d` 代替发布编排。首次空环境可按[部署指南](/deployment/guide)直接启动 Compose。
 - 生产镜像必须固定为与仓库发布记录一致的不可变 `v*-release` tag，禁止使用 `release-latest` 或 `latest`。
 - 表、字段、索引、约束和必要的数据回填必须先进入有序 Radish migration；生产环境由一次性 `Radish.DbMigrate apply` 任务执行，不允许 Api、Auth 或 Gateway 启动时自行迁移。
 - 每个发布批次即使没有 pending migration，也会显式执行一次 `apply` 和独立 `verify`，以确认数据库 ledger、结构和数据语义与发布镜像一致。
@@ -17,8 +17,8 @@
 ```bash
 cp Deploy/.env.example Deploy/.env
 chmod 600 Deploy/.env
-mkdir -p DeployData/Postgres DeployData/Redis DeployData/AuthCerts
-mkdir -p DeployBackups DataBases Logs
+mkdir -p Deploy/data/postgres Deploy/data/redis Deploy/data/auth-certs
+mkdir -p Deploy/data/app Deploy/logs Deploy/backups
 ```
 
 至少确认以下生产值：
@@ -68,6 +68,8 @@ mkdir -p DeployBackups DataBases Logs
 ```text
 <RADISH_BACKUP_PATH>/<UTC timestamp>-<release tag>/
 ```
+
+默认 `RADISH_BACKUP_PATH=./backups`，相对于 `Deploy/` 解析；备份目录与 PostgreSQL 数据目录分离，且整体归入部署目录。旧路径迁入及冷备份要求见[部署指南](/deployment/guide)。
 
 其中包含 globals、六库 dump、校验和、元数据以及成功或失败标记。脚本不会自动清理历史备份。
 

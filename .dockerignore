@@ -32,3 +32,10 @@ README.md
 !.git/config
 !.git/packed-refs
 !.git/refs/heads/**
+
+# Deployment state must never enter the image build context.
+Deploy/data
+Deploy/logs
+Deploy/backups
+DeployData
+DeployBackups

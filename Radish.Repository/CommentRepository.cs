@@ -146,9 +146,9 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
 
     private async Task ApplyCommentLikeCountDeltaAsync(long commentId, int delta)
     {
-        var tableName = RepositorySqlHelper.QuoteIdentifier(DbProtectedClient.EntityMaintenance.GetEntityInfo<Comment>().DbTableName);
-        var idColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Comment.Id));
-        var likeCountColumn = RepositorySqlHelper.QuoteIdentifier(nameof(Comment.LikeCount));
+        var tableName = RepositorySqlHelper.GetTableIdentifier<Comment>(DbProtectedClient);
+        var idColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.Id));
+        var likeCountColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.LikeCount));
 
         if (delta > 0)
         {
@@ -241,14 +241,14 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
                 return [];
             }
 
-            var tableName = QuoteIdentifier(DbProtectedClient.EntityMaintenance.GetEntityInfo<Comment>().DbTableName);
-            var postIdColumn = QuoteIdentifier(nameof(Comment.PostId));
-            var authorIdColumn = QuoteIdentifier(nameof(Comment.AuthorId));
-            var createTimeColumn = QuoteIdentifier(nameof(Comment.CreateTime));
-            var idColumn = QuoteIdentifier(nameof(Comment.Id));
-            var isEnabledColumn = QuoteIdentifier(nameof(Comment.IsEnabled));
-            var isDeletedColumn = QuoteIdentifier(nameof(Comment.IsDeleted));
-            var tenantIdColumn = QuoteIdentifier(nameof(Comment.TenantId));
+            var tableName = RepositorySqlHelper.GetTableIdentifier<Comment>(DbProtectedClient);
+            var postIdColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.PostId));
+            var authorIdColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.AuthorId));
+            var createTimeColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.CreateTime));
+            var idColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.Id));
+            var isEnabledColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.IsEnabled));
+            var isDeletedColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.IsDeleted));
+            var tenantIdColumn = RepositorySqlHelper.GetColumnIdentifier<Comment>(DbProtectedClient, nameof(Comment.TenantId));
             const string excludedAuthorIdColumn = "\"ExcludedAuthorId\"";
 
             var parameters = new List<SugarParameter>
@@ -317,12 +317,5 @@ ORDER BY {postIdColumn}, {createTimeColumn} DESC, {idColumn} DESC;
 
             return await DbProtectedClient.Ado.SqlQueryAsync<Comment>(sql, parameters.ToArray());
         });
-    }
-
-    private static string QuoteIdentifier(string identifier)
-    {
-        return string.Join(".", identifier
-            .Split('.', StringSplitOptions.RemoveEmptyEntries)
-            .Select(part => $"\"{part.Replace("\"", "\"\"")}\""));
     }
 }

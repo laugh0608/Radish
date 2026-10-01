@@ -1,3 +1,7 @@
+using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
+using Serilog;
 using Radish.Common;
 using Radish.IRepository;
 using Radish.Model;
@@ -195,7 +199,7 @@ public sealed class ReliableOutboxRepository : IReliableOutboxRepository
 
         var attemptCount = current.AttemptCount + 1;
         var canRetry = retryAtUtc.HasValue && attemptCount < current.MaxAttempts;
-        await GetConnection(sourceDatabase).Updateable<TEntity>()
+        var affectedRows = await GetConnection(sourceDatabase).Updateable<TEntity>()
             .SetColumns(message => new TEntity
             {
                 Status = canRetry ? ReliableOutboxStatuses.Pending : ReliableOutboxStatuses.DeadLetter,
@@ -209,6 +213,23 @@ public sealed class ReliableOutboxRepository : IReliableOutboxRepository
             })
             .Where(message => message.Id == outboxId && message.Status == ReliableOutboxStatuses.Processing)
             .ExecuteCommandAsync();
+
+        if (affectedRows > 0)
+        {
+            // 仅记录实际落库的状态；并发无效写入不能伪造重试或死信事件。
+            var scope = IsChat(sourceDatabase) ? "chat" : "main";
+            var identity = $"radish:outbox:{scope}:{outboxId.ToString(CultureInfo.InvariantCulture)}";
+            var digest = SHA256.HashData(Encoding.UTF8.GetBytes(identity));
+            var operationId = new Guid(digest.AsSpan(0, 16)).ToString("D");
+            var logger = Log.ForContext("SourceCategory", "job")
+                .ForContext("EventCode", canRetry ? "outbox.retrying" : "outbox.dead_letter")
+                .ForContext("operationId", operationId)
+                .ForContext("databaseScope", scope)
+                .ForContext("attempt", attemptCount)
+                .ForContext("outcome", canRetry ? "retrying" : "failed");
+            if (canRetry) logger.Warning("Outbox retry scheduled");
+            else logger.Error("Outbox task moved to dead letter");
+        }
     }
 
     private async Task<bool> ReplayCoreAsync<TEntity>(

@@ -27,11 +27,10 @@ public class AutofacModuleRegister: Autofac.Module
         var basePath = AppContext.BaseDirectory;
         var serviceDllFile = Path.Combine(basePath, "Radish.Service.dll");
         var repositoryDllFile = Path.Combine(basePath, "Radish.Repository.dll");
-        
+
         // 注册 AOP
-        var aopTypes = new List<Type>(){typeof(TranAop), typeof(ServiceAop)};
+        var aopTypes = new List<Type>(){typeof(TranAop)};
         builder.RegisterType<TranAop>();
-        builder.RegisterType<ServiceAop>();
         // 注册服务
         builder.RegisterGeneric(typeof(BaseService<,>)).As(typeof(IBaseService<,>))
             .InstancePerDependency() // 瞬态
@@ -60,7 +59,7 @@ public class AutofacModuleRegister: Autofac.Module
             .AsImplementedInterfaces()
             .PropertiesAutowired()
             .InstancePerDependency();
-        
+
         // 注册事务模型
         builder.RegisterType<UnitOfWorkManage>().As<IUnitOfWorkManage>()
             .AsImplementedInterfaces()

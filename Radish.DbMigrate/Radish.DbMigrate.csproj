@@ -19,6 +19,7 @@
     <ProjectReference Include="..\Radish.Auth.Persistence\Radish.Auth.Persistence.csproj" />
     <ProjectReference Include="..\Radish.Common\Radish.Common.csproj" />
     <ProjectReference Include="..\Radish.Extension\Radish.Extension.csproj" />
+    <ProjectReference Include="..\Radish.Extension.Log\Radish.Extension.Log.csproj" />
   </ItemGroup>
 
   <ItemGroup>

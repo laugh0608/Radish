@@ -3,6 +3,11 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-01 dev → master 批次回归](./master-pr-regression-2026-10-01.md)：近期部署 / Console 修复及日志 L1 / L2 集成前检查
+- [2026-09-28 日终代码与文档回顾](./day-end-doc-review-2026-09-28.md)：15 个日志 L2 开发提交、批次证据索引、文档状态校准与明天事项
+
+- [2026-09-23 日终回顾与日志 L2 八组批次记录](./day-end-doc-review-2026-09-23.md)（9 个开发 / 验证提交）
+- [2026-09-19 日终回顾](./day-end-doc-review-2026-09-19.md) · [统一日志 L1 契约与采集首轮实验](/records/unified-logging-l1-contract-and-transport-2026-09-19) · [采集安全与故障边界](/records/unified-logging-l1-guarded-collector-2026-09-19) · [L2 生成入口](/records/unified-logging-l2-producer-entry-2026-09-19)
 - [专题回归索引](/guide/regression-index)
 - [2026-09-06 项目全面审阅](/records/project-review-2026-09-06) · [工程改进候选（待确认）](/planning/engineering-improvement-candidates) · [F4 旧入口流水](/records/f4-planning-entry-history-2026-09-06)
 - [人工验收模板](/records/manual-acceptance-template)
@@ -40,6 +45,8 @@
 - [flutter-android-mvp-rc-supplemental-assessment-2026-05-02](/records/flutter-android-mvp-rc-supplemental-assessment-2026-05-02)
 
 ## 四、宿主运行、部署与发布记录
+
+- [test-latest 部署反馈修复（2026-09-19）](/records/test-deployment-maintenance-2026-09-19)
 
 - [m14-host-runtime-checklist](/records/m14-host-runtime-checklist)
 - [m14-host-maintenance-record-example](/records/m14-host-maintenance-record-example)

@@ -6,6 +6,7 @@ import path from 'node:path';
 import test from 'node:test';
 
 import { createStaticServer } from '../Frontend/scripts/serve-static.mjs';
+import { createFrontendLogger } from '../Frontend/scripts/logging/runtime-output.mjs';
 
 function createMemoryLogger() {
   const warnings = [];
@@ -25,7 +26,7 @@ function createMemoryLogger() {
   };
 }
 
-async function createServerFixture(t) {
+async function createServerFixture(t, options = {}) {
   const fixtureRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'radish-frontend-server-'));
   const clientRoot = path.join(fixtureRoot, 'client');
   const consoleRoot = path.join(fixtureRoot, 'console');
@@ -36,28 +37,26 @@ async function createServerFixture(t) {
   fs.writeFileSync(path.join(consoleRoot, 'index.html'), '<main>console fixture</main>\n');
 
   const server = createStaticServer({
-    clientRoot,
+    clientRoot: options.clientRoot ?? clientRoot,
     consoleRoot,
-    logger: memoryLogger.logger,
+    logger: options.logger ?? memoryLogger.logger,
+  });
+
+  t.after(async () => {
+    try {
+      if (server.listening) {
+        await new Promise((resolve, reject) => {
+          server.close((error) => error ? reject(error) : resolve());
+        });
+      }
+    } finally {
+      fs.rmSync(fixtureRoot, { recursive: true, force: true });
+    }
   });
 
   await new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(0, '127.0.0.1', resolve);
-  });
-
-  t.after(async () => {
-    await new Promise((resolve, reject) => {
-      server.close((error) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        resolve();
-      });
-    });
-    fs.rmSync(fixtureRoot, { recursive: true, force: true });
   });
 
   const address = server.address();
@@ -133,8 +132,32 @@ test('invalid request targets return 400 without terminating the frontend server
   const healthResponse = await sendRawRequest(fixture.port, '/healthz');
   assert.match(healthResponse, /^HTTP\/1\.1 200 OK\r\n/);
   assert.equal(fixture.warnings.length, invalidRequestTargets.length);
-  assert.match(fixture.warnings[0], /path="\/\/"/);
-  assert.match(fixture.warnings[0], /forwardedFor="203\.0\.113\.10"/);
+  assert.equal(fixture.warnings[0], 'http.rejected');
+  assert.doesNotMatch(fixture.warnings.join('\n'), /203\.0\.113\.10/);
   assert.doesNotMatch(fixture.warnings.join('\n'), /must-not-appear-in-log/);
   assert.deepEqual(fixture.errors, []);
+});
+
+test('unified static-server logs omit encoded paths and forwarded headers before output', async (t) => {
+  const lines = [];
+  const logger = createFrontendLogger({ RadishLogging__Enabled: 'true' }, { write: line => lines.push(line) });
+  const fixture = await createServerFixture(t, { logger });
+  await sendRawRequest(fixture.port, '//PRIVATE_SENTINEL?code=PRIVATE_SENTINEL');
+  await sendRawRequest(fixture.port, '/healthz');
+  assert.equal(lines.length, 1);
+  const event = JSON.parse(lines[0]);
+  assert.equal(event.eventCode, 'http.rejected');
+  assert.deepEqual(event.properties, { method: 'GET', statusCode: 400 });
+  assert.doesNotMatch(lines[0], /PRIVATE_SENTINEL|203\.0\.113\.10/);
+});
+
+test('request failure emits one safe error while health checks stay available', async (t) => {
+  const lines = [];
+  const logger = createFrontendLogger({ RadishLogging__Enabled: 'true' }, { write: line => lines.push(line) });
+  const fixture = await createServerFixture(t, { logger, clientRoot: 123 });
+  assert.match(await sendRawRequest(fixture.port, '/PRIVATE_SENTINEL'), /^HTTP\/1\.1 500/);
+  assert.match(await sendRawRequest(fixture.port, '/healthz'), /^HTTP\/1\.1 200/);
+  assert.equal(lines.length, 1);
+  assert.equal(JSON.parse(lines[0]).eventCode, 'http.failed');
+  assert.doesNotMatch(lines[0], /PRIVATE_SENTINEL|TypeError/);
 });

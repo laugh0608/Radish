@@ -4,6 +4,8 @@ using Microsoft.Extensions.Localization;
 using Radish.Api.Filters;
 using Radish.Api.Resources;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
+using Serilog;
 using Radish.Common.HttpContextTool;
 using Radish.IService;
 using Radish.Model;
@@ -238,6 +240,12 @@ public class PaymentPasswordController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
+            }
             return BuildError<T>(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,

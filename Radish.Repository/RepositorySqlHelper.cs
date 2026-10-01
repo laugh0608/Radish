@@ -4,6 +4,30 @@ namespace Radish.Repository;
 
 internal static class RepositorySqlHelper
 {
+    // 手写 SQL 必须遵循与 ORM 查询相同的实体映射和 PostgreSQL 小写约定。
+    public static string GetTableIdentifier<T>(ISqlSugarClient db)
+    {
+        return QuoteMappedIdentifier(db, db.EntityMaintenance.GetEntityInfo<T>().DbTableName);
+    }
+
+    public static string GetColumnIdentifier<T>(ISqlSugarClient db, string propertyName)
+    {
+        var column = db.EntityMaintenance.GetEntityInfo<T>().Columns
+            .Single(item => item.PropertyName == propertyName);
+        return QuoteMappedIdentifier(db, column.DbColumnName);
+    }
+
+    private static string QuoteMappedIdentifier(ISqlSugarClient db, string identifier)
+    {
+        if (db.CurrentConnectionConfig.DbType == DbType.PostgreSQL &&
+            db.CurrentConnectionConfig.MoreSettings?.PgSqlIsAutoToLower != false)
+        {
+            identifier = identifier.ToLowerInvariant();
+        }
+
+        return QuoteIdentifier(identifier);
+    }
+
     public static string ResolvePhysicalTableName(ISqlSugarClient db, string configuredTableName)
     {
         return ResolvePhysicalName(

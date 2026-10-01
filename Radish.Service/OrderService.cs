@@ -77,9 +77,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
         try
         {
-            Log.Information("用户 {UserId} 开始购买商品 {ProductId}, 数量={Quantity}",
-                userId, dto.ProductId, dto.Quantity);
-
             // 1. 检查是否可以购买
             var (canBuy, reason) = await _productService.CheckCanBuyAsync(userId, dto.ProductId, dto.Quantity);
             if (!canBuy)
@@ -128,8 +125,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
 
             if (!verifyResult.IsSuccess)
             {
-                Log.Warning("商城购买失败：支付口令验证失败，用户={UserId}, 商品={ProductId}, 原因={Reason}",
-                    userId, dto.ProductId, verifyResult.ErrorMessage);
                 return new PurchaseResultDto
                 {
                     Success = false,
@@ -211,7 +206,10 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "扣除萝卜币失败，订单 {OrderId}", orderId);
+                Log.ForContext("EventCode", "order.purchase_failed")
+                    .ForContext("SourceCategory", "application").ForContext("purchaseStage", "payment")
+                    .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                    .Error("Purchase payment failure consumed");
 
                 // 恢复库存
                 if (product.StockType == StockType.Limited)
@@ -252,7 +250,10 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "发放权益失败，订单 {OrderId}", orderId);
+                Log.ForContext("EventCode", "order.purchase_failed")
+                    .ForContext("SourceCategory", "application").ForContext("purchaseStage", "fulfillment")
+                    .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                    .Error("Purchase fulfillment failure consumed");
                 order.Status = OrderStatus.Failed;
                 order.FailureStage = OrderFailureStage.Fulfillment;
                 order.FailReason = $"发放权益失败：{ex.Message}";
@@ -302,9 +303,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                     order.CompletedTime!.Value);
             }
 
-            Log.Information("用户 {UserId} 购买商品 {ProductId} 成功，订单号={OrderNo}",
-                userId, dto.ProductId, order.OrderNo);
-
             var purchaseResult = new PurchaseResultDto
             {
                 Success = order.Status == OrderStatus.Completed,
@@ -327,7 +325,12 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "用户 {UserId} 购买商品 {ProductId} 失败", userId, dto.ProductId);
+            // 包装后的业务异常默认返回 400，API 边界不会为其记录 Error。
+            // 此处负责未被支付 / 履约分支消费的失败，也包括独立的补偿或后续写入失败。
+            Log.ForContext("EventCode", "order.purchase_interrupted")
+                .ForContext("SourceCategory", "application")
+                .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                .Error("Purchase interrupted before returning a result");
             throw new BusinessException("购买失败，请稍后重试", ex);
         }
     }
@@ -336,50 +339,34 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     [UseTran]
     public async Task<bool> CancelOrderAsync(long userId, long orderId, string? reason = null)
     {
-        try
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
+        if (order == null)
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
-            if (order == null)
-            {
-                throw new InvalidOperationException("订单不存在");
-            }
+            throw new InvalidOperationException("订单不存在");
+        }
 
-            return await CancelPendingOrderAsync(
-                order,
-                string.IsNullOrWhiteSpace(reason) ? "用户取消" : reason.Trim(),
-                "User",
-                userId);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "取消订单 {OrderId} 失败", orderId);
-            throw;
-        }
+        return await CancelPendingOrderAsync(
+            order,
+            string.IsNullOrWhiteSpace(reason) ? "用户取消" : reason.Trim(),
+            "User",
+            userId);
     }
 
     /// <summary>系统取消订单</summary>
     [UseTran]
     public async Task<bool> CancelOrderBySystemAsync(long orderId, string reason)
     {
-        try
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+        if (order == null)
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
-            if (order == null)
-            {
-                throw new InvalidOperationException("订单不存在");
-            }
+            throw new InvalidOperationException("订单不存在");
+        }
 
-            return await CancelPendingOrderAsync(
-                order,
-                string.IsNullOrWhiteSpace(reason) ? "系统取消" : reason.Trim(),
-                "System",
-                0);
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "系统取消订单 {OrderId} 失败", orderId);
-            throw;
-        }
+        return await CancelPendingOrderAsync(
+            order,
+            string.IsNullOrWhiteSpace(reason) ? "系统取消" : reason.Trim(),
+            "System",
+            0);
     }
 
     #endregion
@@ -393,96 +380,64 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         int pageIndex = 1,
         int pageSize = 20)
     {
-        try
+        Expression<Func<Order, bool>> where = o => o.UserId == userId && !o.IsDeleted;
+
+        if (status.HasValue)
         {
-            Expression<Func<Order, bool>> where = o => o.UserId == userId && !o.IsDeleted;
-
-            if (status.HasValue)
-            {
-                where = where.And(o => o.Status == status.Value);
-            }
-
-            var (orders, totalCount) = await _orderRepository.QueryPageAsync(
-                whereExpression: where,
-                pageIndex: pageIndex,
-                pageSize: pageSize,
-                orderByExpression: o => o.CreateTime,
-                orderByType: OrderByType.Desc);
-
-            var orderVos = Mapper.Map<List<OrderListItemVo>>(orders);
-            FillOrderListItemUrls(orderVos);
-
-            return new PageModel<OrderListItemVo>
-            {
-                Page = pageIndex,
-                PageSize = pageSize,
-                DataCount = totalCount,
-                PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
-                Data = orderVos
-            };
+            where = where.And(o => o.Status == status.Value);
         }
-        catch (Exception ex)
+
+        var (orders, totalCount) = await _orderRepository.QueryPageAsync(
+            whereExpression: where,
+            pageIndex: pageIndex,
+            pageSize: pageSize,
+            orderByExpression: o => o.CreateTime,
+            orderByType: OrderByType.Desc);
+
+        var orderVos = Mapper.Map<List<OrderListItemVo>>(orders);
+        FillOrderListItemUrls(orderVos);
+
+        return new PageModel<OrderListItemVo>
         {
-            Log.Error(ex, "获取用户 {UserId} 订单列表失败", userId);
-            throw;
-        }
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
+            Data = orderVos
+        };
     }
 
     /// <summary>获取订单详情</summary>
     public async Task<OrderVo?> GetOrderDetailAsync(long userId, long orderId)
     {
-        try
-        {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
-            if (order == null) return null;
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
+        if (order == null) return null;
 
-            var orderVo = Mapper.Map<OrderVo>(order);
-            FillOrderUrl(orderVo);
-            return orderVo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取订单 {OrderId} 详情失败", orderId);
-            throw;
-        }
+        var orderVo = Mapper.Map<OrderVo>(order);
+        FillOrderUrl(orderVo);
+        return orderVo;
     }
 
     /// <summary>根据订单号获取订单</summary>
     public async Task<OrderVo?> GetOrderByNoAsync(string orderNo)
     {
-        try
-        {
-            var order = await _orderRepository.QueryFirstAsync(o => o.OrderNo == orderNo && !o.IsDeleted);
-            if (order == null) return null;
+        var order = await _orderRepository.QueryFirstAsync(o => o.OrderNo == orderNo && !o.IsDeleted);
+        if (order == null) return null;
 
-            var orderVo = Mapper.Map<OrderVo>(order);
-            FillOrderUrl(orderVo);
-            return orderVo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "根据订单号 {OrderNo} 获取订单失败", orderNo);
-            throw;
-        }
+        var orderVo = Mapper.Map<OrderVo>(order);
+        FillOrderUrl(orderVo);
+        return orderVo;
     }
 
     /// <summary>获取用户购买某商品的数量</summary>
     public async Task<int> GetUserPurchaseCountAsync(long userId, long productId)
     {
-        try
-        {
-            var count = await _orderRepository.QueryCountAsync(
-                o => o.UserId == userId &&
-                     o.ProductId == productId &&
-                     (o.Status == OrderStatus.Completed || o.Status == OrderStatus.Paid) &&
-                     !o.IsDeleted);
-            return count;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 购买商品 {ProductId} 数量失败", userId, productId);
-            throw;
-        }
+        var count = await _orderRepository.QueryCountAsync(
+            o => o.UserId == userId &&
+                 o.ProductId == productId &&
+                 (o.Status == OrderStatus.Completed || o.Status == OrderStatus.Paid) &&
+                 !o.IsDeleted);
+        return count;
     }
 
     #endregion
@@ -498,168 +453,125 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         int pageIndex = 1,
         int pageSize = 20)
     {
-        try
+        Expression<Func<Order, bool>> where = o => !o.IsDeleted;
+
+        if (userId.HasValue)
         {
-            Expression<Func<Order, bool>> where = o => !o.IsDeleted;
-
-            if (userId.HasValue)
-            {
-                where = where.And(o => o.UserId == userId.Value);
-            }
-
-            if (status.HasValue)
-            {
-                where = where.And(o => o.Status == status.Value);
-            }
-
-            if (productId.HasValue)
-            {
-                where = where.And(o => o.ProductId == productId.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(orderNo))
-            {
-                where = where.And(o => o.OrderNo.Contains(orderNo));
-            }
-
-            var (orders, totalCount) = await _orderRepository.QueryPageAsync(
-                whereExpression: where,
-                pageIndex: pageIndex,
-                pageSize: pageSize,
-                orderByExpression: o => o.CreateTime,
-                orderByType: OrderByType.Desc);
-
-            var orderVos = Mapper.Map<List<OrderVo>>(orders);
-            await FillOrderUsersAsync(orderVos);
-            FillOrderUrls(orderVos);
-
-            return new PageModel<OrderVo>
-            {
-                Page = pageIndex,
-                PageSize = pageSize,
-                DataCount = totalCount,
-                PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
-                Data = orderVos
-            };
+            where = where.And(o => o.UserId == userId.Value);
         }
-        catch (Exception ex)
+
+        if (status.HasValue)
         {
-            Log.Error(ex, "获取订单列表（管理后台）失败");
-            throw;
+            where = where.And(o => o.Status == status.Value);
         }
+
+        if (productId.HasValue)
+        {
+            where = where.And(o => o.ProductId == productId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(orderNo))
+        {
+            where = where.And(o => o.OrderNo.Contains(orderNo));
+        }
+
+        var (orders, totalCount) = await _orderRepository.QueryPageAsync(
+            whereExpression: where,
+            pageIndex: pageIndex,
+            pageSize: pageSize,
+            orderByExpression: o => o.CreateTime,
+            orderByType: OrderByType.Desc);
+
+        var orderVos = Mapper.Map<List<OrderVo>>(orders);
+        await FillOrderUsersAsync(orderVos);
+        FillOrderUrls(orderVos);
+
+        return new PageModel<OrderVo>
+        {
+            Page = pageIndex,
+            PageSize = pageSize,
+            DataCount = totalCount,
+            PageCount = (int)Math.Ceiling((double)totalCount / pageSize),
+            Data = orderVos
+        };
     }
 
     /// <summary>获取订单详情（管理后台）</summary>
     public async Task<OrderVo?> GetOrderDetailForAdminAsync(long orderId)
     {
-        try
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+        if (order == null)
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
-            if (order == null)
-            {
-                return null;
-            }
+            return null;
+        }
 
-            var orderVo = Mapper.Map<OrderVo>(order);
-            await FillOrderUsersAsync([orderVo]);
-            FillOrderUrl(orderVo);
-            return orderVo;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取订单 {OrderId} 详情（管理后台）失败", orderId);
-            throw;
-        }
+        var orderVo = Mapper.Map<OrderVo>(order);
+        await FillOrderUsersAsync([orderVo]);
+        FillOrderUrl(orderVo);
+        return orderVo;
     }
 
     /// <summary>管理员备注订单</summary>
     public async Task<bool> AdminRemarkOrderAsync(long orderId, string remark, long operatorId, string operatorName)
     {
-        try
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+        if (order == null)
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
-            if (order == null)
-            {
-                throw new BusinessException(
-                    "订单不存在",
-                    (int)HttpStatusCodeEnum.NotFound,
-                    "Order.NotFound",
-                    "error.order.not_found");
-            }
-
-            order.AdminRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
-            order.ModifyTime = GetUtcNow();
-            order.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
-            order.ModifyId = operatorId;
-
-            var result = await _orderRepository.UpdateAsync(order);
-            if (result)
-            {
-                Log.Information("管理员 {OperatorName}({OperatorId}) 更新订单 {OrderId} 备注成功",
-                    order.ModifyBy, operatorId, orderId);
-            }
-
-            return result;
+            throw new BusinessException(
+                "订单不存在",
+                (int)HttpStatusCodeEnum.NotFound,
+                "Order.NotFound",
+                "error.order.not_found");
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "管理员备注订单 {OrderId} 失败", orderId);
-            throw;
-        }
+
+        order.AdminRemark = string.IsNullOrWhiteSpace(remark) ? null : remark.Trim();
+        order.ModifyTime = GetUtcNow();
+        order.ModifyBy = string.IsNullOrWhiteSpace(operatorName) ? "Unknown" : operatorName.Trim();
+        order.ModifyId = operatorId;
+
+        var result = await _orderRepository.UpdateAsync(order);
+        return result;
     }
 
     /// <summary>重新发放权益（发放失败时使用）</summary>
     [UseTran]
     public async Task<bool> RetryGrantBenefitAsync(long orderId)
     {
-        try
+        var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
+        if (order == null)
         {
-            var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && !o.IsDeleted);
-            if (order == null)
-            {
-                throw new BusinessException(
-                    "订单不存在",
-                    (int)HttpStatusCodeEnum.NotFound,
-                    "Order.NotFound",
-                    "error.order.not_found");
-            }
-
-            if (order.Status != OrderStatus.Failed)
-            {
-                throw BuildRetryRejected("只能重试发放失败的订单");
-            }
-
-            if (order.FailureStage != OrderFailureStage.Fulfillment)
-            {
-                throw BuildRetryRejected("支付阶段失败的订单不能重试发放");
-            }
-
-            await EnsureValidPaymentEvidenceAsync(order);
-
-            var fulfillmentResult = await _userBenefitService.GrantOrderFulfillmentAsync(order);
-            order.GrantedBenefitId = fulfillmentResult.GrantedBenefitId;
-            order.GrantedInventoryId = fulfillmentResult.GrantedInventoryId;
-            order.BenefitExpiresAt = fulfillmentResult.ExpiresAt;
-            order.Status = OrderStatus.Completed;
-            order.FailureStage = OrderFailureStage.None;
-            order.CompletedTime = GetUtcNow();
-            order.FailReason = null;
-            order.ModifyTime = GetUtcNow();
-
-            var result = await _orderRepository.UpdateAsync(order);
-
-            if (result)
-            {
-                Log.Information("订单 {OrderId} 权益重新发放成功", orderId);
-            }
-
-            return result;
+            throw new BusinessException(
+                "订单不存在",
+                (int)HttpStatusCodeEnum.NotFound,
+                "Order.NotFound",
+                "error.order.not_found");
         }
-        catch (Exception ex)
+
+        if (order.Status != OrderStatus.Failed)
         {
-            Log.Error(ex, "重新发放订单 {OrderId} 权益失败", orderId);
-            throw;
+            throw BuildRetryRejected("只能重试发放失败的订单");
         }
+
+        if (order.FailureStage != OrderFailureStage.Fulfillment)
+        {
+            throw BuildRetryRejected("支付阶段失败的订单不能重试发放");
+        }
+
+        await EnsureValidPaymentEvidenceAsync(order);
+
+        var fulfillmentResult = await _userBenefitService.GrantOrderFulfillmentAsync(order);
+        order.GrantedBenefitId = fulfillmentResult.GrantedBenefitId;
+        order.GrantedInventoryId = fulfillmentResult.GrantedInventoryId;
+        order.BenefitExpiresAt = fulfillmentResult.ExpiresAt;
+        order.Status = OrderStatus.Completed;
+        order.FailureStage = OrderFailureStage.None;
+        order.CompletedTime = GetUtcNow();
+        order.FailReason = null;
+        order.ModifyTime = GetUtcNow();
+
+        var result = await _orderRepository.UpdateAsync(order);
+
+        return result;
     }
 
     #endregion
@@ -869,13 +781,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
                 throw new InvalidOperationException("取消订单失败，库存回补未完成");
             }
         }
-
-        Log.Information(
-            "订单 {OrderId} 已取消，用户={UserId}，数量={Quantity}，原因={Reason}",
-            order.Id,
-            order.UserId,
-            order.Quantity,
-            cancelReason);
 
         return true;
     }

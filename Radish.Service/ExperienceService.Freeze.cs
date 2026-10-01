@@ -4,7 +4,6 @@ using Radish.IRepository;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
-using Serilog;
 
 namespace Radish.Service;
 
@@ -57,13 +56,6 @@ public partial class ExperienceService
             operatorId,
             normalizedOperatorName,
             now);
-        Log.Information(
-            "管理员 {OperatorName}({OperatorId}) 冻结用户 {UserId} 经验，经验版本 {ExpectedVersion} -> {ResultVersion}",
-            normalizedOperatorName,
-            operatorId,
-            userId,
-            expectedVersion,
-            result.VoExperience.VoVersion);
         return result;
     }
 
@@ -111,13 +103,6 @@ public partial class ExperienceService
             operatorId,
             normalizedOperatorName,
             now);
-        Log.Information(
-            "管理员 {OperatorName}({OperatorId}) 解冻用户 {UserId} 经验，经验版本 {ExpectedVersion} -> {ResultVersion}",
-            normalizedOperatorName,
-            operatorId,
-            userId,
-            expectedVersion,
-            result.VoExperience.VoVersion);
         return result;
     }
 
@@ -152,11 +137,6 @@ public partial class ExperienceService
                     0,
                     "System",
                     now));
-            Log.Information(
-                "用户 {UserId} 的临时经验冻结已到期并追加自动解冻事件，经验版本 {ExpectedVersion} -> {ResultVersion}",
-                userExp.UserId,
-                userExp.Version,
-                result.Experience.Version);
             return result.Experience;
         }
         catch (ExperienceGovernanceStateConflictException)

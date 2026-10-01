@@ -1,4 +1,5 @@
 using Hangfire;
+using System.Diagnostics;
 using System.Text.Json;
 using Radish.IRepository;
 using Radish.IService;
@@ -23,9 +24,10 @@ public sealed class ReliableOutboxDispatcherJob
         _logger = logger;
     }
 
-    [AutomaticRetry(Attempts = 0)]
+    [AutomaticRetry(Attempts = 0, LogEvents = false)]
     public async Task<int> DispatchAsync(int batchSize = 50)
     {
+        var started = Stopwatch.GetTimestamp();
         var workerId = $"{Environment.MachineName}:{Environment.ProcessId}:{Guid.NewGuid():N}";
         var dispatchedCount = 0;
 
@@ -48,7 +50,12 @@ public sealed class ReliableOutboxDispatcherJob
 
         if (dispatchedCount > 0)
         {
-            _logger.LogInformation("[ReliableOutbox] 已分派 {Count} 个任务", dispatchedCount);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "outbox.dispatched", ["SourceCategory"] = "job"
+            });
+            _logger.LogInformation("Outbox dispatch completed; count={count}; duration={durationMs} ms",
+                dispatchedCount, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
         }
 
         return dispatchedCount;
@@ -60,21 +67,18 @@ public sealed class ReliableOutboxExecutionJob
     private readonly IReliableOutboxService _outboxService;
     private readonly IReliableTaskProcessor _processor;
     private readonly IContentModerationCaseRepository _contentModerationCaseRepository;
-    private readonly ILogger<ReliableOutboxExecutionJob> _logger;
 
     public ReliableOutboxExecutionJob(
         IReliableOutboxService outboxService,
         IReliableTaskProcessor processor,
-        IContentModerationCaseRepository contentModerationCaseRepository,
-        ILogger<ReliableOutboxExecutionJob> logger)
+        IContentModerationCaseRepository contentModerationCaseRepository)
     {
         _outboxService = outboxService;
         _processor = processor;
         _contentModerationCaseRepository = contentModerationCaseRepository;
-        _logger = logger;
     }
 
-    [AutomaticRetry(Attempts = 0)]
+    [AutomaticRetry(Attempts = 0, LogEvents = false)]
     public async Task ExecuteAsync(string sourceDatabase, long outboxId, CancellationToken cancellationToken)
     {
         var message = await _outboxService.QueryByIdAsync(sourceDatabase, outboxId);
@@ -92,12 +96,7 @@ public sealed class ReliableOutboxExecutionJob
         {
             await _outboxService.MarkFailedAsync(sourceDatabase, outboxId, ex, DateTime.UtcNow);
             await RecordContentModerationFailureAsync(message, ex);
-            _logger.LogError(
-                ex,
-                "[ReliableOutbox] 任务执行失败：Source={Source}, OutboxId={OutboxId}, TaskType={TaskType}",
-                sourceDatabase,
-                outboxId,
-                message.TaskType);
+            // 重试 / 死信由实际完成状态写入的 Repository 记录；这里不重复输出异常载荷。
         }
     }
 

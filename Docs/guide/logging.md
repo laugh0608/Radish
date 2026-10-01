@@ -1,6 +1,6 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志，提供完整的应用监控和审计能力。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理的生成端安全摘要同时作用于旧 / 候选 sink；Hangfire、后台业务、奖励、清理及资产操作的具体口径见该契约第 10–14 节。
 
 ## 架构概述
 
@@ -11,7 +11,7 @@ Radish 的日志系统分为三个层次：
 | 日志类型 | 用途 | 存储位置 | 实现方式 |
 |---------|------|---------|---------|
 | **应用日志** | 记录应用运行状态、错误、警告等 | 文件系统 + 数据库(可选) | Serilog |
-| **SQL 日志** | 记录所有 SQL 执行语句和性能 | 文件系统 + 数据库(可选) | SqlSugar AOP + Serilog |
+| **SQL 日志** | 记录安全操作摘要和慢链路耗时 | 文件系统 + 数据库(可选) | SqlSugar AOP + Serilog |
 | **业务审计日志** | 记录敏感操作（登录、权限变更、数据删除等） | 数据库 + 文件 | 审计中间件 + Serilog |
 
 ### 日志流向
@@ -43,14 +43,12 @@ Radish 的日志系统分为三个层次：
 在 `Program.cs` 中调用扩展方法：
 
 ```csharp
-builder.Host.AddSerilogSetup();
+using var runtimeLogging = new RuntimeLoggingSession(
+    builder.Configuration, builder.Environment.EnvironmentName, "api");
+builder.Host.AddSerilogSetup(runtimeLogging);
 ```
 
-该方法由 `Radish.Extension.Log` 提供，自动配置：
-- 日志输出目标（Console + File）
-- 日志格式（结构化 JSON）
-- 日志级别（从 `appsettings.json` 读取）
-- 异步写入（避免阻塞请求线程）
+该方法由 `Radish.Extension.Log` 提供。默认旧链路按 Serilog 选项选择介质和级别，文件使用既有文本格式；候选开启时使用共享的规范 JSONL 输出，跳过旧文件与数据库 sink。候选 stdout 为同步写入，不能宣称不受管道背压影响。
 
 ### 日志目录结构
 
@@ -137,157 +135,69 @@ Logs/
 
 ### `SqlAopLog` 配置
 
-`Serilog` 控制的是 SQL 日志的输出目标（控制台 / 文件 / 数据库），`SqlAopLog` 控制的是 **SqlSugar AOP 是否生成这条 SQL 日志**。
+SQL 生成规则同时适用于旧 sink 和统一候选入口。普通 SQL 诊断需要宿主为 Development、`RadishLogging.Mode=Development`、`RadishLogging.Diagnostics=true`，且 `SqlAopLog.Enabled=true`；生产不生成普通 SQL 诊断。
 
-在 `appsettings.Shared.json` 中，当前默认配置如下：
+共享默认值：
 
 ```json
 {
   "SqlAopLog": {
-    "Enabled": true,
+    "Enabled": false,
     "LogQuery": true,
     "LogInsert": true,
     "LogUpdate": true,
     "LogDelete": true,
-    "OmitLargeText": true,
-    "LargeTextThreshold": 256,
-    "OmittedFields": [
-      "MarkdownContent",
-      "Content",
-      "Body",
-      "HtmlContent",
-      "RequestBody",
-      "ResponseBody",
-      "OldContent",
-      "NewContent",
-      "ContentSnapshot"
-    ],
-    "SkipTables": [
-      "WikiDocument",
-      "WikiDocumentRevision"
-    ],
+    "SlowQueryEnabled": true,
+    "SlowQueryThresholdMs": 1000,
+    "SlowConnectionEnabled": true,
+    "SlowConnectionThresholdMs": 500,
+    "SkipTables": ["WikiDocument", "WikiDocumentRevision"],
     "SkipUsers": []
   }
 }
 ```
 
-| 配置项 | 说明 | 默认值 |
-|-------|------|--------|
-| `Enabled` | 是否启用 SQL AOP 日志 | true |
-| `LogQuery` | 是否记录查询日志 | true |
-| `LogInsert` | 是否记录新增日志 | true |
-| `LogUpdate` | 是否记录更新日志 | true |
-| `LogDelete` | 是否记录删除日志 | true |
-| `OmitLargeText` | 是否省略大文本正文 | true |
-| `LargeTextThreshold` | 大文本省略阈值 | 256 |
-| `OmittedFields` | 强制脱敏的字段名列表 | 见上方配置 |
-| `SkipTables` | 直接跳过日志的表名列表 | `WikiDocument`、`WikiDocumentRevision` |
-| `SkipUsers` | 直接跳过日志的操作人列表 | 空 |
+- `Enabled / LogQuery / LogInsert / LogUpdate / LogDelete / SkipTables / SkipUsers` 只筛选普通开发诊断。
+- `SlowQueryEnabled / SlowConnectionEnabled` 独立控制慢操作与慢连接，阈值必须大于零；关闭普通 SQL 或排除表名不会屏蔽慢链路。
+- 输出只包含受控 `operation`、`parameterCount`、`durationMs`，不输出 SQL 文本、参数名 / 值、用户、表名或连接字符串。原 `OmitLargeText / LargeTextThreshold / OmittedFields` 已退出，不再以字段黑名单判断哪些值可输出。
+- Log 库仍排除 SQL 日志，避免递归；PostgreSQL 时间参数规范化不受任何日志开关影响。
+- 旧 sink 的介质开关与阈值仍可关闭介质；候选入口按统一策略输出，不能把生成独立性解释为绕过显式存储禁用。
 
-常见用法：
-
-- 只关闭查询日志：将 `LogQuery` 设为 `false`
-- 屏蔽系统同步 SQL：在 `SkipUsers` 中加入 `System`
-- 屏蔽指定大表：在 `SkipTables` 中加入表名
-- 保留 SQL 结构但隐藏正文：保持 `OmitLargeText=true`
-
-补充说明：
-
-- `SkipTables` 当前会同时作用于 `INSERT / UPDATE / DELETE / SELECT` 场景，不再只对 `FROM` / `UPDATE` 类语句生效。
-- SQL AOP 当前以结构化参数方式把整段 SQL 文本写入 Serilog；即使参数值中包含 `{userId}` 这类花括号文本，也不会再触发 Serilog 的模板占位异常。
-
-**启用数据库日志**：
-
-在 `appsettings.Local.json` 中覆盖配置：
-
-```json
-{
-  "Serilog": {
-    "Database": {
-      "Enable": true
-    }
-  }
-}
-```
 
 ## 应用日志
 
-### 使用方法
+### 生成安全事件
 
-**推荐方式**：直接使用 Serilog 静态方法
-
-```csharp
-using Serilog;
-
-// 信息日志
-Log.Information("User {UserId} logged in from {IpAddress}", userId, ipAddress);
-
-// 警告日志
-Log.Warning("Cache miss for key {CacheKey}", cacheKey);
-
-// 错误日志
-Log.Error(ex, "Failed to process order {OrderId}", orderId);
-
-// 调试日志
-Log.Debug("Processing request with parameters: {@Parameters}", parameters);
-```
-
-**依赖注入方式**（仅在需要与外部框架集成时使用）：
+新调用优先注入 `ILogger<T>`，存量 Serilog 调用使用同一宿主管线。先在共享 `runtime-log-policy.v1.json` 登记事件及允许的属性，再在拥有处理责任的边界输出。下面以已消费的订单支付失败为例，省略业务处理：
 
 ```csharp
-public class MyService
+using var scope = logger.BeginScope(new Dictionary<string, object>
 {
-    private readonly ILogger<MyService> _logger;
-
-    public MyService(ILogger<MyService> logger)
-    {
-        _logger = logger;
-    }
-
-    public void DoWork()
-    {
-        _logger.LogInformation("Work started");
-    }
-}
+    ["EventCode"] = "order.purchase_failed",
+    ["SourceCategory"] = "application",
+    ["purchaseStage"] = "payment",
+    ["failureKind"] = RuntimeFailureSummary.Classify(exception)
+});
+logger.LogError("Purchase payment failure consumed");
 ```
 
-### 结构化日志
-
-使用 `@` 前缀记录复杂对象：
+存量 Serilog 的等价写法：
 
 ```csharp
-var user = new { Id = 123, Name = "Alice", Email = "alice@example.com" };
-Log.Information("User created: {@User}", user);
+Log.ForContext("EventCode", "order.purchase_failed")
+    .ForContext("SourceCategory", "application")
+    .ForContext("purchaseStage", "payment")
+    .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
+    .Error("Purchase payment failure consumed");
 ```
 
-输出：
-```json
-{
-  "Timestamp": "2025-12-20T15:30:00.123Z",
-  "Level": "Information",
-  "MessageTemplate": "User created: {@User}",
-  "User": {
-    "Id": 123,
-    "Name": "Alice",
-    "Email": "alice@example.com"
-  }
-}
-```
+`RuntimeFailureSummary` 位于 `Radish.Common.LogTool`。两种写法只选一种，不重复输出；上例仅适用于当前层消费异常的分支，继续传播时由最终边界记录。不要传入原始 exception 参数、用户 / 金额 / 备注、令牌、SQL 或任意请求对象；`{@Object}` 解构也不能绕过生成端契约。
 
-### 日志上下文
+### 上下文与批次口径
 
-使用 `LogContext` 为一组操作添加上下文信息：
-
-```csharp
-using Serilog.Context;
-
-using (LogContext.PushProperty("TenantId", tenantId))
-using (LogContext.PushProperty("TraceId", traceId))
-{
-    Log.Information("Processing tenant request");
-    // 所有日志都会包含 TenantId 和 TraceId
-}
-```
+- `BeginScope`、`ForContext` 或 `LogContext` 仅承载已登记的安全字段。候选 `traceId / spanId / operationId` 需符合规范，权威 tenant / request / job 上下文尚未完整接入，不能随意添加身份字段并假定会被安全持久化。
+- 正常单项成功、业务拒绝、空扫描及纯幂等重放按专题保持安静；批次摘要明确区分查询数、正常返回数、实际更新数和已消费失败数。
+- 各批次边界及保留行为以[统一事件契约](../features/unified-logging-contract.md)为准；日志不证明数据库事务已提交，也不替代业务审计。
 
 ### 数据库持久化
 
@@ -365,48 +275,25 @@ SELECT 'Error', COUNT(*) FROM ErrorLog_20251201;
 
 ## SQL 日志
 
-### 配置
+### 生成与异常责任
 
-SqlSugar AOP 在 `SqlSugarSetup` 中自动配置，先由 `SqlAopLog` 判断“这条 SQL 要不要记”，再交给 Serilog 决定输出到文件、控制台或数据库：
+`SqlSugarSetup` 注册安全 SQL 生成器。普通诊断使用 `database.diagnostic`，执行结束与连接检查超阈值使用 `database.slow`；只记录操作类别、参数数量和耗时。表 / 用户跳过名单只用于本地筛选，不进入输出。
 
-```csharp
-// Radish.Extension/AopExtension/SqlSugarAop.cs
-public static void OnLogExecuting(ISqlSugarClient sqlSugarScopeProvider, string user, string table, string operate,
-    string sql, SugarParameter[] p, ConnectionConfig config)
-{
-    var options = ResolveOptions();
-    if (!ShouldLog(options, user, table, operate))
-    {
-        return;
-    }
+- `OnGetDataReadered` 观测查询读取耗时，`OnLogExecuted` 只观测非 Query 命令，避免同一查询重复生成。
+- `CheckConnectionExecuted` 观测连接检查耗时，默认阈值 500ms；慢操作默认阈值 1000ms。
+- 不再配置 SQL `OnError` 日志回调。Service AOP 已移除；事务 AOP 与 UnitOfWork 保留提交、回滚、保存点及异常传播，不重复打印失败。
+- 已处理的 API 5xx 由 `ApiExceptionHandler` 记录一次 `http.failed`，同时抑制已处理异常的框架重复诊断；普通业务 4xx 只返回原错误契约。无法处理、响应已开始等异常仍由框架最终边界处理，不把它们误称已处理。
+- API / Auth / Gateway / DbMigrate 的顶层使用 `RuntimeProcess`，配置加载或运行失败以安全 Fatal 事件输出 stderr，并以 1 退出；成功为 0。测试工具的 `HostAbortedException` 继续传播。无法初始化配置时来源标记为 `bootstrap / unversioned`，不伪造部署身份。
 
-    using (LogContextTool.Create.SqlAopPushProperty(sqlSugarScopeProvider))
-    {
-        Log.Information("...");
-    }
-}
-```
+### DbMigrate 命令输出
 
-**当前默认行为**：
-- `WikiDocument`、`WikiDocumentRevision` 默认加入 `SkipTables`，启动时固定文档同步不会再刷大量 SQL 日志
-- `MarkdownContent`、`Content`、`RequestBody` 等大文本字段默认只记录长度占位，不输出正文
-- 仍会保留普通字段和 SQL 结构，方便排查问题
+`doctor / verify / help` 报告继续写 stdout；CLI 诊断写 stderr，使用统一 JSONL 策略，不连接旧文件 / 数据库 sink。诊断入口记录命令类别、阶段、变更数量和耗时；原始 argv、连接串和 provider 异常消息不进入诊断。doctor / verify 的报告保留判定、问题分类和退出成功 / 失败语义，连接目标及异常原文改为安全说明。
 
-### SQLite 连接初始化与慢链路观测
+Seed 不再捕获或回放 `Console.Out`。每阶段记录受控 `seedStep`、`outcome` 和耗时；缺失资源、冲突、未解决回填使用安全警告，不附路径、邮箱或业务载荷。阶段失败摘要为 Info，异常原样交给顶层记录一次 Error。
 
-自 `2026-03-30` 起，`SqlSugarSetup` 对非 `Log` 库连接除了原有 `OnLogExecuting` 外，又补了一层连接级与执行后观测，重点用于排查“登录前置链路等待几十秒”“标签页后台恢复后再次登录变慢”这类问题：
+具体迁移由 ledger 在事务提交后生成 `dbmigrate.schema.applied`，仅包含登记的迁移 ID、库范围及耗时；重复执行无新提交时不重复记录。新增 migration 时同步登记共享策略中的 `migrationId`，注册表测试防止遗漏。Auth schema adoption 同样在提交后记录，Auth seed 完成时汇总新增、更新和移除数。日志不替代迁移账本或权威审计；其他调用链仍待治理，生产切换保持关闭。
 
-- `CheckConnectionExecuted`
-  - 记录数据库连接检查耗时。
-  - 超过 `500ms` 会输出 `[SqlSugar] 检测到慢连接检查`。
-- `OnGetDataReadered`
-  - 记录查询实际读取耗时。
-  - 超过 `1000ms` 会输出 `[SqlSugar] 检测到慢查询`。
-- `OnLogExecuted`
-  - 对非 `Query` 命令记录执行耗时。
-  - 超过 `1000ms` 会输出 `[SqlSugar] 检测到慢命令`。
-- `OnError`
-  - 统一补 `ConnId / DbType / Message`，便于快速定位具体连接和数据库类型。
+### SQLite 连接初始化
 
 对于默认本地开发使用的 SQLite，当前还会在连接已打开时自动执行以下初始化：
 
@@ -435,7 +322,7 @@ public class AuditSqlLog : BaseLog
     // - Id: long (Snowflake ID)
     // - DateTime: DateTime
     // - Level: string
-    // - Message: string (包含完整的 SQL 语句)
+    // - Message: string (安全操作与耗时摘要，不包含 SQL 正文)
     // - MessageTemplate: string
     // - Properties: string (JSON 格式的附加属性)
 }
@@ -451,7 +338,7 @@ public class AuditSqlLog : BaseLog
     "Database": {
       "Enable": true,
       "EnableSqlLog": true,
-      "LogSelectQueries": true  // false 时仅记录 INSERT/UPDATE/DELETE
+      "LogSelectQueries": true  // false 时过滤普通 SELECT 诊断，保留慢链路告警
     }
   }
 }
@@ -463,8 +350,8 @@ public class AuditSqlLog : BaseLog
 # 查看最新的 SQL 日志
 tail -f Logs/Radish.Api/AopSql/AopSql.txt
 
-# 搜索特定表的 SQL
-grep "Table:\[User\]" Logs/Radish.Api/AopSql/AopSql.txt
+# 搜索安全慢链路摘要
+rg "duration=" Logs/Radish.Api/AopSql/AopSql.txt
 
 # 查看今天的 SQL 日志
 cat Logs/Radish.Api/AopSql/AopSql.txt | grep "$(date +%Y-%m-%d)"
@@ -657,68 +544,15 @@ dotnet run --project Radish.Api
 
 ## 最佳实践
 
-### 1. 日志级别选择
+### 运行事件规则
 
-| 级别 | 使用场景 | 示例 |
-|-----|---------|------|
-| **Debug** | 开发调试信息 | `Log.Debug("Cache hit for key {Key}", key)` |
-| **Information** | 正常业务流程 | `Log.Information("User {UserId} logged in", userId)` |
-| **Warning** | 潜在问题 | `Log.Warning("API rate limit approaching for {UserId}", userId)` |
-| **Error** | 错误但不影响系统运行 | `Log.Error(ex, "Failed to send email to {Email}", email)` |
-| **Fatal** | 严重错误导致系统崩溃 | `Log.Fatal(ex, "Database connection failed")` |
+- 使用 Info / Warning / Error 三级语义；开发细节显式标记 diagnostic，生产不生成普通开发诊断。Fatal 在统一入口映射为 Error + isFatal。
+- 新调用优先 `ILogger<T>`，携带登记的 EventCode / SourceCategory 与受控属性。普通运行日志不记录实体、邮件、凭据、正文或任意异常消息。
+- 最终处理 / 放弃重试的边界记录一次 Error；事务与数据库层继续抛出，不逐层重复记录。异常当前只允许固定 `failureKind`，完整安全栈帧按专题后续治理。
+- 循环处理记录一次 count / duration / outcome 摘要；明确动作的权威审计仍按独立事务与保留规则维护。
+- 新旧 sink 过渡期间，调用点也必须安全；不能仅依赖候选 sink 的防御裁剪。
 
-### 2. 避免日志泄露敏感信息
-
-```csharp
-// ❌ 错误：记录完整的用户对象（可能包含密码）
-Log.Information("User: {@User}", user);
-
-// ✅ 正确：只记录必要的字段
-Log.Information("User {UserId} ({UserName}) logged in", user.Id, user.UserName);
-
-// ✅ 正确：使用匿名对象过滤敏感字段
-Log.Information("User: {@User}", new { user.Id, user.UserName, user.Email });
-```
-
-### 3. 使用结构化日志
-
-```csharp
-// ❌ 错误：字符串拼接
-Log.Information("User " + userId + " created post " + postId);
-
-// ✅ 正确：结构化参数
-Log.Information("User {UserId} created post {PostId}", userId, postId);
-```
-
-### 4. 异常日志记录
-
-```csharp
-try
-{
-    await ProcessOrderAsync(orderId);
-}
-catch (Exception ex)
-{
-    // ✅ 正确：记录异常对象和上下文
-    Log.Error(ex, "Failed to process order {OrderId}", orderId);
-    throw;
-}
-```
-
-### 5. 性能考虑
-
-```csharp
-// ❌ 错误：在循环中记录大量日志
-foreach (var item in items)
-{
-    Log.Debug("Processing item {ItemId}", item.Id);  // 可能产生数千条日志
-}
-
-// ✅ 正确：批量记录或只记录关键信息
-Log.Information("Processing {ItemCount} items", items.Count);
-```
-
-### 6. 审计日志配置建议
+### 审计日志配置建议
 
 **开发环境**：
 ```json
@@ -755,8 +589,8 @@ Log.Information("Processing {ItemCount} items", items.Count);
 # 查看最新的应用日志
 tail -f Logs/Radish.Api/Log.txt
 
-# 搜索特定用户的日志
-grep "UserId: 20000" Logs/Radish.Api/Log.txt
+# 搜索受控失败事件的静态说明（旧文本 sink）
+rg "Purchase payment failure consumed" Logs/Radish.Api/Log.txt
 
 # 查看今天的错误日志
 grep "Error" Logs/Radish.Api/Log20251220.txt
@@ -868,7 +702,7 @@ echo "Cleaned up logs older than $TARGET_DATE"
 **问题**：应用运行但没有生成日志文件
 
 **解决方案**：
-1. 检查 `Program.cs` 是否调用了 `builder.Host.AddSerilogSetup()`
+1. 检查 `Program.cs` 是否调用了 `builder.Host.AddSerilogSetup(runtimeLogging)`
 2. 检查文件系统权限（确保应用有写入 `Logs/` 目录的权限）
 3. 查看 `Logs/{ProjectName}/SerilogDebug/` 目录中的调试日志
 
@@ -901,25 +735,7 @@ SqlSugar.SqlSugarException: ConfigId was not found Log
 
 ### SQL 日志性能影响
 
-**问题**：SQL 日志导致性能下降
-
-**解决方案**：
-1. 使用异步写入（已默认配置）
-2. 生产环境提高日志级别（只记录慢查询）
-3. 考虑只在开发环境启用 SQL 日志
-
-```csharp
-// 只记录慢查询（超过100ms）
-db.Aop.OnLogExecuting = (sql, pars) =>
-{
-    var sw = Stopwatch.StartNew();
-    // ... 执行后
-    if (sw.ElapsedMilliseconds > 100)
-    {
-        Log.Warning("Slow SQL ({Duration}ms): {Sql}", sw.ElapsedMilliseconds, sql);
-    }
-};
-```
+普通诊断默认关闭，生产仅保留独立慢操作摘要；排障时调整 `SlowQueryThresholdMs / SlowConnectionThresholdMs`，不要添加直接输出 SQL 的临时回调。
 
 ### SQLite 登录链路偶发慢请求
 
@@ -927,124 +743,15 @@ db.Aop.OnLogExecuting = (sql, pars) =>
 
 **建议排查**：
 1. 先看 `Logs/Radish.Auth/Log.txt` 中 `[Account/Login]` 的阶段耗时，确认慢点落在用户查询、密码校验还是角色查询。
-2. 再看 `Logs/Radish.Auth/AopSql/AopSql.txt` 是否出现慢连接、慢查询、慢命令或数据库异常日志。
+2. 再看 `Logs/Radish.Auth/AopSql/AopSql.txt` 是否出现 `database.slow` 摘要，并结合最终请求失败日志。
 3. 如果当前数据库是旧 SQLite 库，先执行一次 `DbMigrate apply`，确认当前用户身份字段、公开索引和登录查询所需结构已自动补齐。
 4. 如果仍频繁出现连接等待，应优先评估是否存在同库高频写入竞争，必要时把环境从 SQLite 切到 PostgreSQL。
 
-## 扩展功能
+## 持久化实现与后续迁移
 
-### 日志数据库持久化架构
+旧链路由 `LogBatchingSink` 批量分发应用 / SQL 日志，`LogFilterExtensions` 选择来源与普通 SELECT 诊断，`SerilogOptions` 管理介质与队列。具体实现以 `Radish.Extension.Log` 源码为准，不在文档复制实现代码。
 
-应用日志和 SQL 日志的数据库持久化已实现,采用以下架构:
-
-**核心组件**：
-
-1. **LogBatchingSink** - 批处理 Sink
-   - 实现 `IBatchedLogEventSink` 接口
-   - 使用 `PeriodicBatchingSink` 进行批量写入
-   - 自动区分应用日志和 SQL 日志
-   - 按日志级别路由到不同表
-
-2. **LogFilterExtensions** - 日志过滤扩展
-   - `FilterSqlLog()` - 过滤 SQL 日志
-   - `FilterApplicationLog()` - 过滤应用日志
-   - 支持选择性记录 SELECT 查询
-
-3. **SerilogOptions** - 配置类
-   - 实现 `IConfigurableOptions` 接口
-   - 支持控制台/文件/数据库三种输出方式
-   - 可配置批处理参数
-
-**实现细节**：
-
-```csharp
-// Radish.Extension.Log/LogBatchingSink.cs
-public class LogBatchingSink : IBatchedLogEventSink
-{
-    public async Task EmitBatchAsync(IEnumerable<LogEvent> batch)
-    {
-        // 分离 SQL 日志和应用日志
-        var sqlLogs = batch.FilterSqlLog(_options.Database.LogSelectQueries);
-        var appLogs = batch.FilterApplicationLog();
-
-        // 写入 SQL 日志
-        if (_options.Database.EnableSqlLog && sqlLogs.Any())
-        {
-            await WriteSqlLogAsync(sqlLogs);
-        }
-
-        // 写入应用日志(按级别分表)
-        if (_options.Database.EnableApplicationLog && appLogs.Any())
-        {
-            await WriteApplicationLogsAsync(appLogs);
-        }
-    }
-
-    private async Task WriteInformationLogAsync(IEnumerable<LogEvent> batch)
-    {
-        var logs = batch.Select(MapToInformationLog).ToList();
-        if (logs.Any())
-        {
-            // 注意: SqlSugar 在初始化时会将 ConfigId 转换为小写
-            var logDb = ((SqlSugarScope)_db).GetConnectionScope(SqlSugarConst.LogConfigId.ToLower());
-            await logDb.Insertable(logs).SplitTable().ExecuteReturnSnowflakeIdAsync();
-        }
-    }
-}
-```
-
-**性能优化**：
-
-- 批量写入减少数据库连接开销
-- 异步处理避免阻塞请求线程
-- 可配置批处理大小和周期
-- 队列限制防止内存溢出
-
-**注意事项**：
-
-- SqlSugar 会将 ConfigId 自动转换为小写,代码中需使用 `SqlSugarConst.LogConfigId.ToLower()`
-- 使用 `((SqlSugarScope)_db).GetConnectionScope()` 获取特定数据库连接
-- 日志表按月自动分表,无需手动创建
-
-### 集成日志中心
-
-对于生产环境，建议集成集中式日志管理系统：
-
-**Seq**（推荐用于 .NET 项目）：
-
-```csharp
-var loggerConfiguration = new LoggerConfiguration()
-    .WriteTo.Seq("http://localhost:5341", apiKey: "your-api-key");
-```
-
-**Elasticsearch + Kibana**：
-
-```csharp
-var loggerConfiguration = new LoggerConfiguration()
-    .WriteTo.Elasticsearch(new ElasticsearchSinkOptions(new Uri("http://localhost:9200"))
-    {
-        AutoRegisterTemplate = true,
-        IndexFormat = "radish-logs-{0:yyyy.MM.dd}"
-    });
-```
-
-**配置示例**：
-
-```json
-{
-  "Serilog": {
-    "WriteTo": [
-      {
-        "Name": "Seq",
-        "Args": {
-          "serverUrl": "http://localhost:5341",
-          "apiKey": "your-api-key"
-        }
-      }
-    ]
-  }
-}
-```
+后续集中汇聚沿用已确认的[统一日志专题](../features/unified-logging-governance-design.md)：独立 collector、JSONL、内网批量入库和 Console 查询 / 告警。此方案尚未完成生产切换，不额外引入 Seq 或 Elasticsearch 等另一套架构。
 
 ## 相关文档
 

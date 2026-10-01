@@ -26,4 +26,8 @@
     <ProjectReference Include="..\Radish.Model\Radish.Model.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Include="../Scripts/logging/fixtures/runtime-events.json" Link="LoggingFixtures/runtime-events.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

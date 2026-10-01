@@ -7,12 +7,14 @@ using Radish.Api.Filters;
 using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -353,6 +355,9 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            Log.ForContext("EventCode", "order.cancellation_rejected")
+                .ForContext("SourceCategory", "http")
+                .Warning("Order cancellation rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return MessageModel<bool>.Message(false, ex.Message, false);
         }
     }
@@ -422,6 +427,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "benefit.activation_rejected");
             return MessageModel<UserBenefitActionResultVo>.Message(false, ex.Message, default!);
         }
     }
@@ -450,6 +456,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "benefit.deactivation_rejected");
             return MessageModel<UserBenefitActionResultVo>.Message(false, ex.Message, default!);
         }
     }
@@ -498,11 +505,16 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                LogConsumedInventoryFailure(ex, "inventory.use_failed");
+            }
             result = new UseItemResultDto { Success = false, ErrorMessage = ex.Message };
             return MessageModel<UseItemResultDto>.Message(false, ex.Message, result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            LogConsumedInventoryFailure(ex, "inventory.use_failed");
             result = new UseItemResultDto { Success = false, ErrorMessage = "使用失败" };
             return MessageModel<UseItemResultDto>.Message(false, "使用失败", result);
         }
@@ -560,11 +572,16 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                LogConsumedInventoryFailure(ex, "inventory.rename_failed");
+            }
             result = new UseItemResultDto { Success = false, ErrorMessage = ex.Message };
             return MessageModel<UseItemResultDto>.Message(false, ex.Message, result);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            LogConsumedInventoryFailure(ex, "inventory.rename_failed");
             result = new UseItemResultDto { Success = false, ErrorMessage = "使用失败" };
             return MessageModel<UseItemResultDto>.Message(false, "使用失败", result);
         }
@@ -652,6 +669,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -661,6 +679,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.BadRequest,
                 ex.Message,
@@ -688,6 +707,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -697,6 +717,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.BadRequest,
                 ex.Message,
@@ -724,6 +745,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -733,6 +755,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 ex.Message,
@@ -757,6 +780,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -766,6 +790,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 ex.Message,
@@ -790,6 +815,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -799,6 +825,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "product.management_rejected");
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 ex.Message,
@@ -899,8 +926,9 @@ public class ShopController : ControllerBase
                 result.VoChanged ? "权益已撤销" : "权益此前已撤销",
                 result);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "benefit.revocation_rejected");
             return BuildError<UserBenefitActionResultVo>(
                 HttpStatusCodeEnum.Conflict,
                 "当前权益操作无法完成，请刷新后核对权益状态",
@@ -924,6 +952,12 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
+            }
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -931,8 +965,11 @@ public class ShopController : ControllerBase
                 ex.MessageKey ?? "error.order.retry_rejected",
                 false);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            Log.ForContext("EventCode", "order.fulfillment_retry_rejected")
+                .ForContext("SourceCategory", "http")
+                .Warning("Order fulfillment retry rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 "当前订单不能重新发放，请刷新后核对订单状态与支付证据",
@@ -968,6 +1005,7 @@ public class ShopController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            LogHandledShopFailure(ex, "order.remark_rejected");
             return BuildError(
                 (HttpStatusCodeEnum)ex.StatusCode,
                 ex.Message,
@@ -975,8 +1013,9 @@ public class ShopController : ControllerBase
                 ex.MessageKey ?? "error.order.remark_failed",
                 false);
         }
-        catch (InvalidOperationException)
+        catch (InvalidOperationException ex)
         {
+            LogHandledShopFailure(ex, "order.remark_rejected");
             return BuildError(
                 HttpStatusCodeEnum.Conflict,
                 "订单备注保存失败，请刷新后重试",
@@ -989,6 +1028,32 @@ public class ShopController : ControllerBase
     #endregion
 
     #region 私有方法
+
+    private static void LogConsumedInventoryFailure(Exception exception, string eventCode) =>
+        Log.ForContext("EventCode", eventCode)
+            .ForContext("SourceCategory", "application")
+            .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
+            .Error("Inventory request consumed a failure");
+
+    private static void LogHandledShopFailure(Exception exception, string rejectionEventCode)
+    {
+        if (exception is BusinessException businessException)
+        {
+            if (businessException.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}",
+                        businessException.StatusCode, RuntimeFailureSummary.Classify(exception));
+            }
+            return;
+        }
+
+        Log.ForContext("EventCode", rejectionEventCode)
+            .ForContext("SourceCategory", "application")
+            .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
+            .Warning("Shop request rejected");
+    }
 
     /// <summary>获取当前用户 ID</summary>
     private long GetCurrentUserId() => Current.UserId;

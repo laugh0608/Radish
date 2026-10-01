@@ -5,8 +5,8 @@ namespace Radish.Common.OptionTool;
 /// <summary>SqlSugar AOP 日志配置</summary>
 public sealed class SqlAopLogOptions : IConfigurableOptions
 {
-    /// <summary>是否启用 SQL AOP 日志</summary>
-    public bool Enabled { get; set; } = true;
+    /// <summary>是否启用普通 SQL 开发诊断（仍需 Development 与 Diagnostics）</summary>
+    public bool Enabled { get; set; } = false;
 
     /// <summary>是否记录查询日志</summary>
     public bool LogQuery { get; set; } = true;
@@ -20,28 +20,14 @@ public sealed class SqlAopLogOptions : IConfigurableOptions
     /// <summary>是否记录删除日志</summary>
     public bool LogDelete { get; set; } = true;
 
-    /// <summary>是否省略超长文本内容</summary>
-    public bool OmitLargeText { get; set; } = true;
+    /// <summary>慢查询独立启用，不受普通 SQL 诊断筛选影响</summary>
+    public bool SlowQueryEnabled { get; set; } = true;
 
-    /// <summary>超长文本阈值</summary>
-    public int LargeTextThreshold { get; set; } = 256;
+    public int SlowQueryThresholdMs { get; set; } = 1000;
 
-    /// <summary>强制省略正文的字段名</summary>
-    public List<string> OmittedFields { get; set; } =
-    [
-        "MarkdownContent",
-        "Content",
-        "Body",
-        "HtmlContent",
-        "RequestBody",
-        "ResponseBody",
-        "OldContent",
-        "NewContent",
-        "ContentSnapshot",
-        "Token",
-        "TokenHash",
-        "AccessToken"
-    ];
+    public bool SlowConnectionEnabled { get; set; } = true;
+
+    public int SlowConnectionThresholdMs { get; set; } = 500;
 
     /// <summary>直接跳过日志记录的表名</summary>
     public List<string> SkipTables { get; set; } = [];

@@ -1,4 +1,5 @@
 export const enCore = {
+  'consolePage.context': 'Context and permissions',
   'lang.zh': '中文',
   'lang.en': 'EN',
   'lang.switch': 'Switch language',

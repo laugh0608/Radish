@@ -13,6 +13,7 @@ using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
 using Serilog;
+using Radish.Common.LogTool;
 
 namespace Radish.Service;
 
@@ -226,7 +227,9 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "读取公开 head 快照缓存失败，CacheKey={CacheKey}", cacheKey);
+            Log.ForContext("EventCode", "public_head.cache_read_failed")
+                .ForContext("SourceCategory", "business")
+                .Warning("Public head cache read failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return null;
         }
     }
@@ -239,7 +242,9 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "写入公开 head 快照缓存失败，CacheKey={CacheKey}", cacheKey);
+            Log.ForContext("EventCode", "public_head.cache_write_failed")
+                .ForContext("SourceCategory", "business")
+                .Warning("Public head cache write failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
         }
     }
 

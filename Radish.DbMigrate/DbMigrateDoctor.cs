@@ -140,11 +140,11 @@ internal static class DbMigrateDoctor
             database.DbType == DataBaseType.Sqlite &&
             exception.Message.Contains("SQLite 数据库不存在", StringComparison.Ordinal))
         {
-            warnings.Add(exception.Message);
+            warnings.Add("SQLite 数据库不存在，请先执行 init。");
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            errors.Add($"OpenIddict schema 探测失败：{exception.Message}");
+            errors.Add("OpenIddict schema 探测失败；请检查连接与迁移状态。");
         }
     }
 
@@ -156,7 +156,7 @@ internal static class DbMigrateDoctor
 
             if (inspectionResult.DatabaseFileMissing)
             {
-                warnings.Add($"主库 SQLite 文件不存在：{inspectionResult.DatabaseFilePath ?? "<unknown>"}");
+                warnings.Add("主库 SQLite 文件不存在，请先执行 init。");
                 warnings.Add("核心表状态未探测，因为数据库文件尚未创建。可先执行 init。");
                 return;
             }
@@ -228,9 +228,9 @@ internal static class DbMigrateDoctor
                 errors.AddRange(SchemaMigrationLedger.VerifyApplied(dbScope, services));
             }
         }
-        catch (Exception exception)
+        catch (Exception)
         {
-            errors.Add($"核心表探测失败：{exception.Message}");
+            errors.Add("核心表探测失败；请检查连接与迁移状态。");
         }
     }
 
@@ -238,7 +238,7 @@ internal static class DbMigrateDoctor
     {
         if (database.DbType == DataBaseType.Sqlite)
         {
-            return $"DataBases/{database.ConnectionString}";
+            return string.IsNullOrWhiteSpace(database.ConnectionString) ? "<empty>" : "<configured-sqlite>";
         }
 
         return string.IsNullOrWhiteSpace(database.ConnectionString) ? "<empty>" : "<configured>";

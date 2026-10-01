@@ -23,6 +23,10 @@ public static class LogFilterExtensions
             // 仅保留 INSERT/UPDATE/DELETE 操作
             sqlLogs = sqlLogs.Where(e =>
             {
+                // 旧介质的 SELECT 诊断筛选不能屏蔽独立慢查询 / 连接告警。
+                if (e.Level >= LogEventLevel.Warning) return true;
+                if (e.Properties.TryGetValue("operation", out var operation) && operation is ScalarValue { Value: string name })
+                    return name is "insert" or "update" or "delete";
                 if (!e.Properties.TryGetValue(LogContextTool.SugarActionType, out var actionTypeValue))
                     return false;
 

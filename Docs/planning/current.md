@@ -6,9 +6,9 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`Flutter Native P8-C Windows toolchain + platform foundation readiness`
-- **下一项工作**：只读审计 Windows 日常开发 VM 与 CleanBase VM 的工具链、平台工程输入、运行边界与精确清理方案。
-- **状态复核日期**：`2026-09-06`；本次只做仓库审阅与文档整理，未新增平台运行或分发验收。
+- **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
+- **下一项工作**：今日开发已收尾；明天（`2026-09-29`）从用户关注通知入队与直接调用链日志治理开始，具体见下方明天事项；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-09-28`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容与统计调用链，准确边界见[事件契约第 7–29 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,6 +29,11 @@
 
 ## 最近结论
 
+- `2026-09-28` 完成日志 L2 十五批生成端治理，覆盖账户 / 经验 / 奖励、商城、文件 / 附件、支付口令、公开内容与统计报表。完整提交清单、代码与文档对照及验证边界见[日终回顾](../records/day-end-doc-review-2026-09-28.md)。保留业务规则与权威审计，生产链路未切换。
+
+- `2026-09-23` 完成日志 L2 的 9 个开发 / 验证提交；代码与文档对照、各批次证据及未覆盖边界见[日终回顾](../records/day-end-doc-review-2026-09-23.md)。SQL / seed / Outbox / Rust、Hangfire / 后台任务、奖励、服务内清理及币扣除 / 转账直接消费边界已推进；L2 尚未关闭，生产链路未切换。
+
+- `2026-09-19` 完成部署反馈修复及统一日志 L1 / L2 入口子项；[日终回顾](../records/day-end-doc-review-2026-09-19.md)汇总 7 个提交及文档校准。L2 仍未完成，`RadishLogging.Enabled` 默认 false。
 - `2026-09-06` 完成[项目全面审阅](/records/project-review-2026-09-06)：确认类型检查入口漏检、Outbox 租约归属保护缺口、Web 构建预加载负担及 Flutter 通用 CI 覆盖缺口。条件性安全风险、维护热点与证据范围均已记录；本批仅整理文档，尚未修复代码或调整工程顺位。
 - `2026-09-05` [P8-B2 macOS 本地运行验收](/records/f4-flutter-native-p8b2-macos-local-runtime-acceptance-closure-2026-09-05)关闭：standalone signed Debug 候选在本地 Gateway 完成 OIDC、Keychain / preferences、重启恢复、三档窗口、四主题和桌面输入验收；临时服务、注册与数据已精确清理。
 - `2026-09-01` 项目所有者确认[当前无付费 Apple 会员或测试真机](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01)，P7-D2 / D3 暂缓；恢复需满足当时最新候选、会员 / Team / App ID、设备与分阶段授权条件。
@@ -40,7 +45,19 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 下一事项：P8-C Windows readiness
+## 明天事项（2026-09-29）：L2 剩余生成端治理
+
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–29 节](../features/unified-logging-contract.md)，今日批次证据见[日终回顾](../records/day-end-doc-review-2026-09-28.md)。以下为下次开发建议，本次只记录，不继续实施。
+
+1. **首项：用户关注通知入队**。已发现 UserFollowService 的关注通知入队失败仍携带关注者 / 目标用户身份记录 Warning 后重抛；核对直接消费者、事务和可靠 Outbox 边界后治理，保留关注规则、幂等键、通知内容、原异常传播与返回契约。若需改变业务规则，先单独确认范围。
+2. **后续顺位**：按生成端剩余清单复核尚未治理的业务入口与框架来源，不将已完成的若干调用链视为 L2 整体完成，不一次扩成全仓改造。
+3. **Rust 既有回退问题**：本机返回码 / stderr 与真实动态库验证已补完；`.tmp` 输入触发水印回退的既有问题见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)，不自动扩大日志批次范围。
+4. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。
+5. **验证与收口**：每组调用链补旧 / 候选安全输出、异常所有权与原有行为回归，按影响面更新契约和记录。
+
+生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。若下一批需安装依赖或启动真实宿主 / 隔离容器，按当批具体范围单独授权。
+
+## 后续平台事项：P8-C Windows readiness
 
 1. 只读确认日常开发 VM 与 CleanBase VM 的系统版本、架构、磁盘 / 快照状态与角色，不修改干净基线。
 2. 审计 Flutter `3.44.x`、Visual Studio C++ Desktop workload / ATL、CMake / Ninja、Git 与 Windows SDK 的现状和缺口。
@@ -51,12 +68,13 @@
 ## 审阅改进候选
 
 - 候选排序、影响面与完成标准统一维护在[工程改进候选清单](/planning/engineering-improvement-candidates)。
-- 当前仅完成审阅及文档整理；类型检查、Outbox、管理端安全边界、Web 加载、Flutter CI 与结构治理均未因本次文档更新取得实施授权。
-- 候选不自动替代 P8-C。选定批次后再确认方案与顺位；不以本次审阅启动全仓重构或主动生产数据采集。
+- 上述工程改进候选仍仅完成审阅；类型检查、Outbox、管理端安全边界、Web 加载、Flutter CI 与结构治理均未因本次文档更新取得实施授权。
+- 候选不自动替代当前日志专题或后续 P8-C。选定批次后再确认方案与顺位；不以本次审阅启动全仓重构或主动生产数据采集。
 - 类型检查的已知覆盖限制和补充命令见[验证基线说明](/guide/validation-baseline)。
 
 ## 并行维护线
 
+- `2026-09-19` 根据项目所有者反馈整理[统一日志与跨容器汇聚专题方案](/features/unified-logging-governance-design)：已确认设计并开始 L1，统一生成契约与隔离采集首轮实验已落地；[实测](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)发现 HTTP 413 丢弃、文件按 chunk 轮转和 Docker 长行分片。[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)已通过本机验证；L2 生成入口与已完成子项统一见[事件契约](../features/unified-logging-contract.md)，继续剩余业务调用链与框架来源治理。正式传输上界及发布平台门禁未关闭，生产默认链路未切换。
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护。
 - WebOS 只处理阻断级兼容；Flutter 承接高价值原生路径，不机械追平 Web。

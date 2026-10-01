@@ -181,7 +181,7 @@ validate_preflight() {
     POSTGRES_CHAT_DB="$(read_env_value RADISH_POSTGRES_CHAT_DB radish_chat)"
     POSTGRES_OPENIDDICT_DB="$(read_env_value RADISH_POSTGRES_OPENIDDICT_DB radish_openiddict)"
     POSTGRES_HANGFIRE_DB="$(read_env_value RADISH_POSTGRES_HANGFIRE_DB radish_hangfire)"
-    BACKUP_ROOT="${RADISH_DEPLOY_BACKUP_ROOT:-$(read_env_value RADISH_BACKUP_PATH ../DeployBackups)}"
+    BACKUP_ROOT="${RADISH_DEPLOY_BACKUP_ROOT:-$(read_env_value RADISH_BACKUP_PATH ./backups)}"
 
     [[ "${IMAGE_TAG}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\.[1-9][0-9]*)?-release$ ]] ||
         fail "RADISH_IMAGE_TAG must be an immutable v*-release tag, not a floating alias."

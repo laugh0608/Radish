@@ -368,7 +368,7 @@
 
 ### 当前状态
 
-- ✅ 已不再依赖 `System/Admin` 角色硬编码放行
-- ✅ 资源 URL 与种子已对齐到 `/hangfire(/.*)?`
-- ✅ React 侧已通过 `SystemTools/HangfirePage` 承载外层页头、指标和 iframe 容器
+- ✅ 所有请求（含本地回环）均需认证；看板沿用 `System/Admin` 或 `console.hangfire.view` 的授权判断
+- ✅ 资源与种子覆盖 `POST /api/v1/HangfireSession/Create` 及 `/hangfire(/.*)?`，兑换接口要求 Bearer 与查看权限
+- ✅ `SystemTools/HangfirePage` 先兑换 / 校验短期 Cookie，再展示 iframe；包含续期、重试及新窗口入口，具体期限与边界见[定时任务指南](/guide/hangfire-scheduled-jobs)
 - ⏸️ 当前只承载受保护的外部 Hangfire Dashboard，不扩展项目内任务队列、失败重试或运行审计平台

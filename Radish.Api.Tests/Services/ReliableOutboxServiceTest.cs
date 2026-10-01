@@ -58,7 +58,7 @@ public class ReliableOutboxServiceTest
                 ReliableOutboxSources.Main,
                 10,
                 nameof(TimeoutException),
-                "任务执行失败，完整异常请查看服务端日志",
+                "任务执行失败，请结合错误码和运行日志安全摘要排查",
                 failedAtUtc,
                 failedAtUtc.AddMinutes(1).AddSeconds(10)))
             .Returns(Task.CompletedTask);

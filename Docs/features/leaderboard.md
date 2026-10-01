@@ -146,7 +146,7 @@ PrimaryValue DESC, StableEntityId ASC
 - `DataCount` 统计应用全部资格条件后的实体数量；
 - `PageCount` 由 `DataCount` 和规范化后的 `PageSize` 计算；
 - `GetMyRank` 返回同一全序中的位置，`0` 只表示用户不具备资格或没有有效指标；
-- 查询异常必须向上抛出并由统一错误处理记录，不能伪装成未上榜。
+- 查询异常必须向上抛出，不能伪装成未上榜；按[统一日志契约第 28 节](./unified-logging-contract.md)，Service 不在重抛前重复记录，API 最终边界仅对 5xx 输出安全 `http.failed`，正常结果与 4xx 保持安静。
 
 当用户状态在一次请求执行期间发生并发变化时，最终用户装配仍需再次应用共同资格；允许出现短暂名次空洞，但不得把已经确认失效的用户重新补入响应。
 

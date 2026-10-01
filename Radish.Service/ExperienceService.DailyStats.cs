@@ -3,7 +3,6 @@ using Radish.IRepository;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
-using Serilog;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -17,46 +16,38 @@ public partial class ExperienceService
     /// </summary>
     public async Task<UserExpDailyStatsWindowVo> GetDailyStatsAsync(long userId, int days = 7)
     {
-        try
+        var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
+        var endDate = _businessCalendar.GetCurrentDate();
+        var startDate = endDate.AddDays(-normalizedDays + 1);
+        var startStorageValue = GetBusinessDateStorageValue(startDate);
+        var endStorageValueExclusive = GetBusinessDateStorageValue(endDate.AddDays(1));
+        var dailyLimits = GetDailyLimitOptions();
+
+        var stats = await _dailyStatsRepository.QueryAsync(
+            s => s.UserId == userId &&
+                 s.StatDate >= startStorageValue &&
+                 s.StatDate < endStorageValueExclusive
+        );
+
+        var sortedStats = stats.OrderByDescending(s => s.StatDate).ToList();
+        var statVos = Mapper.Map<List<UserExpDailyStatsVo>>(sortedStats);
+        for (var index = 0; index < sortedStats.Count && index < statVos.Count; index++)
         {
-            var normalizedDays = days <= 0 ? 7 : Math.Min(days, 30);
-            var endDate = _businessCalendar.GetCurrentDate();
-            var startDate = endDate.AddDays(-normalizedDays + 1);
-            var startStorageValue = GetBusinessDateStorageValue(startDate);
-            var endStorageValueExclusive = GetBusinessDateStorageValue(endDate.AddDays(1));
-            var dailyLimits = GetDailyLimitOptions();
-
-            var stats = await _dailyStatsRepository.QueryAsync(
-                s => s.UserId == userId &&
-                     s.StatDate >= startStorageValue &&
-                     s.StatDate < endStorageValueExclusive
-            );
-
-            var sortedStats = stats.OrderByDescending(s => s.StatDate).ToList();
-            var statVos = Mapper.Map<List<UserExpDailyStatsVo>>(sortedStats);
-            for (var index = 0; index < sortedStats.Count && index < statVos.Count; index++)
-            {
-                statVos[index].VoStatDate = GetStoredBusinessDate(sortedStats[index].StatDate);
-            }
-            var normalizedStats = NormalizeDailyStatsWindow(userId, startDate, endDate, statVos, dailyLimits);
-            var ruleSummaries = BuildAnomalyRuleSummaries(normalizedStats, dailyLimits);
-            var recommendation = BuildGovernanceRecommendation(normalizedStats, ruleSummaries);
-
-            return new UserExpDailyStatsWindowVo
-            {
-                VoWindowDays = normalizedDays,
-                VoStats = normalizedStats,
-                VoSummary = BuildDailyStatsSummary(normalizedStats, dailyLimits),
-                VoRuleSummaries = ruleSummaries,
-                VoRecommendation = recommendation,
-                VoLimits = BuildDailyLimitSnapshot(dailyLimits)
-            };
+            statVos[index].VoStatDate = GetStoredBusinessDate(sortedStats[index].StatDate);
         }
-        catch (Exception ex)
+        var normalizedStats = NormalizeDailyStatsWindow(userId, startDate, endDate, statVos, dailyLimits);
+        var ruleSummaries = BuildAnomalyRuleSummaries(normalizedStats, dailyLimits);
+        var recommendation = BuildGovernanceRecommendation(normalizedStats, ruleSummaries);
+
+        return new UserExpDailyStatsWindowVo
         {
-            Log.Error(ex, "获取用户 {UserId} 每日统计失败", userId);
-            throw;
-        }
+            VoWindowDays = normalizedDays,
+            VoStats = normalizedStats,
+            VoSummary = BuildDailyStatsSummary(normalizedStats, dailyLimits),
+            VoRuleSummaries = ruleSummaries,
+            VoRecommendation = recommendation,
+            VoLimits = BuildDailyLimitSnapshot(dailyLimits)
+        };
     }
 
     /// <summary>
@@ -67,13 +58,11 @@ public partial class ExperienceService
     {
         if (userId <= 0)
         {
-            Log.Warning("更新每日经验统计失败：userId 无效（{UserId}）", userId);
             return;
         }
 
         if (amount <= 0)
         {
-            Log.Warning("更新每日经验统计失败：amount 必须大于 0，userId={UserId}, amount={Amount}", userId, amount);
             return;
         }
 
@@ -89,33 +78,25 @@ public partial class ExperienceService
         int pageIndex = 1,
         int pageSize = 20)
     {
-        try
-        {
-            var safePageIndex = Math.Max(1, pageIndex);
-            var safePageSize = NormalizeGovernanceActionTake(pageSize);
-            var target = await _userExpRepository.QueryFirstAsync(item => item.UserId == userId && !item.IsDeleted)
-                ?? throw new ExperienceGovernanceTargetUnavailableException();
-            var (actions, total) = await _experienceGovernanceRepository.QueryActionsPageAsync(
-                new ExperienceGovernanceActionPageQuery(
-                    target.TenantId,
-                    userId,
-                    safePageIndex,
-                    safePageSize));
+        var safePageIndex = Math.Max(1, pageIndex);
+        var safePageSize = NormalizeGovernanceActionTake(pageSize);
+        var target = await _userExpRepository.QueryFirstAsync(item => item.UserId == userId && !item.IsDeleted)
+            ?? throw new ExperienceGovernanceTargetUnavailableException();
+        var (actions, total) = await _experienceGovernanceRepository.QueryActionsPageAsync(
+            new ExperienceGovernanceActionPageQuery(
+                target.TenantId,
+                userId,
+                safePageIndex,
+                safePageSize));
 
-            return new PageModel<UserExperienceGovernanceActionVo>
-            {
-                Page = safePageIndex,
-                PageSize = safePageSize,
-                DataCount = total,
-                PageCount = (int)Math.Ceiling(total / (double)safePageSize),
-                Data = actions.Select(MapGovernanceAction).ToList()
-            };
-        }
-        catch (Exception ex)
+        return new PageModel<UserExperienceGovernanceActionVo>
         {
-            Log.Error(ex, "获取用户 {UserId} 经验治理留痕失败", userId);
-            throw;
-        }
+            Page = safePageIndex,
+            PageSize = safePageSize,
+            DataCount = total,
+            PageCount = (int)Math.Ceiling(total / (double)safePageSize),
+            Data = actions.Select(MapGovernanceAction).ToList()
+        };
     }
 
     private static List<UserExpDailyStatsVo> NormalizeDailyStatsWindow(

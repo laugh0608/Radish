@@ -96,12 +96,7 @@ internal static partial class InitialDataSeeder
             var existingCategory = await db.Queryable<ProductCategory>().FirstAsync(c => c.Id == category.Id);
             if (existingCategory == null)
             {
-                Console.WriteLine($"[Radish.DbMigrate] 创建商品分类 Id={category.Id}, Name={category.Name}...");
                 await db.Insertable(category).ExecuteCommandAsync();
-            }
-            else
-            {
-                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={category.Id} 的商品分类，跳过。");
             }
         }
     }
@@ -482,7 +477,6 @@ internal static partial class InitialDataSeeder
             var existingProduct = await db.Queryable<Product>().FirstAsync(p => p.Id == product.Id);
             if (existingProduct == null)
             {
-                Console.WriteLine($"[Radish.DbMigrate] 创建商品 Id={product.Id}, Name={product.Name}...");
                 try
                 {
                     await db.Insertable(product).ExecuteCommandAsync();
@@ -500,14 +494,11 @@ internal static partial class InitialDataSeeder
                     {
                         throw;
                     }
-
-                    Console.WriteLine($"[Radish.DbMigrate] 检测到商品 Id={product.Id} 的旧记录，已自动纠正商品配置。");
                 }
             }
             else
             {
                 await TakeSeededUnavailableProductOffSaleAsync(db, existingProduct, product);
-                Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={product.Id} 的商品，跳过。");
             }
         }
     }
@@ -545,8 +536,7 @@ internal static partial class InitialDataSeeder
             })
             .Where(p => p.Id == existingProduct.Id)
             .ExecuteCommandAsync();
-
-        Console.WriteLine($"[Radish.DbMigrate] 已按当前可用性策略下架历史商品 Id={existingProduct.Id}, Name={existingProduct.Name}。");
+        WriteSeedEvent("dbmigrate.seed.product_retired", 1);
     }
 
     private static async Task BackfillShopOrderStockTypesAsync(ISqlSugarClient db)
@@ -558,14 +548,14 @@ internal static partial class InitialDataSeeder
 
         if (string.IsNullOrWhiteSpace(orderTable) || string.IsNullOrWhiteSpace(productTable))
         {
-            Console.WriteLine("[Radish.DbMigrate] 商城订单或商品表尚不存在，跳过历史订单快照回填。");
+            WriteSeedEvent("dbmigrate.seed.schema_missing", warning: true);
             return;
         }
 
         var orderStockTypeColumn = ResolveExistingColumnName(db, orderTable, GetColumnName(orderEntity, nameof(Order.StockType)));
         if (string.IsNullOrWhiteSpace(orderStockTypeColumn))
         {
-            Console.WriteLine("[Radish.DbMigrate] ShopOrder.StockType 列尚不存在，跳过历史订单快照回填。");
+            WriteSeedEvent("dbmigrate.seed.schema_missing", warning: true);
             return;
         }
 
@@ -577,7 +567,7 @@ internal static partial class InitialDataSeeder
             string.IsNullOrWhiteSpace(productIdColumn) ||
             string.IsNullOrWhiteSpace(productStockTypeColumn))
         {
-            Console.WriteLine("[Radish.DbMigrate] 无法解析商城订单快照回填所需列名，跳过。");
+            WriteSeedEvent("dbmigrate.seed.schema_missing", warning: true);
             return;
         }
 
@@ -589,7 +579,6 @@ internal static partial class InitialDataSeeder
 
         if (unresolvedBefore <= 0)
         {
-            Console.WriteLine("[Radish.DbMigrate] 商城历史订单无需回填 StockType。");
             return;
         }
 
@@ -616,10 +605,10 @@ internal static partial class InitialDataSeeder
             WHERE {QuoteIdentifier(orderStockTypeColumn)} IS NULL
             """);
 
-        Console.WriteLine($"[Radish.DbMigrate] 已回填商城历史订单 StockType，共 {updated} 条。");
+        WriteSeedEvent("dbmigrate.seed.stock_backfilled", updated);
         if (unresolvedAfter > 0)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 仍有 {unresolvedAfter} 条历史订单缺少 StockType，请检查关联商品是否存在。");
+            WriteSeedEvent("dbmigrate.seed.stock_unresolved", unresolvedAfter, warning: true);
         }
     }
 
@@ -686,7 +675,7 @@ internal static partial class InitialDataSeeder
         var defaultImagesPath = Path.Combine(AppPathTool.GetDataBasesPath(), "Uploads", "DefaultShopImage");
         if (!Directory.Exists(defaultImagesPath))
         {
-            Console.WriteLine($"[Radish.DbMigrate] 商城默认图片目录不存在，跳过：{defaultImagesPath}");
+            WriteSeedEvent("dbmigrate.seed.asset_missing", warning: true);
             return;
         }
 
@@ -727,8 +716,6 @@ internal static partial class InitialDataSeeder
                     })
                     .Where(c => c.Id == seed.CategoryId)
                     .ExecuteCommandAsync();
-
-                Console.WriteLine($"[Radish.DbMigrate] 已为商城分类 {seed.CategoryId} 回填默认图标附件。");
             }
         }
 
@@ -767,8 +754,6 @@ internal static partial class InitialDataSeeder
                 })
                 .Where(p => p.Id == product.Id)
                 .ExecuteCommandAsync();
-
-            Console.WriteLine($"[Radish.DbMigrate] 已为商品 Id={product.Id}, Name={product.Name} 回填默认图片附件。");
         }
     }
 
@@ -784,7 +769,7 @@ internal static partial class InitialDataSeeder
         var filePath = Path.Combine(defaultImagesPath, fileName);
         if (!File.Exists(filePath))
         {
-            Console.WriteLine($"[Radish.DbMigrate] 商城默认图片文件不存在，跳过：{filePath}");
+            WriteSeedEvent("dbmigrate.seed.asset_missing", warning: true);
             return;
         }
 

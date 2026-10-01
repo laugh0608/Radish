@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.Shared.Constants;
 
 namespace Radish.Api.ErrorHandling;
@@ -20,22 +21,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
         {
             if (businessException.StatusCode >= StatusCodes.Status500InternalServerError)
             {
-                logger.LogError(
-                    businessException,
-                    "API server error {ErrorCode} at {Method} {Path}; TraceId: {TraceId}",
-                    businessException.ErrorCode,
-                    httpContext.Request.Method,
-                    httpContext.Request.Path,
-                    httpContext.TraceIdentifier);
-            }
-            else
-            {
-                logger.LogWarning(
-                    "API business error {ErrorCode} at {Method} {Path}; TraceId: {TraceId}",
-                    businessException.ErrorCode,
-                    httpContext.Request.Method,
-                    httpContext.Request.Path,
-                    httpContext.TraceIdentifier);
+                WriteFailure(businessException, businessException.StatusCode);
             }
 
             await ApiErrorResultFactory.WriteAsync(
@@ -49,12 +35,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             return true;
         }
 
-        logger.LogError(
-            exception,
-            "Unhandled API exception at {Method} {Path}; TraceId: {TraceId}",
-            httpContext.Request.Method,
-            httpContext.Request.Path,
-            httpContext.TraceIdentifier);
+        WriteFailure(exception, StatusCodes.Status500InternalServerError);
 
         await ApiErrorResultFactory.WriteAsync(
             httpContext,
@@ -64,5 +45,15 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             "error.system.unexpected_error",
             cancellationToken: cancellationToken);
         return true;
+    }
+
+    private void WriteFailure(Exception exception, int statusCode)
+    {
+        using var scope = logger.BeginScope(new Dictionary<string, object>
+        {
+            ["EventCode"] = "http.failed", ["SourceCategory"] = "http"
+        });
+        // 不把 Exception、URL、业务错误文案交给旧 sink；候选与旧路径同样安全。
+        logger.LogError("Request failed with {statusCode}; kind={failureKind}", statusCode, RuntimeFailureSummary.Classify(exception));
     }
 }

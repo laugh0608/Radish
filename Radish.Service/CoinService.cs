@@ -68,29 +68,20 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     /// </summary>
     public async Task<UserBalanceVo?> GetBalanceAsync(long userId)
     {
-        try
+        var user = await EnsureUserExistsAsync(userId);
+
+        var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
+
+        if (userBalance == null)
         {
-            var user = await EnsureUserExistsAsync(userId);
-
-            var userBalance = await _userBalanceRepository.QueryFirstAsync(b => b.UserId == userId && !b.IsDeleted);
-
-            if (userBalance == null)
-            {
-                // 如果用户余额记录不存在，自动创建初始记录
-                Log.Information("用户 {UserId} 余额记录不存在，自动创建初始记录", userId);
-                userBalance = await InitializeUserBalanceAsync(userId);
-            }
-
-            var balanceVo = Mapper.Map<UserBalanceVo>(userBalance);
-            balanceVo.VoUserName = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
-                ?? User.NormalizeDisplayName(user.UserName, user.Id);
-            return balanceVo;
+            // 如果用户余额记录不存在，自动创建初始记录
+            userBalance = await InitializeUserBalanceAsync(userId);
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "获取用户 {UserId} 余额信息失败", userId);
-            throw;
-        }
+
+        var balanceVo = Mapper.Map<UserBalanceVo>(userBalance);
+        balanceVo.VoUserName = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
+            ?? User.NormalizeDisplayName(user.UserName, user.Id);
+        return balanceVo;
     }
 
     /// <summary>
@@ -98,22 +89,14 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     /// </summary>
     public async Task<Dictionary<long, UserBalanceVo>> GetBalancesAsync(List<long> userIds)
     {
-        try
-        {
-            var userBalances = await _userBalanceRepository.QueryAsync(
-                u => userIds.Contains(u.UserId) && !u.IsDeleted
-            );
+        var userBalances = await _userBalanceRepository.QueryAsync(
+            u => userIds.Contains(u.UserId) && !u.IsDeleted
+        );
 
-            return userBalances.ToDictionary(
-                u => u.UserId,
-                u => Mapper.Map<UserBalanceVo>(u)
-            );
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "批量获取用户余额信息失败");
-            throw;
-        }
+        return userBalances.ToDictionary(
+            u => u.UserId,
+            u => Mapper.Map<UserBalanceVo>(u)
+        );
     }
 
     /// <summary>
@@ -172,7 +155,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
         catch (Exception ex) when (IsUniqueConstraintConflict(ex, "UserBalance.UserId"))
         {
             // 并发情况下，其他请求可能已经创建了记录，重新查询
-            Log.Warning("用户 {UserId} 余额记录已存在（并发创建），重新查询", userId);
             var existingBalance = await _userBalanceRepository.QueryFirstAsync(
                 b => b.UserId == userId && !b.IsDeleted);
 
@@ -201,40 +183,25 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
         long? businessId = null,
         string? remark = null)
     {
-        try
+        // 1. 参数校验
+        if (amount <= 0)
         {
-            // 1. 参数校验
-            if (amount <= 0)
-            {
-                throw new ArgumentException("发放金额必须大于 0", nameof(amount));
-            }
-
-            if (string.IsNullOrWhiteSpace(transactionType))
-            {
-                throw new ArgumentException("交易类型不能为空", nameof(transactionType));
-            }
-
-            await EnsureUserExistsAsync(userId);
-
-            Log.Information("开始发放萝卜币：用户={UserId}, 金额={Amount}, 类型={TransactionType}",
-                userId, amount, transactionType);
-
-            // 2. 使用乐观锁重试策略执行发放操作（最多重试 3 次，指数退避）
-            var transactionNo = await ExecuteWithRetryAsync(async () =>
-                await GrantCoinInternalAsync(userId, amount, transactionType, businessType, businessId, remark)
-            );
-
-            Log.Information("萝卜币发放成功：用户={UserId}, 金额={Amount}, 流水号={TransactionNo}",
-                userId, amount, transactionNo);
-
-            return transactionNo;
+            throw new ArgumentException("发放金额必须大于 0", nameof(amount));
         }
-        catch (Exception ex)
+
+        if (string.IsNullOrWhiteSpace(transactionType))
         {
-            Log.Error(ex, "发放萝卜币失败：用户={UserId}, 金额={Amount}, 类型={TransactionType}",
-                userId, amount, transactionType);
-            throw;
+            throw new ArgumentException("交易类型不能为空", nameof(transactionType));
         }
+
+        await EnsureUserExistsAsync(userId);
+
+        // 2. 使用乐观锁重试策略执行发放操作（最多重试 3 次，指数退避）
+        var transactionNo = await ExecuteWithRetryAsync(async () =>
+            await GrantCoinInternalAsync(userId, amount, transactionType, businessType, businessId, remark)
+        );
+
+        return transactionNo;
     }
 
     /// <summary>
@@ -299,13 +266,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
                 return CoinGrantOnceResult.Existing(existingReward.TransactionNo);
             }
 
-            Log.Warning(ex, "奖励业务键 {RewardBusinessKey} 已被占用但未找到成功流水", normalizedRewardBusinessKey);
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "按业务键发放萝卜币失败：用户={UserId}, 金额={Amount}, 类型={TransactionType}, RewardBusinessKey={RewardBusinessKey}",
-                userId, amount, transactionType, normalizedRewardBusinessKey);
             throw;
         }
     }
@@ -348,33 +308,18 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
         long? businessId = null,
         string? remark = null)
     {
-        try
+        if (amount <= 0)
         {
-            if (amount <= 0)
-            {
-                throw new ArgumentException("扣除金额必须大于 0", nameof(amount));
-            }
-
-            await EnsureUserExistsAsync(userId);
-
-            Log.Information("开始扣除萝卜币：用户={UserId}, 金额={Amount}, 业务={BusinessType}, 业务ID={BusinessId}",
-                userId, amount, businessType, businessId);
-
-            var result = await ExecuteWithRetryAsync(async () =>
-                await ConsumeCoinInternalAsync(userId, amount, businessType, businessId, remark)
-            );
-
-            Log.Information("萝卜币扣除成功：用户={UserId}, 金额={Amount}, 交易ID={TransactionId}, 流水号={TransactionNo}",
-                userId, amount, result.transactionId, result.transactionNo);
-
-            return result;
+            throw new ArgumentException("扣除金额必须大于 0", nameof(amount));
         }
-        catch (Exception ex)
-        {
-            Log.Error(ex, "扣除萝卜币失败：用户={UserId}, 金额={Amount}, 业务={BusinessType}, 业务ID={BusinessId}",
-                userId, amount, businessType, businessId);
-            throw;
-        }
+
+        await EnsureUserExistsAsync(userId);
+
+        var result = await ExecuteWithRetryAsync(async () =>
+            await ConsumeCoinInternalAsync(userId, amount, businessType, businessId, remark)
+        );
+
+        return result;
     }
 
     /// <summary>
@@ -577,6 +522,8 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     public async Task<List<string>> BatchGrantCoinAsync(List<CoinGrantInfo> grantInfos)
     {
         var transactionNos = new List<string>();
+        var failedCount = 0;
+        string? failureKind = null;
 
         foreach (var grantInfo in grantInfos)
         {
@@ -595,11 +542,13 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "批量发放萝卜币失败：用户={UserId}, 金额={Amount}",
-                    grantInfo.UserId, grantInfo.Amount);
+                failedCount++;
+                var kind = Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex);
+                failureKind = failureKind == null || failureKind == kind ? kind : "other";
             }
         }
 
+        RewardRuntimeLog.Batch("coin", transactionNos.Count, 0, failedCount, failureKind);
         return transactionNos;
     }
 
@@ -645,9 +594,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
             EnsureTransferPaymentPasscodeIsValid(paymentPassword);
 
-            Log.Information("用户转账：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
-                fromUserId, toUserId, amount);
-
             // 2. 验证支付口令
             var verifyRequest = new VerifyPaymentPasswordRequest
             {
@@ -659,8 +605,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
             if (!verifyResult.IsSuccess)
             {
-                Log.Warning("转账失败：支付口令验证失败，用户={FromUserId}, 原因={Reason}",
-                    fromUserId, verifyResult.ErrorMessage);
                 throw CreatePaymentVerificationException(verifyResult);
             }
 
@@ -687,17 +631,11 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
             await CompleteTransferIdempotencyAsync(idempotencyResult, transactionNo);
 
-            Log.Information("用户转账成功：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}, 流水号={TransactionNo}",
-                fromUserId, toUserId, amount, transactionNo);
-
             return transactionNo;
         }
         catch (Exception ex)
         {
             var transferException = NormalizeTransferException(ex);
-            Log.Error(transferException, "用户转账失败：转出用户={FromUserId}, 转入用户={ToUserId}, 金额={Amount}",
-                fromUserId, toUserId, amount);
-
             if (idempotencyResult?.Status == OperationIdempotencyBeginStatus.Started &&
                 idempotencyResult.RecordId.HasValue &&
                 _operationIdempotencyService != null)
@@ -705,6 +643,10 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
                 if (completedTransactionNo != null)
                 {
                     await CompleteTransferIdempotencyAsync(idempotencyResult, completedTransactionNo);
+                    Log.ForContext("EventCode", "coin.transfer_completion_recovered")
+                        .ForContext("SourceCategory", "application")
+                        .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
+                        .Warning("Transfer completion recording recovered after retry");
                     return completedTransactionNo;
                 }
 
@@ -884,61 +826,49 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     /// </summary>
     public async Task<CoinStatisticsVo> GetStatisticsAsync(long userId, string timeRange = "month")
     {
-        try
-        {
-            // 1. 计算时间范围
-            var (startDate, endDate) = CalculateDateRange(timeRange);
+        // 1. 计算时间范围
+        var (startDate, endDate) = CalculateDateRange(timeRange);
 
-            Log.Information("获取用户统计数据：用户={UserId}, 时间范围={TimeRange}, 开始日期={StartDate}, 结束日期={EndDate}",
-                userId, timeRange, startDate, endDate);
+        // 2. 查询时间范围内的交易记录
+        var transactions = await _coinTransactionRepository.QueryAsync(
+            t => (t.FromUserId == userId || t.ToUserId == userId) &&
+                 t.Status == "SUCCESS" &&
+                 t.CreateTime >= startDate &&
+                 t.CreateTime <= endDate
+        );
 
-            // 2. 查询时间范围内的交易记录
-            var transactions = await _coinTransactionRepository.QueryAsync(
-                t => (t.FromUserId == userId || t.ToUserId == userId) &&
-                     t.Status == "SUCCESS" &&
-                     t.CreateTime >= startDate &&
-                     t.CreateTime <= endDate
-            );
-
-            // 3. 计算趋势数据（按日期分组）
-            var trendData = transactions
-                .GroupBy(t => t.CreateTime.Date)
-                .Select(g => new TrendDataItem
-                {
-                    VoDate = g.Key.ToString("yyyy-MM-dd"),
-                    VoIncome = g.Where(t => t.ToUserId == userId).Sum(t => t.Amount),
-                    VoExpense = g.Where(t => t.FromUserId == userId).Sum(t => t.Amount)
-                })
-                .OrderBy(t => t.VoDate)
-                .ToList();
-
-            // 4. 补充缺失的日期（确保每天都有数据）
-            var completeTrendData = FillMissingDates(trendData, startDate, endDate);
-
-            // 5. 计算分类统计数据
-            var categoryStats = transactions
-                .GroupBy(t => GetTransactionCategory(t, userId))
-                .Select(g => new CategoryStatItem
-                {
-                    VoCategory = g.Key,
-                    VoAmount = g.Sum(t => t.Amount),
-                    VoCount = g.Count()
-                })
-                .OrderByDescending(c => c.VoAmount)
-                .ToList();
-
-            return new CoinStatisticsVo
+        // 3. 计算趋势数据（按日期分组）
+        var trendData = transactions
+            .GroupBy(t => t.CreateTime.Date)
+            .Select(g => new TrendDataItem
             {
-                VoTrendData = completeTrendData,
-                VoCategoryStats = categoryStats
-            };
-        }
-        catch (Exception ex)
+                VoDate = g.Key.ToString("yyyy-MM-dd"),
+                VoIncome = g.Where(t => t.ToUserId == userId).Sum(t => t.Amount),
+                VoExpense = g.Where(t => t.FromUserId == userId).Sum(t => t.Amount)
+            })
+            .OrderBy(t => t.VoDate)
+            .ToList();
+
+        // 4. 补充缺失的日期（确保每天都有数据）
+        var completeTrendData = FillMissingDates(trendData, startDate, endDate);
+
+        // 5. 计算分类统计数据
+        var categoryStats = transactions
+            .GroupBy(t => GetTransactionCategory(t, userId))
+            .Select(g => new CategoryStatItem
+            {
+                VoCategory = g.Key,
+                VoAmount = g.Sum(t => t.Amount),
+                VoCount = g.Count()
+            })
+            .OrderByDescending(c => c.VoAmount)
+            .ToList();
+
+        return new CoinStatisticsVo
         {
-            Log.Error(ex, "获取用户统计数据失败：用户={UserId}, 时间范围={TimeRange}",
-                userId, timeRange);
-            throw;
-        }
+            VoTrendData = completeTrendData,
+            VoCategoryStats = categoryStats
+        };
     }
 
     /// <summary>
@@ -1052,15 +982,13 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
                 if (retryCount > MaxRetryCount)
                 {
-                    Log.Error(ex, "乐观锁冲突重试 {MaxRetryCount} 次后仍然失败", MaxRetryCount);
                     throw;
                 }
 
                 // 指数退避：100ms * 2^(retryCount-1)
                 var delayMs = BaseRetryDelayMs * (int)Math.Pow(2, retryCount - 1);
-                Log.Warning("乐观锁冲突，第 {RetryCount} 次重试（延迟 {DelayMs}ms）: {Message}",
-                    retryCount, delayMs, ex.Message);
 
+                RewardRuntimeLog.Retry("coin", retryCount, delayMs);
                 await Task.Delay(delayMs);
             }
         }

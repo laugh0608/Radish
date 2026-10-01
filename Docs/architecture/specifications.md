@@ -385,7 +385,8 @@ git push origin v26.1.1.3003
 - Program 在调用 `builder.Services.AddSqlSugarSetup()` 后会立即读取 `Snowflake` 段并设置 `SnowFlakeSingle.WorkId/DatacenterId`，因此只要在环境配置中写好差异值即可，无需在扩展或仓储层重复配置；若服务器时间曾被回拨，务必同步调整新的 WorkId。
 - `BaseRepository` 通过 `IUnitOfWorkManage` 获取 `SqlSugarScope` 单例，内部根据泛型实体的 `[Tenant(configId)]` 特性切换连接；未标注特性的实体沿用 `MainDb`，标注了 `configId="Log"` 等值（大小写不敏感）的实体会自动访问对应库。需要写入日志库或其他独立库的模型务必显式添加 `TenantAttribute`，以免错写入主库；若实体启用了 `[MultiTenant(TenantTypeEnum.DataBases)]`，`BaseRepository` 会通过 `TenantUtil.GetConnectionConfig()` 在运行期动态添加租户库配置。
 - 使用 SQLite 时 `ConnectionString` 只需传数据库文件名，运行期会自动拼接 `Environment.CurrentDirectory`；对于 MySQL/SQLServer 等外部数据库，可通过 `dbCountPsw1_*.txt` 本地文件或环境变量隐藏真实连接串，`BaseDbConfig.SpecialDbString` 会优先读取文件值。
-- SQL 日志统一通过 `SqlSugarAop.OnLogExecuting` 写入 Serilog，`LogContextTool` 会在上下文中打上 `LogSource=AopSql` 标签；SqlSugar 的缓存实现委托给 `Radish.Common.CacheTool.SqlSugarCache`，保持与 Redis/内存缓存一致的策略。Serilog 输出由 `SerilogSetup + LogConfigExtension` 统一配置，普通日志与 SQL 日志会分别落入 `Logs/{ProjectName}/Log.txt` 与 `Logs/{ProjectName}/AopSql/AopSql.txt`，并启用 `WriteTo.Async()` 防止阻塞请求线程。项目名解析当前优先通过宿主 `ContentRootPath` 与 `AppContext.BaseDirectory` 定位具体项目，再回退到宿主名称，避免开发态把多个宿主误写进 `Logs/Radish/`。SQL AOP 过滤与大文本脱敏统一使用共享配置 `SqlAopLog`，默认允许按 `Query/Insert/Update/Delete` 维度开关、按 `SkipTables/SkipUsers` 跳过记录；`SkipTables` 当前对 `INSERT / UPDATE / DELETE / SELECT` 统一生效，并对 `MarkdownContent` 等大字段只输出长度占位。SQL 原文需以结构化参数方式写入，避免把包含 `{...}` 的文本误当成 Serilog 模板占位。
+- SQL AOP 通过 `SqlSugarAop.Executing / Executed / ConnectionChecked` 生成受控操作、参数数量及耗时摘要，不输出 SQL 正文、参数名 / 值、用户或表名。普通诊断需要 Development 宿主、Development 日志模式、Diagnostics 与 `SqlAopLog.Enabled` 同时开启；CRUD 与 SkipTables / SkipUsers 只筛选普通诊断，慢操作 / 连接独立启用。PostgreSQL 时间参数规范化不依赖日志开关，SqlSugar 缓存仍使用 `Radish.Common.CacheTool.SqlSugarCache`。
+- 宿主使用 `RuntimeLoggingSession + AddSerilogSetup` 选择旧 / 候选链路。旧链路按 Serilog 配置分流应用与 SQL 日志，候选启用后仅生成规范 JSONL；默认候选开关关闭。介质、路径及背压边界见[日志系统](/guide/logging)，生成规则见[统一事件契约](/features/unified-logging-contract)。
 
 ### 多租户隔离模式示例
 
@@ -575,10 +576,10 @@ git push origin v26.1.1.3003
 
 ## AOP 与日志
 
-- `Radish.Extension/ServiceAop` 基于 Castle.DynamicProxy 实现接口拦截，当前主要用于捕捉 `BaseService<,>` 等应用服务的入参、响应与耗时信息，并通过 `AopLogInfo` 统一结构化输出。
-- 常规业务日志统一调用 Serilog 静态方法（`Log.Information/Log.Warning/Log.Error` 等），除非框架/第三方库必须注入 `ILogger<T>` 才能工作，否则 Controller、Service 以及扩展类中都不再手动注入 `ILogger`，避免出现多套日志通道。
-- `AutofacModuleRegister` 已在泛型服务注册时启用 `.EnableInterfaceInterceptors().InterceptedBy(ServiceAop)`，如果后续服务需要自定义拦截，可在同一位置扩展拦截器数组。
-- `Radish.Common/AopLogInfo` 集中维护 AOP 日志字段，调用层仅负责填充必要属性并交给日志基础设施处理，避免在各服务中手写日志模型。
+- `ServiceAop` 与其注册已移除，不再逐方法捕获入参、响应或输出调用日志。Autofac 保留 `TranAop` 接口拦截，事务提交、回滚和保存点规则不因日志治理改变。
+- 新运行日志优先注入 `ILogger<T>`；已有 Serilog 调用使用同一宿主日志管线继续迁移。使用登记的 `EventCode / SourceCategory` 和受控数值 / 枚举，禁止实体解构、自由文本载荷及异常正文进入普通运行日志。
+- 已消费的异常由消费边界记录安全事件；继续传播的异常交给最终处理边界，事务 / 仓储层不重复记录 Error。重试、批次计数和降级的口径见[统一事件契约](/features/unified-logging-contract)。
+- 业务审计、资金流水及治理记录保留原有事务与权限边界，不能用运行日志替代。生成端安全规则同时适用于旧与候选 sink，不依赖候选裁剪才满足约束。
 
 ## 项目依赖约定
 

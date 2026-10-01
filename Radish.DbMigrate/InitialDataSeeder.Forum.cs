@@ -19,8 +19,6 @@ internal static partial class InitialDataSeeder
         var techExists = await db.Queryable<Category>().AnyAsync(c => c.Id == techCategoryId);
         if (!techExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认分类 Id={techCategoryId}, Name=技术交流...");
-
             var techCategory = new Category(new CategoryInitializationOptions("技术交流")
             {
                 Slug = "tech",
@@ -35,17 +33,11 @@ internal static partial class InitialDataSeeder
 
             await db.Insertable(techCategory).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={techCategoryId} 的技术交流分类，跳过创建。");
-        }
 
         // 生活随笔分类
         var lifeExists = await db.Queryable<Category>().AnyAsync(c => c.Id == lifeCategoryId);
         if (!lifeExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认分类 Id={lifeCategoryId}, Name=生活随笔...");
-
             var lifeCategory = new Category(new CategoryInitializationOptions("生活随笔")
             {
                 Slug = "life",
@@ -60,17 +52,11 @@ internal static partial class InitialDataSeeder
 
             await db.Insertable(lifeCategory).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={lifeCategoryId} 的生活随笔分类，跳过创建。");
-        }
 
         // 问答讨论分类
         var discussExists = await db.Queryable<Category>().AnyAsync(c => c.Id == discussCategoryId);
         if (!discussExists)
         {
-            Console.WriteLine($"[Radish.DbMigrate] 创建默认分类 Id={discussCategoryId}, Name=问答讨论...");
-
             var discussCategory = new Category(new CategoryInitializationOptions("问答讨论")
             {
                 Slug = "discuss",
@@ -85,17 +71,12 @@ internal static partial class InitialDataSeeder
 
             await db.Insertable(discussCategory).ExecuteCommandAsync();
         }
-        else
-        {
-            Console.WriteLine($"[Radish.DbMigrate] 已存在 Id={discussCategoryId} 的问答讨论分类，跳过创建。");
-        }
     }
 
     /// <summary>初始化论坛标签数据</summary>
     private static async Task SeedForumTagsAsync(ISqlSugarClient db)
     {
         db.CodeFirst.InitTables<Tag>();
-        Console.WriteLine("[Radish.DbMigrate] 已同步 Tag 表结构（自动补齐缺失列）。");
 
         var fixedTags = new[]
         {
@@ -125,18 +106,16 @@ internal static partial class InitialDataSeeder
                 existingByName.ModifyBy = "System";
 
                 await db.Updateable(existingByName).ExecuteCommandAsync();
-                Console.WriteLine($"[Radish.DbMigrate] 已更新固定标签 Name={meta.Name} 的配置。");
+
                 continue;
             }
 
             var existsById = await db.Queryable<Tag>().AnyAsync(t => t.Id == meta.Id);
             if (existsById)
             {
-                Console.WriteLine($"[Radish.DbMigrate] Id={meta.Id} 已存在且名称不同，跳过创建 Name={meta.Name}。");
+                WriteSeedEvent("dbmigrate.seed.identity_conflict", warning: true);
                 continue;
             }
-
-            Console.WriteLine($"[Radish.DbMigrate] 创建固定标签 Id={meta.Id}, Name={meta.Name}...");
 
             var tag = new Tag(new TagInitializationOptions(meta.Name)
             {

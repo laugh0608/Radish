@@ -156,7 +156,7 @@ internal static class SchemaMigrationLedger
                     DurationMs = stopwatch.ElapsedMilliseconds
                 }).ExecuteCommand();
                 db.Ado.CommitTran();
-                Console.WriteLine($"[Radish.DbMigrate] Schema: {scope}.{BaselineMigrationId} 已登记。");
+                WriteApplied(scope, BaselineMigrationId, stopwatch.ElapsedMilliseconds);
             }
             catch
             {
@@ -267,7 +267,7 @@ internal static class SchemaMigrationLedger
                         DurationMs = stopwatch.ElapsedMilliseconds
                     }).ExecuteCommand();
                     db.Ado.CommitTran();
-                    Console.WriteLine($"[Radish.DbMigrate] Schema: {scope}.{migration.MigrationId} 已应用。");
+                    WriteApplied(scope, migration.MigrationId, stopwatch.ElapsedMilliseconds);
                 }
                 catch
                 {
@@ -277,6 +277,14 @@ internal static class SchemaMigrationLedger
             }
         }
     }
+
+    private static void WriteApplied(string scope, string migrationId, long durationMs) =>
+        Serilog.Log.ForContext("EventCode", "dbmigrate.schema.applied")
+            .ForContext("SourceCategory", "database")
+            .ForContext("databaseScope", scope.ToLowerInvariant())
+            .ForContext("migrationId", migrationId)
+            .ForContext("durationMs", durationMs)
+            .Information("Schema migration committed");
 
     private static void BeginMigrationTransaction(ISqlSugarClient db)
     {

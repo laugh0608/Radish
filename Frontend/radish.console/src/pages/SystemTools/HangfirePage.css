@@ -24,8 +24,8 @@
 
 .hangfire-page__shell {
   display: grid;
-  grid-template-rows: auto minmax(520px, 1fr);
-  min-height: calc(100vh - 320px);
+  grid-template-rows: minmax(520px, 1fr);
+  min-height: calc(100vh - 200px);
   overflow: hidden;
   background: var(--console-bg-surface);
   border: 1px solid var(--console-border-subtle);
@@ -33,14 +33,12 @@
   box-shadow: var(--console-shadow-card);
 }
 
-.hangfire-page__notice {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
+.hangfire-page__state {
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  padding: 24px;
   color: var(--console-text-secondary);
-  background: var(--console-bg-muted);
-  border-bottom: 1px solid var(--console-border-subtle);
-  line-height: 1.6;
 }
 
 .hangfire-page__frame {
@@ -57,7 +55,7 @@
   }
 
   .hangfire-page__shell {
-    grid-template-rows: auto minmax(460px, 1fr);
+    grid-template-rows: minmax(460px, 1fr);
     min-height: 560px;
   }
 

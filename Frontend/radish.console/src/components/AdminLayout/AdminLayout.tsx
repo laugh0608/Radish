@@ -42,8 +42,8 @@ import { LanguageSwitcher } from '@/i18n/LanguageSwitcher';
 const { Header, Sider, Content } = Layout;
 
 const MOBILE_SIDEBAR_MEDIA_QUERY = '(max-width: 768px)';
-const DESKTOP_SIDEBAR_WIDTH = 300;
-const DESKTOP_COLLAPSED_WIDTH = 88;
+const DESKTOP_SIDEBAR_WIDTH = 224;
+const DESKTOP_COLLAPSED_WIDTH = 64;
 const highFrequencyMobileRouteKeys = [
   'dashboard',
   'moderation',

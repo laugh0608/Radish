@@ -9,7 +9,6 @@ using System.Text;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
-using Serilog;
 
 namespace Radish.Infrastructure.FileStorage;
 
@@ -158,7 +157,7 @@ public class LocalFileStorage : IFileStorage
 
             return result;
         }
-        catch (Exception exception)
+        catch (Exception)
         {
             if (!string.IsNullOrWhiteSpace(writeTargetPath) && File.Exists(writeTargetPath))
             {
@@ -171,8 +170,6 @@ public class LocalFileStorage : IFileStorage
                     // 保留原始存储异常，上层会记录并按 StorageFailed 返回。
                 }
             }
-
-            Log.Error(exception, "本地附件存储失败：{FileName}", fileName);
 
             return FileUploadResult.Fail(
                 FileUploadFailureKind.StorageFailed,
