@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续 L2 用户关系失效推送日志治理，先复核 `UserInteractionRealtimeNotifier` 双 Hub 消费异常及 `ReliableTaskProcessor` 直接调用边界；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计、用户关注通知入队、通知创建 / 推送及通知 Hub 自有日志，准确边界见[事件契约第 7–32 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：继续 L2 ChatHub 自有日志治理，先复核连接 / 断开及加入 / 离开频道日志与 presence、分组和直接 Service 调用边界；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计、用户关注通知入队、通知创建 / 推送、通知 Hub 自有日志及用户关系失效推送，准确边界见[事件契约第 7–33 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,7 +29,7 @@
 
 ## 最近结论
 
-- `2026-10-02` 已完成[关注通知入队](../records/unified-logging-l2-user-follow-2026-10-02.md)、[通知创建 / 推送](../records/unified-logging-l2-notification-creation-2026-10-02.md)和[通知 Hub 生命周期](../records/unified-logging-l2-notification-hub-2026-10-02.md)三批日志治理。原事务、返回、Outbox 重试与连接行为保留；SignalR 框架来源仍待治理，不能据此认定全通知系统收口。
+- `2026-10-02` 已完成[关注通知入队](../records/unified-logging-l2-user-follow-2026-10-02.md)、[通知创建 / 推送](../records/unified-logging-l2-notification-creation-2026-10-02.md)、[通知 Hub 生命周期](../records/unified-logging-l2-notification-hub-2026-10-02.md)和[用户关系失效推送](../records/unified-logging-l2-user-interaction-2026-10-02.md)四批日志治理。原事务、返回、Outbox 重试与连接行为保留；SignalR 框架来源仍待治理，不能据此认定全通知系统收口。
 
 - `2026-09-28` 完成日志 L2 十五批生成端治理，覆盖账户 / 经验 / 奖励、商城、文件 / 附件、支付口令、公开内容与统计报表。完整提交清单、代码与文档对照及验证边界见[日终回顾](../records/day-end-doc-review-2026-09-28.md)。保留业务规则与权威审计，生产链路未切换。
 
@@ -49,9 +49,9 @@
 
 ## 下一批：L2 剩余生成端治理
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–32 节](../features/unified-logging-contract.md)，关注通知入队、通知创建与推送直接链、通知 Hub 自有生成点已完成，不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–33 节](../features/unified-logging-contract.md)，关注通知入队、通知创建与推送直接链、通知 Hub 自有生成点及用户关系失效推送已完成，不再列为待办。
 
-1. **首项：用户关系失效推送**。`UserInteractionRealtimeNotifier` 对 Chat / Notification 双 Hub 的逐用户降级仍输出原始异常、用户 ID 与关系版本；直接消费者为 `ReliableTaskProcessor`。先核对各发送失败后的继续处理与 Outbox 完成边界，保留接收者去重、关系版本载荷、组名、best-effort 语义及屏蔽规则。
+1. **首项：ChatHub 自有日志**。连接 Info、异常断开 Warning、加入 / 离开频道 Debug 仍携带身份、连接或频道信息；先核对 presence、分组清理及直接 Service 异常边界。保留认证、频道权限、租户组名、加入 / 离开顺序、输入中广播及原异常传播；不借日志治理扩展聊天能力。
 2. **其余业务与框架来源**：按未覆盖调用链成组复核，继续稳定事件码、异常安全栈帧及框架最终处理边界；SignalR 连接 / 消息处理的框架输出仍未迁移，ChatHub 自有日志也未治理；不以少数调用链或未分类摘要代表 L2 整体完成，不一次扩为全仓改造。
 3. **独立可靠性边界**：关注关系与通知入队并非共同事务，失败后再次关注不补投；仅完成现状核对和日志回归，事务 / 补偿改造需单独评估并确认。Rust `.tmp` 输入水印回退仍按[既有记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)后置。
 4. **验证与收口**：每组调用链补旧 / 候选安全输出、异常所有权与原行为回归，按影响面更新契约和记录。

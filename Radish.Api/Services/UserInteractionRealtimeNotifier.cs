@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Radish.Api.Hubs;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.Model.ViewModels;
 
@@ -42,12 +43,11 @@ public sealed class UserInteractionRealtimeNotifier : IUserInteractionRealtimeNo
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
-                    exception,
-                    "用户关系失效推送失败，Hub={Hub}, UserId={UserId}, RelationshipVersion={RelationshipVersion}",
-                    nameof(ChatHub),
-                    userId,
-                    relationshipVersion);
+                using var scope = _logger.BeginScope(new Dictionary<string, object>
+                {
+                    ["EventCode"] = "user_interaction.chat_push_failed", ["SourceCategory"] = "business"
+                });
+                _logger.LogWarning("Relationship invalidation chat push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
             }
 
             try
@@ -57,12 +57,11 @@ public sealed class UserInteractionRealtimeNotifier : IUserInteractionRealtimeNo
             }
             catch (Exception exception)
             {
-                _logger.LogWarning(
-                    exception,
-                    "用户关系失效推送失败，Hub={Hub}, UserId={UserId}, RelationshipVersion={RelationshipVersion}",
-                    nameof(NotificationHub),
-                    userId,
-                    relationshipVersion);
+                using var scope = _logger.BeginScope(new Dictionary<string, object>
+                {
+                    ["EventCode"] = "user_interaction.notification_push_failed", ["SourceCategory"] = "business"
+                });
+                _logger.LogWarning("Relationship invalidation notification push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
             }
         }
     }
