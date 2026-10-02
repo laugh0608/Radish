@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖及标签 / 分类创建与更新最终消费见第 30–47 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -443,4 +443,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 名称去空白、slug 的空白回退 / 小写 / 空格替换、描述原样保留、附件标识、层级和审计字段不变。禁用父分类仍可使用，已删除父分类仍不可用；顶级为 0，其余按原 Math.Max 计算。模型 / ID / 自身父级预检、目标缺失、正常成功均安静。
 - 更新预读后实际影响 0 行仍返回成功；创建 / 更新没有事务特性，实际写入后再抛错仍保留已写数据。本批不新增行数判定、事务、重试、补偿或层级规则。
 - 七组四模式回归覆盖真实 BaseService、BaseRepository、ForumProfile、UnitOfWorkManage / TranAop、SQLite Category 表及内存 API / 结果过滤器，验证父分类拒绝、映射 / 仓储故障归属、写入前后状态和实际 0 行更新。不代表 PostgreSQL、真实并发、MVC 认证 / 模型绑定或 HTTP 宿主验收；上批内存 404 框架分支保留独立证据。
-- 下一项先核对 ReactionController 单目标 / 批量汇总及切换回应的 BusinessException 最终消费，确认方案后实施；L2 尚未整体完成，生产开关继续关闭，见[本批记录](../records/unified-logging-l2-category-controller-2026-10-02.md)。
+- ReactionController 单目标 / 批量汇总、切换回应及 Service 重试日志的后续治理见第 48 节；L2 尚未整体完成，生产开关继续关闭，见[本批记录](../records/unified-logging-l2-category-controller-2026-10-02.md)。
+
+## 48. L2 表情回应最终消费与冲突重试
+
+- ReactionController 三个入口在原错误响应成功构造后，对消费的 5xx BusinessException 记录一次 `http.failed` Error，仅带 statusCode / failureKind。4xx 业务拒绝、模型预检和正常成功保持安静；原响应消息、错误码及不复制 MessageKey / MessageArguments 的行为不变。
+- ReactionService 原冲突 Warning 改为 `reaction.retrying`，仅带固定 failureKind，不传异常、目标 / 用户身份或表情值。它表示选择一次重试，不表示重试成功或事务已提交；二次唯一冲突仍转原 409，不追加 Error，二次依赖故障仍交给 Controller / API 最终处理。
+- 原唯一冲突过滤器仍通过异常 ToString 判断三个既有标记；这是保留的控制流判定，日志分类与输出不读取原文。未新增冲突识别规则、次数、退避、保存点或 PostgreSQL 事务恢复。其他异常继续传播；Message getter 导致 Controller 响应构造失败时不提前记录 Error。
+- 单目标 / 批量汇总的规范化、有效 ID 去重、100 目标上限、空目标键、分组 / 排序 / 缩略图保持；汇总原本不检查目标存在或可见性。Toggle 的目标 / 贴纸可用性、10 种上限、软删除审计和 UTC 写入保持，返回汇总仍在原事务内，实际写入后或刷新失败继续回滚。
+- 真实 SQLite 发现既有恢复偏差：BaseRepository.QueryFirstAsync 默认排除软删除记录，Service 查找已删除回应不能命中，随后两次 Add 触发唯一约束并返回 409。添加 / 取消可提交，再次添加仍失败；本批只留痕，不将日志治理视为恢复功能修复。仅用显式代理提供已删除行时，另行验证原恢复分支的写入 / 回滚，不冒充真实仓储恢复成功。
+- 七组四模式回归覆盖真实 ReactionService、BaseRepository、TranAop、SQLite 的 Reaction / Post / Comment / StickerGroup / Sticker 五表及内存 API 管道。受控隐藏预读触发真实唯一约束，验证重试成功或耗尽；模拟第二次依赖故障与刷新失败验证日志所有权和回滚。附件 URL 解析为 mock；不代表真实并发、PostgreSQL、MVC 认证 / 模型绑定或 HTTP 宿主验收。
+- 下一项先核对 StickerController 创建分组 / 单表情、批量保存 / 排序的异常消费，确认方案后实施；其余业务与框架来源仍待治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-reaction-controller-2026-10-02.md)。

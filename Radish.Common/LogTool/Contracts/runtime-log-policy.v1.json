@@ -218,6 +218,7 @@
     "lottery.request_failed": "Lottery request consumed a failure.",
     "tag.request_failed": "Tag request consumed a failure.",
     "category.request_failed": "Category request consumed a failure.",
+    "reaction.retrying": "Reaction toggle selected its single conflict retry.",
     "order.purchase_failed": "Purchase stage consumed a failure.",
     "coin.balance_query_rejected": "Balance query rejected.",
     "coin.transaction_query_rejected": "Transaction query rejected.",

@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.07.19
+> **最后更新**: 2026.10.02
 >
 > **关联文档**：
 > [表情包与 Reaction 系统设计](./emoji-sticker-system.md) ·
@@ -157,6 +157,8 @@ public class ReactionSummaryVo
 1. 不存在：新建 `Reaction(IsDeleted=false)`
 2. 存在且 `IsDeleted=false`：软删除（视为取消）
 3. 存在且 `IsDeleted=true`：恢复（视为重新添加）
+
+**已知实现偏差（2026-10-02）**：上述第 3 项尚不能据当前通用仓储认定成立。`BaseRepository.QueryFirstAsync` 默认过滤已删除行，恢复查询无法命中，继而新建触发唯一约束，重试后返回 `409 ConcurrentConflict`。真实 SQLite 已复现，旧行保留已删除状态；本轮仅治理日志，恢复能力需独立确认修复。证据与受控分支验证见[回应日志治理记录](../records/unified-logging-l2-reaction-controller-2026-10-02.md)。
 
 ### 4.2 事务与重试
 
