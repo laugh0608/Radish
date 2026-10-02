@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续 L2 评论实时推送日志治理，先复核 `CommentRealtimePushService` 及 `CommentController` 直接消费边界；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计、用户关注通知入队、通知创建 / 推送、通知 Hub 自有日志、用户关系失效推送及 ChatHub 自有日志，准确边界见[事件契约第 7–34 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：继续 L2 CommentHub 自有日志治理，先复核加入 / 离开帖子组与输入中广播的身份、分组和失败传播边界；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计、用户关注通知入队、通知创建 / 推送、通知 Hub 自有日志、用户关系失效推送、ChatHub 自有日志及评论实时推送，准确边界见[事件契约第 7–35 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,7 +29,7 @@
 
 ## 最近结论
 
-- `2026-10-02` 已完成[关注通知入队](../records/unified-logging-l2-user-follow-2026-10-02.md)、[通知创建 / 推送](../records/unified-logging-l2-notification-creation-2026-10-02.md)、[通知 Hub 生命周期](../records/unified-logging-l2-notification-hub-2026-10-02.md)、[用户关系失效推送](../records/unified-logging-l2-user-interaction-2026-10-02.md)和[ChatHub 自有日志](../records/unified-logging-l2-chat-hub-2026-10-02.md)五批日志治理。原事务、返回、Outbox 重试与连接行为保留；SignalR 框架来源仍待治理，不能据此认定全通知系统收口。
+- `2026-10-02` 已完成[关注通知入队](../records/unified-logging-l2-user-follow-2026-10-02.md)、[通知创建 / 推送](../records/unified-logging-l2-notification-creation-2026-10-02.md)、[通知 Hub 生命周期](../records/unified-logging-l2-notification-hub-2026-10-02.md)、[用户关系失效推送](../records/unified-logging-l2-user-interaction-2026-10-02.md)、[ChatHub 自有日志](../records/unified-logging-l2-chat-hub-2026-10-02.md)和[评论实时推送](../records/unified-logging-l2-comment-realtime-2026-10-02.md)六批日志治理。原事务、返回、Outbox 重试与连接行为保留；SignalR 框架来源仍待治理，不能据此认定全通知系统收口。
 
 - `2026-09-28` 完成日志 L2 十五批生成端治理，覆盖账户 / 经验 / 奖励、商城、文件 / 附件、支付口令、公开内容与统计报表。完整提交清单、代码与文档对照及验证边界见[日终回顾](../records/day-end-doc-review-2026-09-28.md)。保留业务规则与权威审计，生产链路未切换。
 
@@ -49,10 +49,10 @@
 
 ## 下一批：L2 剩余生成端治理
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–34 节](../features/unified-logging-contract.md)，关注通知入队、通知创建与推送直接链、通知 Hub 自有生成点、用户关系失效推送及 ChatHub 自有日志已完成，不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–35 节](../features/unified-logging-contract.md)，关注通知入队、通知创建与推送直接链、通知 Hub 自有生成点、用户关系失效推送、ChatHub 自有日志及评论实时推送已完成，不再列为待办。
 
-1. **首项：评论实时推送**。`CommentRealtimePushService` 推送失败仍记录原始异常、事件名和帖子 ID；先核对 `CommentController` 等直接消费者、无效输入短路与推送降级的返回边界。保留创建 / 更新 / 删除 / 点赞 / 神评事件、载荷、组名、业务写入及 best-effort 行为。
-2. **其余业务与框架来源**：按未覆盖调用链成组复核，继续稳定事件码、异常安全栈帧及框架最终处理边界；SignalR 连接 / 消息处理的框架输出仍未迁移；不以少数调用链或未分类摘要代表 L2 整体完成，不一次扩为全仓改造。
+1. **首项：CommentHub 自有日志**。加入 / 离开帖子组 Debug 仍携带帖子与连接身份；复核无效帖子参数、匿名与已认证输入中广播、组名及失败传播。保留现有身份、订阅与广播行为，不借日志治理新增权限规则。
+2. **其余业务与框架来源**：按未覆盖调用链成组复核，继续稳定事件码、异常安全栈帧及框架最终处理边界；CommentService 神评 / 沙发计算与标识填充日志、Controller 静默消费失败及 SignalR 连接 / 消息处理框架输出仍待治理；不以少数调用链或未分类摘要代表 L2 整体完成，不一次扩为全仓改造。
 3. **独立可靠性边界**：关注关系与通知入队并非共同事务，失败后再次关注不补投；仅完成现状核对和日志回归，事务 / 补偿改造需单独评估并确认。Rust `.tmp` 输入水印回退仍按[既有记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)后置。
 4. **验证与收口**：每组调用链补旧 / 候选安全输出、异常所有权与原行为回归，按影响面更新契约和记录。
 

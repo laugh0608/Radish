@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送与 ChatHub 见第 30–34 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub 与评论实时推送见第 30–35 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -330,3 +330,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 加入频道仍先经 ChatService 权限校验，再入租户频道组并登记 presence；离开仍先调用 Service，再退组与清理 presence；断开仍先清理 presence 再移除用户组。身份、权限、分组或 presence 失败原样传播，不增加 catch、补偿或重试。
 - 非正频道的加入拒绝、离开 / 输入中安静返回、非法用户拒绝、输入中 CanSend 校验和 OthersInGroup 广播载荷保持不变；不改组名、凭据读取、权限、在线状态算法或重复加入语义。
 - 旧 / 候选 × Development / Production 回归包含实际 ChatHub、mock SignalR / Service 以及真实 ChatPresenceService 双连接清理；既有 ChatService / ChatChannelAccessService 测试覆盖相关服务。框架输出仍按第 32 节的未覆盖边界处理，不宣称整个连接故障只有一条事件或已完成真实 WebSocket 验收。生产开关保持关闭，见[本批记录](../records/unified-logging-l2-chat-hub-2026-10-02.md)。
+
+## 35. L2 评论实时推送及直接消费边界
+
+- CommentRealtimePushService 统一在既有 catch 消费分组访问或发送失败，生成 `comment.push_failed` Warning，仅保留受控 failureKind；不记录帖子 / 评论 / 用户身份、事件名、组名、载荷或原始异常，不求值异常正文。成功推送保持安静，失败不重试。
+- CommentCreated / CommentUpdated / CommentDeleted / CommentLikeChanged / CommentHighlightsChanged 的事件名、`post-comments:{postId}` 组名、对象载荷、父 / 根评论关系及 UTC 事件时间保持原义。创建 / 更新仍在帖子或评论 Id 非正时短路，高亮无变更或帖子 Id 非正时短路；删除 / 点赞原本没有该校验，本批不扩张参数规则。
+- 唯一直接生产消费者 CommentController 保留创建、点赞、删除、编辑及版本恢复的写入 / 读取 / 重算 / 推送顺序与响应。首个推送失败后仍尝试高亮推送；幂等重放、重复内容、无变更不重复发送；创建 / 点赞的详情缺失仍可发送高亮，编辑 / 恢复详情缺失则不重算或发送。
+- 推送 catch 不扩展到 Controller 的业务写入、详情读取或高亮重算；这些步骤原有异常传播、ArgumentException / InvalidOperationException 响应映射及软删除审计字段均保留。Controller 原有静默 400 消费边界未新增日志，不据此宣称所有业务失败已有最终日志。
+- 旧 / 候选 × Development / Production 回归使用真实推送服务、真实 Controller 与 mock SignalR / 业务依赖；不代表真实数据库事务、幂等并发或 WebSocket 验收。CommentHub 自有日志、CommentService 神评 / 沙发计算与填充日志、SignalR 框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-realtime-2026-10-02.md)。

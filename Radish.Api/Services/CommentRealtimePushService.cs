@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Radish.Api.Hubs;
+using Radish.Common.LogTool;
 using Radish.Model.ViewModels;
 
 namespace Radish.Api.Services;
@@ -89,9 +90,11 @@ public class CommentRealtimePushService
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "[CommentRealtimePushService] 推送评论事件失败，EventName: {EventName}, PostId: {PostId}",
-                eventName,
-                postId);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "comment.push_failed", ["SourceCategory"] = "business"
+            });
+            _logger.LogWarning("Comment realtime push is unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
         }
     }
 }
