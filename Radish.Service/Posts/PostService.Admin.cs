@@ -1,4 +1,5 @@
 using Radish.Common.AttributeTool;
+using Radish.Model;
 using Radish.Model.ViewModels;
 
 namespace Radish.Service;
@@ -19,7 +20,7 @@ public partial class PostService
         var post = await _postRepository.QueryByIdAsync(postId);
         if (post == null || post.IsDeleted || !post.IsPublished)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new PostOperationRejectedException("帖子不存在");
         }
 
         if (post.IsTop != isTop)
@@ -32,6 +33,6 @@ public partial class PostService
         }
 
         return await GetPostDetailAsync(postId)
-               ?? throw new InvalidOperationException("帖子不存在");
+               ?? throw new PostOperationRejectedException("帖子不存在");
     }
 }

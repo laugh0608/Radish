@@ -120,22 +120,22 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
 
         if (trimmedTitle.Length < settings.MinTitleLength)
         {
-            throw new ArgumentException($"帖子标题不能少于 {settings.MinTitleLength} 个字符");
+            throw new PostContentValidationException($"帖子标题不能少于 {settings.MinTitleLength} 个字符");
         }
 
         if (trimmedTitle.Length > settings.MaxTitleLength)
         {
-            throw new ArgumentException($"帖子标题不能超过 {settings.MaxTitleLength} 个字符");
+            throw new PostContentValidationException($"帖子标题不能超过 {settings.MaxTitleLength} 个字符");
         }
 
         if (trimmedContent.Length < settings.MinBodyLength)
         {
-            throw new ArgumentException($"帖子内容不能少于 {settings.MinBodyLength} 个字符");
+            throw new PostContentValidationException($"帖子内容不能少于 {settings.MinBodyLength} 个字符");
         }
 
         if (trimmedContent.Length > settings.MaxBodyLength)
         {
-            throw new ArgumentException($"帖子内容不能超过 {settings.MaxBodyLength} 个字符");
+            throw new PostContentValidationException($"帖子内容不能超过 {settings.MaxBodyLength} 个字符");
         }
 
         return settings;

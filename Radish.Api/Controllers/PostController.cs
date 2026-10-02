@@ -8,6 +8,7 @@ using Radish.Api.Resources;
 using Radish.Api.Routing;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.IService.Base;
 using Radish.Model;
@@ -16,6 +17,7 @@ using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -496,6 +498,11 @@ public class PostController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            if (ex is not PostOperationRejectedException)
+            {
+                Log.ForContext("EventCode", "post.top_failed")
+                    .Error("Post top operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            }
             return new MessageModel
             {
                 IsSuccess = false,
@@ -694,6 +701,11 @@ public class PostController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            if (ex is not PostOperationRejectedException)
+            {
+                Log.ForContext("EventCode", "post.edit_failed")
+                    .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            }
             return new MessageModel
             {
                 IsSuccess = false,
@@ -703,6 +715,11 @@ public class PostController : ControllerBase
         }
         catch (ArgumentException ex)
         {
+            if (ex is not PostContentValidationException)
+            {
+                Log.ForContext("EventCode", "post.edit_failed")
+                    .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            }
             return new MessageModel
             {
                 IsSuccess = false,

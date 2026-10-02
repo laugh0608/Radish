@@ -3,6 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-02 L2 帖子编辑 / 置顶最终消费日志治理](./unified-logging-l2-post-controller-2026-10-02.md)：明确拒绝分类、安全故障归属与 SQLite 帖子行回滚
 - [2026-10-02 L2 内容提交并发冲突日志治理](./unified-logging-l2-content-submission-2026-10-02.md)：安全恢复摘要、异常传播与 SQLite 保存点回归
 - [2026-10-02 L2 评论 Controller 最终消费日志治理](./unified-logging-l2-comment-controller-2026-10-02.md)：正常拒绝分类、安全故障归属与 SQLite 点赞回滚
 - [2026-10-02 L2 轻回应通知入队日志治理](./unified-logging-l2-post-quick-reply-2026-10-02.md)：安全异常归属、事务 AOP / 缓存边界和响应契约回归
