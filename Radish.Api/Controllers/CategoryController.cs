@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.IService.Base;
@@ -11,6 +12,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using Serilog;
 using SqlSugar;
 
 namespace Radish.Api.Controllers;
@@ -155,7 +157,12 @@ public class CategoryController : ControllerBase
 
         try
         {
-            var level = await ResolveCategoryLevelAsync(createDto.ParentId);
+            var resolvedLevel = await ResolveCategoryLevelAsync(createDto.ParentId);
+            if (resolvedLevel is not int level)
+            {
+                return BuildError(HttpStatusCodeEnum.BadRequest, "父分类不存在");
+            }
+
             var category = new Category(createDto.Name)
             {
                 Slug = NormalizeSlug(createDto.Name, createDto.Slug),
@@ -178,7 +185,7 @@ public class CategoryController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+            return BuildErrorResponse(ex);
         }
     }
 
@@ -216,7 +223,12 @@ public class CategoryController : ControllerBase
 
         try
         {
-            var level = await ResolveCategoryLevelAsync(updateDto.ParentId);
+            var resolvedLevel = await ResolveCategoryLevelAsync(updateDto.ParentId);
+            if (resolvedLevel is not int level)
+            {
+                return BuildError(HttpStatusCodeEnum.BadRequest, "父分类不存在");
+            }
+
             await _categoryService.UpdateColumnsAsync(
                 c => new Category
                 {
@@ -239,7 +251,7 @@ public class CategoryController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return BuildError(HttpStatusCodeEnum.BadRequest, ex.Message);
+            return BuildErrorResponse(ex);
         }
     }
 
@@ -340,7 +352,7 @@ public class CategoryController : ControllerBase
             : BuildError(HttpStatusCodeEnum.NotFound, "分类不存在");
     }
 
-    private async Task<int> ResolveCategoryLevelAsync(long? parentId)
+    private async Task<int?> ResolveCategoryLevelAsync(long? parentId)
     {
         if (!parentId.HasValue)
         {
@@ -350,7 +362,7 @@ public class CategoryController : ControllerBase
         var parent = await _categoryService.QueryFirstAsync(c => c.Id == parentId.Value && !c.IsDeleted);
         if (parent == null)
         {
-            throw new InvalidOperationException("父分类不存在");
+            return null;
         }
 
         return Math.Max(0, parent.VoLevel + 1);
@@ -395,6 +407,14 @@ public class CategoryController : ControllerBase
             MessageInfo = message,
             ResponseData = data
         };
+    }
+
+    private static MessageModel BuildErrorResponse(InvalidOperationException exception)
+    {
+        var response = BuildError(HttpStatusCodeEnum.BadRequest, exception.Message);
+        Log.ForContext("EventCode", "category.request_failed")
+            .Error("Category request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
+        return response;
     }
 
     private static MessageModel BuildError(HttpStatusCodeEnum statusCode, string message)

@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续 L2 CategoryController 分类创建与更新最终消费，先核对父分类拒绝与依赖故障并确认方案；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计、用户关注通知入队、通知创建 / 推送、通知 Hub 自有日志、用户关系失效推送、ChatHub / CommentHub 自有日志、评论实时推送、高亮重算 / 填充、轻回应通知入队、评论 Controller 最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖及标签创建 / 更新最终消费，准确边界见[事件契约第 7–46 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：继续 L2 ReactionController 单目标 / 批量汇总与切换回应的 BusinessException 最终消费，先核对调用链并确认方案；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计、用户关注通知入队、通知创建 / 推送、通知 Hub 自有日志、用户关系失效推送、ChatHub / CommentHub 自有日志、评论实时推送、高亮重算 / 填充、轻回应通知入队、评论 Controller 最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖及标签 / 分类创建与更新最终消费，准确边界见[事件契约第 7–47 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,7 +29,7 @@
 
 ## 最近结论
 
-- `2026-10-02` 已完成[关注通知入队](../records/unified-logging-l2-user-follow-2026-10-02.md)、[通知创建 / 推送](../records/unified-logging-l2-notification-creation-2026-10-02.md)、[通知 Hub 生命周期](../records/unified-logging-l2-notification-hub-2026-10-02.md)、[用户关系失效推送](../records/unified-logging-l2-user-interaction-2026-10-02.md)、[ChatHub 自有日志](../records/unified-logging-l2-chat-hub-2026-10-02.md)、[评论实时推送](../records/unified-logging-l2-comment-realtime-2026-10-02.md)、[CommentHub 自有日志](../records/unified-logging-l2-comment-hub-2026-10-02.md)、[评论高亮链](../records/unified-logging-l2-comment-highlight-2026-10-02.md)、[轻回应通知入队](../records/unified-logging-l2-post-quick-reply-2026-10-02.md)、[评论最终消费](../records/unified-logging-l2-comment-controller-2026-10-02.md)、[内容提交冲突恢复](../records/unified-logging-l2-content-submission-2026-10-02.md)、[帖子编辑 / 置顶最终消费](../records/unified-logging-l2-post-controller-2026-10-02.md)、[帖子版本恢复](../records/unified-logging-l2-post-restore-2026-10-02.md)、[问答最终消费](../records/unified-logging-l2-question-controller-2026-10-02.md)、[投票最终消费](../records/unified-logging-l2-poll-controller-2026-10-02.md)、[抽奖最终消费](../records/unified-logging-l2-lottery-controller-2026-10-02.md)和[标签创建 / 更新最终消费](../records/unified-logging-l2-tag-controller-2026-10-02.md)十七批日志治理。原事务、返回、Outbox 重试与连接行为保留；SignalR 框架来源仍待治理，不能据此认定全通知系统收口。
+- `2026-10-02` 已完成[关注通知入队](../records/unified-logging-l2-user-follow-2026-10-02.md)、[通知创建 / 推送](../records/unified-logging-l2-notification-creation-2026-10-02.md)、[通知 Hub 生命周期](../records/unified-logging-l2-notification-hub-2026-10-02.md)、[用户关系失效推送](../records/unified-logging-l2-user-interaction-2026-10-02.md)、[ChatHub 自有日志](../records/unified-logging-l2-chat-hub-2026-10-02.md)、[评论实时推送](../records/unified-logging-l2-comment-realtime-2026-10-02.md)、[CommentHub 自有日志](../records/unified-logging-l2-comment-hub-2026-10-02.md)、[评论高亮链](../records/unified-logging-l2-comment-highlight-2026-10-02.md)、[轻回应通知入队](../records/unified-logging-l2-post-quick-reply-2026-10-02.md)、[评论最终消费](../records/unified-logging-l2-comment-controller-2026-10-02.md)、[内容提交冲突恢复](../records/unified-logging-l2-content-submission-2026-10-02.md)、[帖子编辑 / 置顶最终消费](../records/unified-logging-l2-post-controller-2026-10-02.md)、[帖子版本恢复](../records/unified-logging-l2-post-restore-2026-10-02.md)、[问答最终消费](../records/unified-logging-l2-question-controller-2026-10-02.md)、[投票最终消费](../records/unified-logging-l2-poll-controller-2026-10-02.md)、[抽奖最终消费](../records/unified-logging-l2-lottery-controller-2026-10-02.md)、[标签创建 / 更新最终消费](../records/unified-logging-l2-tag-controller-2026-10-02.md)和[分类创建 / 更新最终消费](../records/unified-logging-l2-category-controller-2026-10-02.md)十八批日志治理。原事务、返回、Outbox 重试与连接行为保留；SignalR 框架来源仍待治理，不能据此认定全通知系统收口。
 
 - `2026-09-28` 完成日志 L2 十五批生成端治理，覆盖账户 / 经验 / 奖励、商城、文件 / 附件、支付口令、公开内容与统计报表。完整提交清单、代码与文档对照及验证边界见[日终回顾](../records/day-end-doc-review-2026-09-28.md)。保留业务规则与权威审计，生产链路未切换。
 
@@ -49,11 +49,11 @@
 
 ## 下一批：L2 剩余生成端治理
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–46 节](../features/unified-logging-contract.md)，关注通知入队、通知创建与推送直接链、通知 Hub 自有生成点、用户关系失效推送、ChatHub / CommentHub 自有日志、评论实时推送、高亮链、轻回应通知入队、评论 Controller 最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖及标签创建 / 更新最终消费已完成，不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–47 节](../features/unified-logging-contract.md)，关注通知入队、通知创建与推送直接链、通知 Hub 自有生成点、用户关系失效推送、ChatHub / CommentHub 自有日志、评论实时推送、高亮链、轻回应通知入队、评论 Controller 最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖及标签 / 分类创建与更新最终消费已完成，不再列为待办。
 
-1. **首项：分类创建 / 更新最终消费边界**。CategoryController 仍静默消费 InvalidOperationException；先核对 ResolveCategoryLevelAsync 的父分类不存在拒绝与依赖故障，保留响应、层级 / slug 和写入语义，确认方案后实施。
+1. **首项：表情回应最终消费边界**。ReactionController 单目标 / 批量汇总和切换回应仍直接消费 BusinessException；先核对 Service 的明确拒绝与依赖故障，保留响应、错误码和写入语义，确认方案后实施。
 2. **其余业务与框架来源**：按未覆盖调用链成组复核，继续稳定事件码、异常安全栈帧及框架最终处理边界；Controller 静默消费失败及 SignalR 连接 / 消息处理框架输出仍待治理；不以少数调用链或未分类摘要代表 L2 整体完成，不一次扩为全仓改造。
-3. **独立可靠性边界**：关注关系与通知入队并非共同事务，失败后再次关注不补投；仅完成现状核对和日志回归，事务 / 补偿改造需单独评估并确认。评论高亮重算消费异常后可能保留部分写入并返回无变更，原事务提交 / 失败语义未改，后续可靠性改造需独立确认；轻回应入队失败回滚事务后，冷却 / 去重缓存可能保留，本批未调整补投或缓存补偿；标签创建 / 更新没有事务特性，实际写入后抛错仍可能保留数据，日志治理不改变该边界；此前发现自动抽奖从 SQLite 读取截止时间后，Outbox 信封会按本地时区再转 UTC，时间规范化按[抽奖记录](../records/unified-logging-l2-lottery-controller-2026-10-02.md)单独确认；Rust `.tmp` 输入水印回退仍按[既有记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)后置。
+3. **独立可靠性边界**：关注关系与通知入队并非共同事务，失败后再次关注不补投；仅完成现状核对和日志回归，事务 / 补偿改造需单独评估并确认。评论高亮重算消费异常后可能保留部分写入并返回无变更，原事务提交 / 失败语义未改，后续可靠性改造需独立确认；轻回应入队失败回滚事务后，冷却 / 去重缓存可能保留，本批未调整补投或缓存补偿；标签 / 分类创建与更新没有事务特性，实际写入后抛错仍可能保留数据；分类更新 0 行仍返回成功，日志治理不改变这些边界；此前发现自动抽奖从 SQLite 读取截止时间后，Outbox 信封会按本地时区再转 UTC，时间规范化按[抽奖记录](../records/unified-logging-l2-lottery-controller-2026-10-02.md)单独确认；Rust `.tmp` 输入水印回退仍按[既有记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)后置。
 4. **验证与收口**：每组调用链补旧 / 候选安全输出、异常所有权与原行为回归，按影响面更新契约和记录。
 
 生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。若下一批需安装依赖或启动真实宿主 / 隔离容器，按当批具体范围单独授权。
