@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -575,12 +576,15 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
                 new NotificationRequestedTaskPayload(notification),
                 occurredAtUtc);
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
         {
-            _logger.LogWarning(ex,
-                "[UserFollowService] 发送关注通知失败，FollowerUserId={FollowerUserId}, TargetUserId={TargetUserId}",
-                followerUserId,
-                targetUser.Id);
+            // 直接消费者 UserFollowController 会将这两类异常转换为业务响应，无法到达 API 最终日志边界。
+            // 仅在通知阶段记录安全失败；其他异常继续交由 API 最终边界处理。
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "user_follow.notification_enqueue_failed", ["SourceCategory"] = "business"
+            });
+            _logger.LogError("Follow notification enqueue failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             throw;
         }
     }

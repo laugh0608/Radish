@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-09-28。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-10-02。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，用户关注通知入队见第 30 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -293,3 +293,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 唯一直接生产消费者 StatisticsController 保留四个入口的现有包装：所有异常（包括原 4xx / 5xx BusinessException）均包装为 `500 / System.UnexpectedError / error.system.unexpected_error`，保留 InnerException 和各入口固定提示。API 最终边界只记录一次安全 `http.failed`，不新增事件码，不借日志治理调整响应状态。
 - DashboardView 权限、用户软删除筛选、仓储聚合口径、天数 / 条数规范化、DateTime.Today 的本地日历边界、逐日顺序与排他结束时间、等级 0 补足及等级名称回退均保持原样。
 - 旧 / 候选输出覆盖 Development / Production；真实 Service / Controller、mock 仓储与内存 HTTP 管道验证异常归属和结果，不替代真实数据库聚合、权限中间件或浏览器验收。生产开关继续关闭，L2 尚未整体完成；证据见[本批记录](../records/unified-logging-l2-statistics-2026-09-28.md)。
+
+## 30. L2 用户关注通知入队
+
+- `UserFollowService` 的通知准备 / 入队阶段不再输出双方用户身份或原始异常。唯一直接生产消费者 `UserFollowController.Follow` 会消费 `ArgumentException / InvalidOperationException` 并返回原有 400 / 404 业务响应；这两类通知阶段失败由 Service 记录一次 `user_follow.notification_enqueue_failed` Error，仅带受控 failureKind，然后原样重抛。参数、自关注、目标不可用及屏蔽拒绝不新增日志。
+- 其余异常保持传播：API 最终边界对一般异常或 5xx BusinessException 输出一次安全 `http.failed`；4xx BusinessException 保持安静。不新增通用失败包装，不改变 Controller 捕获范围和响应正文；现有响应可能包含被消费异常的 Message，本批只治理运行日志。
+- 关注关系仍先由仓储独立事务提交，再构造通知并写入可靠 Outbox；二者没有共同事务。入队失败不回滚已提交关系，再次关注返回未变更时不补投通知。本批不新增重试、补偿或事务保证，也不改写 Outbox 的异步消费 / 重试策略。
+- 通知类型、接收者、模板参数、目标、身份快照、UTC 时间及通知业务键 / 任务幂等键保持原义；正常成功、重复关注保持安静。Outbox 权威载荷继续保存业务数据，日志安全裁剪不作用于通知载荷。
+- 旧 / 候选日志路径覆盖 Development / Production；真实 Service、Controller、ReliableOutboxService 与 mock 仓储及内存 HTTP 管道验证异常所有权和原行为。既有 SQLite 仓储回归不替代真实宿主、PostgreSQL 或跨事务故障验收。生产开关继续关闭，L2 尚未完成，见[本批记录](../records/unified-logging-l2-user-follow-2026-10-02.md)。
