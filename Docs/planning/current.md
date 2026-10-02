@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续 L2 StickerController 创建分组 / 单表情、批量保存 / 排序的异常消费，先核对调用链并确认方案；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计、用户关注通知入队、通知创建 / 推送、通知 Hub 自有日志、用户关系失效推送、ChatHub / CommentHub 自有日志、评论实时推送、高亮重算 / 填充、轻回应通知入队、评论 Controller 最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新及表情回应最终消费 / 冲突重试日志，准确边界见[事件契约第 7–48 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：明天（2026-10-03）先核对 L2 StickerController 创建分组 / 单表情、批量保存 / 排序的异常消费，具体事项见下文；今天以文档收尾提交结束。
+- **状态复核日期**：`2026-10-02`；L2 已完成的生成端范围见[事件契约第 7–48 节](../features/unified-logging-contract.md)，今天 19 个开发提交与代码 / 文档对照见[日终回顾](../records/day-end-doc-review-2026-10-02.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,7 +29,7 @@
 
 ## 最近结论
 
-- `2026-10-02` 已完成[关注通知入队](../records/unified-logging-l2-user-follow-2026-10-02.md)、[通知创建 / 推送](../records/unified-logging-l2-notification-creation-2026-10-02.md)、[通知 Hub 生命周期](../records/unified-logging-l2-notification-hub-2026-10-02.md)、[用户关系失效推送](../records/unified-logging-l2-user-interaction-2026-10-02.md)、[ChatHub 自有日志](../records/unified-logging-l2-chat-hub-2026-10-02.md)、[评论实时推送](../records/unified-logging-l2-comment-realtime-2026-10-02.md)、[CommentHub 自有日志](../records/unified-logging-l2-comment-hub-2026-10-02.md)、[评论高亮链](../records/unified-logging-l2-comment-highlight-2026-10-02.md)、[轻回应通知入队](../records/unified-logging-l2-post-quick-reply-2026-10-02.md)、[评论最终消费](../records/unified-logging-l2-comment-controller-2026-10-02.md)、[内容提交冲突恢复](../records/unified-logging-l2-content-submission-2026-10-02.md)、[帖子编辑 / 置顶最终消费](../records/unified-logging-l2-post-controller-2026-10-02.md)、[帖子版本恢复](../records/unified-logging-l2-post-restore-2026-10-02.md)、[问答最终消费](../records/unified-logging-l2-question-controller-2026-10-02.md)、[投票最终消费](../records/unified-logging-l2-poll-controller-2026-10-02.md)、[抽奖最终消费](../records/unified-logging-l2-lottery-controller-2026-10-02.md)、[标签创建 / 更新最终消费](../records/unified-logging-l2-tag-controller-2026-10-02.md)、[分类创建 / 更新最终消费](../records/unified-logging-l2-category-controller-2026-10-02.md)和[表情回应最终消费 / 冲突重试](../records/unified-logging-l2-reaction-controller-2026-10-02.md)十九批日志治理。原事务、返回、Outbox 重试与连接行为保留；SignalR 框架来源仍待治理，不能据此认定全通知系统收口。
+- `2026-10-02` 完成日志 L2 十九批治理，覆盖通知入队 / 创建、实时推送与 Hub 自有日志，以及评论、内容提交、帖子、问答、投票、抽奖、标签 / 分类和表情回应消费边界。[日终回顾](../records/day-end-doc-review-2026-10-02.md)汇总全部提交、证据与已知限制；SignalR 框架等剩余来源继续治理，生产链路未切换。
 
 - `2026-09-28` 完成日志 L2 十五批生成端治理，覆盖账户 / 经验 / 奖励、商城、文件 / 附件、支付口令、公开内容与统计报表。完整提交清单、代码与文档对照及验证边界见[日终回顾](../records/day-end-doc-review-2026-09-28.md)。保留业务规则与权威审计，生产链路未切换。
 
@@ -47,16 +47,16 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 下一批：L2 剩余生成端治理
+## 明天事项：2026-10-03
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–48 节](../features/unified-logging-contract.md)，关注通知入队、通知创建与推送直接链、通知 Hub 自有生成点、用户关系失效推送、ChatHub / CommentHub 自有日志、评论实时推送、高亮链、轻回应通知入队、评论 Controller 最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新及表情回应最终消费 / 冲突重试日志已完成，不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)，首项为表情管理最终消费边界。今天已完成的范围以[事件契约第 7–48 节](../features/unified-logging-contract.md)为准，不重复列为待办。
 
-1. **首项：表情管理最终消费边界**。StickerController 创建分组 / 单表情、批量保存 / 排序仍直接消费 ArgumentException / InvalidOperationException；先核对 Service 的明确拒绝与依赖故障、批量部分失败和写入语义，确认方案后实施。
-2. **其余业务与框架来源**：按未覆盖调用链成组复核，继续稳定事件码、异常安全栈帧及框架最终处理边界；Controller 静默消费失败及 SignalR 连接 / 消息处理框架输出仍待治理；不以少数调用链或未分类摘要代表 L2 整体完成，不一次扩为全仓改造。
-3. **独立可靠性边界**：关注关系与通知入队并非共同事务，失败后再次关注不补投；仅完成现状核对和日志回归，事务 / 补偿改造需单独评估并确认。评论高亮重算消费异常后可能保留部分写入并返回无变更，原事务提交 / 失败语义未改，后续可靠性改造需独立确认；轻回应入队失败回滚事务后，冷却 / 去重缓存可能保留，本批未调整补投或缓存补偿；标签 / 分类创建与更新没有事务特性，实际写入后抛错仍可能保留数据；分类更新 0 行仍返回成功，日志治理不改变这些边界；Reaction 的已删除行恢复查询被通用仓储过滤，再次添加会触发唯一约束并返回 409，按[回应记录](../records/unified-logging-l2-reaction-controller-2026-10-02.md)独立确认修复；此前发现自动抽奖从 SQLite 读取截止时间后，Outbox 信封会按本地时区再转 UTC，时间规范化按[抽奖记录](../records/unified-logging-l2-lottery-controller-2026-10-02.md)单独确认；Rust `.tmp` 输入水印回退仍按[既有记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)后置。
-4. **验证与收口**：每组调用链补旧 / 候选安全输出、异常所有权与原行为回归，按影响面更新契约和记录。
+1. **先核对调用链并确认方案**：读取 StickerController 的 CreateGroup / AddSticker / BatchAddStickers / BatchUpdateSort 及 StickerService 直接依赖，区分明确的参数拒绝、标识冲突、目标缺失、排序快照失效与依赖故障。保留原状态、错误码、消息、批量部分结果及写入语义，说明具体方案后等待确认。
+2. **确认后再实施和回归**：核对缩略图失败、附件处理和批量写入的异常所有权；补旧 / 候选 × Development / Production 安全输出与原行为回归，按影响面更新契约和记录，完成本地验证后提交。当前事项不授权安装依赖、启动服务 / 容器或访问生产。
+3. **后续日志边界**：继续其余业务与框架来源，包含 SignalR 最终处理及标签回归发现的内存 404 框架重抛。早期轻回应 / 评论 / 帖子消费点仍先记录后读取异常 Message；响应构造再次失败时的日志所有权需要另行核对，不能沿用后续批次的单次输出结论。
+4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。可靠性改造均需独立说明并确认；Rust `.tmp` 水印回退仍按[既有记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)后置。
 
-生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。若下一批需安装依赖或启动真实宿主 / 隔离容器，按当批具体范围单独授权。
+生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L2 整体治理、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。Native P8-C readiness 保留后续顺位。明天事项是书面计划，不创建定时执行任务。
 
 ## 后续平台事项：P8-C Windows readiness
 

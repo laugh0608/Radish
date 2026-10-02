@@ -3,25 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
-- [2026-10-02 L2 表情回应最终消费与冲突重试日志治理](./unified-logging-l2-reaction-controller-2026-10-02.md)：三入口异常归属、安全重试事件与 SQLite 恢复偏差
-- [2026-10-02 L2 分类创建 / 更新最终消费日志治理](./unified-logging-l2-category-controller-2026-10-02.md)：父分类拒绝、读取 / 映射故障归属与 SQLite 非事务写入 / 0 行语义
-- [2026-10-02 L2 标签创建 / 更新最终消费日志治理](./unified-logging-l2-tag-controller-2026-10-02.md)：重名分类、安全故障归属与 SQLite 非事务写入语义
-- [2026-10-02 L2 抽奖 Controller 最终消费日志治理](./unified-logging-l2-lottery-controller-2026-10-02.md)：手动 / 自动异常归属、中奖 / Outbox 回滚与批次继续处理
-- [2026-10-02 L2 投票 Controller 最终消费日志治理](./unified-logging-l2-poll-controller-2026-10-02.md)：三类入口故障归属、结果刷新与 SQLite 投票 / 计数回滚
-- [2026-10-02 L2 问答 Controller 最终消费日志治理](./unified-logging-l2-question-controller-2026-10-02.md)：九个入口异常归属、响应契约与 SQLite 台账 / 版本 / 采纳 / Outbox 回滚
-- [2026-10-02 L2 帖子版本恢复日志治理](./unified-logging-l2-post-restore-2026-10-02.md)：409 转换的故障归属、恢复 / 重放与 SQLite 四类记录回滚
-- [2026-10-02 L2 帖子编辑 / 置顶最终消费日志治理](./unified-logging-l2-post-controller-2026-10-02.md)：明确拒绝分类、安全故障归属与 SQLite 帖子行回滚
-- [2026-10-02 L2 内容提交并发冲突日志治理](./unified-logging-l2-content-submission-2026-10-02.md)：安全恢复摘要、异常传播与 SQLite 保存点回归
-- [2026-10-02 L2 评论 Controller 最终消费日志治理](./unified-logging-l2-comment-controller-2026-10-02.md)：正常拒绝分类、安全故障归属与 SQLite 点赞回滚
-- [2026-10-02 L2 轻回应通知入队日志治理](./unified-logging-l2-post-quick-reply-2026-10-02.md)：安全异常归属、事务 AOP / 缓存边界和响应契约回归
-- [2026-10-02 L2 评论神评 / 沙发实时重算与标识填充日志治理](./unified-logging-l2-comment-highlight-2026-10-02.md)：安全失败、奖励 / 缓存顺序和部分写入边界回归
-- [2026-10-02 L2 CommentHub 自有日志治理](./unified-logging-l2-comment-hub-2026-10-02.md)：分组安静、身份与广播载荷保留、DI 激活和失败传播回归
-- [2026-10-02 L2 评论实时推送日志治理](./unified-logging-l2-comment-realtime-2026-10-02.md)：五类事件安全降级及 Controller 写入 / 重放 / 失败传播回归
-- [2026-10-02 L2 ChatHub 自有日志治理](./unified-logging-l2-chat-hub-2026-10-02.md)：连接 / 频道安静、安全异常断开与 presence 回归
-- [2026-10-02 L2 用户关系失效推送日志治理](./unified-logging-l2-user-interaction-2026-10-02.md)：双 Hub 安全降级、继续发送与 SQLite Outbox 回归
-- [2026-10-02 L2 通知 Hub 生命周期日志治理](./unified-logging-l2-notification-hub-2026-10-02.md)：安全异常断开事件、连接行为回归及 SignalR 框架边界
-- [2026-10-02 L2 通知创建与实时推送日志治理](./unified-logging-l2-notification-creation-2026-10-02.md)：偏好抑制安静、推送安全降级及 SQLite Outbox 异常所有权回归
-- [2026-10-02 L2 用户关注通知入队日志治理](./unified-logging-l2-user-follow-2026-10-02.md)：异常所有权、安全日志、原有业务与独立事务边界
+- [2026-10-02 日终代码与文档回顾](./day-end-doc-review-2026-10-02.md)：19 个日志 L2 开发提交与完整批次索引、文档校准、独立问题及 10 月 3 日事项
 - [2026-10-01 dev → master 批次回归](./master-pr-regression-2026-10-01.md)：近期部署 / Console 修复及日志 L1 / L2 集成前检查
 - [2026-09-28 日终代码与文档回顾](./day-end-doc-review-2026-09-28.md)：15 个日志 L2 开发提交、批次证据索引、文档状态校准与明天事项
 

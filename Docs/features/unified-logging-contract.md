@@ -65,6 +65,8 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
+2026-10-02 日终静态复核补充：第 38、39、41 节中的早期轻回应 / 评论 / 帖子消费点仍在响应构造或失败结果转换之前记录日志，再读取异常 Message。若该 getter 自身抛错，可能已输出原消费事件，又把新异常交给 API；这类“错误处理再次失败”路径尚未包含在这些批次的单次输出结论中，后续需独立核对。第 42–48 节已在各自已列明的转换 / 响应边界补验先构造成功再记录，不应反推全部早期入口已经具备同样保证。
+
 ## 6. L2 候选生成入口
 
 `RadishLogging.Enabled` 默认 false；这是一项阶段性迁移开关，不是新增日志模式。API / Auth / Gateway 在配置加载完成后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例；启用时不再读取旧 Serilog sink / MinimumLevel 配置。DbMigrate 已将命令报告与诊断分开；seed / 具体 migration 已接入安全事件，其他裸输出旁路尚未收口，禁止据此提前切换生产。
@@ -308,7 +310,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 直接依赖 `NotificationPushService` 的 SignalR 分组访问、revision 事件及兼容角标事件失败仍被消费，只输出一次 `notification.push_failed` Warning，属性仅为受控 failureKind。用户 ID、revision、连接信息和原始异常不进入运行日志；推送仍为 best-effort，不回滚通知、不令 Outbox 进入重试，前一个发送失败时不继续后一个发送。
 - 接收者规范化、偏好与屏蔽规则、强制分类、目标与模板校验、通知身份快照、入箱持久化与 revision、两种推送载荷均保持不变。`ReliableTaskProcessor` 继续以 Outbox 租户和发生时间覆盖载荷值；NotificationRequested 的 ArgumentException / JsonException 仍转为永久失败，其余失败按既有路径交给 Outbox 最终状态写入所有者输出 `outbox.retrying / outbox.dead_letter`。
 - 旧 / 候选 × Development / Production 覆盖正常 / 抑制 / 混合接收者、推送两阶段降级、依赖失败重试与死信。使用真实 Service、Processor、ExecutionJob、PushService、SQLite Outbox，加上 mock 收件箱 / 用户仓储与 SignalR；既有 SQLite 收件箱回归覆盖仓储幂等，不代表真实网络、PostgreSQL 或全通知系统验收。
-- 本批不改权威失败摘要、重试次数、审计、租约或推送可靠性；`NotificationHub` 连接生命周期与 SignalR 框架日志仍待治理。生产候选开关继续关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-notification-creation-2026-10-02.md)。
+- 本批不改权威失败摘要、重试次数、审计、租约或推送可靠性；`NotificationHub` 自有连接生命周期日志的后续治理见第 32 节；SignalR 框架来源仍待治理。生产候选开关继续关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-notification-creation-2026-10-02.md)。
 
 ## 32. L2 通知 Hub 连接生命周期
 

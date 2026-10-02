@@ -348,6 +348,6 @@ L2–L6 是一个完整重构目标的交付切片，不能把“只降低 SQL �
 
 - 已完成方案确认、现状审计、统一事件策略及 .NET / Node 生成契约；实现入口见[事件契约](./unified-logging-contract.md)。
 - L1 已取得本机 Linux arm64 的传输、安全裁剪及故障可见性证据；固定版本 / digest、HTTP 候选上限、队列与轮转限制见[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)及[采集边界记录](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。这不代表全部平台或磁盘故障门禁关闭。
-- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配；`RadishLogging.Enabled` 默认 false。基础生成端、后台任务与已列明业务调用链的准确边界统一见[事件契约第 7–48 节](./unified-logging-contract.md)，批次证据见 [9 月 23 日日终回顾](../records/day-end-doc-review-2026-09-23.md)及 [9 月 28 日日终回顾](../records/day-end-doc-review-2026-09-28.md)。其余业务入口、异常安全栈帧和框架来源继续治理。
+- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配；`RadishLogging.Enabled` 默认 false。基础生成端、后台任务与已列明业务调用链的准确边界统一见[事件契约第 7–48 节](./unified-logging-contract.md)，批次证据见 [9 月 23 日日终回顾](../records/day-end-doc-review-2026-09-23.md)、[9 月 28 日日终回顾](../records/day-end-doc-review-2026-09-28.md)及 [10 月 2 日日终回顾](../records/day-end-doc-review-2026-10-02.md)。其余业务入口、异常安全栈帧和框架来源继续治理。
 - 真实内网入库、新日志表、Console 查询与告警、旧链路退出尚未完成；没有切换 production Compose、发布镜像、改写线上数据或发送告警。
 - 已确认的架构仍为独立 collector、统一标准流出口、文件与内网 API 两条持久化支路、Console 查询 / 提醒及独立审计权威性；下一步顺位由[当前规划](../planning/current.md)维护。
