@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队与评论最终消费见第 30–39 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费与内容提交冲突恢复见第 30–40 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -371,4 +371,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 编辑内容校验 catch 保留原 `(false, message)` 返回。明确长度拒绝保持安静；系统设置依赖抛出的普通 ArgumentException 在此最终消费点记录一次 `comment.edit_failed`，随后写入服务转换为拒绝异常，Controller 不再重复记录。恢复版本的消费者继续接收原失败结果。
 - 提交台账、版本追加、Outbox 载荷、提交 / 回滚顺序及重放 / 重复 / 无变化时不推送的决策不变。创建 / 编辑成功后的详情读取在写入事务提交后，失败仍返回原 500；点赞详情读取仍在原 catch 内，InvalidOperationException 仍转为 400。本批不把响应失败解释为先前写入已回滚。
 - 四模式回归覆盖真实 Service、ForumContentWriteService、TranAop、Controller、结果过滤器与内存 API 管道；SQLite 补验真实评论点赞缺失拒绝与 Outbox 失败后关系 / 计数回滚。mock 台账 / 版本 / 缓存与 SQLite 证据不替代 PostgreSQL、真实宿主或并发验收。
-- 本批关闭评论三类操作的最终消费日志边界；ContentSubmissionService 并发冲突的原始 Warning、其余业务和框架来源继续治理。生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-controller-2026-10-02.md)。
+- 本批关闭评论三类操作的最终消费日志边界；ContentSubmissionService 并发冲突的后续治理见第 40 节；其余业务和框架来源继续治理。生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-controller-2026-10-02.md)。
+
+## 40. L2 内容提交并发冲突恢复
+
+- ContentSubmissionService 移除恢复尝试前包含原始异常、用户、操作类型和提交键的 Warning。只有唯一约束冲突后成功从既有记录取得结果，才生成 `content_submission.conflict_resolved` Warning，仅带固定 failureKind。
+- 该事件只表示既有记录读取 / 必要重置已返回结果，不表示业务提交成功或外层事务已提交。Processing、Succeeded、DuplicateContent、Conflict 与重置后的 Started 均保持原返回；之后独立的业务失败仍可产生最终 Error。
+- 记录不存在时保留原冲突异常；读取或重置失败时保留该失败传播，不输出恢复摘要。评论 Controller 与 API 已治理边界仍负责最终 Error；PostController 编辑及 QuestionController 的部分 ArgumentException / InvalidOperationException / BusinessException 消费点尚待治理，不能据本批宣称所有共享消费者已收口。
+- 保存点、唯一约束识别、键规范化、指纹、限频、24 小时保留与审计不变。既有冲突识别仍扫描异常 Message / InnerException，本批只约束日志载荷，未把它改成数据库错误码分类器。
+- 四模式回归验证安全输出、恢复结果、失败传播与真实评论写入消费者；SQLite 使用真实唯一约束和保存点，控制首次查询不可见以触发冲突，验证保存点回滚保留外层先前写入、事务可继续及最终提交 / 回滚。该证据不代表并发竞态或 PostgreSQL 验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-content-submission-2026-10-02.md)。

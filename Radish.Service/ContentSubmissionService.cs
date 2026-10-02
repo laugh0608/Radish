@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Radish.Common.LogTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -129,21 +130,18 @@ public class ContentSubmissionService : IContentSubmissionService
         }
         catch (Exception ex) when (IsUniqueConstraintConflict(ex))
         {
-            Log.Warning(
-                ex,
-                "内容提交记录并发创建冲突，转为读取既有记录：UserId={UserId}, OperationType={OperationType}, Key={ClientSubmissionId}",
-                request.UserId,
-                request.OperationType,
-                key);
-
             var existing = hasClientKey
                 ? await QueryRecordAsync(request.TenantId, request.UserId, request.OperationType, key)
                 : await QueryRecentFingerprintRecordAsync(request, now);
             if (existing != null)
             {
-                return hasClientKey
+                var result = hasClientKey
                     ? await ResolveExistingRecordAsync(existing, request, now)
                     : ResolveFingerprintRecord(existing, now, request.DuplicateWindowSeconds);
+                // 只声明已从既有记录取得结果；后续业务操作与外层事务仍可能失败。
+                Log.ForContext("EventCode", "content_submission.conflict_resolved").ForContext("SourceCategory", "business")
+                    .Warning("Content submission conflict resolved from an existing record; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+                return result;
             }
 
             throw;
