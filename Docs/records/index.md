@@ -3,6 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-02 L2 标签创建 / 更新最终消费日志治理](./unified-logging-l2-tag-controller-2026-10-02.md)：重名分类、安全故障归属与 SQLite 非事务写入语义
 - [2026-10-02 L2 抽奖 Controller 最终消费日志治理](./unified-logging-l2-lottery-controller-2026-10-02.md)：手动 / 自动异常归属、中奖 / Outbox 回滚与批次继续处理
 - [2026-10-02 L2 投票 Controller 最终消费日志治理](./unified-logging-l2-poll-controller-2026-10-02.md)：三类入口故障归属、结果刷新与 SQLite 投票 / 计数回滚
 - [2026-10-02 L2 问答 Controller 最终消费日志治理](./unified-logging-l2-question-controller-2026-10-02.md)：九个入口异常归属、响应契约与 SQLite 台账 / 版本 / 采纳 / Outbox 回滚

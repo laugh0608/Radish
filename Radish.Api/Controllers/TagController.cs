@@ -1,5 +1,6 @@
 using Asp.Versioning;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -12,6 +13,7 @@ using Radish.Model.DtoModels;
 using Radish.Shared;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
+using Serilog;
 using SqlSugar;
 
 namespace Radish.Api.Controllers;
@@ -277,12 +279,7 @@ public class TagController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildErrorResponse(ex);
         }
     }
 
@@ -338,12 +335,7 @@ public class TagController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = (int)HttpStatusCodeEnum.BadRequest,
-                MessageInfo = ex.Message
-            };
+            return BuildErrorResponse(ex);
         }
     }
 
@@ -511,6 +503,22 @@ public class TagController : ControllerBase
             MessageInfo = "恢复成功",
             ResponseData = true
         };
+    }
+
+    private static MessageModel BuildErrorResponse(InvalidOperationException exception)
+    {
+        var response = new MessageModel
+        {
+            IsSuccess = false,
+            StatusCode = (int)HttpStatusCodeEnum.BadRequest,
+            MessageInfo = exception.Message
+        };
+        if (exception is not TagNameConflictException)
+        {
+            Log.ForContext("EventCode", "tag.request_failed")
+                .Error("Tag request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
+        }
+        return response;
     }
 
     private MessageModel BuildError(

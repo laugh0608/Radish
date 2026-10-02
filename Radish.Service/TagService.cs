@@ -213,7 +213,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
         var exists = await _tagRepository.QueryExistsAsync(t => t.Name == normalizedName && !t.IsDeleted);
         if (exists)
         {
-            throw new InvalidOperationException("标签名称已存在");
+            throw new TagNameConflictException("标签名称已存在");
         }
 
         var tag = new Tag(new TagInitializationOptions(normalizedName)
@@ -261,7 +261,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
         var duplicated = await _tagRepository.QueryExistsAsync(t => t.Id != id && t.Name == normalizedName && !t.IsDeleted);
         if (duplicated)
         {
-            throw new InvalidOperationException("标签名称已存在");
+            throw new TagNameConflictException("标签名称已存在");
         }
 
         existingTag.Name = normalizedName;

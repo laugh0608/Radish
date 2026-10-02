@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票及抽奖最终消费见第 30–45 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖及标签创建 / 更新最终消费见第 30–46 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -424,4 +424,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 中奖记录、开奖主体、通知 Outbox 入队和详情刷新继续处于原事务内；Outbox 写入后或详情刷新失败会共同回滚。通知业务键 / 任务键、接收者、模板、目标、身份和时间保持，不将日志裁剪作用于权威载荷。
 - 发现既有 SQLite 时间边界：自动截止时间读回为 Unspecified，ReliableOutboxRepository 按本地时区调用 ToUniversalTime；在本机 Asia/Shanghai 下，Outbox 信封时间相对中奖 / 通知载荷时间提前 8 小时。本批保留并记录现状，不将日志回归视为 UTC 契约修复；时间规范化需独立确认。
 - 四模式回归使用真实 PostLotteryService、PostService、ForumProfile、BaseRepository、ReliableOutboxService / Repository、TranAop、PostLotteryJob 及 SQLite 五表，覆盖成功提交、晚期失败回滚、空池、批次部分失败与继续处理；辅助标签 / 投票 / 问答依赖为 mock，API 为内存管道。不代表 PostgreSQL、真实并发开奖、认证 / MVC 模型绑定、宿主或通知投递验收。
-- 下一项为 TagController / TagService 创建与更新的 InvalidOperationException 最终消费，区分重名拒绝和依赖故障。其余业务与框架来源仍待治理，生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-lottery-controller-2026-10-02.md)。
+- TagController / TagService 创建与更新最终消费的后续治理见第 46 节。其余业务与框架来源仍待治理，生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-lottery-controller-2026-10-02.md)。
+
+## 46. L2 标签创建 / 更新最终消费
+
+- 项目所有者已确认新增 `TagNameConflictException : InvalidOperationException`，仅标记 TagService 创建 / 更新中未删除标签的重名拒绝。保留原“标签名称已存在”文案、父类消费及 400 响应；不根据异常消息区分拒绝与故障。
+- TagController 两个入口在原响应成功构造后，为其他 InvalidOperationException 生成 `tag.request_failed` Error，仅带 failureKind。重名拒绝、模型 / ID 预检、目标缺失及正常成功保持安静；日志不包含异常对象 / 原文、标签名称 / slug / 描述 / 颜色或操作人身份。依赖故障仍返回原 400 与消息，不在本批调整响应语义。
+- Service 不新增 catch / 日志；其他异常和响应 Message getter 失败仍向 API 传播。Controller 不新增聚合异常解包，普通 ArgumentException / IO / 超时 / 取消等仍由 API 最终处理，不能把它们统称为正常输入拒绝。
+- 名称去空白、重名排除已删除但包含禁用标签、更新排除自身、slug 规范化与后缀避重、字段与审计写入保持。创建 / 更新没有事务特性，写入前故障不产生该次写入；仓储实际写入后再抛错时，已提交数据继续保留，不因日志治理增加回滚、重试或补偿。GetOrCreateTagAsync 及其他标签入口未调整。
+- 六组四模式回归覆盖真实 TagService、BaseRepository、UnitOfWorkManage / TranAop、SQLite Tag 表及内存 API / 结果过滤器。正常拒绝、阶段故障、实际写入后故障、成功数据和安全日志归属均已验证；合成 BusinessException(404) 在 DefaultHttpContext 未开始响应时触发既有框架重抛，旧 sink 仍收到原异常，候选仅有安全未分类摘要，单独作为未治理框架边界留痕，不计入标签安全消费完成范围。
+- 不代表 PostgreSQL、并发创建、MVC 认证 / 模型绑定或真实 HTTP 宿主验收。下一项先核对 CategoryController 创建 / 更新的父分类拒绝与依赖故障消费，实施前确认方案；L2 尚未整体完成，`RadishLogging.Enabled=false` 保持，见[本批记录](../records/unified-logging-l2-tag-controller-2026-10-02.md)。
