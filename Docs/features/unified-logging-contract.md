@@ -377,7 +377,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 - ContentSubmissionService 移除恢复尝试前包含原始异常、用户、操作类型和提交键的 Warning。只有唯一约束冲突后成功从既有记录取得结果，才生成 `content_submission.conflict_resolved` Warning，仅带固定 failureKind。
 - 该事件只表示既有记录读取 / 必要重置已返回结果，不表示业务提交成功或外层事务已提交。Processing、Succeeded、DuplicateContent、Conflict 与重置后的 Started 均保持原返回；之后独立的业务失败仍可产生最终 Error。
-- 记录不存在时保留原冲突异常；读取或重置失败时保留该失败传播，不输出恢复摘要。评论 Controller 与 API 已治理边界仍负责最终 Error；PostController 编辑的后续治理见第 41 节；帖子版本恢复的后续治理见第 42 节；QuestionController 的部分异常消费点尚待治理，不能据本批宣称所有共享消费者已收口。
+- 记录不存在时保留原冲突异常；读取或重置失败时保留该失败传播，不输出恢复摘要。评论 Controller 与 API 已治理边界仍负责最终 Error；PostController 编辑的后续治理见第 41 节；帖子版本恢复的后续治理见第 42 节；QuestionController 的后续异常消费治理见第 43 节，不能据本批宣称所有共享消费者已收口。
 - 保存点、唯一约束识别、键规范化、指纹、限频、24 小时保留与审计不变。既有冲突识别仍扫描异常 Message / InnerException，本批只约束日志载荷，未把它改成数据库错误码分类器。
 - 四模式回归验证安全输出、恢复结果、失败传播与真实评论写入消费者；SQLite 使用真实唯一约束和保存点，控制首次查询不可见以触发冲突，验证保存点回滚保留外层先前写入、事务可继续及最终提交 / 回滚。该证据不代表并发竞态或 PostgreSQL 验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-content-submission-2026-10-02.md)。
 
@@ -387,7 +387,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - PostController 编辑保留 ArgumentException → 400、InvalidOperationException → 403，置顶保留 InvalidOperationException → 404。明确拒绝保持安静，其余已消费异常分别生成 `post.edit_failed` / `post.top_failed` Error，仅带固定 failureKind。未消费异常仍由 API `http.failed` 记录；正常 4xx BusinessException 继续安静。
 - 输入预检、权限查询、提交台账、版本追加、CAS、分类 / 标签计数、重放 / 无变化和事务边界不变。置顶详情读取仍在事务内，读取故障或不可见帖子仍走原回滚；编辑前置查询在 Controller catch 外，其失败继续由 API 处理。
 - 旧 / 候选 × Development / Production 回归覆盖真实 PostService、ForumContentWriteService、TranAop、Controller、结果过滤器及内存 API 管道。SQLite 补验真实帖子行在置顶成功时提交、详情故障 / 不可见时回滚、编辑完成台账失败时回滚；其他仓储、台账及版本服务为 mock，不代表全部数据表联合持久化或 PostgreSQL 验收。
-- `ForumContentRevisionService.RestorePostAsync` 的后续异常消费治理见第 42 节；QuestionController 与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-controller-2026-10-02.md)。
+- `ForumContentRevisionService.RestorePostAsync` 的后续异常消费治理见第 42 节；QuestionController 的后续治理见第 43 节；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-controller-2026-10-02.md)。
 
 ## 42. L2 帖子版本恢复最终消费
 
@@ -395,4 +395,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 原响应消息、ContentRejected / EditLimitReached 错误码及消息键、按“次数”选择错误码的旧逻辑保持。分类器不读取异常原文；业务转换仍按原契约读取 Message。如果转换本身失败，恢复服务未消费成功，不先生成 Error，新的失败继续交给 API。
 - 前置授权、版本 / 分类 / 标签 / 附件检查及后续快照追加、台账完成在该 catch 外。普通故障继续传播，由 API 记录一次 `http.failed`；原 4xx BusinessException 安静，5xx BusinessException 由 API 记录。PostController 恢复入口不重复记录。
 - 恢复规则、CAS、正文 / 封面更新、不可变版本及标签 / 附件引用、UTC 审计、提交台账、重放 / 重复和事务边界不变。四模式回归覆盖真实 PostService、版本服务、写入服务、TranAop 与 Controller；SQLite 验证帖子、版本、标签快照和附件引用四类记录成功提交或共同回滚。分类 / 标签主数据与提交台账依赖仍为 mock，不代表完整持久化、并发或 PostgreSQL 验收。
-- 下一项为 QuestionController 的参数 / 业务 / 聚合异常最终消费；生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-restore-2026-10-02.md)。
+- QuestionController 参数 / 业务 / 聚合异常最终消费的后续治理见第 43 节；生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-restore-2026-10-02.md)。
+
+## 43. L2 问答 Controller 最终消费
+
+- 项目所有者已确认新增 `ForumAnswerContentValidationException : ArgumentException`，仅用于 ForumQuestionService 创建 / 编辑回答的空内容与超长内容检查。原文案、参数名、父类消费和响应契约保持；恢复历史正文沿用原规则，不新增内容校验。
+- QuestionController 九个入口统一在原错误响应成功构造后记录故障：普通 ArgumentException 使用 `question.request_failed` Error，仅带 failureKind；已消费的 5xx BusinessException 使用 `http.failed` Error，仅带 statusCode / failureKind。明确内容拒绝与 4xx BusinessException 安静，异常对象、消息原文、提交键、正文及业务身份不进入运行日志。
+- AggregateException 的原 Flatten / 单一已知异常解包规则保持；多异常、空聚合及未知异常仍由 API 最终处理。若 Message getter 在构造响应时抛错，Controller 不提前输出 Error，继续按原直接 catch / 异常过滤器语义传播，由 API 记录一次；正常响应的消息参数规范化、错误码和消息键不变。
+- 回答创建 / 编辑 / 删除 / 恢复、采纳 / 撤销的提交台账、CAS、不可变版本、附件绑定、采纳审计、通知业务键 / 载荷与事务边界不变。读取分页、版本权限、正常拒绝和成功重放保持原义，不新增重试或补偿。
+- 四模式回归覆盖真实 ForumQuestionService、问答仓储、ContentSubmissionService、ReliableOutboxService、TranAop、Controller、结果过滤器及内存 API 管道。SQLite 验证回答、版本、附件及引用、采纳记录、台账和 Outbox 的提交 / 回滚；包含通知实际写入后再抛错。不代表 PostgreSQL、并发请求、真实宿主、附件存储或消息投递验收。
+- 下一项为 PollController / PostPollService 投票消费边界；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-question-controller-2026-10-02.md)。
