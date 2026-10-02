@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，用户关注通知入队见第 30 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，用户关注通知入队与通知创建 / 推送见第 30–31 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -301,3 +301,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 关注关系仍先由仓储独立事务提交，再构造通知并写入可靠 Outbox；二者没有共同事务。入队失败不回滚已提交关系，再次关注返回未变更时不补投通知。本批不新增重试、补偿或事务保证，也不改写 Outbox 的异步消费 / 重试策略。
 - 通知类型、接收者、模板参数、目标、身份快照、UTC 时间及通知业务键 / 任务幂等键保持原义；正常成功、重复关注保持安静。Outbox 权威载荷继续保存业务数据，日志安全裁剪不作用于通知载荷。
 - 旧 / 候选日志路径覆盖 Development / Production；真实 Service、Controller、ReliableOutboxService 与 mock 仓储及内存 HTTP 管道验证异常所有权和原行为。既有 SQLite 仓储回归不替代真实宿主、PostgreSQL 或跨事务故障验收。生产开关继续关闭，L2 尚未完成，见[本批记录](../records/unified-logging-l2-user-follow-2026-10-02.md)。
+
+## 31. L2 通知创建与实时推送降级
+
+- `NotificationService.CreateNotificationAsync` 移除“按偏好抑制全部接收者”的逐条 Info 及无剩余用途的 logger 依赖。偏好 / 屏蔽抑制仍返回通知 ID，可靠任务成功结束，不创建空通知、不推送、不输出身份摘要；正常创建和幂等命中同样保持安静。
+- 直接依赖 `NotificationPushService` 的 SignalR 分组访问、revision 事件及兼容角标事件失败仍被消费，只输出一次 `notification.push_failed` Warning，属性仅为受控 failureKind。用户 ID、revision、连接信息和原始异常不进入运行日志；推送仍为 best-effort，不回滚通知、不令 Outbox 进入重试，前一个发送失败时不继续后一个发送。
+- 接收者规范化、偏好与屏蔽规则、强制分类、目标与模板校验、通知身份快照、入箱持久化与 revision、两种推送载荷均保持不变。`ReliableTaskProcessor` 继续以 Outbox 租户和发生时间覆盖载荷值；NotificationRequested 的 ArgumentException / JsonException 仍转为永久失败，其余失败按既有路径交给 Outbox 最终状态写入所有者输出 `outbox.retrying / outbox.dead_letter`。
+- 旧 / 候选 × Development / Production 覆盖正常 / 抑制 / 混合接收者、推送两阶段降级、依赖失败重试与死信。使用真实 Service、Processor、ExecutionJob、PushService、SQLite Outbox，加上 mock 收件箱 / 用户仓储与 SignalR；既有 SQLite 收件箱回归覆盖仓储幂等，不代表真实网络、PostgreSQL 或全通知系统验收。
+- 本批不改权威失败摘要、重试次数、审计、租约或推送可靠性；`NotificationHub` 连接生命周期与 SignalR 框架日志仍待治理。生产候选开关继续关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-notification-creation-2026-10-02.md)。

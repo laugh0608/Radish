@@ -182,6 +182,7 @@
     "payment.locks_cleared": "Expired payment locks cleared.",
     "payment.suggestions_failed": "Payment security suggestions consumed a failure.",
     "user_follow.notification_enqueue_failed": "Follow notification enqueue failed before a handled response.",
+    "notification.push_failed": "Notification realtime push is unavailable.",
     "attachment.delete_rejected": "Attachment soft delete changed no rows.",
     "attachment.delete_failed": "Attachment soft delete consumed a failure.",
     "attachment.download_unavailable": "Attachment download stream is unavailable.",

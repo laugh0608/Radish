@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：继续 L2 通知创建及直接消费链日志治理，先复核 `NotificationService` 按偏好抑制通知的逐条身份日志与 `ReliableTaskProcessor` 消费边界；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计及用户关注通知入队调用链，准确边界见[事件契约第 7–30 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：继续 L2 通知 Hub 连接生命周期日志治理，先复核 `NotificationHub.OnDisconnectedAsync` 的身份 / 连接标识及异常输出和 SignalR 最终处理边界；Native P8-C readiness 保留为后续平台事项。
+- **状态复核日期**：`2026-10-02`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容、统计、用户关注通知入队及通知创建 / 推送调用链，准确边界见[事件契约第 7–31 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -28,6 +28,8 @@
 正式产品线只保留 Web 与 Flutter Native；Web 优先，Flutter mobile-first、desktop stage-gated。WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 
 ## 最近结论
+
+- `2026-10-02` 完成通知创建 / 推送直接调用链日志治理：按偏好抑制保持安静，SignalR best-effort 失败使用安全 Warning；真实 SQLite Outbox 回归保留重试 / 死信语义。范围与证据见[本批记录](../records/unified-logging-l2-notification-creation-2026-10-02.md)，Hub 生命周期仍待治理。
 
 - `2026-10-02` 完成关注通知准备 / 入队的日志治理：保留控制器消费异常的安全事件，其余失败由 API 最终边界记录；关注与 Outbox 的既有独立事务、返回和重试语义不变。实现与证据见[本批记录](../records/unified-logging-l2-user-follow-2026-10-02.md)。10 月 1 日集成提交 `f5262a09` 已在本地 `dev/master` 对齐；本批继续在 `dev` 开发。
 
@@ -49,9 +51,9 @@
 
 ## 下一批：L2 剩余生成端治理
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–30 节](../features/unified-logging-contract.md)，关注通知入队已完成，不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–31 节](../features/unified-logging-contract.md)，关注通知入队、通知创建与推送直接链已完成，不再列为待办。
 
-1. **首项：通知创建与直接消费链**。`NotificationService.CreateNotificationAsync` 按偏好抑制全部接收者时仍逐条记录通知 ID 与分类；先复核直接消费者 `ReliableTaskProcessor` 及其既有 Outbox 重试 / 最终失败所有权，再治理生成点。保留偏好、屏蔽、租户、通知快照、收件箱写入、幂等和推送语义。
+1. **首项：通知 Hub 连接生命周期**。`NotificationHub.OnDisconnectedAsync` 仍记录原始异常、用户 ID 与连接 ID；先核对连接 / 断开、分组移除、身份标准化和 SignalR 框架异常所有权，再治理该边界。保留认证、组名、连接初始化 revision / 角标、断开清理和原异常传播；不扩为全量实时通信改造。
 2. **其余业务与框架来源**：按未覆盖调用链成组复核，继续稳定事件码、异常安全栈帧及框架最终处理边界；不以少数调用链或未分类摘要代表 L2 整体完成，不一次扩为全仓改造。
 3. **独立可靠性边界**：关注关系与通知入队并非共同事务，失败后再次关注不补投；仅完成现状核对和日志回归，事务 / 补偿改造需单独评估并确认。Rust `.tmp` 输入水印回退仍按[既有记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)后置。
 4. **验证与收口**：每组调用链补旧 / 候选安全输出、异常所有权与原行为回归，按影响面更新契约和记录。
