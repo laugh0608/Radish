@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub 与用户关系失效推送见第 30–33 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送与 ChatHub 见第 30–34 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -323,3 +323,10 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 非正接收者过滤、按输入顺序去重、每人先 Chat 后 Notification、版本使用 InvariantCulture 字符串以及只含版本的推送载荷均保留。分组访问或发送失败继续消费，仍尝试后续 Hub 和接收者；不新增重试或改变 best-effort 语义。
 - 唯一直接生产消费者 `ReliableTaskProcessor` 保留 Blocked 先抑制双方通知、Unblocked 不恢复通知、随后发送关系失效的顺序。真实 notifier 消费推送失败后 Outbox 仍成功；通知抑制失败与未知事件继续由既有任务 / Outbox 边界处理，不更改权威错误摘要、重试或审计。
 - 回归覆盖旧 / 候选 × Development / Production，候选显式配置并核对 mode。真实 notifier、Processor、ExecutionJob 和 SQLite Outbox 配合 mock SignalR / 收件箱验证继续发送、纯版本载荷、成功 / 重试 / 死信及日志安全；不代表真实 SignalR、屏蔽事务或 PostgreSQL 验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-user-interaction-2026-10-02.md)。
+
+## 34. L2 ChatHub 自有日志
+
+- ChatHub 移除逐连接 Info、加入 / 离开频道 Debug。异常断开在 presence 清理和用户分组移除成功后输出 `chat.connection_closed` Warning，仅保留受控 failureKind；不记录用户 / 租户 / 频道 / 连接身份或原始异常。正常生命周期与频道进出保持安静，Development 开启 diagnostics 后也不重新生成这些事件。
+- 加入频道仍先经 ChatService 权限校验，再入租户频道组并登记 presence；离开仍先调用 Service，再退组与清理 presence；断开仍先清理 presence 再移除用户组。身份、权限、分组或 presence 失败原样传播，不增加 catch、补偿或重试。
+- 非正频道的加入拒绝、离开 / 输入中安静返回、非法用户拒绝、输入中 CanSend 校验和 OthersInGroup 广播载荷保持不变；不改组名、凭据读取、权限、在线状态算法或重复加入语义。
+- 旧 / 候选 × Development / Production 回归包含实际 ChatHub、mock SignalR / Service 以及真实 ChatPresenceService 双连接清理；既有 ChatService / ChatChannelAccessService 测试覆盖相关服务。框架输出仍按第 32 节的未覆盖边界处理，不宣称整个连接故障只有一条事件或已完成真实 WebSocket 验收。生产开关保持关闭，见[本批记录](../records/unified-logging-l2-chat-hub-2026-10-02.md)。
