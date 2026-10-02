@@ -131,7 +131,7 @@ public class CommentRepository : BaseRepository<Comment>, ICommentRepository
             .Where(comment => comment.Id == commentId && !comment.IsDeleted)
             .FirstAsync();
 
-        return comment ?? throw new InvalidOperationException("评论不存在或已被删除");
+        return comment ?? throw new CommentOperationRejectedException("评论不存在或已被删除");
     }
 
     private async Task<UserCommentLike?> QueryCommentLikeRelationAsync(long tenantId, long userId, long commentId)

@@ -213,10 +213,15 @@ public sealed class CommentRealtimeLoggingTests
             Assert.Equal(400, result.StatusCode);
             Assert.Equal(Secret, result.MessageInfo);
             Assert.Empty(f.Sends);
+            capture.AssertFailure(operation == "create" ? "comment.create_failed" : operation == "like" ? "comment.like_failed" : "comment.edit_failed",
+                failure is ArgumentException ? "argument" : "invalid-operation");
+            capture.Clear();
         }
         // ToggleLike's existing catch also covers detail lookup; restore has no such catch.
         using (var f = new Fixture(capture.Logger) { FailedStage = "detail", BusinessFailure = new InvalidOperationException(Secret) })
             Assert.Equal(400, (await f.CallControllerAsync("like")).StatusCode);
+        capture.AssertFailure("comment.like_failed", "invalid-operation");
+        capture.Clear();
         using (var f = new Fixture(capture.Logger) { FailedStage = "restore", BusinessFailure = new InvalidOperationException(Secret) })
             Assert.Same(f.BusinessFailure, await Assert.ThrowsAsync<InvalidOperationException>(() => f.CallControllerAsync("restore")));
         capture.AssertWarnings(0);
@@ -333,6 +338,7 @@ public sealed class CommentRealtimeLoggingTests
 
     private sealed class Capture : IDisposable
     {
+        private readonly Serilog.ILogger _previous = Log.Logger;
         private readonly StringWriter _output = new();
         private readonly string? _candidateMode;
         public Serilog.Core.Logger Logger { get; }
@@ -351,6 +357,16 @@ public sealed class CommentRealtimeLoggingTests
             }
             else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
             Logger = config.CreateLogger();
+            Log.Logger = Logger;
+        }
+        public void AssertFailure(string code, string kind)
+        {
+            var text = _output.ToString();
+            Assert.Single(text.Split('\n', StringSplitOptions.RemoveEmptyEntries));
+            Assert.Contains(code, text);
+            Assert.Contains("Error", text);
+            Assert.Contains(kind, text);
+            Assert.DoesNotContain(Secret, text);
         }
         public void AssertWarnings(int count, string kind = "io")
         {
@@ -378,7 +394,7 @@ public sealed class CommentRealtimeLoggingTests
                 Assert.DoesNotContain(forbidden, text);
         }
         public void Clear() => _output.GetStringBuilder().Clear();
-        public void Dispose() { Logger.Dispose(); _output.Dispose(); }
+        public void Dispose() { Log.Logger = _previous; Logger.Dispose(); _output.Dispose(); }
     }
     private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
     {

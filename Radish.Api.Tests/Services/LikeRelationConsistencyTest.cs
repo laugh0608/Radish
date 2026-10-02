@@ -26,6 +26,33 @@ namespace Radish.Api.Tests.Services;
 public sealed class LikeRelationConsistencyTest
 {
     [Fact]
+    public async Task ToggleCommentLikeAsync_ShouldIdentifyMissingCommentAsNormalRejection()
+    {
+        using var harness = LikeRepositoryHarness.Create();
+        var exception = await Assert.ThrowsAsync<CommentOperationRejectedException>(() =>
+            harness.CommentRepository.ToggleCommentLikeAsync(3001, "liker", 4001));
+        Assert.IsAssignableFrom<InvalidOperationException>(exception);
+        Assert.Equal("评论不存在或已被删除", exception.Message);
+        Assert.Equal(0, harness.Db.Queryable<UserCommentLike>().Count());
+        Assert.Equal(0, harness.Db.Queryable<ReliableOutboxMessage>().Count());
+    }
+
+    [Fact]
+    public async Task ToggleCommentLikeAsync_ShouldPreserveFailureAndRollbackRelationAndCount_WhenOutboxFails()
+    {
+        var failure = new InvalidOperationException("outbox unavailable");
+        var outbox = new Mock<IReliableOutboxRepository>();
+        outbox.Setup(r => r.AddAsync(It.IsAny<ReliableOutboxDraft>())).ThrowsAsync(failure);
+        using var harness = LikeRepositoryHarness.Create(outbox.Object);
+        harness.Db.Insertable(new Comment("评论") { Id = 4001, PostId = 1001, AuthorId = 2001, TenantId = 0 }).ExecuteCommand();
+
+        Assert.Same(failure, await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            harness.CommentRepository.ToggleCommentLikeAsync(3001, "liker", 4001)));
+        Assert.Equal(0, harness.Db.Queryable<UserCommentLike>().Count());
+        Assert.Equal(0, harness.Db.Queryable<Comment>().First(comment => comment.Id == 4001).LikeCount);
+    }
+
+    [Fact]
     public async Task TogglePostLikeAsync_ShouldReuseSingleRelation_AndUpdateCount()
     {
         using var harness = LikeRepositoryHarness.Create();

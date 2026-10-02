@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链及轻回应通知入队见第 30–38 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队与评论最终消费见第 30–39 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -354,7 +354,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 原 catch 继续消费计算 / 存储 / 入队 / 缓存异常，保留原返回对象；中途失败可能在已写入高亮或奖励后返回 NoChange。事务拦截器见到正常返回仍走 commit，不因安全 Error 自动回滚，日志也不宣称此前写入已撤销或高亮最终状态已同步。这一现有可靠性边界未在日志治理中改变。
 - 根评论页标识填充失败仍返回评论并继续作者资料填充；单条详情的高亮读取、外层分页和作者资料失败继续传播，不扩大 catch。递归填充保留神评 / 沙发布尔标识和排名；当前根页清空子评论，递归分支通过定向调用单独验证，不冒充页面运行态覆盖。
 - 真实 CommentService、ReliableOutboxService、TranAop 与 Controller 配合 mock 仓储 / 缓存 / SignalR 验证成功与无变更安静、失败单条事件、部分进度、创建 / 点赞 / 删除的返回与无变更高亮广播抑制；上一批 Controller 回归继续覆盖编辑 / 恢复的调用边界。持久化仅在内存 mock 中模拟，不代表真实 SQLite / PostgreSQL 事务、并发奖励或 Redis 验收。
-- 本批关闭上述高亮日志生成点；Controller 静默 400 消费边界及其余业务 / 框架来源继续治理，生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-highlight-2026-10-02.md)。
+- 本批关闭上述高亮日志生成点；CommentController 静默 400 消费边界的后续治理见第 39 节；其余业务 / 框架来源继续治理，生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-highlight-2026-10-02.md)。
 
 ## 38. L2 轻回应通知入队与 Controller 最终消费
 
@@ -362,4 +362,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `PostQuickReplyController` Create / Delete 消费的 5xx BusinessException 使用安全 `http.failed` Error，仅带 statusCode / failureKind；4xx 业务拒绝与普通参数校验保持安静。GetRecentByPostId 消费的 InvalidOperationException 使用 `quick_reply.query_rejected` Warning，保留既有 404 响应；未调整错误码、消息键、响应文案与 ApiErrorContract 状态映射。
 - 原内容规范化、长度限制、权限、冷却 / 重复内容限制、帖子作者筛选、通知业务键 / 载荷 / UTC 时间及软删除审计不变。入队失败仍向事务 AOP 传播并调用 rollback；此前写入的冷却与去重缓存不会随数据库事务撤销，失败后重试仍可能返回 429 / 409，不新增补投或创建成功重放。
 - 旧 / 候选 × Development / Production 覆盖真实 Service、ReliableOutboxService、TranAop、Controller、结果过滤器和内存 API 异常管道；mock 依赖验证调用顺序与缓存现状，不替代真实数据库回滚或 Redis / HTTP 宿主验收。
-- 生产开关保持关闭，L2 尚未整体完成；下一批继续 CommentController 的创建 / 点赞 / 编辑静默消费边界及直接写入服务。见[本批记录](../records/unified-logging-l2-post-quick-reply-2026-10-02.md)。
+- 生产开关保持关闭，L2 尚未整体完成；CommentController 创建 / 点赞 / 编辑静默消费边界的后续治理见第 39 节。见[本批记录](../records/unified-logging-l2-post-quick-reply-2026-10-02.md)。
+
+## 39. L2 评论创建 / 点赞 / 编辑最终消费
+
+- 正常内容长度校验改用继承 ArgumentException 的 `CommentContentValidationException`；点赞评论不存在、编辑服务已返回失败结果改用继承 InvalidOperationException 的 `CommentOperationRejectedException`。这是项目所有者单独确认的内部异常分类变更，不调整 HTTP 状态、文案或业务规则，不通过匹配异常文本判断是否为正常拒绝。
+- `CommentController` Create / ToggleLike / Update 消费的非正常 ArgumentException / InvalidOperationException 分别使用 `comment.create_failed / comment.like_failed / comment.edit_failed` Error，仅带固定 failureKind。专用拒绝类型保持安静；4xx BusinessException 继续按既有契约上抛至 API 并安静处理；其他未处理异常仍只由 API 最终边界记录 `http.failed`。
+- 编辑内容校验 catch 保留原 `(false, message)` 返回。明确长度拒绝保持安静；系统设置依赖抛出的普通 ArgumentException 在此最终消费点记录一次 `comment.edit_failed`，随后写入服务转换为拒绝异常，Controller 不再重复记录。恢复版本的消费者继续接收原失败结果。
+- 提交台账、版本追加、Outbox 载荷、提交 / 回滚顺序及重放 / 重复 / 无变化时不推送的决策不变。创建 / 编辑成功后的详情读取在写入事务提交后，失败仍返回原 500；点赞详情读取仍在原 catch 内，InvalidOperationException 仍转为 400。本批不把响应失败解释为先前写入已回滚。
+- 四模式回归覆盖真实 Service、ForumContentWriteService、TranAop、Controller、结果过滤器与内存 API 管道；SQLite 补验真实评论点赞缺失拒绝与 Outbox 失败后关系 / 计数回滚。mock 台账 / 版本 / 缓存与 SQLite 证据不替代 PostgreSQL、真实宿主或并发验收。
+- 本批关闭评论三类操作的最终消费日志边界；ContentSubmissionService 并发冲突的原始 Warning、其余业务和框架来源继续治理。生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-controller-2026-10-02.md)。

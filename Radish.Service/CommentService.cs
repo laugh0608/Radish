@@ -98,12 +98,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
         if (trimmedContent.Length < minContentLength)
         {
-            throw new ArgumentException($"评论内容不能少于 {minContentLength} 个字符");
+            throw new CommentContentValidationException($"评论内容不能少于 {minContentLength} 个字符");
         }
 
         if (trimmedContent.Length > maxContentLength)
         {
-            throw new ArgumentException($"评论内容不能超过 {maxContentLength} 个字符");
+            throw new CommentContentValidationException($"评论内容不能超过 {maxContentLength} 个字符");
         }
     }
 
@@ -796,6 +796,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (ArgumentException ex)
         {
+            // 保留原失败结果契约；系统设置依赖的 ArgumentException 不能冒充正常内容校验。
+            if (ex is not CommentContentValidationException)
+            {
+                Log.ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
+                    .Error("Comment edit failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
             return (false, ex.Message);
         }
 
