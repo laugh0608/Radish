@@ -1,11 +1,13 @@
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.Constants;
+using Serilog;
 using SqlSugar;
 
 namespace Radish.Service;
@@ -487,14 +489,26 @@ public sealed class ForumContentRevisionService : IForumContentRevisionService
         }
         catch (ArgumentException exception)
         {
-            throw CreateException(exception.Message, 409, ForumContentRevisionErrorCodes.ContentRejected);
+            var rejection = CreateException(exception.Message, 409, ForumContentRevisionErrorCodes.ContentRejected);
+            if (exception is not PostContentValidationException)
+            {
+                Log.ForContext("EventCode", "post.restore_failed")
+                    .Error("Post restore consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
+            }
+            throw rejection;
         }
         catch (InvalidOperationException exception)
         {
             var errorCode = exception.Message.Contains("次数", StringComparison.Ordinal)
                 ? ForumContentRevisionErrorCodes.EditLimitReached
                 : ForumContentRevisionErrorCodes.ContentRejected;
-            throw CreateException(exception.Message, 409, errorCode);
+            var rejection = CreateException(exception.Message, 409, errorCode);
+            if (exception is not PostOperationRejectedException)
+            {
+                Log.ForContext("EventCode", "post.restore_failed")
+                    .Error("Post restore consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
+            }
+            throw rejection;
         }
 
         return await AppendPostRevisionAsync(

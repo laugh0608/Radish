@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复与帖子最终消费见第 30–41 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶与版本恢复最终消费见第 30–42 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -377,7 +377,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 - ContentSubmissionService 移除恢复尝试前包含原始异常、用户、操作类型和提交键的 Warning。只有唯一约束冲突后成功从既有记录取得结果，才生成 `content_submission.conflict_resolved` Warning，仅带固定 failureKind。
 - 该事件只表示既有记录读取 / 必要重置已返回结果，不表示业务提交成功或外层事务已提交。Processing、Succeeded、DuplicateContent、Conflict 与重置后的 Started 均保持原返回；之后独立的业务失败仍可产生最终 Error。
-- 记录不存在时保留原冲突异常；读取或重置失败时保留该失败传播，不输出恢复摘要。评论 Controller 与 API 已治理边界仍负责最终 Error；PostController 编辑的后续治理见第 41 节；帖子版本恢复与 QuestionController 的部分异常消费点尚待治理，不能据本批宣称所有共享消费者已收口。
+- 记录不存在时保留原冲突异常；读取或重置失败时保留该失败传播，不输出恢复摘要。评论 Controller 与 API 已治理边界仍负责最终 Error；PostController 编辑的后续治理见第 41 节；帖子版本恢复的后续治理见第 42 节；QuestionController 的部分异常消费点尚待治理，不能据本批宣称所有共享消费者已收口。
 - 保存点、唯一约束识别、键规范化、指纹、限频、24 小时保留与审计不变。既有冲突识别仍扫描异常 Message / InnerException，本批只约束日志载荷，未把它改成数据库错误码分类器。
 - 四模式回归验证安全输出、恢复结果、失败传播与真实评论写入消费者；SQLite 使用真实唯一约束和保存点，控制首次查询不可见以触发冲突，验证保存点回滚保留外层先前写入、事务可继续及最终提交 / 回滚。该证据不代表并发竞态或 PostgreSQL 验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-content-submission-2026-10-02.md)。
 
@@ -387,4 +387,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - PostController 编辑保留 ArgumentException → 400、InvalidOperationException → 403，置顶保留 InvalidOperationException → 404。明确拒绝保持安静，其余已消费异常分别生成 `post.edit_failed` / `post.top_failed` Error，仅带固定 failureKind。未消费异常仍由 API `http.failed` 记录；正常 4xx BusinessException 继续安静。
 - 输入预检、权限查询、提交台账、版本追加、CAS、分类 / 标签计数、重放 / 无变化和事务边界不变。置顶详情读取仍在事务内，读取故障或不可见帖子仍走原回滚；编辑前置查询在 Controller catch 外，其失败继续由 API 处理。
 - 旧 / 候选 × Development / Production 回归覆盖真实 PostService、ForumContentWriteService、TranAop、Controller、结果过滤器及内存 API 管道。SQLite 补验真实帖子行在置顶成功时提交、详情故障 / 不可见时回滚、编辑完成台账失败时回滚；其他仓储、台账及版本服务为 mock，不代表全部数据表联合持久化或 PostgreSQL 验收。
-- `ForumContentRevisionService.RestorePostAsync` 仍将普通参数 / 操作异常转换为 409，尚未区分依赖故障；随后继续 QuestionController 与框架来源。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-controller-2026-10-02.md)。
+- `ForumContentRevisionService.RestorePostAsync` 的后续异常消费治理见第 42 节；QuestionController 与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-controller-2026-10-02.md)。
+
+## 42. L2 帖子版本恢复最终消费
+
+- `ForumContentRevisionService.RestorePostAsync` 在 PostService 更新异常成功转换为原 409 BusinessException 后，对普通 ArgumentException / InvalidOperationException 生成一次 `post.restore_failed` Error，仅带固定 failureKind；明确的 PostContentValidationException / PostOperationRejectedException 继续安静。
+- 原响应消息、ContentRejected / EditLimitReached 错误码及消息键、按“次数”选择错误码的旧逻辑保持。分类器不读取异常原文；业务转换仍按原契约读取 Message。如果转换本身失败，恢复服务未消费成功，不先生成 Error，新的失败继续交给 API。
+- 前置授权、版本 / 分类 / 标签 / 附件检查及后续快照追加、台账完成在该 catch 外。普通故障继续传播，由 API 记录一次 `http.failed`；原 4xx BusinessException 安静，5xx BusinessException 由 API 记录。PostController 恢复入口不重复记录。
+- 恢复规则、CAS、正文 / 封面更新、不可变版本及标签 / 附件引用、UTC 审计、提交台账、重放 / 重复和事务边界不变。四模式回归覆盖真实 PostService、版本服务、写入服务、TranAop 与 Controller；SQLite 验证帖子、版本、标签快照和附件引用四类记录成功提交或共同回滚。分类 / 标签主数据与提交台账依赖仍为 mock，不代表完整持久化、并发或 PostgreSQL 验收。
+- 下一项为 QuestionController 的参数 / 业务 / 聚合异常最终消费；生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-restore-2026-10-02.md)。

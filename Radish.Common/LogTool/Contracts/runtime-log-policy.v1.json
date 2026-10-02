@@ -212,6 +212,7 @@
     "content_submission.conflict_resolved": "Content submission conflict resolved from an existing record.",
     "post.edit_failed": "Post edit operation consumed a failure.",
     "post.top_failed": "Post top operation consumed a failure.",
+    "post.restore_failed": "Post restore consumed a failure.",
     "order.purchase_failed": "Purchase stage consumed a failure.",
     "coin.balance_query_rejected": "Balance query rejected.",
     "coin.transaction_query_rejected": "Transaction query rejected.",
