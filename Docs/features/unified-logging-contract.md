@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶与版本恢复最终消费见第 30–42 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票及抽奖最终消费见第 30–45 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -413,4 +413,15 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 未消费的 IO / 超时 / 取消 / InvalidOperationException 等继续由 API 最终处理。Controller 不新增聚合异常解包；事务 AOP 现有单一聚合解包保持。异常 Message getter 若使响应构造失败，Controller 不提前输出 Error，API 记录最终失败。
 - 投票记录、选项 / 总计数、截止判断、作者权限、UTC 审计、匿名查看和返回载荷保持；重复投票 / 再次关闭仍返回原 409。写入后的帖子详情刷新仍在原事务内，刷新失败或帖子不可见会回滚，不因已生成过写入而提交。
 - 四模式回归使用真实 PostPollService、PostService、ForumProfile、BaseRepository、TranAop 与 SQLite 的 Post / PostPoll / PostPollOption / PostPollVote 表，验证成功提交、阶段故障 / 刷新拒绝回滚、排序 / 比例 / 总数回退和唯一约束故障归属。辅助标签 / 问答依赖为 mock；唯一约束用受控前置查询触发，不代表真实并发、PostgreSQL、认证 / MVC 模型验证或 HTTP 宿主验收。
-- 下一项为 LotteryController / PostLotteryService 抽奖消费边界，结合手动 / 自动开奖核对故障归属；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-poll-controller-2026-10-02.md)。
+- LotteryController / PostLotteryService 抽奖消费边界的后续治理见第 45 节；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-poll-controller-2026-10-02.md)。
+
+## 45. L2 抽奖 Controller 最终消费
+
+- 项目所有者已确认新增 `LotteryInputValidationException : ArgumentException`，仅标记 PostLotteryService 查询 / 手动开奖的两处非正帖子 ID 校验。消息、参数名和 HTTP 响应保持；自动开奖的同类检查继续抛原 ArgumentException，由任务边界按故障处理。
+- LotteryController 两个入口在原响应成功构造后，对其他 ArgumentException 输出 `lottery.request_failed` Error，仅含 failureKind；已消费的 5xx BusinessException 输出 `http.failed` Error，仅含 statusCode / failureKind。明确参数拒绝、模型 / 登录预检、4xx 业务拒绝和正常成功保持安静，错误码 / 消息键及不复制 MessageArguments 的行为不变。
+- 未消费异常继续交给 API；Controller 不新增聚合异常解包，TranAop 原有单一聚合解包保持。Message getter 若使响应构造失败，Controller 不提前输出日志，API 记录最终失败。服务不新增 catch 或失败日志；自动开奖仍由 PostLotteryJob 生成既有批次摘要，任务中的 4xx 业务异常仍计作失败，扫描失败继续向外传播。
+- 参与池筛选、同一作者最早父评论、中奖人数上下限、内容快照、作者权限、一小时手动门槛、截止时间与审计字段不变。自动开奖按配置截止时间筛选及留痕；手动空池返回 409，自动空池完成结算且不入队通知。重复开奖仍返回 409，不新增幂等成功、重试或补偿。
+- 中奖记录、开奖主体、通知 Outbox 入队和详情刷新继续处于原事务内；Outbox 写入后或详情刷新失败会共同回滚。通知业务键 / 任务键、接收者、模板、目标、身份和时间保持，不将日志裁剪作用于权威载荷。
+- 发现既有 SQLite 时间边界：自动截止时间读回为 Unspecified，ReliableOutboxRepository 按本地时区调用 ToUniversalTime；在本机 Asia/Shanghai 下，Outbox 信封时间相对中奖 / 通知载荷时间提前 8 小时。本批保留并记录现状，不将日志回归视为 UTC 契约修复；时间规范化需独立确认。
+- 四模式回归使用真实 PostLotteryService、PostService、ForumProfile、BaseRepository、ReliableOutboxService / Repository、TranAop、PostLotteryJob 及 SQLite 五表，覆盖成功提交、晚期失败回滚、空池、批次部分失败与继续处理；辅助标签 / 投票 / 问答依赖为 mock，API 为内存管道。不代表 PostgreSQL、真实并发开奖、认证 / MVC 模型绑定、宿主或通知投递验收。
+- 下一项为 TagController / TagService 创建与更新的 InvalidOperationException 最终消费，区分重名拒绝和依赖故障。其余业务与框架来源仍待治理，生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-lottery-controller-2026-10-02.md)。

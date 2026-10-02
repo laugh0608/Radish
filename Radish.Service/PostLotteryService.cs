@@ -49,7 +49,7 @@ public class PostLotteryService : IPostLotteryService
     {
         if (postId <= 0)
         {
-            throw new ArgumentException("帖子ID必须大于0", nameof(postId));
+            throw new LotteryInputValidationException("帖子ID必须大于0", nameof(postId));
         }
 
         var post = await _postService.GetPostDetailAsync(postId, viewerUserId);
@@ -81,7 +81,7 @@ public class PostLotteryService : IPostLotteryService
 
         if (postId <= 0)
         {
-            throw new ArgumentException("帖子ID必须大于0", nameof(postId));
+            throw new LotteryInputValidationException("帖子ID必须大于0", nameof(postId));
         }
 
         var post = await GetPostOrThrowAsync(postId);
