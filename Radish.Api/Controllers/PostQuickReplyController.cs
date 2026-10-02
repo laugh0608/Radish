@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -67,6 +69,9 @@ public class PostQuickReplyController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
+            Log.ForContext("EventCode", "quick_reply.query_rejected")
+                .ForContext("SourceCategory", "business")
+                .Warning("Quick reply query rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return new MessageModel
             {
                 IsSuccess = false,
@@ -157,6 +162,12 @@ public class PostQuickReplyController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
+            }
             return new MessageModel
             {
                 IsSuccess = false,
@@ -211,6 +222,12 @@ public class PostQuickReplyController : ControllerBase
         }
         catch (BusinessException ex)
         {
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
+            }
             return new MessageModel
             {
                 IsSuccess = false,

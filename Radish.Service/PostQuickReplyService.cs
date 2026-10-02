@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -431,13 +432,15 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
                 new NotificationRequestedTaskPayload(notification),
                 quickReply.CreateTime);
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
         {
-            _logger?.LogWarning(ex,
-                "[PostQuickReplyService] 发送轻回应通知失败，PostId={PostId}, QuickReplyId={QuickReplyId}, ReceiverUserId={ReceiverUserId}",
-                post.Id,
-                quickReply.Id,
-                post.AuthorId);
+            // Controller 会将 ArgumentException 转成 400，通知阶段失败不会到达 API 最终日志边界。
+            // 其他异常继续交给上层最终消费点记录。
+            using var scope = _logger?.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "quick_reply.notification_enqueue_failed", ["SourceCategory"] = "business"
+            });
+            _logger?.LogError("Quick reply notification enqueue failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             throw;
         }
     }

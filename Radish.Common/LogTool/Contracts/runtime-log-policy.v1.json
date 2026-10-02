@@ -182,6 +182,8 @@
     "payment.locks_cleared": "Expired payment locks cleared.",
     "payment.suggestions_failed": "Payment security suggestions consumed a failure.",
     "user_follow.notification_enqueue_failed": "Follow notification enqueue failed before a handled response.",
+    "quick_reply.notification_enqueue_failed": "Quick reply notification enqueue failed before a handled response.",
+    "quick_reply.query_rejected": "Quick reply query rejected.",
     "notification.push_failed": "Notification realtime push is unavailable.",
     "notification.connection_closed": "Notification connection closed with a failure.",
     "chat.connection_closed": "Chat connection closed with a failure.",
