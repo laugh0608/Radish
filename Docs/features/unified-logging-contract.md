@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub 与评论实时推送见第 30–35 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送与 CommentHub 见第 30–36 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -337,4 +337,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - CommentCreated / CommentUpdated / CommentDeleted / CommentLikeChanged / CommentHighlightsChanged 的事件名、`post-comments:{postId}` 组名、对象载荷、父 / 根评论关系及 UTC 事件时间保持原义。创建 / 更新仍在帖子或评论 Id 非正时短路，高亮无变更或帖子 Id 非正时短路；删除 / 点赞原本没有该校验，本批不扩张参数规则。
 - 唯一直接生产消费者 CommentController 保留创建、点赞、删除、编辑及版本恢复的写入 / 读取 / 重算 / 推送顺序与响应。首个推送失败后仍尝试高亮推送；幂等重放、重复内容、无变更不重复发送；创建 / 点赞的详情缺失仍可发送高亮，编辑 / 恢复详情缺失则不重算或发送。
 - 推送 catch 不扩展到 Controller 的业务写入、详情读取或高亮重算；这些步骤原有异常传播、ArgumentException / InvalidOperationException 响应映射及软删除审计字段均保留。Controller 原有静默 400 消费边界未新增日志，不据此宣称所有业务失败已有最终日志。
-- 旧 / 候选 × Development / Production 回归使用真实推送服务、真实 Controller 与 mock SignalR / 业务依赖；不代表真实数据库事务、幂等并发或 WebSocket 验收。CommentHub 自有日志、CommentService 神评 / 沙发计算与填充日志、SignalR 框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-realtime-2026-10-02.md)。
+- 旧 / 候选 × Development / Production 回归使用真实推送服务、真实 Controller 与 mock SignalR / 业务依赖；不代表真实数据库事务、幂等并发或 WebSocket 验收。CommentHub 自有日志的后续治理见第 36 节；CommentService 神评 / 沙发计算与填充日志、SignalR 框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-realtime-2026-10-02.md)。
+
+## 36. L2 CommentHub 自有日志
+
+- 移除加入 / 离开帖子组的逐次 Debug 与不再使用的 ILogger 注入；CommentHub 自有路径不再生成运行日志。不新增 Warning / Error 或捕获边界，正常调用与向外传播的失败均不在 Hub 重复记录。
+- 加入时非正帖子 Id 仍抛原 HubException；离开和输入中对非正帖子 Id 仍直接返回。加入 / 离开继续等待既有组操作，不新增身份查询或权限校验；`post-comments:{postId}` 组名保持不变。
+- 输入中继续通过原 normalizer 读取身份，只有 IsAuthenticated 且 UserId 为正时发送 CommentTyping 给 OthersInGroup。帖子 / 可空评论 / 用户 Id、名称空白回退 Unknown、UTC 时间与凭据选择顺序保持原义；原本未校验的 commentId 不增加约束。
+- 四种输出模式使用 DI 激活真实 Hub，验证分组等待、参数短路、广播载荷、query / header 凭据传递及原异常实例传播。旧路径显式捕获 Trace 以上日志，候选 Development 开启 diagnostics，避免用输出过滤掩盖逐次日志。
+- 回归覆盖 Hub 方法和 mock 分组 / 发送 / normalizer，不能替代真实 SignalR 调度、WebSocket 或认证中间件验收。CommentHub 自有日志已收口，CommentService 和框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-hub-2026-10-02.md)。
