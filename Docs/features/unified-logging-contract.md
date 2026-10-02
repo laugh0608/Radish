@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，用户关注通知入队与通知创建 / 推送见第 30–31 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送及通知 Hub 见第 30–32 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -309,3 +309,10 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 接收者规范化、偏好与屏蔽规则、强制分类、目标与模板校验、通知身份快照、入箱持久化与 revision、两种推送载荷均保持不变。`ReliableTaskProcessor` 继续以 Outbox 租户和发生时间覆盖载荷值；NotificationRequested 的 ArgumentException / JsonException 仍转为永久失败，其余失败按既有路径交给 Outbox 最终状态写入所有者输出 `outbox.retrying / outbox.dead_letter`。
 - 旧 / 候选 × Development / Production 覆盖正常 / 抑制 / 混合接收者、推送两阶段降级、依赖失败重试与死信。使用真实 Service、Processor、ExecutionJob、PushService、SQLite Outbox，加上 mock 收件箱 / 用户仓储与 SignalR；既有 SQLite 收件箱回归覆盖仓储幂等，不代表真实网络、PostgreSQL 或全通知系统验收。
 - 本批不改权威失败摘要、重试次数、审计、租约或推送可靠性；`NotificationHub` 连接生命周期与 SignalR 框架日志仍待治理。生产候选开关继续关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-notification-creation-2026-10-02.md)。
+
+## 32. L2 通知 Hub 连接生命周期
+
+- `NotificationHub.OnDisconnectedAsync` 在传入异常非空且原分组清理成功后，输出 `notification.connection_closed` Warning，仅包含受控 failureKind；不传递异常对象、用户 / 租户 ID、连接 ID 或凭据。正常连接和断开继续安静，不新增连接计数或逐用户摘要。
+- 身份标准化、query access_token 优先于 Authorization 的既有读取规则、用户组名、连接初始化 revision / 兼容角标与调用顺序保持不变。连接时用户 ID 无效仍拒绝；断开时 ID 非正仍跳过移组；身份解析、加 / 移组、摘要或发送失败继续原样传播，不新增 catch、重试或兜底。
+- 该事件描述 Hub 收到的异常断开原因，不替代 SignalR 框架最终处理日志。与本机运行时相同的 ASP.NET Core 10.0.8 源码显示，连接初始化、消息处理及断开回调失败分别由框架记录；消息处理失败还可能传入 Hub 回调。因此不宣称全连接故障只输出一条事件，也不将 SignalR 整体来源视为已迁移。
+- 新回归覆盖旧 / 候选 × Development / Production，验证原异常实例、清理前不记录、清理失败仍传播、正常初始化载荷、身份拒绝及凭据选择。证据为真实 Hub 方法与 mock SignalR / 业务依赖；不替代真实 WebSocket、框架调度或认证中间件验收。生产开关保持关闭，见[本批记录与框架依据](../records/unified-logging-l2-notification-hub-2026-10-02.md)。

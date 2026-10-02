@@ -278,7 +278,14 @@ public sealed class UserFollowLoggingTests
         public Capture(bool candidate, string environment)
         {
             var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate) RuntimeLoggingConfiguration.Configure(config, new ConfigurationBuilder().Build(), environment, "api", _output, _output);
+            if (candidate)
+            {
+                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["RadishLogging:Mode"] = environment
+                }).Build();
+                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
+            }
             else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
             Logger = config.CreateLogger();
             Log.Logger = Logger;

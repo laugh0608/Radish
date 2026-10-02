@@ -18,6 +18,7 @@
 
 ## 验证
 
+- 后续校准：初轮只显式切换宿主环境，候选日志模式仍默认 Production；同日 [Hub 批次](./unified-logging-l2-notification-hub-2026-10-02.md)已补齐候选 Mode 并完成三批相关回归，开发 / 生产模式证据以该次复测为准。
 - 定向 .NET 测试 **63 / 63** 通过，无跳过：新增关注日志测试、既有关注 Service / Controller / SQLite 仓储测试及 RuntimeLogPolicy / RuntimeLoggingAdapter 测试。
 - 新增测试覆盖旧 / 候选 × Development / Production 四种组合；使用真实 Service、Controller、ReliableOutboxService，mock 仓储及内存 HTTP 错误管道。验证通知资料 / 头像读取 / Outbox 写入的消费与上抛异常、原异常实例、原响应、缺失 Outbox、成功载荷、重复关注及安全输出。
 - 首轮 2 项失败是新测试将来源类名 `ApiExceptionHandler` 误判为异常泄漏；修正过宽断言后全部通过。

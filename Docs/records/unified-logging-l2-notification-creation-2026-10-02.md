@@ -12,6 +12,7 @@
 
 ## 验证
 
+- 后续校准：初轮只显式切换宿主环境，候选日志模式仍默认 Production；同日 [Hub 批次](./unified-logging-l2-notification-hub-2026-10-02.md)已补齐候选 Mode 并完成三批相关回归，开发 / 生产模式证据以该次复测为准。
 - 定向 .NET 测试 **68 / 68** 通过，无跳过：新通知创建日志测试、既有通知 Service、屏蔽政策、可靠通知 Processor、SQLite 收件箱仓储、RuntimeLogPolicy / RuntimeLoggingAdapter。
 - 新测试覆盖旧 / 候选 × Development / Production；真实 NotificationService、PushService、ReliableTaskProcessor、ExecutionJob、ReliableOutboxService / Repository 和内存 SQLite Outbox，mock 用户 / 收件箱仓储及 SignalR 客户端。
 - 验证全部抑制不写不推且任务成功、混合接收者与源事件上下文、推送分组 / 第一事件 / 第二事件失败均不重试、通知依赖失败的重试耗尽 / 永久失败日志安全。收件箱 mock 的幂等返回验证 Service 不补推；真实仓储幂等由既有 SQLite 回归覆盖。

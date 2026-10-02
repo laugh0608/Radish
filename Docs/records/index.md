@@ -3,6 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-02 L2 通知 Hub 生命周期日志治理](./unified-logging-l2-notification-hub-2026-10-02.md)：安全异常断开事件、连接行为回归及 SignalR 框架边界
 - [2026-10-02 L2 通知创建与实时推送日志治理](./unified-logging-l2-notification-creation-2026-10-02.md)：偏好抑制安静、推送安全降级及 SQLite Outbox 异常所有权回归
 - [2026-10-02 L2 用户关注通知入队日志治理](./unified-logging-l2-user-follow-2026-10-02.md)：异常所有权、安全日志、原有业务与独立事务边界
 - [2026-10-01 dev → master 批次回归](./master-pr-regression-2026-10-01.md)：近期部署 / Console 修复及日志 L1 / L2 集成前检查
