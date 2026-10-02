@@ -404,4 +404,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - AggregateException 的原 Flatten / 单一已知异常解包规则保持；多异常、空聚合及未知异常仍由 API 最终处理。若 Message getter 在构造响应时抛错，Controller 不提前输出 Error，继续按原直接 catch / 异常过滤器语义传播，由 API 记录一次；正常响应的消息参数规范化、错误码和消息键不变。
 - 回答创建 / 编辑 / 删除 / 恢复、采纳 / 撤销的提交台账、CAS、不可变版本、附件绑定、采纳审计、通知业务键 / 载荷与事务边界不变。读取分页、版本权限、正常拒绝和成功重放保持原义，不新增重试或补偿。
 - 四模式回归覆盖真实 ForumQuestionService、问答仓储、ContentSubmissionService、ReliableOutboxService、TranAop、Controller、结果过滤器及内存 API 管道。SQLite 验证回答、版本、附件及引用、采纳记录、台账和 Outbox 的提交 / 回滚；包含通知实际写入后再抛错。不代表 PostgreSQL、并发请求、真实宿主、附件存储或消息投递验收。
-- 下一项为 PollController / PostPollService 投票消费边界；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-question-controller-2026-10-02.md)。
+- PollController / PostPollService 投票消费边界的后续治理见第 44 节；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-question-controller-2026-10-02.md)。
+
+## 44. L2 投票 Controller 最终消费
+
+- 项目所有者已确认新增 `PollInputValidationException : ArgumentException`，仅标记 PostPollService 查询 / 投票 / 关闭的四处现有帖子与选项 ID 校验。原消息、参数名、父类消费和 HTTP 状态保持，不新增业务规则。
+- PollController 三个入口在原响应成功构造后，对其他 ArgumentException 生成 `poll.request_failed` Error，仅带 failureKind；已消费的 5xx BusinessException 使用 `http.failed` Error，仅带 statusCode / failureKind。明确参数拒绝与 4xx BusinessException 安静，原错误码 / 消息键保留，原未复制的 MessageArguments 不新增。
+- 未消费的 IO / 超时 / 取消 / InvalidOperationException 等继续由 API 最终处理。Controller 不新增聚合异常解包；事务 AOP 现有单一聚合解包保持。异常 Message getter 若使响应构造失败，Controller 不提前输出 Error，API 记录最终失败。
+- 投票记录、选项 / 总计数、截止判断、作者权限、UTC 审计、匿名查看和返回载荷保持；重复投票 / 再次关闭仍返回原 409。写入后的帖子详情刷新仍在原事务内，刷新失败或帖子不可见会回滚，不因已生成过写入而提交。
+- 四模式回归使用真实 PostPollService、PostService、ForumProfile、BaseRepository、TranAop 与 SQLite 的 Post / PostPoll / PostPollOption / PostPollVote 表，验证成功提交、阶段故障 / 刷新拒绝回滚、排序 / 比例 / 总数回退和唯一约束故障归属。辅助标签 / 问答依赖为 mock；唯一约束用受控前置查询触发，不代表真实并发、PostgreSQL、认证 / MVC 模型验证或 HTTP 宿主验收。
+- 下一项为 LotteryController / PostLotteryService 抽奖消费边界，结合手动 / 自动开奖核对故障归属；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-poll-controller-2026-10-02.md)。
