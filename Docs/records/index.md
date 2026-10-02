@@ -3,6 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-02 L2 评论神评 / 沙发实时重算与标识填充日志治理](./unified-logging-l2-comment-highlight-2026-10-02.md)：安全失败、奖励 / 缓存顺序和部分写入边界回归
 - [2026-10-02 L2 CommentHub 自有日志治理](./unified-logging-l2-comment-hub-2026-10-02.md)：分组安静、身份与广播载荷保留、DI 激活和失败传播回归
 - [2026-10-02 L2 评论实时推送日志治理](./unified-logging-l2-comment-realtime-2026-10-02.md)：五类事件安全降级及 Controller 写入 / 重放 / 失败传播回归
 - [2026-10-02 L2 ChatHub 自有日志治理](./unified-logging-l2-chat-hub-2026-10-02.md)：连接 / 频道安静、安全异常断开与 presence 回归

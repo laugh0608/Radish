@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送与 CommentHub 见第 30–36 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub 与评论高亮链见第 30–37 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 ## 6. L2 候选生成入口
 
@@ -337,7 +337,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - CommentCreated / CommentUpdated / CommentDeleted / CommentLikeChanged / CommentHighlightsChanged 的事件名、`post-comments:{postId}` 组名、对象载荷、父 / 根评论关系及 UTC 事件时间保持原义。创建 / 更新仍在帖子或评论 Id 非正时短路，高亮无变更或帖子 Id 非正时短路；删除 / 点赞原本没有该校验，本批不扩张参数规则。
 - 唯一直接生产消费者 CommentController 保留创建、点赞、删除、编辑及版本恢复的写入 / 读取 / 重算 / 推送顺序与响应。首个推送失败后仍尝试高亮推送；幂等重放、重复内容、无变更不重复发送；创建 / 点赞的详情缺失仍可发送高亮，编辑 / 恢复详情缺失则不重算或发送。
 - 推送 catch 不扩展到 Controller 的业务写入、详情读取或高亮重算；这些步骤原有异常传播、ArgumentException / InvalidOperationException 响应映射及软删除审计字段均保留。Controller 原有静默 400 消费边界未新增日志，不据此宣称所有业务失败已有最终日志。
-- 旧 / 候选 × Development / Production 回归使用真实推送服务、真实 Controller 与 mock SignalR / 业务依赖；不代表真实数据库事务、幂等并发或 WebSocket 验收。CommentHub 自有日志的后续治理见第 36 节；CommentService 神评 / 沙发计算与填充日志、SignalR 框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-realtime-2026-10-02.md)。
+- 旧 / 候选 × Development / Production 回归使用真实推送服务、真实 Controller 与 mock SignalR / 业务依赖；不代表真实数据库事务、幂等并发或 WebSocket 验收。CommentHub 自有日志的后续治理见第 36 节；CommentService 神评 / 沙发计算与填充日志的后续治理见第 37 节；SignalR 框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-realtime-2026-10-02.md)。
 
 ## 36. L2 CommentHub 自有日志
 
@@ -345,4 +345,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 加入时非正帖子 Id 仍抛原 HubException；离开和输入中对非正帖子 Id 仍直接返回。加入 / 离开继续等待既有组操作，不新增身份查询或权限校验；`post-comments:{postId}` 组名保持不变。
 - 输入中继续通过原 normalizer 读取身份，只有 IsAuthenticated 且 UserId 为正时发送 CommentTyping 给 OthersInGroup。帖子 / 可空评论 / 用户 Id、名称空白回退 Unknown、UTC 时间与凭据选择顺序保持原义；原本未校验的 commentId 不增加约束。
 - 四种输出模式使用 DI 激活真实 Hub，验证分组等待、参数短路、广播载荷、query / header 凭据传递及原异常实例传播。旧路径显式捕获 Trace 以上日志，候选 Development 开启 diagnostics，避免用输出过滤掩盖逐次日志。
-- 回归覆盖 Hub 方法和 mock 分组 / 发送 / normalizer，不能替代真实 SignalR 调度、WebSocket 或认证中间件验收。CommentHub 自有日志已收口，CommentService 和框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-hub-2026-10-02.md)。
+- 回归覆盖 Hub 方法和 mock 分组 / 发送 / normalizer，不能替代真实 SignalR 调度、WebSocket 或认证中间件验收。CommentHub 自有日志已收口；CommentService 高亮链的后续治理见第 37 节，框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-hub-2026-10-02.md)。
+
+## 37. L2 评论神评 / 沙发实时重算与标识填充
+
+- CommentService 移除实时重算、扫描、逐项更新与递归标识填充的 Info / Debug。既有消费点使用 `comment.god_recheck_failed / comment.sofa_recheck_failed / comment.highlight_fill_failed` Error，外层重算 catch 使用 `comment.highlight_recheck_failed` Error；仅保留受控 failureKind，不记录帖子 / 评论 / 作者身份、内容快照、点赞数、排名、缓存键、奖励键或原始异常。
+- 实时开关、数量门槛、前五名查询、最高赞并列、稳定窗口与替换领先值、零赞清理、排名和快照保持不变。新高亮仍先退役旧记录、插入新记录、入队基础奖励再失效缓存；既有高亮的点赞增量仍先入队奖励再更新快照，原业务键、载荷和 UTC 入队时间不变。
+- 原 catch 继续消费计算 / 存储 / 入队 / 缓存异常，保留原返回对象；中途失败可能在已写入高亮或奖励后返回 NoChange。事务拦截器见到正常返回仍走 commit，不因安全 Error 自动回滚，日志也不宣称此前写入已撤销或高亮最终状态已同步。这一现有可靠性边界未在日志治理中改变。
+- 根评论页标识填充失败仍返回评论并继续作者资料填充；单条详情的高亮读取、外层分页和作者资料失败继续传播，不扩大 catch。递归填充保留神评 / 沙发布尔标识和排名；当前根页清空子评论，递归分支通过定向调用单独验证，不冒充页面运行态覆盖。
+- 真实 CommentService、ReliableOutboxService、TranAop 与 Controller 配合 mock 仓储 / 缓存 / SignalR 验证成功与无变更安静、失败单条事件、部分进度、创建 / 点赞 / 删除的返回与无变更高亮广播抑制；上一批 Controller 回归继续覆盖编辑 / 恢复的调用边界。持久化仅在内存 mock 中模拟，不代表真实 SQLite / PostgreSQL 事务、并发奖励或 Redis 验收。
+- 本批关闭上述高亮日志生成点；Controller 静默 400 消费边界及其余业务 / 框架来源继续治理，生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-highlight-2026-10-02.md)。
