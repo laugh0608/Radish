@@ -26,6 +26,22 @@ public sealed class OuterHttpFrameworkMetadataTests
     [InlineData(DiagnosticsAssembly, DeveloperLog, "DisplayErrorPageException", 3, "DisplayErrorPageException", LogLevel.Error)]
     [InlineData(DiagnosticsAssembly, DiagnosticsLog, "UnhandledException", 1, "UnhandledException", LogLevel.Error)]
     [InlineData(DiagnosticsAssembly, DiagnosticsLog, "RequestAbortedException", 4, "RequestAborted", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ConnectionStart", 1, "ConnectionStart", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ConnectionStop", 2, "ConnectionStop", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ConnectionPause", 4, "ConnectionPause", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ConnectionResume", 5, "ConnectionResume", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ConnectionKeepAlive", 9, "ConnectionKeepAlive", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ConnectionDisconnect", 10, "ConnectionDisconnect", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "NotAllConnectionsClosedGracefully", 16, "NotAllConnectionsClosedGracefully", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "NotAllConnectionsAborted", 21, "NotAllConnectionsAborted", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ConnectionRejected", 24, "ConnectionRejected", LogLevel.Warning)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ApplicationAbortedConnection", 34, "ApplicationAbortedConnection", LogLevel.Information)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+ConnectionsLog", "ConnectionAccepted", 39, "ConnectionAccepted", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+BadRequestsLog", "ConnectionBadRequest", 17, "ConnectionBadRequest", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+BadRequestsLog", "RequestProcessingError", 20, "RequestProcessingError", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+BadRequestsLog", "RequestBodyMinimumDataRateNotSatisfied", 27, "RequestBodyMinimumDataRateNotSatisfied", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+BadRequestsLog", "ResponseMinimumDataRateNotSatisfied", 28, "ResponseMinimumDataRateNotSatisfied", LogLevel.Debug)]
+    [InlineData(KestrelAssembly, "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.KestrelTrace+BadRequestsLog", "PossibleInvalidHttpVersionDetected", 54, "PossibleInvalidHttpVersionDetected", LogLevel.Debug)]
     public void LoggerMapping_ShouldMatchInstalledFramework(string assembly, string owner, string method, int id, string name, LogLevel level)
     {
         var type = Assembly.Load(assembly).GetType(owner, true)!;

@@ -18,6 +18,9 @@ public sealed class OuterHttpFrameworkSinkTests
     private const string Hosting = "Microsoft.AspNetCore.Hosting.Diagnostics";
     private const string Kestrel = "Microsoft.AspNetCore.Server.Kestrel";
 
+    private const string Connections = Kestrel + ".Connections";
+    private const string BadRequests = Kestrel + ".BadRequests";
+
     [Theory]
     [InlineData(Developer, 1, "UnhandledException", "http.developer_exception")]
     [InlineData(Developer, 2, "ResponseStarted", "http.developer_response_started")]
@@ -41,6 +44,26 @@ public sealed class OuterHttpFrameworkSinkTests
     [InlineData(Hosting, 6, "ApplicationError", "http.hosting_unclassified")]
     [InlineData(Hosting, 6, "", "http.hosting_unclassified")]
     [InlineData(Kestrel, 999, "ApplicationError", "http.server_unclassified")]
+    [InlineData(Connections, 1, "ConnectionStart", "http.connection_started")]
+    [InlineData(Connections, 2, "ConnectionStop", "http.connection_stopped")]
+    [InlineData(Connections, 4, "ConnectionPause", "http.connection_paused")]
+    [InlineData(Connections, 5, "ConnectionResume", "http.connection_resumed")]
+    [InlineData(Connections, 9, "ConnectionKeepAlive", "http.connection_keep_alive")]
+    [InlineData(Connections, 10, "ConnectionDisconnect", "http.connection_disconnected")]
+    [InlineData(Connections, 16, "NotAllConnectionsClosedGracefully", "http.connection_close_incomplete")]
+    [InlineData(Connections, 21, "NotAllConnectionsAborted", "http.connection_abort_incomplete")]
+    [InlineData(Connections, 24, "ConnectionRejected", "http.connection_rejected")]
+    [InlineData(Connections, 34, "ApplicationAbortedConnection", "http.connection_application_aborted")]
+    [InlineData(Connections, 39, "ConnectionAccepted", "http.connection_accepted")]
+    [InlineData(BadRequests, 17, "ConnectionBadRequest", "http.bad_request")]
+    [InlineData(BadRequests, 20, "RequestProcessingError", "http.request_processing_ended")]
+    [InlineData(BadRequests, 27, "RequestBodyMinimumDataRateNotSatisfied", "http.request_rate_insufficient")]
+    [InlineData(BadRequests, 28, "ResponseMinimumDataRateNotSatisfied", "http.response_rate_insufficient")]
+    [InlineData(BadRequests, 54, "PossibleInvalidHttpVersionDetected", "http.protocol_mismatch")]
+    [InlineData(Connections, 24, null, "http.connection_unclassified")]
+    [InlineData(Connections, 24, "Wrong", "http.connection_unclassified")]
+    [InlineData(BadRequests, 17, "", "http.bad_request_unclassified")]
+    [InlineData(BadRequests, 999, "ConnectionBadRequest", "http.bad_request_unclassified")]
     public void Adapter_ShouldKeepMetadataAndNeverReadOrMutateOriginalPayload(string source, int id, string? name, string expected)
     {
         var sink = new HttpBoundaryTestSink();
@@ -75,8 +98,8 @@ public sealed class OuterHttpFrameworkSinkTests
     }
 
     [Theory]
-    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Connections")]
-    [InlineData("Microsoft.AspNetCore.Server.Kestrel.BadRequests")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Connections.Custom")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.BadRequests.Custom")]
     [InlineData("Microsoft.AspNetCore.Server.Kestrel.Http2")]
     [InlineData("Microsoft.AspNetCore.Server.Kestrel.Http3")]
     [InlineData("Microsoft.Extensions.Hosting.Internal.Host")]
@@ -98,7 +121,7 @@ public sealed class OuterHttpFrameworkSinkTests
     {
         using var capture = new HttpBoundaryCapture(candidate, environment, diagnostics: false);
         using var scope = capture.SensitiveScope();
-        foreach (var (source, code) in new[] { (Developer, "http.developer_unclassified"), (Hosting, "http.hosting_unclassified"), (Kestrel, "http.server_unclassified") })
+        foreach (var (source, code) in new[] { (Developer, "http.developer_unclassified"), (Hosting, "http.hosting_unclassified"), (Kestrel, "http.server_unclassified"), (Connections, "http.connection_unclassified"), (BadRequests, "http.bad_request_unclassified") })
         {
             var logger = capture.Factory.CreateLogger(source);
             logger.LogWarning(new EventId(990, "FutureWarning"), new UnreadableException(), "{secret}", HttpBoundaryCapture.Secret);
@@ -152,13 +175,13 @@ public sealed class OuterHttpFrameworkSinkTests
     }
 
     [Fact]
-    public void ConfiguredAuditOutput_ShouldReceiveAllThreeAdaptedSources()
+    public void ConfiguredAuditOutput_ShouldReceiveAllFiveAdaptedSources()
     {
         using var capture = new HttpBoundaryCapture(false, "Production", audit: true);
         using var scope = capture.SensitiveScope();
-        foreach (var source in new[] { Developer, Hosting, Kestrel })
+        foreach (var source in new[] { Developer, Hosting, Kestrel, Connections, BadRequests })
             capture.Factory.CreateLogger(source).LogError(new EventId(999, "FutureEvent"), new UnreadableException(), "{secret}", HttpBoundaryCapture.Secret);
-        Assert.Equal(new[] { "http.developer_unclassified", "http.hosting_unclassified", "http.server_unclassified" }, capture.Codes);
+        Assert.Equal(new[] { "http.developer_unclassified", "http.hosting_unclassified", "http.server_unclassified", "http.connection_unclassified", "http.bad_request_unclassified" }, capture.Codes);
         capture.AssertSafe();
     }
 

@@ -3,6 +3,10 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-07 日志 L2 Kestrel 连接 / 坏请求治理](./unified-logging-l2-kestrel-connections-2026-10-07.md)：18 个安全事件编码、四模式真实解析 / 连接限流与生命周期回归
+
+- [2026-10-07 日志 L2 Kestrel 连接 / 坏请求方案](./unified-logging-l2-kestrel-connections-plan-2026-10-07.md)：两类 16 个事件、连接收尾与协议拒绝边界及已确认实施范围
+
 - [2026-10-07 日志 L2 外层 HTTP 三来源适配](./unified-logging-l2-outer-http-2026-10-07.md)：开发异常页、Hosting / Kestrel 主来源安全输出与真实内存 HTTP/1 回归
 
 - [2026-10-07 日志 L2 外层 HTTP 框架方案](./unified-logging-l2-outer-http-plan-2026-10-07.md)：自动开发异常页、Hosting / Kestrel 所有权、运行时探针及已确认适配范围

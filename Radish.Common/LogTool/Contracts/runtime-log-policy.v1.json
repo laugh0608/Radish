@@ -281,7 +281,25 @@
     "http.server_protocol_downgraded": "HTTP server protocol configuration was downgraded.",
     "http.server_request_aborted": "HTTP server observed an aborted request.",
     "http.server_body_drain_failed": "HTTP server request body draining failed.",
-    "http.server_unclassified": "HTTP server event; raw content omitted."
+    "http.server_unclassified": "HTTP server event; raw content omitted.",
+    "http.connection_started": "Connection started.",
+    "http.connection_stopped": "Connection stopped.",
+    "http.connection_paused": "Connection paused.",
+    "http.connection_resumed": "Connection resumed.",
+    "http.connection_keep_alive": "Connection remains available.",
+    "http.connection_disconnected": "Connection disconnected.",
+    "http.connection_close_incomplete": "Graceful connection close incomplete.",
+    "http.connection_abort_incomplete": "Connection abort incomplete.",
+    "http.connection_rejected": "Connection limit rejected a connection.",
+    "http.connection_application_aborted": "Application aborted a connection.",
+    "http.connection_accepted": "Connection accepted.",
+    "http.bad_request": "Server rejected request data.",
+    "http.request_processing_ended": "Request processing ended abnormally.",
+    "http.request_rate_insufficient": "Request minimum data rate not satisfied.",
+    "http.response_rate_insufficient": "Response minimum data rate not satisfied.",
+    "http.protocol_mismatch": "Possible HTTP version mismatch.",
+    "http.connection_unclassified": "Connection event; raw content omitted.",
+    "http.bad_request_unclassified": "Bad request event; raw content omitted."
   },
   "properties": {
     "durationMs": {

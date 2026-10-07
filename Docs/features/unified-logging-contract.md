@@ -503,4 +503,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Kestrel 应用 / 回调失败、请求取消使用 `http.server_application_failed / server_request_aborted`，另区分心跳慢、应用未完成、无效响应头移除、协议降级和请求体收尾故障；未知使用 `http.server_unclassified`。OnStarting 失败停止后续启动回调；OnCompleted 失败保留已完成响应并继续其他回调。不同阶段不按请求去重。
 - Warning / Error / Critical 保持可见，低级别诊断继续受原最低等级 / diagnostics 控制。RuntimeProcess 仅移交 Generic Host 来源 EventId 11 的既有规则不变，不与 Hosting.Diagnostics 的 11 混同。
 - 四模式验证包含真实宿主自动管道组装、Hosting 请求生命周期，以及只接入内存 transport 的 Kestrel HTTP/1 处理。未绑定网络端口、运行项目宿主或访问生产；启动阶段告警与部分 Kestrel 告警只有真实生成方法 / 映射 / 元数据证据，不代表全部运行分支验收。
-- Kestrel 子类别、HTTPS / 证书、Http.Connections、协议 resolver、其他 Hosting / Lifetime 来源和非 Serilog 通道仍待分批治理；未对业务来源继承的任意 scope 做全局清理。生产候选开关关闭、L2 未整体完成。完整映射、测试与限制见[本批记录](../records/unified-logging-l2-outer-http-2026-10-07.md)。
+- Kestrel.Connections / BadRequests 的后续治理见第 54 节；HTTP/2 / HTTP/3、HTTPS / 证书、Http.Connections、协议 resolver、其他 Hosting / Lifetime 来源和非 Serilog 通道仍待分批治理；未对业务来源继承的任意 scope 做全局清理。生产候选开关关闭、L2 未整体完成。完整映射、测试与限制见[本批记录](../records/unified-logging-l2-outer-http-2026-10-07.md)。
+
+## 54. L2 Kestrel 连接与坏请求来源
+
+- `HttpServerFrameworkLogSink` 增加 Kestrel.Connections / BadRequests 两个精确类别，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出。按来源 + ID + Name 匹配 16 个已知事件；未知分别输出 `http.connection_unclassified / bad_request_unclassified`。输入时间、等级、类型化 trace/span 与受控 failureKind 保持，不复制原消息、异常原文、连接标识、请求数据或任意 scope。
+- 连接过程、应用终止、并发拒绝、关闭阶段、坏请求、请求处理异常结束、最低速率及版本不匹配分别使用受控编码；完整映射见本批记录。Warning / Error / Critical 保持可见；低级别继续遵循原 diagnostics 策略，候选 Development 的 Debug 仍规范为 Info + diagnostic，Production 过滤过程诊断。
+- HTTP/1 解析拒绝仍由框架返回原状态且可不建立 Hosting 请求上下文；实际连接限流直接释放连接，不生成 HTTP 429。应用终止、连续 keep-alive、输入异常、同步 / 异步连接完成回调与 transport 释放顺序不变。
+- 连接委托与完成回调故障仍是 Kestrel 主类别 `0 / Name=null / Error`，保留已有 `http.server_unclassified`；不同阶段不去重，不按原文本猜测事件。框架在 ILogger 前读取 BadHttpRequestException.Message 的行为不属于 sink 的控制范围。
+- 四模式真实 Kestrel HTTP/1 使用唯一内存 transport，无系统 bind、项目宿主或生产操作。部分速率 / 关闭 / 协议事件仅有真实生成方法与元数据 / 映射验证，不代表真实超时、流控或 HTTP/2 分支验收。
+- HTTP/2 / HTTP/3 / TLS、Socket transport、Http.Connections、协议 resolver、其他框架来源及非 Serilog 通道继续独立治理。生产候选开关关闭，L2 未整体完成；测试、限制及 18 个事件编码见[本批记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。
