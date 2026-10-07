@@ -135,7 +135,7 @@ public class StickerServiceTest
             .ReturnsAsync(new List<Sticker> { new() { Id = 91, GroupId = 13 } });
         var service = CreateService(groupRepository, stickerRepository);
 
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(() => service.BatchUpdateSortAsync(
+        var error = await Assert.ThrowsAsync<StickerRequestRejectedException>(() => service.BatchUpdateSortAsync(
             new BatchUpdateStickerSortDto
             {
                 GroupId = 12,

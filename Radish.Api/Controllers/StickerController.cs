@@ -5,6 +5,7 @@ using Microsoft.Extensions.Localization;
 using Radish.Api.Filters;
 using Radish.Api.Resources;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.Common.PermissionTool;
 using Radish.IService;
 using Radish.Model;
@@ -12,6 +13,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -176,22 +178,26 @@ public class StickerController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            LogConsumedFailure(ex);
+            return response;
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = 409,
                 MessageInfo = ex.Message,
                 Code = "CodeAlreadyExists"
             };
+            LogConsumedFailure(ex);
+            return response;
         }
     }
 
@@ -350,22 +356,26 @@ public class StickerController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            LogConsumedFailure(ex);
+            return response;
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = 409,
                 MessageInfo = ex.Message,
                 Code = "CodeAlreadyExists"
             };
+            LogConsumedFailure(ex);
+            return response;
         }
     }
 
@@ -420,19 +430,23 @@ public class StickerController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BuildError(
+            var response = BuildError(
                 (int)HttpStatusCodeEnum.BadRequest,
                 ex.Message,
                 ApiErrorCodes.ValidationFailed,
                 "error.common.validation_failed");
+            LogConsumedFailure(ex);
+            return response;
         }
         catch (InvalidOperationException ex)
         {
-            return BuildError(
+            var response = BuildError(
                 (int)HttpStatusCodeEnum.NotFound,
                 ex.Message,
                 "StickerGroupNotFound",
                 "error.sticker.group_not_found");
+            LogConsumedFailure(ex);
+            return response;
         }
     }
 
@@ -471,19 +485,23 @@ public class StickerController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return BuildError(
+            var response = BuildError(
                 (int)HttpStatusCodeEnum.BadRequest,
                 ex.Message,
                 ApiErrorCodes.ValidationFailed,
                 "error.common.validation_failed");
+            LogConsumedFailure(ex);
+            return response;
         }
         catch (InvalidOperationException ex)
         {
-            return BuildError(
+            var response = BuildError(
                 StatusCodes.Status409Conflict,
                 ex.Message,
                 "StickerSortSnapshotStale",
                 "error.common.conflict");
+            LogConsumedFailure(ex);
+            return response;
         }
     }
 
@@ -708,6 +726,17 @@ public class StickerController : ControllerBase
             MessageInfo = "获取成功",
             ResponseData = stickers
         };
+    }
+
+    private static void LogConsumedFailure(Exception exception)
+    {
+        if (exception is StickerInputValidationException or StickerRequestRejectedException)
+        {
+            return;
+        }
+
+        Log.ForContext("EventCode", "sticker.request_failed")
+            .Error("Sticker request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
     }
 
     private MessageModel BuildError(

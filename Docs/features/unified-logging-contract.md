@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-10-02。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-10-07。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，表情管理消费与降级边界见第 49 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 2026-10-02 日终静态复核补充：第 38、39、41 节中的早期轻回应 / 评论 / 帖子消费点仍在响应构造或失败结果转换之前记录日志，再读取异常 Message。若该 getter 自身抛错，可能已输出原消费事件，又把新异常交给 API；这类“错误处理再次失败”路径尚未包含在这些批次的单次输出结论中，后续需独立核对。第 42–48 节已在各自已列明的转换 / 响应边界补验先构造成功再记录，不应反推全部早期入口已经具备同样保证。
 
@@ -455,4 +455,15 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 单目标 / 批量汇总的规范化、有效 ID 去重、100 目标上限、空目标键、分组 / 排序 / 缩略图保持；汇总原本不检查目标存在或可见性。Toggle 的目标 / 贴纸可用性、10 种上限、软删除审计和 UTC 写入保持，返回汇总仍在原事务内，实际写入后或刷新失败继续回滚。
 - 真实 SQLite 发现既有恢复偏差：BaseRepository.QueryFirstAsync 默认排除软删除记录，Service 查找已删除回应不能命中，随后两次 Add 触发唯一约束并返回 409。添加 / 取消可提交，再次添加仍失败；本批只留痕，不将日志治理视为恢复功能修复。仅用显式代理提供已删除行时，另行验证原恢复分支的写入 / 回滚，不冒充真实仓储恢复成功。
 - 七组四模式回归覆盖真实 ReactionService、BaseRepository、TranAop、SQLite 的 Reaction / Post / Comment / StickerGroup / Sticker 五表及内存 API 管道。受控隐藏预读触发真实唯一约束，验证重试成功或耗尽；模拟第二次依赖故障与刷新失败验证日志所有权和回滚。附件 URL 解析为 mock；不代表真实并发、PostgreSQL、MVC 认证 / 模型绑定或 HTTP 宿主验收。
-- 下一项先核对 StickerController 创建分组 / 单表情、批量保存 / 排序的异常消费，确认方案后实施；其余业务与框架来源仍待治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-reaction-controller-2026-10-02.md)。
+- StickerController 创建分组 / 单表情、批量保存 / 排序的后续异常消费治理见第 49 节；其余业务与框架来源仍待治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-reaction-controller-2026-10-02.md)。
+
+## 49. L2 表情管理最终消费与降级边界
+
+- 项目所有者已确认新增 `StickerInputValidationException : ArgumentException` 与 `StickerRequestRejectedException : InvalidOperationException`，仅标记四个管理入口及共享附件解析的明确参数拒绝、标识冲突、目标缺失与排序快照失效。消息、参数名与父类消费保持；空请求仍为原 ArgumentNullException，排序实际写入不足仍为原 InvalidOperationException，不伪装成正常拒绝。
+- StickerController 的 CreateGroup / AddSticker / BatchAddStickers / BatchUpdateSort 在原响应成功构造后，对消费的其他 ArgumentException / InvalidOperationException 输出 `sticker.request_failed` Error，仅含 failureKind。明确拒绝、模型预检和成功保持安静，不按消息文本分类。Message getter 或本地化使响应构造失败时不提前记录，其他异常仍由 API 处理，Controller 不新增聚合异常解包。
+- 保留原响应映射：创建分组 / 单表情的 InvalidOperationException 为 `409 / CodeAlreadyExists`（包括单表情的目标缺失），批量添加为 `404 / StickerGroupNotFound`，排序为 `409 / StickerSortSnapshotStale`（包括实际写入不足）。本批仅治理日志，不把这些既有映射当成完善后的错误语义。
+- 批量附件构建在逐项失败结果成功构造后记录 `sticker.batch_item_failed` Error，不输出异常原文、分组 / 附件标识或表情内容；保留逐项错误消息与继续处理。存在任何失败项时不插入表情，返回原 `500 / ImageProcessFailed`；Controller 不重复记录该结果。附件构建中早先完成的数据库更新可能随正常返回提交，文件副作用不会因事务回滚自动删除。
+- 缩略图的失败结果、依赖异常与流释放失败归入 `sticker.thumbnail_failed` Warning，仅带固定 failureKind；失败结果不再输出 ErrorMessage。日志在流释放完成后生成，失败结果后释放再次失败只保留最终降级事件。缓存读 / 写 / 失效分别输出 `sticker.cache_read_failed`、`sticker.cache_write_failed`、`sticker.cache_invalidation_failed` Warning，保留回源、忽略缓存失败及继续写入的原行为，移除缓存键与异常原文。
+- 缩略图仍为尽力生成：空存储路径、Exists=false、Download=null 保持静默跳过；LocalFileStorage 将部分故障折叠为 false / null 的既有契约未改。共享附件解析同样供 UpdateSticker 使用，本批没有为该入口增加异常消费；缓存和缩略图共享方法的安全输出也覆盖其他调用者。
+- 保留代码规范化、GIF 判断、批次 50 项限制、冲突列表、排序空列表返回 0、审计字段与现有时间写入。批量添加 / 排序继续由原 TranAop 管理事务，真实部分写入后异常会回滚；创建分组 / 单表情无事务，写入后抛错仍保留已写数据。不增加重试、补偿、文件清理或新的业务事务。
+- 十组四模式回归覆盖真实 StickerService、BaseRepository、TranAop、SQLite 三表及内存 API / 结果过滤器，验证原响应、提交 / 回滚、逐项结果、文件副作用、安全日志和最终异常归属。存储 / 图片处理 / 缓存为故障可控的 mock，不代表真实图片处理、PostgreSQL、并发、MVC 认证 / 模型绑定或真实宿主验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)。
