@@ -474,3 +474,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 保留业务状态、消息、错误码、消息键、规范化参数、TraceId 与 `X-Correlation-ID`。成功处理的 4xx 不生成运行日志，5xx 继续由 API 输出一次安全 `http.failed`；非异常的普通 404 响应保持原状态与正文。
 - 响应已开始、写入失败与非 API / health 请求仍按原框架路径传播原异常，不因允许 404 而吞掉未完成的处理。原 SuppressDiagnosticsCallback 只覆盖已处理分支；这些未处理路径的旧日志仍可能携带原文，候选输出仍为安全 `runtime.unclassified`，本批不宣称全框架来源已治理。
 - 新增五组旧 / 候选 × Development / Production 内存管道回归；标签原 404 重抛测试改为校验完整响应及安静日志。覆盖 400 / 403 / 404 / 409 / 429 / 500 / 503、普通 404、已开始响应、写入失败与非 API 传播。响应开始状态通过 feature 模拟，未启动真实 HTTP / WebSocket 服务，不替代真实宿主验收。SignalR 来源与其他框架失败路径继续治理，见[本批记录](../records/unified-logging-l2-api-not-found-2026-10-07.md)。
+
+## 51. L2 SignalR Core 三类框架来源
+
+- `SignalRFrameworkLogSink` 在上下文合并后、旧 / 候选输出前，精确适配 `HubConnectionHandler`、`Internal.DefaultHubDispatcher` 和 `HubConnectionContext` 的 ILogger 来源；不按命名空间前缀吞掉其他框架日志。
+- 已知来源 + EventId / Name 映射为 `signalr.connect_failed / disconnect_failed / message_failed / close_failed / invocation_failed / stream_failed / invocation_rejected / handshake_failed / write_failed`。未知目标事件保留为 `signalr.unclassified`，不静默丢弃 Warning / Error。
+- 安全事件只保留固定模板、原等级 / 时间、可用 trace/span、固定 SourceContext、受控事件元数据及 failureKind；不读取或传递异常正文、动态方法名、客户端错误、身份、请求路径与任意 scope。非目标事件保持原行为。
+- 框架原 Debug / Trace 与低级别过程事件继续受最低等级 / diagnostics 控制，不统一升级为 Error。Hub 自有断开事件保留原时机；不同处理阶段与独立写入失败不按连接去重。Hub 授权、业务执行、协议响应、清理与异常传播不变。
+- 旧链的代码 Console / File / Database 与配置 WriteTo 均进入安全包装；AuditTo 继续传播输出失败，内部聚合异常可能增加包装层。候选入口与旧链仍互斥，生产开关保持关闭。
+- 四模式内存真实框架调度回归覆盖方法、绑定、生命周期、协议解析、握手及写入；另有未知事件、不可渲染异常 / 属性、配置 reload、SQL 属性保留、释放与审计失败回归。`ErrorSendingClose / FailedStreaming` 仅有映射及元数据证据，不代表真实分支验收。
+- 协议 resolver、Http.Connections、Kestrel 与 HTTP 未处理路径仍待治理；本批不代表真实 WebSocket / 宿主 / 日志库入库验收。准确映射与验证边界见[本批记录](../records/unified-logging-l2-signalr-core-2026-10-07.md)。

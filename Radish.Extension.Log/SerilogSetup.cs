@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -7,6 +8,7 @@ using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Serilog;
 using Serilog.Debugging;
+using Serilog.Configuration;
 using Serilog.Events;
 
 namespace Radish.Extension.Log;
@@ -25,26 +27,37 @@ public static class SerilogSetup
             // 获取配置选项（使用 IOptions 而非 IOptionsSnapshot，因为 Serilog 在 root provider 中初始化）
             var options = services.GetRequiredService<IOptions<SerilogOptions>>().Value;
 
-            // 解析最小日志级别
-            var minimumLevel = Enum.TryParse<LogEventLevel>(options.MinimumLevel, true, out var level)
-                ? level
-                : LogEventLevel.Information;
-
-            loggerConfiguration
-                .ReadFrom.Configuration(AppSettingsTool.Configuration)
-                .MinimumLevel.Is(minimumLevel)
-                .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
-                .Enrich.FromLogContext()
-                .Enrich.With<SensitiveQueryStringLogEnricher>()
-                .WriteToConsole(options)
-                .WriteToFile(options)
-                .WriteToDatabase(services, options);
+            ConfigureLegacy(loggerConfiguration, AppSettingsTool.Configuration, services, options);
 
             // 配置 Serilog 内部日志
             ConfigureSerilogSelfLog();
         });
 
         return host;
+    }
+
+    /// <summary>旧链共用接线；配置与代码 sink 均在上下文合并后接受安全事件。</summary>
+    public static void ConfigureLegacy(LoggerConfiguration logger, IConfiguration configuration,
+        IServiceProvider services, SerilogOptions options)
+    {
+        var minimumLevel = Enum.TryParse<LogEventLevel>(options.MinimumLevel, true, out var level)
+            ? level : LogEventLevel.Information;
+        logger.ReadFrom.Configuration(new SerilogConfigurationView(configuration, "root"))
+            .MinimumLevel.Is(minimumLevel)
+            .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
+            .Enrich.FromLogContext()
+            .Enrich.With<SensitiveQueryStringLogEnricher>()
+            .WriteTo.Sink(LoggerSinkConfiguration.Wrap(sink => new SignalRFrameworkLogSink(sink), sinks =>
+                sinks.Logger(outputs => outputs
+                    .ReadFrom.Configuration(new SerilogConfigurationView(configuration, "WriteTo"))
+                    .WriteToConsole(options).WriteToFile(options).WriteToDatabase(services, options))));
+        if (configuration.GetSection("Serilog:AuditTo").GetChildren().Any())
+        {
+            // 审计 sink 保持异常向调用方传播的语义。
+            logger.AuditTo.Sink(LoggerSinkConfiguration.Wrap(sink => new SignalRFrameworkLogSink(sink), sinks =>
+                sinks.Logger(outputs => outputs
+                    .ReadFrom.Configuration(new SerilogConfigurationView(configuration, "AuditTo")))));
+        }
     }
 
     private static void ConfigureSerilogSelfLog()

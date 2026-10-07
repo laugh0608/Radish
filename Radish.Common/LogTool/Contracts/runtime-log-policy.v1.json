@@ -246,7 +246,17 @@
     "benefit.revocation_rejected": "Benefit revocation rejected.",
     "inventory.use_failed": "Inventory request consumed a failure.",
     "inventory.rename_failed": "Inventory rename request consumed a failure.",
-    "inventory.rename_rejected": "Inventory rename effect rejected."
+    "inventory.rename_rejected": "Inventory rename effect rejected.",
+    "signalr.connect_failed": "SignalR connection initialization failed.",
+    "signalr.disconnect_failed": "SignalR disconnect cleanup failed.",
+    "signalr.message_failed": "SignalR message processing failed.",
+    "signalr.close_failed": "SignalR close message failed.",
+    "signalr.invocation_failed": "SignalR method invocation failed.",
+    "signalr.stream_failed": "SignalR stream processing failed.",
+    "signalr.invocation_rejected": "SignalR invocation rejected.",
+    "signalr.unclassified": "SignalR framework event; raw content omitted.",
+    "signalr.handshake_failed": "SignalR handshake failed.",
+    "signalr.write_failed": "SignalR connection write failed."
   },
   "properties": {
     "durationMs": {
