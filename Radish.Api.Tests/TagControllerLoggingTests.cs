@@ -115,7 +115,7 @@ public sealed class TagControllerLoggingTests
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task UnconsumedBusinessNotFound_ShouldRemainOwnedByExistingFrameworkBoundary(bool candidate, string environment)
+    public async Task UnconsumedBusinessNotFound_ShouldCompleteWithoutFrameworkRethrow(bool candidate, string environment)
     {
         using var capture = new Capture(candidate, environment);
         foreach (var operation in Operations)
@@ -125,9 +125,8 @@ public sealed class TagControllerLoggingTests
             Task<MessageModel> CallAsync() => CallControllerAsync(CreateController(service), operation, new CreateTagDto());
             Assert.Same(failure, await Assert.ThrowsAsync<BusinessException>(CallAsync));
             capture.AssertQuiet();
-            Assert.Null(await InvokeApiAsync(CallAsync, 404, environment, failure));
-            // 合成的依赖 404 触达既有框架缺口，不冒充标签最终消费或安全输出已收口。
-            capture.AssertFrameworkNotFound(failure);
+            Assert.Null(await InvokeApiAsync(CallAsync, 404, environment));
+            capture.AssertQuiet();
             capture.Clear();
         }
     }
@@ -511,7 +510,7 @@ public sealed class TagControllerLoggingTests
     }
 
     private static async Task<MessageModel?> InvokeApiAsync(
-        Func<Task<MessageModel>> action, int status, string environment, BusinessException? expectedNotFoundRethrow = null)
+        Func<Task<MessageModel>> action, int status, string environment)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = environment });
         builder.Logging.ClearProviders();
@@ -532,12 +531,17 @@ public sealed class TagControllerLoggingTests
         context.Response.Body = output;
         context.RequestServices = app.Services;
         var pipeline = ((IApplicationBuilder)app).Build();
-        if (expectedNotFoundRethrow == null) await pipeline(context);
-        else
+        await pipeline(context);
+        if (result == null && status == 404)
         {
-            // 现有中间件未允许异常处理器返回 404；仅锁定该合成故障的传播，不修改框架配置。
-            var propagated = await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline(context));
-            Assert.Same(expectedNotFoundRethrow, propagated.InnerException);
+            using var json = JsonDocument.Parse(output.ToArray());
+            Assert.Equal(404, json.RootElement.GetProperty("statusCode").GetInt32());
+            Assert.Equal(Secret, json.RootElement.GetProperty("messageInfo").GetString());
+            Assert.Equal("Private.Code", json.RootElement.GetProperty("code").GetString());
+            Assert.Equal("Private.Key", json.RootElement.GetProperty("messageKey").GetString());
+            Assert.Equal(context.TraceIdentifier, json.RootElement.GetProperty("traceId").GetString());
+            Assert.Equal(context.TraceIdentifier, context.Response.Headers["X-Correlation-ID"]);
+            Assert.False(context.Response.HasStarted);
         }
         Assert.Equal(status, context.Response.StatusCode);
         return result;
@@ -582,27 +586,6 @@ public sealed class TagControllerLoggingTests
             Log.Logger = _logger;
         }
         public void AssertQuiet() => Assert.Equal("", _output.ToString());
-        public void AssertFrameworkNotFound(BusinessException failure)
-        {
-            var text = _output.ToString();
-            Assert.DoesNotContain("tag.request_failed", text);
-            Assert.DoesNotContain("http.failed", text);
-            if (_mode != null)
-            {
-                Assert.Single(text.Split('\n', StringSplitOptions.RemoveEmptyEntries));
-                using var json = JsonDocument.Parse(text);
-                Assert.Equal("runtime.unclassified", json.RootElement.GetProperty("eventCode").GetString());
-                Assert.Equal("Error", json.RootElement.GetProperty("level").GetString());
-                Assert.DoesNotContain(Secret, text);
-            }
-            else
-            {
-                var logged = Assert.Single(_events);
-                Assert.Equal(LogEventLevel.Error, logged.Level);
-                Assert.Same(failure, logged.Exception);
-                Assert.Contains("ExceptionHandlerMiddleware", logged.Properties["SourceContext"].ToString());
-            }
-        }
         public void AssertSingle(string code, string kind, int? status = null)
         {
             var text = _output.ToString();

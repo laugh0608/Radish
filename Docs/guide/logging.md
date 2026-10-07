@@ -282,7 +282,7 @@ SELECT 'Error', COUNT(*) FROM ErrorLog_20251201;
 - `OnGetDataReadered` 观测查询读取耗时，`OnLogExecuted` 只观测非 Query 命令，避免同一查询重复生成。
 - `CheckConnectionExecuted` 观测连接检查耗时，默认阈值 500ms；慢操作默认阈值 1000ms。
 - 不再配置 SQL `OnError` 日志回调。Service AOP 已移除；事务 AOP 与 UnitOfWork 保留提交、回滚、保存点及异常传播，不重复打印失败。
-- 已处理的 API 5xx 由 `ApiExceptionHandler` 记录一次 `http.failed`，同时抑制已处理异常的框架重复诊断；普通业务 4xx 只返回原错误契约。无法处理、响应已开始等异常仍由框架最终边界处理，不把它们误称已处理。
+- 已处理的 API 5xx 由 `ApiExceptionHandler` 记录一次 `http.failed`，同时抑制已处理异常的框架重复诊断；普通业务 4xx 只返回原错误契约。异常处理中间件显式允许已处理的 404，即使响应尚未标记开始也不会因 404 再次重抛。无法处理、响应已开始或错误响应写入失败时仍走框架传播路径；这些路径的旧日志原文治理尚未关闭，不能视为已处理异常。
 - API / Auth / Gateway / DbMigrate 的顶层使用 `RuntimeProcess`，配置加载或运行失败以安全 Fatal 事件输出 stderr，并以 1 退出；成功为 0。测试工具的 `HostAbortedException` 继续传播。无法初始化配置时来源标记为 `bootstrap / unversioned`，不伪造部署身份。
 
 ### DbMigrate 命令输出

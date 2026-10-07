@@ -63,7 +63,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，表情管理消费与降级边界见第 49 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，表情管理消费与降级边界见第 49 节，API 已处理 404 完成边界见第 50 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
 
 2026-10-02 日终静态复核补充：第 38、39、41 节中的早期轻回应 / 评论 / 帖子消费点仍在响应构造或失败结果转换之前记录日志，再读取异常 Message。若该 getter 自身抛错，可能已输出原消费事件，又把新异常交给 API；这类“错误处理再次失败”路径尚未包含在这些批次的单次输出结论中，后续需独立核对。第 42–48 节已在各自已列明的转换 / 响应边界补验先构造成功再记录，不应反推全部早期入口已经具备同样保证。
 
@@ -434,7 +434,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - TagController 两个入口在原响应成功构造后，为其他 InvalidOperationException 生成 `tag.request_failed` Error，仅带 failureKind。重名拒绝、模型 / ID 预检、目标缺失及正常成功保持安静；日志不包含异常对象 / 原文、标签名称 / slug / 描述 / 颜色或操作人身份。依赖故障仍返回原 400 与消息，不在本批调整响应语义。
 - Service 不新增 catch / 日志；其他异常和响应 Message getter 失败仍向 API 传播。Controller 不新增聚合异常解包，普通 ArgumentException / IO / 超时 / 取消等仍由 API 最终处理，不能把它们统称为正常输入拒绝。
 - 名称去空白、重名排除已删除但包含禁用标签、更新排除自身、slug 规范化与后缀避重、字段与审计写入保持。创建 / 更新没有事务特性，写入前故障不产生该次写入；仓储实际写入后再抛错时，已提交数据继续保留，不因日志治理增加回滚、重试或补偿。GetOrCreateTagAsync 及其他标签入口未调整。
-- 六组四模式回归覆盖真实 TagService、BaseRepository、UnitOfWorkManage / TranAop、SQLite Tag 表及内存 API / 结果过滤器。正常拒绝、阶段故障、实际写入后故障、成功数据和安全日志归属均已验证；合成 BusinessException(404) 在 DefaultHttpContext 未开始响应时触发既有框架重抛，旧 sink 仍收到原异常，候选仅有安全未分类摘要，单独作为未治理框架边界留痕，不计入标签安全消费完成范围。
+- 六组四模式回归覆盖真实 TagService、BaseRepository、UnitOfWorkManage / TranAop、SQLite Tag 表及内存 API / 结果过滤器。正常拒绝、阶段故障、实际写入后故障、成功数据和安全日志归属均已验证；合成 BusinessException(404) 在 DefaultHttpContext 未开始响应时触发既有框架重抛，旧 sink 仍收到原异常，候选仅有安全未分类摘要，当时单独作为未治理框架边界留痕，不计入标签批次范围；该已处理 404 的后续修正见第 50 节。
 - 不代表 PostgreSQL、并发创建、MVC 认证 / 模型绑定或真实 HTTP 宿主验收。CategoryController 创建 / 更新最终消费的后续治理见第 47 节；L2 尚未整体完成，`RadishLogging.Enabled=false` 保持，见[本批记录](../records/unified-logging-l2-tag-controller-2026-10-02.md)。
 
 ## 47. L2 分类创建 / 更新最终消费
@@ -444,7 +444,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 更新目标查询及实体到 Vo 的映射仍在 try 外，此处 InvalidOperationException 继续传播至 API 并返回原 500；父分类查询 / 映射与写入仍在原 catch 内。其他异常、聚合与 BusinessException 不新增本地消费，也不调整 API 契约。
 - 名称去空白、slug 的空白回退 / 小写 / 空格替换、描述原样保留、附件标识、层级和审计字段不变。禁用父分类仍可使用，已删除父分类仍不可用；顶级为 0，其余按原 Math.Max 计算。模型 / ID / 自身父级预检、目标缺失、正常成功均安静。
 - 更新预读后实际影响 0 行仍返回成功；创建 / 更新没有事务特性，实际写入后再抛错仍保留已写数据。本批不新增行数判定、事务、重试、补偿或层级规则。
-- 七组四模式回归覆盖真实 BaseService、BaseRepository、ForumProfile、UnitOfWorkManage / TranAop、SQLite Category 表及内存 API / 结果过滤器，验证父分类拒绝、映射 / 仓储故障归属、写入前后状态和实际 0 行更新。不代表 PostgreSQL、真实并发、MVC 认证 / 模型绑定或 HTTP 宿主验收；上批内存 404 框架分支保留独立证据。
+- 七组四模式回归覆盖真实 BaseService、BaseRepository、ForumProfile、UnitOfWorkManage / TranAop、SQLite Category 表及内存 API / 结果过滤器，验证父分类拒绝、映射 / 仓储故障归属、写入前后状态和实际 0 行更新。不代表 PostgreSQL、真实并发、MVC 认证 / 模型绑定或 HTTP 宿主验收；上批内存 404 框架分支保留历史证据，后续修正见第 50 节。
 - ReactionController 单目标 / 批量汇总、切换回应及 Service 重试日志的后续治理见第 48 节；L2 尚未整体完成，生产开关继续关闭，见[本批记录](../records/unified-logging-l2-category-controller-2026-10-02.md)。
 
 ## 48. L2 表情回应最终消费与冲突重试
@@ -467,3 +467,10 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 缩略图仍为尽力生成：空存储路径、Exists=false、Download=null 保持静默跳过；LocalFileStorage 将部分故障折叠为 false / null 的既有契约未改。共享附件解析同样供 UpdateSticker 使用，本批没有为该入口增加异常消费；缓存和缩略图共享方法的安全输出也覆盖其他调用者。
 - 保留代码规范化、GIF 判断、批次 50 项限制、冲突列表、排序空列表返回 0、审计字段与现有时间写入。批量添加 / 排序继续由原 TranAop 管理事务，真实部分写入后异常会回滚；创建分组 / 单表情无事务，写入后抛错仍保留已写数据。不增加重试、补偿、文件清理或新的业务事务。
 - 十组四模式回归覆盖真实 StickerService、BaseRepository、TranAop、SQLite 三表及内存 API / 结果过滤器，验证原响应、提交 / 回滚、逐项结果、文件副作用、安全日志和最终异常归属。存储 / 图片处理 / 缓存为故障可控的 mock，不代表真实图片处理、PostgreSQL、并发、MVC 认证 / 模型绑定或真实宿主验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)。
+
+## 50. L2 API 已处理 404 正常完成
+
+- `UseApiExceptionHandler` 显式设置 `AllowStatusCode404Response=true`。ApiExceptionHandler 已写入业务 404 JSON 时，即使内存响应的 HasStarted 仍为 false，框架也认可该结果，不再包装重抛或生成原异常诊断。这是错误处理器的有效结果声明，不是路径不存在时的路由兜底；原 `/api` 且排除 `/api/health` 的处理范围不变。
+- 保留业务状态、消息、错误码、消息键、规范化参数、TraceId 与 `X-Correlation-ID`。成功处理的 4xx 不生成运行日志，5xx 继续由 API 输出一次安全 `http.failed`；非异常的普通 404 响应保持原状态与正文。
+- 响应已开始、写入失败与非 API / health 请求仍按原框架路径传播原异常，不因允许 404 而吞掉未完成的处理。原 SuppressDiagnosticsCallback 只覆盖已处理分支；这些未处理路径的旧日志仍可能携带原文，候选输出仍为安全 `runtime.unclassified`，本批不宣称全框架来源已治理。
+- 新增五组旧 / 候选 × Development / Production 内存管道回归；标签原 404 重抛测试改为校验完整响应及安静日志。覆盖 400 / 403 / 404 / 409 / 429 / 500 / 503、普通 404、已开始响应、写入失败与非 API 传播。响应开始状态通过 feature 模拟，未启动真实 HTTP / WebSocket 服务，不替代真实宿主验收。SignalR 来源与其他框架失败路径继续治理，见[本批记录](../records/unified-logging-l2-api-not-found-2026-10-07.md)。

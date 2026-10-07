@@ -10,6 +10,8 @@ public static class ApiExceptionHandlerExtensions
     {
         return app.UseExceptionHandler(new ExceptionHandlerOptions
         {
+            // 业务 404 是合法的 JSON 错误结果；响应尚未开始时也应正常完成。
+            AllowStatusCode404Response = true,
             // API 最终边界已记录一次；避免框架再记录同一异常与原始消息。
             SuppressDiagnosticsCallback = _ => true,
             ExceptionHandler = async context =>
