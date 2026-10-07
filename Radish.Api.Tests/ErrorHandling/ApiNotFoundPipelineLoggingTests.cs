@@ -109,7 +109,7 @@ public sealed class ApiNotFoundPipelineLoggingTests
         Assert.Equal(206, pipeline.Context.Response.StatusCode);
         Assert.Equal("already-started", System.Text.Encoding.UTF8.GetString(pipeline.Body.ToArray()));
         Assert.False(pipeline.Context.Response.Headers.ContainsKey("X-Correlation-ID"));
-        capture.AssertFrameworkBoundary(apiFailureCount: 0);
+        capture.AssertFrameworkBoundary("http.response_started");
     }
 
     [Theory]
@@ -131,7 +131,7 @@ public sealed class ApiNotFoundPipelineLoggingTests
             Assert.Equal(status, pipeline.Context.Response.StatusCode);
             Assert.False(pipeline.Context.Response.HasStarted);
             // 框架仍保留原异常传播；响应写入故障不是一个已成功处理的 404。
-            capture.AssertFrameworkBoundary(apiFailureCount: status >= 500 ? 1 : 0);
+            capture.AssertFrameworkBoundary("http.exception_handler_failed");
             capture.Clear();
         }
     }
@@ -151,7 +151,7 @@ public sealed class ApiNotFoundPipelineLoggingTests
 
             Assert.Empty(pipeline.Body.ToArray());
             Assert.False(pipeline.Context.Response.Headers.ContainsKey("X-Correlation-ID"));
-            capture.AssertFrameworkBoundary(apiFailureCount: 0);
+            capture.AssertFrameworkBoundary("http.exception_handler_failed");
             capture.Clear();
         }
     }
@@ -218,7 +218,7 @@ public sealed class ApiNotFoundPipelineLoggingTests
                 }).Build();
                 RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
             }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output, _events));
+            else config.Enrich.FromLogContext().WriteTo.Sink(new HttpExceptionFrameworkLogSink(new LegacySink(_output, _events)));
             Logger = config.CreateLogger();
         }
         public void AssertQuiet() => Assert.Equal("", _output.ToString());
@@ -250,9 +250,9 @@ public sealed class ApiNotFoundPipelineLoggingTests
                 Assert.Equal("other", Assert.IsType<ScalarValue>(value.Properties["failureKind"]).Value);
             }
         }
-        public void AssertFrameworkBoundary(int apiFailureCount)
+        public void AssertFrameworkBoundary(string phase)
         {
-            // 此处验证传播边界，不把仍存在的框架原文日志宣称为已治理。
+            // 四模式保留框架阶段及传播，不输出原始异常或提前生成 API 自有事件。
             if (_mode != null)
             {
                 var codes = new List<string?>();
@@ -262,16 +262,17 @@ public sealed class ApiNotFoundPipelineLoggingTests
                     Assert.Equal(_mode, json.RootElement.GetProperty("mode").GetString());
                     codes.Add(json.RootElement.GetProperty("eventCode").GetString());
                 }
-                Assert.Equal(apiFailureCount, codes.Count(code => code == "http.failed"));
-                Assert.Contains("runtime.unclassified", codes);
+                Assert.Equal(new[] { phase, "http.framework_exception" }, codes);
                 Assert.DoesNotContain(Secret, _output.ToString());
                 Assert.DoesNotContain(WriteSecret, _output.ToString());
             }
             else
             {
-                Assert.Equal(apiFailureCount, _events.Count(e => e.Properties.TryGetValue("EventCode", out var code) && code is ScalarValue { Value: "http.failed" }));
-                Assert.Contains(_events, e => e.Properties.TryGetValue("SourceContext", out var source) &&
-                    source is ScalarValue { Value: "Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware" });
+                Assert.Equal(new[] { phase, "http.framework_exception" },
+                    _events.Select(e => Assert.IsType<ScalarValue>(e.Properties["EventCode"]).Value));
+                Assert.All(_events, e => Assert.Null(e.Exception));
+                Assert.DoesNotContain(Secret, _output.ToString());
+                Assert.DoesNotContain(WriteSecret, _output.ToString());
             }
         }
         public void Clear() { _output.GetStringBuilder().Clear(); _events.Clear(); }

@@ -256,7 +256,12 @@
     "signalr.invocation_rejected": "SignalR invocation rejected.",
     "signalr.unclassified": "SignalR framework event; raw content omitted.",
     "signalr.handshake_failed": "SignalR handshake failed.",
-    "signalr.write_failed": "SignalR connection write failed."
+    "signalr.write_failed": "SignalR connection write failed.",
+    "http.framework_exception": "HTTP middleware reported an exception.",
+    "http.exception_handler_failed": "HTTP exception handler failed.",
+    "http.response_started": "HTTP exception handling skipped after response started.",
+    "http.request_aborted": "HTTP request was aborted.",
+    "http.framework_unclassified": "HTTP exception middleware event; raw content omitted."
   },
   "properties": {
     "durationMs": {

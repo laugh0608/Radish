@@ -472,7 +472,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 - `UseApiExceptionHandler` 显式设置 `AllowStatusCode404Response=true`。ApiExceptionHandler 已写入业务 404 JSON 时，即使内存响应的 HasStarted 仍为 false，框架也认可该结果，不再包装重抛或生成原异常诊断。这是错误处理器的有效结果声明，不是路径不存在时的路由兜底；原 `/api` 且排除 `/api/health` 的处理范围不变。
 - 保留业务状态、消息、错误码、消息键、规范化参数、TraceId 与 `X-Correlation-ID`。成功处理的 4xx 不生成运行日志，5xx 继续由 API 输出一次安全 `http.failed`；非异常的普通 404 响应保持原状态与正文。
-- 响应已开始、写入失败与非 API / health 请求仍按原框架路径传播原异常，不因允许 404 而吞掉未完成的处理。原 SuppressDiagnosticsCallback 只覆盖已处理分支；这些未处理路径的旧日志仍可能携带原文，候选输出仍为安全 `runtime.unclassified`，本批不宣称全框架来源已治理。
+- 响应已开始、写入失败与非 API / health 请求仍按原框架路径传播原异常，不因允许 404 而吞掉未完成的处理。原 SuppressDiagnosticsCallback 只覆盖已处理分支；这些未处理路径在本节批次时的旧日志仍可能携带原文，候选输出为安全 `runtime.unclassified`；后续 ExceptionHandlerMiddleware 来源治理见第 52 节，不代表全框架来源已治理。
 - 新增五组旧 / 候选 × Development / Production 内存管道回归；标签原 404 重抛测试改为校验完整响应及安静日志。覆盖 400 / 403 / 404 / 409 / 429 / 500 / 503、普通 404、已开始响应、写入失败与非 API 传播。响应开始状态通过 feature 模拟，未启动真实 HTTP / WebSocket 服务，不替代真实宿主验收。SignalR 来源与其他框架失败路径继续治理，见[本批记录](../records/unified-logging-l2-api-not-found-2026-10-07.md)。
 
 ## 51. L2 SignalR Core 三类框架来源
@@ -483,4 +483,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 框架原 Debug / Trace 与低级别过程事件继续受最低等级 / diagnostics 控制，不统一升级为 Error。Hub 自有断开事件保留原时机；不同处理阶段与独立写入失败不按连接去重。Hub 授权、业务执行、协议响应、清理与异常传播不变。
 - 旧链的代码 Console / File / Database 与配置 WriteTo 均进入安全包装；AuditTo 继续传播输出失败，内部聚合异常可能增加包装层。候选入口与旧链仍互斥，生产开关保持关闭。
 - 四模式内存真实框架调度回归覆盖方法、绑定、生命周期、协议解析、握手及写入；另有未知事件、不可渲染异常 / 属性、配置 reload、SQL 属性保留、释放与审计失败回归。`ErrorSendingClose / FailedStreaming` 仅有映射及元数据证据，不代表真实分支验收。
-- 协议 resolver、Http.Connections、Kestrel 与 HTTP 未处理路径仍待治理；本批不代表真实 WebSocket / 宿主 / 日志库入库验收。准确映射与验证边界见[本批记录](../records/unified-logging-l2-signalr-core-2026-10-07.md)。
+- 协议 resolver、Http.Connections、Kestrel 等来源仍待治理；HTTP 异常处理中间件的后续治理见第 52 节。本批不代表真实 WebSocket / 宿主 / 日志库入库验收。准确映射与验证边界见[本批记录](../records/unified-logging-l2-signalr-core-2026-10-07.md)。
+
+## 52. L2 HTTP 异常处理中间件安全输出
+
+- API 自有 `http.failed` 后移到 `ApiErrorResultFactory.WriteAsync` 成功返回之后；业务 4xx 继续安静，5xx / 普通异常成功写入后仍记录一次。构造或写入失败不提前生成自有事件，交给原框架路径报告并继续传播原始请求异常。写入任务完成不表示客户端已接收。
+- `HttpExceptionFrameworkLogSink` 仅匹配 `Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware`，在上下文合并后、旧链代码 / 配置 WriteTo / AuditTo 和候选输出前重建安全事件。保留原时间、等级、类型化 trace/span、固定来源及受控 failureKind，不读取或复制异常原文、模板、请求数据与任意 scope。
+- 来源 + EventId / Name 映射为 `http.framework_exception`、`http.response_started`、`http.exception_handler_failed`、`http.request_aborted`；未知目标事件使用 `http.framework_unclassified`，Warning / Error 保持可见。低级别事件继续遵循最低等级 / diagnostics，不升级取消为 Error。
+- `http.framework_exception` 是中性框架异常报告：Gateway 的 `/Error` 重执行已完成也可能产生。处理委托失败与原异常报告、响应已开始与原异常报告分别保留，不按请求全局去重；同一个原异常在非 API 委托拒绝时仍可能属于两个框架阶段。
+- 响应已开始时保留原正文 / 状态 / header；IOException / OperationCanceledException 且 RequestAborted 已取消时继续走原取消分支，未开始时设 499，已开始时保留状态。非 API / health 保留框架先清理响应并设 500、再由委托重抛的现状，不声称绕过异常中间件。
+- API 的 MessageModel、404 完成选项、correlation header、Gateway 重执行路径与异常实例传播保持。四模式内存真实中间件回归覆盖写入完成屏障、构造 / 写入 / 部分写入 / 取消失败、响应开始、非 API、Gateway 错误页及正常状态矩阵；未启动宿主，不代表真实 Kestrel、WebSocket 或生产验收。
+- Kestrel、Hosting、DeveloperExceptionPage、Http.Connections、协议 resolver 等来源继续独立治理；DiagnosticListener、Activity / metrics 等非 Serilog 通道不由适配器接管。生产候选开关仍关闭，L2 未整体完成，具体映射与验证证据见[本批记录](../records/unified-logging-l2-http-exception-2026-10-07.md)。

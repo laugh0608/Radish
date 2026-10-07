@@ -12,7 +12,7 @@ public static class ApiExceptionHandlerExtensions
         {
             // 业务 404 是合法的 JSON 错误结果；响应尚未开始时也应正常完成。
             AllowStatusCode404Response = true,
-            // API 最终边界已记录一次；避免框架再记录同一异常与原始消息。
+            // 已完成的 API 错误响应按契约记录；未处理路径仍由框架记录并传播。
             SuppressDiagnosticsCallback = _ => true,
             ExceptionHandler = async context =>
             {

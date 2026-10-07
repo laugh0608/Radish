@@ -3,6 +3,10 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-07 日志 L2 HTTP 异常处理中间件](./unified-logging-l2-http-exception-2026-10-07.md)：API 写入完成后记录、框架双链安全摘要与四模式传播回归
+
+- [2026-10-07 日志 L2 HTTP 异常处理方案](./unified-logging-l2-http-boundary-plan-2026-10-07.md)：响应写入、取消 499、非 API / Gateway 框架所有权与已确认实施范围
+
 - [2026-10-07 日志 L2 SignalR Core 框架适配](./unified-logging-l2-signalr-core-2026-10-07.md)：三类框架来源、旧 / 候选安全接线与四模式内存调度回归
 
 - [2026-10-07 日志 L2 框架最终边界核对](./unified-logging-l2-framework-boundary-audit-2026-10-07.md)：SignalR / HTTP 日志所有权、已确认实施范围与框架调度验证矩阵
