@@ -261,7 +261,27 @@
     "http.exception_handler_failed": "HTTP exception handler failed.",
     "http.response_started": "HTTP exception handling skipped after response started.",
     "http.request_aborted": "HTTP request was aborted.",
-    "http.framework_unclassified": "HTTP exception middleware event; raw content omitted."
+    "http.framework_unclassified": "HTTP exception middleware event; raw content omitted.",
+    "http.developer_exception": "Development error page reported an exception.",
+    "http.developer_response_started": "Development error page skipped after response started.",
+    "http.developer_page_failed": "Development error page generation failed.",
+    "http.developer_request_aborted": "Development error page observed an aborted request.",
+    "http.developer_unclassified": "Development error page event; raw content omitted.",
+    "http.request_started": "HTTP request started.",
+    "http.request_finished": "HTTP request finished.",
+    "http.request_unhandled": "HTTP request reached the end of the application pipeline.",
+    "http.host_pipeline_failed": "HTTP host pipeline configuration failed.",
+    "http.hosting_startup_failed": "HTTP hosting startup assembly failed.",
+    "http.host_binding_overridden": "HTTP host binding configuration was overridden.",
+    "http.hosting_unclassified": "HTTP hosting event; raw content omitted.",
+    "http.server_application_failed": "HTTP server reported an application or callback failure.",
+    "http.server_heartbeat_slow": "HTTP server heartbeat was slow.",
+    "http.server_application_incomplete": "HTTP server application did not complete.",
+    "http.server_response_headers_removed": "HTTP server removed invalid response headers.",
+    "http.server_protocol_downgraded": "HTTP server protocol configuration was downgraded.",
+    "http.server_request_aborted": "HTTP server observed an aborted request.",
+    "http.server_body_drain_failed": "HTTP server request body draining failed.",
+    "http.server_unclassified": "HTTP server event; raw content omitted."
   },
   "properties": {
     "durationMs": {

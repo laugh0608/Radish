@@ -493,4 +493,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `http.framework_exception` 是中性框架异常报告：Gateway 的 `/Error` 重执行已完成也可能产生。处理委托失败与原异常报告、响应已开始与原异常报告分别保留，不按请求全局去重；同一个原异常在非 API 委托拒绝时仍可能属于两个框架阶段。
 - 响应已开始时保留原正文 / 状态 / header；IOException / OperationCanceledException 且 RequestAborted 已取消时继续走原取消分支，未开始时设 499，已开始时保留状态。非 API / health 保留框架先清理响应并设 500、再由委托重抛的现状，不声称绕过异常中间件。
 - API 的 MessageModel、404 完成选项、correlation header、Gateway 重执行路径与异常实例传播保持。四模式内存真实中间件回归覆盖写入完成屏障、构造 / 写入 / 部分写入 / 取消失败、响应开始、非 API、Gateway 错误页及正常状态矩阵；未启动宿主，不代表真实 Kestrel、WebSocket 或生产验收。
-- Kestrel、Hosting、DeveloperExceptionPage、Http.Connections、协议 resolver 等来源继续独立治理；DiagnosticListener、Activity / metrics 等非 Serilog 通道不由适配器接管。生产候选开关仍关闭，L2 未整体完成，具体映射与验证证据见[本批记录](../records/unified-logging-l2-http-exception-2026-10-07.md)。
+- Kestrel 主来源、Hosting.Diagnostics 与 DeveloperExceptionPage 的后续治理见第 53 节；其他 Kestrel / Hosting 来源、Http.Connections、协议 resolver 继续独立治理。DiagnosticListener、Activity / metrics 等非 Serilog 通道不由适配器接管。生产候选开关仍关闭，L2 未整体完成，具体映射与验证证据见[本批记录](../records/unified-logging-l2-http-exception-2026-10-07.md)。
+
+## 53. L2 外层 HTTP 三类框架来源
+
+- `HttpServerFrameworkLogSink` 精确适配 DeveloperExceptionPageMiddleware、Hosting.Diagnostics 与 Kestrel 主来源；在上下文合并后重建安全事件，旧链代码 / 配置 WriteTo / AuditTo 与候选输出均接入。保持时间、等级、类型化 trace/span、固定来源及受控 failureKind，不复制异常原文、URL、header、身份或任意 scope。
+- 开发异常页分别输出 `http.developer_exception / developer_response_started / developer_page_failed / developer_request_aborted`，未知事件保留为 `http.developer_unclassified`。Development 的宿主自动包装与 Gateway 样式显式包装均保持；开发页面文本 / HTML 原有详情不做日志式裁剪。已开始响应和生成页面失败仍按原顺序报告并传播原异常。
+- Hosting 请求起止 / 管道末尾分别为 `http.request_started / request_finished / request_unhandled` 诊断，不能把正常未匹配请求当成 Error。EventId 的 Name=null 是实际契约；管道构建、Hosting startup assembly 与绑定覆盖分别为 `http.host_pipeline_failed / hosting_startup_failed / host_binding_overridden`，未知使用 `http.hosting_unclassified`。阶段故障不等于进程必然退出，原 Critical 在旧链保持 Fatal、候选按公共规范映射为 Error。
+- Kestrel 应用 / 回调失败、请求取消使用 `http.server_application_failed / server_request_aborted`，另区分心跳慢、应用未完成、无效响应头移除、协议降级和请求体收尾故障；未知使用 `http.server_unclassified`。OnStarting 失败停止后续启动回调；OnCompleted 失败保留已完成响应并继续其他回调。不同阶段不按请求去重。
+- Warning / Error / Critical 保持可见，低级别诊断继续受原最低等级 / diagnostics 控制。RuntimeProcess 仅移交 Generic Host 来源 EventId 11 的既有规则不变，不与 Hosting.Diagnostics 的 11 混同。
+- 四模式验证包含真实宿主自动管道组装、Hosting 请求生命周期，以及只接入内存 transport 的 Kestrel HTTP/1 处理。未绑定网络端口、运行项目宿主或访问生产；启动阶段告警与部分 Kestrel 告警只有真实生成方法 / 映射 / 元数据证据，不代表全部运行分支验收。
+- Kestrel 子类别、HTTPS / 证书、Http.Connections、协议 resolver、其他 Hosting / Lifetime 来源和非 Serilog 通道仍待分批治理；未对业务来源继承的任意 scope 做全局清理。生产候选开关关闭、L2 未整体完成。完整映射、测试与限制见[本批记录](../records/unified-logging-l2-outer-http-2026-10-07.md)。
