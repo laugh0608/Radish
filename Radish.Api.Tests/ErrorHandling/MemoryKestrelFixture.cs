@@ -22,7 +22,7 @@ internal sealed class MemoryKestrelFixture : IAsyncDisposable
     private readonly KestrelServer _server;
     private readonly IHttpApplication<object> _application;
     public MemoryKestrelFixture(OuterHttpTestPipeline pipeline, HttpBoundaryCapture capture,
-        Action<KestrelServerOptions>? configure = null, Func<ConnectionDelegate, ConnectionDelegate>? middleware = null)
+        Action<KestrelServerOptions>? configure = null, Func<ConnectionDelegate, ConnectionDelegate>? middleware = null, Action<ListenOptions>? endpoint = null)
     {
         var options = new KestrelServerOptions { ApplicationServices = pipeline.Services, AddServerHeader = false };
         options.Limits.MinRequestBodyDataRate = null;
@@ -33,6 +33,7 @@ internal sealed class MemoryKestrelFixture : IAsyncDisposable
         {
             listen.Protocols = HttpProtocols.Http1;
             if (middleware != null) listen.Use(middleware);
+            endpoint?.Invoke(listen);
         });
         _server = new KestrelServer(Options.Create(options), _listener, capture.Factory);
         _application = pipeline.Application;
@@ -71,6 +72,21 @@ internal sealed class MemoryKestrelFixture : IAsyncDisposable
         await connection.Input.Writer.CompleteAsync();
         await connection.Output.Reader.CompleteAsync();
         return Encoding.UTF8.GetString(bytes.ToArray());
+    }
+
+    public async Task Exchange(Func<Stream, Task> exchange)
+    {
+        await using var connection = new MemoryConnection(null);
+        await _listener.Connections.Writer.WriteAsync(connection, TestContext.Current.CancellationToken);
+        using var stream = new ProtocolDuplexStream(connection.Output.Reader.AsStream(leaveOpen: true), connection.Input.Writer.AsStream(leaveOpen: true));
+        try { await exchange(stream); }
+        finally
+        {
+            await connection.Input.Writer.CompleteAsync();
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            await connection.Disposed.Task.WaitAsync(timeout.Token);
+            await connection.Output.Reader.CompleteAsync();
+        }
     }
 
     public async ValueTask DisposeAsync()

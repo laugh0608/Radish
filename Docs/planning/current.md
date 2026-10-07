@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：核对 Kestrel HTTP/2 / HTTP/3 / TLS 日志来源与协议边界，整理下一批适配方案；Http.Connections、协议 resolver 及其他框架来源保留后续范围。
-- **状态复核日期**：`2026-10-07`；已完成表情管理、API 已处理 404、SignalR Core 三类来源、HTTP 异常处理中间件、外层 HTTP 三来源及 Kestrel 连接 / 坏请求治理，见[事件契约第 49–54 节](../features/unified-logging-contract.md)及[Kestrel 连接 / 坏请求批次记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：只读核对 CertificatePathWatcher 与配置加载的日志来源、事件身份及证书访问边界，再确认适配范围；HTTP/2 / HTTP/3 / HTTPS 中间件已完成[本批治理](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。Socket / QUIC transport、Http.Connections、协议 resolver 等保留后续范围。
+- **状态复核日期**：`2026-10-07`；已完成表情管理、API 已处理 404、SignalR Core 三类来源、HTTP 异常处理中间件、外层 HTTP 三来源、Kestrel 连接 / 坏请求及协议 / HTTPS 治理，见[事件契约第 49–55 节](../features/unified-logging-contract.md)及[Kestrel 协议 / HTTPS 批次记录](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -29,7 +29,9 @@
 
 ## 最近结论
 
-- `2026-10-07` 完成 Kestrel.Connections / BadRequests 双链适配，四模式验证真实解析拒绝、并发连接限制、keep-alive 与连接回调 / 释放边界，见[本批记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。HTTP/2 / HTTP/3 / TLS 及其他框架来源继续治理。
+- `2026-10-07` 完成 Kestrel Http2 / Http3 / HTTPS 中间件三个来源的 39 个安全编码，四模式验证真实内存协议与 SslStream；完整证据及真实 QUIC / 平台边界见[本批记录](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。生产链路未切换。
+
+- `2026-10-07` 完成 Kestrel.Connections / BadRequests 双链适配，四模式验证真实解析拒绝、并发连接限制、keep-alive 与连接回调 / 释放边界，见[本批记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。协议 / HTTPS 中间件已由后续批次覆盖，其他框架来源继续治理。
 
 - `2026-10-07` 完成 DeveloperExceptionPage、Hosting.Diagnostics 与 Kestrel 主来源双链安全适配；四模式覆盖宿主自动包装、真实请求生命周期与无网络 HTTP/1，见[本批记录](../records/unified-logging-l2-outer-http-2026-10-07.md)。子类别及其他框架来源继续治理。
 
@@ -61,9 +63,9 @@
 
 ## 下一批日志事项
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–54 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–55 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
 
-1. **继续框架子类别**：外层 HTTP 三来源已完成[受限适配](../records/unified-logging-l2-outer-http-2026-10-07.md)。Kestrel.Connections / BadRequests 已完成[治理与内存协议回归](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。下一步核对 HTTP/2 / HTTP/3 / TLS 来源后确认实施方案；协议 resolver、Http.Connections 保留后续范围。不授权安装依赖、启动项目服务 / 容器或访问生产。
+1. **继续框架子类别**：外层 HTTP、Kestrel 连接 / 坏请求及 HTTP/2 / HTTP/3 / HTTPS 中间件已完成[治理与内存协议回归](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。下一步只读核对证书文件监视 / 配置加载，形成具体方案后确认实现；Socket / QUIC transport、协议 resolver、Http.Connections 保留后续范围。不授权安装依赖、启动项目服务 / 容器或访问生产。
 2. **复核早期消费点**：早期轻回应 / 评论 / 帖子消费点仍先记录后读取异常 Message；响应构造再次失败时的日志所有权需要另行核对，不能沿用后续批次的单次输出结论。
 3. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
 

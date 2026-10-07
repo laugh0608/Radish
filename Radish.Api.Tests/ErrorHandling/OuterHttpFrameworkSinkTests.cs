@@ -21,6 +21,10 @@ public sealed class OuterHttpFrameworkSinkTests
     private const string Connections = Kestrel + ".Connections";
     private const string BadRequests = Kestrel + ".BadRequests";
 
+    private const string Http2 = Kestrel + ".Http2";
+    private const string Http3 = Kestrel + ".Http3";
+    private const string Https = "Microsoft.AspNetCore.Server.Kestrel.Https.Internal.HttpsConnectionMiddleware";
+
     [Theory]
     [InlineData(Developer, 1, "UnhandledException", "http.developer_exception")]
     [InlineData(Developer, 2, "ResponseStarted", "http.developer_response_started")]
@@ -64,6 +68,48 @@ public sealed class OuterHttpFrameworkSinkTests
     [InlineData(Connections, 24, "Wrong", "http.connection_unclassified")]
     [InlineData(BadRequests, 17, "", "http.bad_request_unclassified")]
     [InlineData(BadRequests, 999, "ConnectionBadRequest", "http.bad_request_unclassified")]
+    [InlineData(Http2, 29, "Http2ConnectionError", "http.http2_connection_error")]
+    [InlineData(Http2, 30, "Http2StreamError", "http.http2_stream_error")]
+    [InlineData(Http2, 31, "HPackDecodingError", "http.http2_headers_decode_failed")]
+    [InlineData(Http2, 35, "Http2StreamResetAbort", "http.http2_stream_reset")]
+    [InlineData(Http2, 36, "Http2ConnectionClosing", "http.http2_connection_closing")]
+    [InlineData(Http2, 37, "Http2FrameReceived", "http.http2_frame_received")]
+    [InlineData(Http2, 38, "HPackEncodingError", "http.http2_headers_encode_failed")]
+    [InlineData(Http2, 40, "Http2MaxConcurrentStreamsReached", "http.http2_stream_limit_reached")]
+    [InlineData(Http2, 48, "Http2ConnectionClosed", "http.http2_connection_closed")]
+    [InlineData(Http2, 49, "Http2FrameSending", "http.http2_frame_sending")]
+    [InlineData(Http2, 60, "Http2QueueOperationsExceeded", "http.http2_output_queue_exceeded")]
+    [InlineData(Http2, 61, "Http2UnexpectedDataRemaining", "http.http2_output_data_remaining")]
+    [InlineData(Http2, 62, "Http2ConnectionQueueProcessingCompleted", "http.http2_output_queue_completed")]
+    [InlineData(Http2, 63, "Http2UnexpectedConnectionQueueError", "http.http2_output_queue_failed")]
+    [InlineData(Http2, 64, "Http2TooManyEnhanceYourCalms", "http.http2_reset_limit_exceeded")]
+    [InlineData(Http2, 65, "Http2FlowControlQueueOperationsExceeded", "http.http2_flow_queue_exceeded")]
+    [InlineData(Http2, 66, "Http2FlowControlQueueMaximumTooLow", "http.http2_flow_queue_adjusted")]
+    [InlineData(Http3, 42, "Http3ConnectionError", "http.http3_connection_error")]
+    [InlineData(Http3, 43, "Http3ConnectionClosing", "http.http3_connection_closing")]
+    [InlineData(Http3, 44, "Http3ConnectionClosed", "http.http3_connection_closed")]
+    [InlineData(Http3, 45, "Http3StreamAbort", "http.http3_stream_aborted")]
+    [InlineData(Http3, 46, "Http3FrameReceived", "http.http3_frame_received")]
+    [InlineData(Http3, 47, "Http3FrameSending", "http.http3_frame_sending")]
+    [InlineData(Http3, 50, "Http3OutboundControlStreamError", "http.http3_control_stream_failed")]
+    [InlineData(Http3, 51, "QPackDecodingError", "http.http3_headers_decode_failed")]
+    [InlineData(Http3, 52, "QPackEncodingError", "http.http3_headers_encode_failed")]
+    [InlineData(Http3, 53, "Http3GoAwayHighestOpenedStreamId", "http.http3_goaway")]
+    [InlineData(Https, 1, "AuthenticationFailed", "http.tls_handshake_failed")]
+    [InlineData(Https, 2, "AuthenticationTimedOut", "http.tls_handshake_timed_out")]
+    [InlineData(Https, 3, "HttpsConnectionEstablished", "http.tls_established")]
+    [InlineData(Https, 4, "Http2DefaultCiphersInsufficient", "http.tls_protocol_fallback")]
+    [InlineData(Https, 5, "LocateCertWithPrivateKey", "http.tls_certificate_search")]
+    [InlineData(Https, 6, "FoundCertWithPrivateKey", "http.tls_certificate_found")]
+    [InlineData(Https, 7, "FailToLocateCertificate", "http.tls_certificate_search_failed")]
+    [InlineData(Https, 8, "FailToOpenStore", "http.tls_certificate_store_failed")]
+    [InlineData(Https, 9, "NoSubjectAlternativeName", "http.tls_certificate_missing_san")]
+    [InlineData(Http2, 60, null, "http.http2_unclassified")]
+    [InlineData(Http2, 60, "Wrong", "http.http2_unclassified")]
+    [InlineData(Http3, 53, null, "http.http3_unclassified")]
+    [InlineData(Http3, 53, "Wrong", "http.http3_unclassified")]
+    [InlineData(Https, 5, null, "http.tls_unclassified")]
+    [InlineData(Https, 5, "Wrong", "http.tls_unclassified")]
     public void Adapter_ShouldKeepMetadataAndNeverReadOrMutateOriginalPayload(string source, int id, string? name, string expected)
     {
         var sink = new HttpBoundaryTestSink();
@@ -100,12 +146,15 @@ public sealed class OuterHttpFrameworkSinkTests
     [Theory]
     [InlineData("Microsoft.AspNetCore.Server.Kestrel.Connections.Custom")]
     [InlineData("Microsoft.AspNetCore.Server.Kestrel.BadRequests.Custom")]
-    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Http2")]
-    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Http3")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Http2.Custom")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Http3.Custom")]
     [InlineData("Microsoft.Extensions.Hosting.Internal.Host")]
     [InlineData("Microsoft.Hosting.Lifetime")]
     [InlineData("Microsoft.AspNetCore.Hosting.Diagnostics.Custom")]
     [InlineData("Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware.Custom")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Https.Internal.HttpsConnectionMiddleware.Custom")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.CertificatePathWatcher")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Transport.Quic")]
     [InlineData(HttpBoundaryCapture.Source)]
     public void OtherSources_ShouldPassThroughSameInstance(string source)
     {
@@ -121,7 +170,7 @@ public sealed class OuterHttpFrameworkSinkTests
     {
         using var capture = new HttpBoundaryCapture(candidate, environment, diagnostics: false);
         using var scope = capture.SensitiveScope();
-        foreach (var (source, code) in new[] { (Developer, "http.developer_unclassified"), (Hosting, "http.hosting_unclassified"), (Kestrel, "http.server_unclassified"), (Connections, "http.connection_unclassified"), (BadRequests, "http.bad_request_unclassified") })
+        foreach (var (source, code) in new[] { (Developer, "http.developer_unclassified"), (Hosting, "http.hosting_unclassified"), (Kestrel, "http.server_unclassified"), (Connections, "http.connection_unclassified"), (BadRequests, "http.bad_request_unclassified"), (Http2, "http.http2_unclassified"), (Http3, "http.http3_unclassified"), (Https, "http.tls_unclassified") })
         {
             var logger = capture.Factory.CreateLogger(source);
             logger.LogWarning(new EventId(990, "FutureWarning"), new UnreadableException(), "{secret}", HttpBoundaryCapture.Secret);
@@ -175,13 +224,13 @@ public sealed class OuterHttpFrameworkSinkTests
     }
 
     [Fact]
-    public void ConfiguredAuditOutput_ShouldReceiveAllFiveAdaptedSources()
+    public void ConfiguredAuditOutput_ShouldReceiveAllAdaptedSources()
     {
         using var capture = new HttpBoundaryCapture(false, "Production", audit: true);
         using var scope = capture.SensitiveScope();
-        foreach (var source in new[] { Developer, Hosting, Kestrel, Connections, BadRequests })
+        foreach (var source in new[] { Developer, Hosting, Kestrel, Connections, BadRequests, Http2, Http3, Https })
             capture.Factory.CreateLogger(source).LogError(new EventId(999, "FutureEvent"), new UnreadableException(), "{secret}", HttpBoundaryCapture.Secret);
-        Assert.Equal(new[] { "http.developer_unclassified", "http.hosting_unclassified", "http.server_unclassified", "http.connection_unclassified", "http.bad_request_unclassified" }, capture.Codes);
+        Assert.Equal(new[] { "http.developer_unclassified", "http.hosting_unclassified", "http.server_unclassified", "http.connection_unclassified", "http.bad_request_unclassified", "http.http2_unclassified", "http.http3_unclassified", "http.tls_unclassified" }, capture.Codes);
         capture.AssertSafe();
     }
 

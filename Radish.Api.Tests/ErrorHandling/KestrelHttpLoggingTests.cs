@@ -168,13 +168,14 @@ public sealed class KestrelHttpLoggingTests
         foreach (var e in capture.Sink.Events)
         {
             if (!e.Properties.TryGetValue("SourceContext", out var source) || source is not ScalarValue { Value: string category } ||
-                category is not ("Microsoft.AspNetCore.Server.Kestrel.Connections" or "Microsoft.AspNetCore.Server.Kestrel.BadRequests" or "Microsoft.AspNetCore.Server.Kestrel" or "Microsoft.AspNetCore.Hosting.Diagnostics" or
+                category is not ("Microsoft.AspNetCore.Server.Kestrel.Http2" or "Microsoft.AspNetCore.Server.Kestrel.Http3" or
+                    "Microsoft.AspNetCore.Server.Kestrel.Https.Internal.HttpsConnectionMiddleware" or "Microsoft.AspNetCore.Server.Kestrel.Connections" or "Microsoft.AspNetCore.Server.Kestrel.BadRequests" or "Microsoft.AspNetCore.Server.Kestrel" or "Microsoft.AspNetCore.Hosting.Diagnostics" or
                     "Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware" or HttpBoundaryCapture.Source)) continue;
             Assert.Null(e.Exception);
             Assert.DoesNotContain(HttpBoundaryCapture.Secret, e.RenderMessage() + string.Join(" ", e.Properties));
             Assert.All(e.Properties.Keys, key => Assert.Contains(key,
                 new[] { "EventCode", "SourceCategory", "SourceContext", "Diagnostic", "failureKind" }));
         }
-        // HTTP/2 / HTTP/3 / TLS 等类别仍在本断言与治理范围之外。
+        // Socket / QUIC transport 与证书监视等来源仍在本断言范围之外。
     }
 }

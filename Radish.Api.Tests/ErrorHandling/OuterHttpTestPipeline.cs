@@ -29,12 +29,13 @@ internal sealed class OuterHttpTestPipeline : IAsyncDisposable
     public IServiceProvider Services => _app.Services;
 
     public OuterHttpTestPipeline(HttpBoundaryCapture capture, RequestDelegate? action,
-        bool api = false, bool explicitDeveloperPage = false)
+        bool api = false, bool explicitDeveloperPage = false, Action<WebApplicationBuilder>? configure = null)
     {
         var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = capture.Environment });
         builder.Logging.ClearProviders();
         builder.Services.AddSerilog(capture.Logger, dispose: false);
         builder.Services.AddSingleton<ApiExceptionHandler>();
+        configure?.Invoke(builder);
         _app = builder.Build();
         if (explicitDeveloperPage) _app.UseDeveloperExceptionPage();
         if (api) _app.UseApiExceptionHandler();
