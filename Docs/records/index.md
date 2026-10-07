@@ -3,30 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
-- [2026-10-07 日志 L2 Kestrel 协议 / HTTPS 治理](./unified-logging-l2-kestrel-protocol-2026-10-07.md)：39 个安全编码、HTTP/2 / HTTP/3 内存协议与真实 SslStream 四模式回归
-
-- [2026-10-07 日志 L2 Kestrel 协议与 HTTPS 方案](./unified-logging-l2-kestrel-protocol-plan-2026-10-07.md)：三个来源 36 个事件、协议 / TLS 边界及已确认内存验证方案
-
-- [2026-10-07 日志 L2 Kestrel 连接 / 坏请求治理](./unified-logging-l2-kestrel-connections-2026-10-07.md)：18 个安全事件编码、四模式真实解析 / 连接限流与生命周期回归
-
-- [2026-10-07 日志 L2 Kestrel 连接 / 坏请求方案](./unified-logging-l2-kestrel-connections-plan-2026-10-07.md)：两类 16 个事件、连接收尾与协议拒绝边界及已确认实施范围
-
-- [2026-10-07 日志 L2 外层 HTTP 三来源适配](./unified-logging-l2-outer-http-2026-10-07.md)：开发异常页、Hosting / Kestrel 主来源安全输出与真实内存 HTTP/1 回归
-
-- [2026-10-07 日志 L2 外层 HTTP 框架方案](./unified-logging-l2-outer-http-plan-2026-10-07.md)：自动开发异常页、Hosting / Kestrel 所有权、运行时探针及已确认适配范围
-
-- [2026-10-07 日志 L2 HTTP 异常处理中间件](./unified-logging-l2-http-exception-2026-10-07.md)：API 写入完成后记录、框架双链安全摘要与四模式传播回归
-
-- [2026-10-07 日志 L2 HTTP 异常处理方案](./unified-logging-l2-http-boundary-plan-2026-10-07.md)：响应写入、取消 499、非 API / Gateway 框架所有权与已确认实施范围
-
-- [2026-10-07 日志 L2 SignalR Core 框架适配](./unified-logging-l2-signalr-core-2026-10-07.md)：三类框架来源、旧 / 候选安全接线与四模式内存调度回归
-
-- [2026-10-07 日志 L2 框架最终边界核对](./unified-logging-l2-framework-boundary-audit-2026-10-07.md)：SignalR / HTTP 日志所有权、已确认实施范围与框架调度验证矩阵
-
-- [2026-10-07 日志 L2 API 404 完成边界](./unified-logging-l2-api-not-found-2026-10-07.md)：已处理业务 404 正常完成、四模式完整响应与未处理路径传播回归
-
-- [2026-10-07 日志 L2 表情管理消费与降级边界](./unified-logging-l2-sticker-controller-2026-10-07.md)：四个管理入口、附件构建、缩略图 / 缓存安全输出与 SQLite 事务回归
-
+- [2026-10-07 日终代码与文档回顾](./day-end-doc-review-2026-10-07.md)：7 个日志 L2 开发提交、全部批次 / 方案索引、文档校准与 10 月 8 日事项
 - [2026-10-02 日终代码与文档回顾](./day-end-doc-review-2026-10-02.md)：19 个日志 L2 开发提交与完整批次索引、文档校准、独立问题及 10 月 3 日事项
 - [2026-10-01 dev → master 批次回归](./master-pr-regression-2026-10-01.md)：近期部署 / Console 修复及日志 L1 / L2 集成前检查
 - [2026-09-28 日终代码与文档回顾](./day-end-doc-review-2026-09-28.md)：15 个日志 L2 开发提交、批次证据索引、文档状态校准与明天事项
