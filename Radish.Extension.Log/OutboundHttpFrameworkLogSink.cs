@@ -22,6 +22,13 @@ public sealed class OutboundHttpFrameworkLogSink(ILogEventSink next) : ILogEvent
         // 客户端名称采用封闭清单；相邻类别与未来注册的名称不自动纳入。
         var owner = category switch
         {
+            "Yarp.ReverseProxy.SessionAffinity.SessionAffinityMiddleware" => "proxy.affinity",
+            "Yarp.ReverseProxy.SessionAffinity.CookieSessionAffinityPolicy" => "proxy.affinity_cookie",
+            "Yarp.ReverseProxy.SessionAffinity.CustomHeaderSessionAffinityPolicy" => "proxy.affinity_header",
+            "Yarp.ReverseProxy.SessionAffinity.HashCookieSessionAffinityPolicy" => "proxy.affinity_hash",
+            "Yarp.ReverseProxy.SessionAffinity.ArrCookieSessionAffinityPolicy" => "proxy.affinity_arr",
+            "Yarp.ReverseProxy.Health.ActiveHealthCheckMonitor" => "proxy.health_probe",
+            "Yarp.ReverseProxy.Health.DestinationHealthUpdater" => "proxy.health_state",
             "Yarp.ReverseProxy.Configuration.ConfigProvider.ConfigurationConfigProvider" => "proxy.config_source",
             "Yarp.ReverseProxy.Management.ProxyConfigManager" => "proxy.config_manager",
             "Yarp.ReverseProxy.Configuration.ConfigValidator" => "proxy.config_validator",
@@ -51,6 +58,33 @@ public sealed class OutboundHttpFrameworkLogSink(ILogEventSink next) : ILogEvent
         var (id, name) = Identity(logEvent);
         var code = (owner, id, name) switch
         {
+            // 亲和基类借用具体策略的 logger；Hash / ARR 不产生解密事件。框架 EventName 原拼写保持。
+            ("proxy.affinity", 34, "AffinityResolutionFailedForCluster") => "proxy.affinity_rejected",
+            ("proxy.affinity", 41, "AffinityResolutionFailureWasHandledProcessingWillBeContinued") => "proxy.affinity_failure_handled",
+            ("proxy.affinity_cookie", 36, "AffinityCannotBeEstablishedBecauseNoDestinationsFoundOnCluster") => "proxy.affinity_cookie_no_destinations",
+            ("proxy.affinity_cookie", 38, "RequestAffinityKeyDecryptionFailed") => "proxy.affinity_cookie_decrypt_failed",
+            ("proxy.affinity_cookie", 39, "DestinationMatchingToAffinityKeyNotFound") => "proxy.affinity_cookie_destination_missing",
+            ("proxy.affinity_header", 36, "AffinityCannotBeEstablishedBecauseNoDestinationsFoundOnCluster") => "proxy.affinity_header_no_destinations",
+            ("proxy.affinity_header", 38, "RequestAffinityKeyDecryptionFailed") => "proxy.affinity_header_decrypt_failed",
+            ("proxy.affinity_header", 39, "DestinationMatchingToAffinityKeyNotFound") => "proxy.affinity_header_destination_missing",
+            ("proxy.affinity_header", 40, "RequestAffinityHeaderHasMultipleValues") => "proxy.affinity_header_multiple_values",
+            ("proxy.affinity_hash", 36, "AffinityCannotBeEstablishedBecauseNoDestinationsFoundOnCluster") => "proxy.affinity_hash_no_destinations",
+            ("proxy.affinity_hash", 39, "DestinationMatchingToAffinityKeyNotFound") => "proxy.affinity_hash_destination_missing",
+            ("proxy.affinity_arr", 36, "AffinityCannotBeEstablishedBecauseNoDestinationsFoundOnCluster") => "proxy.affinity_arr_no_destinations",
+            ("proxy.affinity_arr", 39, "DestinationMatchingToAffinityKeyNotFound") => "proxy.affinity_arr_destination_missing",
+            ("proxy.health_probe", 10, "ExplicitActiveCheckOfAllClustersHealthFailed") => "proxy.health_probe_all_failed",
+            ("proxy.health_probe", 11, "ActiveHealthProbingFailedOnCluster") => "proxy.health_probe_cluster_failed",
+            ("proxy.health_probe", 12, "ErrorOccuredDuringActiveHealthProbingShutdownOnCluster") => "proxy.health_probe_cleanup_failed",
+            ("proxy.health_probe", 13, "ActiveHealthProbeConstructionFailedOnCluster") => "proxy.health_probe_construction_failed",
+            ("proxy.health_probe", 14, "StartingActiveHealthProbingOnCluster") => "proxy.health_probe_started",
+            ("proxy.health_probe", 15, "StoppedActiveHealthProbingOnCluster") => "proxy.health_probe_stopped",
+            ("proxy.health_probe", 16, "DestinationActiveProbingCompleted") => "proxy.health_probe_completed",
+            ("proxy.health_probe", 17, "DestinationActiveProbingFailed") => "proxy.health_probe_failed",
+            ("proxy.health_probe", 18, "SendingHealthProbeToEndpointOfDestination") => "proxy.health_probe_sending",
+            ("proxy.health_state", 19, "UnhealthyDestinationIsScheduledForReactivation") => "proxy.health_state_reactivation_scheduled",
+            ("proxy.health_state", 20, "PassiveDestinationHealthResetToUnkownState") => "proxy.health_state_passive_reset",
+            ("proxy.health_state", 49, "ActiveDestinationHealthStateIsSetToUnhealthy") => "proxy.health_state_active_unhealthy",
+            ("proxy.health_state", 50, "ActiveDestinationHealthStateIsSet") => "proxy.health_state_active_changed",
             // ConfigValidator 是实际 ILogger 类别；事件生成类型 ProxyHttpRequestValidator 不作为来源匹配。
             // 配置通知失败不等于应用事务回滚；EndpointAdded/Changed/Removed 保留框架实际 Name。
             ("proxy.config_source", 1, "ApplyProxyConfig") => "proxy.config_source_loading",

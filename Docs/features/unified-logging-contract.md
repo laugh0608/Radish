@@ -556,7 +556,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 在上下文合并后适配旧链代码 / 配置 WriteTo / AuditTo 和候选链，只保留时间、原等级、类型化 trace/span、固定类别、`SourceCategory=http`、Diagnostic、事件码及受控 failureKind。URI、header、cluster / route 标识、原异常和任意 scope 不进入输出；既有诊断门禁、最低等级和 AuditTo 异常语义继续沿用。
 - 日志不改变响应、取消或异常传播。HttpClient 的 RequestFailed 保持 Information，取消及非 HttpRequestException 不新增 failure 事件；内外 handler、负载均衡与最终转发各自记录，不做跨阶段去重。YARP 原失败 feature、状态和抛出边界保留；工厂清理失败仍按框架消费，不改变释放 / 重入队规则。
 - 四模式采用真实生成器、内存中间件与替代 HTTP handler；无依赖安装、项目服务启动或网络端口。真实网络连接、TLS / WebSocket 握手、协议协商和连接池时序均未验收；少见分支只证明日志生成器与输出。生产候选开关保持关闭、L2 尚未整体完成。
-- YARP 配置加载 / 管理后续治理见第 60 节；Socket `.Client` 当前没有产品调用，条件性亲和 / 健康检查、其他命名客户端与剩余框架 / 非 Serilog 通道继续后置。
+- YARP 配置加载 / 管理后续治理见第 60 节；亲和 / 健康检查后续治理见第 61 节；Socket `.Client` 当前没有产品调用，其他命名客户端与剩余框架 / 非 Serilog 通道继续后置。
 
 ## 60. L2 YARP 配置加载、管理与校验
 
@@ -565,4 +565,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 沿用第 59 节的上下文合并后安全重建：旧链代码 / 配置 WriteTo / AuditTo 与候选输出均覆盖，只保留固定身份、时间、原等级、类型化 trace/span 与受控 failureKind；不复制配置值、cluster / route / destination 标识、URI、异常详情或任意 scope。Debug / Information 保持诊断语义，Warning / Error 和未知严重事件保持可见。
 - 首次转换失败继续抛原异常；provider 重载转换失败保留旧快照和 token，通知回调失败保留已发布的新快照。manager 首次加载失败保留原包装 / InnerException，不合成重载事件；重载读取失败记录 43，校验 / 应用失败记录 44，分别沿用既有状态和传播边界。校验失败发生在更新前，后期应用失败可能留下部分更新，不新增事务回滚、重试、catch 或去重。
 - 四模式验证真实安装版本的全部生成器、provider 内存重载、validator 和 manager 的增改删 / 等价配置、失败恢复、endpoint token、部分更新与回调异常。manager 使用受控配置通知并显式等待真实重载方法；健康监视 / cluster listener / HTTP 客户端使用替身，密钥只在内存中，未启动健康调度器或发送请求。
-- Gateway 当前 JSON 配置 `reloadOnChange:false` 保持；本批不启用文件监视。验证不含真实文件变更、项目宿主、网络 / DNS / TLS、主动 / 被动健康探测及五分钟轮询计时；未触发分支仅证明日志生成器与安全输出。生产候选开关关闭，L2 尚未整体完成，其余条件性来源继续单独确认。
+- Gateway 当前 JSON 配置 `reloadOnChange:false` 保持；本批不启用文件监视。验证不含真实文件变更、项目宿主、网络 / DNS / TLS、主动 / 被动健康探测及五分钟轮询计时；未触发分支仅证明日志生成器与安全输出。生产候选开关关闭，L2 尚未整体完成；亲和 / 健康检查后续治理见第 61 节，其余来源继续单独确认。
+
+## 61. L2 YARP 条件性亲和与健康检查
+
+- `OutboundHttpFrameworkLogSink` 增加 `Yarp.ReverseProxy.SessionAffinity` 下的 SessionAffinityMiddleware、CookieSessionAffinityPolicy、CustomHeaderSessionAffinityPolicy、HashCookieSessionAffinityPolicy、ArrCookieSessionAffinityPolicy，以及 `Yarp.ReverseProxy.Health` 下的 ActiveHealthCheckMonitor、DestinationHealthUpdater，共 7 个精确类别；26 个已知来源 / 事件组合与 7 个未知摘要，共 33 个编码。完整身份和编码见[本批记录](../records/unified-logging-l2-yarp-affinity-health-2026-10-11.md)。
+- 只匹配来源 + EventId + EventName；共享亲和生成器借用具体策略类别，不按基类或命名空间前缀扩张。HashCookie / ARR 不映射解密事件；主动探测 16 / 17 的实际 Name 带 `Active`，状态恢复 20 保留框架 `Unkown` 原拼写。
+- 旧链代码 / 配置 WriteTo / AuditTo 与候选链继续在上下文合并后重建安全事件，保持原等级、时间、类型化 trace/span、固定来源、Diagnostic 和受控 failureKind。不输出 cookie / header、亲和键、目标 / cluster 标识、探测 URI、原异常或任意 scope；诊断门禁、未知严重事件可见性与候选等级规范保持。
+- 不启用亲和或健康配置，不修改 cookie / header 策略、阈值和传播边界。亲和匹配限制候选目标，缺失键继续安静；解密错误 / 多值 header 保持失败状态，Redistribute 继续处理，Return503Error 保持 503。响应加密失败与下游异常继续传播，不新增去重或 catch。
+- 主动探测收到 HTTP 响应仍记录原 Information 完成事件，策略按成功状态码与连续失败阈值更新健康；请求构造、发送 / 取消、策略和响应释放异常各沿用原消费边界。被动健康按转发错误 feature 和请求取消判断，不将 HTTP 500 自动视为传输失败；默认样本数、失败率、时间窗口、恢复周期保持。被动恢复仍为 Unknown，默认 HealthyOrPanic 在全部不健康时仍返回全部目标。
+- 四模式覆盖真实生成器、四种亲和策略和响应 transform、真实 monitor / 策略 / updater 与可用目标策略。测试仅使用内存 HTTP context、临时内存密钥、替代 HTTP handler、受控 TimeProvider / ITimer；显式等待真实内部异步方法以结束后台工作，区分公共 SetPassive 丢弃 Task 的既有语义。
+- 不安装依赖、不启动项目宿主、不绑定端口。真实网络 / DNS / TLS、外部健康探测、真实超时到期和调度竞态未验收；取消异常只证明消费分支。HttpSys delegation、其他框架来源及 Activity / EventSource / Metrics / Debug 等非 Serilog 通道继续独立核对。生产候选开关保持关闭，L2 尚未整体完成。
