@@ -20,19 +20,21 @@ public static class SerilogSetup
         if (host == null) throw new ArgumentNullException(nameof(host));
 
         if (runtimeLogging.Logger != null)
-            return host.UseSerilog(runtimeLogging.Logger, dispose: false);
-
-        host.UseSerilog((context, services, loggerConfiguration) =>
         {
-            // 获取配置选项（使用 IOptions 而非 IOptionsSnapshot，因为 Serilog 在 root provider 中初始化）
-            var options = services.GetRequiredService<IOptions<SerilogOptions>>().Value;
+            host.UseSerilog(runtimeLogging.Logger, dispose: false);
+        }
+        else
+        {
+            host.UseSerilog((context, services, loggerConfiguration) =>
+            {
+                // 使用 root provider 的 IOptions，保留旧链的配置与释放所有权。
+                var options = services.GetRequiredService<IOptions<SerilogOptions>>().Value;
+                ConfigureLegacy(loggerConfiguration, AppSettingsTool.Configuration, services, options);
+                ConfigureSerilogSelfLog();
+            });
+        }
 
-            ConfigureLegacy(loggerConfiguration, AppSettingsTool.Configuration, services, options);
-
-            // 配置 Serilog 内部日志
-            ConfigureSerilogSelfLog();
-        });
-
+        host.ConfigureServices((_, services) => services.ProtectHealthCheckLogging());
         return host;
     }
 
@@ -47,14 +49,14 @@ public static class SerilogSetup
             .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
             .Enrich.FromLogContext()
             .Enrich.With<SensitiveQueryStringLogEnricher>()
-            .WriteTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(sink)))))), sinks =>
+            .WriteTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(sink))))))), sinks =>
                 sinks.Logger(outputs => outputs
                     .ReadFrom.Configuration(new SerilogConfigurationView(configuration, "WriteTo"))
                     .WriteToConsole(options).WriteToFile(options).WriteToDatabase(services, options))));
         if (configuration.GetSection("Serilog:AuditTo").GetChildren().Any())
         {
             // 审计 sink 保持异常向调用方传播的语义。
-            logger.AuditTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(sink)))))), sinks =>
+            logger.AuditTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(sink))))))), sinks =>
                 sinks.Logger(outputs => outputs
                     .ReadFrom.Configuration(new SerilogConfigurationView(configuration, "AuditTo")))));
         }

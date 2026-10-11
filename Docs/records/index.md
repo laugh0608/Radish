@@ -3,6 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-11 L2 宿主健康服务日志治理](./unified-logging-l2-host-health-2026-10-11.md)：1 个精确来源、7 个编码、桥接前保护与四模式内存回归
 - [2026-10-11 L2 路由框架日志治理](./unified-logging-l2-routing-2026-10-11.md)：4 个精确来源、32 个编码与四模式内存路由 / 链接回归
 
 - [2026-10-11 L2 认证／授权日志治理](./unified-logging-l2-authentication-authorization-2026-10-11.md)：4 个框架来源、两处 JWT 回调、24 个编码与四模式内存回归

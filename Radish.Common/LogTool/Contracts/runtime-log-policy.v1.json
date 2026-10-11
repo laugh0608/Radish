@@ -73,6 +73,13 @@
     }
   },
   "events": {
+    "health.run_started": "Health check run started.",
+    "health.run_completed": "Health check run returned.",
+    "health.check_started": "Health check started.",
+    "health.check_completed": "Health check returned.",
+    "health.check_failed": "Health check consumed a failure.",
+    "health.check_data": "Health check data omitted.",
+    "health.unknown": "Health check event; raw content omitted.",
     "routing.pipeline_matched": "Routing pipeline matched.",
     "routing.pipeline_unmatched": "Routing pipeline unmatched.",
     "routing.pipeline_matching_skipped": "Routing pipeline matching skipped.",

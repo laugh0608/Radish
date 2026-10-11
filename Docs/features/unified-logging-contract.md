@@ -594,4 +594,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 在上下文合并后重建旧链代码 / 配置 WriteTo / AuditTo 和候选输出。保留原等级、时间、类型化 trace/span、固定身份、Diagnostic 和受控 failureKind；舍弃路径、route values、生成 URI、端点 / constraint 对象、原异常及任意 scope。诊断门禁与未知严重事件可见性保持。
 - `ExecutedEndpoint` 只表示执行退出，失败路径同样产生，编码使用 `exited`。不改变匹配、404、fallback、预设 endpoint、constraint / complex segment 拒绝、歧义异常、请求体限制、安全 metadata 检查、链接结果、异常或取消传播；ShortCircuit / 禁用请求体上限仅测试条件性分支，不启用产品配置。
 - DfaMatcher 的 constraint.ToString、DefaultLinkGenerator 的失败 route values 格式化可能早于 logger；不承诺控制前置求值或跨阶段去重。DiagnosticListener / Activity / Meter 等非 Serilog 通道不在适配范围。
-- 四模式验证真实生成器、内存 UseRouting / UseEndpoints 与 LinkGenerator，含敏感 scope、身份错误、请求体限制、短路 / 安全检查、退出与前置格式化失败；无项目宿主、服务启动或网络端口。宿主健康、OpenIddict 与其余来源继续分批确认；生产候选开关保持关闭，L2 尚未整体完成。
+- 四模式验证真实生成器、内存 UseRouting / UseEndpoints 与 LinkGenerator，含敏感 scope、身份错误、请求体限制、短路 / 安全检查、退出与前置格式化失败；无项目宿主、服务启动或网络端口。宿主健康后续范围见第 64 节，OpenIddict 与其余来源继续分批确认；生产候选开关保持关闭，L2 尚未整体完成。
+
+## 64. L2 宿主健康服务
+
+- 只治理 `Microsoft.Extensions.Diagnostics.HealthChecks.DefaultHealthCheckService`，按实际 Id / Name 匹配 100–105 六个身份及 `health.unknown`，共 7 个编码；103 的 Healthy / Degraded / Unhealthy 共用 `health.check_completed`，保留原 Debug / Warning / Error。映射及证据见[本批记录](../records/unified-logging-l2-host-health-2026-10-11.md)。
+- 105 使用自定义 Data 日志状态。Serilog 桥接可能在 sink 前格式化值、允许 Data 中的 SourceContext 覆盖来源，故不能只靠输出 sink。共享 `AddSerilogSetup` 在旧 / 候选分支装饰既有 `ILoggerFactory`：仅该精确类别的 Log 输入重建固定身份 / 来源 / 诊断标记 / 异常类型分类，不读取原始 state、调用 formatter 或传递异常对象。其他类别、BeginScope、IsEnabled、AddProvider 和原工厂创建 / logger 释放所有权保留。
+- `HealthCheckLogSink` 在上下文合并后再次重建事件，接入旧链代码 / 配置 WriteTo、AuditTo 与候选输出；仅保留时间、原等级、类型化 trace/span、固定 EventCode / 来源 / Diagnostic 及受控 failureKind。不保留名称、描述、Data、URL、异常原文或任意 scope。错名、错误类型、重复身份或未知事件统一为未知摘要；严重事件不因身份未知而隐藏。
+- Trace / Debug / Information 保持诊断语义，候选 Production 或 Diagnostics 关闭时抑制，旧链等级策略不变。`run_completed` 只表示报告聚合结束，`check_completed` 只表示检查返回结果，均不代表健康、业务成功或 HTTP 响应写入完成。
+- 保持 HealthReport 的状态 / 描述 / 异常 / Data、FailureStatus、predicate / tags、最小与扩展分组、默认 HTTP 状态和响应体。健康服务抛出异常与调用方取消、UriHealthCheck 自行捕获取消并返回失败结果，继续遵循各自既有边界。
+- 工厂创建、scope 释放、异常 Message 读取以及 Data.Count / 枚举可能发生在受保护 Log 调用之外；本批不改这些失败传播或折叠行为。结构化健康响应仍可能输出 description 与 exception.Message，日志治理不构成健康响应内容治理。
+- 四模式覆盖真实生成器、健康服务 / 中间件、内存 URL handler、WriteTo / AuditTo 和共享宿主注册 / 释放。HostBuilder 只 Build，不 Start；旧链 SelfLog 保留原文件初始化。未启动项目服务、绑定端口、进行网络探测或真实超时计时，未访问证书库。Publisher、OpenIddict、非 Serilog 通道与响应内容治理仍后置；生产候选开关关闭，L2 未整体完成。
