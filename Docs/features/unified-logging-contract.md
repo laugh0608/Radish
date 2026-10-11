@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-10-07。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-10-11。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -503,7 +503,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Kestrel 应用 / 回调失败、请求取消使用 `http.server_application_failed / server_request_aborted`，另区分心跳慢、应用未完成、无效响应头移除、协议降级和请求体收尾故障；未知使用 `http.server_unclassified`。OnStarting 失败停止后续启动回调；OnCompleted 失败保留已完成响应并继续其他回调。不同阶段不按请求去重。
 - Warning / Error / Critical 保持可见，低级别诊断继续受原最低等级 / diagnostics 控制。RuntimeProcess 仅移交 Generic Host 来源 EventId 11 的既有规则不变，不与 Hosting.Diagnostics 的 11 混同。
 - 四模式验证包含真实宿主自动管道组装、Hosting 请求生命周期，以及只接入内存 transport 的 Kestrel HTTP/1 处理。未绑定网络端口、运行项目宿主或访问生产；启动阶段告警与部分 Kestrel 告警只有真实生成方法 / 映射 / 元数据证据，不代表全部运行分支验收。
-- Kestrel.Connections / BadRequests 的后续治理见第 54 节；HTTP/2 / HTTP/3 与 HTTPS 中间件后续治理见第 55 节；证书监视 / 配置加载、Http.Connections、协议 resolver、其他 Hosting / Lifetime 来源和非 Serilog 通道仍待分批治理；未对业务来源继承的任意 scope 做全局清理。生产候选开关关闭、L2 未整体完成。完整映射、测试与限制见[本批记录](../records/unified-logging-l2-outer-http-2026-10-07.md)。
+- Kestrel.Connections / BadRequests 的后续治理见第 54 节；HTTP/2 / HTTP/3 与 HTTPS 中间件后续治理见第 55 节；证书监视 / 配置加载后续治理见第 56 节；Http.Connections、协议 resolver、其他 Hosting / Lifetime 来源和非 Serilog 通道仍待分批治理；未对业务来源继承的任意 scope 做全局清理。生产候选开关关闭、L2 未整体完成。完整映射、测试与限制见[本批记录](../records/unified-logging-l2-outer-http-2026-10-07.md)。
 
 ## 54. L2 Kestrel 连接与坏请求来源
 
@@ -512,7 +512,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - HTTP/1 解析拒绝仍由框架返回原状态且可不建立 Hosting 请求上下文；实际连接限流直接释放连接，不生成 HTTP 429。应用终止、连续 keep-alive、输入异常、同步 / 异步连接完成回调与 transport 释放顺序不变。
 - 连接委托与完成回调故障仍是 Kestrel 主类别 `0 / Name=null / Error`，保留已有 `http.server_unclassified`；不同阶段不去重，不按原文本猜测事件。框架在 ILogger 前读取 BadHttpRequestException.Message 的行为不属于 sink 的控制范围。
 - 四模式真实 Kestrel HTTP/1 使用唯一内存 transport，无系统 bind、项目宿主或生产操作。部分速率 / 关闭 / 协议事件仅有真实生成方法与元数据 / 映射验证，不代表真实超时、流控或 HTTP/2 分支验收。
-- HTTP/2 / HTTP/3 与 HTTPS 中间件后续治理见第 55 节；证书监视 / 配置加载、Socket / QUIC transport、Http.Connections、协议 resolver、其他框架来源及非 Serilog 通道继续独立治理。生产候选开关关闭，L2 未整体完成；测试、限制及 18 个事件编码见[本批记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。
+- HTTP/2 / HTTP/3 与 HTTPS 中间件后续治理见第 55 节；证书监视 / 配置加载后续治理见第 56 节；Socket / QUIC transport、Http.Connections、协议 resolver、其他框架来源及非 Serilog 通道继续独立治理。生产候选开关关闭，L2 未整体完成；测试、限制及 18 个事件编码见[本批记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。
 
 ## 55. L2 Kestrel HTTP/2、HTTP/3 与 HTTPS 中间件
 
@@ -521,4 +521,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 真实内存 HTTP/2 验证流拒绝后可继续请求、连接 / HPACK 拒绝的 GOAWAY、500 与清理。当前框架 HPACK 索引 0 走主来源 Warning + GOAWAY(2)，截断索引走压缩错误 + GOAWAY(9)，不将两条路径混同或修改协议。真实内存 HTTP/3 验证 QPACK 请求 / 响应、控制流 DATA 拒绝 0x105、单流 Abort 0x102 后下个请求成功；应用故障保留开发异常页 / Kestrel 主来源所有权。
 - 真实 HTTPS 中间件 / SslStream 验证 TLS 1.2 成功、无效 TLS 字节、握手回调取消 / IO / 认证 / 其他异常，以及后续委托失败时恢复 transport。取消回调只证明框架 timed_out 消费分支，不代表实际计时器超时。所有响应、消费、错误码、协议配置和证书规则保持。
 - 四模式测试只使用内存连接 / 多路复用流与临时自签证书，不启动项目服务、不执行系统网络 bind、不导入信任存储。HTTP/3 的 TLS 已建立 feature 替代真实 QUIC transport，不能用于证明 QUIC 握手。稀有队列故障、编码失败、平台回退和证书库路径仅有实际生成方法 / 元数据 / 安全映射证据。
-- 证书监视 / 配置加载、Socket / QUIC transport、Http.Connections、协议 resolver、其他框架来源及非 Serilog 通道仍待治理。生产候选开关关闭，L2 尚未整体完成；完整映射、测试与限制见[本批记录](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。
+- 证书监视 / 配置加载后续治理见第 56 节；Socket / QUIC transport、Http.Connections、协议 resolver、其他框架来源及非 Serilog 通道仍待治理。生产候选开关关闭，L2 尚未整体完成；完整映射、测试与限制见[本批记录](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。
+
+## 56. L2 证书文件监视与配置加载
+
+- `HttpServerFrameworkLogSink` 精确适配 `Microsoft.AspNetCore.Server.Kestrel.Core.Internal.CertificatePathWatcher` 与 `Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServer`。前者 16 个、后者 10 个已知事件，各保留一个未知编码，共 28 个 `http.certificate_watch_* / certificate_config_*` 公共编码。两个类别不能与 Kestrel 主来源或 HTTPS 中间件混同。
+- 旧链代码 / 配置 WriteTo / AuditTo 与候选输出继续在上下文合并后重建安全事件，保留时间、原等级、类型化 trace/span、固定来源和受控 failureKind；不复制目录、证书 / 私钥路径、主题 / 指纹、自由文本、异常详情或任意 scope。Warning / Error / Critical 和原 diagnostics / 最低等级规则保持。
+- `LocatedDevelopmentCertificate` 的实际 ID 为 0，Serilog 省略零值 Id，仅精确配置来源 + 该 Name 接受缺省零；显式错误类型、错误名称或其他来源不匹配。事件 6 / 7 使用实际 Name `MissingOrInvalidCertificateFile / MissingOrInvalidCertificateKeyFile`，不按方法名或消息文本猜测。
+- 真实监视器配合可控 IFileProvider 验证观察者复用 / 移除、最后一个文件 / 目录释放、文件不可用时忽略事件、可用变更设置 FileHasChanged 并更换 token。保持仅监视 Path、未单独监视 KeyPath 的框架行为；没有真实磁盘轮询或证书解析。
+- 真实证书加载器读取临时公钥 PEM；真实密钥加载方法验证临时普通 / 加密 PEM 的签名能力，以及错误密码、格式、缺失与不匹配的异常传播。配置重载以唯一内存 transport 验证证书加载失败保留原 HTTP endpoint、恢复后重新绑定，以及绑定失败仍由 Kestrel 主来源 `0 / Name=null` 报告。首次加载失败仍归 `runtime.failed`，不新增 catch、重试或跨阶段去重。
+- 四模式测试不启动项目宿主、不执行系统网络 bind、不读取用户开发证书或系统证书库。开发证书查找 / 信任、事件 6 / 7、LastModifiedTimeError 仅有真实生成方法 / 身份 / 安全映射证据；Windows 私钥持久化、PFX、实际轮询 / 符号链接及 TLS 握手 / 热换证书未验收。候选开关保持关闭、L2 未整体完成，完整映射和证据见[本批记录](../records/unified-logging-l2-certificate-configuration-2026-10-11.md)。

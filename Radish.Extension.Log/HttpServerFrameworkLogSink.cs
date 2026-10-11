@@ -6,7 +6,7 @@ using Serilog.Parsing;
 
 namespace Radish.Extension.Log;
 
-/// <summary>适配外层 HTTP 与 Kestrel 协议 / HTTPS 的精确日志来源，不改变服务器与开发异常页行为。</summary>
+/// <summary>适配外层 HTTP、Kestrel 协议 / HTTPS 与证书配置的精确日志来源，不改变服务器行为。</summary>
 public sealed class HttpServerFrameworkLogSink(ILogEventSink next) : ILogEventSink
 {
     private const string DeveloperPage = "Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware";
@@ -17,6 +17,8 @@ public sealed class HttpServerFrameworkLogSink(ILogEventSink next) : ILogEventSi
     private const string Http2 = Kestrel + ".Http2";
     private const string Http3 = Kestrel + ".Http3";
     private const string Https = "Microsoft.AspNetCore.Server.Kestrel.Https.Internal.HttpsConnectionMiddleware";
+    private const string CertificateWatcher = Kestrel + ".Core.Internal.CertificatePathWatcher";
+    private const string CertificateConfig = Kestrel + ".Core.KestrelServer";
     private static readonly MessageTemplate Template = new MessageTemplateParser().Parse("HTTP server event {EventCode}.");
     private static readonly MessageTemplate FailureTemplate = new MessageTemplateParser().Parse("HTTP server event {EventCode}; kind={failureKind}.");
 
@@ -24,7 +26,7 @@ public sealed class HttpServerFrameworkLogSink(ILogEventSink next) : ILogEventSi
     {
         if (!logEvent.Properties.TryGetValue("SourceContext", out var source) ||
             source is not ScalarValue { Value: string category } ||
-            category is not (DeveloperPage or Hosting or Kestrel or Connections or BadRequests or Http2 or Http3 or Https))
+            category is not (DeveloperPage or Hosting or Kestrel or Connections or BadRequests or Http2 or Http3 or Https or CertificateWatcher or CertificateConfig))
         {
             next.Emit(logEvent);
             return;
@@ -105,6 +107,36 @@ public sealed class HttpServerFrameworkLogSink(ILogEventSink next) : ILogEventSi
             (Https, 7, "FailToLocateCertificate") => "http.tls_certificate_search_failed",
             (Https, 8, "FailToOpenStore") => "http.tls_certificate_store_failed",
             (Https, 9, "NoSubjectAlternativeName") => "http.tls_certificate_missing_san",
+            (CertificateWatcher, 1, "DirectoryDoesNotExist") => "http.certificate_watch_directory_missing",
+            (CertificateWatcher, 2, "UnknownFile") => "http.certificate_watch_file_unknown",
+            (CertificateWatcher, 3, "UnknownObserver") => "http.certificate_watch_observer_unknown",
+            (CertificateWatcher, 4, "CreatedDirectoryWatcher") => "http.certificate_watch_directory_created",
+            (CertificateWatcher, 5, "CreatedFileWatcher") => "http.certificate_watch_file_created",
+            (CertificateWatcher, 6, "RemovedDirectoryWatcher") => "http.certificate_watch_directory_removed",
+            (CertificateWatcher, 7, "RemovedFileWatcher") => "http.certificate_watch_file_removed",
+            (CertificateWatcher, 8, "LastModifiedTimeError") => "http.certificate_watch_timestamp_failed",
+            (CertificateWatcher, 9, "UntrackedFileEvent") => "http.certificate_watch_untracked_event",
+            (CertificateWatcher, 10, "ReusedObserver") => "http.certificate_watch_observer_reused",
+            (CertificateWatcher, 11, "AddedObserver") => "http.certificate_watch_observer_added",
+            (CertificateWatcher, 12, "RemovedObserver") => "http.certificate_watch_observer_removed",
+            (CertificateWatcher, 13, "ObserverCount") => "http.certificate_watch_observer_count",
+            (CertificateWatcher, 14, "FileCount") => "http.certificate_watch_file_count",
+            (CertificateWatcher, 15, "FlaggedObservers") => "http.certificate_watch_changed",
+            (CertificateWatcher, 16, "EventWithoutFile") => "http.certificate_watch_file_unavailable",
+            // Serilog.Extensions.Logging 省略零值 Id；仅此精确类别与名称接受缺省零。
+            // 畸形 Id 经 Identity 返回 (null, null)，不会命中该分支。
+            (CertificateConfig, 0 or null, "LocatedDevelopmentCertificate") => "http.certificate_config_development_selected",
+            (CertificateConfig, 1, "UnableToLocateDevelopmentCertificate") => "http.certificate_config_development_missing",
+            (CertificateConfig, 2, "FailedToLocateDevelopmentCertificateFile") => "http.certificate_config_development_file_missing",
+            (CertificateConfig, 3, "FailedToLoadDevelopmentCertificate") => "http.certificate_config_development_load_failed",
+            (CertificateConfig, 4, "BadDeveloperCertificateState") => "http.certificate_config_development_invalid",
+            (CertificateConfig, 5, "DeveloperCertificateFirstRun") => "http.certificate_config_development_setup_required",
+            (CertificateConfig, 6, "MissingOrInvalidCertificateFile") => "http.certificate_config_file_invalid",
+            (CertificateConfig, 7, "MissingOrInvalidCertificateKeyFile") => "http.certificate_config_key_invalid",
+            (CertificateConfig, 8, "DeveloperCertificateNotTrusted") => "http.certificate_config_development_untrusted",
+            (CertificateConfig, 9, "DeveloperCertificatePartiallyTrusted") => "http.certificate_config_development_partially_trusted",
+            (CertificateWatcher, _, _) => "http.certificate_watch_unclassified",
+            (CertificateConfig, _, _) => "http.certificate_config_unclassified",
             (Http2, _, _) => "http.http2_unclassified",
             (Http3, _, _) => "http.http3_unclassified",
             (Https, _, _) => "http.tls_unclassified",

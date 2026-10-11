@@ -153,7 +153,9 @@ public sealed class OuterHttpFrameworkSinkTests
     [InlineData("Microsoft.AspNetCore.Hosting.Diagnostics.Custom")]
     [InlineData("Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware.Custom")]
     [InlineData("Microsoft.AspNetCore.Server.Kestrel.Https.Internal.HttpsConnectionMiddleware.Custom")]
-    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.CertificatePathWatcher")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.CertificatePathWatcher.Custom")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServer.Custom")]
+    [InlineData("Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Certificates.CertificateConfigLoader")]
     [InlineData("Microsoft.AspNetCore.Server.Kestrel.Transport.Quic")]
     [InlineData(HttpBoundaryCapture.Source)]
     public void OtherSources_ShouldPassThroughSameInstance(string source)

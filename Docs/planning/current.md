@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：只读核对 CertificatePathWatcher 与配置加载的日志来源、事件身份及证书访问边界，再确认适配范围；HTTP/2 / HTTP/3 / HTTPS 中间件已完成[本批治理](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。Socket / QUIC transport、Http.Connections、协议 resolver 等保留后续范围。
-- **状态复核日期**：`2026-10-07`；已完成表情管理、API 已处理 404、SignalR Core 三类来源、HTTP 异常处理中间件、外层 HTTP 三来源、Kestrel 连接 / 坏请求及协议 / HTTPS 治理，见[事件契约第 49–55 节](../features/unified-logging-contract.md)及[Kestrel 协议 / HTTPS 批次记录](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：先只读复核早期轻回应 / 评论 / 帖子消费点在响应构造再次失败时的日志所有权，再确认适配方案；CertificatePathWatcher 与配置加载已完成[本批治理](../records/unified-logging-l2-certificate-configuration-2026-10-11.md)。Socket / QUIC transport、Http.Connections、协议 resolver 等保留后续范围。
+- **状态复核日期**：`2026-10-11`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS 及证书监视 / 配置加载治理，见[事件契约第 49–56 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -28,6 +28,8 @@
 正式产品线只保留 Web 与 Flutter Native；Web 优先，Flutter mobile-first、desktop stage-gated。WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 
 ## 最近结论
+
+- `2026-10-11` 完成日志 L2 的证书文件监视 / 配置加载适配：两个精确来源、26 个已知事件与两个未知摘要，四模式隔离验证见[本批记录](../records/unified-logging-l2-certificate-configuration-2026-10-11.md)。生产开关继续关闭，未访问系统证书库。
 
 - `2026-10-07` 完成日志 L2 的 7 个开发提交，覆盖表情管理、API 404 / 错误响应完成边界，以及 SignalR Core、外层 HTTP 和 Kestrel 协议 / HTTPS 来源。[日终回顾](../records/day-end-doc-review-2026-10-07.md)汇总提交、文档校准、验证证据与未关闭边界；L2 尚未关闭，生产链路未切换。
 
@@ -49,15 +51,15 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 明天事项（2026-10-08）
+## 下一步事项（2026-10-11 更新）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–55 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–56 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
 
-1. **优先只读核对证书来源**：外层 HTTP、Kestrel 连接 / 坏请求及 HTTP/2 / HTTP/3 / HTTPS 中间件已完成[治理与内存协议回归](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。下一步只读核对证书文件监视 / 配置加载，形成具体方案后确认实现；Socket / QUIC transport、协议 resolver、Http.Connections 保留后续范围。不授权安装依赖、启动项目服务 / 容器或访问生产。
-2. **后续候选：复核早期消费点**：早期轻回应 / 评论 / 帖子消费点仍先记录后读取异常 Message；响应构造再次失败时的日志所有权需要另行核对，不能沿用后续批次的单次输出结论。
+1. **优先复核早期消费点**：早期轻回应 / 评论 / 帖子消费点仍先记录后读取异常 Message；响应构造再次失败时的日志所有权需要只读核对，形成具体方案后确认实现，不能沿用后续批次的单次输出结论。
+2. **其余框架来源后续分批确认**：证书监视 / 配置加载已完成，不再列为待办；Socket / QUIC transport、协议 resolver、Http.Connections 和其他框架来源保留后续范围，不因本批完成自动取得实现或运行授权。
 3. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
 
-以上为明天恢复工作的顺位；项目启动仍需按当时具体范围授权。证书核对先形成来源、事件身份、敏感字段、消费归属与可验证范围清单，再确认运行时实现。
+以上为后续恢复工作的顺位；本批不授权安装依赖、启动项目服务 / 容器、访问生产或系统证书库。真实运行与后续实现仍按具体范围确认。
 
 生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L2 整体治理、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。Native P8-C readiness 保留后续顺位。
 
