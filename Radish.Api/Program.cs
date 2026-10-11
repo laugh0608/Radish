@@ -408,74 +408,7 @@ return await RuntimeProcess.RunAsync("api", async () =>
                 options.RequireHttpsMetadata = false;
             }
 
-            // SignalR (WebSocket) 在浏览器端无法稳定携带 Authorization Header，
-            // 会把 token 放在 query string 的 access_token 上；这里需要显式取出来。
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = context =>
-                {
-                    var accessToken = context.Request.Query["access_token"].ToString();
-                    var path = context.HttpContext.Request.Path;
-
-                    if (!string.IsNullOrWhiteSpace(accessToken)
-                        && (path.StartsWithSegments("/hub/notification") ||
-                            path.StartsWithSegments("/hub/chat") ||
-                            path.StartsWithSegments("/hub/comment")))
-                    {
-                        context.Token = accessToken;
-                    }
-
-                    return Task.CompletedTask;
-                },
-                OnAuthenticationFailed = context =>
-                {
-                    var path = context.HttpContext.Request.Path;
-                    Log.Warning(
-                        "[JWT] AuthenticationFailed - Path: {Path}, ErrorType: {ErrorType}, TraceId: {TraceId}",
-                        path,
-                        context.Exception.GetType().Name,
-                        context.HttpContext.TraceIdentifier);
-                    return Task.CompletedTask;
-                },
-                OnChallenge = context =>
-                {
-                    var path = context.HttpContext.Request.Path;
-                    Log.Warning(
-                        "[JWT] Challenge - Path: {Path}, Error: {Error}, TraceId: {TraceId}",
-                        path,
-                        context.Error,
-                        context.HttpContext.TraceIdentifier);
-
-                    if (!ApiErrorResultFactory.IsMessageModelApiRequest(context.HttpContext))
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    context.HandleResponse();
-                    return ApiErrorResultFactory.WriteAsync(
-                        context.HttpContext,
-                        StatusCodes.Status401Unauthorized,
-                        "请先登录后再继续操作",
-                        ApiErrorCodes.Unauthorized,
-                        "error.auth.unauthorized",
-                        cancellationToken: context.HttpContext.RequestAborted);
-                },
-                OnForbidden = context =>
-                {
-                    if (!ApiErrorResultFactory.IsMessageModelApiRequest(context.HttpContext))
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    return ApiErrorResultFactory.WriteAsync(
-                        context.HttpContext,
-                        StatusCodes.Status403Forbidden,
-                        "当前账号无权执行此操作",
-                        ApiErrorCodes.Forbidden,
-                        "error.auth.forbidden",
-                        cancellationToken: context.HttpContext.RequestAborted);
-                }
-            };
+            options.Events = new ApiJwtBearerEvents();
 
             options.TokenValidationParameters = ApiJwtValidationPolicy.Create(
                 jwtIssuer,

@@ -576,3 +576,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 主动探测收到 HTTP 响应仍记录原 Information 完成事件，策略按成功状态码与连续失败阈值更新健康；请求构造、发送 / 取消、策略和响应释放异常各沿用原消费边界。被动健康按转发错误 feature 和请求取消判断，不将 HTTP 500 自动视为传输失败；默认样本数、失败率、时间窗口、恢复周期保持。被动恢复仍为 Unknown，默认 HealthyOrPanic 在全部不健康时仍返回全部目标。
 - 四模式覆盖真实生成器、四种亲和策略和响应 transform、真实 monitor / 策略 / updater 与可用目标策略。测试仅使用内存 HTTP context、临时内存密钥、替代 HTTP handler、受控 TimeProvider / ITimer；显式等待真实内部异步方法以结束后台工作，区分公共 SetPassive 丢弃 Task 的既有语义。
 - 不安装依赖、不启动项目宿主、不绑定端口。真实网络 / DNS / TLS、外部健康探测、真实超时到期和调度竞态未验收；取消异常只证明消费分支。HttpSys delegation、其他框架来源及 Activity / EventSource / Metrics / Debug 等非 Serilog 通道继续独立核对。生产候选开关保持关闭，L2 尚未整体完成。
+
+## 62. L2 认证／授权框架与 API JWT 回调
+
+- `AuthenticationLogSink` 精确覆盖 `Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler`、`Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationHandler`、`Microsoft.AspNetCore.Authorization.DefaultAuthorizationService`、`Microsoft.AspNetCore.Authorization.AuthorizationMiddleware`。18 个已知来源 / 事件组合、4 个来源未知摘要，加 API 两处自有回调，共 24 个编码；完整映射见[本批记录](../records/unified-logging-l2-authentication-authorization-2026-10-11.md)。
+- 只按来源 + EventId + EventName 识别；基类共同事件借用具体 JWT / Cookie 类别。授权中间件的 0 / 无名 Debug 只进入 `auth.authorization_middleware_unknown`，不按模板推断；不扩展 RemoteAuthentication、OpenIddict 或实现类名称。
+- 在上下文合并后重建旧链代码 / 配置 WriteTo / AuditTo 与候选输出。只保留固定身份、原等级与时间、类型化 trace/span、Diagnostic 和受控 failureKind；不输出 token、Cookie、claims、路径、错误文本、requirements、异常对象及任意 scope。诊断门禁与未知严重事件可见性保持。
+- `ApiJwtBearerEvents` 承接 Program 的既有凭据选择与 401 / 403 回调，两处日志改为 `auth.jwt_failure_observed` / `auth.jwt_challenge_observed`。观察发生在响应写入前，不等于写入完成；框架 challenge 完成事件只在原处理返回后产生。不改变 Hub query 范围、HandleResponse、API / 非 API 响应、Cookie、策略、取消和异常传播。
+- 认证基类读取 Failure.Message、授权服务格式化 requirements 都可能早于 logger；适配器不控制这些前置求值。日志消费阶段不合并去重，也不承诺整个请求只有一条故障事件。
+- 四模式验证真实生成器、JWT / Cookie handler、Authentication / Authorization 中间件及 API 回调。仅使用内存 HTTP context、内存密钥 / DataProtection、静态 OIDC 配置和受控响应流；进程内 xUnit 不安装依赖、不启动服务、不绑定端口。
+- 路由、宿主健康服务、OpenIddict 与非 Serilog 通道暂不扩展。真实 OIDC 登录、持久 Cookie 密钥、网络 / 浏览器、数据库权限和生产外部采集未验收；生产候选开关保持关闭，L2 尚未整体完成。
