@@ -6,7 +6,7 @@ using Serilog.Parsing;
 
 namespace Radish.Extension.Log;
 
-/// <summary>在上下文合并后重建已确认的 YARP 与出站 HTTP 日志，不改变请求、取消或异常传播。</summary>
+/// <summary>在上下文合并后重建已确认的 YARP 与出站 HTTP 日志，不改变配置加载 / 重载、请求、取消或异常传播。</summary>
 public sealed class OutboundHttpFrameworkLogSink(ILogEventSink next) : ILogEventSink
 {
     private static readonly MessageTemplate Template = new MessageTemplateParser().Parse("Outbound HTTP event {EventCode}.");
@@ -22,6 +22,9 @@ public sealed class OutboundHttpFrameworkLogSink(ILogEventSink next) : ILogEvent
         // 客户端名称采用封闭清单；相邻类别与未来注册的名称不自动纳入。
         var owner = category switch
         {
+            "Yarp.ReverseProxy.Configuration.ConfigProvider.ConfigurationConfigProvider" => "proxy.config_source",
+            "Yarp.ReverseProxy.Management.ProxyConfigManager" => "proxy.config_manager",
+            "Yarp.ReverseProxy.Configuration.ConfigValidator" => "proxy.config_validator",
             "Yarp.ReverseProxy.Forwarder.HttpForwarder" => "proxy.forwarder",
             "Yarp.ReverseProxy.Forwarder.ForwarderHttpClientFactory" => "proxy.client",
             "Yarp.ReverseProxy.Forwarder.ForwarderMiddleware" => "proxy.middleware",
@@ -48,6 +51,23 @@ public sealed class OutboundHttpFrameworkLogSink(ILogEventSink next) : ILogEvent
         var (id, name) = Identity(logEvent);
         var code = (owner, id, name) switch
         {
+            // ConfigValidator 是实际 ILogger 类别；事件生成类型 ProxyHttpRequestValidator 不作为来源匹配。
+            // 配置通知失败不等于应用事务回滚；EndpointAdded/Changed/Removed 保留框架实际 Name。
+            ("proxy.config_source", 1, "ApplyProxyConfig") => "proxy.config_source_loading",
+            ("proxy.config_source", 2, "ApplyProxyConfigFailed") => "proxy.config_source_notification_failed",
+            ("proxy.config_source", 47, "ConfigurationDataConversionFailed") => "proxy.config_source_conversion_failed",
+            ("proxy.config_manager", 21, "ClusterAdded") => "proxy.config_manager_cluster_added",
+            ("proxy.config_manager", 22, "ClusterChanged") => "proxy.config_manager_cluster_changed",
+            ("proxy.config_manager", 23, "ClusterRemoved") => "proxy.config_manager_cluster_removed",
+            ("proxy.config_manager", 24, "EndpointAdded") => "proxy.config_manager_destination_added",
+            ("proxy.config_manager", 25, "EndpointChanged") => "proxy.config_manager_destination_changed",
+            ("proxy.config_manager", 26, "EndpointRemoved") => "proxy.config_manager_destination_removed",
+            ("proxy.config_manager", 27, "RouteAdded") => "proxy.config_manager_route_added",
+            ("proxy.config_manager", 28, "RouteChanged") => "proxy.config_manager_route_changed",
+            ("proxy.config_manager", 29, "RouteRemoved") => "proxy.config_manager_route_removed",
+            ("proxy.config_manager", 43, "ErrorReloadingConfig") => "proxy.config_manager_reload_failed",
+            ("proxy.config_manager", 44, "ErrorApplyingConfig") => "proxy.config_manager_apply_failed",
+            ("proxy.config_validator", 58, "Http10RequestVersionDetected") => "proxy.config_validator_http10_detected",
             ("proxy.forwarder", 9, "Forwarding") => "proxy.forwarder_forwarding",
             ("proxy.forwarder", 56, "ResponseReceived") => "proxy.forwarder_response_received",
             ("proxy.forwarder", 48, "ForwardingError") => "proxy.forwarder_failed",

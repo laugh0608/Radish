@@ -130,7 +130,7 @@ public sealed class OutboundFrameworkLoggingTests
             Assert.Same(neighbor, Adapt(neighbor));
         }
         foreach (var source in new[] { "System.Net.Http.HttpClient.Other.ClientHandler", "System.Net.Http.HttpClient.api-service.clienthandler",
-            "Yarp.ReverseProxy.Management.ProxyConfigManager", "Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.Client", "System.Net.Http" })
+            "Yarp.ReverseProxy.Management.ProxyConfigManager.Custom", "Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.Client", "System.Net.Http" })
         {
             var original = Event(source, Identity(100, "RequestStart"));
             Assert.Same(original, Adapt(original));

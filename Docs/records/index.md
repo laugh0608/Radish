@@ -3,6 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-11 L2 YARP 配置加载、管理与校验](./unified-logging-l2-yarp-configuration-2026-10-11.md)：3 个精确来源、18 个编码与四模式内存配置回归
 - [2026-10-11 L2 YARP 与出站 HTTP 框架日志](./unified-logging-l2-outbound-http-2026-10-11.md)：15 个精确来源、75 个编码与无网络的四模式回归
 - [2026-10-11 L2 transport 与协议解析日志](./unified-logging-l2-transport-protocol-2026-10-11.md)：9 个精确来源、99 个编码与无网络端口的四模式验证
 - [2026-10-11 L2 早期消费点错误结果与日志所有权](./unified-logging-l2-early-consumer-ownership-2026-10-11.md)：先构造后记录、轻回应通知异常交接与四模式回归

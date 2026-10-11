@@ -540,7 +540,25 @@
     "http.console_health_handler_request_headers": "Http console health handler request headers.",
     "http.console_health_handler_response_headers": "Http console health handler response headers.",
     "http.console_health_handler_failed": "Http console health handler failed.",
-    "http.console_health_handler_unclassified": "Outbound HTTP event; raw content omitted."
+    "http.console_health_handler_unclassified": "Outbound HTTP event; raw content omitted.",
+    "proxy.config_source_loading": "Proxy config source loading.",
+    "proxy.config_source_notification_failed": "Proxy config source notification failed.",
+    "proxy.config_source_conversion_failed": "Proxy config source conversion failed.",
+    "proxy.config_source_unclassified": "Proxy configuration event; raw content omitted.",
+    "proxy.config_manager_cluster_added": "Proxy config manager cluster added.",
+    "proxy.config_manager_cluster_changed": "Proxy config manager cluster changed.",
+    "proxy.config_manager_cluster_removed": "Proxy config manager cluster removed.",
+    "proxy.config_manager_destination_added": "Proxy config manager destination added.",
+    "proxy.config_manager_destination_changed": "Proxy config manager destination changed.",
+    "proxy.config_manager_destination_removed": "Proxy config manager destination removed.",
+    "proxy.config_manager_route_added": "Proxy config manager route added.",
+    "proxy.config_manager_route_changed": "Proxy config manager route changed.",
+    "proxy.config_manager_route_removed": "Proxy config manager route removed.",
+    "proxy.config_manager_reload_failed": "Proxy config manager reload failed.",
+    "proxy.config_manager_apply_failed": "Proxy config manager apply failed.",
+    "proxy.config_manager_unclassified": "Proxy configuration event; raw content omitted.",
+    "proxy.config_validator_http10_detected": "Proxy config validator http10 detected.",
+    "proxy.config_validator_unclassified": "Proxy configuration event; raw content omitted."
   },
   "properties": {
     "durationMs": {

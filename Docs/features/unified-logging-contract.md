@@ -556,4 +556,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 在上下文合并后适配旧链代码 / 配置 WriteTo / AuditTo 和候选链，只保留时间、原等级、类型化 trace/span、固定类别、`SourceCategory=http`、Diagnostic、事件码及受控 failureKind。URI、header、cluster / route 标识、原异常和任意 scope 不进入输出；既有诊断门禁、最低等级和 AuditTo 异常语义继续沿用。
 - 日志不改变响应、取消或异常传播。HttpClient 的 RequestFailed 保持 Information，取消及非 HttpRequestException 不新增 failure 事件；内外 handler、负载均衡与最终转发各自记录，不做跨阶段去重。YARP 原失败 feature、状态和抛出边界保留；工厂清理失败仍按框架消费，不改变释放 / 重入队规则。
 - 四模式采用真实生成器、内存中间件与替代 HTTP handler；无依赖安装、项目服务启动或网络端口。真实网络连接、TLS / WebSocket 握手、协议协商和连接池时序均未验收；少见分支只证明日志生成器与输出。生产候选开关保持关闭、L2 尚未整体完成。
-- Socket `.Client` 当前没有产品调用；YARP 配置管理、条件性亲和 / 健康检查、其他命名客户端与剩余框架 / 非 Serilog 通道继续后置。
+- YARP 配置加载 / 管理后续治理见第 60 节；Socket `.Client` 当前没有产品调用，条件性亲和 / 健康检查、其他命名客户端与剩余框架 / 非 Serilog 通道继续后置。
+
+## 60. L2 YARP 配置加载、管理与校验
+
+- `OutboundHttpFrameworkLogSink` 精确增加 `Yarp.ReverseProxy.Configuration.ConfigProvider.ConfigurationConfigProvider`、`Yarp.ReverseProxy.Management.ProxyConfigManager`、`Yarp.ReverseProxy.Configuration.ConfigValidator` 三个类别；15 个已知事件与每来源一个未知摘要，共 18 个公共编码。按来源 + EventId + EventName 匹配，完整清单见[本批记录](../records/unified-logging-l2-yarp-configuration-2026-10-11.md)。
+- `ProxyHttpRequestValidator` 实际注入 `ILogger<ConfigValidator>`，不以生成类型充当日志来源；目标变更事件的实际 Name 为 `EndpointAdded / EndpointChanged / EndpointRemoved`。provider 的 `2 / ApplyProxyConfigFailed` 表示发布新快照后的通知失败，不代表事务回滚；`58 / Http10RequestVersionDetected` 保持 Warning，HTTP/1.0 仍被接受。
+- 沿用第 59 节的上下文合并后安全重建：旧链代码 / 配置 WriteTo / AuditTo 与候选输出均覆盖，只保留固定身份、时间、原等级、类型化 trace/span 与受控 failureKind；不复制配置值、cluster / route / destination 标识、URI、异常详情或任意 scope。Debug / Information 保持诊断语义，Warning / Error 和未知严重事件保持可见。
+- 首次转换失败继续抛原异常；provider 重载转换失败保留旧快照和 token，通知回调失败保留已发布的新快照。manager 首次加载失败保留原包装 / InnerException，不合成重载事件；重载读取失败记录 43，校验 / 应用失败记录 44，分别沿用既有状态和传播边界。校验失败发生在更新前，后期应用失败可能留下部分更新，不新增事务回滚、重试、catch 或去重。
+- 四模式验证真实安装版本的全部生成器、provider 内存重载、validator 和 manager 的增改删 / 等价配置、失败恢复、endpoint token、部分更新与回调异常。manager 使用受控配置通知并显式等待真实重载方法；健康监视 / cluster listener / HTTP 客户端使用替身，密钥只在内存中，未启动健康调度器或发送请求。
+- Gateway 当前 JSON 配置 `reloadOnChange:false` 保持；本批不启用文件监视。验证不含真实文件变更、项目宿主、网络 / DNS / TLS、主动 / 被动健康探测及五分钟轮询计时；未触发分支仅证明日志生成器与安全输出。生产候选开关关闭，L2 尚未整体完成，其余条件性来源继续单独确认。
