@@ -6,7 +6,7 @@ using Serilog.Parsing;
 
 namespace Radish.Extension.Log;
 
-/// <summary>适配外层 HTTP、Kestrel 协议 / HTTPS 与证书配置的精确日志来源，不改变服务器行为。</summary>
+/// <summary>适配外层 HTTP、Kestrel 协议 / HTTPS、证书配置与 Socket / QUIC transport 的精确日志来源，不改变服务器行为。</summary>
 public sealed class HttpServerFrameworkLogSink(ILogEventSink next) : ILogEventSink
 {
     private const string DeveloperPage = "Microsoft.AspNetCore.Diagnostics.DeveloperExceptionPageMiddleware";
@@ -19,6 +19,8 @@ public sealed class HttpServerFrameworkLogSink(ILogEventSink next) : ILogEventSi
     private const string Https = "Microsoft.AspNetCore.Server.Kestrel.Https.Internal.HttpsConnectionMiddleware";
     private const string CertificateWatcher = Kestrel + ".Core.Internal.CertificatePathWatcher";
     private const string CertificateConfig = Kestrel + ".Core.KestrelServer";
+    private const string Sockets = Kestrel + ".Transport.Sockets";
+    private const string Quic = Kestrel + ".Transport.Quic";
     private static readonly MessageTemplate Template = new MessageTemplateParser().Parse("HTTP server event {EventCode}.");
     private static readonly MessageTemplate FailureTemplate = new MessageTemplateParser().Parse("HTTP server event {EventCode}; kind={failureKind}.");
 
@@ -26,7 +28,7 @@ public sealed class HttpServerFrameworkLogSink(ILogEventSink next) : ILogEventSi
     {
         if (!logEvent.Properties.TryGetValue("SourceContext", out var source) ||
             source is not ScalarValue { Value: string category } ||
-            category is not (DeveloperPage or Hosting or Kestrel or Connections or BadRequests or Http2 or Http3 or Https or CertificateWatcher or CertificateConfig))
+            category is not (DeveloperPage or Hosting or Kestrel or Connections or BadRequests or Http2 or Http3 or Https or CertificateWatcher or CertificateConfig or Sockets or Quic))
         {
             next.Emit(logEvent);
             return;
@@ -135,6 +137,40 @@ public sealed class HttpServerFrameworkLogSink(ILogEventSink next) : ILogEventSi
             (CertificateConfig, 7, "MissingOrInvalidCertificateKeyFile") => "http.certificate_config_key_invalid",
             (CertificateConfig, 8, "DeveloperCertificateNotTrusted") => "http.certificate_config_development_untrusted",
             (CertificateConfig, 9, "DeveloperCertificatePartiallyTrusted") => "http.certificate_config_development_partially_trusted",
+            (Sockets, 6, "ConnectionReadFin") => "http.socket_read_fin",
+            (Sockets, 7, "ConnectionWriteFin") => "http.socket_write_fin",
+            (Sockets, 8, "ConnectionWriteRst") => "http.socket_write_reset",
+            (Sockets, 14, "ConnectionError") => "http.socket_connection_error",
+            (Sockets, 19, "ConnectionReset") => "http.socket_connection_reset",
+            (Sockets, 4, "ConnectionPause") => "http.socket_paused",
+            (Sockets, 5, "ConnectionResume") => "http.socket_resumed",
+            (Quic, 1, "AcceptedConnection") => "http.quic_connection_accepted",
+            (Quic, 2, "AcceptedStream") => "http.quic_stream_accepted",
+            (Quic, 3, "ConnectedStream") => "http.quic_stream_connected",
+            (Quic, 4, "ConnectionError") => "http.quic_connection_error",
+            (Quic, 5, "ConnectionAborted") => "http.quic_connection_aborted",
+            (Quic, 6, "ConnectionAbort") => "http.quic_connection_abort",
+            (Quic, 7, "StreamError") => "http.quic_stream_error",
+            (Quic, 8, "StreamPause") => "http.quic_stream_paused",
+            (Quic, 9, "StreamResume") => "http.quic_stream_resumed",
+            (Quic, 10, "StreamShutdownWrite") => "http.quic_stream_write_shutdown",
+            (Quic, 11, "StreamAbortedRead") => "http.quic_stream_read_aborted",
+            (Quic, 12, "StreamAbortedWrite") => "http.quic_stream_write_aborted",
+            (Quic, 13, "StreamAbort") => "http.quic_stream_abort",
+            (Quic, 14, "StreamAbortRead") => "http.quic_stream_read_abort",
+            (Quic, 15, "StreamAbortWrite") => "http.quic_stream_write_abort",
+            (Quic, 16, "StreamPooled") => "http.quic_stream_pooled",
+            (Quic, 17, "StreamReused") => "http.quic_stream_reused",
+            (Quic, 18, "ConnectionListenerCertificateNotSpecified") => "http.quic_certificate_missing",
+            (Quic, 19, "ConnectionListenerApplicationProtocolsNotSpecified") => "http.quic_protocols_missing",
+            (Quic, 20, "ConnectionListenerStarting") => "http.quic_listener_starting",
+            (Quic, 21, "ConnectionListenerAborted") => "http.quic_listener_aborted",
+            (Quic, 22, "StreamTimeoutRead") => "http.quic_stream_read_timeout",
+            (Quic, 23, "StreamTimeoutWrite") => "http.quic_stream_write_timeout",
+            (Quic, 24, "ConnectionListenerAcceptConnectionFailed") => "http.quic_listener_accept_failed",
+            // transport 的直接日志使用 0 / null，统一安全摘要，不根据原文猜测语义。
+            (Sockets, _, _) => "http.socket_unclassified",
+            (Quic, _, _) => "http.quic_unclassified",
             (CertificateWatcher, _, _) => "http.certificate_watch_unclassified",
             (CertificateConfig, _, _) => "http.certificate_config_unclassified",
             (Http2, _, _) => "http.http2_unclassified",

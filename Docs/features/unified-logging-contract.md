@@ -483,7 +483,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 框架原 Debug / Trace 与低级别过程事件继续受最低等级 / diagnostics 控制，不统一升级为 Error。Hub 自有断开事件保留原时机；不同处理阶段与独立写入失败不按连接去重。Hub 授权、业务执行、协议响应、清理与异常传播不变。
 - 旧链的代码 Console / File / Database 与配置 WriteTo 均进入安全包装；AuditTo 继续传播输出失败，内部聚合异常可能增加包装层。候选入口与旧链仍互斥，生产开关保持关闭。
 - 四模式内存真实框架调度回归覆盖方法、绑定、生命周期、协议解析、握手及写入；另有未知事件、不可渲染异常 / 属性、配置 reload、SQL 属性保留、释放与审计失败回归。`ErrorSendingClose / FailedStreaming` 仅有映射及元数据证据，不代表真实分支验收。
-- 协议 resolver、Http.Connections、Kestrel 等来源仍待治理；HTTP 异常处理中间件的后续治理见第 52 节。本批不代表真实 WebSocket / 宿主 / 日志库入库验收。准确映射与验证边界见[本批记录](../records/unified-logging-l2-signalr-core-2026-10-07.md)。
+- 协议 resolver / Http.Connections 后续治理见第 58 节，Kestrel 后续治理见第 53–56 节；HTTP 异常处理中间件的后续治理见第 52 节。本批不代表真实 WebSocket / 宿主 / 日志库入库验收。准确映射与验证边界见[本批记录](../records/unified-logging-l2-signalr-core-2026-10-07.md)。
 
 ## 52. L2 HTTP 异常处理中间件安全输出
 
@@ -512,7 +512,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - HTTP/1 解析拒绝仍由框架返回原状态且可不建立 Hosting 请求上下文；实际连接限流直接释放连接，不生成 HTTP 429。应用终止、连续 keep-alive、输入异常、同步 / 异步连接完成回调与 transport 释放顺序不变。
 - 连接委托与完成回调故障仍是 Kestrel 主类别 `0 / Name=null / Error`，保留已有 `http.server_unclassified`；不同阶段不去重，不按原文本猜测事件。框架在 ILogger 前读取 BadHttpRequestException.Message 的行为不属于 sink 的控制范围。
 - 四模式真实 Kestrel HTTP/1 使用唯一内存 transport，无系统 bind、项目宿主或生产操作。部分速率 / 关闭 / 协议事件仅有真实生成方法与元数据 / 映射验证，不代表真实超时、流控或 HTTP/2 分支验收。
-- HTTP/2 / HTTP/3 与 HTTPS 中间件后续治理见第 55 节；证书监视 / 配置加载后续治理见第 56 节；Socket / QUIC transport、Http.Connections、协议 resolver、其他框架来源及非 Serilog 通道继续独立治理。生产候选开关关闭，L2 未整体完成；测试、限制及 18 个事件编码见[本批记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。
+- HTTP/2 / HTTP/3 与 HTTPS 中间件后续治理见第 55 节；证书监视 / 配置加载后续治理见第 56 节；Socket / QUIC transport、Http.Connections 与协议 resolver 后续治理见第 58 节；其他框架来源及非 Serilog 通道继续独立治理。生产候选开关关闭，L2 未整体完成；测试、限制及 18 个事件编码见[本批记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。
 
 ## 55. L2 Kestrel HTTP/2、HTTP/3 与 HTTPS 中间件
 
@@ -521,7 +521,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 真实内存 HTTP/2 验证流拒绝后可继续请求、连接 / HPACK 拒绝的 GOAWAY、500 与清理。当前框架 HPACK 索引 0 走主来源 Warning + GOAWAY(2)，截断索引走压缩错误 + GOAWAY(9)，不将两条路径混同或修改协议。真实内存 HTTP/3 验证 QPACK 请求 / 响应、控制流 DATA 拒绝 0x105、单流 Abort 0x102 后下个请求成功；应用故障保留开发异常页 / Kestrel 主来源所有权。
 - 真实 HTTPS 中间件 / SslStream 验证 TLS 1.2 成功、无效 TLS 字节、握手回调取消 / IO / 认证 / 其他异常，以及后续委托失败时恢复 transport。取消回调只证明框架 timed_out 消费分支，不代表实际计时器超时。所有响应、消费、错误码、协议配置和证书规则保持。
 - 四模式测试只使用内存连接 / 多路复用流与临时自签证书，不启动项目服务、不执行系统网络 bind、不导入信任存储。HTTP/3 的 TLS 已建立 feature 替代真实 QUIC transport，不能用于证明 QUIC 握手。稀有队列故障、编码失败、平台回退和证书库路径仅有实际生成方法 / 元数据 / 安全映射证据。
-- 证书监视 / 配置加载后续治理见第 56 节；Socket / QUIC transport、Http.Connections、协议 resolver、其他框架来源及非 Serilog 通道仍待治理。生产候选开关关闭，L2 尚未整体完成；完整映射、测试与限制见[本批记录](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。
+- 证书监视 / 配置加载后续治理见第 56 节；Socket / QUIC transport、Http.Connections 与协议 resolver 后续治理见第 58 节；其他框架来源及非 Serilog 通道仍待治理。生产候选开关关闭，L2 尚未整体完成；完整映射、测试与限制见[本批记录](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。
 
 ## 56. L2 证书文件监视与配置加载
 
@@ -539,3 +539,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 轻回应通知阶段通过专用 ArgumentException 子类传递来源，原异常保留在 InnerException，Message 延迟委托给原异常。包装改变该分支传播实例，不改变父类消费、消息或回滚契约；Controller 仅在 400 结果构造成功后生成原通知事件。回滚本身失败或响应消息读取失败时，helper 不留下提前日志；不以 Exception.Data、全局状态或异常文本匹配识别通知来源。
 - 日志只证明本层错误结果已构造，不证明 HTTP 响应已发送。后续结果过滤、序列化、网络写入失败仍由既有 API / 框架边界处理；ApiExceptionHandler 仍在错误 JSON 写入完成后记录，不新增全请求去重或更改异常中间件。帖子发布 / 版本恢复保持既有顺序。
 - 四模式覆盖被消费类型的 Message 再次抛错、消息只读取一次、通知包装不提前求值、回滚失败、评论编辑与版本恢复交接，以及正常拒绝、响应与事务 / 缓存回归。内存管道与 SQLite 证据不替代真实项目宿主、Redis、PostgreSQL 或生产验收。生产开关保持关闭，L2 尚未整体完成；见[本批记录](../records/unified-logging-l2-early-consumer-ownership-2026-10-11.md)。
+
+## 58. L2 Socket / QUIC transport、Http.Connections 与协议解析
+
+- `HttpServerFrameworkLogSink` 新增服务端 `Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets / Quic`；`SignalRFrameworkLogSink` 新增 Http.Connections 的 dispatcher、manager、context、WebSocketsTransport、LongPollingTransport、ServerSentEventsTransport 及 `DefaultHubProtocolResolver`。只匹配这 9 个精确来源，90 个已知事件各有编码，每个来源另有一个未知摘要，共 99 个公共编码。
+- 已知事件按来源 + EventId + EventName 匹配。dispatcher 的实际 Name 为 `TerminatingConection`（框架原拼写）；三个 HTTP transport 日志类别保留不含 Server 的历史名称。Socket / QUIC 直接记录的 `0 / Name=null` 进入各自未知摘要，不按模板或异常文本细分。Socket transport 的 `.Client`、其他前缀邻居和非 Serilog 通道不在本批范围。
+- 继续复用上下文合并后的旧链代码 / 配置 WriteTo / AuditTo 和候选包装链，只输出固定编码、来源、Diagnostic 与受控 failureKind；保留时间、原日志等级与类型化 trace/span。连接 ID、用户名、协议名、endpoint、原模板、异常详情、任意 scope 不复制。低等级诊断不提升成 Warning / Error，候选 diagnostics 开关及最低等级规则保持。
+- 不改协商 JSON / 状态码、transport 选择、超时、取消、回调、连接清理或异常传播。LongPolling 非取消错误仍先 Error、设 500 再抛原异常；SSE I/O 仍向上传播。不同阶段的上层 API / 框架日志不做全请求去重。resolver 仍大小写不敏感、同名最后注册生效，未知 / 禁用协议返回 null 且安静。
+- 四模式覆盖已安装 ASP.NET Core 10.0.8 的全部 90 个真实日志生成器、元数据身份、未知事件及配置输出；Http.Connections / resolver 使用真实框架对象、内存 HTTP / Pipe 和抽象 WebSocket 验证消费行为。未安装依赖、未启动项目服务、未绑定端口，测试通过 xUnit 进程内入口执行。
+- Socket / QUIC 仅证明日志生成器、身份及安全输出，不证明真实连接、读写、握手、关闭或平台回调分支。本机原生 QUIC 不受支持；Http.Connections 稀有分支与未触发定义的证据仍限于生成器，不能写成传输验收。生产候选开关保持关闭、L2 尚未整体完成，准确清单与验证边界见[本批记录](../records/unified-logging-l2-transport-protocol-2026-10-11.md)。

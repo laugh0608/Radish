@@ -1,6 +1,6 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理的生成端安全摘要同时作用于旧 / 候选 sink；基础生成端、后台任务、业务消费和实时推送的准确范围见该契约第 7–57 节。SignalR Core 的 handler、dispatcher、connection context 及 HTTP ExceptionHandlerMiddleware、DeveloperExceptionPageMiddleware、Hosting.Diagnostics、Kestrel 主来源、Connections / BadRequests、Http2 / Http3、HttpsConnectionMiddleware、CertificatePathWatcher 与证书配置类别 Core.KestrelServer 已在上下文合并后统一输出安全事件，覆盖旧链代码 / 配置 sink 与候选输出；其他 SignalR / HTTP / 传输框架来源仍待治理，L2 尚未整体完成。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理的生成端安全摘要同时作用于旧 / 候选 sink；基础生成端、后台任务、业务消费和实时推送的准确范围见该契约第 7–58 节。SignalR Core 的 handler、dispatcher、connection context 及 HTTP ExceptionHandlerMiddleware、DeveloperExceptionPageMiddleware、Hosting.Diagnostics、Kestrel 主来源、Connections / BadRequests、Http2 / Http3、HttpsConnectionMiddleware、CertificatePathWatcher、证书配置类别 Core.KestrelServer、服务端 Socket / QUIC transport、Http.Connections 六来源及 DefaultHubProtocolResolver 已在上下文合并后统一输出安全事件，覆盖旧链代码 / 配置 sink 与候选输出；其他 SignalR / HTTP / 传输框架来源仍待治理，L2 尚未整体完成。
 
 ## 架构概述
 

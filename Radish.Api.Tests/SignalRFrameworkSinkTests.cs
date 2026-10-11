@@ -65,7 +65,7 @@ public sealed class SignalRFrameworkSinkTests
 
     [Theory]
     [InlineData("Microsoft.AspNetCore.SignalR.HubConnectionHandler.Custom")]
-    [InlineData("Microsoft.AspNetCore.Http.Connections.Internal.HttpConnectionManager")]
+    [InlineData("Microsoft.AspNetCore.Http.Connections.Internal.HttpConnectionManager.Custom")]
     [InlineData("Radish.Api.Hubs.ChatHub")]
     public void OtherSources_ShouldPassThroughSameEvent(string source)
     {
