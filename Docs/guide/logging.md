@@ -1,6 +1,18 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理的生成端安全摘要同时作用于旧 / 候选 sink；基础生成端、后台任务、业务消费和实时推送的准确范围见该契约第 7–66 节。SignalR Core 的 handler、dispatcher、connection context 及 HTTP ExceptionHandlerMiddleware、DeveloperExceptionPageMiddleware、Hosting.Diagnostics、Kestrel 主来源、Connections / BadRequests、Http2 / Http3、HttpsConnectionMiddleware、CertificatePathWatcher、证书配置类别 Core.KestrelServer、服务端 Socket / QUIC transport、Http.Connections 六来源及 DefaultHubProtocolResolver 已在上下文合并后统一输出安全事件，覆盖旧链代码 / 配置 sink 与候选输出；YARP 转发六来源、四个固定 HttpClient 的八个 handler 来源及 DefaultHttpClientFactory 已完成治理，准确范围见契约第 59 节；YARP 配置加载 / 管理 / 校验的三个精确来源见第 60 节，条件性亲和 / 健康检查的七个精确来源见第 61 节；JWT / Cookie / 授权的四个精确框架来源及 API 两处 JWT 回调见第 62 节；endpoint routing / matcher / link generator 的四个精确来源见第 63 节；宿主健康服务的精确来源、桥接前保护与输出摘要见第 64 节；OpenIddict Server 的两个精确来源见第 65 节，Core 三个 manager 精确来源及存储 / 缓存失败边界见第 66 节，自有日志与其他 OpenIddict 通道仍后置；其他 SignalR / HTTP / 传输框架来源仍待治理，L2 尚未整体完成。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端的安全摘要同时作用于旧 / 候选链，准确范围见契约第 7–66 节；L2 尚未整体完成。
+
+已治理框架类别在上下文合并后重建安全事件，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出。精确来源和事件身份以契约为准，不按类别前缀扩大：
+
+| 来源组 | 契约章节 |
+| --- | --- |
+| SignalR Core、HTTP 异常 / Hosting、Kestrel 连接 / 协议 / HTTPS | 第 51–55 节 |
+| 证书监视 / 配置、服务端 Socket / QUIC、Http.Connections / 协议解析 | 第 56、58 节 |
+| YARP 转发 / 命名 HttpClient、配置、条件性亲和与健康检查 | 第 59–61 节 |
+| JWT / Cookie / 授权、API JWT 回调、路由 | 第 62–63 节 |
+| 宿主健康服务、OpenIddict Server / Core | 第 64–66 节 |
+
+宿主健康服务与 OpenIddict 的已列明来源另在 ILogger → Serilog 桥接前阻止读取原 state、formatter 和 exception；最终 sink 继续清理合并后的 scope。其他来源不能继承此桥接保护结论。日志治理不改变协议响应、认证结果、存储 / 缓存与事务语义，也不代表客户端已收到响应；自有 Auth 日志、其他集成及非 Serilog 通道仍需独立核对。详细限制见[敏感数据保护](./logging-sensitive-data.md)与[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)。
 
 ## 架构概述
 

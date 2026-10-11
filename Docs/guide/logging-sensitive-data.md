@@ -1,6 +1,6 @@
 # 日志敏感数据与查询凭据保护
 
-> 最后更新：2026-10-07（Asia/Shanghai）
+> 最后更新：2026-10-11（Asia/Shanghai）
 >
 > 本页说明应用日志、网关日志与审计日志中的敏感数据边界；日志输出、存储、查询和归档仍以 [日志系统](/guide/logging) 为准，前端规则见 [前端日志与敏感字段脱敏](/guide/frontend-logging)。
 
@@ -51,19 +51,20 @@ API / Auth / Gateway 在 `RadishLogging.Enabled=false` 的旧 `AddSerilogSetup` 
 
 ## 已治理框架来源的输出边界
 
-`SignalRFrameworkLogSink`、`HttpExceptionFrameworkLogSink` 与 `HttpServerFrameworkLogSink` 只匹配[事件契约第 51–55 节](../features/unified-logging-contract.md)列明的精确类别，包括 SignalR Core 三来源、HTTP 异常处理 / 开发异常页、Hosting.Diagnostics、Kestrel 主来源、Connections / BadRequests、Http2 / Http3 与 HTTPS 中间件。已知事件按来源、EventId / Name 识别，未知目标事件仍输出安全摘要，不通过原消息推断。
+已治理来源以[事件契约第 51–66 节](../features/unified-logging-contract.md)逐项列明的精确类别为准（第 57 节为业务消费边界）：SignalR Core、HTTP 异常 / Hosting / Kestrel、证书监视与配置、服务端 Socket / QUIC、Http.Connections / 协议解析、YARP / 命名 HttpClient、认证授权、路由、宿主健康服务及 OpenIddict Server / Core。已知事件按来源、EventId / Name 识别，未知目标事件输出安全摘要，不通过原消息推断。
 
 - 在 enrichment / LogContext 合并后重建事件，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出；保留时间、等级、类型化 trace/span、固定来源和受控 failureKind，移除原模板、异常对象与任意 scope。
+- 宿主健康服务的一个来源和 OpenIddict Server / Core 的五个来源另有 ILogger → Serilog 桥接前保护：不枚举原 state、不调用原 formatter、不传入原 exception，避免消息绑定提前读取敏感对象。其他适配器不能据此宣称同样具备桥接前保护；最终 sink 仍负责移除合并后的任意 scope。
 - 配置输出由 `ConfigureLegacy` 和实时 `SerilogConfigurationView` 分开装配，避免标准配置 sink 绕过适配；AuditTo 原有失败传播语义保留。自定义插件自行增添数据不由此保证。
-- 非目标类别继续透传给后续输出；不能据此宣称业务任意 scope、Http.Connections、协议 resolver、证书监视 / 配置加载、Socket / QUIC 或其他框架来源已全部治理。候选公共策略仍会省略未登记载荷。
-- 日志适配不改变开发异常页正文、HTTP / SignalR 协议消息、异常传播或证书验证，也不接管 DiagnosticListener、Activity / metrics、裸输出等其他通道。框架在调用 ILogger 前读取异常 / 证书属性的行为不在 sink 控制范围。
+- 非目标类别继续透传给后续输出。自有 Auth 日志、任意业务 scope、相邻框架类别与其他 OpenIddict 集成不因本批自动完成治理；候选公共策略仍会省略未登记载荷。
+- 日志适配不改变开发异常页正文、HTTP / SignalR / OIDC 响应、认证规则、健康结果、manager 存储 / 缓存行为或证书验证。调用 ILogger 前读取属性的行为、BeginScope 自身的行为以及 IdentityModel 的独立日志接口 / EventSource、DiagnosticListener、Activity / metrics、Serilog SelfLog、裸输出等通道，不由本批整体保证。
 
 ## 代码与验证入口
 
 - 全局注册：`Radish.Extension.Log/SerilogSetup.cs`
 - 查询参数脱敏：`Radish.Extension.Log/SensitiveQueryStringLogEnricher.cs`
 - 查询参数回归：`Radish.Api.Tests/SensitiveQueryStringLogEnricherTests.cs`
-- 框架安全输出回归：`SignalRFrameworkSinkTests`、`HttpExceptionFrameworkSinkTests`、`OuterHttpFrameworkSinkTests`，真实路径与证据限制见[10 月 7 日日终回顾](../records/day-end-doc-review-2026-10-07.md)
+- 框架安全输出回归：`SignalRFrameworkSinkTests`、`HttpExceptionFrameworkSinkTests`、`OuterHttpFrameworkSinkTests`，早期真实路径见[10 月 7 日日终回顾](../records/day-end-doc-review-2026-10-07.md)；后续来源、健康 / OpenIddict 桥接保护与验证限制见[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)
 - 前端统一日志：`Frontend/radish.client/src/utils/logger.ts`
 - 前端敏感字段规则：[前端日志与敏感字段脱敏](/guide/frontend-logging)
 

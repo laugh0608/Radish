@@ -358,16 +358,16 @@ Gateway 是默认公开入口，但 `Api / Auth / Gateway` 三个宿主都会注
 
 ### 4. 日志记录
 
-Gateway 使用 Serilog 记录结构化日志。
+Gateway 通过共享 `AddSerilogSetup` 记录日志；以下文件与启动示例适用于默认旧链，候选入口默认关闭，输出与级别见[日志系统](./logging.md)。
 
 **日志输出**：
 - **控制台**：彩色格式化输出，包含启动信息
-- **文件**：`Log/Gateway/Gateway.txt`（按天滚动）
+- **文件**：`Logs/Radish.Gateway/Log.txt`（按天滚动）
 
 **日志内容**：
 - 启动信息（环境、监听地址、CORS 配置、下游服务地址）
-- 请求日志（通过 Serilog Request Logging 中间件）
-- 错误日志（异常堆栈、错误上下文）
+- HTTP / YARP 请求、转发、配置与条件性亲和 / 健康事件；当前未注册 `UseSerilogRequestLogging`
+- 已治理精确来源输出固定事件与受控 failureKind，省略原始 URL、异常正文及 scope；范围见[统一日志契约第 59–64 节](../features/unified-logging-contract.md)
 
 **启动日志示例**：
 
@@ -514,19 +514,7 @@ dotnet run --project Radish.Gateway/Radish.Gateway.csproj
 
 **1. 查看 YARP 路由日志**
 
-在 `appsettings.json` 中启用详细日志：
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "Yarp": "Debug"
-    }
-  }
-}
-```
+本地排障先按[日志系统](./logging.md)核对 Serilog 与各输出的级别配置；临时覆盖放入不提交的 `appsettings.Local.json`。降低级别不会恢复已治理来源的原始 URI、请求头或异常文本。候选链仍按公共策略过滤，生产策略不输出 Debug / Trace；提高框架详细度不等于取得真实网络验收。
 
 **2. 测试路由转发**
 
@@ -647,7 +635,7 @@ docker compose up -d
 
 5. **监控告警**：
    - 集成 Prometheus + Grafana 监控
-   - 配置日志聚合（ELK/Loki）
+   - 日志汇聚按[统一日志专题](../features/unified-logging-governance-design.md)推进，当前尚未切换生产链路
    - 设置关键指标告警（QPS、错误率、延迟）
 
 ## 常见问题
@@ -837,8 +825,8 @@ if (hasAccessToken()) {
 **A**: 日志输出位置：
 
 - **控制台**：启动 Gateway 的终端窗口
-- **文件**：`Log/Gateway/Gateway.txt`（按天滚动）
-- **结构化日志**：可配置输出到 Elasticsearch、Seq 等日志平台
+- **文件**：`Logs/Radish.Gateway/Log.txt`（按天滚动）
+- **后续汇聚**：按[统一日志专题](../features/unified-logging-governance-design.md)接入独立 collector、文件与内网 API 持久化及 Console 查询；尚未完成生产切换
 
 ### Q7: 如何添加新的后端服务？
 
