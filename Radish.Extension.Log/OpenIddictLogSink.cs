@@ -6,7 +6,7 @@ using Serilog.Parsing;
 
 namespace Radish.Extension.Log;
 
-/// <summary>在上下文合并后重建 OpenIddict Server 事件，不输出协议消息与认证材料。</summary>
+/// <summary>在上下文合并后重建 OpenIddict Server / Core 事件，不输出协议消息与认证材料。</summary>
 public sealed class OpenIddictLogSink(ILogEventSink next) : ILogEventSink
 {
     private static readonly MessageTemplate Template = new MessageTemplateParser().Parse("OpenIddict event {EventCode}.");
@@ -34,7 +34,7 @@ public sealed class OpenIddictLogSink(ILogEventSink next) : ILogEventSink
         {
             new("EventCode", new ScalarValue(code)),
             new("SourceContext", new ScalarValue(source)),
-            new("SourceCategory", new ScalarValue("http")),
+            new("SourceCategory", new ScalarValue(OpenIddictLogIdentity.Category(source))),
             new("Diagnostic", new ScalarValue(logEvent.Level < LogEventLevel.Warning))
         };
         if (failureKind != null) properties.Add(new("failureKind", new ScalarValue(failureKind)));

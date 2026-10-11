@@ -3,6 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-11 L2 OpenIddict Core 日志治理](./unified-logging-l2-openiddict-core-2026-10-11.md)：3 个精确来源、21 个编码、桥接保护扩展与存储 / 缓存 / Server 消费四模式回归
 - [2026-10-11 L2 OpenIddict Server 日志治理](./unified-logging-l2-openiddict-server-2026-10-11.md)：2 个精确来源、185 个编码、桥接前保护与认证 / 响应四模式回归
 - [2026-10-11 L2 宿主健康服务日志治理](./unified-logging-l2-host-health-2026-10-11.md)：1 个精确来源、7 个编码、桥接前保护与四模式内存回归
 - [2026-10-11 L2 路由框架日志治理](./unified-logging-l2-routing-2026-10-11.md)：4 个精确来源、32 个编码与四模式内存路由 / 链接回归

@@ -6,10 +6,48 @@ internal static class OpenIddictLogIdentity
     internal const string Server = "OpenIddict.Server.OpenIddictServerDispatcher";
     internal const string Handler = "OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandler";
 
-    internal static bool IsSource(string source) => source is Server or Handler;
+    internal const string Application = "OpenIddict.Core.OpenIddictApplicationManager";
+    internal const string Authorization = "OpenIddict.Core.OpenIddictAuthorizationManager";
+    internal const string Token = "OpenIddict.Core.OpenIddictTokenManager";
+
+    internal static bool IsSource(string source) => source is Server or Handler or Application or Authorization or Token;
+    internal static string Category(string source) => source is Application or Authorization or Token ? "application" : "http";
 
     internal static string Code(string source, int? id, string? name)
     {
+        if (source == Application)
+            return (id, name) switch
+            {
+                (6159, null) => "oidc.core.application.public_client_secret_rejected",
+                (6160, null) => "oidc.core.application.client_secret_missing",
+                (6161, null) => "oidc.core.application.client_secret_invalid",
+                (6202, null) => "oidc.core.application.post_logout_redirect_uri_rejected",
+                (6162, null) => "oidc.core.application.redirect_uri_rejected",
+                (6163, null) => "oidc.core.application.client_secret_verification_failed",
+                _ => "oidc.core.application.unknown"
+            };
+        if (source == Authorization)
+            return (id, name) switch
+            {
+                (6164, null) => "oidc.core.authorization.revoke_completed",
+                (6165, null) => "oidc.core.authorization.revoke_concurrency",
+                (6166, null) => "oidc.core.authorization.revoke_failed",
+                _ => "oidc.core.authorization.unknown"
+            };
+        if (source == Token)
+            return (id, name) switch
+            {
+                (6168, null) => "oidc.core.token.redeem_completed",
+                (6169, null) => "oidc.core.token.redeem_concurrency",
+                (6170, null) => "oidc.core.token.redeem_failed",
+                (6171, null) => "oidc.core.token.reject_completed",
+                (6172, null) => "oidc.core.token.reject_concurrency",
+                (6173, null) => "oidc.core.token.reject_failed",
+                (6174, null) => "oidc.core.token.revoke_completed",
+                (6175, null) => "oidc.core.token.revoke_concurrency",
+                (6176, null) => "oidc.core.token.revoke_failed",
+                _ => "oidc.core.token.unknown"
+            };
         if (source == Handler)
             return (id, name) switch
             {

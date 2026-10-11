@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：OpenIddict Server 已完成[2 个精确来源、185 个编码及桥接前保护](../records/unified-logging-l2-openiddict-server-2026-10-11.md)；后续先确认 OpenIddict Core 的来源与验证范围，自有日志及非 Serilog 专项另批确认。
-- **状态复核日期**：`2026-10-11`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务及 OpenIddict Server 治理，见[事件契约第 49–65 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：OpenIddict Core 已完成[3 个精确来源、21 个编码及桥接保护扩展](../records/unified-logging-l2-openiddict-core-2026-10-11.md)；后续先确认自有 Auth 日志与非 Serilog 专项的来源和验证范围。
+- **状态复核日期**：`2026-10-11`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务及 OpenIddict Server / Core 治理，见[事件契约第 49–66 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -55,10 +55,10 @@
 
 ## 下一步事项（2026-10-11 更新）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–65 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–66 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
 
 1. **早期消费点已完成本批调整**：10 个 Controller catch 与评论失败元组先构造后记录，轻回应通知通过内部异常分类交接到 Create；二次失败与四模式回归见[本批记录](../records/unified-logging-l2-early-consumer-ownership-2026-10-11.md)。本层构造完成不等于 HTTP 写入完成，不承诺跨阶段仅一条日志。
-2. **其余框架来源后续分批确认**：服务端 Socket / QUIC transport、Http.Connections 六来源与协议 resolver 已完成日志适配；Socket / QUIC 无真实连接验收。YARP 转发 / 命名 HttpClient 的 15 个精确来源已完成日志适配，证据限于生成器与内存行为，不含真实网络连接。YARP 配置加载 / 管理 / 校验的 3 个精确来源已完成日志适配，证据限于生成器与内存配置行为，不含真实文件监视或健康探测。条件性亲和 / 健康检查的 7 个精确来源已完成日志适配，证据限于生成器和内存替身，不含真实网络、健康探测及超时计时。认证／授权四个精确来源及 API 两处 JWT 回调完成 24 个编码治理，证据限于真实生成器、内存 handler / 中间件和回调，不含真实登录全流程。路由四个精确来源完成 32 个编码治理，证据限于真实生成器与内存路由 / 链接行为。宿主健康服务的 1 个精确来源完成 7 个编码及桥接前保护，证据限于真实生成器、内存服务 / 响应 / URL handler 与宿主 Build / 释放，不含真实探测。OpenIddict Server 的两个精确来源完成 185 个编码及桥接前保护，证据限于真实处理器、内存 JWT / 响应和 manager 替身，不含真实登录或存储验收。OpenIddict Core、自有日志与非 Serilog 通道暂不扩展；Socket `.Client` 当前无产品调用，HttpSys delegation 继续后置，后续实现与运行均需独立确认。
+2. **其余框架来源后续分批确认**：服务端 Socket / QUIC transport、Http.Connections 六来源与协议 resolver 已完成日志适配；Socket / QUIC 无真实连接验收。YARP 转发 / 命名 HttpClient 的 15 个精确来源已完成日志适配，证据限于生成器与内存行为，不含真实网络连接。YARP 配置加载 / 管理 / 校验的 3 个精确来源已完成日志适配，证据限于生成器与内存配置行为，不含真实文件监视或健康探测。条件性亲和 / 健康检查的 7 个精确来源已完成日志适配，证据限于生成器和内存替身，不含真实网络、健康探测及超时计时。认证／授权四个精确来源及 API 两处 JWT 回调完成 24 个编码治理，证据限于真实生成器、内存 handler / 中间件和回调，不含真实登录全流程。路由四个精确来源完成 32 个编码治理，证据限于真实生成器与内存路由 / 链接行为。宿主健康服务的 1 个精确来源完成 7 个编码及桥接前保护，证据限于真实生成器、内存服务 / 响应 / URL handler 与宿主 Build / 释放，不含真实探测。OpenIddict Server 的两个精确来源完成 185 个编码及桥接前保护，证据限于真实处理器、内存 JWT / 响应和 manager 替身，不含真实登录或存储验收。OpenIddict Core 的三个精确来源完成 21 个编码及桥接保护扩展，证据限于真实 manager、存储 / 缓存替身与 Server 消费链，不含真实存储或事务提交验收。自有日志与非 Serilog 通道暂不扩展；Socket `.Client` 当前无产品调用，HttpSys delegation 继续后置，后续实现与运行均需独立确认。
 3. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
 
 以上为后续恢复工作的顺位；本批不授权安装依赖、启动项目服务 / 容器、访问生产或系统证书库。真实运行与后续实现仍按具体范围确认。

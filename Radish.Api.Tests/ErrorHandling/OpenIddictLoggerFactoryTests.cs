@@ -23,16 +23,16 @@ public sealed class OpenIddictLoggerFactoryTests
         var services = new ServiceCollection();
         var creates = 0;
         services.AddSingleton<ILoggerFactory>(_ => { creates++; return inner; });
-        services.ProtectOpenIddictServerLogging();
+        services.ProtectOpenIddictLogging();
         using (var provider = services.BuildServiceProvider())
         {
             var factory = provider.GetRequiredService<ILoggerFactory>();
             Assert.IsType<OpenIddictLoggerFactory>(factory);
             Assert.Same(factory, provider.GetRequiredService<ILoggerFactory>());
             Assert.Equal(1, creates);
-            foreach (var source in new[] { "other", OpenIddictEvents.Server + ".Custom", "OpenIddict.Core.OpenIddictTokenManager", HealthFrameworkEvents.Source })
+            foreach (var source in new[] { "other", OpenIddictEvents.Server + ".Custom", "OpenIddict.Core.OpenIddictScopeManager", OpenIddictCoreEvents.Token + "`1", OpenIddictCoreEvents.Application + ".Custom", HealthFrameworkEvents.Source })
                 Assert.Same(inner.Logger, factory.CreateLogger(source));
-            foreach (var source in new[] { OpenIddictEvents.Server, OpenIddictEvents.Handler })
+            foreach (var source in new[] { OpenIddictEvents.Server, OpenIddictEvents.Handler, OpenIddictCoreEvents.Application, OpenIddictCoreEvents.Authorization, OpenIddictCoreEvents.Token })
             {
                 var logger = factory.CreateLogger(source);
                 Assert.NotSame(inner.Logger, logger);
@@ -49,15 +49,15 @@ public sealed class OpenIddictLoggerFactoryTests
             factory.Dispose(); factory.Dispose();
         }
         Assert.Equal(1, inner.Disposals);
-        Assert.Throws<InvalidOperationException>(() => new ServiceCollection().ProtectOpenIddictServerLogging());
+        Assert.Throws<InvalidOperationException>(() => new ServiceCollection().ProtectOpenIddictLogging());
         var invalid = new ServiceCollection();
         invalid.AddSingleton<ILoggerFactory>(inner);
-        Assert.Throws<InvalidOperationException>(() => invalid.ProtectOpenIddictServerLogging());
+        Assert.Throws<InvalidOperationException>(() => invalid.ProtectOpenIddictLogging());
     }
 
     [Theory]
     [MemberData(nameof(HttpExceptionPipelineLoggingTests.OutputModes), MemberType = typeof(HttpExceptionPipelineLoggingTests))]
-    public void SharedHostBuildAndDispose_ShouldProtectServerAndPreserveLoggerOwnership(bool candidate, string environment)
+    public void SharedHostBuildAndDispose_ShouldProtectServerAndCoreAndPreserveLoggerOwnership(bool candidate, string environment)
     {
         var key = Guid.NewGuid().ToString("N");
         var sink = new HttpBoundaryTestSink();
@@ -84,20 +84,22 @@ public sealed class OpenIddictLoggerFactoryTests
             {
                 var factory = host.Services.GetRequiredService<ILoggerFactory>();
                 Assert.IsType<HealthCheckLoggerFactory>(factory); // 原健康保护仍在同一注册链上。
-                foreach (var source in new[] { OpenIddictEvents.Server, OpenIddictEvents.Handler })
+                foreach (var source in new[] { OpenIddictEvents.Server, OpenIddictEvents.Handler, OpenIddictCoreEvents.Application, OpenIddictCoreEvents.Authorization, OpenIddictCoreEvents.Token })
                     factory.CreateLogger(source).Log(LogLevel.Error, new EventId(9999), new HealthPoisonState(), new HealthUnreadableException(), (_, _) => throw new InvalidOperationException());
             }
             if (candidate)
             {
                 Assert.Contains("oidc.server.unknown", output.ToString());
                 Assert.Contains("oidc.handler.unknown", output.ToString());
+                foreach (var source in new[] { "application", "authorization", "token" })
+                    Assert.Contains("oidc.core." + source + ".unknown", output.ToString());
                 Assert.Equal("", emergency.ToString());
                 session.Logger!.ForContext("EventCode", "runtime.started").Information("After host disposal");
                 Assert.Contains("runtime.started", output.ToString());
             }
             else
             {
-                Assert.Equal(2, sink.Events.Count);
+                Assert.Equal(5, sink.Events.Count);
                 Assert.Equal(1, sink.Disposals); // 旧链仍随宿主释放根 logger 和它拥有的 sink。
             }
         }

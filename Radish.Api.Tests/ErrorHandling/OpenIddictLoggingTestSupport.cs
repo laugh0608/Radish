@@ -24,7 +24,7 @@ internal sealed class OpenIddictLoggingFixture : IDisposable
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSerilog(capture.Logger, dispose: false);
-        services.ProtectOpenIddictServerLogging();
+        services.ProtectOpenIddictLogging();
         services.ProtectHealthCheckLogging();
         configure?.Invoke(services);
         Services = services.BuildServiceProvider();

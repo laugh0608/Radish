@@ -150,7 +150,7 @@ public sealed class OpenIddictFrameworkLoggingTests
             Assert.Equal(source == OpenIddictEvents.Server ? "oidc.server.unknown" : "oidc.handler.unknown", ((ScalarValue)Assert.Single(sink.Events).Properties["EventCode"]).Value);
             sink.Events.Clear();
         }
-        foreach (var source in new[] { OpenIddictEvents.Server + ".Custom", "OpenIddict.Core.OpenIddictTokenManager", "OpenIddict.Validation.OpenIddictValidationDispatcher", "OpenIddict.Client.OpenIddictClientDispatcher", "Radish.Auth.OpenIddict.ValidateIdleSessionTokenRequestHandler" })
+        foreach (var source in new[] { OpenIddictEvents.Server + ".Custom", "OpenIddict.Core.OpenIddictScopeManager", "OpenIddict.Validation.OpenIddictValidationDispatcher", "OpenIddict.Client.OpenIddictClientDispatcher", "Radish.Auth.OpenIddict.ValidateIdleSessionTokenRequestHandler" })
         {
             var original = Event(source, Identity(6000, null));
             adapter.Emit(original);

@@ -36,7 +36,7 @@ public static class SerilogSetup
 
         host.ConfigureServices((_, services) =>
         {
-            services.ProtectOpenIddictServerLogging();
+            services.ProtectOpenIddictLogging();
             services.ProtectHealthCheckLogging();
         });
         return host;
