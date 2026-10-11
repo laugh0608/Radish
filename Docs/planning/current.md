@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：Socket / QUIC transport、Http.Connections 与协议 resolver 已完成[9 个精确来源治理](../records/unified-logging-l2-transport-protocol-2026-10-11.md)；下一批先只读核对 Socket transport `.Client` 等剩余框架来源与实际调用关系，再确认范围。
-- **状态复核日期**：`2026-10-11`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败及服务端 transport / Http.Connections / 协议解析治理，见[事件契约第 49–58 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：YARP 转发与命名 HttpClient 已完成[15 个精确来源治理](../records/unified-logging-l2-outbound-http-2026-10-11.md)；下一批先只读核对 YARP 配置加载 / 管理等剩余框架来源与实际调用关系，再确认范围。
+- **状态复核日期**：`2026-10-11`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP 治理，见[事件契约第 49–59 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -55,10 +55,10 @@
 
 ## 下一步事项（2026-10-11 更新）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–58 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–59 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
 
 1. **早期消费点已完成本批调整**：10 个 Controller catch 与评论失败元组先构造后记录，轻回应通知通过内部异常分类交接到 Create；二次失败与四模式回归见[本批记录](../records/unified-logging-l2-early-consumer-ownership-2026-10-11.md)。本层构造完成不等于 HTTP 写入完成，不承诺跨阶段仅一条日志。
-2. **其余框架来源后续分批确认**：服务端 Socket / QUIC transport、Http.Connections 六来源与协议 resolver 已完成日志适配；Socket / QUIC 无真实连接验收。Socket transport `.Client`、其他框架来源及非 Serilog 通道保留后续只读盘点，不因本批完成自动取得实现或运行授权。
+2. **其余框架来源后续分批确认**：服务端 Socket / QUIC transport、Http.Connections 六来源与协议 resolver 已完成日志适配；Socket / QUIC 无真实连接验收。YARP 转发 / 命名 HttpClient 的 15 个精确来源已完成日志适配，证据限于生成器与内存行为，不含真实网络连接。Socket `.Client` 当前无产品调用；YARP 配置加载 / 管理、条件性亲和 / 健康检查、其他框架来源及非 Serilog 通道保留后续只读盘点，不因本批完成自动取得实现或运行授权。
 3. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
 
 以上为后续恢复工作的顺位；本批不授权安装依赖、启动项目服务 / 容器、访问生产或系统证书库。真实运行与后续实现仍按具体范围确认。

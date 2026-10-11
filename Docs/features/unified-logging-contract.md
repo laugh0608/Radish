@@ -548,3 +548,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 不改协商 JSON / 状态码、transport 选择、超时、取消、回调、连接清理或异常传播。LongPolling 非取消错误仍先 Error、设 500 再抛原异常；SSE I/O 仍向上传播。不同阶段的上层 API / 框架日志不做全请求去重。resolver 仍大小写不敏感、同名最后注册生效，未知 / 禁用协议返回 null 且安静。
 - 四模式覆盖已安装 ASP.NET Core 10.0.8 的全部 90 个真实日志生成器、元数据身份、未知事件及配置输出；Http.Connections / resolver 使用真实框架对象、内存 HTTP / Pipe 和抽象 WebSocket 验证消费行为。未安装依赖、未启动项目服务、未绑定端口，测试通过 xUnit 进程内入口执行。
 - Socket / QUIC 仅证明日志生成器、身份及安全输出，不证明真实连接、读写、握手、关闭或平台回调分支。本机原生 QUIC 不受支持；Http.Connections 稀有分支与未触发定义的证据仍限于生成器，不能写成传输验收。生产候选开关保持关闭、L2 尚未整体完成，准确清单与验证边界见[本批记录](../records/unified-logging-l2-transport-protocol-2026-10-11.md)。
+
+## 59. L2 YARP 与出站 HTTP 框架来源
+
+- `OutboundHttpFrameworkLogSink` 精确覆盖 YARP 的 HttpForwarder、ForwarderHttpClientFactory、ForwarderMiddleware、LoadBalancingMiddleware、ProxyPipelineInitializerMiddleware、LimitsMiddleware 六来源，四个已注册 HttpClient 名称的 LogicalHandler / ClientHandler 八来源，以及 DefaultHttpClientFactory；共 60 个已知编码与 15 个未知摘要。完整类别、EventId / Name 与编码见[本批记录](../records/unified-logging-l2-outbound-http-2026-10-11.md)。
+- 四个名称固定为 `PublicHeadSnapshotClient`、`api-service`、`auth-service`、`console-service`；按来源 + EventId + EventName 匹配，不以类别前缀、模板或异常文本推断。未知目标事件重建安全摘要，非目标类别保持同一 LogEvent 实例通过。
+- 在上下文合并后适配旧链代码 / 配置 WriteTo / AuditTo 和候选链，只保留时间、原等级、类型化 trace/span、固定类别、`SourceCategory=http`、Diagnostic、事件码及受控 failureKind。URI、header、cluster / route 标识、原异常和任意 scope 不进入输出；既有诊断门禁、最低等级和 AuditTo 异常语义继续沿用。
+- 日志不改变响应、取消或异常传播。HttpClient 的 RequestFailed 保持 Information，取消及非 HttpRequestException 不新增 failure 事件；内外 handler、负载均衡与最终转发各自记录，不做跨阶段去重。YARP 原失败 feature、状态和抛出边界保留；工厂清理失败仍按框架消费，不改变释放 / 重入队规则。
+- 四模式采用真实生成器、内存中间件与替代 HTTP handler；无依赖安装、项目服务启动或网络端口。真实网络连接、TLS / WebSocket 握手、协议协商和连接池时序均未验收；少见分支只证明日志生成器与输出。生产候选开关保持关闭、L2 尚未整体完成。
+- Socket `.Client` 当前没有产品调用；YARP 配置管理、条件性亲和 / 健康检查、其他命名客户端与剩余框架 / 非 Serilog 通道继续后置。
