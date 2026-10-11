@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：先只读复核早期轻回应 / 评论 / 帖子消费点在响应构造再次失败时的日志所有权，再确认适配方案；CertificatePathWatcher 与配置加载已完成[本批治理](../records/unified-logging-l2-certificate-configuration-2026-10-11.md)。Socket / QUIC transport、Http.Connections、协议 resolver 等保留后续范围。
-- **状态复核日期**：`2026-10-11`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS 及证书监视 / 配置加载治理，见[事件契约第 49–56 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：早期轻回应 / 评论 / 帖子错误结果构造与日志所有权已完成[本批治理](../records/unified-logging-l2-early-consumer-ownership-2026-10-11.md)；下一批先只读核对 Socket / QUIC transport、Http.Connections、协议 resolver 等剩余框架来源，再确认具体范围。
+- **状态复核日期**：`2026-10-11`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载及早期消费点二次失败治理，见[事件契约第 49–57 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -28,6 +28,8 @@
 正式产品线只保留 Web 与 Flutter Native；Web 优先，Flutter mobile-first、desktop stage-gated。WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 
 ## 最近结论
+
+- `2026-10-11` 完成早期轻回应 / 评论 / 帖子消费点的日志所有权调整：错误结果构造失败不提前记账，通知来源通过专用异常交接；范围、验证与限制见[本批记录](../records/unified-logging-l2-early-consumer-ownership-2026-10-11.md)。
 
 - `2026-10-11` 完成日志 L2 的证书文件监视 / 配置加载适配：两个精确来源、26 个已知事件与两个未知摘要，四模式隔离验证见[本批记录](../records/unified-logging-l2-certificate-configuration-2026-10-11.md)。生产开关继续关闭，未访问系统证书库。
 
@@ -53,9 +55,9 @@
 
 ## 下一步事项（2026-10-11 更新）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–56 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)，已完成的生成端范围以[事件契约第 7–57 节](../features/unified-logging-contract.md)为准，表情管理四入口及已处理 404 重抛不再列为待办。
 
-1. **优先复核早期消费点**：早期轻回应 / 评论 / 帖子消费点仍先记录后读取异常 Message；响应构造再次失败时的日志所有权需要只读核对，形成具体方案后确认实现，不能沿用后续批次的单次输出结论。
+1. **早期消费点已完成本批调整**：10 个 Controller catch 与评论失败元组先构造后记录，轻回应通知通过内部异常分类交接到 Create；二次失败与四模式回归见[本批记录](../records/unified-logging-l2-early-consumer-ownership-2026-10-11.md)。本层构造完成不等于 HTTP 写入完成，不承诺跨阶段仅一条日志。
 2. **其余框架来源后续分批确认**：证书监视 / 配置加载已完成，不再列为待办；Socket / QUIC transport、协议 resolver、Http.Connections 和其他框架来源保留后续范围，不因本批完成自动取得实现或运行授权。
 3. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
 

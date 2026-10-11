@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
 using Radish.Common.Exceptions;
-using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -30,7 +29,6 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly ForumQuickReplyOptions _options;
     private readonly IReliableOutboxService? _reliableOutboxService;
-    private readonly ILogger<PostQuickReplyService>? _logger;
     private readonly IBaseRepository<User>? _userRepository;
 
     public PostQuickReplyService(
@@ -54,7 +52,6 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         _options = options.Value;
         _attachmentService = attachmentService;
         _reliableOutboxService = reliableOutboxService;
-        _logger = logger;
         _userRepository = userRepository;
     }
 
@@ -434,14 +431,8 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         }
         catch (ArgumentException ex)
         {
-            // Controller 会将 ArgumentException 转成 400，通知阶段失败不会到达 API 最终日志边界。
-            // 其他异常继续交给上层最终消费点记录。
-            using var scope = _logger?.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "quick_reply.notification_enqueue_failed", ["SourceCategory"] = "business"
-            });
-            _logger?.LogError("Quick reply notification enqueue failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
-            throw;
+            // 只传递失败阶段；回滚及错误结果构造完成后，由 Controller 记录。
+            throw new PostQuickReplyNotificationEnqueueException(ex);
         }
     }
 

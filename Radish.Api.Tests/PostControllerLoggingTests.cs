@@ -312,6 +312,36 @@ public sealed class PostControllerLoggingTests
         }
     }
 
+    [Theory]
+    [MemberData(nameof(OutputModes))]
+    public async Task ErrorResultConstructionFailure_ShouldLeaveOnlyApiOwner(bool candidate, string environment)
+    {
+        using var capture = new Capture(candidate, environment);
+        foreach (var (operation, stage, failure) in new (string, string, Exception)[]
+        {
+            ("top", "top-write", new UnreadableOperation()),
+            ("edit", "revision", new UnreadableOperation()),
+            ("edit", "revision", new UnreadableArgument())
+        })
+        {
+            var f = new Fixture { FailedStage = stage, Failure = failure };
+            Assert.Null(await InvokeApiAsync(() => f.CallAsync(operation), 500));
+            f.AssertTransaction("rollback");
+            capture.AssertSingle("http.failed", "io", 500);
+            capture.Clear();
+        }
+    }
+
+    private sealed class UnreadableArgument : ArgumentException
+    {
+        public override string Message => throw new IOException(Secret);
+    }
+
+    private sealed class UnreadableOperation : InvalidOperationException
+    {
+        public override string Message => throw new IOException(Secret);
+    }
+
     private sealed class HostileFailure : Exception
     {
         public override string Message => throw new InvalidOperationException("不可读取异常原文");

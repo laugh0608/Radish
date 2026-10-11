@@ -360,8 +360,8 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 ## 38. L2 轻回应通知入队与 Controller 最终消费
 
-- `PostQuickReplyService` 通知 helper 不再对所有异常记录含身份与异常原文的 Warning 后重抛。普通异常保持原实例传播并由 API 最终边界记录 `http.failed`；通知阶段的 ArgumentException 因 Create 会消费并返回 400，在 helper 保留 `quick_reply.notification_enqueue_failed` Error，仅带 failureKind。
-- `PostQuickReplyController` Create / Delete 消费的 5xx BusinessException 使用安全 `http.failed` Error，仅带 statusCode / failureKind；4xx 业务拒绝与普通参数校验保持安静。GetRecentByPostId 消费的 InvalidOperationException 使用 `quick_reply.query_rejected` Warning，保留既有 404 响应；未调整错误码、消息键、响应文案与 ApiErrorContract 状态映射。
+- `PostQuickReplyService` 通知 helper 对 ArgumentException 只包装为 `PostQuickReplyNotificationEnqueueException : ArgumentException`，保留原异常为 InnerException，包装时不读取 Message、不记录。事务回滚后，Create 读取原消息并构造 400 结果，才记录 `quick_reply.notification_enqueue_failed` Error，仅带 failureKind。其他异常保持原实例传播；直接调用服务不再提前记录通知失败。该交接及二次失败边界见第 57 节。
+- `PostQuickReplyController` Create / Delete 消费的 5xx BusinessException 使用安全 `http.failed` Error，仅带 statusCode / failureKind；4xx 业务拒绝与普通参数校验保持安静。GetRecentByPostId 消费的 InvalidOperationException 使用 `quick_reply.query_rejected` Warning，保留既有 404 响应；所有本层失败日志均在错误结果构造成功后记录；未调整错误码、消息键、响应文案与 ApiErrorContract 状态映射。
 - 原内容规范化、长度限制、权限、冷却 / 重复内容限制、帖子作者筛选、通知业务键 / 载荷 / UTC 时间及软删除审计不变。入队失败仍向事务 AOP 传播并调用 rollback；此前写入的冷却与去重缓存不会随数据库事务撤销，失败后重试仍可能返回 429 / 409，不新增补投或创建成功重放。
 - 旧 / 候选 × Development / Production 覆盖真实 Service、ReliableOutboxService、TranAop、Controller、结果过滤器和内存 API 异常管道；mock 依赖验证调用顺序与缓存现状，不替代真实数据库回滚或 Redis / HTTP 宿主验收。
 - 生产开关保持关闭，L2 尚未整体完成；CommentController 创建 / 点赞 / 编辑静默消费边界的后续治理见第 39 节。见[本批记录](../records/unified-logging-l2-post-quick-reply-2026-10-02.md)。
@@ -369,8 +369,8 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 ## 39. L2 评论创建 / 点赞 / 编辑最终消费
 
 - 正常内容长度校验改用继承 ArgumentException 的 `CommentContentValidationException`；点赞评论不存在、编辑服务已返回失败结果改用继承 InvalidOperationException 的 `CommentOperationRejectedException`。这是项目所有者单独确认的内部异常分类变更，不调整 HTTP 状态、文案或业务规则，不通过匹配异常文本判断是否为正常拒绝。
-- `CommentController` Create / ToggleLike / Update 消费的非正常 ArgumentException / InvalidOperationException 分别使用 `comment.create_failed / comment.like_failed / comment.edit_failed` Error，仅带固定 failureKind。专用拒绝类型保持安静；4xx BusinessException 继续按既有契约上抛至 API 并安静处理；其他未处理异常仍只由 API 最终边界记录 `http.failed`。
-- 编辑内容校验 catch 保留原 `(false, message)` 返回。明确长度拒绝保持安静；系统设置依赖抛出的普通 ArgumentException 在此最终消费点记录一次 `comment.edit_failed`，随后写入服务转换为拒绝异常，Controller 不再重复记录。恢复版本的消费者继续接收原失败结果。
+- `CommentController` Create / ToggleLike / Update 消费的非正常 ArgumentException / InvalidOperationException 分别在错误结果构造成功后使用 `comment.create_failed / comment.like_failed / comment.edit_failed` Error，仅带固定 failureKind。专用拒绝类型保持安静；4xx BusinessException 继续按既有契约上抛至 API 并安静处理；其他未处理异常仍只由 API 最终边界记录 `http.failed`。
+- 编辑内容校验 catch 保留原 `(false, message)` 返回。明确长度拒绝保持安静；系统设置依赖抛出的普通 ArgumentException 先完成失败元组构造，再在此消费点记录一次 `comment.edit_failed`，随后写入服务转换为拒绝异常，Controller 不再重复记录。恢复版本的消费者继续接收原失败结果；Message 求值失败时本层不记录，新异常交给外层现有消费点，详见第 57 节。
 - 提交台账、版本追加、Outbox 载荷、提交 / 回滚顺序及重放 / 重复 / 无变化时不推送的决策不变。创建 / 编辑成功后的详情读取在写入事务提交后，失败仍返回原 500；点赞详情读取仍在原 catch 内，InvalidOperationException 仍转为 400。本批不把响应失败解释为先前写入已回滚。
 - 四模式回归覆盖真实 Service、ForumContentWriteService、TranAop、Controller、结果过滤器与内存 API 管道；SQLite 补验真实评论点赞缺失拒绝与 Outbox 失败后关系 / 计数回滚。mock 台账 / 版本 / 缓存与 SQLite 证据不替代 PostgreSQL、真实宿主或并发验收。
 - 本批关闭评论三类操作的最终消费日志边界；ContentSubmissionService 并发冲突的后续治理见第 40 节；其余业务和框架来源继续治理。生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-controller-2026-10-02.md)。
@@ -386,7 +386,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 ## 41. L2 帖子编辑 / 置顶最终消费
 
 - 已经项目所有者确认，明确内容校验改用 `PostContentValidationException : ArgumentException`，帖子缺失、编辑上限与分类不可用改用 `PostOperationRejectedException : InvalidOperationException`。原消息、参数名、父类消费契约和响应状态保持；系统设置配置错误及依赖异常不标记成正常拒绝。
-- PostController 编辑保留 ArgumentException → 400、InvalidOperationException → 403，置顶保留 InvalidOperationException → 404。明确拒绝保持安静，其余已消费异常分别生成 `post.edit_failed` / `post.top_failed` Error，仅带固定 failureKind。未消费异常仍由 API `http.failed` 记录；正常 4xx BusinessException 继续安静。
+- PostController 编辑保留 ArgumentException → 400、InvalidOperationException → 403，置顶保留 InvalidOperationException → 404。明确拒绝保持安静，其余已消费异常在错误结果构造成功后分别生成 `post.edit_failed` / `post.top_failed` Error，仅带固定 failureKind；构造二次失败的交接见第 57 节。未消费异常仍由 API `http.failed` 记录；正常 4xx BusinessException 继续安静。
 - 输入预检、权限查询、提交台账、版本追加、CAS、分类 / 标签计数、重放 / 无变化和事务边界不变。置顶详情读取仍在事务内，读取故障或不可见帖子仍走原回滚；编辑前置查询在 Controller catch 外，其失败继续由 API 处理。
 - 旧 / 候选 × Development / Production 回归覆盖真实 PostService、ForumContentWriteService、TranAop、Controller、结果过滤器及内存 API 管道。SQLite 补验真实帖子行在置顶成功时提交、详情故障 / 不可见时回滚、编辑完成台账失败时回滚；其他仓储、台账及版本服务为 mock，不代表全部数据表联合持久化或 PostgreSQL 验收。
 - `ForumContentRevisionService.RestorePostAsync` 的后续异常消费治理见第 42 节；QuestionController 的后续治理见第 43 节；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-controller-2026-10-02.md)。
@@ -531,3 +531,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 真实监视器配合可控 IFileProvider 验证观察者复用 / 移除、最后一个文件 / 目录释放、文件不可用时忽略事件、可用变更设置 FileHasChanged 并更换 token。保持仅监视 Path、未单独监视 KeyPath 的框架行为；没有真实磁盘轮询或证书解析。
 - 真实证书加载器读取临时公钥 PEM；真实密钥加载方法验证临时普通 / 加密 PEM 的签名能力，以及错误密码、格式、缺失与不匹配的异常传播。配置重载以唯一内存 transport 验证证书加载失败保留原 HTTP endpoint、恢复后重新绑定，以及绑定失败仍由 Kestrel 主来源 `0 / Name=null` 报告。首次加载失败仍归 `runtime.failed`，不新增 catch、重试或跨阶段去重。
 - 四模式测试不启动项目宿主、不执行系统网络 bind、不读取用户开发证书或系统证书库。开发证书查找 / 信任、事件 6 / 7、LastModifiedTimeError 仅有真实生成方法 / 身份 / 安全映射证据；Windows 私钥持久化、PFX、实际轮询 / 符号链接及 TLS 握手 / 热换证书未验收。候选开关保持关闭、L2 未整体完成，完整映射和证据见[本批记录](../records/unified-logging-l2-certificate-configuration-2026-10-11.md)。
+
+## 57. L2 早期消费点的错误结果构造与日志所有权
+
+- 轻回应查询 / 创建 / 删除、评论创建 / 点赞 / 编辑、帖子编辑 / 置顶共 10 个既有日志 catch，统一先完整构造 MessageModel，再记录并返回。Message 求值失败时不生成原消费事件，新异常按上层现有契约处理；不是捕获后吞掉或替换异常消息。普通校验与专用拒绝继续安静，原状态码、文案、错误码和消息键保持。
+- 评论编辑内容校验先构造 `(false, message)` 再记录。构造成功后的写入服务仍转换为 CommentOperationRejectedException，版本恢复仍映射原 409 / 403；构造失败的新 ArgumentException / InvalidOperationException 可由编辑 Controller 消费并记录，其他异常继续传播。服务已完成失败结果后发生的独立故障，不与该事件跨阶段去重。
+- 轻回应通知阶段通过专用 ArgumentException 子类传递来源，原异常保留在 InnerException，Message 延迟委托给原异常。包装改变该分支传播实例，不改变父类消费、消息或回滚契约；Controller 仅在 400 结果构造成功后生成原通知事件。回滚本身失败或响应消息读取失败时，helper 不留下提前日志；不以 Exception.Data、全局状态或异常文本匹配识别通知来源。
+- 日志只证明本层错误结果已构造，不证明 HTTP 响应已发送。后续结果过滤、序列化、网络写入失败仍由既有 API / 框架边界处理；ApiExceptionHandler 仍在错误 JSON 写入完成后记录，不新增全请求去重或更改异常中间件。帖子发布 / 版本恢复保持既有顺序。
+- 四模式覆盖被消费类型的 Message 再次抛错、消息只读取一次、通知包装不提前求值、回滚失败、评论编辑与版本恢复交接，以及正常拒绝、响应与事务 / 缓存回归。内存管道与 SQLite 证据不替代真实项目宿主、Redis、PostgreSQL 或生产验收。生产开关保持关闭，L2 尚未整体完成；见[本批记录](../records/unified-logging-l2-early-consumer-ownership-2026-10-11.md)。

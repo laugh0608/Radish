@@ -796,13 +796,15 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (ArgumentException ex)
         {
+            // 先完成失败结果构造；读取消息失败时由上层消费新的异常。
+            var result = (false, ex.Message);
             // 保留原失败结果契约；系统设置依赖的 ArgumentException 不能冒充正常内容校验。
             if (ex is not CommentContentValidationException)
             {
                 Log.ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
                     .Error("Comment edit failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             }
-            return (false, ex.Message);
+            return result;
         }
 
         var safeUserName = string.IsNullOrWhiteSpace(userName) ? "System" : userName;

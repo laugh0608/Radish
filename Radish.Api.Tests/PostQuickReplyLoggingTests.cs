@@ -135,11 +135,16 @@ public sealed class PostQuickReplyLoggingTests
                 Exception? observed = null;
                 try { await direct.Proxy.CreateAsync(Request, UserId, Secret, TenantId); }
                 catch (Exception exception) { observed = exception; }
-                // 避免断言库格式化恶意异常；只核对原实例传播。
-                Assert.True(ReferenceEquals(failure, observed));
+                // 仅通知参数异常带阶段包装；其他异常仍保留原实例。
+                if (failure is ArgumentException)
+                {
+                    var wrapped = Assert.IsType<PostQuickReplyNotificationEnqueueException>(observed);
+                    Assert.True(ReferenceEquals(failure, wrapped.InnerException));
+                    Assert.Equal(failure.Message, wrapped.Message);
+                }
+                else Assert.True(ReferenceEquals(failure, observed));
                 direct.AssertRolledBack();
-                if (failure is ArgumentException) capture.AssertSingle("quick_reply.notification_enqueue_failed", "argument");
-                else capture.AssertQuiet();
+                capture.AssertQuiet();
                 capture.Clear();
             }
 
@@ -275,6 +280,116 @@ public sealed class PostQuickReplyLoggingTests
         }
     }
 
+    [Theory]
+    [MemberData(nameof(OutputModes))]
+    public async Task ErrorResultConstructionFailure_ShouldLeaveOnlyApiOwner(bool candidate, string environment)
+    {
+        using var capture = new Capture(candidate, environment);
+        foreach (var operation in new[] { "query", "create", "delete" })
+        foreach (var failure in operation == "query"
+            ? new Exception[] { new MessageProbeArgument(() => throw new IOException(Secret)), new UnreadableOperation() }
+            : new Exception[] { new MessageProbeArgument(() => throw new IOException(Secret)), new UnreadableBusiness(503), new UnreadableBusiness(409) })
+        {
+            var service = new Mock<IPostQuickReplyService>();
+            service.Setup(s => s.GetRecentByPostIdAsync(PostId, 30)).ThrowsAsync(failure);
+            service.Setup(s => s.CreateAsync(It.IsAny<CreatePostQuickReplyDto>(), UserId, Secret, TenantId)).ThrowsAsync(failure);
+            service.Setup(s => s.DeleteAsync(ReplyId, UserId, Secret, false)).ThrowsAsync(failure);
+            var permission = new Mock<IContentModerationService>();
+            permission.Setup(p => p.GetPublishPermissionAsync(UserId)).ReturnsAsync(new ContentModerationPermissionVo { VoCanPublish = true });
+            var current = new Mock<ICurrentUserAccessor>();
+            current.SetupGet(c => c.Current).Returns(new CurrentUser { UserId = UserId, UserName = Secret, TenantId = TenantId });
+            var controller = new PostQuickReplyController(service.Object, permission.Object, current.Object);
+            Assert.Null(await InvokeApiAsync(() => operation switch
+            {
+                "query" => controller.GetRecentByPostId(PostId),
+                "create" => controller.Create(Request),
+                _ => controller.Delete(ReplyId)
+            }, 500));
+            capture.AssertSingle("http.failed", "io", status: 500);
+            capture.Clear();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(OutputModes))]
+    public async Task NotificationMessage_ShouldBeReadOnceAfterRollbackAndBeforeLogging(bool candidate, string environment)
+    {
+        using var capture = new Capture(candidate, environment);
+        foreach (var unreadable in new[] { false, true })
+        {
+            using var f = new Fixture();
+            var reads = 0;
+            var failure = new MessageProbeArgument(() =>
+            {
+                reads++;
+                f.AssertRolledBack();
+                capture.AssertQuiet();
+                if (unreadable) throw new IOException(Secret);
+                return Secret;
+            });
+            f.Fail("outbox", failure);
+            var result = await InvokeApiAsync(() => f.Controller.Create(Request), unreadable ? 500 : 400);
+            Assert.Equal(1, reads);
+            Assert.Equal(2, f.CacheMarks.Count);
+            if (unreadable)
+            {
+                Assert.Null(result);
+                capture.AssertSingle("http.failed", "io", status: 500);
+            }
+            else
+            {
+                Assert.Equal(Secret, result!.MessageInfo);
+                capture.AssertSingle("quick_reply.notification_enqueue_failed", "argument");
+            }
+            capture.Clear();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(OutputModes))]
+    public async Task NotificationWrapperAndRollbackFailure_ShouldNotReadMessageOrLogEarly(bool candidate, string environment)
+    {
+        using var capture = new Capture(candidate, environment);
+        using (var direct = new Fixture())
+        {
+            var reads = 0;
+            var failure = new MessageProbeArgument(() => { reads++; throw new IOException(Secret); });
+            direct.Fail("outbox", failure);
+            // xUnit 的 ThrowsAsync 会求值 ArgumentException.Message；这里直接捕获以观测生产路径。
+            Exception? observed = null;
+            try { await direct.Proxy.CreateAsync(Request, UserId, Secret, TenantId); }
+            catch (Exception exception) { observed = exception; }
+            Assert.True(observed is PostQuickReplyNotificationEnqueueException);
+            Assert.True(ReferenceEquals(failure, observed!.InnerException));
+            Assert.Equal(0, reads);
+            direct.AssertRolledBack();
+            capture.AssertQuiet();
+        }
+        using var f = new Fixture { RollbackFailure = new IOException(Secret) };
+        var messageReads = 0;
+        f.Fail("outbox", new MessageProbeArgument(() => { messageReads++; return Secret; }));
+        Assert.Null(await InvokeApiAsync(() => f.Controller.Create(Request), 500));
+        Assert.Equal(0, messageReads);
+        f.AssertRolledBack();
+        Assert.Equal(2, f.CacheMarks.Count);
+        capture.AssertSingle("http.failed", "io", status: 500);
+    }
+
+    private sealed class MessageProbeArgument(Func<string> read) : ArgumentException
+    {
+        public override string Message => read();
+    }
+
+    private sealed class UnreadableOperation : InvalidOperationException
+    {
+        public override string Message => throw new IOException(Secret);
+    }
+
+    private sealed class UnreadableBusiness(int status) : BusinessException(Secret, status)
+    {
+        public override string Message => throw new IOException(Secret);
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ILoggerFactory _factory;
@@ -295,6 +410,7 @@ public sealed class PostQuickReplyLoggingTests
         public List<ReliableOutboxDraft> Drafts { get; } = [];
         public IPostQuickReplyService Proxy { get; }
         public PostQuickReplyController Controller { get; }
+        public Exception? RollbackFailure { get; set; }
 
         public Fixture(bool missingOutbox = false)
         {
@@ -337,7 +453,11 @@ public sealed class PostQuickReplyLoggingTests
             var unit = new Mock<IUnitOfWorkManage>();
             unit.Setup(u => u.BeginTran(It.IsAny<MethodInfo>())).Callback(() => Steps.Add("begin"));
             unit.Setup(u => u.CommitTran(It.IsAny<MethodInfo>())).Callback(() => Steps.Add("commit"));
-            unit.Setup(u => u.RollbackTran(It.IsAny<MethodInfo>())).Callback(() => Steps.Add("rollback"));
+            unit.Setup(u => u.RollbackTran(It.IsAny<MethodInfo>())).Callback(() =>
+            {
+                Steps.Add("rollback");
+                if (RollbackFailure != null) throw RollbackFailure;
+            });
             Proxy = new ProxyGenerator().CreateInterfaceProxyWithTarget<IPostQuickReplyService>(service, new TranAop(unit.Object));
             var current = new Mock<ICurrentUserAccessor>();
             current.SetupGet(c => c.Current).Returns(() => Current);

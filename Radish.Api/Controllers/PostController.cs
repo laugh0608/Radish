@@ -498,17 +498,18 @@ public class PostController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            if (ex is not PostOperationRejectedException)
-            {
-                Log.ForContext("EventCode", "post.top_failed")
-                    .Error("Post top operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
-            }
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.NotFound,
                 MessageInfo = ex.Message
             };
+            if (ex is not PostOperationRejectedException)
+            {
+                Log.ForContext("EventCode", "post.top_failed")
+                    .Error("Post top operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
     }
 
@@ -701,31 +702,33 @@ public class PostController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            if (ex is not PostOperationRejectedException)
-            {
-                Log.ForContext("EventCode", "post.edit_failed")
-                    .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
-            }
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.Forbidden,
                 MessageInfo = ex.Message
             };
-        }
-        catch (ArgumentException ex)
-        {
-            if (ex is not PostContentValidationException)
+            if (ex is not PostOperationRejectedException)
             {
                 Log.ForContext("EventCode", "post.edit_failed")
                     .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
             }
-            return new MessageModel
+            return response;
+        }
+        catch (ArgumentException ex)
+        {
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            if (ex is not PostContentValidationException)
+            {
+                Log.ForContext("EventCode", "post.edit_failed")
+                    .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
     }
 

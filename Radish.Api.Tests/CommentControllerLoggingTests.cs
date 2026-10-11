@@ -270,6 +270,118 @@ public sealed class CommentControllerLoggingTests
         capture.AssertSingle("comment.edit_failed", "invalid-operation");
     }
 
+    [Theory]
+    [MemberData(nameof(OutputModes))]
+    public async Task UnreadableConsumedFailure_ShouldLeaveOnlyApiOwner(bool candidate, string environment)
+    {
+        using var capture = new Capture(candidate, environment);
+        foreach (var (operation, stage, failure) in new (string, string, Exception)[]
+        {
+            ("create", "revision", new MessageProbeArgument(() => throw new IOException(Secret))),
+            ("like", "like", new UnreadableOperation()),
+            ("edit", "revision", new UnreadableOperation()),
+            ("edit", "revision", new MessageProbeArgument(() => throw new IOException(Secret))),
+            ("edit", "settings", new MessageProbeArgument(() => throw new IOException(Secret)))
+        })
+        {
+            using var f = new Fixture { FailedStage = stage, Failure = failure };
+            Assert.Null(await InvokeApiAsync(() => f.CallAsync(operation), 500));
+            capture.AssertSingle("http.failed", "io", 500);
+            if (operation != "like") f.AssertTransaction("rollback");
+            Assert.Empty(f.Sends);
+            capture.Clear();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(OutputModes))]
+    public async Task ValidationResultConstruction_ShouldReadOnceAndLeaveNewFailureToOuterConsumer(bool candidate, string environment)
+    {
+        using var capture = new Capture(candidate, environment);
+        foreach (var nextFailure in new Exception?[] { null, new ArgumentException(Secret), new InvalidOperationException(Secret) })
+        {
+            var reads = 0;
+            using var f = new Fixture { FailedStage = "settings", Failure = new MessageProbeArgument(() =>
+            {
+                reads++;
+                capture.AssertQuiet();
+                if (nextFailure != null) throw nextFailure;
+                return Secret;
+            }) };
+            var result = await InvokeApiAsync(() => f.CallAsync("edit"), 400);
+            Assert.Equal(1, reads);
+            Assert.Equal(Secret, result!.MessageInfo);
+            f.AssertTransaction("rollback");
+            Assert.Empty(f.RevisionSources);
+            Assert.Empty(f.Sends);
+            capture.AssertSingle("comment.edit_failed", nextFailure is InvalidOperationException ? "invalid-operation" : "argument");
+            capture.Clear();
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(OutputModes))]
+    public async Task RestoreCommentConsumer_ShouldKeep409OrPropagateConstructionFailure(bool candidate, string environment)
+    {
+        using var capture = new Capture(candidate, environment);
+        foreach (var scenario in new[] { "dependency", "unreadable", "validation" })
+        {
+            using var f = new Fixture();
+            var reads = 0;
+            if (scenario == "validation") f.MinLength = 100;
+            else
+            {
+                f.FailedStage = "settings";
+                f.Failure = new MessageProbeArgument(() =>
+                {
+                    reads++;
+                    capture.AssertQuiet();
+                    if (scenario == "unreadable") throw new IOException(Secret);
+                    return Secret;
+                });
+            }
+            var comments = new Mock<IBaseRepository<Comment>>();
+            comments.Setup(r => r.QueryByIdAsync(CommentId)).ReturnsAsync(f.Stored);
+            var revisions = new Mock<IBaseRepository<CommentContentRevision>>();
+            revisions.Setup(r => r.QueryByIdAsync(42)).ReturnsAsync(new CommentContentRevision
+            { Id = 42, CommentId = CommentId, RevisionNumber = 2, Content = Secret });
+            var attachments = new Mock<IBaseRepository<ForumContentRevisionAttachment>>();
+            attachments.Setup(r => r.QueryAsync(It.IsAny<Expression<Func<ForumContentRevisionAttachment, bool>>?>())).ReturnsAsync([]);
+            var service = new ForumContentRevisionService(Mock.Of<IBaseRepository<Post>>(), comments.Object,
+                Mock.Of<IBaseRepository<PostContentRevision>>(), Mock.Of<IBaseRepository<PostContentRevisionTag>>(),
+                revisions.Object, attachments.Object, Mock.Of<IBaseRepository<PostTag>>(), Mock.Of<IBaseRepository<Tag>>(),
+                Mock.Of<IBaseRepository<Category>>(), Mock.Of<IBaseRepository<Attachment>>(), Mock.Of<IPostService>(), f.Service);
+            var unit = new Mock<IUnitOfWorkManage>();
+            unit.Setup(u => u.BeginTran(It.IsAny<MethodInfo>())).Callback(() => f.Steps.Add("begin"));
+            unit.Setup(u => u.RollbackTran(It.IsAny<MethodInfo>())).Callback(() => f.Steps.Add("rollback"));
+            unit.Setup(u => u.CommitTran(It.IsAny<MethodInfo>())).Callback(() => f.Steps.Add("commit"));
+            var proxy = new ProxyGenerator().CreateInterfaceProxyWithTarget<IForumContentRevisionService>(service, new TranAop(unit.Object));
+            Assert.Null(await InvokeApiAsync(async () =>
+            {
+                await proxy.RestoreCommentAsync(CommentId, 42, 1, UserId, Secret, false);
+                return new MessageModel();
+            }, scenario == "unreadable" ? 500 : 409));
+            f.AssertTransaction("rollback");
+            Assert.Equal(scenario == "validation" ? 0 : 1, reads);
+            Assert.DoesNotContain("columns", f.Steps);
+            revisions.Verify(r => r.AddAsync(It.IsAny<CommentContentRevision>()), Times.Never);
+            if (scenario == "validation") capture.AssertQuiet();
+            else if (scenario == "unreadable") capture.AssertSingle("http.failed", "io", 500);
+            else capture.AssertSingle("comment.edit_failed", "argument");
+            capture.Clear();
+        }
+    }
+
+    private sealed class MessageProbeArgument(Func<string> read) : ArgumentException
+    {
+        public override string Message => read();
+    }
+
+    private sealed class UnreadableOperation : InvalidOperationException
+    {
+        public override string Message => throw new IOException(Secret);
+    }
+
     private sealed class Fixture : IDisposable
     {
         private readonly ILoggerFactory _factory;
