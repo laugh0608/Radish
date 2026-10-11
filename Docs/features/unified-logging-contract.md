@@ -585,4 +585,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `ApiJwtBearerEvents` 承接 Program 的既有凭据选择与 401 / 403 回调，两处日志改为 `auth.jwt_failure_observed` / `auth.jwt_challenge_observed`。观察发生在响应写入前，不等于写入完成；框架 challenge 完成事件只在原处理返回后产生。不改变 Hub query 范围、HandleResponse、API / 非 API 响应、Cookie、策略、取消和异常传播。
 - 认证基类读取 Failure.Message、授权服务格式化 requirements 都可能早于 logger；适配器不控制这些前置求值。日志消费阶段不合并去重，也不承诺整个请求只有一条故障事件。
 - 四模式验证真实生成器、JWT / Cookie handler、Authentication / Authorization 中间件及 API 回调。仅使用内存 HTTP context、内存密钥 / DataProtection、静态 OIDC 配置和受控响应流；进程内 xUnit 不安装依赖、不启动服务、不绑定端口。
-- 路由、宿主健康服务、OpenIddict 与非 Serilog 通道暂不扩展。真实 OIDC 登录、持久 Cookie 密钥、网络 / 浏览器、数据库权限和生产外部采集未验收；生产候选开关保持关闭，L2 尚未整体完成。
+- 本认证批次不扩展路由（后续范围见第 63 节）、宿主健康服务、OpenIddict 与非 Serilog 通道。真实 OIDC 登录、持久 Cookie 密钥、网络 / 浏览器、数据库权限和生产外部采集未验收；生产候选开关保持关闭，L2 尚未整体完成。
+
+## 63. L2 路由框架
+
+- `RoutingLogSink` 精确覆盖 `Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware`、`Microsoft.AspNetCore.Routing.EndpointMiddleware`、`Microsoft.AspNetCore.Routing.Matching.DfaMatcher`、`Microsoft.AspNetCore.Routing.DefaultLinkGenerator`。28 个已知事件和 4 个来源未知摘要，共 32 个编码；完整身份映射见[本批记录](../records/unified-logging-l2-routing-2026-10-11.md)。
+- 完整来源 + EventId + EventName 决定身份；仅 EndpointMiddleware 的 `0 / ExecutingEndpoint` 兼容桥接省略 Id 字段，显式 null / 错误类型 / 重复字段仍拒绝。未知身份仅进入来源摘要，不按模板猜测，不接管 DefaultLinkParser 或相邻类别。
+- 在上下文合并后重建旧链代码 / 配置 WriteTo / AuditTo 和候选输出。保留原等级、时间、类型化 trace/span、固定身份、Diagnostic 和受控 failureKind；舍弃路径、route values、生成 URI、端点 / constraint 对象、原异常及任意 scope。诊断门禁与未知严重事件可见性保持。
+- `ExecutedEndpoint` 只表示执行退出，失败路径同样产生，编码使用 `exited`。不改变匹配、404、fallback、预设 endpoint、constraint / complex segment 拒绝、歧义异常、请求体限制、安全 metadata 检查、链接结果、异常或取消传播；ShortCircuit / 禁用请求体上限仅测试条件性分支，不启用产品配置。
+- DfaMatcher 的 constraint.ToString、DefaultLinkGenerator 的失败 route values 格式化可能早于 logger；不承诺控制前置求值或跨阶段去重。DiagnosticListener / Activity / Meter 等非 Serilog 通道不在适配范围。
+- 四模式验证真实生成器、内存 UseRouting / UseEndpoints 与 LinkGenerator，含敏感 scope、身份错误、请求体限制、短路 / 安全检查、退出与前置格式化失败；无项目宿主、服务启动或网络端口。宿主健康、OpenIddict 与其余来源继续分批确认；生产候选开关保持关闭，L2 尚未整体完成。
