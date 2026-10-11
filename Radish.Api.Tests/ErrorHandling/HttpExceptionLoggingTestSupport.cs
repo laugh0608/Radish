@@ -23,10 +23,12 @@ using Xunit;
 
 namespace Radish.Api.Tests.ErrorHandling;
 
-public sealed class HttpBoundaryTestSink : ILogEventSink
+public sealed class HttpBoundaryTestSink : ILogEventSink, IDisposable
 {
     public readonly ConcurrentQueue<LogEvent> Events = new();
+    public int Disposals;
     public void Emit(LogEvent logEvent) => Events.Enqueue(logEvent);
+    public void Dispose() => Interlocked.Increment(ref Disposals);
 }
 
 public static class HttpBoundaryTestSinkExtensions

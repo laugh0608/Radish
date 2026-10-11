@@ -34,7 +34,11 @@ public static class SerilogSetup
             });
         }
 
-        host.ConfigureServices((_, services) => services.ProtectHealthCheckLogging());
+        host.ConfigureServices((_, services) =>
+        {
+            services.ProtectOpenIddictServerLogging();
+            services.ProtectHealthCheckLogging();
+        });
         return host;
     }
 
@@ -49,14 +53,14 @@ public static class SerilogSetup
             .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
             .Enrich.FromLogContext()
             .Enrich.With<SensitiveQueryStringLogEnricher>()
-            .WriteTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(sink))))))), sinks =>
+            .WriteTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(sink)))))))), sinks =>
                 sinks.Logger(outputs => outputs
                     .ReadFrom.Configuration(new SerilogConfigurationView(configuration, "WriteTo"))
                     .WriteToConsole(options).WriteToFile(options).WriteToDatabase(services, options))));
         if (configuration.GetSection("Serilog:AuditTo").GetChildren().Any())
         {
             // 审计 sink 保持异常向调用方传播的语义。
-            logger.AuditTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(sink))))))), sinks =>
+            logger.AuditTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(sink)))))))), sinks =>
                 sinks.Logger(outputs => outputs
                     .ReadFrom.Configuration(new SerilogConfigurationView(configuration, "AuditTo")))));
         }

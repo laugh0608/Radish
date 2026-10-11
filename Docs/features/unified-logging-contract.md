@@ -604,4 +604,16 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Trace / Debug / Information 保持诊断语义，候选 Production 或 Diagnostics 关闭时抑制，旧链等级策略不变。`run_completed` 只表示报告聚合结束，`check_completed` 只表示检查返回结果，均不代表健康、业务成功或 HTTP 响应写入完成。
 - 保持 HealthReport 的状态 / 描述 / 异常 / Data、FailureStatus、predicate / tags、最小与扩展分组、默认 HTTP 状态和响应体。健康服务抛出异常与调用方取消、UriHealthCheck 自行捕获取消并返回失败结果，继续遵循各自既有边界。
 - 工厂创建、scope 释放、异常 Message 读取以及 Data.Count / 枚举可能发生在受保护 Log 调用之外；本批不改这些失败传播或折叠行为。结构化健康响应仍可能输出 description 与 exception.Message，日志治理不构成健康响应内容治理。
-- 四模式覆盖真实生成器、健康服务 / 中间件、内存 URL handler、WriteTo / AuditTo 和共享宿主注册 / 释放。HostBuilder 只 Build，不 Start；旧链 SelfLog 保留原文件初始化。未启动项目服务、绑定端口、进行网络探测或真实超时计时，未访问证书库。Publisher、OpenIddict、非 Serilog 通道与响应内容治理仍后置；生产候选开关关闭，L2 未整体完成。
+- 四模式覆盖真实生成器、健康服务 / 中间件、内存 URL handler、WriteTo / AuditTo 和共享宿主注册 / 释放。HostBuilder 只 Build，不 Start；旧链 SelfLog 保留原文件初始化。未启动项目服务、绑定端口、进行网络探测或真实超时计时，未访问证书库。OpenIddict Server 后续范围见第 65 节；Publisher、OpenIddict Core / 自有日志、非 Serilog 通道与响应内容治理仍后置；生产候选开关关闭，L2 未整体完成。
+
+## 65. L2 OpenIddict Server
+
+- 只治理 `OpenIddict.Server.OpenIddictServerDispatcher` 与 `OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandler`。前者由 Server / ASP.NET Core 扩展共用，当前 7.2.0 目标程序集含 178 个数字事件；后者包含 AuthenticationHandler 基类的 5 个命名事件，各加一个未知摘要，共 185 个编码。完整映射见[本批记录](../records/unified-logging-l2-openiddict-server-2026-10-11.md)。
+- 数字日志使用普通 Log 扩展，EventName 为 null，桥接后的 EventId 仅含 Id；只有 Name 字段缺省合法，显式 null、错名、错误类型、重复字段均降为未知摘要。不能从资源编号、消息文本或 payload 的 EventName 推断身份。6072 属于当前未编译分支，不作为已知事件。
+- `OpenIddictLoggerFactory` 在原 UseSerilog 工厂之后、既有健康保护之前接入，仅保护这两个精确类别。Log 不读取原 state、不调用 formatter、不向桥接传递异常对象；固定来源、事件身份与 failureKind 防止 scope 补入。其他类别、BeginScope、IsEnabled、AddProvider、原工厂创建与释放所有权保持。
+- `OpenIddictLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出，只保留时间、原等级、类型化 trace/span、固定 EventCode / 来源 / Diagnostic 及受控异常类型分类；不输出 request / response、token、claims、secret、state、URI、异常原文或任意 scope。
+- 保持低于 Warning 的诊断语义，包括原 Debug 的 handler 异常观察；候选 Production 或 Diagnostics 关闭时抑制，严重未知事件仍可见。`handler_returned` 只表示 handler 返回，`event_handled` 只表示上下文已标记 handled；6141–6145、6147–6149、6151 使用 prepared 编码，不承诺 HTTP 输出完成。
+- 保持请求提取、认证结果 / 缓存 / properties / principal、handled / skipped / rejected、client / redirect / PKCE / scope 校验、令牌结果、重放撤销与异常传播。重放撤销失败（含取消）仍由框架消费并拒绝令牌。JSON / 文本 / form-post / query / fragment / logout / challenge 响应保持协议内容；日志治理不改变响应脱敏策略。
+- 四模式覆盖全部身份与输出链、真实 dispatcher / ASP.NET Core handler、请求 / 参数处理器、内存 JWT 生成验证和 manager 替身、响应写入失败 / 取消。数字身份由已安装 IL 核对，5 个命名事件由真实 LoggerMessage 元数据与生成器核对，不宣称 178 个数字事件都是生成器或都经过完整端点流程。
+- 工厂 / filter / handler 解析、协议序列化以及 logger 前参数求值仍在保护范围之外。form-post 的既有 CopyToAsync 不传 context 取消令牌，本批只验证流抛出取消异常仍传播；其他已测正文 writer 保留 token 传递。不修正这些既有运行语义。
+- 只进行内存验证和宿主 Build / Dispose；旧链 SelfLog 保留文件初始化。不安装 / 还原依赖、不启动服务、不绑定端口、不访问网络、真实数据库或证书库。Core、自有日志、Client / Validation / DataProtection 与非 Serilog 通道仍后置；生产候选开关关闭，L2 未整体完成。
