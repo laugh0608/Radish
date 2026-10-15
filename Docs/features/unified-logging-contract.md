@@ -19,7 +19,7 @@
 | `eventId` | 在生成入口创建 UUID；同一个事件对象在不同介质 / 重试间复用；独立发生生成不同 ID |
 | `eventCode` | 策略注册表里的稳定类别；未知值变为 `runtime.unclassified`，不输出原值 |
 | `occurredAtUtc / observedAtUtc` | 生成时的 UTC 毫秒时间；.NET 使用可注入的 `TimeProvider`；不接受载荷伪造时间 |
-| `deploymentId / service / instanceId / release` | 从宿主受信配置构造 `RuntimeLogSource`；请求 / 日志载荷不能覆盖 |
+| `deploymentId / service / instanceId / release` | 从宿主受信配置或已登记的独立引导来源构造 `RuntimeLogSource`；请求 / 日志载荷不能覆盖 |
 | `mode` | 仅 `Development / Production`，与 `test-latest` 镜像标签无关 |
 | `level / diagnostic / isFatal` | 统一三级，诊断是独立标志，Critical / Fatal 保留 `isFatal=true` |
 | `sourceCategory` | 注册表内的来源分类；未知分类回到 application 并标记裁剪 |
@@ -669,3 +669,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 输出只保留固定来源 / 编码 / 分类、原时间 / 等级、Diagnostic、上述属性和强类型 trace/span；丢弃异常、URL、Issuer、证书路径 / 身份、原始环境名、时区名、目标名 / 状态与任意 scope。已知摘要受既有 MinimumLevel 约束，不依赖候选 Diagnostics 开关；独立 logger、任意外部 enricher 的提前求值不自动受保护。
 - 回调注册在 RunAsync 前，作用域结束时释放；注册本身不输出，停止通知不生成启动摘要。未发出 ApplicationStarted 的失败路径无摘要；后续 Auth 状态变化不补发。既有 `runtime.started` / `runtime.stopped` 仍由 RuntimeLoggingSession 管理，未扩展旧链生命周期所有权。WriteTo 消费输出异常、AuditTo 传播异常和候选应急输出的既有语义保留。
 - 四模式、配置后续读取失败、不可枚举地址、延迟 Auth 状态、scope 污染、输出故障与健康解析回归见[本批记录](../records/unified-logging-l2-host-startup-2026-10-15.md)。只使用受控生命周期通知与内存 / 临时文件验证，没有启动项目服务或访问真实数据库 / 证书库。Common 程序集诊断、浏览器输出、Gateway 关闭日志及其他启动业务日志未纳入；生产候选开关关闭，L2 未整体完成。
+
+## 71. L2 Common 程序集加载与类型枚举诊断
+
+- 仅替换 `RuntimeExtension.GetAllAssemblies` 与 `App.GetTypes` 原有 catch 中的两条裸输出，分别生成 `runtime.assembly_load_failed` / `runtime.assembly_types_failed`。均为非致命 Error、非 diagnostic、infrastructure 分类，只携带既有封闭枚举 `failureKind`；不访问或输出程序集名称 / 路径、异常 Message / StackTrace / Data / ToString、LoaderExceptions、部分类型、任意 scope 或关联字段。
+- `AssemblyDiagnosticReporter` 位于 Common，直接复用 Common 的公共策略和 `RuntimeLogOutput` 写 stderr，不依赖 App、InternalApp、DI、LogContextTool 或 Serilog，不增加 Common 向内部业务层的引用。旧链 / 候选链与宿主环境均使用同一通道，不受主日志 MinimumLevel、Diagnostics 或候选开关控制；模式固定为 Production，表示诊断通道策略而非宿主环境。
+- `RuntimeProcess.RunAsync` 在执行宿主委托前绑定来源，覆盖 API / Auth / Gateway / DbMigrate 的配置加载前和 Session 创建 / 释放边界。service 只接受四个固定宿主值；未绑定、无存活祖先或未知绑定值使用新增的 `runtime` 来源。deploymentId=bootstrap、instanceId=process-进程号、release=unversioned，不读取配置或主机名称。`runtime` 是独立调用的来源标识，不代表新增宿主 / 容器。
+- 绑定使用 AsyncLocal；嵌套退出恢复存活祖先，外层先释放不清除内层，继承已释放作用域的任务报告时跳过该作用域。并发进程边界不交换来源；writer 不归 reporter 所有。已开始的一次写入可以在作用域释放后结束，释放不取消 IO。输出在首次诊断时惰性初始化；未显式传 writer 时使用当前 Console.Error，介质引用变化后重建对应输出状态。
+- 原有扫描目录、`Radish.Api` 前缀匹配、Default 加载上下文、即时程序集列表及延迟 EffectiveTypes 保持。单次加载失败仍跳过，类型枚举失败仍返回空集合，不回收 ReflectionTypeLoadException 中的部分类型；重复枚举仍会再次执行并报告。目录枚举、名称筛选、公共类型过滤、直接 DefinedTypes / LoadFromAssemblyName 以及独立选项扫描等原本向外传播的异常不扩大 catch、不添加重复事件，最终进程退出及 HostAbortedException 行为保持。
+- 本批有意消除诊断自身的二次故障：分类、策略初始化、序列化与写入故障不再替代原有跳过 / 空集合结果，也不因裸输出失败使 App 静态初始化持续不可用。同步及继承执行上下文的 writer 重入直接返回，不递归、不补发。不同 scope 的本通道写入串行；同步 writer 无 IO 超时保障，不承诺抵御任意外部阻塞。
+- 正常诊断按每次 catch 输出，不新增业务事件限频或聚合。规范化 / 输出失败复用 `pipeline.output_failed`，每个输出实例首次立即报告、此后 60 秒至多尝试一次；应急写入使用同一 stderr。策略不可用、应急介质也失效或重入抑制时可能无事件，不回退原文。没有持久队列、关闭补发或恰好一次承诺；输出实例 / 介质变化会重置其应急计数窗口。
+- 四模式、配置读取失败、嵌套 / 并发 / 已释放上下文、真实扫描、独立进程静态初始化、受控畸形 DLL、类型枚举替身、策略资源损坏、Write / Flush / 重入、进程退出与 CLI stdout 回归见[本批记录](../records/unified-logging-l2-common-assembly-diagnostics-2026-10-15.md)。未启动项目服务、访问真实数据库或系统证书库；ConsoleHelper 的其他通用输出、浏览器输出及其他程序集相关架构调整未扩展，生产候选开关关闭，L2 未整体完成。

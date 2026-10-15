@@ -55,3 +55,13 @@ test('UTF-8 event budget is checked before stdout framing', () => {
   const event = createRuntimeLogPolicy(source)({ eventCode: 'runtime.started' });
   assert.throws(() => serializeRuntimeLogEvent({ ...event, message: '汉'.repeat(3000) }));
 });
+
+test('unbound assembly diagnostics have an explicit runtime source', () => {
+  const event = createRuntimeLogPolicy({ ...source, service: 'runtime' })({
+    eventCode: 'runtime.assembly_load_failed', level: 'Error', sourceCategory: 'infrastructure',
+    properties: { failureKind: 'other' },
+  });
+  assert.equal(event.service, 'runtime');
+  assert.equal(event.eventCode, 'runtime.assembly_load_failed');
+  assert.equal(event.isFatal, false);
+});

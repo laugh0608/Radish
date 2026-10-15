@@ -1,8 +1,8 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端的安全摘要同时作用于旧 / 候选链，准确范围见契约第 7–66 节；L2 尚未整体完成。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端的安全摘要同时作用于旧 / 候选链，准确范围见契约第 7–71 节；L2 尚未整体完成。
 
-已治理框架类别在上下文合并后重建安全事件，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出。精确来源和事件身份以契约为准，不按类别前缀扩大：
+已治理框架及自有来源在上下文合并后重建安全事件，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出。精确来源和事件身份以契约为准，不按类别前缀扩大：
 
 | 来源组 | 契约章节 |
 | --- | --- |
@@ -11,8 +11,12 @@ Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链�
 | YARP 转发 / 命名 HttpClient、配置、条件性亲和与健康检查 | 第 59–61 节 |
 | JWT / Cookie / 授权、API JWT 回调、路由 | 第 62–63 节 |
 | 宿主健康服务、OpenIddict Server / Core | 第 64–66 节 |
+| 自有 Auth 账户 / 会话、三宿主启动摘要 | 第 67、70 节 |
+| ASP.NET Core DataProtection | 第 69 节 |
 
-宿主健康服务与 OpenIddict 的已列明来源另在 ILogger → Serilog 桥接前阻止读取原 state、formatter 和 exception；最终 sink 继续清理合并后的 scope。其他来源不能继承此桥接保护结论。日志治理不改变协议响应、认证结果、存储 / 缓存与事务语义，也不代表客户端已收到响应；自有 Auth 日志、其他集成及非 Serilog 通道仍需独立核对。详细限制见[敏感数据保护](./logging-sensitive-data.md)与[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)。
+宿主健康服务、OpenIddict 与 DataProtection 的已列明来源另在 ILogger → Serilog 桥接前阻止读取原 state、formatter 和 exception；最终 sink 继续清理合并后的 scope。其他来源不能继承此桥接保护结论。日志治理不改变协议响应、认证结果、存储 / 缓存与事务语义，也不代表客户端已收到响应；其他自有日志、集成及非 Serilog 通道仍需独立核对。详细限制见[敏感数据保护](./logging-sensitive-data.md)与[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)。
+
+Common 程序集加载 / 类型枚举失败使用独立安全 stderr 通道，固定为 `runtime.assembly_load_failed` / `runtime.assembly_types_failed` 非致命 Error，只保留异常类型分类。该通道不经过主 logger，覆盖其建立前的诊断；未绑定宿主时来源为 `runtime`。输出失败不会再替代原有跳过 / 空集合结果，细节见[契约第 71 节](../features/unified-logging-contract.md#71-l2-common-程序集加载与类型枚举诊断)。
 
 ## 架构概述
 

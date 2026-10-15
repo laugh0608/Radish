@@ -9,7 +9,8 @@
     "frontend",
     "postgres",
     "redis",
-    "log-collector"
+    "log-collector",
+    "runtime"
   ],
   "categories": [
     "application",
@@ -973,7 +974,9 @@
     "data_protection.cng_gcm_encryptor.symmetric_algorithm_opening": "Data protection cng gcm encryptor: symmetric algorithm opening.",
     "data_protection.cng_gcm_encryptor.unknown": "Data protection event observed; original content omitted.",
     "runtime.startup_summary": "Host startup summary.",
-    "runtime.startup_unknown": "Unrecognized host startup event."
+    "runtime.startup_unknown": "Unrecognized host startup event.",
+    "runtime.assembly_load_failed": "Assembly load failed.",
+    "runtime.assembly_types_failed": "Assembly type enumeration failed."
   },
   "properties": {
     "durationMs": {

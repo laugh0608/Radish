@@ -508,5 +508,56 @@
       "diagnostic": false,
       "redacted": false
     }
+  },
+  {
+    "name": "assembly-load-failure-production-retained",
+    "input": {
+      "eventCode": "runtime.assembly_load_failed",
+      "level": "Error",
+      "sourceCategory": "infrastructure",
+      "properties": {
+        "failureKind": "io",
+        "assemblyName": "SENTINEL_SECRET",
+        "path": "SENTINEL_SECRET",
+        "message": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "runtime.assembly_load_failed",
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "failureKind": "io"
+      }
+    }
+  },
+  {
+    "name": "assembly-types-failure-does-not-expose-loader-details",
+    "input": {
+      "eventCode": "runtime.assembly_types_failed",
+      "level": "Error",
+      "sourceCategory": "infrastructure",
+      "properties": {
+        "failureKind": "other",
+        "loaderExceptions": [
+          "SENTINEL_SECRET"
+        ],
+        "types": [
+          "SENTINEL_SECRET"
+        ]
+      }
+    },
+    "expected": {
+      "eventCode": "runtime.assembly_types_failed",
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "failureKind": "other"
+      }
+    }
   }
 ]
