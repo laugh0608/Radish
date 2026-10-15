@@ -46,7 +46,7 @@ public partial class WikiDocumentService
         if (!ShouldIncludeBuiltInDocuments())
         {
             summary.IsSkipped = true;
-            summary.SkipReason = "Document.ShowBuiltInDocs=false";
+            summary.SkipReason = WikiBuiltInSyncSkipReason.Disabled;
             return summary;
         }
 
@@ -54,7 +54,7 @@ public partial class WikiDocumentService
         if (!Directory.Exists(docsRoot))
         {
             summary.IsSkipped = true;
-            summary.SkipReason = $"固定文档目录不存在: {docsRoot}";
+            summary.SkipReason = WikiBuiltInSyncSkipReason.DirectoryMissing;
             return summary;
         }
 
@@ -65,7 +65,7 @@ public partial class WikiDocumentService
         if (descriptors.Count == 0)
         {
             summary.IsSkipped = true;
-            summary.SkipReason = "未扫描到可同步的固定 Markdown 文档";
+            summary.SkipReason = WikiBuiltInSyncSkipReason.NoMarkdown;
             return summary;
         }
 

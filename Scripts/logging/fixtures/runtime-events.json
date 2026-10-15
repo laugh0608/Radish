@@ -559,5 +559,105 @@
         "failureKind": "other"
       }
     }
+  },
+  {
+    "name": "job.recurring_registration_returned-safe-fields",
+    "input": {
+      "eventCode": "job.recurring_registration_returned",
+      "level": "Info",
+      "sourceCategory": "job",
+      "properties": {
+        "jobKind": "outbox-dispatch",
+        "schedule": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "job.recurring_registration_returned",
+      "level": "Info",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "jobKind": "outbox-dispatch"
+      }
+    }
+  },
+  {
+    "name": "document.builtin_sync_skipped-safe-fields",
+    "input": {
+      "eventCode": "document.builtin_sync_skipped",
+      "level": "Info",
+      "sourceCategory": "application",
+      "properties": {
+        "builtInSyncSkipReason": "directory-missing",
+        "path": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "document.builtin_sync_skipped",
+      "level": "Info",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "builtInSyncSkipReason": "directory-missing"
+      }
+    }
+  },
+  {
+    "name": "document.builtin_sync_completed-safe-fields",
+    "input": {
+      "eventCode": "document.builtin_sync_completed",
+      "level": "Info",
+      "sourceCategory": "application",
+      "properties": {
+        "markdownFileCount": 3,
+        "descriptorCount": 5,
+        "generatedNodeCount": 2,
+        "syncedCount": 5,
+        "restoredCount": 1,
+        "parentAdjustedCount": 3,
+        "softDeletedCount": 2,
+        "title": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "document.builtin_sync_completed",
+      "level": "Info",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "markdownFileCount": 3,
+        "descriptorCount": 5,
+        "generatedNodeCount": 2,
+        "syncedCount": 5,
+        "restoredCount": 1,
+        "parentAdjustedCount": 3,
+        "softDeletedCount": 2
+      }
+    }
+  },
+  {
+    "name": "document.builtin_sync_failed-safe-fields",
+    "input": {
+      "eventCode": "document.builtin_sync_failed",
+      "level": "Error",
+      "sourceCategory": "application",
+      "properties": {
+        "failureKind": "io",
+        "error": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "document.builtin_sync_failed",
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "failureKind": "io"
+      }
+    }
   }
 ]

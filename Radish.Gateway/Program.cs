@@ -135,7 +135,7 @@ return await RuntimeProcess.RunAsync("gateway", async () =>
     }
 
     var app = builder.Build();
-    runtimeLogging.AttachLifetime(app.Lifetime);
+    runtimeLogging.AttachGatewayLifetime(app.Lifetime, Log.Logger);
 
     var enableHttpsRedirection = app.Configuration.GetValue<bool?>("GatewayRuntime:EnableHttpsRedirection") ??
         app.Environment.IsDevelopment();
@@ -196,6 +196,4 @@ return await RuntimeProcess.RunAsync("gateway", async () =>
     using var startupSummaryRegistration = startupLog.Register(app.Lifetime, app.Urls, Log.Logger);
 
     await app.RunAsync();
-
-    Log.Information("Radish.Gateway 已关闭");
 });

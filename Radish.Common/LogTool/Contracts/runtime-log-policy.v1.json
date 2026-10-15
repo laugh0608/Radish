@@ -976,7 +976,12 @@
     "runtime.startup_summary": "Host startup summary.",
     "runtime.startup_unknown": "Unrecognized host startup event.",
     "runtime.assembly_load_failed": "Assembly load failed.",
-    "runtime.assembly_types_failed": "Assembly type enumeration failed."
+    "runtime.assembly_types_failed": "Assembly type enumeration failed.",
+    "job.recurring_registration_returned": "Recurring job registration returned.",
+    "document.builtin_sync_skipped": "Built-in document startup sync skipped.",
+    "document.builtin_sync_completed": "Built-in document startup sync completed.",
+    "document.builtin_sync_failed": "Built-in document startup sync failed.",
+    "runtime.program_unknown": "Unrecognized host program event."
   },
   "properties": {
     "durationMs": {
@@ -1230,7 +1235,8 @@
         "comment-highlight",
         "retention-rewards",
         "upload-sessions",
-        "file-tokens"
+        "file-tokens",
+        "outbox-dispatch"
       ]
     },
     "processedCount": {
@@ -1440,6 +1446,60 @@
       "type": "number",
       "min": 0,
       "max": 2147483647,
+      "integer": true
+    },
+    "builtInSyncSkipReason": {
+      "type": "enum",
+      "values": [
+        "disabled",
+        "both-tables-missing",
+        "document-table-missing",
+        "revision-table-missing",
+        "directory-missing",
+        "no-markdown",
+        "unknown"
+      ]
+    },
+    "markdownFileCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "descriptorCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "generatedNodeCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "syncedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "restoredCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "parentAdjustedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
+      "integer": true
+    },
+    "softDeletedCount": {
+      "type": "number",
+      "min": 0,
+      "max": 9007199254740991,
       "integer": true
     }
   }

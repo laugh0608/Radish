@@ -143,7 +143,7 @@ public class WikiDocumentBuiltInSyncTests
             var summary = await service.SyncBuiltInDocumentsAsync(TestContext.Current.CancellationToken);
 
             summary.IsSkipped.ShouldBeTrue();
-            summary.SkipReason.ShouldBe("Document.ShowBuiltInDocs=false");
+            summary.SkipReason.ShouldBe(WikiBuiltInSyncSkipReason.Disabled);
             summary.SyncedCount.ShouldBe(0);
             summary.CreatedCount.ShouldBe(0);
             summary.UpdatedCount.ShouldBe(0);
@@ -277,6 +277,25 @@ public class WikiDocumentBuiltInSyncTests
         {
             DeleteDirectory(docsRoot);
         }
+    }
+
+    [Theory]
+    [InlineData(false, WikiBuiltInSyncSkipReason.DirectoryMissing)]
+    [InlineData(true, WikiBuiltInSyncSkipReason.NoMarkdown)]
+    public async Task SyncBuiltInDocumentsAsync_ShouldReturnTypedReasonWithoutDirectoryText(bool directoryExists, WikiBuiltInSyncSkipReason reason)
+    {
+        var root = CreateTempDocsRoot();
+        try
+        {
+            var path = directoryExists ? root : Path.Combine(root, "PRIVATE_PATH_SENTINEL");
+            var context = new WikiDocumentSyncTestContext();
+            var summary = await context.CreateService(path).SyncBuiltInDocumentsAsync(TestContext.Current.CancellationToken);
+            summary.IsSkipped.ShouldBeTrue();
+            summary.SkipReason.ShouldBe(reason);
+            context.Documents.ShouldBeEmpty();
+            context.Revisions.ShouldBeEmpty();
+        }
+        finally { DeleteDirectory(root); }
     }
 
     private static string CreateTempDocsRoot()

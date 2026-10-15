@@ -5,7 +5,7 @@ public sealed class WikiBuiltInSyncSummary
 {
     public bool IsSkipped { get; set; }
 
-    public string? SkipReason { get; set; }
+    public WikiBuiltInSyncSkipReason SkipReason { get; set; }
 
     public int MarkdownFileCount { get; set; }
 

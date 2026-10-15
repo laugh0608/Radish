@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：对照已治理清单继续只读核对剩余自有日志与非 Serilog 通道，确认下一批范围；Common 两处程序集诊断已收口，浏览器输出仍待独立确认。
-- **状态复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要与 Common 程序集诊断治理，见[事件契约第 49–71 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：对照已治理清单继续只读核对剩余自有日志与非 Serilog 通道，确认下一批范围；Common 两处程序集诊断及 API 启动业务 / Gateway 停止日志已收口，浏览器输出仍待独立确认。
+- **状态复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -32,6 +32,8 @@
 正式产品线只保留 Web 与 Flutter Native；Web 优先，Flutter mobile-first、desktop stage-gated。WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 
 ## 最近结论
+
+- `2026-10-15` 完成[API 启动业务与 Gateway 停止日志治理](../records/unified-logging-l2-program-operations-2026-10-15.md)：21 处旧调用点改为受控事件；保留注册与同步消费语义，停止通知在 logger 释放前记录，浏览器输出未扩展。
 
 - `2026-10-15` 完成[Common 程序集诊断治理](../records/unified-logging-l2-common-assembly-diagnostics-2026-10-15.md)：两处裸输出改为独立安全 stderr，绑定早期宿主来源并隔离诊断二次失败；保留扫描与空集合行为，浏览器输出未扩展。
 
@@ -67,10 +69,10 @@
 
 ## 下一步事项（2026-10-15 更新）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–71 节](../features/unified-logging-contract.md)，最新批次与证据限制见[Common 程序集诊断记录](../records/unified-logging-l2-common-assembly-diagnostics-2026-10-15.md)，不再逐批列作待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，最新批次与证据限制见[Program 日志治理记录](../records/unified-logging-l2-program-operations-2026-10-15.md)，不再逐批列作待办。
 
 1. **继续剩余框架与非日志通道只读核对**：ASP.NET Core DataProtection 的已列明来源已治理；OpenIddict Client / Validation / DataProtection 依赖存在但未注册。IdentityModel 默认空 logger、仓库无诊断订阅器不等于外部 EventPipe / DiagnosticListener / Activity / metrics 已受控；详细边界见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 继续后置。
-2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。继续区分未治理的 Program 启动业务 / 关闭日志与各自消费边界；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。
+2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。API 周期任务注册 / 固定文档同步与 Gateway 停止日志已治理；继续只读核对其他自有来源与相邻透传边界；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。
 3. **形成 L2 剩余覆盖清单**：对照生产接线与事件契约，区分已治理精确来源、待治理自有业务日志、相邻透传来源、桥接前读取风险及非日志输出，确定下一批完整范围；现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
 4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
 

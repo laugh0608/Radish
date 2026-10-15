@@ -667,8 +667,8 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 环境在创建摘要状态时归一化；CORS 数量来自已解析 origins。API 模式来自实际已加载签名证书是否存在；Auth 在既有 OpenIddict 配置委托主体完成后记录所选密钥模式，未到该点时明确为 not-initialized，不为日志强制解析 options 或初始化证书。模式是配置选择，不证明证书或认证流程可用。Gateway 复用实际 HTTPS / delegation 分支和健康检查 tags 数量；retained 不承诺 HttpSys delegation 实际可用。
 - 启动通知只读取监听地址集合的 Count，不枚举地址、不重新读取配置、不解析 URI / 路径、不探测文件、不读取证书 Subject，不拼接 CORS 或下游目标。删除仅用于旧日志的两个 BuildStartupSummary 及对应 record；健康检查使用的 issuer / certificate 解析方法和实际认证、时区、代理、健康响应行为保持。
 - 输出只保留固定来源 / 编码 / 分类、原时间 / 等级、Diagnostic、上述属性和强类型 trace/span；丢弃异常、URL、Issuer、证书路径 / 身份、原始环境名、时区名、目标名 / 状态与任意 scope。已知摘要受既有 MinimumLevel 约束，不依赖候选 Diagnostics 开关；独立 logger、任意外部 enricher 的提前求值不自动受保护。
-- 回调注册在 RunAsync 前，作用域结束时释放；注册本身不输出，停止通知不生成启动摘要。未发出 ApplicationStarted 的失败路径无摘要；后续 Auth 状态变化不补发。既有 `runtime.started` / `runtime.stopped` 仍由 RuntimeLoggingSession 管理，未扩展旧链生命周期所有权。WriteTo 消费输出异常、AuditTo 传播异常和候选应急输出的既有语义保留。
-- 四模式、配置后续读取失败、不可枚举地址、延迟 Auth 状态、scope 污染、输出故障与健康解析回归见[本批记录](../records/unified-logging-l2-host-startup-2026-10-15.md)。只使用受控生命周期通知与内存 / 临时文件验证，没有启动项目服务或访问真实数据库 / 证书库。Common 程序集诊断、浏览器输出、Gateway 关闭日志及其他启动业务日志未纳入；生产候选开关关闭，L2 未整体完成。
+- 回调注册在 RunAsync 前，作用域结束时释放；注册本身不输出，停止通知不生成启动摘要。未发出 ApplicationStarted 的失败路径无摘要；后续 Auth 状态变化不补发。本节批次时既有 `runtime.started` / `runtime.stopped` 仍由 RuntimeLoggingSession 管理，未扩展旧链生命周期所有权；Gateway 停止通知的后续治理见第 72 节。WriteTo 消费输出异常、AuditTo 传播异常和候选应急输出的既有语义保留。
+- 四模式、配置后续读取失败、不可枚举地址、延迟 Auth 状态、scope 污染、输出故障与健康解析回归见[本批记录](../records/unified-logging-l2-host-startup-2026-10-15.md)。只使用受控生命周期通知与内存 / 临时文件验证，没有启动项目服务或访问真实数据库 / 证书库。本节未纳入 Common 程序集诊断、浏览器输出与其他 Program 日志；Common 后续见第 71 节，任务注册 / 固定文档同步 / Gateway 停止后续见第 72 节；生产候选开关关闭，L2 未整体完成。
 
 ## 71. L2 Common 程序集加载与类型枚举诊断
 
@@ -680,3 +680,15 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 本批有意消除诊断自身的二次故障：分类、策略初始化、序列化与写入故障不再替代原有跳过 / 空集合结果，也不因裸输出失败使 App 静态初始化持续不可用。同步及继承执行上下文的 writer 重入直接返回，不递归、不补发。不同 scope 的本通道写入串行；同步 writer 无 IO 超时保障，不承诺抵御任意外部阻塞。
 - 正常诊断按每次 catch 输出，不新增业务事件限频或聚合。规范化 / 输出失败复用 `pipeline.output_failed`，每个输出实例首次立即报告、此后 60 秒至多尝试一次；应急写入使用同一 stderr。策略不可用、应急介质也失效或重入抑制时可能无事件，不回退原文。没有持久队列、关闭补发或恰好一次承诺；输出实例 / 介质变化会重置其应急计数窗口。
 - 四模式、配置读取失败、嵌套 / 并发 / 已释放上下文、真实扫描、独立进程静态初始化、受控畸形 DLL、类型枚举替身、策略资源损坏、Write / Flush / 重入、进程退出与 CLI stdout 回归见[本批记录](../records/unified-logging-l2-common-assembly-diagnostics-2026-10-15.md)。未启动项目服务、访问真实数据库或系统证书库；ConsoleHelper 的其他通用输出、浏览器输出及其他程序集相关架构调整未扩展，生产候选开关关闭，L2 未整体完成。
+
+## 72. L2 API 启动业务与 Gateway 停止日志
+
+- 收口 API 的 16 处周期任务注册、4 处固定文档同步以及 Gateway 的 1 处尾部关闭日志。精确来源为 `Radish.Extension.Log.HostProgramLog`；`HostProgramLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出。只保留固定事件 / 分类 / 来源、原时间 / 等级、Diagnostic、事件对应的受控字段和强类型 trace / span；异常、scope、配置、路径、cron、时区和任务参数原文均不透传。相邻来源不接管，独立 logger 和外部 enricher 的提前求值不自动受保护。
+- `job.recurring_registration_returned` 是非诊断 Information、job 分类，只携带 `jobKind`，既有枚举新增 `outbox-dispatch`。16 处仍逐项调用原 `RecurringJob.AddOrUpdate` 静态入口；每次正常返回后才记录，不把“注册返回”写成任务执行成功。条件、顺序、参数、计划、时区、全局存储 / manager 和异常传播不变；默认开启 15 项，DailyStats 仍默认关闭。配置 / 注册失败不新增本地 catch，最终由既有 RuntimeProcess 处理。
+- `document.builtin_sync_skipped / completed` 为非诊断 Information，`document.builtin_sync_failed` 为非致命 Error，均为 application 分类。失败只保留 `failureKind`；成功只保留原摘要的十个非负 int 数量，不携带文档身份或内容。共享策略为新增七个计数键登记 0–9007199254740991 的整数边界，生成端 / 精确 sink 仍只接受非负 int；既有 createdCount / updatedCount / skippedCount 复用。
+- `WikiBuiltInSyncSummary.SkipReason` 与启动守卫改用 `WikiBuiltInSyncSkipReason`，移除目录文本拼接。日志字段 `builtInSyncSkipReason` 只接受 disabled、both-tables-missing、document-table-missing、revision-table-missing、directory-missing、no-markdown、unknown；无明确原因的跳过结果仅记录 unknown。该摘要只有内部启动消费者，不新增 HTTP 接口或数据迁移。缺表原因仍明确区分，处理方式仍为先执行 DbMigrate apply。
+- 启动任务注册块和文档同步块按职责移至 API Services，由 Program 在原位置调用。同步仍先建立 scope、读取实体表名、执行两次 IsAnyTable，再检查展示开关 / 缺表守卫；不会因 ShowBuiltInDocs=false 提前省略原有数据库查询。同步服务仍使用默认 CancellationToken；原 catch 保持消费同步、配置解析后的依赖解析、查询、取消及 scope 释放异常，正常日志输出返回后继续启动，不增加重试、事务或补偿。
+- 同步完成事件仅表示服务返回了非跳过摘要，发生在 scope 释放前；后续释放失败会另有 failed，不能据完成事件宣称整个启动或释放成功。部分同步后失败保留此前副作用，不新增回滚。WriteTo 仍消费 sink 异常；完成输出的 AuditTo 失败仍进入既有 catch，失败输出的 AuditTo 故障继续传播，可能影响进程退出，不能把其一概写成“必定继续启动”。
+- Gateway 改用 RuntimeLoggingSession.AttachGatewayLifetime：候选保留 started、由一个受控 stopped 回调记录；旧链补充同一 ApplicationStopped 通知的受控输出。复用 `runtime.stopped`（非诊断 Information、lifecycle，无业务属性），删除 RunAsync 返回后的额外日志；旧 logger 仍归宿主释放，候选 logger 仍归 Session 释放。停止通知不保证后续宿主 / logger Dispose 成功，不新增 Auth / API 旧链生命周期接管。注册本身、Stopping 和未发出 Stopped 的路径均不输出 stopped；Session 释放注销回调。
+- 同来源未知编码改为 `runtime.program_unknown`，保持原等级，低于 Warning 标为 diagnostic；已知事件不依赖 Diagnostics 开关，仍受 MinimumLevel 约束。字段按事件分别校验，跨事件或类型错误的属性丢弃。
+- 四模式、真实静态 Hangfire 注册 + 存储替身、SQLite 内存表查询、同步服务替身 / 既有真实服务回归、受控停止通知及 HostBuilder Build / Dispose、scope / WriteTo / AuditTo / 应急通道验证见[本批记录](../records/unified-logging-l2-program-operations-2026-10-15.md)。未启动项目服务 / Hangfire worker、访问真实数据库或绑定端口；不能代替调度执行、真实存储事务、系统停机和部署验收。浏览器输出未扩展，生产候选开关仍关闭，L2 未整体完成。

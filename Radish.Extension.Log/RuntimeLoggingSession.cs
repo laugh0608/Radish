@@ -46,6 +46,14 @@ public sealed class RuntimeLoggingSession : IDisposable
         _registrations.Add(lifetime.ApplicationStopped.Register(() => WriteLifecycle("runtime.stopped")));
     }
 
+    /// <summary>Gateway 两条链只在停止通知时记录一次；旧链 logger 仍归宿主释放。</summary>
+    public void AttachGatewayLifetime(IHostApplicationLifetime lifetime, Serilog.ILogger legacyLogger)
+    {
+        if (Logger != null)
+            _registrations.Add(lifetime.ApplicationStarted.Register(() => WriteLifecycle("runtime.started")));
+        _registrations.Add(HostProgramLog.RegisterGatewayStopped(lifetime, Logger ?? legacyLogger));
+    }
+
     private void WriteLifecycle(string code) => Logger?.ForContext("EventCode", code)
         .ForContext("SourceCategory", "lifecycle").Information("Runtime lifecycle event");
 
