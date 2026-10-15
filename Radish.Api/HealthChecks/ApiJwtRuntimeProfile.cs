@@ -54,32 +54,4 @@ public static class ApiJwtRuntimeProfile
 
         return Path.GetFullPath(Path.Combine(contentRootPath, configuredPath));
     }
-
-    public static ApiJwtRuntimeSummary BuildStartupSummary(
-        IConfiguration configuration,
-        string basePath,
-        string contentRootPath)
-    {
-        var issuer = ResolveJwtIssuer(configuration);
-        if (!IsDeploymentJwtValidationEnabled(configuration))
-        {
-            return new ApiJwtRuntimeSummary(
-                ValidationMode: "authority",
-                ValidationTarget: LocalAuthority,
-                IssuerSummary: string.IsNullOrWhiteSpace(issuer) ? $"未解析，沿用 {LocalAuthority}" : issuer,
-                SigningCertificateSummary: "未启用（Authority 模式）");
-        }
-
-        return new ApiJwtRuntimeSummary(
-            ValidationMode: "local-certificate",
-            ValidationTarget: issuer ?? "未解析",
-            IssuerSummary: issuer ?? "未解析",
-            SigningCertificateSummary: ResolveSigningCertificatePath(configuration, basePath, contentRootPath));
-    }
 }
-
-public sealed record ApiJwtRuntimeSummary(
-    string ValidationMode,
-    string ValidationTarget,
-    string IssuerSummary,
-    string SigningCertificateSummary);

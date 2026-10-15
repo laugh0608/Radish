@@ -360,8 +360,6 @@ return await RuntimeProcess.RunAsync("api", async () =>
 
     var jwtIssuer = ApiJwtRuntimeProfile.ResolveJwtIssuer(builder.Configuration);
     var deploymentJwtValidationEnabled = ApiJwtRuntimeProfile.IsDeploymentJwtValidationEnabled(builder.Configuration);
-    var jwtValidationMode = "authority";
-    var jwtValidationTarget = ApiJwtRuntimeProfile.LocalAuthority;
     X509Certificate2? jwtSigningCertificate = null;
 
     if (deploymentJwtValidationEnabled)
@@ -376,8 +374,6 @@ return await RuntimeProcess.RunAsync("api", async () =>
             AppContext.BaseDirectory,
             builder.Environment.ContentRootPath,
             waitForCertificate: true);
-        jwtValidationMode = "local-certificate";
-        jwtValidationTarget = $"{jwtIssuer} | {jwtSigningCertificate.Subject}";
     }
 
     builder.Services.AddScoped<IHangfireDashboardSessionService, HangfireDashboardSessionService>();
@@ -499,8 +495,6 @@ return await RuntimeProcess.RunAsync("api", async () =>
     runtimeLogging.AttachLifetime(app.Lifetime);
     // -------------- App 初始化阶段 ---------------
 
-    Log.Information("[JWT] 初始化验签模式: {Mode}, 目标: {Target}", jwtValidationMode, jwtValidationTarget);
-
     // 3. 绑定 InternalApp 扩展中的服务
     app.ConfigureApplication();
     // 4. 启动 InternalApp 扩展中的 App
@@ -608,32 +602,9 @@ return await RuntimeProcess.RunAsync("api", async () =>
         Predicate = ApiHostHealthChecks.IsMinimal,
     });
 
-    // 输出项目启动标识（使用 Serilog，与 Gateway 风格统一）
-    app.Lifetime.ApplicationStarted.Register(() =>
-    {
-        var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
-        var jwtRuntimeSummary = ApiJwtRuntimeProfile.BuildStartupSummary(
-            builder.Configuration,
-            AppContext.BaseDirectory,
-            builder.Environment.ContentRootPath);
-
-        Log.Information("====================================");
-        Log.Information("   ____           _ _     _");
-        Log.Information("  |  _ \\ __ _  __| (_)___| |__");
-        Log.Information("  | |_) / _` |/ _` | / __| '_ \\");
-        Log.Information("  |  _ < (_| | (_| | \\__ \\ | | |");
-        Log.Information("  |_| \\\\__,_|\\__,_|_|___/_| |_|");
-        Log.Information("        Radish.Api --by luobo");
-        Log.Information("====================================");
-        Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
-        Log.Information("监听地址: {Urls}", urls);
-        Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
-        Log.Information("默认时区: {TimeZone}", TimeZoneResolver.NormalizeToDisplayId(configuredTimeOptions.DefaultTimeZoneId));
-        Log.Information("JWT 验签模式: {Mode}", jwtRuntimeSummary.ValidationMode);
-        Log.Information("JWT 验签目标: {Target}", jwtRuntimeSummary.ValidationTarget);
-        Log.Information("JWT Issuer 解析: {Issuer}", jwtRuntimeSummary.IssuerSummary);
-        Log.Information("JWT signing 证书: {Certificate}", jwtRuntimeSummary.SigningCertificateSummary);
-    });
+    var startupLog = HostStartupLog.Api(builder.Environment.EnvironmentName, allowedOrigins.Length,
+        localSigningCertificateLoaded: jwtSigningCertificate != null);
+    using var startupSummaryRegistration = startupLog.Register(app.Lifetime, app.Urls, Log.Logger);
 
     // 注册 Hangfire 定时任务
     RecurringJob.AddOrUpdate<Radish.Api.Services.ReliableOutboxDispatcherJob>(

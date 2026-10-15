@@ -36,30 +36,4 @@ public static class AuthOidcRuntimeProfile
 
         return Path.GetFullPath(Path.Combine(environment.ContentRootPath, configuredPath));
     }
-
-    public static AuthOidcRuntimeSummary BuildStartupSummary(
-        IConfiguration configuration,
-        IHostEnvironment environment)
-    {
-        if (UsesDevelopmentKeys(configuration))
-        {
-            return new AuthOidcRuntimeSummary(
-                IssuerSummary: ResolveIssuer(configuration) ?? "未解析",
-                KeyMode: "development-keys",
-                SigningCertificateSummary: "开发密钥",
-                EncryptionCertificateSummary: "开发密钥");
-        }
-
-        return new AuthOidcRuntimeSummary(
-            IssuerSummary: ResolveIssuer(configuration) ?? "未解析",
-            KeyMode: "file-certificates",
-            SigningCertificateSummary: ResolveCertificatePath(configuration, environment, "Signing"),
-            EncryptionCertificateSummary: ResolveCertificatePath(configuration, environment, "Encryption"));
-    }
 }
-
-public sealed record AuthOidcRuntimeSummary(
-    string IssuerSummary,
-    string KeyMode,
-    string SigningCertificateSummary,
-    string EncryptionCertificateSummary);

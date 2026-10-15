@@ -657,4 +657,15 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 原等级低于 Warning 的事件均标为 diagnostic，候选链按既有环境 / Diagnostics 门禁过滤；Warning / Error 不降级，未知身份遵循同一规则。预载失败 66 保留框架 Information / diagnostic，不能提升成宿主启动失败或据其成功摘要推定整个宿主健康。候选链 Trace / Debug 仍统一为 Info + diagnostic；旧链保留原始等级。
 - `key_creation_started`、`key_revocation_started`、`date_revocation_started`、`file_repository.write_started` 等只表示已到达操作开始点，不承诺持久化完成。密钥处理失败 24 与详细诊断 25 安全化后，畸形 key 仍可被跳过，延迟 descriptor 导入失败仍抛出；畸形 revocation 的 21 仍中止读取。预载消费异常、缓存刷新回退、密钥轮换、撤销、加解密和持久化语义均保持框架行为。
 - 前置保护不阻止框架在调用 ILogger 之前构造 purposes 字符串或 XML 副本；scope 仍经原桥接处理，任意第三方 enricher / destructurer 的提前求值及独立 logger 不自动受控。这里只保证列明接线输出的安全重建，不宣称全进程所有日志和诊断通道已覆盖。
-- 四模式验证真实日志生成器、内存密钥环 / XML repository、篡改 / 用途隔离 / 缺失与撤销密钥、轮换、刷新失败、预载失败恢复、受控临时文件与证书 resolver 替身，以及桥接 / scope / WriteTo / AuditTo / 宿主 Build / Dispose。Windows CNG、DPAPI、Registry 分支只具备真实生成器证据，不代表原生平台验收；没有启动项目服务、访问真实密钥库、数据库或系统证书库。Auth 启动日志、其他裸输出和非日志诊断仍后置；生产候选开关关闭，L2 尚未整体完成。
+- 四模式验证真实日志生成器、内存密钥环 / XML repository、篡改 / 用途隔离 / 缺失与撤销密钥、轮换、刷新失败、预载失败恢复、受控临时文件与证书 resolver 替身，以及桥接 / scope / WriteTo / AuditTo / 宿主 Build / Dispose。Windows CNG、DPAPI、Registry 分支只具备真实生成器证据，不代表原生平台验收；没有启动项目服务、访问真实密钥库、数据库或系统证书库。本节批次未扩展 Auth 启动日志；三宿主启动摘要后续见第 70 节。其他裸输出和非日志诊断仍后置；生产候选开关关闭，L2 尚未整体完成。
+
+## 70. L2 Auth / API / Gateway 启动摘要
+
+- 三宿主原 ApplicationStarted 回调的 47 处 banner / 配置日志统一为每个宿主一个 `runtime.startup_summary`（Information、非 diagnostic、lifecycle 分类）。同时移除 API 回调外的一处 JWT 初始化摘要及其证书 Subject / 验签目标拼接，共收口 48 处旧调用点。它只说明收到宿主启动完成通知，不代表认证、健康检查、下游连接或生产验收成功。
+- 精确来源为 `Radish.Extension.Log.HostStartupLog`。生成端只接受受控状态与数量；`HostStartupLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出。身份由精确来源及固定 EventCode 匹配；同来源未知编码进入 `runtime.startup_unknown`，保留原等级，低于 Warning 标为 diagnostic。相邻来源不拦截，不扩展到整个 Program 或进程。
+- 公共属性为 `startupHost=auth|api|gateway`、`startupEnvironment=development|production|staging|other`、`listenEndpointCount`、`corsOriginCount`。Auth 仅允许 `startupAuthentication=not-initialized|development-keys|file-certificates`；API 仅允许 `authority|local-certificate`；Gateway 仅允许 `healthTargetCount`、`startupHttpsRedirection=enabled|disabled`、`startupDelegation=removed|retained`。生成端计数为 int，输出要求非负；共享策略要求 0–2147483647 的整数。类型错误、跨宿主属性及未登记值丢弃。
+- 环境在创建摘要状态时归一化；CORS 数量来自已解析 origins。API 模式来自实际已加载签名证书是否存在；Auth 在既有 OpenIddict 配置委托主体完成后记录所选密钥模式，未到该点时明确为 not-initialized，不为日志强制解析 options 或初始化证书。模式是配置选择，不证明证书或认证流程可用。Gateway 复用实际 HTTPS / delegation 分支和健康检查 tags 数量；retained 不承诺 HttpSys delegation 实际可用。
+- 启动通知只读取监听地址集合的 Count，不枚举地址、不重新读取配置、不解析 URI / 路径、不探测文件、不读取证书 Subject，不拼接 CORS 或下游目标。删除仅用于旧日志的两个 BuildStartupSummary 及对应 record；健康检查使用的 issuer / certificate 解析方法和实际认证、时区、代理、健康响应行为保持。
+- 输出只保留固定来源 / 编码 / 分类、原时间 / 等级、Diagnostic、上述属性和强类型 trace/span；丢弃异常、URL、Issuer、证书路径 / 身份、原始环境名、时区名、目标名 / 状态与任意 scope。已知摘要受既有 MinimumLevel 约束，不依赖候选 Diagnostics 开关；独立 logger、任意外部 enricher 的提前求值不自动受保护。
+- 回调注册在 RunAsync 前，作用域结束时释放；注册本身不输出，停止通知不生成启动摘要。未发出 ApplicationStarted 的失败路径无摘要；后续 Auth 状态变化不补发。既有 `runtime.started` / `runtime.stopped` 仍由 RuntimeLoggingSession 管理，未扩展旧链生命周期所有权。WriteTo 消费输出异常、AuditTo 传播异常和候选应急输出的既有语义保留。
+- 四模式、配置后续读取失败、不可枚举地址、延迟 Auth 状态、scope 污染、输出故障与健康解析回归见[本批记录](../records/unified-logging-l2-host-startup-2026-10-15.md)。只使用受控生命周期通知与内存 / 临时文件验证，没有启动项目服务或访问真实数据库 / 证书库。Common 程序集诊断、浏览器输出、Gateway 关闭日志及其他启动业务日志未纳入；生产候选开关关闭，L2 未整体完成。

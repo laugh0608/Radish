@@ -85,7 +85,6 @@ return await RuntimeProcess.RunAsync("gateway", async () =>
     builder.Services.AddRazorPages();
 
     // ===== CORS 配置 =====
-    var corsSection = builder.Configuration.GetSection("Cors");
     var allowedOrigins = CorsOriginResolver.ResolveAllowedOrigins(builder.Configuration);
 
     builder.Services.AddCors(options =>
@@ -111,9 +110,6 @@ return await RuntimeProcess.RunAsync("gateway", async () =>
     });
 
     // ===== 健康检查配置 =====
-    var apiBaseUrl = builder.Configuration["DownstreamServices:ApiService:BaseUrl"];
-    var authBaseUrl = builder.Configuration["DownstreamServices:AuthService:BaseUrl"];
-    var gatewayHealthTargets = GatewayHostHealthChecks.CreateHealthTargets(builder.Configuration);
     var healthCheckTags = GatewayHostHealthChecks.CreateTags(builder.Configuration);
     builder.Services.AddGatewayHostHealthChecks(builder.Configuration, healthCheckTags);
 
@@ -132,7 +128,8 @@ return await RuntimeProcess.RunAsync("gateway", async () =>
     builder.Services.AddReverseProxy()
         .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
 
-    if (!OperatingSystem.IsWindows())
+    var delegationRemoved = !OperatingSystem.IsWindows();
+    if (delegationRemoved)
     {
         RemoveHttpSysDelegationRegistrations(builder.Services);
     }
@@ -194,43 +191,9 @@ return await RuntimeProcess.RunAsync("gateway", async () =>
     // 默认路由到门户页
     app.MapFallbackToPage("/Index");
 
-    // ===== 启动日志 =====
-    app.Lifetime.ApplicationStarted.Register(() =>
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            Log.Information("当前运行环境非 Windows，Gateway 已跳过 YARP HttpSys delegation 注册");
-        }
-
-        var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
-
-        Log.Information("====================================");
-        Log.Information("   ____           _ _     _");
-        Log.Information("  |  _ \\ __ _  __| (_)___| |__");
-        Log.Information("  | |_) / _` |/ _` | / __| '_ \\");
-        Log.Information("  |  _ < (_| | (_| | \\__ \\ | | |");
-        Log.Information("  |_| \\\\__,_|\\__,_|_|___/_| |_|");
-        Log.Information("        Radish.Gateway --by luobo");
-        Log.Information("====================================");
-        Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
-        Log.Information("监听地址: {Urls}", urls);
-        Log.Information("HTTPS 重定向: {HttpsRedirection}", enableHttpsRedirection ? "启用" : "禁用");
-        Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
-        if (!string.IsNullOrEmpty(apiBaseUrl))
-        {
-            Log.Information("下游 API 服务: {ApiUrl}", apiBaseUrl);
-        }
-
-        foreach (var target in gatewayHealthTargets)
-        {
-            var scope = target.Tags.Contains("minimal") ? "最小探活" : "扩展观测";
-            Log.Information("{Scope}[{TargetName}]: {TargetUrl} | failureStatus={FailureStatus}",
-                scope,
-                target.Name,
-                target.Url,
-                target.FailureStatus);
-        }
-    });
+    var startupLog = HostStartupLog.Gateway(builder.Environment.EnvironmentName, allowedOrigins.Length,
+        healthCheckTags.Count, enableHttpsRedirection, delegationRemoved);
+    using var startupSummaryRegistration = startupLog.Register(app.Lifetime, app.Urls, Log.Logger);
 
     await app.RunAsync();
 

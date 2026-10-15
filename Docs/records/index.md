@@ -3,6 +3,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-15 Auth / API / Gateway 启动摘要治理](./unified-logging-l2-host-startup-2026-10-15.md)：48 处旧调用点、安全状态摘要、完成时机与四模式回归
+
 - [2026-10-15 ASP.NET Core DataProtection 日志治理](./unified-logging-l2-dataprotection-2026-10-15.md)：20 个精确来源、98 个固定编码、四模式生成器与密钥环行为验证
 
 - [2026-10-15 SelfLog 独立自诊断治理](./unified-logging-l2-selflog-2026-10-15.md)：两条链安全 stderr、初始化与释放所有权、限频及故障回归

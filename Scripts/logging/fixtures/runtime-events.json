@@ -428,5 +428,85 @@
       "sourceCategory": "infrastructure"
     },
     "expected": null
+  },
+  {
+    "name": "host-startup-production-summary-keeps-safe-state",
+    "input": {
+      "eventCode": "runtime.startup_summary",
+      "level": "Information",
+      "sourceCategory": "lifecycle",
+      "properties": {
+        "startupHost": "api",
+        "startupEnvironment": "production",
+        "startupAuthentication": "local-certificate",
+        "listenEndpointCount": 1,
+        "corsOriginCount": 2
+      }
+    },
+    "expected": {
+      "eventCode": "runtime.startup_summary",
+      "level": "Info",
+      "diagnostic": false,
+      "redacted": false,
+      "properties": {
+        "startupHost": "api",
+        "startupEnvironment": "production",
+        "startupAuthentication": "local-certificate",
+        "listenEndpointCount": 1,
+        "corsOriginCount": 2
+      }
+    }
+  },
+  {
+    "name": "host-startup-rejects-raw-config-and-invalid-counts",
+    "input": {
+      "eventCode": "runtime.startup_summary",
+      "level": "Information",
+      "sourceCategory": "lifecycle",
+      "properties": {
+        "startupHost": "SENTINEL_SECRET",
+        "startupEnvironment": "SENTINEL_SECRET",
+        "startupAuthentication": "SENTINEL_SECRET",
+        "listenEndpointCount": -1,
+        "corsOriginCount": 1.5,
+        "healthTargetCount": 2147483648,
+        "issuer": "SENTINEL_SECRET",
+        "certificate": "SENTINEL_SECRET",
+        "startupHttpsRedirection": "enabled",
+        "startupDelegation": "removed"
+      }
+    },
+    "expected": {
+      "eventCode": "runtime.startup_summary",
+      "redacted": true,
+      "properties": {
+        "startupHttpsRedirection": "enabled",
+        "startupDelegation": "removed"
+      }
+    }
+  },
+  {
+    "name": "host-startup-unknown-info-production-quiet",
+    "input": {
+      "eventCode": "runtime.startup_unknown",
+      "level": "Information",
+      "diagnostic": true,
+      "sourceCategory": "lifecycle"
+    },
+    "expected": null
+  },
+  {
+    "name": "host-startup-unknown-error-preserved",
+    "input": {
+      "eventCode": "runtime.startup_unknown",
+      "level": "Error",
+      "sourceCategory": "lifecycle"
+    },
+    "expected": {
+      "eventCode": "runtime.startup_unknown",
+      "level": "Error",
+      "diagnostic": false,
+      "redacted": false
+    }
   }
 ]
