@@ -616,7 +616,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 保持请求提取、认证结果 / 缓存 / properties / principal、handled / skipped / rejected、client / redirect / PKCE / scope 校验、令牌结果、重放撤销与异常传播。重放撤销失败（含取消）仍由框架消费并拒绝令牌。JSON / 文本 / form-post / query / fragment / logout / challenge 响应保持协议内容；日志治理不改变响应脱敏策略。
 - 四模式覆盖全部身份与输出链、真实 dispatcher / ASP.NET Core handler、请求 / 参数处理器、内存 JWT 生成验证和 manager 替身、响应写入失败 / 取消。数字身份由已安装 IL 核对，5 个命名事件由真实 LoggerMessage 元数据与生成器核对，不宣称 178 个数字事件都是生成器或都经过完整端点流程。
 - 工厂 / filter / handler 解析、协议序列化以及 logger 前参数求值仍在保护范围之外。form-post 的既有 CopyToAsync 不传 context 取消令牌，本批只验证流抛出取消异常仍传播；其他已测正文 writer 保留 token 传递。不修正这些既有运行语义。
-- 只进行内存验证和宿主 Build / Dispose；本节批次时旧链 SelfLog 保留文件初始化，后续治理见第 68 节。不安装 / 还原依赖、不启动服务、不绑定端口、不访问网络、真实数据库或证书库。Core 后续范围见第 66 节；自有 Auth 账户／会话后续治理见第 67 节，其他自有日志、Client / Validation / DataProtection 与非 Serilog 通道仍后置；生产候选开关关闭，L2 未整体完成。
+- 只进行内存验证和宿主 Build / Dispose；本节批次时旧链 SelfLog 保留文件初始化，后续治理见第 68 节。不安装 / 还原依赖、不启动服务、不绑定端口、不访问网络、真实数据库或证书库。Core 后续范围见第 66 节；自有 Auth 账户／会话后续治理见第 67 节，其他自有日志、OpenIddict Client / Validation / DataProtection 与非 Serilog 通道仍后置；生产候选开关关闭，L2 未整体完成。
 
 ## 66. L2 OpenIddict Core
 
@@ -627,7 +627,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 保持 Authorization.TryRevoke 与 Token.TryRedeem / TryReject / TryRevoke 的校验、缓存移除、存储更新、缓存回填顺序、可变实体状态和返回值。并发异常保留 Debug；更新 catch 内的非致命异常（含取消）按原逻辑返回 false，前提是 catch 中读取 ID 和写日志成功。SetStatus / redemption date 的早期异常和致命异常继续传播；catch 内二次 ID 失败仍可替代原异常。
 - `*_completed` 只表示 manager 走到原完成日志位置，不证明外围事务提交。缓存回填或日志 ID 读取失败可能发生在 Store.UpdateAsync 返回之后，`*_failed` 不承诺未写入 / 已回滚。禁用日志也不会跳过框架调用 logger 前的参数求值。WriteTo 消费 sink 失败与 AuditTo 将失败传播回 manager 的既有差异保持。
 - 真实 Server handler 联查保持授权码兑换 false 时的拒绝、刷新令牌分支对 false 的消费、撤销失败的 unsupported_token_type、invalid_token 响应归一化，以及条件性 device / logout 分支的原返回值消费和异常传播；不启用新的产品端点、流程或协议能力。
-- 四模式覆盖全部身份、真实 manager 与存储 / 缓存替身、Server 消费链、WriteTo / AuditTo、诊断门禁、scope 冲突及共享宿主 Build / Dispose；不代表真实数据库、事务提交、并发竞争或完整登录验收。自有 Auth 账户／会话后续治理见第 67 节；其他自有日志、Client / Validation / DataProtection 和非 Serilog 通道继续后置；生产候选开关关闭，L2 未整体完成。
+- 四模式覆盖全部身份、真实 manager 与存储 / 缓存替身、Server 消费链、WriteTo / AuditTo、诊断门禁、scope 冲突及共享宿主 Build / Dispose；不代表真实数据库、事务提交、并发竞争或完整登录验收。自有 Auth 账户／会话后续治理见第 67 节；其他自有日志、OpenIddict Client / Validation / DataProtection 和非 Serilog 通道继续后置；生产候选开关关闭，L2 未整体完成。
 
 ## 67. L2 自有 Auth 账户与 IdleSession
 
@@ -648,3 +648,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 回调不解析或转发原文、异常、scope、URL 或业务身份；Serilog 在回调前可能已经格式化原始消息，本批不阻止上游求值。应急输出遵循统一单事件大小约束；writer 同步调用，限频不等于 IO 超时保障。
 - Session 构造失败时释放自己的注册并原样传播异常；正常作用域中旧 logger 随宿主先释放，候选 logger 随 Session 释放，最后注销自诊断。SelfLog 是进程全局通道：最新存活会话接收，注销后恢复最近仍存活会话；旧会话不清除新会话，全部释放后禁用。此所有权仅覆盖本组件的注册，不恢复外部直接覆盖的 SelfLog 回调，也不扩展业务 `Log.Logger` 的单宿主作用域约定。
 - 四模式、真实旧链配置 sink 的创建 / 创建失败 / 释放 / 释放失败、主链 WriteTo / AuditTo、宿主 Build / Dispose、并发、限频、写入重入和应急失败已定向验证，见[本批记录](../records/unified-logging-l2-selflog-2026-10-15.md)。初始宿主配置加载前及最后 Session 释放后的第三方自诊断不在接管期内；没有运行服务或切换生产候选链。DataProtection、Auth 启动日志与其他裸输出不在本批范围。
+
+## 69. L2 ASP.NET Core DataProtection 日志
+
+- 覆盖 ASP.NET Core 10.0.8 核心程序集的 20 个精确来源、78 个有调用点的命名事件身份，加各来源 unknown 共 98 个 `data_protection.*` 编码。按 `SourceContext + EventId.Id + EventId.Name` 联合匹配，不按命名空间前缀、消息模板或裸数字推断；两个无命名调用点进入各自 unknown，只有声明而未发现调用点的 52 / 79 不登记已启用身份。完整来源与分组见[本批记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)，逐身份映射见 `DataProtectionLogIdentity`。
+- Auth 的 MVC / antiforgery / Cookie、API 的 Hangfire Cookie、Gateway 的 RazorPages 均引入 DataProtection，包括密钥环预载服务。该范围不同于未注册的 OpenIddict DataProtection 集成包；不因包被传递引用而推定其能力已启用。
+- `AddSerilogSetup` 注册 `DataProtectionLoggerFactory`，在列明来源进入 Serilog 绑定前丢弃原 state、formatter 与异常正文，仅按异常类型生成固定 `failureKind`；保留工厂、provider、scope 与 logger 的既有所有权。`DataProtectionLogSink` 在上下文合并后重建安全事件，覆盖候选链及旧链代码 / 配置 WriteTo / AuditTo。仅保留固定编码、来源、infrastructure 分类、原时间 / 等级、Diagnostic、受控 failureKind 与强类型 trace / span；不保留 XML、密钥标识、用途、路径、撤销理由、算法类型名、注册表或证书信息。
+- 原等级低于 Warning 的事件均标为 diagnostic，候选链按既有环境 / Diagnostics 门禁过滤；Warning / Error 不降级，未知身份遵循同一规则。预载失败 66 保留框架 Information / diagnostic，不能提升成宿主启动失败或据其成功摘要推定整个宿主健康。候选链 Trace / Debug 仍统一为 Info + diagnostic；旧链保留原始等级。
+- `key_creation_started`、`key_revocation_started`、`date_revocation_started`、`file_repository.write_started` 等只表示已到达操作开始点，不承诺持久化完成。密钥处理失败 24 与详细诊断 25 安全化后，畸形 key 仍可被跳过，延迟 descriptor 导入失败仍抛出；畸形 revocation 的 21 仍中止读取。预载消费异常、缓存刷新回退、密钥轮换、撤销、加解密和持久化语义均保持框架行为。
+- 前置保护不阻止框架在调用 ILogger 之前构造 purposes 字符串或 XML 副本；scope 仍经原桥接处理，任意第三方 enricher / destructurer 的提前求值及独立 logger 不自动受控。这里只保证列明接线输出的安全重建，不宣称全进程所有日志和诊断通道已覆盖。
+- 四模式验证真实日志生成器、内存密钥环 / XML repository、篡改 / 用途隔离 / 缺失与撤销密钥、轮换、刷新失败、预载失败恢复、受控临时文件与证书 resolver 替身，以及桥接 / scope / WriteTo / AuditTo / 宿主 Build / Dispose。Windows CNG、DPAPI、Registry 分支只具备真实生成器证据，不代表原生平台验收；没有启动项目服务、访问真实密钥库、数据库或系统证书库。Auth 启动日志、其他裸输出和非日志诊断仍后置；生产候选开关关闭，L2 尚未整体完成。

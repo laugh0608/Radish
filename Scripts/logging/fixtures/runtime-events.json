@@ -362,5 +362,71 @@
         "count": 3
       }
     }
+  },
+  {
+    "name": "data-protection-error-removes-xml",
+    "input": {
+      "eventCode": "data_protection.key_manager.key_processing_failed",
+      "level": "Error",
+      "sourceCategory": "infrastructure",
+      "properties": {
+        "failureKind": "other",
+        "xml": "DP_PRIVATE_SENTINEL",
+        "keyId": "DP_PRIVATE_SENTINEL",
+        "purposes": "DP_PRIVATE_SENTINEL"
+      }
+    },
+    "expected": {
+      "eventCode": "data_protection.key_manager.key_processing_failed",
+      "level": "Error",
+      "diagnostic": false,
+      "redacted": true,
+      "properties": {
+        "failureKind": "other"
+      }
+    }
+  },
+  {
+    "name": "data-protection-attempt-remains-diagnostic",
+    "input": {
+      "eventCode": "data_protection.key_manager.key_creation_started",
+      "level": "Information",
+      "diagnostic": true,
+      "sourceCategory": "infrastructure"
+    },
+    "expected": {
+      "eventCode": "data_protection.key_manager.key_creation_started",
+      "level": "Info",
+      "diagnostic": true,
+      "redacted": false
+    },
+    "options": {
+      "mode": "Development",
+      "diagnostics": true
+    }
+  },
+  {
+    "name": "data-protection-unknown-warning-retained",
+    "input": {
+      "eventCode": "data_protection.type_activation.unknown",
+      "level": "Warning",
+      "sourceCategory": "infrastructure"
+    },
+    "expected": {
+      "eventCode": "data_protection.type_activation.unknown",
+      "level": "Warning",
+      "diagnostic": false,
+      "redacted": false
+    }
+  },
+  {
+    "name": "data-protection-attempt-production-quiet",
+    "input": {
+      "eventCode": "data_protection.key_manager.key_creation_started",
+      "level": "Information",
+      "diagnostic": true,
+      "sourceCategory": "infrastructure"
+    },
+    "expected": null
   }
 ]

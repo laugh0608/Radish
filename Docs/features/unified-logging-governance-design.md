@@ -1,6 +1,6 @@
 # 全项目统一日志、跨容器汇聚与 Console 运维中心
 
-> 状态：项目所有者已于 2026-09-19 确认方案；作为重构基线。L1 契约及采集安全 / 故障可见性子项已实施；L2 入口与多组生成端调用链已实施，准确范围见[事件契约第 7–68 节](./unified-logging-contract.md)。L1 剩余门禁、L2 整体治理及 L3–L6 尚未完成，生产默认链路未切换。
+> 状态：项目所有者已于 2026-09-19 确认方案；作为重构基线。L1 契约及采集安全 / 故障可见性子项已实施；L2 入口与多组生成端调用链已实施，准确范围见[事件契约第 7–69 节](./unified-logging-contract.md)。L1 剩余门禁、L2 整体治理及 L3–L6 尚未完成，生产默认链路未切换。
 >
 > 更新：2026-10-15（Asia/Shanghai）。范围来自项目所有者本轮反馈：统一文件、终端和日志库，开发 / 生产两种模式，Info / Warning / Error 三级，跨服务容器集中查询，Console 内告警与提醒。
 
@@ -348,6 +348,6 @@ L2–L6 是一个完整重构目标的交付切片，不能把“只降低 SQL �
 
 - 已完成方案确认、现状审计、统一事件策略及 .NET / Node 生成契约；实现入口见[事件契约](./unified-logging-contract.md)。
 - L1 已取得本机 Linux arm64 的传输、安全裁剪及故障可见性证据；固定版本 / digest、HTTP 候选上限、队列与轮转限制见[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)及[采集边界记录](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。这不代表全部平台或磁盘故障门禁关闭。
-- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配；`RadishLogging.Enabled` 默认 false。基础生成端、后台任务与已列明业务调用链的准确边界统一见[事件契约第 7–68 节](./unified-logging-contract.md)，批次证据见 [9 月 23 日日终回顾](../records/day-end-doc-review-2026-09-23.md)、[9 月 28 日日终回顾](../records/day-end-doc-review-2026-09-28.md)、[10 月 2 日日终回顾](../records/day-end-doc-review-2026-10-02.md)及 [10 月 7 日日终回顾](../records/day-end-doc-review-2026-10-07.md)。[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)汇总早期消费点、证书 / 传输、YARP、认证授权 / 路由、宿主健康及 OpenIddict Server / Core 的全部批次。自有 Auth 账户与会话日志后续治理见[10 月 15 日批次](../records/unified-logging-l2-auth-account-idle-session-2026-10-15.md)，SelfLog 的独立安全输出与生命周期见[同日 SelfLog 批次](../records/unified-logging-l2-selflog-2026-10-15.md)。启动回调、DataProtection 与其他非 Serilog 通道仍需独立治理。日志安全重建不改变结果 / 协议 / 存储语义；健康服务与 OpenIddict 的列明来源增加桥接前保护，其他来源不自动继承。生成器、内存处理器与存储替身证据不替代真实网络、登录或存储验收；其余业务入口、异常安全栈帧、框架来源与非 Serilog 通道继续独立治理。
+- L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配；`RadishLogging.Enabled` 默认 false。基础生成端、后台任务与已列明业务调用链的准确边界统一见[事件契约第 7–69 节](./unified-logging-contract.md)，批次证据见 [9 月 23 日日终回顾](../records/day-end-doc-review-2026-09-23.md)、[9 月 28 日日终回顾](../records/day-end-doc-review-2026-09-28.md)、[10 月 2 日日终回顾](../records/day-end-doc-review-2026-10-02.md)及 [10 月 7 日日终回顾](../records/day-end-doc-review-2026-10-07.md)。[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)汇总早期消费点、证书 / 传输、YARP、认证授权 / 路由、宿主健康及 OpenIddict Server / Core 的全部批次。自有 Auth 账户与会话日志后续治理见[10 月 15 日批次](../records/unified-logging-l2-auth-account-idle-session-2026-10-15.md)，SelfLog 的独立安全输出与生命周期见[同日 SelfLog 批次](../records/unified-logging-l2-selflog-2026-10-15.md)。ASP.NET Core DataProtection 的精确来源保护见[同日 DataProtection 批次](../records/unified-logging-l2-dataprotection-2026-10-15.md)。启动回调与其他非 Serilog 通道仍需独立治理。日志安全重建不改变结果 / 协议 / 存储语义；健康服务、OpenIddict 与 DataProtection 的列明来源增加桥接前保护，其他来源不自动继承。生成器、内存处理器与存储替身证据不替代真实网络、登录或存储验收；其余业务入口、异常安全栈帧、框架来源与非 Serilog 通道继续独立治理。
 - 真实内网入库、新日志表、Console 查询与告警、旧链路退出尚未完成；没有切换 production Compose、发布镜像、改写线上数据或发送告警。
 - 已确认的架构仍为独立 collector、统一标准流出口、文件与内网 API 两条持久化支路、Console 查询 / 提醒及独立审计权威性；下一步顺位由[当前规划](../planning/current.md)维护。
