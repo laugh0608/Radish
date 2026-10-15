@@ -341,5 +341,26 @@
         "failureKind": "io"
       }
     }
+  },
+  {
+    "name": "self-diagnostic-is-warning-not-output-failure",
+    "input": {
+      "eventCode": "pipeline.self_diagnostic",
+      "level": "Warning",
+      "sourceCategory": "pipeline",
+      "properties": {
+        "count": 3,
+        "raw": "SELFLOG_PRIVATE_SENTINEL"
+      }
+    },
+    "expected": {
+      "eventCode": "pipeline.self_diagnostic",
+      "level": "Warning",
+      "diagnostic": false,
+      "redacted": true,
+      "properties": {
+        "count": 3
+      }
+    }
   }
 ]

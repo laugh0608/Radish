@@ -604,7 +604,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Trace / Debug / Information 保持诊断语义，候选 Production 或 Diagnostics 关闭时抑制，旧链等级策略不变。`run_completed` 只表示报告聚合结束，`check_completed` 只表示检查返回结果，均不代表健康、业务成功或 HTTP 响应写入完成。
 - 保持 HealthReport 的状态 / 描述 / 异常 / Data、FailureStatus、predicate / tags、最小与扩展分组、默认 HTTP 状态和响应体。健康服务抛出异常与调用方取消、UriHealthCheck 自行捕获取消并返回失败结果，继续遵循各自既有边界。
 - 工厂创建、scope 释放、异常 Message 读取以及 Data.Count / 枚举可能发生在受保护 Log 调用之外；本批不改这些失败传播或折叠行为。结构化健康响应仍可能输出 description 与 exception.Message，日志治理不构成健康响应内容治理。
-- 四模式覆盖真实生成器、健康服务 / 中间件、内存 URL handler、WriteTo / AuditTo 和共享宿主注册 / 释放。HostBuilder 只 Build，不 Start；旧链 SelfLog 保留原文件初始化。未启动项目服务、绑定端口、进行网络探测或真实超时计时，未访问证书库。OpenIddict Server 后续范围见第 65 节；Core 后续范围见第 66 节；Publisher、自有日志、非 Serilog 通道与响应内容治理仍后置；生产候选开关关闭，L2 未整体完成。
+- 四模式覆盖真实生成器、健康服务 / 中间件、内存 URL handler、WriteTo / AuditTo 和共享宿主注册 / 释放。HostBuilder 只 Build，不 Start；本节批次时旧链 SelfLog 保留文件初始化，后续治理见第 68 节。未启动项目服务、绑定端口、进行网络探测或真实超时计时，未访问证书库。OpenIddict Server 后续范围见第 65 节；Core 后续范围见第 66 节；Publisher、自有日志、非 Serilog 通道与响应内容治理仍后置；生产候选开关关闭，L2 未整体完成。
 
 ## 65. L2 OpenIddict Server
 
@@ -616,7 +616,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 保持请求提取、认证结果 / 缓存 / properties / principal、handled / skipped / rejected、client / redirect / PKCE / scope 校验、令牌结果、重放撤销与异常传播。重放撤销失败（含取消）仍由框架消费并拒绝令牌。JSON / 文本 / form-post / query / fragment / logout / challenge 响应保持协议内容；日志治理不改变响应脱敏策略。
 - 四模式覆盖全部身份与输出链、真实 dispatcher / ASP.NET Core handler、请求 / 参数处理器、内存 JWT 生成验证和 manager 替身、响应写入失败 / 取消。数字身份由已安装 IL 核对，5 个命名事件由真实 LoggerMessage 元数据与生成器核对，不宣称 178 个数字事件都是生成器或都经过完整端点流程。
 - 工厂 / filter / handler 解析、协议序列化以及 logger 前参数求值仍在保护范围之外。form-post 的既有 CopyToAsync 不传 context 取消令牌，本批只验证流抛出取消异常仍传播；其他已测正文 writer 保留 token 传递。不修正这些既有运行语义。
-- 只进行内存验证和宿主 Build / Dispose；旧链 SelfLog 保留文件初始化。不安装 / 还原依赖、不启动服务、不绑定端口、不访问网络、真实数据库或证书库。Core 后续范围见第 66 节；自有 Auth 账户／会话后续治理见第 67 节，其他自有日志、Client / Validation / DataProtection 与非 Serilog 通道仍后置；生产候选开关关闭，L2 未整体完成。
+- 只进行内存验证和宿主 Build / Dispose；本节批次时旧链 SelfLog 保留文件初始化，后续治理见第 68 节。不安装 / 还原依赖、不启动服务、不绑定端口、不访问网络、真实数据库或证书库。Core 后续范围见第 66 节；自有 Auth 账户／会话后续治理见第 67 节，其他自有日志、Client / Validation / DataProtection 与非 Serilog 通道仍后置；生产候选开关关闭，L2 未整体完成。
 
 ## 66. L2 OpenIddict Core
 
@@ -638,3 +638,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - IdleSession 先 Reject 再记录，保留过期策略、invalid_grant 与错误说明。登录的异常／取消继续向外传播；注册及客户端解析的既有 catch 仍消费异常（含取消），客户端 query fallback 读取仍在解析 catch 外。结果准备与上下文拒绝不等于 HTTP／协议响应写入完成，Auth 未接入 API 的错误处理中间件，不能把传播路径写成 API http.failed 已验收。
 - 四模式验证真实 Controller／handler、内存 Cookie + 临时 DataProtection、OpenIddict dispatcher、服务／store 替身、未知身份、scope 冲突、诊断门禁和 WriteTo／AuditTo 输出故障。WriteTo 消费输出失败；AuditTo 可抛 AggregateException，日志前已完成的拒绝／登录／用户创建副作用保留。catch 内本地化、TempData 或结果构造二次失败时不提前记录原异常已消费。
 - returnUrl 解析 catch 未稳定触发，只有真实日志生成方法、身份与安全输出证据；没有新增可注入解析器来制造分支。未安装依赖、启动项目服务、绑定端口、访问真实数据库或证书库，不代表完整 OIDC 登录、网络、存储事务或生产采集验收。Auth 启动回调 16 处日志、其余框架与非 Serilog 通道继续核对；候选开关关闭，L2 尚未整体完成。
+
+## 68. L2 SelfLog 独立自诊断通道
+
+- `RuntimeLoggingSession` 在读取自身日志配置之前注册 `SerilogSelfLogSession`，旧链、候选链及 DbMigrate 共用。旧链移除 `ConfigureSerilogSelfLog` 的每日原文追加文件；不删除或迁移历史文件。自诊断独立写入 stderr（测试可注入 writer），不经 Serilog、应用文件或数据库 sink。
+- 新增 `pipeline.self_diagnostic`，固定 Warning、非 diagnostic、SourceCategory=pipeline，只携带受控 `count`。它表示收到 provider 自诊断，不代表已确认业务失败、丢失日志或原始诊断等级；实际规范化 / 输出失败仍为 `pipeline.output_failed` Error，二者计数和限频独立。
+- 自诊断不依赖 `RadishLogging.Enabled`、主链 MinimumLevel 或 Diagnostics。来源固定使用 deploymentId=bootstrap、宿主 service、`instanceId=process-<pid>`、release=unversioned；mode 仅在宿主为 Development 时取 Development，其余为 Production。不读取可能失效或尚未完成验证的配置来源字段，不承诺与主链部署元数据相同。
+- 每个会话首次立即报告，此后每 60 秒至多尝试一次；使用单调时钟，累计回调次数，上限 9007199254740991。没有定时器；下一次回调触发窗口检查。写入 / Flush 失败保留计数，写入重入只累计不递归；部分写入可能使后续计数重叠。关闭不强制冲刷，未报告计数不持久化，不承诺恰好一次或应急介质绝不丢失。
+- 回调不解析或转发原文、异常、scope、URL 或业务身份；Serilog 在回调前可能已经格式化原始消息，本批不阻止上游求值。应急输出遵循统一单事件大小约束；writer 同步调用，限频不等于 IO 超时保障。
+- Session 构造失败时释放自己的注册并原样传播异常；正常作用域中旧 logger 随宿主先释放，候选 logger 随 Session 释放，最后注销自诊断。SelfLog 是进程全局通道：最新存活会话接收，注销后恢复最近仍存活会话；旧会话不清除新会话，全部释放后禁用。此所有权仅覆盖本组件的注册，不恢复外部直接覆盖的 SelfLog 回调，也不扩展业务 `Log.Logger` 的单宿主作用域约定。
+- 四模式、真实旧链配置 sink 的创建 / 创建失败 / 释放 / 释放失败、主链 WriteTo / AuditTo、宿主 Build / Dispose、并发、限频、写入重入和应急失败已定向验证，见[本批记录](../records/unified-logging-l2-selflog-2026-10-15.md)。初始宿主配置加载前及最后 Session 释放后的第三方自诊断不在接管期内；没有运行服务或切换生产候选链。DataProtection、Auth 启动日志与其他裸输出不在本批范围。

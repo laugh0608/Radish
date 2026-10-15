@@ -1,8 +1,9 @@
+using System.Globalization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Radish.Common.LogTool;
 using Serilog;
 using Serilog.Core;
-using Serilog.Debugging;
 
 namespace Radish.Extension.Log;
 
@@ -11,6 +12,7 @@ public sealed class RuntimeLoggingSession : IDisposable
 {
     private readonly Serilog.ILogger _previous;
     private readonly List<IDisposable> _registrations = [];
+    private readonly SerilogSelfLogSession _selfLog;
     private bool _disposed;
     public Logger? Logger { get; }
 
@@ -18,12 +20,23 @@ public sealed class RuntimeLoggingSession : IDisposable
         TextWriter? output = null, TextWriter? emergency = null)
     {
         _previous = Serilog.Log.Logger;
-        if (!RuntimeLoggingConfiguration.IsEnabled(configuration)) return;
-        var loggerConfiguration = new LoggerConfiguration();
-        var writer = RuntimeLoggingConfiguration.Configure(loggerConfiguration, configuration, environmentName, service, output, emergency);
-        Logger = loggerConfiguration.CreateLogger();
-        Serilog.Log.Logger = Logger;
-        SelfLog.Enable(_ => writer.ReportFailure());
+        // 配置可能尚未读完或已经失效，自诊断不依赖日志开关、配置来源字段或业务输出。
+        _selfLog = new SerilogSelfLogSession(
+            new RuntimeLogSource("bootstrap", service, "process-" + Environment.ProcessId.ToString(CultureInfo.InvariantCulture), "unversioned"),
+            environmentName == Environments.Development ? "Development" : "Production", emergency ?? Console.Error);
+        try
+        {
+            if (!RuntimeLoggingConfiguration.IsEnabled(configuration)) return;
+            var loggerConfiguration = new LoggerConfiguration();
+            RuntimeLoggingConfiguration.Configure(loggerConfiguration, configuration, environmentName, service, output, emergency);
+            Logger = loggerConfiguration.CreateLogger();
+            Serilog.Log.Logger = Logger;
+        }
+        catch
+        {
+            _selfLog.Dispose();
+            throw;
+        }
     }
 
     public void AttachLifetime(IHostApplicationLifetime lifetime)
@@ -40,13 +53,17 @@ public sealed class RuntimeLoggingSession : IDisposable
     {
         if (_disposed) return;
         _disposed = true;
-        foreach (var registration in _registrations) registration.Dispose();
-        if (Logger == null) return;
-        if (ReferenceEquals(Serilog.Log.Logger, Logger))
+        try
         {
-            SelfLog.Disable();
-            Serilog.Log.Logger = _previous;
+            foreach (var registration in _registrations) registration.Dispose();
+            if (Logger == null) return;
+            if (ReferenceEquals(Serilog.Log.Logger, Logger)) Serilog.Log.Logger = _previous;
+            Logger.Dispose();
         }
-        Logger.Dispose();
+        finally
+        {
+            // 旧链 logger 由宿主先释放；候选 logger 由上方释放。两者均保留释放阶段的自诊断。
+            _selfLog.Dispose();
+        }
     }
 }

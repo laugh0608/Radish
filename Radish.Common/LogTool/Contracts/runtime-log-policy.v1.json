@@ -357,6 +357,7 @@
     "infrastructure.postgres": "PostgreSQL runtime event; raw content omitted.",
     "infrastructure.redis": "Redis runtime event; raw content omitted.",
     "pipeline.output_failed": "Log output failed; original content omitted.",
+    "pipeline.self_diagnostic": "Logging provider reported an internal diagnostic; original content omitted.",
     "dbmigrate.index.created": "Schema index created.",
     "dbmigrate.comment.likes_updated": "Comment like counts corrected.",
     "dbmigrate.comment.likes_deduplicated": "Duplicate comment likes removed.",

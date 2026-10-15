@@ -70,15 +70,15 @@ builder.Host.AddSerilogSetup(runtimeLogging);
 Logs/
 ├── Radish.Api/
 │   ├── Log.txt                    # 应用日志（滚动文件）
-│   ├── AopSql/
-│   │   └── AopSql.txt            # SQL 日志
-│   └── SerilogDebug/
-│       └── Serilog20251220.txt   # Serilog 内部调试日志
+│   └── AopSql/
+│       └── AopSql.txt            # SQL 日志
 ├── Radish.Gateway/
 │   └── Log.txt
 └── Radish.Auth/
     └── Log.txt
 ```
+
+SelfLog 内部自诊断独立输出到 stderr：固定 `pipeline.self_diagnostic` Warning，仅包含累计次数，每个会话每 60 秒至多尝试一条；不受主链等级或诊断开关过滤。`SerilogDebug/Serilog*.txt` 仅为历史文件，当前不再新增或追加。应急介质失败时保留内存计数，后续回调触发重试；未报告计数不跨进程保留。初始化、释放与来源元数据边界见[事件契约第 68 节](../features/unified-logging-contract.md#68-l2-selflog-独立自诊断通道)。
 
 **自动检测机制**：
 1. 向上查找 `*.slnx` 或 `*.sln` 文件确定解决方案根目录
@@ -716,7 +716,7 @@ echo "Cleaned up logs older than $TARGET_DATE"
 **解决方案**：
 1. 检查 `Program.cs` 是否调用了 `builder.Host.AddSerilogSetup(runtimeLogging)`
 2. 检查文件系统权限（确保应用有写入 `Logs/` 目录的权限）
-3. 查看 `Logs/{ProjectName}/SerilogDebug/` 目录中的调试日志
+3. 检查 stderr 的 `pipeline.self_diagnostic` 安全摘要，并结合应用失败事件与配置定位；摘要不包含底层原文
 
 ### 审计日志未写入数据库
 
@@ -736,7 +736,7 @@ echo "Cleaned up logs older than $TARGET_DATE"
 1. 检查 `Serilog.Database.Enable` 是否为 `true`
 2. 检查 `Serilog.Database.EnableApplicationLog` 或 `EnableSqlLog` 是否启用
 3. 检查日志数据库配置：`ConnId=Log` 必须存在且正确
-4. 查看 Serilog 调试日志：`Logs/{ProjectName}/SerilogDebug/Serilog*.txt`
+4. 检查 stderr 的 `pipeline.self_diagnostic`（provider 自诊断）和 `pipeline.output_failed`（已观察到规范化 / 输出失败）
 5. 确认 SqlSugar 配置正确初始化了 Log 数据库连接
 
 **常见错误**：

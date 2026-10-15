@@ -3,6 +3,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-15 SelfLog 独立自诊断治理](./unified-logging-l2-selflog-2026-10-15.md)：两条链安全 stderr、初始化与释放所有权、限频及故障回归
+
 - [2026-10-15 自有 Auth 账户与 IdleSession 日志治理](./unified-logging-l2-auth-account-idle-session-2026-10-15.md)：24 处旧调用点、12 个固定编码、四模式输出与异常完成边界
 
 - [2026-10-11 日终代码与文档回顾](./day-end-doc-review-2026-10-11.md)：11 个日志 L2 开发提交、完整批次索引、文档校准与 10 月 12 日事项

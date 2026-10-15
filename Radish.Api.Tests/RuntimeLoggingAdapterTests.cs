@@ -150,7 +150,7 @@ public class RuntimeLoggingAdapterTests
         Assert.Equal("http.failed", json.RootElement.GetProperty("eventCode").GetString());
         Assert.Equal(503, json.RootElement.GetProperty("properties").GetProperty("statusCode").GetInt32());
         using var selfLog = JsonDocument.Parse(emergency.ToString());
-        Assert.Equal("pipeline.output_failed", selfLog.RootElement.GetProperty("eventCode").GetString());
+        Assert.Equal("pipeline.self_diagnostic", selfLog.RootElement.GetProperty("eventCode").GetString());
         Assert.DoesNotContain(Secret, stream.ToString() + emergency);
     }
 

@@ -46,7 +46,7 @@ public sealed class RuntimeLogOutput
         }
     }
 
-    // 同时接收 provider 自诊断；不得将 SelfLog 的原文传入这里。
+    // 只报告已观察到的规范化 / 输出失败；SelfLog 自诊断由独立会话拥有。
     public void ReportFailure()
     {
         lock (_gate)
