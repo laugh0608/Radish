@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-10-11。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-10-15。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -616,7 +616,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 保持请求提取、认证结果 / 缓存 / properties / principal、handled / skipped / rejected、client / redirect / PKCE / scope 校验、令牌结果、重放撤销与异常传播。重放撤销失败（含取消）仍由框架消费并拒绝令牌。JSON / 文本 / form-post / query / fragment / logout / challenge 响应保持协议内容；日志治理不改变响应脱敏策略。
 - 四模式覆盖全部身份与输出链、真实 dispatcher / ASP.NET Core handler、请求 / 参数处理器、内存 JWT 生成验证和 manager 替身、响应写入失败 / 取消。数字身份由已安装 IL 核对，5 个命名事件由真实 LoggerMessage 元数据与生成器核对，不宣称 178 个数字事件都是生成器或都经过完整端点流程。
 - 工厂 / filter / handler 解析、协议序列化以及 logger 前参数求值仍在保护范围之外。form-post 的既有 CopyToAsync 不传 context 取消令牌，本批只验证流抛出取消异常仍传播；其他已测正文 writer 保留 token 传递。不修正这些既有运行语义。
-- 只进行内存验证和宿主 Build / Dispose；旧链 SelfLog 保留文件初始化。不安装 / 还原依赖、不启动服务、不绑定端口、不访问网络、真实数据库或证书库。Core 后续范围见第 66 节；自有日志、Client / Validation / DataProtection 与非 Serilog 通道仍后置；生产候选开关关闭，L2 未整体完成。
+- 只进行内存验证和宿主 Build / Dispose；旧链 SelfLog 保留文件初始化。不安装 / 还原依赖、不启动服务、不绑定端口、不访问网络、真实数据库或证书库。Core 后续范围见第 66 节；自有 Auth 账户／会话后续治理见第 67 节，其他自有日志、Client / Validation / DataProtection 与非 Serilog 通道仍后置；生产候选开关关闭，L2 未整体完成。
 
 ## 66. L2 OpenIddict Core
 
@@ -627,4 +627,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 保持 Authorization.TryRevoke 与 Token.TryRedeem / TryReject / TryRevoke 的校验、缓存移除、存储更新、缓存回填顺序、可变实体状态和返回值。并发异常保留 Debug；更新 catch 内的非致命异常（含取消）按原逻辑返回 false，前提是 catch 中读取 ID 和写日志成功。SetStatus / redemption date 的早期异常和致命异常继续传播；catch 内二次 ID 失败仍可替代原异常。
 - `*_completed` 只表示 manager 走到原完成日志位置，不证明外围事务提交。缓存回填或日志 ID 读取失败可能发生在 Store.UpdateAsync 返回之后，`*_failed` 不承诺未写入 / 已回滚。禁用日志也不会跳过框架调用 logger 前的参数求值。WriteTo 消费 sink 失败与 AuditTo 将失败传播回 manager 的既有差异保持。
 - 真实 Server handler 联查保持授权码兑换 false 时的拒绝、刷新令牌分支对 false 的消费、撤销失败的 unsupported_token_type、invalid_token 响应归一化，以及条件性 device / logout 分支的原返回值消费和异常传播；不启用新的产品端点、流程或协议能力。
-- 四模式覆盖全部身份、真实 manager 与存储 / 缓存替身、Server 消费链、WriteTo / AuditTo、诊断门禁、scope 冲突及共享宿主 Build / Dispose；不代表真实数据库、事务提交、并发竞争或完整登录验收。自有 Auth 日志、Client / Validation / DataProtection 和非 Serilog 通道继续后置；生产候选开关关闭，L2 未整体完成。
+- 四模式覆盖全部身份、真实 manager 与存储 / 缓存替身、Server 消费链、WriteTo / AuditTo、诊断门禁、scope 冲突及共享宿主 Build / Dispose；不代表真实数据库、事务提交、并发竞争或完整登录验收。自有 Auth 账户／会话后续治理见第 67 节；其他自有日志、Client / Validation / DataProtection 和非 Serilog 通道继续后置；生产候选开关关闭，L2 未整体完成。
+
+## 67. L2 自有 Auth 账户与 IdleSession
+
+- 治理 AccountController 的 23 处与 ValidateIdleSessionTokenRequestHandler 的 1 处旧日志调用。前者注入 `ILogger<AccountController>`，后者保留现有 ILogger；生成端只传固定命名 EventId、安全枚举、总耗时和 `RuntimeFailureSummary` 分类，不传邮箱、展示名、用户／客户端 ID、流水号、回跳 URL、Subject、活跃时间或原异常。
+- 复用 `AuthenticationLogSink`，只匹配 `Radish.Auth.Controllers.AccountController` 与 `Radish.Auth.OpenIddict.ValidateIdleSessionTokenRequestHandler` 两个完整来源及 Id / Name；9 + 1 个已知事件、每来源 1 个 unknown，共新增 12 个编码。旧链代码／配置 WriteTo、AuditTo 与候选输出在上下文合并后重建，保留时间、原等级、typed trace/span 和事件对应的受控字段；任意 scope、伪造 EventCode、字符串关联键及原异常均不透传。完整映射见[本批记录](../records/unified-logging-l2-auth-account-idle-session-2026-10-15.md)。
+- 登录中间过程与正常 returnUrl 解析日志移除；凭据错误、非法回跳和客户端未找到改为 Debug 诊断，凭据错误不区分账户不存在与密码错误。客户端读取失败降级为空摘要记 Warning；注册消费失败记 Error。候选诊断仍要求 Development + Diagnostics，旧链保留原等级配置；登录／注册 result_prepared 与 idle_session.rejected 是非诊断 Info。
+- 登录成功先等待 SignInAsync 返回并构造 IActionResult，再记录 result_prepared；注册先构造成功提示与跳转，catch 先构造错误提示与跳转，再记录消费失败。用户创建／确保奖励调用返回只记诊断，不宣称整体注册成功、新发奖励或外层事务提交。authStage 描述失败所在阶段，既有写入不因后续失败自动回滚。
+- IdleSession 先 Reject 再记录，保留过期策略、invalid_grant 与错误说明。登录的异常／取消继续向外传播；注册及客户端解析的既有 catch 仍消费异常（含取消），客户端 query fallback 读取仍在解析 catch 外。结果准备与上下文拒绝不等于 HTTP／协议响应写入完成，Auth 未接入 API 的错误处理中间件，不能把传播路径写成 API http.failed 已验收。
+- 四模式验证真实 Controller／handler、内存 Cookie + 临时 DataProtection、OpenIddict dispatcher、服务／store 替身、未知身份、scope 冲突、诊断门禁和 WriteTo／AuditTo 输出故障。WriteTo 消费输出失败；AuditTo 可抛 AggregateException，日志前已完成的拒绝／登录／用户创建副作用保留。catch 内本地化、TempData 或结果构造二次失败时不提前记录原异常已消费。
+- returnUrl 解析 catch 未稳定触发，只有真实日志生成方法、身份与安全输出证据；没有新增可注入解析器来制造分支。未安装依赖、启动项目服务、绑定端口、访问真实数据库或证书库，不代表完整 OIDC 登录、网络、存储事务或生产采集验收。Auth 启动回调 16 处日志、其余框架与非 Serilog 通道继续核对；候选开关关闭，L2 尚未整体完成。

@@ -410,6 +410,18 @@
     "dbmigrate.seed.preference_unresolved": "Existing time preference could not be corrected.",
     "dbmigrate.schema.applied": "Schema migration committed and recorded in the ledger.",
     "auth.schema.adopted": "Existing OpenIddict schema adopted into migration history.",
+    "auth.account.login_rejected": "Login rejection result prepared.",
+    "auth.account.login_result_prepared": "Login result prepared after sign-in returned.",
+    "auth.account.registration_user_create_returned": "Registration user creation call returned.",
+    "auth.account.registration_reward_returned": "Registration reward call returned; existing reward may have been reused.",
+    "auth.account.registration_result_prepared": "Registration result prepared.",
+    "auth.account.registration_failed": "Registration failure result prepared; earlier writes may remain.",
+    "auth.account.client_resolution_returned": "Client summary resolution returned.",
+    "auth.account.client_resolution_failed": "Client summary resolution failed; empty summary returned.",
+    "auth.account.return_url_parse_failed": "Return URL parsing failed; no client identifier returned.",
+    "auth.account.unknown": "Account event; raw content omitted.",
+    "auth.idle_session.rejected": "Idle session context rejected; protocol response not yet completed.",
+    "auth.idle_session.unknown": "Idle session event; raw content omitted.",
     "auth.seed.completed": "OpenIddict seed configuration applied.",
     "outbox.dispatched": "Due outbox tasks dispatched.",
     "outbox.retrying": "Outbox failure persisted with a scheduled retry.",
@@ -1232,6 +1244,32 @@
       "values": [
         "success",
         "failure"
+      ]
+    },
+    "authReason": {
+      "type": "enum",
+      "values": [
+        "invalid-return-url",
+        "invalid-credentials"
+      ]
+    },
+    "authStage": {
+      "type": "enum",
+      "values": [
+        "validation",
+        "user-lookup",
+        "password-hash",
+        "user-create",
+        "reward",
+        "result-prepare"
+      ]
+    },
+    "authClientOutcome": {
+      "type": "enum",
+      "values": [
+        "missing-id",
+        "not-found",
+        "resolved"
       ]
     },
     "purchaseStage": {

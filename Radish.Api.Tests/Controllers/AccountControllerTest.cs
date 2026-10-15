@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using OpenIddict.Abstractions;
 using Radish.Auth.Controllers;
@@ -44,7 +45,8 @@ public class AccountControllerTest
             Mock.Of<IUserService>(),
             Mock.Of<IOpenIddictApplicationManager>(),
             Mock.Of<ICoinService>(),
-            CreateSystemSettingProvider())
+            CreateSystemSettingProvider(),
+            NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext { HttpContext = httpContext },
             Url = urlHelper.Object
@@ -99,7 +101,8 @@ public class AccountControllerTest
             userServiceMock.Object,
             applicationManager.Object,
             coinService.Object,
-            CreateSystemSettingProvider())
+            CreateSystemSettingProvider(),
+            NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext
             {
@@ -138,7 +141,8 @@ public class AccountControllerTest
             userServiceMock.Object,
             applicationManager.Object,
             coinService.Object,
-            CreateSystemSettingProvider(displayNameMinLength: 2))
+            CreateSystemSettingProvider(displayNameMinLength: 2),
+            NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext
             {
@@ -221,7 +225,8 @@ public class AccountControllerTest
             userServiceMock.Object,
             applicationManager.Object,
             coinService.Object,
-            CreateSystemSettingProvider())
+            CreateSystemSettingProvider(),
+            NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext
             {
@@ -272,7 +277,8 @@ public class AccountControllerTest
             userService.Object,
             Mock.Of<IOpenIddictApplicationManager>(),
             Mock.Of<ICoinService>(),
-            CreateSystemSettingProvider())
+            CreateSystemSettingProvider(),
+            NullLogger<AccountController>.Instance)
         {
             ControllerContext = new ControllerContext
             {

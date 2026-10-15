@@ -251,5 +251,95 @@
       "redacted": true,
       "normalizationStatus": "unclassified"
     }
+  },
+  {
+    "name": "auth-account-failure-safe-stage",
+    "input": {
+      "level": "Error",
+      "eventCode": "auth.account.registration_failed",
+      "sourceCategory": "http",
+      "properties": {
+        "authStage": "reward",
+        "failureKind": "cancelled",
+        "email": "PRIVATE_AUTH_SENTINEL",
+        "returnUrl": "PRIVATE_AUTH_SENTINEL"
+      }
+    },
+    "expected": {
+      "eventCode": "auth.account.registration_failed",
+      "level": "Error",
+      "redacted": true,
+      "properties": {
+        "authStage": "reward",
+        "failureKind": "cancelled"
+      }
+    }
+  },
+  {
+    "name": "auth-account-rejection-development-diagnostic",
+    "options": {
+      "mode": "Development",
+      "diagnostics": true
+    },
+    "input": {
+      "level": "Debug",
+      "eventCode": "auth.account.login_rejected",
+      "sourceCategory": "http",
+      "properties": {
+        "authReason": "invalid-credentials"
+      }
+    },
+    "expected": {
+      "eventCode": "auth.account.login_rejected",
+      "level": "Info",
+      "diagnostic": true,
+      "properties": {
+        "authReason": "invalid-credentials"
+      }
+    }
+  },
+  {
+    "name": "auth-account-rejection-production-quiet",
+    "input": {
+      "level": "Debug",
+      "eventCode": "auth.account.login_rejected",
+      "properties": {
+        "authReason": "invalid-return-url"
+      }
+    },
+    "expected": null
+  },
+  {
+    "name": "auth-idle-rejection-production-visible",
+    "input": {
+      "level": "Info",
+      "eventCode": "auth.idle_session.rejected",
+      "sourceCategory": "http"
+    },
+    "expected": {
+      "eventCode": "auth.idle_session.rejected",
+      "level": "Info",
+      "diagnostic": false,
+      "redacted": false
+    }
+  },
+  {
+    "name": "auth-account-enum-values-closed",
+    "input": {
+      "level": "Warning",
+      "eventCode": "auth.account.client_resolution_failed",
+      "properties": {
+        "authReason": "PRIVATE_AUTH_SENTINEL",
+        "authStage": "PRIVATE_AUTH_SENTINEL",
+        "authClientOutcome": "PRIVATE_AUTH_SENTINEL",
+        "failureKind": "io"
+      }
+    },
+    "expected": {
+      "redacted": true,
+      "properties": {
+        "failureKind": "io"
+      }
+    }
   }
 ]

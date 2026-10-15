@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：只读审计自有 Auth 日志（IdleSession / AccountController）及非 Serilog 通道，形成下一批精确来源、事件和验证方案后再确认实现；顺位见下方事项。
-- **状态复核日期**：`2026-10-11`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务及 OpenIddict Server / Core 治理，见[事件契约第 49–66 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：只读核对剩余框架与非 Serilog 通道，并登记 Auth 启动回调的 16 处日志；形成下一批精确来源、事件和验证方案后再确认实现；顺位见下方事项。
+- **状态复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core 及自有 Auth 登录／注册／会话日志治理，见[事件契约第 49–67 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -33,6 +33,8 @@
 
 ## 最近结论
 
+- `2026-10-15` 完成[自有 Auth 日志治理](../records/unified-logging-l2-auth-account-idle-session-2026-10-15.md)：账户与会话共 24 处旧调用点收敛为 10 个事件及 2 个未知摘要，覆盖安全输出、结果准备顺序和四模式内存回归；解析 catch 仅有生成方法证据，未执行真实登录或生产切换。
+
 - `2026-10-11` 完成 11 个日志 L2 开发提交，涵盖早期消费点结果构造、证书 / 传输、YARP、认证授权 / 路由、宿主健康服务及 OpenIddict Server / Core；公共策略净新增 522 个编码。[日终回顾](../records/day-end-doc-review-2026-10-11.md)汇总全部批次、文档校准和验证限制，L2 尚未关闭，生产链路未切换。
 
 - `2026-10-07` 完成日志 L2 的 7 个开发提交，覆盖表情管理、API 404 / 错误响应完成边界，以及 SignalR Core、外层 HTTP 和 Kestrel 协议 / HTTPS 来源。[日终回顾](../records/day-end-doc-review-2026-10-07.md)汇总提交、文档校准、验证证据与未关闭边界；L2 尚未关闭，生产链路未切换。
@@ -55,12 +57,12 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 下一步事项（2026-10-12 恢复）
+## 下一步事项（2026-10-15 更新）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–66 节](../features/unified-logging-contract.md)，今日批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-11.md)，不再逐批列作待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–67 节](../features/unified-logging-contract.md)，最新批次与证据限制见[自有 Auth 日志记录](../records/unified-logging-l2-auth-account-idle-session-2026-10-15.md)，不再逐批列作待办。
 
-1. **先只读审计自有 Auth 日志**：从 `IdleSessionOpenIddictHandlers` 与 `AccountController` 的登录、注册、客户端解析 / returnUrl 入手，核对字段、等级、异常消费和结果完成顺序，形成固定事件与四模式验证方案后再确认实现。既有 `auth.seed.completed` 不重复治理；保留认证规则、响应与会话语义。
-2. **再核对剩余框架与非 Serilog 通道**：分别确认 OpenIddict Client / Validation / DataProtection 是否实际接入，以及 IdentityModel 的 `IIdentityLogger` / EventSource、SelfLog、DiagnosticListener / 裸输出的可达路径和独立风险。Socket `.Client` 当前无产品调用，HttpSys delegation 继续后置，不按名称推定已接入或已治理。
+1. **先核对剩余框架与非 Serilog 通道**：分别确认 OpenIddict Client / Validation / DataProtection 是否实际接入，以及 IdentityModel 的 `IIdentityLogger` / EventSource、SelfLog、DiagnosticListener / 裸输出的可达路径和独立风险。Socket `.Client` 当前无产品调用，HttpSys delegation 继续后置，不按名称推定已接入或已治理。
+2. **登记自有 Auth 启动日志**：`Program.cs` 的 ApplicationStarted 回调仍有 16 处 banner / 配置摘要日志，下一批按来源与配置读取风险确认，不从本批 24 处账户／会话调用点治理推定整个 Auth 已完成。既有 `auth.seed.completed` 不重复治理。
 3. **形成 L2 剩余覆盖清单**：对照生产接线与事件契约，区分已治理精确来源、待治理自有业务日志、相邻透传来源、桥接前读取风险及非日志输出，确定下一批完整范围；现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
 4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
 

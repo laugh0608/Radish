@@ -47,14 +47,10 @@ public sealed class ValidateIdleSessionTokenRequestHandler
             return default;
         }
 
-        _logger.LogInformation(
-            "[IdleSession] Refresh token rejected because the session was idle. Subject: {Subject}, LastActiveAt: {LastActiveAt}",
-            context.RefreshTokenPrincipal?.GetClaim(OpenIddictConstants.Claims.Subject),
-            evaluation.EffectiveLastActiveAt);
-
         context.Reject(
             error: OpenIddictConstants.Errors.InvalidGrant,
             description: IdleSessionPolicy.ExpiredErrorDescription);
+        _logger.LogInformation(new EventId(1, "IdleSessionRejected"), "Idle session rejection prepared.");
 
         return default;
     }
