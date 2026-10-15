@@ -234,9 +234,9 @@ API 启动时执行固定文档同步：
 
 当前又补了一层启动守卫：
 
-- 若 `Document.ShowBuiltInDocs=false`，启动同步会直接跳过；
-- 若 `WikiDocument / WikiDocumentRevision` 任一表尚未初始化，启动同步也会直接跳过，并输出“请先执行 `DbMigrate apply`”的提示日志；
-- 也就是说，固定文档启动同步当前不再把“数据库尚未初始化”的一次性时序问题打成错误，而是明确收口为“前置条件未满足，先迁移再同步”。
+- `WikiBuiltInDocumentStartupSync` 先查询两张表是否存在，再按 `Document.ShowBuiltInDocs` 和表状态决定是否同步；关闭展示仍保留这两次既有查询，跳过原因优先为 `disabled`；
+- `WikiDocument / WikiDocumentRevision` 缺表时记录 `document.builtin_sync_skipped`，原因分别为 `both-tables-missing / document-table-missing / revision-table-missing`；排障动作是先执行 `DbMigrate apply`，再恢复同步；
+- 缺文档目录或未发现 Markdown 时，原因分别为 `directory-missing / no-markdown`，日志不输出目录原文。同步返回后记录数量摘要，失败记录固定事件并保留继续启动的既有消费语义；既有部分写入不会因此回滚，也不保证后续 scope 释放成功，见[事件契约第 72 节](../features/unified-logging-contract.md)。
 
 同时，`DbMigrate apply/seed` 也需要保证 Wiki 表结构在本地 SQLite 环境中可自愈：
 

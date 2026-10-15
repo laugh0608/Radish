@@ -1079,9 +1079,9 @@ curl https://localhost:7100/connect/userinfo \
   - `IUserService.GetEnabledUserCredentialByEmailAsync(...)` 已收口为邮箱单用户精确查询，并返回认证专用 `UserCredentialSnapshot`；密码哈希不再经过通用 `UserVo` 或任何用户查询响应。
   - `User` 登录查询以规范化邮箱为准；旧 SQLite 库若缺少身份字段、公开索引或相关索引，仍可通过 `DbMigrate apply/init/seed` 自动补齐当前结构。
   - 登录页提交后会立即禁用按钮并显示“登录中...”，避免重复点击把并发请求放大成新的等待。
-  - `AccountController` 保留登录分段耗时日志，`SqlSugarAop` 使用 `database.slow` 记录慢连接 / 查询 / 命令；数据库失败由最终消费边界记录。自有 Account / IdleSession 日志尚未纳入 OpenIddict 框架治理，边界见[日志敏感数据保护](./logging-sensitive-data.md)。
+  - `AccountController` 使用固定账户事件，`auth.account.login_result_prepared` 记录结果准备时的总耗时，省略邮箱、用户身份和分段明细；IdleSession 拒绝后记录固定事件。`SqlSugarAop` 使用 `database.slow` 记录慢连接 / 查询 / 命令，数据库失败由最终消费边界记录，边界见[日志敏感数据保护](./logging-sensitive-data.md)。
 - 建议的排障顺序：
-  - 先看 `Logs/Radish.Auth/Log.txt` 中 `[Account/Login]` 的阶段日志，确认等待主要落在用户查询、密码校验还是角色查询。
+  - 先看 `Logs/Radish.Auth/Log.txt` 中的 `auth.account.*` 事件，以受控 `authReason / failureKind` 与登录结果总耗时定位大致边界（注册失败另有 `authStage`）；不能从总耗时推断用户查询、密码校验或角色查询各自耗时，也不能把结果准备视为 HTTP 响应完成。
   - 再看 `Logs/Radish.Auth/AopSql/AopSql.txt` 中的 `database.slow`，通过受控操作类型和耗时区分慢连接 / 查询 / 命令；候选链的查询方式见[日志系统](./logging.md)。
   - 若本地或测试环境仍使用旧 SQLite 库，先执行一次 `DbMigrate apply`，确认登录索引已自愈补齐后再复测。
   - 若问题只在标签页长时间后台恢复后出现，应同时复核当前 token 身份缓存、自动续期结果和前端恢复逻辑，不要把 Dock 的本地显示状态直接当作真实会话状态。

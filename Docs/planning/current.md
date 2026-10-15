@@ -33,17 +33,7 @@
 
 ## 最近结论
 
-- `2026-10-15` 完成[API 启动业务与 Gateway 停止日志治理](../records/unified-logging-l2-program-operations-2026-10-15.md)：21 处旧调用点改为受控事件；保留注册与同步消费语义，停止通知在 logger 释放前记录，浏览器输出未扩展。
-
-- `2026-10-15` 完成[Common 程序集诊断治理](../records/unified-logging-l2-common-assembly-diagnostics-2026-10-15.md)：两处裸输出改为独立安全 stderr，绑定早期宿主来源并隔离诊断二次失败；保留扫描与空集合行为，浏览器输出未扩展。
-
-- `2026-10-15` 完成[Auth / API / Gateway 启动摘要治理](../records/unified-logging-l2-host-startup-2026-10-15.md)：48 处旧调用点收敛为安全摘要，复用已选择状态并保持启动通知边界；该批未扩展 Common 程序集诊断和浏览器输出。
-
-- `2026-10-15` 完成[ASP.NET Core DataProtection 日志治理](../records/unified-logging-l2-dataprotection-2026-10-15.md)：20 个精确来源、98 个固定编码、桥接前保护与输出重建，覆盖四模式生成器、内存密钥环和受控临时文件验证；该批未扩展 Auth 启动日志与其他裸输出。
-
-- `2026-10-15` 完成[SelfLog 治理](../records/unified-logging-l2-selflog-2026-10-15.md)：两条链统一为独立、限频的安全 stderr 自诊断，覆盖会话配置读取、logger 构造及释放边界；原文文件停止新增，历史文件保留。该批未扩展 DataProtection、Auth 启动日志与其他裸输出。
-
-- `2026-10-15` 完成[自有 Auth 日志治理](../records/unified-logging-l2-auth-account-idle-session-2026-10-15.md)：账户与会话共 24 处旧调用点收敛为 10 个事件及 2 个未知摘要，覆盖安全输出、结果准备顺序和四模式内存回归；解析 catch 仅有生成方法证据，未执行真实登录或生产切换。
+- `2026-10-15` 完成六个日志 L2 开发提交，覆盖自有 Auth 账户 / 会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断及 API 启动业务 / Gateway 停止通知；[日终回顾](../records/day-end-doc-review-2026-10-15.md)汇总全部批次、代码与文档对照、验证限制及后续事项。L2 尚未关闭，生产链路未切换。
 
 - `2026-10-11` 完成 11 个日志 L2 开发提交，涵盖早期消费点结果构造、证书 / 传输、YARP、认证授权 / 路由、宿主健康服务及 OpenIddict Server / Core；公共策略净新增 522 个编码。[日终回顾](../records/day-end-doc-review-2026-10-11.md)汇总全部批次、文档校准和验证限制，L2 尚未关闭，生产链路未切换。
 
@@ -69,10 +59,10 @@
 
 ## 下一步事项（2026-10-15 更新）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，最新批次与证据限制见[Program 日志治理记录](../records/unified-logging-l2-program-operations-2026-10-15.md)，不再逐批列作待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，今日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。
 
 1. **继续剩余框架与非日志通道只读核对**：ASP.NET Core DataProtection 的已列明来源已治理；OpenIddict Client / Validation / DataProtection 依赖存在但未注册。IdentityModel 默认空 logger、仓库无诊断订阅器不等于外部 EventPipe / DiagnosticListener / Activity / metrics 已受控；详细边界见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 继续后置。
-2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。API 周期任务注册 / 固定文档同步与 Gateway 停止日志已治理；继续只读核对其他自有来源与相邻透传边界；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。
+2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。API 周期任务注册 / 固定文档同步与 Gateway 停止日志已治理；继续只读核对其他自有来源与相邻透传边界，尤其是既有 Hangfire provider 在 enrichment / scope 合并后经过旧链 WriteTo / AuditTo 的实际输出，不把生成端受控等同最终输出已重建；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。
 3. **形成 L2 剩余覆盖清单**：对照生产接线与事件契约，区分已治理精确来源、待治理自有业务日志、相邻透传来源、桥接前读取风险及非日志输出，确定下一批完整范围；现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
 4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
 

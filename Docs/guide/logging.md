@@ -14,7 +14,7 @@ Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链�
 | 自有 Auth 账户 / 会话、三宿主启动摘要、API 启动业务与 Gateway 停止 | 第 67、70、72 节 |
 | ASP.NET Core DataProtection | 第 69 节 |
 
-宿主健康服务、OpenIddict 与 DataProtection 的已列明来源另在 ILogger → Serilog 桥接前阻止读取原 state、formatter 和 exception；最终 sink 继续清理合并后的 scope。其他来源不能继承此桥接保护结论。日志治理不改变协议响应、认证结果、存储 / 缓存与事务语义，也不代表客户端已收到响应；其他自有日志、集成及非 Serilog 通道仍需独立核对。详细限制见[敏感数据保护](./logging-sensitive-data.md)与[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)。
+宿主健康服务、OpenIddict 与 DataProtection 的已列明来源另在 ILogger → Serilog 桥接前阻止读取原 state、formatter 和 exception；最终 sink 继续清理合并后的 scope。其他来源不能继承此桥接保护结论。日志治理不改变协议响应、认证结果、存储 / 缓存与事务语义，也不代表客户端已收到响应；其他自有日志、集成及非 Serilog 通道仍需独立核对。详细限制见[敏感数据保护](./logging-sensitive-data.md)与[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)。
 
 Common 程序集加载 / 类型枚举失败使用独立安全 stderr 通道，固定为 `runtime.assembly_load_failed` / `runtime.assembly_types_failed` 非致命 Error，只保留异常类型分类。该通道不经过主 logger，覆盖其建立前的诊断；未绑定宿主时来源为 `runtime`。输出失败不会再替代原有跳过 / 空集合结果，细节见[契约第 71 节](../features/unified-logging-contract.md#71-l2-common-程序集加载与类型枚举诊断)。
 

@@ -3,17 +3,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
-- [2026-10-15 API 启动业务与 Gateway 停止日志治理](./unified-logging-l2-program-operations-2026-10-15.md)：21 处调用点、任务注册返回边界、文档同步安全摘要与停止通知所有权
-
-- [2026-10-15 Common 程序集加载与类型枚举诊断治理](./unified-logging-l2-common-assembly-diagnostics-2026-10-15.md)：独立安全 stderr、早期来源作用域、静态初始化与输出故障隔离
-
-- [2026-10-15 Auth / API / Gateway 启动摘要治理](./unified-logging-l2-host-startup-2026-10-15.md)：48 处旧调用点、安全状态摘要、完成时机与四模式回归
-
-- [2026-10-15 ASP.NET Core DataProtection 日志治理](./unified-logging-l2-dataprotection-2026-10-15.md)：20 个精确来源、98 个固定编码、四模式生成器与密钥环行为验证
-
-- [2026-10-15 SelfLog 独立自诊断治理](./unified-logging-l2-selflog-2026-10-15.md)：两条链安全 stderr、初始化与释放所有权、限频及故障回归
-
-- [2026-10-15 自有 Auth 账户与 IdleSession 日志治理](./unified-logging-l2-auth-account-idle-session-2026-10-15.md)：24 处旧调用点、12 个固定编码、四模式输出与异常完成边界
+- [2026-10-15 日终代码与文档回顾](./day-end-doc-review-2026-10-15.md)：六个日志 L2 开发提交、完整批次索引、运行指南校准与下次恢复事项
 
 - [2026-10-11 日终代码与文档回顾](./day-end-doc-review-2026-10-11.md)：11 个日志 L2 开发提交、完整批次索引、文档校准与 10 月 12 日事项
 - [2026-10-07 日终代码与文档回顾](./day-end-doc-review-2026-10-07.md)：7 个日志 L2 开发提交、全部批次 / 方案索引、文档校准与 10 月 8 日事项
