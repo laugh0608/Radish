@@ -560,7 +560,7 @@ git push origin v26.1.1.3003
 - `AuditSqlLogProfile` 已示范如何同时识别源和目标的 `Vo` 前缀：`RecognizeDestinationPrefixes("Vo")` + `RecognizePrefixes("Vo")` 使 `AuditSqlLog` 与 `AuditSqlLogVo` 能够双向自动映射，开发其他 Vo 模型时直接复用该写法即可。
 - AutoMapper 授权：
   - 不要新增额外 `appsettings.*.json` 文件来存放 `AutoMapper:LicenseKey`；本地调试使用 `appsettings.Local.json`，部署环境通过环境变量或 Secret Manager 注入，严禁提交真实 key。
-  - 运行时通过 `AppSettings.RadishApp(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时自动跳过，避免影响本地调试。
+  - 运行时通过 `AppSettings.RadishApp(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时跳过赋值。该技术行为不代表已满足许可条件；精确版本许可和待确认的替代方案见[依赖许可治理专题](../features/dependency-license-governance.md)，当前仍按既有映射分层执行。
 - `Radish.Common.AppSettings` 为自定义配置入口，Program.cs 使用 `builder.Services.AddSingleton(new AppSettings(builder.Configuration));` 注册后即可在任何层注入/静态调用。
   - 当需要分段读取配置时，统一调用 `AppSettings.RadishApp(params string[] sections)`，禁止在业务代码中自行 new ConfigurationBuilder，以保证配置来源一致。
   - 强类型配置建议实现 `IConfigurableOptions`（位于 `Radish.Common.Option.Core`），由 `ConfigurableOptions` + `AllOptionRegister` 自动绑定，再通过 `IOptions<T>` 注入。

@@ -2,7 +2,7 @@
 
 ## 概述
 
-Radish 项目支持使用 Rust 原生扩展来提升图片处理和文件操作的性能。系统提供了 C# (ImageSharp) 和 Rust 两种实现，可以通过配置灵活切换。
+Radish 项目已有 Rust 文字水印、文件 SHA256 及 benchmark 原生扩展，应用层通过配置在 C# 处理器与 Rust / C# 混合处理器之间选择。当前缩略图、缩放、压缩、EXIF、图片信息与图片水印仍走 ImageSharp，文字水印成功后也用 C# 读取尺寸；打开 Rust 配置不能移除 Six Labors 依赖。2026-10-20 的完整能力、`.tmp` 格式识别及原生产物交付缺口见[Rust 图片处理替代评估](../features/rust-image-processing-replacement-assessment.md)。
 
 ## 功能特性
 

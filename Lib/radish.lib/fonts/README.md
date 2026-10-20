@@ -36,8 +36,10 @@ cp /usr/share/fonts/dejavu-sans-fonts/DejaVuSans.ttf ./DejaVuSans.ttf
 ### Option 3: Use System Font (Windows)
 
 Windows doesn't include DejaVu Sans by default. You can:
-1. Download from the official source (Option 1)
-2. Or use Arial as an alternative (copy `C:\Windows\Fonts\arial.ttf` and rename to `DejaVuSans.ttf`)
+1. Download DejaVu Sans from the official source (Option 1).
+2. Preserve its original license and notices when embedding or distributing it.
+
+Do not rename a system font such as Arial to `DejaVuSans.ttf`. A different font is not an equivalent build input, and renaming does not establish redistribution rights.
 
 ## Alternative: Embedded Font
 
@@ -52,5 +54,7 @@ This is the approach currently used in the code.
 
 ## License
 
-DejaVu fonts are free software under the Bitstream Vera License and Public Domain.
+DejaVu fonts include Bitstream Vera terms, public-domain DejaVu changes, and Arev notices for applicable imported glyphs.
 See: https://dejavu-fonts.github.io/License.html
+
+The upstream license and copyright notices must accompany distributed native artifacts that embed this font. This README link alone is not the complete distribution notice. Current inventory and follow-up work: [Rust image replacement assessment](../../../Docs/features/rust-image-processing-replacement-assessment.md).

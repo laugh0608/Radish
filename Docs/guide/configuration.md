@@ -580,7 +580,7 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 }
 ```
 
-如果没有许可证，保持空字符串即可（开源项目通常使用免费版）。
+当前注册代码在配置为空时跳过 `expression.LicenseKey` 赋值；这是运行时接线事实，不代表当前包可在任意条件下免费使用。仓库使用 `AutoMapper 16.1.1`，包内为 RPL-1.5 / 厂商协议选择；Radish 的 Source-Available 定位不能直接替代适用条款判断。许可盘点与替代方案见[第三方依赖许可治理](../features/dependency-license-governance.md)。
 
 ### 5. CORS 配置
 

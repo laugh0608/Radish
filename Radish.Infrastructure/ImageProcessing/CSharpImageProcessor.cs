@@ -292,11 +292,12 @@ public class CSharpImageProcessor : IImageProcessor
         };
 
         // 添加水印
-        image.Mutate(x => x.DrawText(
+        image.Mutate(x => x.Paint(canvas => canvas.DrawText(
             textOptions,
             options.Text,
-            Color.ParseHex(options.Color).WithAlpha(options.Opacity)
-        ));
+            new SolidBrush(Color.ParseHex(options.Color).WithAlpha(options.Opacity)),
+            null
+        )));
 
         await Task.CompletedTask;
     }
@@ -514,7 +515,7 @@ public class CSharpImageProcessor : IImageProcessor
                 Format = imageInfo.Metadata.DecodedImageFormat?.Name ?? "Unknown",
                 FileSize = fileSize,
                 HasExif = imageInfo.Metadata.ExifProfile != null,
-                BitsPerPixel = imageInfo.PixelType?.BitsPerPixel
+                BitsPerPixel = imageInfo.PixelType.BitsPerPixel
             };
         }
         catch
@@ -590,7 +591,7 @@ public class CSharpImageProcessor : IImageProcessor
         int padding)
     {
         // 测量文字尺寸
-        var textSize = TextMeasurer.MeasureSize(text, new RichTextOptions(font));
+        var textSize = TextMeasurer.MeasureBounds(text, new RichTextOptions(font));
 
         return position switch
         {

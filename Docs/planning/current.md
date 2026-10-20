@@ -6,8 +6,8 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：对照已治理清单继续只读核对剩余自有日志与非 Serilog 通道，确认下一批范围；Common 两处程序集诊断及 API 启动业务 / Gateway 停止日志已收口，浏览器输出仍待独立确认。
+- **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
+- **下一项工作**：确认[Rust 图片处理完整替代实施方案](../features/rust-image-processing-implementation-plan.md)，随后冻结 R0 精确依赖与验证输入；当前只细化设计，尚未授权替换实现。AutoMapper 接续边界见[许可治理专题](../features/dependency-license-governance.md)，统一日志 L2 保留后续恢复顺位。
 - **状态复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
@@ -15,6 +15,12 @@
 ## 已确认待实施的客户端方向
 
 2026-10-12 已确认[客户端连接规划](../frontend/client-server-connection-plan.md)：同一个官方安装包运行时选择官方端点或用户自部署后端，无需重新编译。本轮仅更新产品与客户端文档；服务器选择、认证 / 缓存隔离及官方端点交付尚未验收，日志治理与后续 P8 顺位继续按本页推进。
+
+## 当前依赖治理与集成停止线
+
+2026-10-20 [首轮许可盘点](../records/dependency-license-audit-2026-10-20.md)覆盖正式 .NET / Web / Rust / Flutter 的 947 个依赖条目；优先评估 Six Labors 四包链与 AutoMapper，另列 Hangfire、传递数据库驱动、专用 EULA、署名 / 字体及 Redis 服务候选。图片路径按项目所有者要求，已沿补齐已有 Rust 的方向形成[实施方案](../features/rust-image-processing-implementation-plan.md)，涵盖接口、完整能力、构建交付和验证，待确认后实施。
+
+`dev → master` PR 暂缓；[合并前检查](../records/master-pr-regression-2026-10-20.md)的安全升级及图片 API 适配保留为开发候选，当前获准提交保存；严格构建 / Release 仍受 Six Labors key 阻断。恢复途径由本专题比较许可证接线与完整替代，不再以申请 Community key 为唯一路径。提交不代表恢复 PR 或批准新依赖 / 运行时 / CI / Docker 改动，具体实施方案仍需确认。
 
 ## 产品线成熟度
 
@@ -32,6 +38,9 @@
 正式产品线只保留 Web 与 Flutter Native；Web 优先，Flutter mobile-first、desktop stage-gated。WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 
 ## 最近结论
+
+- `2026-10-20` 建立[第三方依赖许可治理专题](../features/dependency-license-governance.md)和[Rust 图片替代评估](../features/rust-image-processing-replacement-assessment.md)；947 条依赖清单、20 项 NuGet 特别复核及 5 项明确证据缺口见[盘点记录](../records/dependency-license-audit-2026-10-20.md)。仅审计与文档，不代表替代已完成或所有许可已放行。
+- `2026-10-20` 按项目所有者要求细化[Rust 完整替代实施方案](../features/rust-image-processing-implementation-plan.md)：单实现、八类操作、动画 / 字体 / 隐私契约、ABI / 资源边界及 Linux 双架构交付；当前仅待评审设计，不安装依赖或修改运行时。
 
 - `2026-10-15` 完成六个日志 L2 开发提交，覆盖自有 Auth 账户 / 会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断及 API 启动业务 / Gateway 停止通知；[日终回顾](../records/day-end-doc-review-2026-10-15.md)汇总全部批次、代码与文档对照、验证限制及后续事项。L2 尚未关闭，生产链路未切换。
 
@@ -57,14 +66,14 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 下一步事项（2026-10-15 更新）
+## 日志专题恢复顺位（保留 2026-10-15 结论）
 
 继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，今日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。
 
 1. **继续剩余框架与非日志通道只读核对**：ASP.NET Core DataProtection 的已列明来源已治理；OpenIddict Client / Validation / DataProtection 依赖存在但未注册。IdentityModel 默认空 logger、仓库无诊断订阅器不等于外部 EventPipe / DiagnosticListener / Activity / metrics 已受控；详细边界见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 继续后置。
 2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。API 周期任务注册 / 固定文档同步与 Gateway 停止日志已治理；继续只读核对其他自有来源与相邻透传边界，尤其是既有 Hangfire provider 在 enrichment / scope 合并后经过旧链 WriteTo / AuditTo 的实际输出，不把生成端受控等同最终输出已重建；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。
 3. **形成 L2 剩余覆盖清单**：对照生产接线与事件契约，区分已治理精确来源、待治理自有业务日志、相邻透传来源、桥接前读取风险及非日志输出，确定下一批完整范围；现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
-4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认，Rust `.tmp` 水印回退仍后置。
+4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认。Rust `.tmp` 水印回退现纳入当前图片替代方案统一处理，尚未实施。
 
 以上为后续恢复工作的顺位；本批不授权安装依赖、启动项目服务 / 容器、访问生产或系统证书库。真实运行与后续实现仍按具体范围确认。
 

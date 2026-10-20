@@ -3,6 +3,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-20 第三方依赖许可盘点](./dependency-license-audit-2026-10-20.md)：947 条依赖、重点许可边界与待补证据；[逐包 CSV](./dependency-license-inventory-2026-10-20.csv)
+- [2026-10-20 dev → master 合并前检查（暂缓）](./master-pr-regression-2026-10-20.md)：49 个提交的批次检查、NuGet 安全修复及 Six Labors 许可证停止线
 - [2026-10-15 日终代码与文档回顾](./day-end-doc-review-2026-10-15.md)：六个日志 L2 开发提交、完整批次索引、运行指南校准与下次恢复事项
 
 - [2026-10-11 日终代码与文档回顾](./day-end-doc-review-2026-10-11.md)：11 个日志 L2 开发提交、完整批次索引、文档校准与 10 月 12 日事项
