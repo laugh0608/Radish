@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
-using Radish.Common.HelpTool;
+using Radish.Common.LogTool;
 using Radish.Common.HttpContextTool;
 using CurrentUserContext = Radish.Common.HttpContextTool.CurrentUser;
 using Radish.Common.OptionTool.Core;
@@ -192,9 +192,9 @@ public class App
         {
             source = ass.GetTypes();
         }
-        catch
+        catch (Exception exception)
         {
-            $@"Error load `{ass.FullName}` assembly.".WriteErrorLine();
+            AssemblyDiagnosticReporter.AssemblyTypesFailed(exception);
         }
 
         return source.Where(u => u.IsPublic);

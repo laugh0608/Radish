@@ -1,104 +1,34 @@
 namespace Radish.Infrastructure.ImageProcessing;
 
-/// <summary>
-/// 图片处理接口
-/// </summary>
-/// <remarks>
-/// 定义统一的图片处理接口，支持多种实现（ImageSharp、Rust Native）
-/// </remarks>
+/// <summary>图片内容识别、受限处理与显式编码；不关闭调用方流。</summary>
 public interface IImageProcessor
 {
-    /// <summary>
-    /// 生成缩略图
-    /// </summary>
-    /// <param name="sourceStream">源图片流</param>
-    /// <param name="outputPath">输出文件路径</param>
-    /// <param name="width">目标宽度</param>
-    /// <param name="height">目标高度</param>
-    /// <param name="quality">图片质量（1-100，默认 85）</param>
-    /// <returns>处理结果</returns>
-    Task<ImageProcessResult> GenerateThumbnailAsync(
-        Stream sourceStream,
-        string outputPath,
-        int width = 150,
-        int height = 150,
-        int quality = 85);
+    Task<ImageProcessResult> GenerateThumbnailAsync(Stream sourceStream, string outputPath,
+        int width = 150, int height = 150, int quality = 85,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.FirstFrame,
+        CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 调整图片大小
-    /// </summary>
-    /// <param name="sourceStream">源图片流</param>
-    /// <param name="outputPath">输出文件路径</param>
-    /// <param name="width">目标宽度（0 表示按比例自动计算）</param>
-    /// <param name="height">目标高度（0 表示按比例自动计算）</param>
-    /// <param name="keepAspectRatio">是否保持宽高比</param>
-    /// <param name="quality">图片质量（1-100，默认 85）</param>
-    /// <returns>处理结果</returns>
-    Task<ImageProcessResult> ResizeAsync(
-        Stream sourceStream,
-        string outputPath,
-        int width,
-        int height,
-        bool keepAspectRatio = true,
-        int quality = 85);
+    Task<ImageProcessResult> ResizeAsync(Stream sourceStream, string outputPath,
+        int width, int height, bool keepAspectRatio = true, int quality = 85,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.Preserve,
+        CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 压缩图片
-    /// </summary>
-    /// <param name="sourceStream">源图片流</param>
-    /// <param name="outputPath">输出文件路径</param>
-    /// <param name="quality">图片质量（1-100，默认 85）</param>
-    /// <returns>处理结果</returns>
-    Task<ImageProcessResult> CompressAsync(
-        Stream sourceStream,
-        string outputPath,
-        int quality = 85);
+    Task<ImageProcessResult> CompressAsync(Stream sourceStream, string outputPath, int quality = 85,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.Preserve,
+        CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 添加水印
-    /// </summary>
-    /// <param name="sourceStream">源图片流</param>
-    /// <param name="outputPath">输出文件路径</param>
-    /// <param name="options">水印配置选项</param>
-    /// <returns>处理结果</returns>
-    Task<ImageProcessResult> AddWatermarkAsync(
-        Stream sourceStream,
-        string outputPath,
-        WatermarkOptions options);
+    Task<ImageProcessResult> AddWatermarkAsync(Stream sourceStream, string outputPath, WatermarkOptions options,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.Preserve,
+        CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 移除 EXIF 信息
-    /// </summary>
-    /// <param name="sourceStream">源图片流</param>
-    /// <param name="outputPath">输出文件路径</param>
-    /// <returns>是否成功移除</returns>
-    Task<bool> RemoveExifAsync(
-        Stream sourceStream,
-        string outputPath);
+    Task<ImageProcessResult> RemoveExifAsync(Stream sourceStream, string outputPath,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.Preserve,
+        CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 生成多个尺寸的图片
-    /// </summary>
-    /// <param name="sourceStream">源图片流</param>
-    /// <param name="baseOutputPath">基础输出路径（不含扩展名）</param>
-    /// <param name="sizes">尺寸配置列表</param>
-    /// <returns>处理结果列表</returns>
-    Task<List<ImageProcessResult>> GenerateMultipleSizesAsync(
-        Stream sourceStream,
-        string baseOutputPath,
-        List<ImageSize> sizes);
+    /// <summary>基础路径包含扩展名；整批成功才提交，结果按 sizes 顺序返回。</summary>
+    Task<List<ImageProcessResult>> GenerateMultipleSizesAsync(Stream sourceStream, string baseOutputPath,
+        List<ImageSize> sizes, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// 获取图片信息
-    /// </summary>
-    /// <param name="stream">图片流</param>
-    /// <returns>图片信息</returns>
-    Task<ImageInfo?> GetImageInfoAsync(Stream stream);
-
-    /// <summary>
-    /// 验证图片是否有效
-    /// </summary>
-    /// <param name="stream">图片流</param>
-    /// <returns>是否为有效图片</returns>
-    Task<bool> IsValidImageAsync(Stream stream);
+    Task<ImageInfo?> GetImageInfoAsync(Stream stream, CancellationToken cancellationToken = default);
+    Task<bool> IsValidImageAsync(Stream stream, CancellationToken cancellationToken = default);
 }

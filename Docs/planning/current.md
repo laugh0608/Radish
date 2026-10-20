@@ -6,11 +6,21 @@
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`统一日志专题 L2：生成端治理`（项目所有者确认的维护线）
-- **下一项工作**：今日开发已收尾；明天（`2026-09-29`）从用户关注通知入队与直接调用链日志治理开始，具体见下方明天事项；Native P8-C readiness 保留为后续平台事项。
-- **状态复核日期**：`2026-09-28`；L2 已覆盖基础生成入口、后台任务，以及已列明的资产 / 商城、文件 / 附件、支付口令、公开内容与统计调用链，准确边界见[事件契约第 7–29 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
-- **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、镜像或部署。
+- **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
+- **下一项工作**：Rust 图片替代已完成交付与合并前验收，创建 `dev → master` PR 并确认 PR 检查。继续使用 .NET；AutoMapper / ORM / Redis 等方案评估后置到 PR 稳定通过之后，统一日志 L2 保留后续恢复顺位。
+- **状态复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
+
+## 已确认待实施的客户端方向
+
+2026-10-12 已确认[客户端连接规划](../frontend/client-server-connection-plan.md)：同一个官方安装包运行时选择官方端点或用户自部署后端，无需重新编译。本轮仅更新产品与客户端文档；服务器选择、认证 / 缓存隔离及官方端点交付尚未验收，日志治理与后续 P8 顺位继续按本页推进。
+
+## 当前依赖治理与集成停止线
+
+2026-10-20 [首轮许可盘点](../records/dependency-license-audit-2026-10-20.md)覆盖正式 .NET / Web / Rust / Flutter 的 947 个依赖条目。项目所有者已确认先按[Rust 实施方案](../features/rust-image-processing-implementation-plan.md)替代 Six Labors 四包链，完成正常 PR 后再详细评估 AutoMapper、ORM、Redis 等其他方案。
+
+图片替代与合并前候选门禁已通过，恢复 `dev → master` PR；[合并前检查](../records/master-pr-regression-2026-10-20.md)的安全升级及图片 API 适配已随 `250cd8f6` 保存，工作区已删除 Six Labors 四包链，本机 Debug / Release 严格构建通过。五宿主原生平台、Linux 双架构最终镜像 / 漏洞策略、联合 ASan 和 PC / mobile 成组验收已通过；HTTP/3 测试夹具修正后全量 Repo Quality 通过，见[实施记录](../records/rust-image-replacement-2026-10-20.md)；服务启动和新增工具链仍按各批清单授权。PR 通过前不扩入其他依赖替代或后端语言迁移。
 
 ## 产品线成熟度
 
@@ -29,6 +39,17 @@
 
 ## 最近结论
 
+- `2026-10-20` 建立[第三方依赖许可治理专题](../features/dependency-license-governance.md)和[Rust 图片替代评估](../features/rust-image-processing-replacement-assessment.md)；947 条依赖清单、20 项 NuGet 特别复核及 5 项明确证据缺口见[盘点记录](../records/dependency-license-audit-2026-10-20.md)。仅审计与文档，不代表替代已完成或所有许可已放行。
+- `2026-10-20` 按项目所有者要求细化[Rust 完整替代实施方案](../features/rust-image-processing-implementation-plan.md)：单实现、八类操作、动画 / 字体 / 隐私契约、ABI / 资源边界及 Linux 双架构交付；方案及精确依赖已获批，单实现与构建接线已落地，验收未全部关闭。
+
+- `2026-10-15` 完成六个日志 L2 开发提交，覆盖自有 Auth 账户 / 会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断及 API 启动业务 / Gateway 停止通知；[日终回顾](../records/day-end-doc-review-2026-10-15.md)汇总全部批次、代码与文档对照、验证限制及后续事项。L2 尚未关闭，生产链路未切换。
+
+- `2026-10-11` 完成 11 个日志 L2 开发提交，涵盖早期消费点结果构造、证书 / 传输、YARP、认证授权 / 路由、宿主健康服务及 OpenIddict Server / Core；公共策略净新增 522 个编码。[日终回顾](../records/day-end-doc-review-2026-10-11.md)汇总全部批次、文档校准和验证限制，L2 尚未关闭，生产链路未切换。
+
+- `2026-10-07` 完成日志 L2 的 7 个开发提交，覆盖表情管理、API 404 / 错误响应完成边界，以及 SignalR Core、外层 HTTP 和 Kestrel 协议 / HTTPS 来源。[日终回顾](../records/day-end-doc-review-2026-10-07.md)汇总提交、文档校准、验证证据与未关闭边界；L2 尚未关闭，生产链路未切换。
+
+- `2026-10-02` 完成日志 L2 十九批治理，覆盖通知入队 / 创建、实时推送与 Hub 自有日志，以及评论、内容提交、帖子、问答、投票、抽奖、标签 / 分类和表情回应消费边界。[日终回顾](../records/day-end-doc-review-2026-10-02.md)汇总全部提交、证据与已知限制；SignalR 框架等剩余来源继续治理，生产链路未切换。
+
 - `2026-09-28` 完成日志 L2 十五批生成端治理，覆盖账户 / 经验 / 奖励、商城、文件 / 附件、支付口令、公开内容与统计报表。完整提交清单、代码与文档对照及验证边界见[日终回顾](../records/day-end-doc-review-2026-09-28.md)。保留业务规则与权威审计，生产链路未切换。
 
 - `2026-09-23` 完成日志 L2 的 9 个开发 / 验证提交；代码与文档对照、各批次证据及未覆盖边界见[日终回顾](../records/day-end-doc-review-2026-09-23.md)。SQL / seed / Outbox / Rust、Hangfire / 后台任务、奖励、服务内清理及币扣除 / 转账直接消费边界已推进；L2 尚未关闭，生产链路未切换。
@@ -45,17 +66,18 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 明天事项（2026-09-29）：L2 剩余生成端治理
+## 日志专题恢复顺位（保留 2026-10-15 结论）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成边界统一见[事件契约第 7–29 节](../features/unified-logging-contract.md)，今日批次证据见[日终回顾](../records/day-end-doc-review-2026-09-28.md)。以下为下次开发建议，本次只记录，不继续实施。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，今日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。
 
-1. **首项：用户关注通知入队**。已发现 UserFollowService 的关注通知入队失败仍携带关注者 / 目标用户身份记录 Warning 后重抛；核对直接消费者、事务和可靠 Outbox 边界后治理，保留关注规则、幂等键、通知内容、原异常传播与返回契约。若需改变业务规则，先单独确认范围。
-2. **后续顺位**：按生成端剩余清单复核尚未治理的业务入口与框架来源，不将已完成的若干调用链视为 L2 整体完成，不一次扩成全仓改造。
-3. **Rust 既有回退问题**：本机返回码 / stderr 与真实动态库验证已补完；`.tmp` 输入触发水印回退的既有问题见[本批记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)，不自动扩大日志批次范围。
-4. **业务与框架来源**：补齐稳定事件码、异常安全栈帧和未覆盖的最终处理边界；不以未分类摘要作为迁移完成证据。
-5. **验证与收口**：每组调用链补旧 / 候选安全输出、异常所有权与原有行为回归，按影响面更新契约和记录。
+1. **继续剩余框架与非日志通道只读核对**：ASP.NET Core DataProtection 的已列明来源已治理；OpenIddict Client / Validation / DataProtection 依赖存在但未注册。IdentityModel 默认空 logger、仓库无诊断订阅器不等于外部 EventPipe / DiagnosticListener / Activity / metrics 已受控；详细边界见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 继续后置。
+2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。API 周期任务注册 / 固定文档同步与 Gateway 停止日志已治理；继续只读核对其他自有来源与相邻透传边界，尤其是既有 Hangfire provider 在 enrichment / scope 合并后经过旧链 WriteTo / AuditTo 的实际输出，不把生成端受控等同最终输出已重建；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。
+3. **形成 L2 剩余覆盖清单**：对照生产接线与事件契约，区分已治理精确来源、待治理自有业务日志、相邻透传来源、桥接前读取风险及非日志输出，确定下一批完整范围；现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
+4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认。Rust `.tmp` 水印回退已由当前图片替代移除，改用内容识别与显式输出格式，交付验收仍在进行。
 
-生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。若下一批需安装依赖或启动真实宿主 / 隔离容器，按当批具体范围单独授权。
+以上为后续恢复工作的顺位；本批不授权安装依赖、启动项目服务 / 容器、访问生产或系统证书库。真实运行与后续实现仍按具体范围确认。
+
+生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L2 整体治理、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。Native P8-C readiness 保留后续顺位。
 
 ## 后续平台事项：P8-C Windows readiness
 

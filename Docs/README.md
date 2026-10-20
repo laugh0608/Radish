@@ -43,6 +43,9 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [部署指南](./deployment/guide.md)
 - [本地运行与排障手册](./guide/operations-runbook.md)
 - [全项目统一日志与跨容器汇聚专题（L1 实施中）](./features/unified-logging-governance-design.md)
+- [第三方依赖许可治理与替代方案](./features/dependency-license-governance.md)
+- [Rust 图片处理替代评估](./features/rust-image-processing-replacement-assessment.md)
+- [Rust 图片处理完整替代实施方案](./features/rust-image-processing-implementation-plan.md)
 - [文档篇幅治理](./guide/document-governance.md)
 
 ## 前端与交互
@@ -52,6 +55,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [F4-R 家族 UI 统一接入与产品视觉重构](./features/family-ui-convergence-design.md)
 - [Flutter Native 产品化与 UI 重构](./features/flutter-native-product-ui-design.md)
 - [前端多壳层策略](./frontend/shell-strategy.md)
+- [官方客户端、官方端点与自部署实例连接规划](./frontend/client-server-connection-plan.md)
 - [Client 与 Console 跨应用导航契约](./frontend/client-console-navigation-contract.md)
 - [Web UI 共享基座设计说明](./frontend/web-ui-foundation-design.md)
 - [公开 Web 统一体验设计说明](./frontend/public-web-unified-experience-design.md)

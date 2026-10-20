@@ -8,6 +8,7 @@ using Radish.Api.Resources;
 using Radish.Api.Routing;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.IService.Base;
 using Radish.Model;
@@ -16,6 +17,7 @@ using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.Constants;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -496,12 +498,18 @@ public class PostController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.NotFound,
                 MessageInfo = ex.Message
             };
+            if (ex is not PostOperationRejectedException)
+            {
+                Log.ForContext("EventCode", "post.top_failed")
+                    .Error("Post top operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
     }
 
@@ -694,21 +702,33 @@ public class PostController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.Forbidden,
                 MessageInfo = ex.Message
             };
+            if (ex is not PostOperationRejectedException)
+            {
+                Log.ForContext("EventCode", "post.edit_failed")
+                    .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            if (ex is not PostContentValidationException)
+            {
+                Log.ForContext("EventCode", "post.edit_failed")
+                    .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
     }
 

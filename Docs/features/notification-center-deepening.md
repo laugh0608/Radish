@@ -2,7 +2,7 @@
 
 > **状态**：F4-B-A / F4-B-B / F4-B-C / F4-B-D 已完成；F4-B 已关闭
 >
-> **复核日期**：2026-07-21
+> **复核日期**：2026-10-02
 >
 > **适用主线**：正式 Web `/notifications`；WebOS `/desktop` 仅复用，Flutter 仅做既有 MVP 兼容
 
@@ -216,6 +216,8 @@ VoDocumentSlug / VoDocumentId / VoDraftId / VoGovernanceCaseId
 
 `OccurredAtUtc` 必须由源事件在可靠任务创建时确定并随 payload 重放，不能在消费者重试时重新取当前时间。这样同一 `NotificationId / BusinessKey` 始终进入同一月表。历史 `Unspecified DateTime` 按仓库既有时间规范解释为 UTC。
 
+已知生产者偏差：2026-10-02 SQLite 回归发现自动抽奖的截止时间读回为 Unspecified，Outbox 仓储仍对其调用 ToUniversalTime，在 Asia/Shanghai 下信封发生时间提前 8 小时；可靠任务处理器又以信封时间覆盖通知载荷时间。上述 UTC 规范仍是目标约束，不能据此认定该输入路径已正确归一化。此问题尚未修复，详见[抽奖专题的已知限制](./forum-lottery-mvp.md#2026-10-02-日志治理复核与已知限制)。
+
 ### 4.2 用户事件关系
 
 `UserNotification` 继续表示“某个可靠通知事件属于某用户”，新增 `InboxGroupId / OccurredAtUtc`。关系时间与源事件时间保持一致，用于组内已读截止点和容量清理。唯一约束继续保持：
@@ -392,6 +394,7 @@ Workbench 只消费摘要和少量最近分组；WebOS 复用同一 API / Store 
 - 分组 ID、通知 ID 和目标 ID 都不授予资源访问权；目标 Controller / 页面重新校验 ACL、软删除和阻断关系。
 - 偏好只影响未来入箱，不追溯删除历史通知。强制通知绕过普通关闭开关必须有注册表和测试证据。
 - 可靠 Outbox 重试依赖稳定事件 ID、业务键和发生时间；未知类型、损坏模板或非法目标属于永久失败，进入 DeadLetter，不能无休止重试。
+- Outbox 可靠处理从成功入队后开始，不自动保证与所有源业务共用事务。当前关注关系先独立提交，再入队通知；入队失败后关系仍保留，再次关注返回未变更时不会补投。日志治理保留该边界，事务 / 补偿改造需另行确认，见[关注入队记录](../records/unified-logging-l2-user-follow-2026-10-02.md)。
 - SignalR、缓存或 Toast 失败不影响事件入箱。HTTP 读取失败不得返回 `0` 或空列表冒充成功，必须保留结构化错误与重试动作。
 - 迁移 verify 可从事件关系和分组重算摘要；若摘要漂移，doctor 报错并提供受控 rebuild 入口，不在普通请求中层层自愈。
 

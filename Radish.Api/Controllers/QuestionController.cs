@@ -4,11 +4,13 @@ using Radish.Api.ErrorHandling;
 using Radish.Api.Filters;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -326,11 +328,23 @@ public class QuestionController : ControllerBase
 
     private static MessageModel BuildErrorResponse(Exception exception)
     {
-        return exception switch
+        var response = exception switch
         {
             BusinessException businessException => BuildBusinessErrorResponse(businessException),
             _ => BuildErrorResponse(HttpStatusCodeEnum.BadRequest, exception.Message)
         };
+        if (exception is BusinessException { StatusCode: >= StatusCodes.Status500InternalServerError } failure)
+        {
+            Log.ForContext("EventCode", "http.failed")
+                .ForContext("SourceCategory", "http")
+                .Error("Request failed with {statusCode}; kind={failureKind}", failure.StatusCode, RuntimeFailureSummary.Classify(failure));
+        }
+        else if (exception is ArgumentException and not ForumAnswerContentValidationException)
+        {
+            Log.ForContext("EventCode", "question.request_failed")
+                .Error("Question request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
+        }
+        return response;
     }
 
     private static MessageModel BuildBusinessErrorResponse(BusinessException exception)

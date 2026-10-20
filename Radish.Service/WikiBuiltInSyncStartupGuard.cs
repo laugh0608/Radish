@@ -1,3 +1,5 @@
+using Radish.Model;
+
 namespace Radish.Service;
 
 /// <summary>
@@ -5,31 +7,29 @@ namespace Radish.Service;
 /// </summary>
 public static class WikiBuiltInSyncStartupGuard
 {
-    private const string DbMigrateHint = "请先执行 DbMigrate apply。";
-
-    public static string? GetSkipReason(
+    public static WikiBuiltInSyncSkipReason? GetSkipReason(
         bool showBuiltInDocs,
         bool hasWikiDocumentTable,
         bool hasWikiDocumentRevisionTable)
     {
         if (!showBuiltInDocs)
         {
-            return "Document.ShowBuiltInDocs=false";
+            return WikiBuiltInSyncSkipReason.Disabled;
         }
 
         if (!hasWikiDocumentTable && !hasWikiDocumentRevisionTable)
         {
-            return $"WikiDocument / WikiDocumentRevision 表未初始化，已跳过固定文档启动同步；{DbMigrateHint}";
+            return WikiBuiltInSyncSkipReason.BothTablesMissing;
         }
 
         if (!hasWikiDocumentTable)
         {
-            return $"WikiDocument 表未初始化，已跳过固定文档启动同步；{DbMigrateHint}";
+            return WikiBuiltInSyncSkipReason.DocumentTableMissing;
         }
 
         if (!hasWikiDocumentRevisionTable)
         {
-            return $"WikiDocumentRevision 表未初始化，已跳过固定文档启动同步；{DbMigrateHint}";
+            return WikiBuiltInSyncSkipReason.RevisionTableMissing;
         }
 
         return null;

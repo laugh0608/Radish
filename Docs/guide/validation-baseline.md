@@ -98,7 +98,7 @@ npm run validate:candidate
   - 依次执行带历史预算的全仓文本卫生与全量文档治理
   - 作为远程 `Repo Hygiene` 和本地候选验证的统一入口
 - `check:repo-quality-contract`
-  - 校验 `.github/workflows/repo-quality.yml` 的六个组件与聚合 job、`.github/rulesets/master-protection.json` 的单一 required check、本地 `validate:ci`、单人审批数和 CI-only 门禁是否仍然一致
+  - 校验 `.github/workflows/repo-quality.yml` 的七个组件与聚合 job、`.github/rulesets/master-protection.json` 的单一 required check、本地 `validate:ci`、单人审批数和 CI-only 门禁是否仍然一致
   - 适合在调整 workflow job、ruleset required checks 或本地 `Repo Quality` 复现入口时先做轻量自校验
 - `check:dependency-security`
   - 联网执行 `npm audit --omit=dev --json` 与 NuGet 直接 / 传递依赖漏洞审计
@@ -204,7 +204,7 @@ npm run validate:candidate
   - 当前也已支持 `--report` / `--report-file <path>`，可把批次级本地门禁结论直接收成固定 Markdown 报告，回写到 `PR -> master` 的回归记录或 PR 描述
 - `validate:candidate`
   - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline 与联网依赖安全审计；LongId 已进入 baseline，不再重复执行
-  - `.github/workflows/candidate-quality.yml` 只供手动与 Docker tag 复用；`PR -> master` 由 `repo-quality.yml` 的六个并行组件和单一 required check `Candidate Quality` 聚合，避免重复执行与通知
+  - `.github/workflows/candidate-quality.yml` 只供手动与 Docker tag 复用；`PR -> master` 由 `repo-quality.yml` 的七个并行组件和单一 required check `Candidate Quality` 聚合，避免重复执行与通知
   - 远程门禁在 PostgreSQL 17 服务下运行环境集成测试，确保数据库迁移与 Repository 专题不会因普通本地入口缺少连接而被跳过
   - Docker 镜像先进行本地单平台构建与分层漏洞扫描：`CRITICAL` 和存在修复版本的 `HIGH` 默认阻断，无修复 `HIGH` 留痕但不阻断；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像，例外和报告规则见[镜像漏洞门禁分层](/guide/image-vulnerability-gate)
 
@@ -473,7 +473,7 @@ npm run collect:change-regression-record -- --title "当前批次" --scope "当�
 - `Identity Guard` 当前也已改为按变更文件触发：先用 `check:identity-impact` 判定是否命中身份语义影响面，再决定是否执行 `validate:identity`
 - 当前 changed-only 入口与 `Repo Quality` 的 Backend / Identity impact 变更文件收集逻辑已统一复用 `Scripts/collect-changed-files.mjs`
 - `check:repo-hygiene:changed` 与 `check:repo-hygiene:staged` 当前也已切到统一 collector，不再单独维护 `git diff` 口径
-- `check:repo-quality-contract` 当前会校验 workflow 六个组件、聚合 `Candidate Quality`、ruleset、本地 `validate:ci` 与 CI-only 组件契约，避免门禁名称或执行面无声漂移
+- `check:repo-quality-contract` 当前会校验 workflow 七个组件、聚合 `Candidate Quality`、ruleset、本地 `validate:ci` 与 CI-only 组件契约，避免门禁名称或执行面无声漂移
 - `check:identity-impact` 的命中范围当前已收口到单一规则源，只覆盖身份语义代码、Auth 协议输出、前端 Token 解析、`AuthFlow`、身份专题文档与实际身份门禁资产；通用规划、PR 模板和 ruleset 变更不会机械触发完整身份回归
 - `check:backend-impact` 的命中范围当前覆盖后端宿主、服务、模型、仓储、DbMigrate、后端测试、后端配置和后端门禁资产
 - 工作区级 changed-only 默认使用 `collect:changed`，同时合并 staged、unstaged 与未跟踪文件，并排除符合 `.gitignore` 的本地内容

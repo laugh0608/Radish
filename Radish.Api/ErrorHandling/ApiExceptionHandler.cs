@@ -19,11 +19,6 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
 
         if (exception is BusinessException businessException)
         {
-            if (businessException.StatusCode >= StatusCodes.Status500InternalServerError)
-            {
-                WriteFailure(businessException, businessException.StatusCode);
-            }
-
             await ApiErrorResultFactory.WriteAsync(
                 httpContext,
                 businessException.StatusCode,
@@ -32,10 +27,12 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
                 businessException.MessageKey,
                 businessException.MessageArguments.ToArray(),
                 cancellationToken: cancellationToken);
+            if (businessException.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                WriteFailure(businessException, businessException.StatusCode);
+            }
             return true;
         }
-
-        WriteFailure(exception, StatusCodes.Status500InternalServerError);
 
         await ApiErrorResultFactory.WriteAsync(
             httpContext,
@@ -44,6 +41,8 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             ApiErrorCodes.UnexpectedError,
             "error.system.unexpected_error",
             cancellationToken: cancellationToken);
+        // 构造或写入失败交回框架边界，不能提前声明已完成本层处理。
+        WriteFailure(exception, StatusCodes.Status500InternalServerError);
         return true;
     }
 

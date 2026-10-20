@@ -1,6 +1,7 @@
 #nullable enable
 
 using Radish.Service;
+using Radish.Model;
 using Shouldly;
 using Xunit;
 
@@ -16,17 +17,17 @@ public class WikiBuiltInSyncStartupGuardTests
             hasWikiDocumentTable: false,
             hasWikiDocumentRevisionTable: false);
 
-        reason.ShouldBe("Document.ShowBuiltInDocs=false");
+        reason.ShouldBe(WikiBuiltInSyncSkipReason.Disabled);
     }
 
-    [Theory(DisplayName = "缺少 Wiki 表时应提示先执行 DbMigrate")]
-    [InlineData(false, false, "WikiDocument / WikiDocumentRevision 表未初始化，已跳过固定文档启动同步；请先执行 DbMigrate apply。")]
-    [InlineData(false, true, "WikiDocument 表未初始化，已跳过固定文档启动同步；请先执行 DbMigrate apply。")]
-    [InlineData(true, false, "WikiDocumentRevision 表未初始化，已跳过固定文档启动同步；请先执行 DbMigrate apply。")]
-    public void GetSkipReason_ShouldReturnDbMigrateHint_WhenWikiTablesMissing(
+    [Theory(DisplayName = "缺少 Wiki 表时应返回明确的缺表原因")]
+    [InlineData(false, false, WikiBuiltInSyncSkipReason.BothTablesMissing)]
+    [InlineData(false, true, WikiBuiltInSyncSkipReason.DocumentTableMissing)]
+    [InlineData(true, false, WikiBuiltInSyncSkipReason.RevisionTableMissing)]
+    public void GetSkipReason_ShouldIdentifyMissingTables(
         bool hasWikiDocumentTable,
         bool hasWikiDocumentRevisionTable,
-        string expectedReason)
+        WikiBuiltInSyncSkipReason expectedReason)
     {
         var reason = WikiBuiltInSyncStartupGuard.GetSkipReason(
             showBuiltInDocs: true,

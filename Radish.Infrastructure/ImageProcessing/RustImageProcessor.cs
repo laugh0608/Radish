@@ -1,314 +1,331 @@
 using System.Runtime.InteropServices;
 using System.Text;
-using Radish.Common.LogTool;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Serilog;
 
 namespace Radish.Infrastructure.ImageProcessing;
 
-/// <summary>
-/// 基于 Rust Native 的图片处理实现
-/// </summary>
-/// <remarks>
-/// 通过 P/Invoke 调用 Rust 编写的高性能图片处理库
-/// </remarks>
-public class RustImageProcessor : IImageProcessor
+/// <summary>唯一图片实现：Rust 处理，宿主负责受限调度、流和文件提交。</summary>
+public sealed class RustImageProcessor : IImageProcessor
 {
+    private static readonly SemaphoreSlim Workers = new(2, 2);
+    private static int _waiting;
+    private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
     private readonly ImageProcessingOptions _options;
-    private readonly TextWatermarkOptions _textWatermarkOptions;
-    private readonly CSharpImageProcessor _fallbackProcessor;
+    private readonly TextWatermarkOptions _text;
+    private readonly long _maxInputBytes;
 
-    // Rust 库名称（根据平台自动选择）
-    private const string LibraryName = "radish_lib";
-
-    public RustImageProcessor(IOptions<FileStorageOptions> fileStorageOptions)
+    public RustImageProcessor(IOptions<FileStorageOptions> options)
     {
-        var options = fileStorageOptions.Value;
-        _options = options.ImageProcessing;
-        _textWatermarkOptions = options.Watermark?.Text ?? new TextWatermarkOptions();
-
-        // 创建 C# 实现作为后备方案
-        _fallbackProcessor = new CSharpImageProcessor(fileStorageOptions);
+        _options = options.Value.ImageProcessing;
+        _text = options.Value.Watermark.Text;
+        _maxInputBytes = Math.Clamp(options.Value.MaxFileSize.Image, 1, 50 * 1024 * 1024);
     }
 
-    #region Rust FFI Declarations
+    public Task<ImageProcessResult> GenerateThumbnailAsync(Stream sourceStream, string outputPath,
+        int width = 150, int height = 150, int quality = 85,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.FirstFrame,
+        CancellationToken cancellationToken = default) => Single(sourceStream, "thumbnail",
+            new Output(outputPath, Format(outputPath, outputFormat), width, height, true, quality, animationPolicy == ImageAnimationPolicy.FirstFrame), null, cancellationToken);
 
-    /// <summary>
-    /// 添加文字水印（Rust 实现）
-    /// </summary>
-    /// <returns>0: 成功, -1: 失败</returns>
-    [DllImport(LibraryName, EntryPoint = "add_text_watermark", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int AddTextWatermarkNative(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string inputPath,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string outputPath,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string text,
-        uint fontSize,
-        float opacity,
-        byte position
-    );
+    public Task<ImageProcessResult> ResizeAsync(Stream sourceStream, string outputPath, int width, int height,
+        bool keepAspectRatio = true, int quality = 85, ImageOutputFormat? outputFormat = null,
+        ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.Preserve, CancellationToken cancellationToken = default) =>
+        Single(sourceStream, "resize", new Output(outputPath, Format(outputPath, outputFormat), width, height, keepAspectRatio, quality,
+            animationPolicy == ImageAnimationPolicy.FirstFrame), null, cancellationToken);
 
-    /// <summary>
-    /// 计算文件 SHA256 哈希（Rust 实现）
-    /// </summary>
-    /// <returns>0: 成功, -1: 失败, -2: 缓冲区太小</returns>
-    [DllImport(LibraryName, EntryPoint = "calculate_file_sha256", CallingConvention = CallingConvention.Cdecl)]
-    private static extern int CalculateFileSha256Native(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string filePath,
-        [MarshalAs(UnmanagedType.LPStr)] StringBuilder hashOutput,
-        int outputLen
-    );
+    public Task<ImageProcessResult> CompressAsync(Stream sourceStream, string outputPath, int quality = 85,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.Preserve,
+        CancellationToken cancellationToken = default) => Single(sourceStream, "compress",
+            new Output(outputPath, Format(outputPath, outputFormat), 0, 0, true, quality, animationPolicy == ImageAnimationPolicy.FirstFrame), null, cancellationToken);
 
-    #endregion
+    public Task<ImageProcessResult> AddWatermarkAsync(Stream sourceStream, string outputPath, WatermarkOptions options,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.Preserve,
+        CancellationToken cancellationToken = default) => Single(sourceStream, "watermark",
+            new Output(outputPath, Format(outputPath, outputFormat), 0, 0, true, _options.CompressQuality, animationPolicy == ImageAnimationPolicy.FirstFrame), options, cancellationToken);
 
-    #region IImageProcessor Implementation
+    public Task<ImageProcessResult> RemoveExifAsync(Stream sourceStream, string outputPath,
+        ImageOutputFormat? outputFormat = null, ImageAnimationPolicy animationPolicy = ImageAnimationPolicy.Preserve,
+        CancellationToken cancellationToken = default) => Single(sourceStream, "stripMetadata",
+            new Output(outputPath, Format(outputPath, outputFormat), 0, 0, true, _options.CompressQuality, animationPolicy == ImageAnimationPolicy.FirstFrame), null, cancellationToken);
 
-    /// <summary>
-    /// 生成缩略图（使用 C# 实现）
-    /// </summary>
-    public Task<ImageProcessResult> GenerateThumbnailAsync(
-        Stream sourceStream,
-        string outputPath,
-        int width = 150,
-        int height = 150,
-        int quality = 85)
+    public Task<List<ImageProcessResult>> GenerateMultipleSizesAsync(Stream sourceStream, string baseOutputPath,
+        List<ImageSize> sizes, CancellationToken cancellationToken = default)
     {
-        // 缩略图生成使用 C# 实现（Rust 版本可以后续添加）
-        return _fallbackProcessor.GenerateThumbnailAsync(sourceStream, outputPath, width, height, quality);
-    }
-
-    /// <summary>
-    /// 调整图片大小（使用 C# 实现）
-    /// </summary>
-    public Task<ImageProcessResult> ResizeAsync(
-        Stream sourceStream,
-        string outputPath,
-        int width,
-        int height,
-        bool keepAspectRatio = true,
-        int quality = 85)
-    {
-        // 图片缩放使用 C# 实现（Rust 版本可以后续添加）
-        return _fallbackProcessor.ResizeAsync(sourceStream, outputPath, width, height, keepAspectRatio, quality);
-    }
-
-    /// <summary>
-    /// 压缩图片（使用 C# 实现）
-    /// </summary>
-    public Task<ImageProcessResult> CompressAsync(
-        Stream sourceStream,
-        string outputPath,
-        int quality = 85)
-    {
-        // 图片压缩使用 C# 实现（Rust 版本可以后续添加）
-        return _fallbackProcessor.CompressAsync(sourceStream, outputPath, quality);
-    }
-
-    /// <summary>
-    /// 添加水印（使用 Rust 实现）
-    /// </summary>
-    public async Task<ImageProcessResult> AddWatermarkAsync(
-        Stream sourceStream,
-        string outputPath,
-        WatermarkOptions options)
-    {
-        // 图片水印是正常的 C# 路由，不是 Rust 能力降级。
-        if (options.Type != WatermarkType.Text)
+        if (sizes.Count is 0 or > 8 || sizes.Select(s => s.Name).Distinct(StringComparer.OrdinalIgnoreCase).Count() != sizes.Count ||
+            sizes.Any(s => string.IsNullOrWhiteSpace(s.Name) || s.Name.Contains("..", StringComparison.Ordinal) ||
+                s.Name.Any(c => !char.IsAsciiLetterOrDigit(c) && c is not '_' and not '-')))
+            return Task.FromResult(new List<ImageProcessResult> { Failure("InvalidArgument") });
+        var outputs = sizes.Select(size =>
         {
-            return await _fallbackProcessor.AddWatermarkAsync(sourceStream, outputPath, options);
-        }
+            var format = Format(baseOutputPath, size.OutputFormat);
+            var path = Path.Combine(Path.GetDirectoryName(baseOutputPath) ?? ".",
+                $"{Path.GetFileNameWithoutExtension(baseOutputPath)}_{size.Name}{Extension(format)}");
+            return new Output(path, format, size.Width, size.Height, size.KeepAspectRatio, size.Quality,
+                size.AnimationPolicy == ImageAnimationPolicy.FirstFrame);
+        }).ToList();
+        return Transform(sourceStream, "multiple", outputs, null, cancellationToken);
+    }
 
+    public async Task<ImageInfo?> GetImageInfoAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        var response = await Invoke(stream, "info", [], null, cancellationToken);
+        if (response.Success) return response.Info;
+        if (response.ErrorCode is "InvalidImage" or "UnsupportedFormat" or "UnsupportedFeature" or "LimitExceeded") return null;
+        throw new InvalidOperationException($"Image inspection failed ({response.ErrorCode})");
+    }
+
+    public async Task<bool> IsValidImageAsync(Stream stream, CancellationToken cancellationToken = default)
+    {
+        var response = await Invoke(stream, "validate", [], null, cancellationToken);
+        if (response.Success) return true;
+        if (response.ErrorCode is "InvalidImage" or "UnsupportedFormat" or "UnsupportedFeature" or "LimitExceeded") return false;
+        throw new InvalidOperationException($"Image validation failed ({response.ErrorCode})");
+    }
+
+    private async Task<ImageProcessResult> Single(Stream stream, string operation, Output output, WatermarkOptions? watermark, CancellationToken token) =>
+        (await Transform(stream, operation, [output], watermark, token))[0];
+
+    private async Task<List<ImageProcessResult>> Transform(Stream stream, string operation, List<Output> outputs,
+        WatermarkOptions? watermark, CancellationToken token)
+    {
+        if (outputs.Any(o => string.IsNullOrEmpty(o.Format) || o.Width < 0 || o.Height < 0 || o.Quality is < 1 or > 100))
+            return outputs.Select(_ => Failure("InvalidArgument")).ToList();
+        var directories = new List<string>();
+        var staged = new List<Output>();
+        var committed = new List<(string Target, string? Backup)>();
+        var retainedDirectories = new HashSet<string>(StringComparer.Ordinal);
         try
         {
-            // 保存源图片到临时文件（Rust 需要文件路径）
-            var tempInputPath = Path.Combine(Path.GetTempPath(), $"radish_input_{Guid.NewGuid()}.tmp");
-            try
+            foreach (var output in outputs)
             {
-                sourceStream.Position = 0;
-                await using (var fileStream = File.Create(tempInputPath))
+                var target = Path.GetFullPath(output.Path);
+                var parent = Path.GetDirectoryName(target)!;
+                EnsureNoLinks(parent);
+                Directory.CreateDirectory(parent);
+                var directory = Path.Combine(parent, $".radish-image-{Guid.NewGuid():N}");
+                CreatePrivateDirectory(directory);
+                directories.Add(directory);
+                staged.Add(output with { Path = Path.Combine(directory, "output.tmp") });
+            }
+            if (outputs.Select(o => Path.GetFullPath(o.Path)).Distinct(StringComparer.OrdinalIgnoreCase).Count() != outputs.Count)
+                return outputs.Select(_ => Failure("InvalidArgument")).ToList();
+            var response = await Invoke(stream, operation, staged, watermark, token);
+            if (!response.Success) return outputs.Select(_ => Failure(response.ErrorCode ?? "InternalError")).ToList();
+            if (response.Outputs.Count != outputs.Count) throw new InvalidOperationException("Native output count mismatch");
+            for (var i = 0; i < outputs.Count; i++)
+            {
+                token.ThrowIfCancellationRequested();
+                var target = Path.GetFullPath(outputs[i].Path);
+                EnsureNoLinks(target);
+                string? backup = null;
+                if (File.Exists(target))
                 {
-                    await sourceStream.CopyToAsync(fileStream);
+                    backup = Path.Combine(directories[i], "backup");
+                    File.Copy(target, backup, false);
                 }
+                File.Move(staged[i].Path, target, true);
+                committed.Add((target, backup));
+            }
+            return response.Outputs.Select((info, i) => new ImageProcessResult
+            {
+                Success = true, OutputPath = Path.GetFullPath(outputs[i].Path), Width = info.Width, Height = info.Height,
+                FileSize = info.FileSize, Format = info.Format, FrameCount = info.FrameCount
+            }).ToList();
+        }
+        catch (OperationCanceledException) { Rollback(committed, retainedDirectories); throw; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Rollback(committed, retainedDirectories);
+            WriteNativeEvent("native.failed", operation, "output-write", ex);
+            return outputs.Select(_ => Failure("IoWrite")).ToList();
+        }
+        catch { Rollback(committed, retainedDirectories); throw; }
+        finally
+        {
+            foreach (var directory in directories.Where(directory => !retainedDirectories.Contains(directory)))
+                Cleanup(directory, operation);
+        }
+    }
 
-                // 确保输出目录存在
-                var directory = Path.GetDirectoryName(outputPath);
-                if (!string.IsNullOrEmpty(directory) && !Directory.Exists(directory))
+    private async Task<Response> Invoke(Stream stream, string operation, List<Output> outputs, WatermarkOptions? watermark, CancellationToken token)
+    {
+        NativeImageLibrary.EnsureAvailable();
+        if (Interlocked.Increment(ref _waiting) > 10)
+        {
+            Interlocked.Decrement(ref _waiting);
+            return new Response { ErrorCode = "LimitExceeded" };
+        }
+        var entered = false;
+        string? directory = null;
+        var originalPosition = stream.CanSeek ? stream.Position : (long?)null;
+        try
+        {
+            entered = await Workers.WaitAsync(TimeSpan.FromSeconds(5), token);
+            if (!entered) return new Response { ErrorCode = "LimitExceeded" };
+            directory = Path.Combine(Path.GetTempPath(), $"radish-image-{Guid.NewGuid():N}");
+            CreatePrivateDirectory(directory);
+            var input = Path.Combine(directory, "input.tmp");
+            using var deadline = CancellationTokenSource.CreateLinkedTokenSource(token);
+            deadline.CancelAfter(TimeSpan.FromSeconds(30));
+            if (stream.CanSeek) stream.Position = 0;
+            await using (var file = new FileStream(input, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, true))
+            {
+                var buffer = new byte[81920];
+                long total = 0;
+                int count;
+                while ((count = await stream.ReadAsync(buffer, deadline.Token)) > 0)
                 {
-                    Directory.CreateDirectory(directory);
-                }
-
-                // 调用 Rust 函数
-                var result = AddTextWatermarkNative(
-                    tempInputPath,
-                    outputPath,
-                    options.Text,
-                    (uint)options.FontSize,
-                    options.Opacity,
-                    (byte)options.Position
-                );
-
-                if (result != 0)
-                {
-                    WriteNativeEvent("native.fallback", "watermark", "native-result");
-                }
-                else
-                {
-                    var fileInfo = new FileInfo(outputPath);
-                    if (!fileInfo.Exists)
-                    {
-                        WriteNativeEvent("native.failed", "watermark", "output-missing");
-                        return ImageProcessResult.Fail("Rust watermark succeeded but output file not found");
-                    }
-
-                    await using var outputStream = File.OpenRead(outputPath);
-                    var imageInfo = await _fallbackProcessor.GetImageInfoAsync(outputStream);
-                    return ImageProcessResult.Ok(
-                        outputPath: outputPath,
-                        fileSize: fileInfo.Length,
-                        width: imageInfo?.Width ?? 0,
-                        height: imageInfo?.Height ?? 0);
+                    total += count;
+                    if (total > _maxInputBytes) return new Response { ErrorCode = "LimitExceeded" };
+                    await file.WriteAsync(buffer.AsMemory(0, count), deadline.Token);
                 }
             }
+            var response = await Task.Run(() =>
+            {
+                object? nativeWatermark = null;
+                if (watermark != null)
+                {
+                    var probe = Call(input, "info", [], null, deadline.Token);
+                    if (!probe.Success) return probe;
+                    var fontSize = _text.Font.UseRelativeSize
+                        ? Math.Clamp((int)(probe.Info!.DisplayWidth * _text.FontSizeRelative), _text.Font.MinFontSize, _text.Font.MaxFontSize)
+                        : watermark.FontSize;
+                    var fonts = new List<string>();
+                    if (!string.IsNullOrEmpty(_text.Font.CustomFontPath)) fonts.Add(Path.GetFullPath(_text.Font.CustomFontPath));
+                    var bundled = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        ["DejaVu Sans"] = "DejaVuSans.ttf", ["Noto Sans"] = "NotoSansSC-VF.ttf",
+                        ["Noto Sans SC"] = "NotoSansSC-VF.ttf"
+                    };
+                    foreach (var name in _text.Font.PreferredFonts.Concat(["Noto Sans SC", "DejaVu Sans"]))
+                        if (bundled.TryGetValue(name, out var filename))
+                        {
+                            var font = Path.Combine(NativeImageLibrary.Assets, "fonts", filename);
+                            if (!fonts.Contains(font, StringComparer.Ordinal)) fonts.Add(font);
+                        }
+                    if (!new[] { "Regular", "Bold", "Italic", "BoldItalic" }.Contains(_text.Font.Style, StringComparer.OrdinalIgnoreCase))
+                        return new Response { ErrorCode = "InvalidArgument" };
+                    if (!TryColor(watermark.Color, out var color)) return new Response { ErrorCode = "InvalidArgument" };
+                    nativeWatermark = new
+                    {
+                        Kind = watermark.Type == WatermarkType.Text ? "text" : watermark.Type == WatermarkType.Image ? "image" : "invalid",
+                        watermark.Text, ImagePath = watermark.ImagePath ?? "", FontPaths = fonts,
+                        FontSize = fontSize, Bold = _text.Font.Style.Contains("bold", StringComparison.OrdinalIgnoreCase),
+                        Italic = _text.Font.Style.Contains("italic", StringComparison.OrdinalIgnoreCase),
+                        watermark.Opacity, Position = (int)watermark.Position, Color = color.Select(value => (int)value).ToArray(), watermark.Padding, watermark.Scale
+                    };
+                }
+                return Call(input, operation, outputs, nativeWatermark, deadline.Token);
+            }, CancellationToken.None);
+            if (response.ErrorCode == "Cancelled") throw new OperationCanceledException(deadline.Token);
+            if (!response.Success) WriteNativeEvent("native.failed", operation, "native-result");
+            return response;
+        }
+        finally
+        {
+            try { if (originalPosition.HasValue) stream.Position = originalPosition.Value; }
             finally
             {
-                // 清理临时文件
-                if (File.Exists(tempInputPath))
-                {
-                    try
-                    {
-                        File.Delete(tempInputPath);
-                    }
-                    catch (Exception ex)
-                    {
-                        WriteNativeEvent("native.cleanup_failed", "watermark", "temporary-file", ex);
-                    }
-                }
+                if (directory != null) Cleanup(directory, operation);
+                if (entered) Workers.Release();
+                Interlocked.Decrement(ref _waiting);
             }
         }
-        catch (DllNotFoundException ex)
+    }
+
+    private Response Call(string input, string operation, List<Output> outputs, object? watermark, CancellationToken token)
+    {
+        var request = JsonSerializer.SerializeToUtf8Bytes(new
+        { SchemaVersion = 1, Operation = operation, InputPath = input, Outputs = outputs, Watermark = watermark, Limits = new { MaxInputBytes = _maxInputBytes } }, Json);
+        return JsonSerializer.Deserialize<Response>(NativeImageLibrary.Run(request, token), Json)
+            ?? throw new InvalidOperationException("Native response missing");
+    }
+
+    private sealed record Output(string Path, string Format, int Width, int Height, bool KeepAspectRatio, int Quality, bool FirstFrame);
+    private sealed class Response
+    {
+        public bool Success { get; set; }
+        public string? ErrorCode { get; set; }
+        public ImageInfo? Info { get; set; }
+        public List<ImageInfo> Outputs { get; set; } = [];
+    }
+    private static ImageProcessResult Failure(string code) => new() { ErrorCode = code, ErrorMessage = $"图片处理失败（{code}）" };
+    private static string Format(string path, ImageOutputFormat? format) => format?.ToString().ToUpperInvariant() ?? Path.GetExtension(path).ToLowerInvariant() switch
+    { ".jpg" or ".jpeg" => "JPEG", ".png" => "PNG", ".webp" => "WEBP", ".gif" => "GIF", ".bmp" => "BMP", ".ico" => "ICO", _ => "" };
+    private static string Extension(string format) => format == "JPEG" ? ".jpg" : "." + format.ToLowerInvariant();
+    private static bool TryColor(string text, out byte[] color)
+    {
+        color = [255, 255, 255, 255];
+        if (text.Length is not (7 or 9) || text[0] != '#') return false;
+        try { var bytes = Convert.FromHexString(text[1..]); bytes.CopyTo(color, 0); return true; }
+        catch (FormatException) { return false; }
+    }
+    private static void CreatePrivateDirectory(string path)
+    {
+        if (OperatingSystem.IsWindows()) Directory.CreateDirectory(path);
+        else Directory.CreateDirectory(path, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+    }
+    private static void EnsureNoLinks(string path)
+    {
+        for (var current = path; !string.IsNullOrEmpty(current); current = Path.GetDirectoryName(current))
         {
-            WriteNativeEvent("native.fallback", "watermark", "library-unavailable", ex);
+            FileSystemInfo info = Directory.Exists(current) ? new DirectoryInfo(current) : new FileInfo(current);
+            // macOS supplies these root-owned aliases in Path.GetTempPath().
+            if (OperatingSystem.IsMacOS() &&
+                ((current == "/var" && info.LinkTarget == "private/var") ||
+                 (current == "/tmp" && info.LinkTarget == "private/tmp")))
+                continue;
+            if (info.LinkTarget != null) throw new IOException("Image path contains a symbolic link");
         }
-        catch (Exception ex)
+    }
+    private static void Rollback(List<(string Target, string? Backup)> committed, ISet<string> retainedDirectories)
+    {
+        foreach (var (target, backup) in committed.AsEnumerable().Reverse())
         {
-            WriteNativeEvent("native.fallback", "watermark", "exception", ex);
-        }
-
-        // 恢复实现只调用一次；其失败结果 / 异常继续交给调用方最终处理。
-        return await _fallbackProcessor.AddWatermarkAsync(sourceStream, outputPath, options);
-    }
-
-    /// <summary>
-    /// 移除 EXIF 信息（使用 C# 实现）
-    /// </summary>
-    public Task<bool> RemoveExifAsync(Stream sourceStream, string outputPath)
-    {
-        // EXIF 移除使用 C# 实现
-        return _fallbackProcessor.RemoveExifAsync(sourceStream, outputPath);
-    }
-
-    /// <summary>
-    /// 生成多个尺寸的图片（使用 C# 实现）
-    /// </summary>
-    public Task<List<ImageProcessResult>> GenerateMultipleSizesAsync(
-        Stream sourceStream,
-        string baseOutputPath,
-        List<ImageSize> sizes)
-    {
-        // 多尺寸生成使用 C# 实现
-        return _fallbackProcessor.GenerateMultipleSizesAsync(sourceStream, baseOutputPath, sizes);
-    }
-
-    /// <summary>
-    /// 获取图片信息（使用 C# 实现）
-    /// </summary>
-    public Task<ImageInfo?> GetImageInfoAsync(Stream stream)
-    {
-        return _fallbackProcessor.GetImageInfoAsync(stream);
-    }
-
-    /// <summary>
-    /// 验证图片是否有效（使用 C# 实现）
-    /// </summary>
-    public Task<bool> IsValidImageAsync(Stream stream)
-    {
-        return _fallbackProcessor.IsValidImageAsync(stream);
-    }
-
-    #endregion
-
-    private static void WriteNativeEvent(string eventCode, string operation, string reason, Exception? exception = null)
-    {
-        var logger = Log.ForContext("EventCode", eventCode)
-            .ForContext("SourceCategory", "infrastructure")
-            .ForContext("nativeOperation", operation)
-            .ForContext("nativeReason", reason);
-        if (exception != null) logger = logger.ForContext("failureKind", RuntimeFailureSummary.Classify(exception));
-        if (eventCode == "native.failed") logger.Error("Native operation failed");
-        else logger.Warning("Native capability degraded");
-    }
-
-    #region Utility Methods
-
-    /// <summary>
-    /// 计算文件 SHA256 哈希（Rust 实现）
-    /// </summary>
-    /// <param name="filePath">文件路径</param>
-    /// <returns>SHA256 哈希值（小写十六进制）</returns>
-    public static string? CalculateFileSha256(string filePath)
-    {
-        try
-        {
-            var buffer = new StringBuilder(65); // SHA256 = 64 chars + null terminator
-            var result = CalculateFileSha256Native(filePath, buffer, buffer.Capacity);
-
-            if (result == 0)
+            try { if (backup != null) File.Move(backup, target, true); else File.Delete(target); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
-                return buffer.ToString();
+                if (backup != null) retainedDirectories.Add(Path.GetDirectoryName(backup)!);
+                WriteNativeEvent("native.cleanup_failed", "commit", "rollback", ex);
             }
-
-            WriteNativeEvent("native.failed", "hash", "native-result");
-            return null;
-        }
-        catch (DllNotFoundException ex)
-        {
-            WriteNativeEvent("native.failed", "hash", "library-unavailable", ex);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            WriteNativeEvent("native.failed", "hash", "exception", ex);
-            return null;
         }
     }
-
-    /// <summary>
-    /// 检查 Rust 库是否可用
-    /// </summary>
+    private static void Cleanup(string directory, string operation)
+    {
+        try { Directory.Delete(directory, true); }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { WriteNativeEvent("native.cleanup_failed", operation, "temporary-file", ex); }
+    }
+    private static void WriteNativeEvent(string code, string operation, string reason, Exception? exception = null)
+    {
+        var logger = Log.ForContext("EventCode", code).ForContext("SourceCategory", "infrastructure")
+            .ForContext("nativeOperation", operation).ForContext("nativeReason", reason);
+        if (exception != null) logger = logger.ForContext("failureKind", RuntimeFailureSummary.Classify(exception));
+        if (code == "native.failed") logger.Error("Native operation failed");
+        else logger.Warning("Native cleanup failed");
+    }
     public static bool IsRustLibraryAvailable()
     {
+        try { NativeImageLibrary.EnsureAvailable(); return true; }
+        catch (Exception ex) when (ex is IOException or InvalidOperationException or DllNotFoundException or BadImageFormatException or EntryPointNotFoundException) { return false; }
+    }
+    public static void EnsureAvailable() => NativeImageLibrary.EnsureAvailable();
+
+    [DllImport("radish_lib", EntryPoint = "calculate_file_sha256", CallingConvention = CallingConvention.Cdecl)]
+    private static extern int CalculateFileSha256Native([MarshalAs(UnmanagedType.LPUTF8Str)] string path, StringBuilder output, nuint length);
+    public static string? CalculateFileSha256(string path)
+    {
         try
         {
-            // 尝试调用一个简单的函数来检测库是否存在
-            var testPath = Path.GetTempFileName();
-            File.WriteAllText(testPath, "test");
-
+            NativeImageLibrary.EnsureAvailable();
             var buffer = new StringBuilder(65);
-            var result = CalculateFileSha256Native(testPath, buffer, buffer.Capacity);
-
-            File.Delete(testPath);
-
-            return result == 0;
+            if (CalculateFileSha256Native(path, buffer, 65) == 0) return buffer.ToString();
+            WriteNativeEvent("native.failed", "hash", "native-result");
         }
-        catch (DllNotFoundException)
-        {
-            return false;
-        }
-        catch
-        {
-            return false;
-        }
+        catch (Exception ex) { WriteNativeEvent("native.failed", "hash", "library-unavailable", ex); }
+        return null;
     }
-
-    #endregion
 }

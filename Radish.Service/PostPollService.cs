@@ -41,7 +41,7 @@ public class PostPollService : IPostPollService
     {
         if (postId <= 0)
         {
-            throw new ArgumentException("帖子ID必须大于0", nameof(postId));
+            throw new PollInputValidationException("帖子ID必须大于0", nameof(postId));
         }
 
         var post = await _postService.GetPostDetailAsync(postId, viewerUserId);
@@ -75,12 +75,12 @@ public class PostPollService : IPostPollService
 
         if (request.PostId <= 0)
         {
-            throw new ArgumentException("帖子ID必须大于0", nameof(request));
+            throw new PollInputValidationException("帖子ID必须大于0", nameof(request));
         }
 
         if (request.OptionId <= 0)
         {
-            throw new ArgumentException("投票选项ID必须大于0", nameof(request));
+            throw new PollInputValidationException("投票选项ID必须大于0", nameof(request));
         }
 
         var post = await _postRepository.QueryFirstAsync(p => p.Id == request.PostId && !p.IsDeleted);
@@ -165,7 +165,7 @@ public class PostPollService : IPostPollService
 
         if (postId <= 0)
         {
-            throw new ArgumentException("帖子ID必须大于0", nameof(postId));
+            throw new PollInputValidationException("帖子ID必须大于0", nameof(postId));
         }
 
         var post = await _postRepository.QueryFirstAsync(p => p.Id == postId && !p.IsDeleted);

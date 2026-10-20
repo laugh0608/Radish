@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.Model.ViewModels;
 
@@ -64,11 +65,11 @@ public sealed class NotificationHub : Hub
 
         if (exception != null)
         {
-            _logger.LogWarning(
-                exception,
-                "通知 Hub 连接异常断开，UserId={UserId}, ConnectionId={ConnectionId}",
-                current.UserId,
-                Context.ConnectionId);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "notification.connection_closed", ["SourceCategory"] = "business"
+            });
+            _logger.LogWarning("Notification connection closed with a failure; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
         }
 
         await base.OnDisconnectedAsync(exception);

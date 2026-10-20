@@ -12,8 +12,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  native-images:
+    name: Native Images
+    uses: ./.github/workflows/native-images.yml
   candidate-quality:
     name: Candidate Quality
+    needs: native-images
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -52,6 +56,9 @@ jobs:
 
       - name: Restore .NET dependencies
         run: dotnet restore Radish.slnx --disable-parallel
+
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.96.0 --profile minimal
 
       - name: Run candidate quality gate
         run: npm run validate:candidate

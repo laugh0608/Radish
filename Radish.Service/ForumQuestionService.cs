@@ -1028,11 +1028,11 @@ public sealed class ForumQuestionService : IForumQuestionService
         var normalized = content?.Trim();
         if (string.IsNullOrWhiteSpace(normalized))
         {
-            throw new ArgumentException("回答内容不能为空", nameof(content));
+            throw new ForumAnswerContentValidationException("回答内容不能为空", nameof(content));
         }
         if (normalized.Length > 20000)
         {
-            throw new ArgumentException("回答内容不能超过 20000 个字符", nameof(content));
+            throw new ForumAnswerContentValidationException("回答内容不能超过 20000 个字符", nameof(content));
         }
         return normalized;
     }

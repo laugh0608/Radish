@@ -6,7 +6,7 @@ Radish 涉及身份认证与授权、多租户数据、用户内容、文件上�
 
 请不要为尚未修复的漏洞创建公开 Issue、Discussion 或 Pull Request，也不要在公开渠道粘贴利用代码、真实凭据、个人数据或生产日志。
 
-优先使用 GitHub 仓库 `Security` 页面中的 Private vulnerability reporting。若该入口不可用，可发送邮件至 `laugh0608@foxmail.com`，主题包含 `[Radish Security]`。
+优先使用 GitHub 仓库 `Security` 页面中的 Private vulnerability reporting。若该入口不可用，可发送邮件至 `luobo@radishx.com`，主题包含 `[Radish Security]`。
 
 报告请尽量包含：
 

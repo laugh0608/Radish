@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.08.12
+> **最后更新**: 2026.10.07
 >
 > **关联文档**：
 > [Console 管理后台实现](./emoji-sticker-console.md) ·
@@ -463,11 +463,16 @@ interface ToggleReactionRequest {
 - `ReactionController` 已标注 `[ApiErrorContract]`，失败响应会同步为真实 HTTP 状态并补 `traceId`。控制器已写入
   `code` 时过滤器不会再推导 `messageKey`，因此现有 `InvalidArgument`、`StickerNotAvailable`、
   `ReactionLimitExceeded` 等响应仍可能缺少本地化键。
-- `StickerController`（包括 `RecordUse` 与管理端写入）当前未标注该契约；领域失败通常是 HTTP 200 +
-  `MessageModel.statusCode`，认证/权限拦截则仍是真实 HTTP 401/403。
-- `MessageModel` 已支持 `messageKey / messageArguments / traceId`，但 Sticker 控制器通常未填充。F3-C9 需将
-  Sticker 领域迁移到真实 HTTP、稳定 `code` 与结构化本地化参数，并把 Console `stickerApi.ts` 的自行解析/
-  普通 `Error` 迁移到共享 `ParsedApiResponse / ApiResponseError`。
+- `StickerController` 已标注 `[ApiErrorContract]`，有效的 `MessageModel.statusCode` 同步为真实 HTTP 状态，失败补 `traceId`；仅在 `code` 缺失时过滤器补默认 code / messageKey。已有 code 不保证同时具有本地化键，认证 / 权限拦截继续为 401 / 403。
+- Console 的 `stickerApi.ts` 已使用 `@radish/http` 与 `createApiResponseError`；批量详情入口保留结构化响应用于行级反馈。前端按 code / statusCode / traceId 处理，不按 messageInfo 文案分支；不能再把真实 HTTP / 共享错误解析整体列为 F3-C9 待迁移。
+
+### 管理写入与运行日志边界
+
+- CreateGroup / AddSticker / BatchAddStickers / BatchUpdateSort 用专用异常子类区分明确拒绝与依赖故障；明确拒绝与成功保持安静。其他被消费的 ArgumentException / InvalidOperationException 在原响应成功构造后输出 `sticker.request_failed`，不带异常原文或表情 / 附件身份。
+- 保留既有状态映射，包括单表情目标缺失仍归 409、批量 InvalidOperationException 归 404、排序实际写入不足归 409；这些映射没有因日志治理而重新设计。
+- 批量附件构建逐项失败在失败结果构造后输出 `sticker.batch_item_failed` Error，继续后续项；有失败项不插入 Sticker，但此前附件更新可能随正常返回提交，文件副作用不随数据库回滚自动撤销。创建分组 / 单表情没有事务，批量保存 / 排序沿用原事务。
+- 缩略图失败在流释放后输出 `sticker.thumbnail_failed` Warning，缓存读 / 写 / 失效输出对应安全 Warning；不输出缓存键、附件路径或异常原文。空路径、不存在文件或下载 null 仍可能静默跳过，存储把故障折叠为 false / null 的行为保持。
+- 日志仅描述该消费或降级阶段，不证明业务事务提交。完整规则与 SQLite 验证限制见[事件契约第 49 节](./unified-logging-contract.md)及[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)。
 
 ### 高频接口限流建议（补充）
 
@@ -653,7 +658,7 @@ type BatchGetReactionSummaryResponse = Record<string, ReactionSummaryVo[]>;
 ```
 
 Reaction 领域失败以真实 HTTP 状态返回，并保留 `MessageModel` 壳；前端按 `code / statusCode / traceId`
-处理，不匹配 `messageInfo` 文案。现有业务 `code` 未必伴随 `messageKey`，需按上文 F3-C9 边界治理。
+处理，不匹配 `messageInfo` 文案。现有业务 `code` 未必伴随 `messageKey`，缺失键的细化仍按具体入口治理。
 
 ---
 
@@ -820,7 +825,7 @@ Phase 3 引入 `VoIsOwned` 后，避免将“用户态”塞入当前公共缓�
 
 ## 上线与观测要点（补充）
 
-- 日志：记录 `BatchAddStickers` 成功数、冲突数、失败原因分布
+- 日志：正常成功与明确冲突保持安静；附件构建、被消费依赖故障和缩略图 / 缓存降级按已登记安全事件记录，不输出逐项身份或原始失败文案
 - 监控：关注 `Toggle` 的 400/409 比例和 `BatchGetSummary` 响应耗时
 - 告警：关注附件构建失败分布与缩略图生成告警，二者不得混为同一失败语义
 - 回滚：保留 `sticker://` 文本降级策略，保证即使服务异常页面也不破版

@@ -283,6 +283,7 @@ return await RuntimeProcess.RunAsync("auth", async () =>
             builder.Configuration,
             builder.Environment);
 
+    var startupLog = HostStartupLog.Auth(builder.Environment.EnvironmentName, corsOrigins.Length);
     builder.Services.AddOpenIddict()
         // 注册 OpenIddict Core 服务（使用 EF Core 存储）
         .AddCore(options =>
@@ -360,6 +361,8 @@ return await RuntimeProcess.RunAsync("auth", async () =>
             {
                 aspNetCoreOptions.DisableTransportSecurityRequirement();
             }
+
+            startupLog.AuthConfigurationCompleted(useDevelopmentKeys);
         });
 
     #endregion
@@ -422,29 +425,8 @@ return await RuntimeProcess.RunAsync("auth", async () =>
         ResponseWriter = (context, report) => StructuredHealthCheckResponseWriter.WriteJsonAsync(context, report, authHealthCheckTags),
     });
 
-    // 启动提示（使用 Serilog，与 Gateway/API 风格统一）
-    app.Lifetime.ApplicationStarted.Register(() =>
-    {
-        var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
-        var oidcRuntimeSummary = AuthOidcRuntimeProfile.BuildStartupSummary(builder.Configuration, builder.Environment);
-
-        Log.Information("====================================");
-        Log.Information("  ____            _ _     _          _         _   _     ");
-        Log.Information(" |  _ \\ __ _  __| (_)___| |__      / \\  _   _| |_| |__  ");
-        Log.Information(" | |_) / _` |/ _` | / __| '_ \\    / _ \\| | | | __| '_ \\ ");
-        Log.Information(" |  _ < (_| | (_| | \\__ \\ | | |  / ___ \\ |_| | |_| | | |");
-        Log.Information(" |_| \\_\\__,_|\\__,_|_|___/_| |_| /_/   \\_\\__,_|\\__|_| |_|");
-        Log.Information("");
-        Log.Information("  OIDC Authentication Server --by luobo");
-        Log.Information("====================================");
-        Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
-        Log.Information("监听地址: {Urls}", urls);
-        Log.Information("CORS 允许来源: {Origins}", string.Join(", ", corsOrigins));
-        Log.Information("OIDC Issuer: {Issuer}", oidcRuntimeSummary.IssuerSummary);
-        Log.Information("OIDC 密钥模式: {KeyMode}", oidcRuntimeSummary.KeyMode);
-        Log.Information("OIDC Signing 证书: {SigningCertificate}", oidcRuntimeSummary.SigningCertificateSummary);
-        Log.Information("OIDC Encryption 证书: {EncryptionCertificate}", oidcRuntimeSummary.EncryptionCertificateSummary);
-    });
+    // 仅在宿主发出启动完成通知后输出已选择的安全状态。
+    using var startupSummaryRegistration = startupLog.Register(app.Lifetime, app.Urls, Log.Logger);
 
     #endregion
 

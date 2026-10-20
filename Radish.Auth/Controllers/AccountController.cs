@@ -1,15 +1,14 @@
-using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Mail;
 using System.Security.Claims;
-using System.Text.Json;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
 using OpenIddict.Abstractions;
 using Radish.Auth.Resources;
+using Radish.Auth.Logging;
 using Radish.Auth.ViewModels.Account;
 using Radish.Common.HttpContextTool;
 using Radish.Common.HelpTool;
@@ -18,7 +17,6 @@ using Radish.Model;
 using Radish.Model.OpenIddict;
 using System.Linq;
 using Microsoft.AspNetCore.WebUtilities;
-using Serilog;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Routing;
@@ -52,19 +50,22 @@ public class AccountController : Controller
     private readonly IOpenIddictApplicationManager _applicationManager;
     private readonly ICoinService _coinService;
     private readonly ISystemSettingProvider _systemSettingProvider;
+    private readonly ILogger<AccountController> _logger;
 
     public AccountController(
         IStringLocalizer<Errors> errorsLocalizer,
         IUserService userService,
         IOpenIddictApplicationManager applicationManager,
         ICoinService coinService,
-        ISystemSettingProvider systemSettingProvider)
+        ISystemSettingProvider systemSettingProvider,
+        ILogger<AccountController> logger)
     {
         _errorsLocalizer = errorsLocalizer;
         _userService = userService;
         _applicationManager = applicationManager;
         _coinService = coinService;
         _systemSettingProvider = systemSettingProvider;
+        _logger = logger;
     }
 
     [HttpGet]
@@ -117,53 +118,39 @@ public class AccountController : Controller
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && !Url.IsLocalUrl(returnUrl))
         {
-            Log.Warning("[Account/Login] 拒绝非本地登录回跳地址");
-            return BadRequest(_errorsLocalizer["auth.login.error.invalidReturnUrl"].Value);
+            var rejected = BadRequest(_errorsLocalizer["auth.login.error.invalidReturnUrl"].Value);
+            AuthAccountLog.LoginRejected(_logger, "invalid-return-url");
+            return rejected;
         }
 
         if (normalizedEmail == null || string.IsNullOrWhiteSpace(password))
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, email));
+            var rejected = RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, email));
+            AuthAccountLog.LoginRejected(_logger, "invalid-credentials");
+            return rejected;
         }
 
-        var logEmail = MaskEmailForLog(normalizedEmail);
-        Log.Information("[Account/Login] 开始处理登录请求，邮箱: {Email}", logEmail);
-
         // 1. 查询用户（单用户精确查询，避免列表物化）
-        var userQueryStopwatch = Stopwatch.StartNew();
         var user = await _userService.GetEnabledUserCredentialByEmailAsync(normalizedEmail);
-        Log.Information(
-            "[Account/Login] 用户查询完成，邮箱: {Email}, 结果数: {UserCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
-            logEmail,
-            user == null ? 0 : 1,
-            userQueryStopwatch.ElapsedMilliseconds,
-            totalStopwatch.ElapsedMilliseconds);
 
         if (user is null)
         {
-            Log.Warning(
-                "[Account/Login] 用户不存在，邮箱: {Email}, 总耗时: {ElapsedMs}ms",
-                logEmail,
-                totalStopwatch.ElapsedMilliseconds);
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, normalizedEmail));
+            var rejected = RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, normalizedEmail));
+            AuthAccountLog.LoginRejected(_logger, "invalid-credentials");
+            return rejected;
         }
 
         // 2. 使用 Argon2id 验证密码
-        var passwordVerifyStopwatch = Stopwatch.StartNew();
         var isPasswordValid = PasswordHasher.VerifyPassword(password, user.PasswordHash);
-        Log.Information(
-            "[Account/Login] 密码校验完成，邮箱: {Email}, 结果: {IsValid}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
-            logEmail,
-            isPasswordValid,
-            passwordVerifyStopwatch.ElapsedMilliseconds,
-            totalStopwatch.ElapsedMilliseconds);
 
         if (!isPasswordValid)
         {
             TempData["LoginError"] = _errorsLocalizer["auth.login.error.invalidCredentials"].Value;
-            return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, normalizedEmail));
+            var rejected = RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(returnUrl, normalizedEmail));
+            AuthAccountLog.LoginRejected(_logger, "invalid-credentials");
+            return rejected;
         }
 
         await _coinService.GrantRegistrationRewardAsync(user.UserId);
@@ -172,14 +159,7 @@ public class AccountController : Controller
         var userId = user.UserId.ToString();
         var tenantId = user.TenantId.ToString();
 
-        var roleQueryStopwatch = Stopwatch.StartNew();
         var roleNames = await _userService.GetUserRoleNamesAsync(user.UserId);
-        Log.Information(
-            "[Account/Login] 角色查询完成，邮箱: {Email}, 角色数: {RoleCount}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
-            logEmail,
-            roleNames.Count,
-            roleQueryStopwatch.ElapsedMilliseconds,
-            totalStopwatch.ElapsedMilliseconds);
 
         var displayName = user.DisplayName;
         var displayHandle = user.DisplayHandle;
@@ -211,22 +191,20 @@ public class AccountController : Controller
         var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
         var principal = new ClaimsPrincipal(identity);
 
-        var signInStopwatch = Stopwatch.StartNew();
         await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
-        Log.Information(
-            "[Account/Login] Cookie 登录完成，邮箱: {Email}, 耗时: {ElapsedMs}ms, 总耗时: {TotalElapsedMs}ms",
-            logEmail,
-            signInStopwatch.ElapsedMilliseconds,
-            totalStopwatch.ElapsedMilliseconds);
 
         if (!string.IsNullOrEmpty(returnUrl))
         {
-            return LocalRedirect(returnUrl);
+            var result = LocalRedirect(returnUrl);
+            AuthAccountLog.LoginResultPrepared(_logger, totalStopwatch.ElapsedMilliseconds);
+            return result;
         }
 
         // 直接访问 /Account/Login 并登录成功时，返回一个简单的确认信息
         var successMessage = _errorsLocalizer["auth.login.success.message"];
-        return Ok(successMessage);
+        var success = Ok(successMessage);
+        AuthAccountLog.LoginResultPrepared(_logger, totalStopwatch.ElapsedMilliseconds);
+        return success;
     }
 
     /// <summary>
@@ -267,6 +245,7 @@ public class AccountController : Controller
             return RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
         }
 
+        var stage = "validation";
         try
         {
             var displayName = model.DisplayName.Trim();
@@ -291,6 +270,7 @@ public class AccountController : Controller
             }
 
             // 2. 检查邮箱是否已存在
+            stage = "user-lookup";
             var existingEmails = await _userService.QueryAsync(u => u.UserEmail == email);
             if (existingEmails.Any())
             {
@@ -299,6 +279,7 @@ public class AccountController : Controller
             }
 
             // 4. 创建用户（使用 Argon2id 哈希密码）
+            stage = "password-hash";
             var hashedPassword = PasswordHasher.HashPassword(model.Password);
             var newUser = new Radish.Model.User
             {
@@ -317,29 +298,30 @@ public class AccountController : Controller
                 ErrorCount = 0
             };
 
+            stage = "user-create";
             var userId = await _userService.AddAsync(newUser);
-
-            Log.Information("用户 {DisplayName} (ID: {UserId}) 注册成功", displayName, userId);
+            AuthAccountLog.UserCreateReturned(_logger);
 
             // 5. 发放注册奖励（50 胡萝卜）
-            var transactionNo = await _coinService.GrantRegistrationRewardAsync(userId);
-            Log.Information("用户 {UserId} 注册奖励发放成功，流水号: {TransactionNo}", userId, transactionNo);
+            stage = "reward";
+            await _coinService.GrantRegistrationRewardAsync(userId);
+            AuthAccountLog.RewardReturned(_logger);
 
             // 6. 注册成功，跳转到登录页
+            stage = "result-prepare";
             TempData["RegisterSuccess"] = _errorsLocalizer["auth.register.success"].Value;
-            return RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(model.ReturnUrl, email));
+            var result = RedirectToAction(nameof(Login), CreateAccountFlowRouteValues(model.ReturnUrl, email));
+            AuthAccountLog.RegistrationResultPrepared(_logger);
+            return result;
         }
         catch (Exception ex)
         {
-            Log.Error(
-                ex,
-                "用户注册失败: {DisplayName}, TraceId: {TraceId}",
-                model.DisplayName,
-                HttpContext.TraceIdentifier);
             TempData["RegisterError"] = _errorsLocalizer[
                 "auth.register.error.unexpected",
                 HttpContext.TraceIdentifier].Value;
-            return RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
+            var result = RedirectToAction(nameof(Register), CreateAccountFlowRouteValues(model.ReturnUrl));
+            AuthAccountLog.RegistrationFailed(_logger, stage, ex);
+            return result;
         }
     }
 
@@ -372,23 +354,6 @@ public class AccountController : Controller
         {
             return null;
         }
-    }
-
-    private static string MaskEmailForLog(string email)
-    {
-        var normalized = email.Trim();
-        var atIndex = normalized.IndexOf('@', StringComparison.Ordinal);
-        if (atIndex <= 0 || atIndex == normalized.Length - 1)
-        {
-            return "***";
-        }
-
-        var local = normalized[..atIndex];
-        var domain = normalized[(atIndex + 1)..];
-        var maskedLocal = local.Length <= 2
-            ? new string('*', local.Length)
-            : $"{local[0]}***{local[^1]}";
-        return $"{maskedLocal}@{domain}";
     }
 
     private bool IsDisplayNameValid(string displayName, int minLength, int maxLength, out string errorMessage)
@@ -487,49 +452,43 @@ public class AccountController : Controller
 
         if (string.IsNullOrWhiteSpace(clientId))
         {
-            Log.Debug("[ResolveClientAsync] No client_id found in URL or query string");
+            AuthAccountLog.ClientResolutionReturned(_logger, "missing-id");
             return ClientSummaryViewModel.Empty;
         }
-
-        Log.Debug("[ResolveClientAsync] Resolved client_id: {ClientId}", clientId);
 
         try
         {
             var applicationObject = await _applicationManager.FindByClientIdAsync(clientId, HttpContext.RequestAborted);
             if (applicationObject is null)
             {
-                Log.Warning("[ResolveClientAsync] Client '{ClientId}' not found in database", clientId);
+                AuthAccountLog.ClientResolutionReturned(_logger, "not-found");
                 return ClientSummaryViewModel.Empty;
             }
 
-            Log.Debug("[ResolveClientAsync] Found application object, type: {TypeName}", applicationObject.GetType().Name);
-
             if (applicationObject is RadishApplication application)
             {
-                Log.Debug("[ResolveClientAsync] Using RadishApplication: {DisplayName}", application.DisplayName);
-                return ClientSummaryViewModel.FromApplication(application);
+                var summary = ClientSummaryViewModel.FromApplication(application);
+                AuthAccountLog.ClientResolutionReturned(_logger, "resolved");
+                return summary;
             }
 
             var clientIdValue = await _applicationManager.GetClientIdAsync(applicationObject, HttpContext.RequestAborted);
             var displayName = await _applicationManager.GetDisplayNameAsync(applicationObject, HttpContext.RequestAborted);
             var properties = await _applicationManager.GetPropertiesAsync(applicationObject, HttpContext.RequestAborted);
 
-            Log.Debug("[ResolveClientAsync] Client: {ClientId}, DisplayName: {DisplayName}, Properties count: {PropertiesCount}",
-                clientIdValue, displayName, properties?.Count ?? 0);
-
-            return ClientSummaryViewModel.FromStoreData(clientIdValue, displayName, properties);
+            var result = ClientSummaryViewModel.FromStoreData(clientIdValue, displayName, properties);
+            AuthAccountLog.ClientResolutionReturned(_logger, "resolved");
+            return result;
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[ResolveClientAsync] Failed to resolve client from returnUrl");
+            AuthAccountLog.ClientResolutionFailed(_logger, ex);
             return ClientSummaryViewModel.Empty;
         }
     }
 
-    private static string? TryGetClientIdFromReturnUrl(string? returnUrl)
+    private string? TryGetClientIdFromReturnUrl(string? returnUrl)
     {
-        Log.Debug("[TryGetClientIdFromReturnUrl] Input returnUrl: {ReturnUrl}", returnUrl);
-
         if (string.IsNullOrWhiteSpace(returnUrl))
         {
             return null;
@@ -541,7 +500,6 @@ public class AccountController : Controller
             var queryIndex = returnUrl.IndexOf('?');
             if (queryIndex == -1)
             {
-                Log.Debug("[TryGetClientIdFromReturnUrl] No query string found in returnUrl");
                 return null;
             }
 
@@ -550,21 +508,18 @@ public class AccountController : Controller
 
             // 使用 QueryHelpers.ParseQuery 解析查询字符串（会自动处理 URL 编码）
             var query = QueryHelpers.ParseQuery(queryString);
-            Log.Debug("[TryGetClientIdFromReturnUrl] Parsed {Count} query parameters", query.Count);
 
             if (!query.TryGetValue("client_id", out var clientIdValues))
             {
-                Log.Debug("[TryGetClientIdFromReturnUrl] client_id not found in query parameters");
                 return null;
             }
 
             var clientId = clientIdValues.FirstOrDefault();
-            Log.Debug("[TryGetClientIdFromReturnUrl] Found client_id: {ClientId}", clientId);
             return clientId;
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "[TryGetClientIdFromReturnUrl] Failed to parse returnUrl");
+            AuthAccountLog.ReturnUrlParseFailed(_logger, ex);
             return null;
         }
     }

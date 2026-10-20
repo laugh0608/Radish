@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -97,12 +98,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
         if (trimmedContent.Length < minContentLength)
         {
-            throw new ArgumentException($"评论内容不能少于 {minContentLength} 个字符");
+            throw new CommentContentValidationException($"评论内容不能少于 {minContentLength} 个字符");
         }
 
         if (trimmedContent.Length > maxContentLength)
         {
-            throw new ArgumentException($"评论内容不能超过 {maxContentLength} 个字符");
+            throw new CommentContentValidationException($"评论内容不能超过 {maxContentLength} 个字符");
         }
     }
 
@@ -306,9 +307,9 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (Exception ex)
         {
-            Log.Error(ex,
-                "[CommentService] 实时触发神评/沙发检查失败：PostId={PostId}, ParentCommentId={ParentCommentId}",
-                postId, parentCommentId);
+            Log.ForContext("EventCode", "comment.highlight_recheck_failed").ForContext("SourceCategory", "business")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Comment highlight recheck failed");
             return CommentHighlightRecheckResultVo.NoChange(postId, parentCommentId, highlightType);
         }
     }
@@ -795,7 +796,15 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (ArgumentException ex)
         {
-            return (false, ex.Message);
+            // 先完成失败结果构造；读取消息失败时由上层消费新的异常。
+            var result = (false, ex.Message);
+            // 保留原失败结果契约；系统设置依赖的 ArgumentException 不能冒充正常内容校验。
+            if (ex is not CommentContentValidationException)
+            {
+                Log.ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
+                    .Error("Comment edit failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
+            return result;
         }
 
         var safeUserName = string.IsNullOrWhiteSpace(userName) ? "System" : userName;
@@ -993,15 +1002,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 existingHighlights,
                 cacheKey: $"god_comments:post:{postId}",
                 createBy: "CommentService.RealTime");
-
-            if (result.VoChanged)
-            {
-                Log.Information("[CommentService] 实时更新神评：PostId={PostId}, Count={Count}", postId, result.VoCurrentCommentIds.Count);
-            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[CommentService] 检查神评失败：PostId={PostId}", postId);
+            Log.ForContext("EventCode", "comment.god_recheck_failed").ForContext("SourceCategory", "business")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("God comment recheck failed");
         }
 
         return result;
@@ -1018,8 +1024,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         var result = CommentHighlightRecheckResultVo.NoChange(postId, parentCommentId, 2);
         try
         {
-            Log.Information("[CommentService] 触发沙发检查：ParentId={ParentId}, PostId={PostId}", parentCommentId, postId);
-
             // 仅在子评论数量超过配置的最小值时生效（避免回复太少时过早产生"沙发"）
             var childCommentCount = await _commentRepository.QueryCountAsync(
                 c => c.ParentId == parentCommentId && !c.IsDeleted && c.IsEnabled);
@@ -1053,12 +1057,8 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
 
             if (!topChildren.Any())
             {
-                Log.Information("[CommentService] 未找到子评论：ParentId={ParentId}", parentCommentId);
                 return result;
             }
-
-            Log.Information("[CommentService] 找到 {Count} 个子评论，最高点赞数={TopLikes}",
-                topChildren.Count, topChildren.First().LikeCount);
 
             // 🔍 查询所有当前沙发记录(可能有多条并列)
             var existingHighlights = await _highlightRepository.QueryAsync(
@@ -1089,16 +1089,12 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 existingHighlights,
                 cacheKey: $"sofas:parent:{parentCommentId}",
                 createBy: "CommentService.RealTime");
-
-            if (result.VoChanged)
-            {
-                Log.Information("[CommentService] 实时更新沙发成功：ParentId={ParentId}, Count={Count}",
-                    parentCommentId, result.VoCurrentCommentIds.Count);
-            }
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[CommentService] 检查沙发失败：ParentCommentId={ParentId}", parentCommentId);
+            Log.ForContext("EventCode", "comment.sofa_recheck_failed").ForContext("SourceCategory", "business")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Sofa comment recheck failed");
         }
 
         return result;
@@ -1363,9 +1359,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                      h.LikeCount > 0 &&
                      h.IsCurrent);
 
-            Log.Information("[CommentService] 填充沙发标识：PostId={PostId}, 父评论数={RootCount}, 查询到沙发数={SofaCount}",
-                postId, parentCommentIds.Count, sofas.Count);
-
             var sofaMap = sofas.ToDictionary(h => h.CommentId, h => h.Rank);
 
             // 3. 递归填充标识
@@ -1373,7 +1366,9 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (Exception ex)
         {
-            Log.Error(ex, "[CommentService] 填充神评/沙发标识失败：PostId={PostId}", postId);
+            Log.ForContext("EventCode", "comment.highlight_fill_failed").ForContext("SourceCategory", "business")
+                .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
+                .Error("Comment highlight status fill failed");
         }
     }
 
@@ -1392,7 +1387,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             {
                 comment.VoIsGodComment = true;
                 comment.VoHighlightRank = godRank;
-                Log.Debug("[CommentService] 填充神评标识：CommentId={CommentId}, Rank={Rank}", comment.VoId, godRank);
             }
 
             // 填充沙发标识（仅子评论）
@@ -1400,8 +1394,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             {
                 comment.VoIsSofa = true;
                 comment.VoHighlightRank = sofaRank;
-                Log.Debug("[CommentService] 填充沙发标识：CommentId={CommentId}, ParentId={ParentId}, Rank={Rank}",
-                    comment.VoId, comment.VoParentId, sofaRank);
             }
 
             // 递归处理子评论

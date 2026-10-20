@@ -47,6 +47,7 @@ const backendTest = createDotNetCommand([
 ], { cwd: repoRoot });
 
 const steps = [
+  { title: '构建当前平台 Rust 图片产物', command: process.execPath, args: ['Scripts/build-native-images.mjs', '--debug'] },
   {
     title: '运行时散点 Claim 读取扫描',
     command: npmCommand,

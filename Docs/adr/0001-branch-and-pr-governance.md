@@ -1,6 +1,6 @@
 # ADR 0001: Branch And PR Governance
 
-更新时间：2026-08-29
+更新时间：2026-10-21
 
 ## 状态
 
@@ -84,7 +84,7 @@ Accepted
 1. 确保远端存在 `dev` 分支，并作为当前默认开发集成面
 2. 需要开发 PR 时，目标分支保持为 `dev`
 3. 对 `master` 启用 branch protection / ruleset
-4. 对 `master` 要求通过 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六个状态检查
+4. 对 `master` 要求单一聚合检查 `Candidate Quality` 通过；其依赖包括 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard`、`Native Images` 七个组件
 5. 对 `master` 开启 “Require a pull request before merging”
 6. 仓库 Merge options 中启用 `Merge commits` 与 `Rebase merging`，关闭 `Squash merging`
 7. 管理员仅通过 Pull Request 方式绕过规则，不开放直接 push
@@ -102,7 +102,8 @@ Accepted
   - `.github/rulesets/README.md`
 - GitHub Actions PR 检查工作流
   - `.github/workflows/repo-quality.yml`
-  - 当前包含独立可见的 `Version Contract`，以及 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六个 required job
+  - 当前以 `Candidate Quality` 为单一 required check，聚合上述七个组件；版本与门禁契约由仓库卫生检查覆盖
+  - `Native Images` 覆盖五宿主平台、Linux 双架构镜像自检与漏洞策略，以及独立 Rust / vendored C AddressSanitizer 检查
   - `Dependency Security` 固定联网审计 npm / NuGet High 与 Critical；`Backend Guard`、`Identity Guard` 按变更影响面决定是否执行专题验证，但 job 本身保持 required check
   - `Identity Guard` 会先按 impact 判定决定是否执行 `validate:identity`，但 job 本身保持独立可见并作为 required check
   - 当前在 `pull_request -> master/dev` 上触发，其中 `master` ruleset 使用的 required check 名称按 job 名配置

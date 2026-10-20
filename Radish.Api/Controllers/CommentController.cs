@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
 using Radish.Api.Services;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -151,12 +153,18 @@ public class CommentController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            if (ex is not CommentContentValidationException)
+            {
+                Log.ForContext("EventCode", "comment.create_failed").ForContext("SourceCategory", "business")
+                    .Error("Comment creation failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
 
         if (writeResult.Created)
@@ -218,12 +226,18 @@ public class CommentController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            if (ex is not CommentOperationRejectedException)
+            {
+                Log.ForContext("EventCode", "comment.like_failed").ForContext("SourceCategory", "business")
+                    .Error("Comment like failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
     }
 
@@ -578,21 +592,33 @@ public class CommentController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            if (ex is not CommentOperationRejectedException)
+            {
+                Log.ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
+                    .Error("Comment edit failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            if (ex is not CommentContentValidationException)
+            {
+                Log.ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
+                    .Error("Comment edit failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
 
         if (editResult.Mutated)

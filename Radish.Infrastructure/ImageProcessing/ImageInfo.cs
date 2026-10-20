@@ -34,4 +34,10 @@ public class ImageInfo
     /// 色彩深度（位/像素）
     /// </summary>
     public int? BitsPerPixel { get; set; }
+    public int DisplayWidth { get; set; }
+    public int DisplayHeight { get; set; }
+    public int Orientation { get; set; } = 1;
+    public int FrameCount { get; set; } = 1;
+    public long DurationMs { get; set; }
+    public bool HasIccProfile { get; set; }
 }

@@ -4,6 +4,7 @@ using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
+using Radish.Common.LogTool;
 using Radish.Infrastructure.FileStorage;
 using Radish.Infrastructure.ImageProcessing;
 using Radish.IRepository.Base;
@@ -69,7 +70,11 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "读取表情包分组缓存失败，cacheKey={CacheKey}", cacheKey);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "sticker.cache_read_failed", ["SourceCategory"] = "business"
+            });
+            _logger.LogWarning("Sticker group cache read failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
         }
 
         var groups = await _stickerGroupRepository.QueryWithOrderAsync(
@@ -250,14 +255,14 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         var normalizedCode = NormalizeCodeOnly(createDto.Code);
         if (!IsValidCode(normalizedCode))
         {
-            throw new ArgumentException("分组标识符格式不正确，仅允许小写字母、数字和下划线。", nameof(createDto.Code));
+            throw new StickerInputValidationException("分组标识符格式不正确，仅允许小写字母、数字和下划线。", nameof(createDto.Code));
         }
 
         var duplicated = await _stickerGroupRepository.QueryExistsAsync(
             g => g.TenantId == normalizedTenantId && g.Code == normalizedCode);
         if (duplicated)
         {
-            throw new InvalidOperationException("分组标识符已存在");
+            throw new StickerRequestRejectedException("分组标识符已存在");
         }
 
         var creator = NormalizeOperatorName(operatorName);
@@ -415,20 +420,20 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         var group = await _stickerGroupRepository.QueryByIdAsync(createDto.GroupId);
         if (group == null || group.IsDeleted)
         {
-            throw new InvalidOperationException("分组不存在或已删除");
+            throw new StickerRequestRejectedException("分组不存在或已删除");
         }
 
         var normalizedCode = NormalizeCodeOnly(createDto.Code);
         if (!IsValidCode(normalizedCode))
         {
-            throw new ArgumentException("表情标识符格式不正确，仅允许小写字母、数字和下划线。", nameof(createDto.Code));
+            throw new StickerInputValidationException("表情标识符格式不正确，仅允许小写字母、数字和下划线。", nameof(createDto.Code));
         }
 
         var duplicated = await _stickerRepository.QueryExistsAsync(
             s => s.GroupId == createDto.GroupId && s.Code == normalizedCode);
         if (duplicated)
         {
-            throw new InvalidOperationException("该分组内表情标识符已存在");
+            throw new StickerRequestRejectedException("该分组内表情标识符已存在");
         }
 
         var isAnimated = await ResolveStickerAttachmentAsync(
@@ -615,23 +620,23 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         if (request.GroupId <= 0)
         {
-            throw new ArgumentException("分组ID无效", nameof(request.GroupId));
+            throw new StickerInputValidationException("分组ID无效", nameof(request.GroupId));
         }
 
         if (request.Stickers == null || request.Stickers.Count == 0)
         {
-            throw new ArgumentException("表情列表不能为空", nameof(request.Stickers));
+            throw new StickerInputValidationException("表情列表不能为空", nameof(request.Stickers));
         }
 
         if (request.Stickers.Count > 50)
         {
-            throw new ArgumentException("单次批量新增表情数不能超过50个", nameof(request.Stickers));
+            throw new StickerInputValidationException("单次批量新增表情数不能超过50个", nameof(request.Stickers));
         }
 
         var group = await _stickerGroupRepository.QueryByIdAsync(request.GroupId);
         if (group == null || group.IsDeleted)
         {
-            throw new InvalidOperationException("分组不存在或已删除");
+            throw new StickerRequestRejectedException("分组不存在或已删除");
         }
 
         var result = new StickerBatchAddResultVo
@@ -761,7 +766,6 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "批量新增表情构建失败，GroupId={GroupId}, RowIndex={RowIndex}", request.GroupId, row.rowIndex);
                 result.VoFailedItems.Add(new StickerBatchFailedItemVo
                 {
                     VoRowIndex = row.rowIndex,
@@ -769,6 +773,13 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
                     VoCode = row.code,
                     VoMessage = ex.Message
                 });
+                using (_logger.BeginScope(new Dictionary<string, object>
+                {
+                    ["EventCode"] = "sticker.batch_item_failed", ["SourceCategory"] = "business"
+                }))
+                {
+                    _logger.LogError("Sticker batch item construction failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
+                }
             }
         }
 
@@ -795,7 +806,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         if (request.GroupId <= 0)
         {
-            throw new ArgumentException("分组ID无效", nameof(request.GroupId));
+            throw new StickerInputValidationException("分组ID无效", nameof(request.GroupId));
         }
 
         if (request.Items == null || request.Items.Count == 0)
@@ -805,7 +816,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         if (request.Items.Any(item => item.Id <= 0))
         {
-            throw new ArgumentException("排序列表包含无效的表情ID", nameof(request.Items));
+            throw new StickerInputValidationException("排序列表包含无效的表情ID", nameof(request.Items));
         }
 
         var duplicateIds = request.Items
@@ -815,20 +826,20 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             .ToList();
         if (duplicateIds.Count > 0)
         {
-            throw new ArgumentException("排序列表包含重复的表情ID", nameof(request.Items));
+            throw new StickerInputValidationException("排序列表包含重复的表情ID", nameof(request.Items));
         }
 
         var group = await _stickerGroupRepository.QueryByIdAsync(request.GroupId);
         if (group == null || group.IsDeleted)
         {
-            throw new InvalidOperationException("分组不存在或已删除");
+            throw new StickerRequestRejectedException("分组不存在或已删除");
         }
 
         var idList = request.Items.Select(item => item.Id).ToList();
         var stickers = await _stickerRepository.QueryByIdsAsync(idList);
         if (stickers.Count != idList.Count || stickers.Any(sticker => sticker.GroupId != request.GroupId))
         {
-            throw new InvalidOperationException("排序快照已失效，请刷新后重试");
+            throw new StickerRequestRejectedException("排序快照已失效，请刷新后重试");
         }
 
         var sortMap = request.Items.ToDictionary(item => item.Id, item => item.Sort);
@@ -869,13 +880,13 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         if (!attachmentId.HasValue || attachmentId.Value <= 0)
         {
-            throw new ArgumentException("附件 ID 不能为空", nameof(attachmentId));
+            throw new StickerInputValidationException("附件 ID 不能为空", nameof(attachmentId));
         }
 
         var attachment = await _attachmentRepository.QueryByIdAsync(attachmentId.Value);
         if (attachment == null || attachment.IsDeleted)
         {
-            throw new InvalidOperationException("关联附件不存在或已删除");
+            throw new StickerRequestRejectedException("关联附件不存在或已删除");
         }
 
         if (!resolvedAnimated)
@@ -901,6 +912,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             return;
         }
 
+        string? failureKind = null;
         try
         {
             if (!await _fileStorage.ExistsAsync(attachment.StoragePath))
@@ -914,7 +926,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
                 return;
             }
 
-            var thumbnailRelativePath = $"stickers/thumbnails/{groupCode}/{stickerCode}.jpg";
+            var thumbnailRelativePath = $"stickers/thumbnails/{groupCode}/{stickerCode}.png";
             var thumbnailFullPath = _fileStorage.GetFullPath(thumbnailRelativePath);
             var directory = Path.GetDirectoryName(thumbnailFullPath);
             if (!string.IsNullOrWhiteSpace(directory))
@@ -925,18 +937,28 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             var result = await _imageProcessor.GenerateThumbnailAsync(sourceStream, thumbnailFullPath, 96, 96, 85);
             if (!result.Success)
             {
-                _logger.LogWarning("生成表情缩略图失败：AttachmentId={AttachmentId}, Error={Error}", attachment.Id, result.ErrorMessage);
-                return;
+                failureKind = "other";
             }
-
-            attachment.ThumbnailPath = thumbnailRelativePath;
-            attachment.ModifyTime = DateTime.Now;
-            attachment.ModifyBy = "StickerService";
-            await _attachmentRepository.UpdateAsync(attachment);
+            else
+            {
+                attachment.ThumbnailPath = thumbnailRelativePath;
+                attachment.ModifyTime = DateTime.Now;
+                attachment.ModifyBy = "StickerService";
+                await _attachmentRepository.UpdateAsync(attachment);
+            }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "生成表情缩略图异常，AttachmentId={AttachmentId}", attachment.Id);
+            failureKind = RuntimeFailureSummary.Classify(ex);
+        }
+
+        if (failureKind != null)
+        {
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "sticker.thumbnail_failed", ["SourceCategory"] = "business"
+            });
+            _logger.LogWarning("Sticker thumbnail generation degraded ({failureKind})", failureKind);
         }
     }
 
@@ -960,7 +982,11 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "失效表情包缓存失败，cacheKey={CacheKey}", cacheKey);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "sticker.cache_invalidation_failed", ["SourceCategory"] = "business"
+            });
+            _logger.LogWarning("Sticker group cache invalidation failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
         }
     }
 
@@ -972,7 +998,11 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "写入表情包缓存失败，cacheKey={CacheKey}", cacheKey);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "sticker.cache_write_failed", ["SourceCategory"] = "business"
+            });
+            _logger.LogWarning("Sticker group cache write failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
         }
     }
 

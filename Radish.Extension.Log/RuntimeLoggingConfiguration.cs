@@ -23,7 +23,7 @@ public static class RuntimeLoggingConfiguration
         var writer = new RuntimeLogOutput(policy, source, output ?? Console.Out, emergency ?? Console.Error, mode);
         logger.MinimumLevel.Verbose().Enrich.FromLogContext()
             .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
-            .WriteTo.Sink(new RuntimeSerilogSink(writer));
+            .WriteTo.Sink(new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(new DataProtectionLogSink(new HostStartupLogSink(new HostProgramLogSink(new RuntimeSerilogSink(writer)))))))))))));
         return writer;
     }
 }

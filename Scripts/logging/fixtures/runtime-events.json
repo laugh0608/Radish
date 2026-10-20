@@ -251,5 +251,413 @@
       "redacted": true,
       "normalizationStatus": "unclassified"
     }
+  },
+  {
+    "name": "auth-account-failure-safe-stage",
+    "input": {
+      "level": "Error",
+      "eventCode": "auth.account.registration_failed",
+      "sourceCategory": "http",
+      "properties": {
+        "authStage": "reward",
+        "failureKind": "cancelled",
+        "email": "PRIVATE_AUTH_SENTINEL",
+        "returnUrl": "PRIVATE_AUTH_SENTINEL"
+      }
+    },
+    "expected": {
+      "eventCode": "auth.account.registration_failed",
+      "level": "Error",
+      "redacted": true,
+      "properties": {
+        "authStage": "reward",
+        "failureKind": "cancelled"
+      }
+    }
+  },
+  {
+    "name": "auth-account-rejection-development-diagnostic",
+    "options": {
+      "mode": "Development",
+      "diagnostics": true
+    },
+    "input": {
+      "level": "Debug",
+      "eventCode": "auth.account.login_rejected",
+      "sourceCategory": "http",
+      "properties": {
+        "authReason": "invalid-credentials"
+      }
+    },
+    "expected": {
+      "eventCode": "auth.account.login_rejected",
+      "level": "Info",
+      "diagnostic": true,
+      "properties": {
+        "authReason": "invalid-credentials"
+      }
+    }
+  },
+  {
+    "name": "auth-account-rejection-production-quiet",
+    "input": {
+      "level": "Debug",
+      "eventCode": "auth.account.login_rejected",
+      "properties": {
+        "authReason": "invalid-return-url"
+      }
+    },
+    "expected": null
+  },
+  {
+    "name": "auth-idle-rejection-production-visible",
+    "input": {
+      "level": "Info",
+      "eventCode": "auth.idle_session.rejected",
+      "sourceCategory": "http"
+    },
+    "expected": {
+      "eventCode": "auth.idle_session.rejected",
+      "level": "Info",
+      "diagnostic": false,
+      "redacted": false
+    }
+  },
+  {
+    "name": "auth-account-enum-values-closed",
+    "input": {
+      "level": "Warning",
+      "eventCode": "auth.account.client_resolution_failed",
+      "properties": {
+        "authReason": "PRIVATE_AUTH_SENTINEL",
+        "authStage": "PRIVATE_AUTH_SENTINEL",
+        "authClientOutcome": "PRIVATE_AUTH_SENTINEL",
+        "failureKind": "io"
+      }
+    },
+    "expected": {
+      "redacted": true,
+      "properties": {
+        "failureKind": "io"
+      }
+    }
+  },
+  {
+    "name": "self-diagnostic-is-warning-not-output-failure",
+    "input": {
+      "eventCode": "pipeline.self_diagnostic",
+      "level": "Warning",
+      "sourceCategory": "pipeline",
+      "properties": {
+        "count": 3,
+        "raw": "SELFLOG_PRIVATE_SENTINEL"
+      }
+    },
+    "expected": {
+      "eventCode": "pipeline.self_diagnostic",
+      "level": "Warning",
+      "diagnostic": false,
+      "redacted": true,
+      "properties": {
+        "count": 3
+      }
+    }
+  },
+  {
+    "name": "data-protection-error-removes-xml",
+    "input": {
+      "eventCode": "data_protection.key_manager.key_processing_failed",
+      "level": "Error",
+      "sourceCategory": "infrastructure",
+      "properties": {
+        "failureKind": "other",
+        "xml": "DP_PRIVATE_SENTINEL",
+        "keyId": "DP_PRIVATE_SENTINEL",
+        "purposes": "DP_PRIVATE_SENTINEL"
+      }
+    },
+    "expected": {
+      "eventCode": "data_protection.key_manager.key_processing_failed",
+      "level": "Error",
+      "diagnostic": false,
+      "redacted": true,
+      "properties": {
+        "failureKind": "other"
+      }
+    }
+  },
+  {
+    "name": "data-protection-attempt-remains-diagnostic",
+    "input": {
+      "eventCode": "data_protection.key_manager.key_creation_started",
+      "level": "Information",
+      "diagnostic": true,
+      "sourceCategory": "infrastructure"
+    },
+    "expected": {
+      "eventCode": "data_protection.key_manager.key_creation_started",
+      "level": "Info",
+      "diagnostic": true,
+      "redacted": false
+    },
+    "options": {
+      "mode": "Development",
+      "diagnostics": true
+    }
+  },
+  {
+    "name": "data-protection-unknown-warning-retained",
+    "input": {
+      "eventCode": "data_protection.type_activation.unknown",
+      "level": "Warning",
+      "sourceCategory": "infrastructure"
+    },
+    "expected": {
+      "eventCode": "data_protection.type_activation.unknown",
+      "level": "Warning",
+      "diagnostic": false,
+      "redacted": false
+    }
+  },
+  {
+    "name": "data-protection-attempt-production-quiet",
+    "input": {
+      "eventCode": "data_protection.key_manager.key_creation_started",
+      "level": "Information",
+      "diagnostic": true,
+      "sourceCategory": "infrastructure"
+    },
+    "expected": null
+  },
+  {
+    "name": "host-startup-production-summary-keeps-safe-state",
+    "input": {
+      "eventCode": "runtime.startup_summary",
+      "level": "Information",
+      "sourceCategory": "lifecycle",
+      "properties": {
+        "startupHost": "api",
+        "startupEnvironment": "production",
+        "startupAuthentication": "local-certificate",
+        "listenEndpointCount": 1,
+        "corsOriginCount": 2
+      }
+    },
+    "expected": {
+      "eventCode": "runtime.startup_summary",
+      "level": "Info",
+      "diagnostic": false,
+      "redacted": false,
+      "properties": {
+        "startupHost": "api",
+        "startupEnvironment": "production",
+        "startupAuthentication": "local-certificate",
+        "listenEndpointCount": 1,
+        "corsOriginCount": 2
+      }
+    }
+  },
+  {
+    "name": "host-startup-rejects-raw-config-and-invalid-counts",
+    "input": {
+      "eventCode": "runtime.startup_summary",
+      "level": "Information",
+      "sourceCategory": "lifecycle",
+      "properties": {
+        "startupHost": "SENTINEL_SECRET",
+        "startupEnvironment": "SENTINEL_SECRET",
+        "startupAuthentication": "SENTINEL_SECRET",
+        "listenEndpointCount": -1,
+        "corsOriginCount": 1.5,
+        "healthTargetCount": 2147483648,
+        "issuer": "SENTINEL_SECRET",
+        "certificate": "SENTINEL_SECRET",
+        "startupHttpsRedirection": "enabled",
+        "startupDelegation": "removed"
+      }
+    },
+    "expected": {
+      "eventCode": "runtime.startup_summary",
+      "redacted": true,
+      "properties": {
+        "startupHttpsRedirection": "enabled",
+        "startupDelegation": "removed"
+      }
+    }
+  },
+  {
+    "name": "host-startup-unknown-info-production-quiet",
+    "input": {
+      "eventCode": "runtime.startup_unknown",
+      "level": "Information",
+      "diagnostic": true,
+      "sourceCategory": "lifecycle"
+    },
+    "expected": null
+  },
+  {
+    "name": "host-startup-unknown-error-preserved",
+    "input": {
+      "eventCode": "runtime.startup_unknown",
+      "level": "Error",
+      "sourceCategory": "lifecycle"
+    },
+    "expected": {
+      "eventCode": "runtime.startup_unknown",
+      "level": "Error",
+      "diagnostic": false,
+      "redacted": false
+    }
+  },
+  {
+    "name": "assembly-load-failure-production-retained",
+    "input": {
+      "eventCode": "runtime.assembly_load_failed",
+      "level": "Error",
+      "sourceCategory": "infrastructure",
+      "properties": {
+        "failureKind": "io",
+        "assemblyName": "SENTINEL_SECRET",
+        "path": "SENTINEL_SECRET",
+        "message": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "runtime.assembly_load_failed",
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "failureKind": "io"
+      }
+    }
+  },
+  {
+    "name": "assembly-types-failure-does-not-expose-loader-details",
+    "input": {
+      "eventCode": "runtime.assembly_types_failed",
+      "level": "Error",
+      "sourceCategory": "infrastructure",
+      "properties": {
+        "failureKind": "other",
+        "loaderExceptions": [
+          "SENTINEL_SECRET"
+        ],
+        "types": [
+          "SENTINEL_SECRET"
+        ]
+      }
+    },
+    "expected": {
+      "eventCode": "runtime.assembly_types_failed",
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "failureKind": "other"
+      }
+    }
+  },
+  {
+    "name": "job.recurring_registration_returned-safe-fields",
+    "input": {
+      "eventCode": "job.recurring_registration_returned",
+      "level": "Info",
+      "sourceCategory": "job",
+      "properties": {
+        "jobKind": "outbox-dispatch",
+        "schedule": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "job.recurring_registration_returned",
+      "level": "Info",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "jobKind": "outbox-dispatch"
+      }
+    }
+  },
+  {
+    "name": "document.builtin_sync_skipped-safe-fields",
+    "input": {
+      "eventCode": "document.builtin_sync_skipped",
+      "level": "Info",
+      "sourceCategory": "application",
+      "properties": {
+        "builtInSyncSkipReason": "directory-missing",
+        "path": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "document.builtin_sync_skipped",
+      "level": "Info",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "builtInSyncSkipReason": "directory-missing"
+      }
+    }
+  },
+  {
+    "name": "document.builtin_sync_completed-safe-fields",
+    "input": {
+      "eventCode": "document.builtin_sync_completed",
+      "level": "Info",
+      "sourceCategory": "application",
+      "properties": {
+        "markdownFileCount": 3,
+        "descriptorCount": 5,
+        "generatedNodeCount": 2,
+        "syncedCount": 5,
+        "restoredCount": 1,
+        "parentAdjustedCount": 3,
+        "softDeletedCount": 2,
+        "title": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "document.builtin_sync_completed",
+      "level": "Info",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "markdownFileCount": 3,
+        "descriptorCount": 5,
+        "generatedNodeCount": 2,
+        "syncedCount": 5,
+        "restoredCount": 1,
+        "parentAdjustedCount": 3,
+        "softDeletedCount": 2
+      }
+    }
+  },
+  {
+    "name": "document.builtin_sync_failed-safe-fields",
+    "input": {
+      "eventCode": "document.builtin_sync_failed",
+      "level": "Error",
+      "sourceCategory": "application",
+      "properties": {
+        "failureKind": "io",
+        "error": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "document.builtin_sync_failed",
+      "level": "Error",
+      "diagnostic": false,
+      "isFatal": false,
+      "redacted": true,
+      "properties": {
+        "failureKind": "io"
+      }
+    }
   }
 ]

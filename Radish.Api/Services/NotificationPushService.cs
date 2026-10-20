@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Radish.Api.Hubs;
+using Radish.Common.LogTool;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model.ViewModels;
@@ -38,11 +39,11 @@ public sealed class NotificationPushService : INotificationPushService
         }
         catch (Exception exception)
         {
-            _logger.LogWarning(
-                exception,
-                "通知收件箱变化推送失败，UserId={UserId}, Revision={Revision}",
-                userId,
-                change.VoRevision);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "notification.push_failed", ["SourceCategory"] = "business"
+            });
+            _logger.LogWarning("Notification realtime push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
         }
     }
 

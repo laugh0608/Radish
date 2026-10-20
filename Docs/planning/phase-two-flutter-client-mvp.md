@@ -116,7 +116,7 @@ Flutter 客户端第一批固定遵循以下约束：
 - 最小 forum notification 回流当前已完成真机人工联调：`Forum notification` 入口回到 forum detail / 评论上下文的逻辑确认正常，系统通知栏推送与完整通知中心继续不纳入当前批次
 - Android MVP 本地 release APK 发布候选当前已完成首轮收口：Android 包身份为 `com.radish.client`，应用显示名为 `Radish`，release signing 读取逻辑与密钥忽略边界已落地，release 包已补齐 `INTERNET` 权限并完成真机安装联调
 - 当前 release APK 真机复核已确认登录、基础读取与样式显示正常；本轮自动化验证覆盖 `flutter analyze`、`flutter test`、Android Studio JBR 下的 `.\gradlew.bat :app:testDebugUnitTest` 与 `flutter build apk --release`
-- Flutter 环境切换能力当前已完成首轮收口：客户端启动配置会读取 `RADISH_ENVIRONMENT` 与 `RADISH_GATEWAY_BASE_URL` 这组 `--dart-define` 构建参数，并继续保持 API / Auth / Gateway 同源；本机 Android + `localhost` Gateway 会保留本地开发证书放行边界，测试 / 正式 Gateway 默认不放宽证书校验
+- Flutter 构建环境选择当前已完成首轮收口：客户端启动配置会读取 `RADISH_ENVIRONMENT` 与 `RADISH_GATEWAY_BASE_URL` 这组 `--dart-define` 构建参数，并继续保持 API / Auth / Gateway 同源；本机 Android + `localhost` Gateway 会保留本地开发证书放行边界，测试 / 正式 Gateway 默认不放宽证书校验。这是编译期配置，不代表用户可在同一官方安装包运行时换服务器；2026-10-12 已确认的后续目标见[客户端连接规划](/frontend/client-server-connection-plan)
 - Android RC 签名配置诊断与分发前置清单当前已完成首轮收口：Gradle 当前提供 `:app:checkReleaseSigningConfig` 检查正式签名材料，`key.properties` 不存在时本地 release 构建仍回落 debug signing；若 `key.properties` 存在但缺字段、仍是示例值或找不到 keystore，会快速失败并提示修正；清单见 [Flutter Android RC 分发前置清单](/records/flutter-android-rc-distribution)
 - Flutter 第三批中文文案基线当前已完成：主 tab、壳层登录态、登录提示、forum / docs / profile / discover 首批真实页面的标题、摘要、空态与错误态已统一到中文主文案；当前不引入完整 i18n 框架
 - Flutter 第三批个人复访入口当前已产品化：`profile` 承载最近 forum 阅读与公开主页复访入口，继续复用既有 `ForumDetailHandoffTarget` 与 follow-up 状态，不把开发态来源说明当作正式用户文案

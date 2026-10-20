@@ -8,14 +8,10 @@ namespace Radish.Api.Hubs;
 public class CommentHub : Hub
 {
     private readonly IClaimsPrincipalNormalizer _claimsPrincipalNormalizer;
-    private readonly ILogger<CommentHub> _logger;
 
-    public CommentHub(
-        IClaimsPrincipalNormalizer claimsPrincipalNormalizer,
-        ILogger<CommentHub> logger)
+    public CommentHub(IClaimsPrincipalNormalizer claimsPrincipalNormalizer)
     {
         _claimsPrincipalNormalizer = claimsPrincipalNormalizer;
-        _logger = logger;
     }
 
     public static string BuildPostGroup(long postId)
@@ -31,9 +27,6 @@ public class CommentHub : Hub
         }
 
         await Groups.AddToGroupAsync(Context.ConnectionId, BuildPostGroup(postId));
-        _logger.LogDebug("[CommentHub] 加入帖子评论组，PostId: {PostId}, ConnectionId: {ConnectionId}",
-            postId,
-            Context.ConnectionId);
     }
 
     public async Task LeavePost(long postId)
@@ -44,9 +37,6 @@ public class CommentHub : Hub
         }
 
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, BuildPostGroup(postId));
-        _logger.LogDebug("[CommentHub] 离开帖子评论组，PostId: {PostId}, ConnectionId: {ConnectionId}",
-            postId,
-            Context.ConnectionId);
     }
 
     public async Task StartTyping(long postId, long? commentId = null)

@@ -2,9 +2,9 @@
 
 > 状态：当前运行说明
 >
-> 最后更新：2026-09-19
+> 最后更新：2026-10-15
 
-Hangfire 是 `Radish.Api` 的后台任务调度与执行设施。任务定义与注册以 `Radish.Api/Program.cs` 为准，Hangfire 自有存储只保存调度和执行状态，不进入业务库 `RadishSchemaVersion` ledger。
+Hangfire 是 `Radish.Api` 的后台任务调度与执行设施。宿主接线位于 `Radish.Api/Program.cs`，周期任务注册由其调用 `Radish.Api/Services/ApiRecurringJobRegistration.cs` 完成；Hangfire 自有存储只保存调度和执行状态，不进入业务库 `RadishSchemaVersion` ledger。
 
 ## 1. 入口与权限
 
@@ -46,7 +46,7 @@ Dashboard 只用于查看、诊断和按权限执行 Hangfire 自带操作，不
 | `shop-mark-expired-benefits` | `0 0 * * *` | 应用默认时区 | 标记过期权益 |
 | `shop-daily-stats` | `0 1 * * *` | 应用默认时区 | 生成商城日统计 |
 
-除前两项固定注册外，多数任务受对应 `Enable` 配置控制。实际计划应在启动日志和 Dashboard Recurring Jobs 页复核，不能只依赖本文默认值。
+Outbox、Chat Reaction、分片上传会话与文件访问令牌清理固定注册，其余受对应 `Enable` 配置控制；商城日统计默认关闭，默认共注册 15 项，全部启用时为 16 项。实际计划应在配置和 Dashboard Recurring Jobs 页复核；启动日志只记录受控 `jobKind`，不输出原始 Job ID、Cron、时区或任务参数。
 
 ## 3. 配置边界
 
@@ -108,14 +108,14 @@ Hangfire 基础配置位于 `Radish.Api/appsettings.json` 的 `Hangfire` 节点�
 - Cron 只负责触发。超时、过期、锁定和清理 cutoff 使用注入的 `TimeProvider` UTC 时刻；业务自然日使用 `BusinessCalendar`。
 - 大数据量任务按稳定排序和有限批次处理，不一次性加载整表。
 - 失败必须抛回 Hangfire 形成 Failed / Retry 状态，不能吞异常后伪装成功。
-- 日志记录 Job 名称、处理数量和安全参数，不记录正文、凭据、连接串或用户敏感信息。
+- 日志使用已登记事件、受控 `jobKind / failureKind` 与处理数量，不输出原始参数、正文、凭据或身份；执行消费与启动注册的边界见[事件契约第 10、72 节](../features/unified-logging-contract.md)。
 - 新增 recurring job 时同步注册、默认配置、权限 / 运行影响、定向测试和本文任务表。
 
 ## 6. 排障顺序
 
 任务未出现或未执行时依次检查：
 
-1. `Radish.Api` 是否成功启动，启动日志是否打印对应“已注册”消息。
+1. `Radish.Api` 是否成功启动，是否存在对应 `jobKind` 的 `job.recurring_registration_returned`；该事件只表示 `AddOrUpdate` 已返回，不代表任务已执行或业务完成。
 2. 对应 `Enable / Schedule / BatchSize / Retention*` 是否来自预期配置层。
 3. Dashboard 的 Recurring Jobs、Retries 和 Failed Jobs 是否记录异常。
 4. Hangfire 存储连接是否可用；SQLite 是否误启多个 Server / worker，PostgreSQL 连接与 schema 是否正确。

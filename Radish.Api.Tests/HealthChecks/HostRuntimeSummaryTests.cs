@@ -18,26 +18,19 @@ namespace Radish.Api.Tests.HealthChecks;
 
 public sealed class HostRuntimeSummaryTests
 {
-    [Fact(DisplayName = "Api 启动摘要应在本地 Authority 模式下回退到默认说明")]
-    public void ApiJwtRuntimeProfile_ShouldDescribeAuthorityModeSummary()
+    [Fact(DisplayName = "Api 本地模式应保留健康检查使用的 Issuer 与验签选择")]
+    public void ApiJwtRuntimeProfile_ShouldKeepAuthorityModeResolution()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection()
             .Build();
 
-        var summary = ApiJwtRuntimeProfile.BuildStartupSummary(
-            configuration,
-            basePath: AppContext.BaseDirectory,
-            contentRootPath: AppContext.BaseDirectory);
-
-        summary.ValidationMode.ShouldBe("authority");
-        summary.ValidationTarget.ShouldBe(ApiJwtRuntimeProfile.LocalAuthority);
-        summary.IssuerSummary.ShouldBe($"未解析，沿用 {ApiJwtRuntimeProfile.LocalAuthority}");
-        summary.SigningCertificateSummary.ShouldBe("未启用（Authority 模式）");
+        ApiJwtRuntimeProfile.IsDeploymentJwtValidationEnabled(configuration).ShouldBeFalse();
+        ApiJwtRuntimeProfile.ResolveJwtIssuer(configuration).ShouldBeNull();
     }
 
-    [Fact(DisplayName = "Api 启动摘要应在部署态指向本地证书验签")]
-    public void ApiJwtRuntimeProfile_ShouldDescribeLocalCertificateModeSummary()
+    [Fact(DisplayName = "Api 证书路径解析应保留已有文件优先规则")]
+    public void ApiJwtRuntimeProfile_ShouldKeepCertificatePathResolution()
     {
         var tempRoot = Path.Combine(Path.GetTempPath(), $"radish-api-runtime-{Guid.NewGuid():N}");
         var basePath = Path.Combine(tempRoot, "base");
@@ -59,12 +52,12 @@ public sealed class HostRuntimeSummaryTests
                 })
                 .Build();
 
-            var summary = ApiJwtRuntimeProfile.BuildStartupSummary(configuration, basePath, contentRootPath);
-
-            summary.ValidationMode.ShouldBe("local-certificate");
-            summary.ValidationTarget.ShouldBe("https://radish.example.com");
-            summary.IssuerSummary.ShouldBe("https://radish.example.com");
-            summary.SigningCertificateSummary.ShouldBe(certificatePath);
+            ApiJwtRuntimeProfile.IsDeploymentJwtValidationEnabled(configuration).ShouldBeTrue();
+            ApiJwtRuntimeProfile.ResolveJwtIssuer(configuration).ShouldBe("https://radish.example.com");
+            ApiJwtRuntimeProfile.ResolveSigningCertificatePath(configuration, basePath, contentRootPath).ShouldBe(certificatePath);
+            File.Delete(certificatePath);
+            ApiJwtRuntimeProfile.ResolveSigningCertificatePath(configuration, basePath, contentRootPath)
+                .ShouldBe(Path.Combine(contentRootPath, "certs", "api-signing.pfx"));
         }
         finally
         {
@@ -75,8 +68,8 @@ public sealed class HostRuntimeSummaryTests
         }
     }
 
-    [Fact(DisplayName = "Auth 启动摘要应在开发密钥模式下输出固定说明")]
-    public void AuthOidcRuntimeProfile_ShouldDescribeDevelopmentKeysSummary()
+    [Fact(DisplayName = "Auth 健康检查应保留开发密钥与 Issuer 解析")]
+    public void AuthOidcRuntimeProfile_ShouldKeepHealthCheckResolution()
     {
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
@@ -86,12 +79,9 @@ public sealed class HostRuntimeSummaryTests
             })
             .Build();
 
-        var summary = AuthOidcRuntimeProfile.BuildStartupSummary(configuration, new TestHostEnvironment());
-
-        summary.IssuerSummary.ShouldBe("https://auth.radish.example.com");
-        summary.KeyMode.ShouldBe("development-keys");
-        summary.SigningCertificateSummary.ShouldBe("开发密钥");
-        summary.EncryptionCertificateSummary.ShouldBe("开发密钥");
+        AuthOidcRuntimeProfile.UsesDevelopmentKeys(configuration).ShouldBeTrue();
+        AuthOidcRuntimeProfile.ResolveIssuer(configuration).ShouldBe("https://auth.radish.example.com");
+        AuthOidcRuntimeProfile.ResolveCertificatePath(configuration, new TestHostEnvironment(), "Signing").ShouldBeEmpty();
     }
 
     [Fact(DisplayName = "Gateway 运行目标应把 console 维持为扩展观测且探活 /healthz")]

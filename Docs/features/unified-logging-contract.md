@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-09-28。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-10-15。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -19,7 +19,7 @@
 | `eventId` | 在生成入口创建 UUID；同一个事件对象在不同介质 / 重试间复用；独立发生生成不同 ID |
 | `eventCode` | 策略注册表里的稳定类别；未知值变为 `runtime.unclassified`，不输出原值 |
 | `occurredAtUtc / observedAtUtc` | 生成时的 UTC 毫秒时间；.NET 使用可注入的 `TimeProvider`；不接受载荷伪造时间 |
-| `deploymentId / service / instanceId / release` | 从宿主受信配置构造 `RuntimeLogSource`；请求 / 日志载荷不能覆盖 |
+| `deploymentId / service / instanceId / release` | 从宿主受信配置或已登记的独立引导来源构造 `RuntimeLogSource`；请求 / 日志载荷不能覆盖 |
 | `mode` | 仅 `Development / Production`，与 `test-latest` 镜像标签无关 |
 | `level / diagnostic / isFatal` | 统一三级，诊断是独立标志，Critical / Fatal 保留 `isFatal=true` |
 | `sourceCategory` | 注册表内的来源分类；未知分类回到 application 并标记裁剪 |
@@ -63,7 +63,9 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件 / 支付口令 / 公开内容 / 统计报表子项见第 15–29 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，表情管理消费与降级边界见第 49 节，API 已处理 404 完成边界见第 50 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+
+2026-10-02 日终静态复核补充：第 38、39、41 节中的早期轻回应 / 评论 / 帖子消费点仍在响应构造或失败结果转换之前记录日志，再读取异常 Message。若该 getter 自身抛错，可能已输出原消费事件，又把新异常交给 API；这类“错误处理再次失败”路径尚未包含在这些批次的单次输出结论中，后续需独立核对。第 42–48 节已在各自已列明的转换 / 响应边界补验先构造成功再记录，不应反推全部早期入口已经具备同样保证。
 
 ## 6. L2 候选生成入口
 
@@ -293,3 +295,400 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 唯一直接生产消费者 StatisticsController 保留四个入口的现有包装：所有异常（包括原 4xx / 5xx BusinessException）均包装为 `500 / System.UnexpectedError / error.system.unexpected_error`，保留 InnerException 和各入口固定提示。API 最终边界只记录一次安全 `http.failed`，不新增事件码，不借日志治理调整响应状态。
 - DashboardView 权限、用户软删除筛选、仓储聚合口径、天数 / 条数规范化、DateTime.Today 的本地日历边界、逐日顺序与排他结束时间、等级 0 补足及等级名称回退均保持原样。
 - 旧 / 候选输出覆盖 Development / Production；真实 Service / Controller、mock 仓储与内存 HTTP 管道验证异常归属和结果，不替代真实数据库聚合、权限中间件或浏览器验收。生产开关继续关闭，L2 尚未整体完成；证据见[本批记录](../records/unified-logging-l2-statistics-2026-09-28.md)。
+
+## 30. L2 用户关注通知入队
+
+- `UserFollowService` 的通知准备 / 入队阶段不再输出双方用户身份或原始异常。唯一直接生产消费者 `UserFollowController.Follow` 会消费 `ArgumentException / InvalidOperationException` 并返回原有 400 / 404 业务响应；这两类通知阶段失败由 Service 记录一次 `user_follow.notification_enqueue_failed` Error，仅带受控 failureKind，然后原样重抛。参数、自关注、目标不可用及屏蔽拒绝不新增日志。
+- 其余异常保持传播：API 最终边界对一般异常或 5xx BusinessException 输出一次安全 `http.failed`；4xx BusinessException 保持安静。不新增通用失败包装，不改变 Controller 捕获范围和响应正文；现有响应可能包含被消费异常的 Message，本批只治理运行日志。
+- 关注关系仍先由仓储独立事务提交，再构造通知并写入可靠 Outbox；二者没有共同事务。入队失败不回滚已提交关系，再次关注返回未变更时不补投通知。本批不新增重试、补偿或事务保证，也不改写 Outbox 的异步消费 / 重试策略。
+- 通知类型、接收者、模板参数、目标、身份快照、UTC 时间及通知业务键 / 任务幂等键保持原义；正常成功、重复关注保持安静。Outbox 权威载荷继续保存业务数据，日志安全裁剪不作用于通知载荷。
+- 旧 / 候选日志路径覆盖 Development / Production；真实 Service、Controller、ReliableOutboxService 与 mock 仓储及内存 HTTP 管道验证异常所有权和原行为。既有 SQLite 仓储回归不替代真实宿主、PostgreSQL 或跨事务故障验收。生产开关继续关闭，L2 尚未完成，见[本批记录](../records/unified-logging-l2-user-follow-2026-10-02.md)。
+
+## 31. L2 通知创建与实时推送降级
+
+- `NotificationService.CreateNotificationAsync` 移除“按偏好抑制全部接收者”的逐条 Info 及无剩余用途的 logger 依赖。偏好 / 屏蔽抑制仍返回通知 ID，可靠任务成功结束，不创建空通知、不推送、不输出身份摘要；正常创建和幂等命中同样保持安静。
+- 直接依赖 `NotificationPushService` 的 SignalR 分组访问、revision 事件及兼容角标事件失败仍被消费，只输出一次 `notification.push_failed` Warning，属性仅为受控 failureKind。用户 ID、revision、连接信息和原始异常不进入运行日志；推送仍为 best-effort，不回滚通知、不令 Outbox 进入重试，前一个发送失败时不继续后一个发送。
+- 接收者规范化、偏好与屏蔽规则、强制分类、目标与模板校验、通知身份快照、入箱持久化与 revision、两种推送载荷均保持不变。`ReliableTaskProcessor` 继续以 Outbox 租户和发生时间覆盖载荷值；NotificationRequested 的 ArgumentException / JsonException 仍转为永久失败，其余失败按既有路径交给 Outbox 最终状态写入所有者输出 `outbox.retrying / outbox.dead_letter`。
+- 旧 / 候选 × Development / Production 覆盖正常 / 抑制 / 混合接收者、推送两阶段降级、依赖失败重试与死信。使用真实 Service、Processor、ExecutionJob、PushService、SQLite Outbox，加上 mock 收件箱 / 用户仓储与 SignalR；既有 SQLite 收件箱回归覆盖仓储幂等，不代表真实网络、PostgreSQL 或全通知系统验收。
+- 本批不改权威失败摘要、重试次数、审计、租约或推送可靠性；`NotificationHub` 自有连接生命周期日志的后续治理见第 32 节；SignalR 框架来源仍待治理。生产候选开关继续关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-notification-creation-2026-10-02.md)。
+
+## 32. L2 通知 Hub 连接生命周期
+
+- `NotificationHub.OnDisconnectedAsync` 在传入异常非空且原分组清理成功后，输出 `notification.connection_closed` Warning，仅包含受控 failureKind；不传递异常对象、用户 / 租户 ID、连接 ID 或凭据。正常连接和断开继续安静，不新增连接计数或逐用户摘要。
+- 身份标准化、query access_token 优先于 Authorization 的既有读取规则、用户组名、连接初始化 revision / 兼容角标与调用顺序保持不变。连接时用户 ID 无效仍拒绝；断开时 ID 非正仍跳过移组；身份解析、加 / 移组、摘要或发送失败继续原样传播，不新增 catch、重试或兜底。
+- 该事件描述 Hub 收到的异常断开原因，不替代 SignalR 框架最终处理日志。与本机运行时相同的 ASP.NET Core 10.0.8 源码显示，连接初始化、消息处理及断开回调失败分别由框架记录；消息处理失败还可能传入 Hub 回调。因此不宣称全连接故障只输出一条事件，也不将 SignalR 整体来源视为已迁移。
+- 新回归覆盖旧 / 候选 × Development / Production，验证原异常实例、清理前不记录、清理失败仍传播、正常初始化载荷、身份拒绝及凭据选择。证据为真实 Hub 方法与 mock SignalR / 业务依赖；不替代真实 WebSocket、框架调度或认证中间件验收。生产开关保持关闭，见[本批记录与框架依据](../records/unified-logging-l2-notification-hub-2026-10-02.md)。
+
+## 33. L2 用户关系失效推送
+
+- `UserInteractionRealtimeNotifier` 双 Hub 的 catch 分别输出 `user_interaction.chat_push_failed / user_interaction.notification_push_failed` Warning，仅带受控 failureKind；不输出异常对象、用户 ID、关系版本或动态 Hub 名。每个失败发送保留一个事件，一次调用最多两个有效去重接收者、四次发送，不将多次独立降级合并为一个失败。
+- 非正接收者过滤、按输入顺序去重、每人先 Chat 后 Notification、版本使用 InvariantCulture 字符串以及只含版本的推送载荷均保留。分组访问或发送失败继续消费，仍尝试后续 Hub 和接收者；不新增重试或改变 best-effort 语义。
+- 唯一直接生产消费者 `ReliableTaskProcessor` 保留 Blocked 先抑制双方通知、Unblocked 不恢复通知、随后发送关系失效的顺序。真实 notifier 消费推送失败后 Outbox 仍成功；通知抑制失败与未知事件继续由既有任务 / Outbox 边界处理，不更改权威错误摘要、重试或审计。
+- 回归覆盖旧 / 候选 × Development / Production，候选显式配置并核对 mode。真实 notifier、Processor、ExecutionJob 和 SQLite Outbox 配合 mock SignalR / 收件箱验证继续发送、纯版本载荷、成功 / 重试 / 死信及日志安全；不代表真实 SignalR、屏蔽事务或 PostgreSQL 验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-user-interaction-2026-10-02.md)。
+
+## 34. L2 ChatHub 自有日志
+
+- ChatHub 移除逐连接 Info、加入 / 离开频道 Debug。异常断开在 presence 清理和用户分组移除成功后输出 `chat.connection_closed` Warning，仅保留受控 failureKind；不记录用户 / 租户 / 频道 / 连接身份或原始异常。正常生命周期与频道进出保持安静，Development 开启 diagnostics 后也不重新生成这些事件。
+- 加入频道仍先经 ChatService 权限校验，再入租户频道组并登记 presence；离开仍先调用 Service，再退组与清理 presence；断开仍先清理 presence 再移除用户组。身份、权限、分组或 presence 失败原样传播，不增加 catch、补偿或重试。
+- 非正频道的加入拒绝、离开 / 输入中安静返回、非法用户拒绝、输入中 CanSend 校验和 OthersInGroup 广播载荷保持不变；不改组名、凭据读取、权限、在线状态算法或重复加入语义。
+- 旧 / 候选 × Development / Production 回归包含实际 ChatHub、mock SignalR / Service 以及真实 ChatPresenceService 双连接清理；既有 ChatService / ChatChannelAccessService 测试覆盖相关服务。框架输出仍按第 32 节的未覆盖边界处理，不宣称整个连接故障只有一条事件或已完成真实 WebSocket 验收。生产开关保持关闭，见[本批记录](../records/unified-logging-l2-chat-hub-2026-10-02.md)。
+
+## 35. L2 评论实时推送及直接消费边界
+
+- CommentRealtimePushService 统一在既有 catch 消费分组访问或发送失败，生成 `comment.push_failed` Warning，仅保留受控 failureKind；不记录帖子 / 评论 / 用户身份、事件名、组名、载荷或原始异常，不求值异常正文。成功推送保持安静，失败不重试。
+- CommentCreated / CommentUpdated / CommentDeleted / CommentLikeChanged / CommentHighlightsChanged 的事件名、`post-comments:{postId}` 组名、对象载荷、父 / 根评论关系及 UTC 事件时间保持原义。创建 / 更新仍在帖子或评论 Id 非正时短路，高亮无变更或帖子 Id 非正时短路；删除 / 点赞原本没有该校验，本批不扩张参数规则。
+- 唯一直接生产消费者 CommentController 保留创建、点赞、删除、编辑及版本恢复的写入 / 读取 / 重算 / 推送顺序与响应。首个推送失败后仍尝试高亮推送；幂等重放、重复内容、无变更不重复发送；创建 / 点赞的详情缺失仍可发送高亮，编辑 / 恢复详情缺失则不重算或发送。
+- 推送 catch 不扩展到 Controller 的业务写入、详情读取或高亮重算；这些步骤原有异常传播、ArgumentException / InvalidOperationException 响应映射及软删除审计字段均保留。Controller 原有静默 400 消费边界未新增日志，不据此宣称所有业务失败已有最终日志。
+- 旧 / 候选 × Development / Production 回归使用真实推送服务、真实 Controller 与 mock SignalR / 业务依赖；不代表真实数据库事务、幂等并发或 WebSocket 验收。CommentHub 自有日志的后续治理见第 36 节；CommentService 神评 / 沙发计算与填充日志的后续治理见第 37 节；SignalR 框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-realtime-2026-10-02.md)。
+
+## 36. L2 CommentHub 自有日志
+
+- 移除加入 / 离开帖子组的逐次 Debug 与不再使用的 ILogger 注入；CommentHub 自有路径不再生成运行日志。不新增 Warning / Error 或捕获边界，正常调用与向外传播的失败均不在 Hub 重复记录。
+- 加入时非正帖子 Id 仍抛原 HubException；离开和输入中对非正帖子 Id 仍直接返回。加入 / 离开继续等待既有组操作，不新增身份查询或权限校验；`post-comments:{postId}` 组名保持不变。
+- 输入中继续通过原 normalizer 读取身份，只有 IsAuthenticated 且 UserId 为正时发送 CommentTyping 给 OthersInGroup。帖子 / 可空评论 / 用户 Id、名称空白回退 Unknown、UTC 时间与凭据选择顺序保持原义；原本未校验的 commentId 不增加约束。
+- 四种输出模式使用 DI 激活真实 Hub，验证分组等待、参数短路、广播载荷、query / header 凭据传递及原异常实例传播。旧路径显式捕获 Trace 以上日志，候选 Development 开启 diagnostics，避免用输出过滤掩盖逐次日志。
+- 回归覆盖 Hub 方法和 mock 分组 / 发送 / normalizer，不能替代真实 SignalR 调度、WebSocket 或认证中间件验收。CommentHub 自有日志已收口；CommentService 高亮链的后续治理见第 37 节，框架来源仍待治理，生产开关保持关闭。见[本批记录](../records/unified-logging-l2-comment-hub-2026-10-02.md)。
+
+## 37. L2 评论神评 / 沙发实时重算与标识填充
+
+- CommentService 移除实时重算、扫描、逐项更新与递归标识填充的 Info / Debug。既有消费点使用 `comment.god_recheck_failed / comment.sofa_recheck_failed / comment.highlight_fill_failed` Error，外层重算 catch 使用 `comment.highlight_recheck_failed` Error；仅保留受控 failureKind，不记录帖子 / 评论 / 作者身份、内容快照、点赞数、排名、缓存键、奖励键或原始异常。
+- 实时开关、数量门槛、前五名查询、最高赞并列、稳定窗口与替换领先值、零赞清理、排名和快照保持不变。新高亮仍先退役旧记录、插入新记录、入队基础奖励再失效缓存；既有高亮的点赞增量仍先入队奖励再更新快照，原业务键、载荷和 UTC 入队时间不变。
+- 原 catch 继续消费计算 / 存储 / 入队 / 缓存异常，保留原返回对象；中途失败可能在已写入高亮或奖励后返回 NoChange。事务拦截器见到正常返回仍走 commit，不因安全 Error 自动回滚，日志也不宣称此前写入已撤销或高亮最终状态已同步。这一现有可靠性边界未在日志治理中改变。
+- 根评论页标识填充失败仍返回评论并继续作者资料填充；单条详情的高亮读取、外层分页和作者资料失败继续传播，不扩大 catch。递归填充保留神评 / 沙发布尔标识和排名；当前根页清空子评论，递归分支通过定向调用单独验证，不冒充页面运行态覆盖。
+- 真实 CommentService、ReliableOutboxService、TranAop 与 Controller 配合 mock 仓储 / 缓存 / SignalR 验证成功与无变更安静、失败单条事件、部分进度、创建 / 点赞 / 删除的返回与无变更高亮广播抑制；上一批 Controller 回归继续覆盖编辑 / 恢复的调用边界。持久化仅在内存 mock 中模拟，不代表真实 SQLite / PostgreSQL 事务、并发奖励或 Redis 验收。
+- 本批关闭上述高亮日志生成点；CommentController 静默 400 消费边界的后续治理见第 39 节；其余业务 / 框架来源继续治理，生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-highlight-2026-10-02.md)。
+
+## 38. L2 轻回应通知入队与 Controller 最终消费
+
+- `PostQuickReplyService` 通知 helper 对 ArgumentException 只包装为 `PostQuickReplyNotificationEnqueueException : ArgumentException`，保留原异常为 InnerException，包装时不读取 Message、不记录。事务回滚后，Create 读取原消息并构造 400 结果，才记录 `quick_reply.notification_enqueue_failed` Error，仅带 failureKind。其他异常保持原实例传播；直接调用服务不再提前记录通知失败。该交接及二次失败边界见第 57 节。
+- `PostQuickReplyController` Create / Delete 消费的 5xx BusinessException 使用安全 `http.failed` Error，仅带 statusCode / failureKind；4xx 业务拒绝与普通参数校验保持安静。GetRecentByPostId 消费的 InvalidOperationException 使用 `quick_reply.query_rejected` Warning，保留既有 404 响应；所有本层失败日志均在错误结果构造成功后记录；未调整错误码、消息键、响应文案与 ApiErrorContract 状态映射。
+- 原内容规范化、长度限制、权限、冷却 / 重复内容限制、帖子作者筛选、通知业务键 / 载荷 / UTC 时间及软删除审计不变。入队失败仍向事务 AOP 传播并调用 rollback；此前写入的冷却与去重缓存不会随数据库事务撤销，失败后重试仍可能返回 429 / 409，不新增补投或创建成功重放。
+- 旧 / 候选 × Development / Production 覆盖真实 Service、ReliableOutboxService、TranAop、Controller、结果过滤器和内存 API 异常管道；mock 依赖验证调用顺序与缓存现状，不替代真实数据库回滚或 Redis / HTTP 宿主验收。
+- 生产开关保持关闭，L2 尚未整体完成；CommentController 创建 / 点赞 / 编辑静默消费边界的后续治理见第 39 节。见[本批记录](../records/unified-logging-l2-post-quick-reply-2026-10-02.md)。
+
+## 39. L2 评论创建 / 点赞 / 编辑最终消费
+
+- 正常内容长度校验改用继承 ArgumentException 的 `CommentContentValidationException`；点赞评论不存在、编辑服务已返回失败结果改用继承 InvalidOperationException 的 `CommentOperationRejectedException`。这是项目所有者单独确认的内部异常分类变更，不调整 HTTP 状态、文案或业务规则，不通过匹配异常文本判断是否为正常拒绝。
+- `CommentController` Create / ToggleLike / Update 消费的非正常 ArgumentException / InvalidOperationException 分别在错误结果构造成功后使用 `comment.create_failed / comment.like_failed / comment.edit_failed` Error，仅带固定 failureKind。专用拒绝类型保持安静；4xx BusinessException 继续按既有契约上抛至 API 并安静处理；其他未处理异常仍只由 API 最终边界记录 `http.failed`。
+- 编辑内容校验 catch 保留原 `(false, message)` 返回。明确长度拒绝保持安静；系统设置依赖抛出的普通 ArgumentException 先完成失败元组构造，再在此消费点记录一次 `comment.edit_failed`，随后写入服务转换为拒绝异常，Controller 不再重复记录。恢复版本的消费者继续接收原失败结果；Message 求值失败时本层不记录，新异常交给外层现有消费点，详见第 57 节。
+- 提交台账、版本追加、Outbox 载荷、提交 / 回滚顺序及重放 / 重复 / 无变化时不推送的决策不变。创建 / 编辑成功后的详情读取在写入事务提交后，失败仍返回原 500；点赞详情读取仍在原 catch 内，InvalidOperationException 仍转为 400。本批不把响应失败解释为先前写入已回滚。
+- 四模式回归覆盖真实 Service、ForumContentWriteService、TranAop、Controller、结果过滤器与内存 API 管道；SQLite 补验真实评论点赞缺失拒绝与 Outbox 失败后关系 / 计数回滚。mock 台账 / 版本 / 缓存与 SQLite 证据不替代 PostgreSQL、真实宿主或并发验收。
+- 本批关闭评论三类操作的最终消费日志边界；ContentSubmissionService 并发冲突的后续治理见第 40 节；其余业务和框架来源继续治理。生产开关保持关闭，L2 尚未整体完成。见[本批记录](../records/unified-logging-l2-comment-controller-2026-10-02.md)。
+
+## 40. L2 内容提交并发冲突恢复
+
+- ContentSubmissionService 移除恢复尝试前包含原始异常、用户、操作类型和提交键的 Warning。只有唯一约束冲突后成功从既有记录取得结果，才生成 `content_submission.conflict_resolved` Warning，仅带固定 failureKind。
+- 该事件只表示既有记录读取 / 必要重置已返回结果，不表示业务提交成功或外层事务已提交。Processing、Succeeded、DuplicateContent、Conflict 与重置后的 Started 均保持原返回；之后独立的业务失败仍可产生最终 Error。
+- 记录不存在时保留原冲突异常；读取或重置失败时保留该失败传播，不输出恢复摘要。评论 Controller 与 API 已治理边界仍负责最终 Error；PostController 编辑的后续治理见第 41 节；帖子版本恢复的后续治理见第 42 节；QuestionController 的后续异常消费治理见第 43 节，不能据本批宣称所有共享消费者已收口。
+- 保存点、唯一约束识别、键规范化、指纹、限频、24 小时保留与审计不变。既有冲突识别仍扫描异常 Message / InnerException，本批只约束日志载荷，未把它改成数据库错误码分类器。
+- 四模式回归验证安全输出、恢复结果、失败传播与真实评论写入消费者；SQLite 使用真实唯一约束和保存点，控制首次查询不可见以触发冲突，验证保存点回滚保留外层先前写入、事务可继续及最终提交 / 回滚。该证据不代表并发竞态或 PostgreSQL 验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-content-submission-2026-10-02.md)。
+
+## 41. L2 帖子编辑 / 置顶最终消费
+
+- 已经项目所有者确认，明确内容校验改用 `PostContentValidationException : ArgumentException`，帖子缺失、编辑上限与分类不可用改用 `PostOperationRejectedException : InvalidOperationException`。原消息、参数名、父类消费契约和响应状态保持；系统设置配置错误及依赖异常不标记成正常拒绝。
+- PostController 编辑保留 ArgumentException → 400、InvalidOperationException → 403，置顶保留 InvalidOperationException → 404。明确拒绝保持安静，其余已消费异常在错误结果构造成功后分别生成 `post.edit_failed` / `post.top_failed` Error，仅带固定 failureKind；构造二次失败的交接见第 57 节。未消费异常仍由 API `http.failed` 记录；正常 4xx BusinessException 继续安静。
+- 输入预检、权限查询、提交台账、版本追加、CAS、分类 / 标签计数、重放 / 无变化和事务边界不变。置顶详情读取仍在事务内，读取故障或不可见帖子仍走原回滚；编辑前置查询在 Controller catch 外，其失败继续由 API 处理。
+- 旧 / 候选 × Development / Production 回归覆盖真实 PostService、ForumContentWriteService、TranAop、Controller、结果过滤器及内存 API 管道。SQLite 补验真实帖子行在置顶成功时提交、详情故障 / 不可见时回滚、编辑完成台账失败时回滚；其他仓储、台账及版本服务为 mock，不代表全部数据表联合持久化或 PostgreSQL 验收。
+- `ForumContentRevisionService.RestorePostAsync` 的后续异常消费治理见第 42 节；QuestionController 的后续治理见第 43 节；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-controller-2026-10-02.md)。
+
+## 42. L2 帖子版本恢复最终消费
+
+- `ForumContentRevisionService.RestorePostAsync` 在 PostService 更新异常成功转换为原 409 BusinessException 后，对普通 ArgumentException / InvalidOperationException 生成一次 `post.restore_failed` Error，仅带固定 failureKind；明确的 PostContentValidationException / PostOperationRejectedException 继续安静。
+- 原响应消息、ContentRejected / EditLimitReached 错误码及消息键、按“次数”选择错误码的旧逻辑保持。分类器不读取异常原文；业务转换仍按原契约读取 Message。如果转换本身失败，恢复服务未消费成功，不先生成 Error，新的失败继续交给 API。
+- 前置授权、版本 / 分类 / 标签 / 附件检查及后续快照追加、台账完成在该 catch 外。普通故障继续传播，由 API 记录一次 `http.failed`；原 4xx BusinessException 安静，5xx BusinessException 由 API 记录。PostController 恢复入口不重复记录。
+- 恢复规则、CAS、正文 / 封面更新、不可变版本及标签 / 附件引用、UTC 审计、提交台账、重放 / 重复和事务边界不变。四模式回归覆盖真实 PostService、版本服务、写入服务、TranAop 与 Controller；SQLite 验证帖子、版本、标签快照和附件引用四类记录成功提交或共同回滚。分类 / 标签主数据与提交台账依赖仍为 mock，不代表完整持久化、并发或 PostgreSQL 验收。
+- QuestionController 参数 / 业务 / 聚合异常最终消费的后续治理见第 43 节；生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-post-restore-2026-10-02.md)。
+
+## 43. L2 问答 Controller 最终消费
+
+- 项目所有者已确认新增 `ForumAnswerContentValidationException : ArgumentException`，仅用于 ForumQuestionService 创建 / 编辑回答的空内容与超长内容检查。原文案、参数名、父类消费和响应契约保持；恢复历史正文沿用原规则，不新增内容校验。
+- QuestionController 九个入口统一在原错误响应成功构造后记录故障：普通 ArgumentException 使用 `question.request_failed` Error，仅带 failureKind；已消费的 5xx BusinessException 使用 `http.failed` Error，仅带 statusCode / failureKind。明确内容拒绝与 4xx BusinessException 安静，异常对象、消息原文、提交键、正文及业务身份不进入运行日志。
+- AggregateException 的原 Flatten / 单一已知异常解包规则保持；多异常、空聚合及未知异常仍由 API 最终处理。若 Message getter 在构造响应时抛错，Controller 不提前输出 Error，继续按原直接 catch / 异常过滤器语义传播，由 API 记录一次；正常响应的消息参数规范化、错误码和消息键不变。
+- 回答创建 / 编辑 / 删除 / 恢复、采纳 / 撤销的提交台账、CAS、不可变版本、附件绑定、采纳审计、通知业务键 / 载荷与事务边界不变。读取分页、版本权限、正常拒绝和成功重放保持原义，不新增重试或补偿。
+- 四模式回归覆盖真实 ForumQuestionService、问答仓储、ContentSubmissionService、ReliableOutboxService、TranAop、Controller、结果过滤器及内存 API 管道。SQLite 验证回答、版本、附件及引用、采纳记录、台账和 Outbox 的提交 / 回滚；包含通知实际写入后再抛错。不代表 PostgreSQL、并发请求、真实宿主、附件存储或消息投递验收。
+- PollController / PostPollService 投票消费边界的后续治理见第 44 节；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-question-controller-2026-10-02.md)。
+
+## 44. L2 投票 Controller 最终消费
+
+- 项目所有者已确认新增 `PollInputValidationException : ArgumentException`，仅标记 PostPollService 查询 / 投票 / 关闭的四处现有帖子与选项 ID 校验。原消息、参数名、父类消费和 HTTP 状态保持，不新增业务规则。
+- PollController 三个入口在原响应成功构造后，对其他 ArgumentException 生成 `poll.request_failed` Error，仅带 failureKind；已消费的 5xx BusinessException 使用 `http.failed` Error，仅带 statusCode / failureKind。明确参数拒绝与 4xx BusinessException 安静，原错误码 / 消息键保留，原未复制的 MessageArguments 不新增。
+- 未消费的 IO / 超时 / 取消 / InvalidOperationException 等继续由 API 最终处理。Controller 不新增聚合异常解包；事务 AOP 现有单一聚合解包保持。异常 Message getter 若使响应构造失败，Controller 不提前输出 Error，API 记录最终失败。
+- 投票记录、选项 / 总计数、截止判断、作者权限、UTC 审计、匿名查看和返回载荷保持；重复投票 / 再次关闭仍返回原 409。写入后的帖子详情刷新仍在原事务内，刷新失败或帖子不可见会回滚，不因已生成过写入而提交。
+- 四模式回归使用真实 PostPollService、PostService、ForumProfile、BaseRepository、TranAop 与 SQLite 的 Post / PostPoll / PostPollOption / PostPollVote 表，验证成功提交、阶段故障 / 刷新拒绝回滚、排序 / 比例 / 总数回退和唯一约束故障归属。辅助标签 / 问答依赖为 mock；唯一约束用受控前置查询触发，不代表真实并发、PostgreSQL、认证 / MVC 模型验证或 HTTP 宿主验收。
+- LotteryController / PostLotteryService 抽奖消费边界的后续治理见第 45 节；其余业务与框架来源继续治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-poll-controller-2026-10-02.md)。
+
+## 45. L2 抽奖 Controller 最终消费
+
+- 项目所有者已确认新增 `LotteryInputValidationException : ArgumentException`，仅标记 PostLotteryService 查询 / 手动开奖的两处非正帖子 ID 校验。消息、参数名和 HTTP 响应保持；自动开奖的同类检查继续抛原 ArgumentException，由任务边界按故障处理。
+- LotteryController 两个入口在原响应成功构造后，对其他 ArgumentException 输出 `lottery.request_failed` Error，仅含 failureKind；已消费的 5xx BusinessException 输出 `http.failed` Error，仅含 statusCode / failureKind。明确参数拒绝、模型 / 登录预检、4xx 业务拒绝和正常成功保持安静，错误码 / 消息键及不复制 MessageArguments 的行为不变。
+- 未消费异常继续交给 API；Controller 不新增聚合异常解包，TranAop 原有单一聚合解包保持。Message getter 若使响应构造失败，Controller 不提前输出日志，API 记录最终失败。服务不新增 catch 或失败日志；自动开奖仍由 PostLotteryJob 生成既有批次摘要，任务中的 4xx 业务异常仍计作失败，扫描失败继续向外传播。
+- 参与池筛选、同一作者最早父评论、中奖人数上下限、内容快照、作者权限、一小时手动门槛、截止时间与审计字段不变。自动开奖按配置截止时间筛选及留痕；手动空池返回 409，自动空池完成结算且不入队通知。重复开奖仍返回 409，不新增幂等成功、重试或补偿。
+- 中奖记录、开奖主体、通知 Outbox 入队和详情刷新继续处于原事务内；Outbox 写入后或详情刷新失败会共同回滚。通知业务键 / 任务键、接收者、模板、目标、身份和时间保持，不将日志裁剪作用于权威载荷。
+- 发现既有 SQLite 时间边界：自动截止时间读回为 Unspecified，ReliableOutboxRepository 按本地时区调用 ToUniversalTime；在本机 Asia/Shanghai 下，Outbox 信封时间相对中奖 / 通知载荷时间提前 8 小时。本批保留并记录现状，不将日志回归视为 UTC 契约修复；时间规范化需独立确认。
+- 四模式回归使用真实 PostLotteryService、PostService、ForumProfile、BaseRepository、ReliableOutboxService / Repository、TranAop、PostLotteryJob 及 SQLite 五表，覆盖成功提交、晚期失败回滚、空池、批次部分失败与继续处理；辅助标签 / 投票 / 问答依赖为 mock，API 为内存管道。不代表 PostgreSQL、真实并发开奖、认证 / MVC 模型绑定、宿主或通知投递验收。
+- TagController / TagService 创建与更新最终消费的后续治理见第 46 节。其余业务与框架来源仍待治理，生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-lottery-controller-2026-10-02.md)。
+
+## 46. L2 标签创建 / 更新最终消费
+
+- 项目所有者已确认新增 `TagNameConflictException : InvalidOperationException`，仅标记 TagService 创建 / 更新中未删除标签的重名拒绝。保留原“标签名称已存在”文案、父类消费及 400 响应；不根据异常消息区分拒绝与故障。
+- TagController 两个入口在原响应成功构造后，为其他 InvalidOperationException 生成 `tag.request_failed` Error，仅带 failureKind。重名拒绝、模型 / ID 预检、目标缺失及正常成功保持安静；日志不包含异常对象 / 原文、标签名称 / slug / 描述 / 颜色或操作人身份。依赖故障仍返回原 400 与消息，不在本批调整响应语义。
+- Service 不新增 catch / 日志；其他异常和响应 Message getter 失败仍向 API 传播。Controller 不新增聚合异常解包，普通 ArgumentException / IO / 超时 / 取消等仍由 API 最终处理，不能把它们统称为正常输入拒绝。
+- 名称去空白、重名排除已删除但包含禁用标签、更新排除自身、slug 规范化与后缀避重、字段与审计写入保持。创建 / 更新没有事务特性，写入前故障不产生该次写入；仓储实际写入后再抛错时，已提交数据继续保留，不因日志治理增加回滚、重试或补偿。GetOrCreateTagAsync 及其他标签入口未调整。
+- 六组四模式回归覆盖真实 TagService、BaseRepository、UnitOfWorkManage / TranAop、SQLite Tag 表及内存 API / 结果过滤器。正常拒绝、阶段故障、实际写入后故障、成功数据和安全日志归属均已验证；合成 BusinessException(404) 在 DefaultHttpContext 未开始响应时触发既有框架重抛，旧 sink 仍收到原异常，候选仅有安全未分类摘要，当时单独作为未治理框架边界留痕，不计入标签批次范围；该已处理 404 的后续修正见第 50 节。
+- 不代表 PostgreSQL、并发创建、MVC 认证 / 模型绑定或真实 HTTP 宿主验收。CategoryController 创建 / 更新最终消费的后续治理见第 47 节；L2 尚未整体完成，`RadishLogging.Enabled=false` 保持，见[本批记录](../records/unified-logging-l2-tag-controller-2026-10-02.md)。
+
+## 47. L2 分类创建 / 更新最终消费
+
+- 项目所有者已确认将 CategoryController 私有 ResolveCategoryLevelAsync 的父分类缺失表示为可空层级；创建 / 更新入口直接返回原 400 与“父分类不存在”，不生成运行日志。没有新增共享异常类型或公共接口，依赖抛出的同文案 InvalidOperationException 不被视为明确业务拒绝。
+- 两个入口消费的其他 InvalidOperationException 在原响应成功构造后输出 `category.request_failed` Error，仅含 failureKind，不传异常对象 / 原文、分类字段、附件标识或操作人身份。响应继续为原 400 + 消息；Message getter 导致响应构造失败时不提前记录，由 API 最终处理。
+- 更新目标查询及实体到 Vo 的映射仍在 try 外，此处 InvalidOperationException 继续传播至 API 并返回原 500；父分类查询 / 映射与写入仍在原 catch 内。其他异常、聚合与 BusinessException 不新增本地消费，也不调整 API 契约。
+- 名称去空白、slug 的空白回退 / 小写 / 空格替换、描述原样保留、附件标识、层级和审计字段不变。禁用父分类仍可使用，已删除父分类仍不可用；顶级为 0，其余按原 Math.Max 计算。模型 / ID / 自身父级预检、目标缺失、正常成功均安静。
+- 更新预读后实际影响 0 行仍返回成功；创建 / 更新没有事务特性，实际写入后再抛错仍保留已写数据。本批不新增行数判定、事务、重试、补偿或层级规则。
+- 七组四模式回归覆盖真实 BaseService、BaseRepository、ForumProfile、UnitOfWorkManage / TranAop、SQLite Category 表及内存 API / 结果过滤器，验证父分类拒绝、映射 / 仓储故障归属、写入前后状态和实际 0 行更新。不代表 PostgreSQL、真实并发、MVC 认证 / 模型绑定或 HTTP 宿主验收；上批内存 404 框架分支保留历史证据，后续修正见第 50 节。
+- ReactionController 单目标 / 批量汇总、切换回应及 Service 重试日志的后续治理见第 48 节；L2 尚未整体完成，生产开关继续关闭，见[本批记录](../records/unified-logging-l2-category-controller-2026-10-02.md)。
+
+## 48. L2 表情回应最终消费与冲突重试
+
+- ReactionController 三个入口在原错误响应成功构造后，对消费的 5xx BusinessException 记录一次 `http.failed` Error，仅带 statusCode / failureKind。4xx 业务拒绝、模型预检和正常成功保持安静；原响应消息、错误码及不复制 MessageKey / MessageArguments 的行为不变。
+- ReactionService 原冲突 Warning 改为 `reaction.retrying`，仅带固定 failureKind，不传异常、目标 / 用户身份或表情值。它表示选择一次重试，不表示重试成功或事务已提交；二次唯一冲突仍转原 409，不追加 Error，二次依赖故障仍交给 Controller / API 最终处理。
+- 原唯一冲突过滤器仍通过异常 ToString 判断三个既有标记；这是保留的控制流判定，日志分类与输出不读取原文。未新增冲突识别规则、次数、退避、保存点或 PostgreSQL 事务恢复。其他异常继续传播；Message getter 导致 Controller 响应构造失败时不提前记录 Error。
+- 单目标 / 批量汇总的规范化、有效 ID 去重、100 目标上限、空目标键、分组 / 排序 / 缩略图保持；汇总原本不检查目标存在或可见性。Toggle 的目标 / 贴纸可用性、10 种上限、软删除审计和 UTC 写入保持，返回汇总仍在原事务内，实际写入后或刷新失败继续回滚。
+- 真实 SQLite 发现既有恢复偏差：BaseRepository.QueryFirstAsync 默认排除软删除记录，Service 查找已删除回应不能命中，随后两次 Add 触发唯一约束并返回 409。添加 / 取消可提交，再次添加仍失败；本批只留痕，不将日志治理视为恢复功能修复。仅用显式代理提供已删除行时，另行验证原恢复分支的写入 / 回滚，不冒充真实仓储恢复成功。
+- 七组四模式回归覆盖真实 ReactionService、BaseRepository、TranAop、SQLite 的 Reaction / Post / Comment / StickerGroup / Sticker 五表及内存 API 管道。受控隐藏预读触发真实唯一约束，验证重试成功或耗尽；模拟第二次依赖故障与刷新失败验证日志所有权和回滚。附件 URL 解析为 mock；不代表真实并发、PostgreSQL、MVC 认证 / 模型绑定或 HTTP 宿主验收。
+- StickerController 创建分组 / 单表情、批量保存 / 排序的后续异常消费治理见第 49 节；其余业务与框架来源仍待治理。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-reaction-controller-2026-10-02.md)。
+
+## 49. L2 表情管理最终消费与降级边界
+
+- 项目所有者已确认新增 `StickerInputValidationException : ArgumentException` 与 `StickerRequestRejectedException : InvalidOperationException`，仅标记四个管理入口及共享附件解析的明确参数拒绝、标识冲突、目标缺失与排序快照失效。消息、参数名与父类消费保持；空请求仍为原 ArgumentNullException，排序实际写入不足仍为原 InvalidOperationException，不伪装成正常拒绝。
+- StickerController 的 CreateGroup / AddSticker / BatchAddStickers / BatchUpdateSort 在原响应成功构造后，对消费的其他 ArgumentException / InvalidOperationException 输出 `sticker.request_failed` Error，仅含 failureKind。明确拒绝、模型预检和成功保持安静，不按消息文本分类。Message getter 或本地化使响应构造失败时不提前记录，其他异常仍由 API 处理，Controller 不新增聚合异常解包。
+- 保留原响应映射：创建分组 / 单表情的 InvalidOperationException 为 `409 / CodeAlreadyExists`（包括单表情的目标缺失），批量添加为 `404 / StickerGroupNotFound`，排序为 `409 / StickerSortSnapshotStale`（包括实际写入不足）。本批仅治理日志，不把这些既有映射当成完善后的错误语义。
+- 批量附件构建在逐项失败结果成功构造后记录 `sticker.batch_item_failed` Error，不输出异常原文、分组 / 附件标识或表情内容；保留逐项错误消息与继续处理。存在任何失败项时不插入表情，返回原 `500 / ImageProcessFailed`；Controller 不重复记录该结果。附件构建中早先完成的数据库更新可能随正常返回提交，文件副作用不会因事务回滚自动删除。
+- 缩略图的失败结果、依赖异常与流释放失败归入 `sticker.thumbnail_failed` Warning，仅带固定 failureKind；失败结果不再输出 ErrorMessage。日志在流释放完成后生成，失败结果后释放再次失败只保留最终降级事件。缓存读 / 写 / 失效分别输出 `sticker.cache_read_failed`、`sticker.cache_write_failed`、`sticker.cache_invalidation_failed` Warning，保留回源、忽略缓存失败及继续写入的原行为，移除缓存键与异常原文。
+- 缩略图仍为尽力生成：空存储路径、Exists=false、Download=null 保持静默跳过；LocalFileStorage 将部分故障折叠为 false / null 的既有契约未改。共享附件解析同样供 UpdateSticker 使用，本批没有为该入口增加异常消费；缓存和缩略图共享方法的安全输出也覆盖其他调用者。
+- 保留代码规范化、GIF 判断、批次 50 项限制、冲突列表、排序空列表返回 0、审计字段与现有时间写入。批量添加 / 排序继续由原 TranAop 管理事务，真实部分写入后异常会回滚；创建分组 / 单表情无事务，写入后抛错仍保留已写数据。不增加重试、补偿、文件清理或新的业务事务。
+- 十组四模式回归覆盖真实 StickerService、BaseRepository、TranAop、SQLite 三表及内存 API / 结果过滤器，验证原响应、提交 / 回滚、逐项结果、文件副作用、安全日志和最终异常归属。存储 / 图片处理 / 缓存为故障可控的 mock，不代表真实图片处理、PostgreSQL、并发、MVC 认证 / 模型绑定或真实宿主验收。生产开关保持关闭，L2 尚未整体完成，见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)。
+
+## 50. L2 API 已处理 404 正常完成
+
+- `UseApiExceptionHandler` 显式设置 `AllowStatusCode404Response=true`。ApiExceptionHandler 已写入业务 404 JSON 时，即使内存响应的 HasStarted 仍为 false，框架也认可该结果，不再包装重抛或生成原异常诊断。这是错误处理器的有效结果声明，不是路径不存在时的路由兜底；原 `/api` 且排除 `/api/health` 的处理范围不变。
+- 保留业务状态、消息、错误码、消息键、规范化参数、TraceId 与 `X-Correlation-ID`。成功处理的 4xx 不生成运行日志，5xx 继续由 API 输出一次安全 `http.failed`；非异常的普通 404 响应保持原状态与正文。
+- 响应已开始、写入失败与非 API / health 请求仍按原框架路径传播原异常，不因允许 404 而吞掉未完成的处理。原 SuppressDiagnosticsCallback 只覆盖已处理分支；这些未处理路径在本节批次时的旧日志仍可能携带原文，候选输出为安全 `runtime.unclassified`；后续 ExceptionHandlerMiddleware 来源治理见第 52 节，不代表全框架来源已治理。
+- 新增五组旧 / 候选 × Development / Production 内存管道回归；标签原 404 重抛测试改为校验完整响应及安静日志。覆盖 400 / 403 / 404 / 409 / 429 / 500 / 503、普通 404、已开始响应、写入失败与非 API 传播。响应开始状态通过 feature 模拟，未启动真实 HTTP / WebSocket 服务，不替代真实宿主验收。SignalR 来源与其他框架失败路径继续治理，见[本批记录](../records/unified-logging-l2-api-not-found-2026-10-07.md)。
+
+## 51. L2 SignalR Core 三类框架来源
+
+- `SignalRFrameworkLogSink` 在上下文合并后、旧 / 候选输出前，精确适配 `HubConnectionHandler`、`Internal.DefaultHubDispatcher` 和 `HubConnectionContext` 的 ILogger 来源；不按命名空间前缀吞掉其他框架日志。
+- 已知来源 + EventId / Name 映射为 `signalr.connect_failed / disconnect_failed / message_failed / close_failed / invocation_failed / stream_failed / invocation_rejected / handshake_failed / write_failed`。未知目标事件保留为 `signalr.unclassified`，不静默丢弃 Warning / Error。
+- 安全事件只保留固定模板、原等级 / 时间、可用 trace/span、固定 SourceContext、受控事件元数据及 failureKind；不读取或传递异常正文、动态方法名、客户端错误、身份、请求路径与任意 scope。非目标事件保持原行为。
+- 框架原 Debug / Trace 与低级别过程事件继续受最低等级 / diagnostics 控制，不统一升级为 Error。Hub 自有断开事件保留原时机；不同处理阶段与独立写入失败不按连接去重。Hub 授权、业务执行、协议响应、清理与异常传播不变。
+- 旧链的代码 Console / File / Database 与配置 WriteTo 均进入安全包装；AuditTo 继续传播输出失败，内部聚合异常可能增加包装层。候选入口与旧链仍互斥，生产开关保持关闭。
+- 四模式内存真实框架调度回归覆盖方法、绑定、生命周期、协议解析、握手及写入；另有未知事件、不可渲染异常 / 属性、配置 reload、SQL 属性保留、释放与审计失败回归。`ErrorSendingClose / FailedStreaming` 仅有映射及元数据证据，不代表真实分支验收。
+- 协议 resolver / Http.Connections 后续治理见第 58 节，Kestrel 后续治理见第 53–56 节；HTTP 异常处理中间件的后续治理见第 52 节。本批不代表真实 WebSocket / 宿主 / 日志库入库验收。准确映射与验证边界见[本批记录](../records/unified-logging-l2-signalr-core-2026-10-07.md)。
+
+## 52. L2 HTTP 异常处理中间件安全输出
+
+- API 自有 `http.failed` 后移到 `ApiErrorResultFactory.WriteAsync` 成功返回之后；业务 4xx 继续安静，5xx / 普通异常成功写入后仍记录一次。构造或写入失败不提前生成自有事件，交给原框架路径报告并继续传播原始请求异常。写入任务完成不表示客户端已接收。
+- `HttpExceptionFrameworkLogSink` 仅匹配 `Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware`，在上下文合并后、旧链代码 / 配置 WriteTo / AuditTo 和候选输出前重建安全事件。保留原时间、等级、类型化 trace/span、固定来源及受控 failureKind，不读取或复制异常原文、模板、请求数据与任意 scope。
+- 来源 + EventId / Name 映射为 `http.framework_exception`、`http.response_started`、`http.exception_handler_failed`、`http.request_aborted`；未知目标事件使用 `http.framework_unclassified`，Warning / Error 保持可见。低级别事件继续遵循最低等级 / diagnostics，不升级取消为 Error。
+- `http.framework_exception` 是中性框架异常报告：Gateway 的 `/Error` 重执行已完成也可能产生。处理委托失败与原异常报告、响应已开始与原异常报告分别保留，不按请求全局去重；同一个原异常在非 API 委托拒绝时仍可能属于两个框架阶段。
+- 响应已开始时保留原正文 / 状态 / header；IOException / OperationCanceledException 且 RequestAborted 已取消时继续走原取消分支，未开始时设 499，已开始时保留状态。非 API / health 保留框架先清理响应并设 500、再由委托重抛的现状，不声称绕过异常中间件。
+- API 的 MessageModel、404 完成选项、correlation header、Gateway 重执行路径与异常实例传播保持。四模式内存真实中间件回归覆盖写入完成屏障、构造 / 写入 / 部分写入 / 取消失败、响应开始、非 API、Gateway 错误页及正常状态矩阵；未启动宿主，不代表真实 Kestrel、WebSocket 或生产验收。
+- Kestrel 主来源、Hosting.Diagnostics 与 DeveloperExceptionPage 的后续治理见第 53 节；其他 Kestrel / Hosting 来源、Http.Connections、协议 resolver 继续独立治理。DiagnosticListener、Activity / metrics 等非 Serilog 通道不由适配器接管。生产候选开关仍关闭，L2 未整体完成，具体映射与验证证据见[本批记录](../records/unified-logging-l2-http-exception-2026-10-07.md)。
+
+## 53. L2 外层 HTTP 三类框架来源
+
+- `HttpServerFrameworkLogSink` 精确适配 DeveloperExceptionPageMiddleware、Hosting.Diagnostics 与 Kestrel 主来源；在上下文合并后重建安全事件，旧链代码 / 配置 WriteTo / AuditTo 与候选输出均接入。保持时间、等级、类型化 trace/span、固定来源及受控 failureKind，不复制异常原文、URL、header、身份或任意 scope。
+- 开发异常页分别输出 `http.developer_exception / developer_response_started / developer_page_failed / developer_request_aborted`，未知事件保留为 `http.developer_unclassified`。Development 的宿主自动包装与 Gateway 样式显式包装均保持；开发页面文本 / HTML 原有详情不做日志式裁剪。已开始响应和生成页面失败仍按原顺序报告并传播原异常。
+- Hosting 请求起止 / 管道末尾分别为 `http.request_started / request_finished / request_unhandled` 诊断，不能把正常未匹配请求当成 Error。EventId 的 Name=null 是实际契约；管道构建、Hosting startup assembly 与绑定覆盖分别为 `http.host_pipeline_failed / hosting_startup_failed / host_binding_overridden`，未知使用 `http.hosting_unclassified`。阶段故障不等于进程必然退出，原 Critical 在旧链保持 Fatal、候选按公共规范映射为 Error。
+- Kestrel 应用 / 回调失败、请求取消使用 `http.server_application_failed / server_request_aborted`，另区分心跳慢、应用未完成、无效响应头移除、协议降级和请求体收尾故障；未知使用 `http.server_unclassified`。OnStarting 失败停止后续启动回调；OnCompleted 失败保留已完成响应并继续其他回调。不同阶段不按请求去重。
+- Warning / Error / Critical 保持可见，低级别诊断继续受原最低等级 / diagnostics 控制。RuntimeProcess 仅移交 Generic Host 来源 EventId 11 的既有规则不变，不与 Hosting.Diagnostics 的 11 混同。
+- 四模式验证包含真实宿主自动管道组装、Hosting 请求生命周期，以及只接入内存 transport 的 Kestrel HTTP/1 处理。未绑定网络端口、运行项目宿主或访问生产；启动阶段告警与部分 Kestrel 告警只有真实生成方法 / 映射 / 元数据证据，不代表全部运行分支验收。
+- Kestrel.Connections / BadRequests 的后续治理见第 54 节；HTTP/2 / HTTP/3 与 HTTPS 中间件后续治理见第 55 节；证书监视 / 配置加载后续治理见第 56 节；Http.Connections、协议 resolver、其他 Hosting / Lifetime 来源和非 Serilog 通道仍待分批治理；未对业务来源继承的任意 scope 做全局清理。生产候选开关关闭、L2 未整体完成。完整映射、测试与限制见[本批记录](../records/unified-logging-l2-outer-http-2026-10-07.md)。
+
+## 54. L2 Kestrel 连接与坏请求来源
+
+- `HttpServerFrameworkLogSink` 增加 Kestrel.Connections / BadRequests 两个精确类别，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出。按来源 + ID + Name 匹配 16 个已知事件；未知分别输出 `http.connection_unclassified / bad_request_unclassified`。输入时间、等级、类型化 trace/span 与受控 failureKind 保持，不复制原消息、异常原文、连接标识、请求数据或任意 scope。
+- 连接过程、应用终止、并发拒绝、关闭阶段、坏请求、请求处理异常结束、最低速率及版本不匹配分别使用受控编码；完整映射见本批记录。Warning / Error / Critical 保持可见；低级别继续遵循原 diagnostics 策略，候选 Development 的 Debug 仍规范为 Info + diagnostic，Production 过滤过程诊断。
+- HTTP/1 解析拒绝仍由框架返回原状态且可不建立 Hosting 请求上下文；实际连接限流直接释放连接，不生成 HTTP 429。应用终止、连续 keep-alive、输入异常、同步 / 异步连接完成回调与 transport 释放顺序不变。
+- 连接委托与完成回调故障仍是 Kestrel 主类别 `0 / Name=null / Error`，保留已有 `http.server_unclassified`；不同阶段不去重，不按原文本猜测事件。框架在 ILogger 前读取 BadHttpRequestException.Message 的行为不属于 sink 的控制范围。
+- 四模式真实 Kestrel HTTP/1 使用唯一内存 transport，无系统 bind、项目宿主或生产操作。部分速率 / 关闭 / 协议事件仅有真实生成方法与元数据 / 映射验证，不代表真实超时、流控或 HTTP/2 分支验收。
+- HTTP/2 / HTTP/3 与 HTTPS 中间件后续治理见第 55 节；证书监视 / 配置加载后续治理见第 56 节；Socket / QUIC transport、Http.Connections 与协议 resolver 后续治理见第 58 节；其他框架来源及非 Serilog 通道继续独立治理。生产候选开关关闭，L2 未整体完成；测试、限制及 18 个事件编码见[本批记录](../records/unified-logging-l2-kestrel-connections-2026-10-07.md)。
+
+## 55. L2 Kestrel HTTP/2、HTTP/3 与 HTTPS 中间件
+
+- `HttpServerFrameworkLogSink` 增加 Kestrel.Http2 / Http3 和 HttpsConnectionMiddleware 三个精确类别；来源 + ID + Name 匹配 36 个已知事件，未知分别为 `http.http2_unclassified / http3_unclassified / tls_unclassified`，共 39 个公共编码。旧链代码 / 配置 WriteTo / AuditTo 与候选输出均在上下文合并后重建安全事件，保留原时间、等级、类型化 trace/span 和受控 failureKind，不带原消息、异常详情、连接 / 流身份、请求或证书数据及任意 scope。
+- Warning / Error / Critical 保持可见；HTTP/2 输出队列三个 Critical 不能随 diagnostics 关闭而丢弃。旧链保持等级，候选 Fatal → Error、Trace / Debug → Info + diagnostic 延续公共规范。TLS 握手失败、协议拒绝和帧过程不自动升级；未知事件不根据文本猜测。
+- 真实内存 HTTP/2 验证流拒绝后可继续请求、连接 / HPACK 拒绝的 GOAWAY、500 与清理。当前框架 HPACK 索引 0 走主来源 Warning + GOAWAY(2)，截断索引走压缩错误 + GOAWAY(9)，不将两条路径混同或修改协议。真实内存 HTTP/3 验证 QPACK 请求 / 响应、控制流 DATA 拒绝 0x105、单流 Abort 0x102 后下个请求成功；应用故障保留开发异常页 / Kestrel 主来源所有权。
+- 真实 HTTPS 中间件 / SslStream 验证 TLS 1.2 成功、无效 TLS 字节、握手回调取消 / IO / 认证 / 其他异常，以及后续委托失败时恢复 transport。取消回调只证明框架 timed_out 消费分支，不代表实际计时器超时。所有响应、消费、错误码、协议配置和证书规则保持。
+- 四模式测试只使用内存连接 / 多路复用流与临时自签证书，不启动项目服务、不执行系统网络 bind、不导入信任存储。HTTP/3 的 TLS 已建立 feature 替代真实 QUIC transport，不能用于证明 QUIC 握手。稀有队列故障、编码失败、平台回退和证书库路径仅有实际生成方法 / 元数据 / 安全映射证据。
+- 证书监视 / 配置加载后续治理见第 56 节；Socket / QUIC transport、Http.Connections 与协议 resolver 后续治理见第 58 节；其他框架来源及非 Serilog 通道仍待治理。生产候选开关关闭，L2 尚未整体完成；完整映射、测试与限制见[本批记录](../records/unified-logging-l2-kestrel-protocol-2026-10-07.md)。
+
+## 56. L2 证书文件监视与配置加载
+
+- `HttpServerFrameworkLogSink` 精确适配 `Microsoft.AspNetCore.Server.Kestrel.Core.Internal.CertificatePathWatcher` 与 `Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServer`。前者 16 个、后者 10 个已知事件，各保留一个未知编码，共 28 个 `http.certificate_watch_* / certificate_config_*` 公共编码。两个类别不能与 Kestrel 主来源或 HTTPS 中间件混同。
+- 旧链代码 / 配置 WriteTo / AuditTo 与候选输出继续在上下文合并后重建安全事件，保留时间、原等级、类型化 trace/span、固定来源和受控 failureKind；不复制目录、证书 / 私钥路径、主题 / 指纹、自由文本、异常详情或任意 scope。Warning / Error / Critical 和原 diagnostics / 最低等级规则保持。
+- `LocatedDevelopmentCertificate` 的实际 ID 为 0，Serilog 省略零值 Id，仅精确配置来源 + 该 Name 接受缺省零；显式错误类型、错误名称或其他来源不匹配。事件 6 / 7 使用实际 Name `MissingOrInvalidCertificateFile / MissingOrInvalidCertificateKeyFile`，不按方法名或消息文本猜测。
+- 真实监视器配合可控 IFileProvider 验证观察者复用 / 移除、最后一个文件 / 目录释放、文件不可用时忽略事件、可用变更设置 FileHasChanged 并更换 token。保持仅监视 Path、未单独监视 KeyPath 的框架行为；没有真实磁盘轮询或证书解析。
+- 真实证书加载器读取临时公钥 PEM；真实密钥加载方法验证临时普通 / 加密 PEM 的签名能力，以及错误密码、格式、缺失与不匹配的异常传播。配置重载以唯一内存 transport 验证证书加载失败保留原 HTTP endpoint、恢复后重新绑定，以及绑定失败仍由 Kestrel 主来源 `0 / Name=null` 报告。首次加载失败仍归 `runtime.failed`，不新增 catch、重试或跨阶段去重。
+- 四模式测试不启动项目宿主、不执行系统网络 bind、不读取用户开发证书或系统证书库。开发证书查找 / 信任、事件 6 / 7、LastModifiedTimeError 仅有真实生成方法 / 身份 / 安全映射证据；Windows 私钥持久化、PFX、实际轮询 / 符号链接及 TLS 握手 / 热换证书未验收。候选开关保持关闭、L2 未整体完成，完整映射和证据见[本批记录](../records/unified-logging-l2-certificate-configuration-2026-10-11.md)。
+
+## 57. L2 早期消费点的错误结果构造与日志所有权
+
+- 轻回应查询 / 创建 / 删除、评论创建 / 点赞 / 编辑、帖子编辑 / 置顶共 10 个既有日志 catch，统一先完整构造 MessageModel，再记录并返回。Message 求值失败时不生成原消费事件，新异常按上层现有契约处理；不是捕获后吞掉或替换异常消息。普通校验与专用拒绝继续安静，原状态码、文案、错误码和消息键保持。
+- 评论编辑内容校验先构造 `(false, message)` 再记录。构造成功后的写入服务仍转换为 CommentOperationRejectedException，版本恢复仍映射原 409 / 403；构造失败的新 ArgumentException / InvalidOperationException 可由编辑 Controller 消费并记录，其他异常继续传播。服务已完成失败结果后发生的独立故障，不与该事件跨阶段去重。
+- 轻回应通知阶段通过专用 ArgumentException 子类传递来源，原异常保留在 InnerException，Message 延迟委托给原异常。包装改变该分支传播实例，不改变父类消费、消息或回滚契约；Controller 仅在 400 结果构造成功后生成原通知事件。回滚本身失败或响应消息读取失败时，helper 不留下提前日志；不以 Exception.Data、全局状态或异常文本匹配识别通知来源。
+- 日志只证明本层错误结果已构造，不证明 HTTP 响应已发送。后续结果过滤、序列化、网络写入失败仍由既有 API / 框架边界处理；ApiExceptionHandler 仍在错误 JSON 写入完成后记录，不新增全请求去重或更改异常中间件。帖子发布 / 版本恢复保持既有顺序。
+- 四模式覆盖被消费类型的 Message 再次抛错、消息只读取一次、通知包装不提前求值、回滚失败、评论编辑与版本恢复交接，以及正常拒绝、响应与事务 / 缓存回归。内存管道与 SQLite 证据不替代真实项目宿主、Redis、PostgreSQL 或生产验收。生产开关保持关闭，L2 尚未整体完成；见[本批记录](../records/unified-logging-l2-early-consumer-ownership-2026-10-11.md)。
+
+## 58. L2 Socket / QUIC transport、Http.Connections 与协议解析
+
+- `HttpServerFrameworkLogSink` 新增服务端 `Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets / Quic`；`SignalRFrameworkLogSink` 新增 Http.Connections 的 dispatcher、manager、context、WebSocketsTransport、LongPollingTransport、ServerSentEventsTransport 及 `DefaultHubProtocolResolver`。只匹配这 9 个精确来源，90 个已知事件各有编码，每个来源另有一个未知摘要，共 99 个公共编码。
+- 已知事件按来源 + EventId + EventName 匹配。dispatcher 的实际 Name 为 `TerminatingConection`（框架原拼写）；三个 HTTP transport 日志类别保留不含 Server 的历史名称。Socket / QUIC 直接记录的 `0 / Name=null` 进入各自未知摘要，不按模板或异常文本细分。Socket transport 的 `.Client`、其他前缀邻居和非 Serilog 通道不在本批范围。
+- 继续复用上下文合并后的旧链代码 / 配置 WriteTo / AuditTo 和候选包装链，只输出固定编码、来源、Diagnostic 与受控 failureKind；保留时间、原日志等级与类型化 trace/span。连接 ID、用户名、协议名、endpoint、原模板、异常详情、任意 scope 不复制。低等级诊断不提升成 Warning / Error，候选 diagnostics 开关及最低等级规则保持。
+- 不改协商 JSON / 状态码、transport 选择、超时、取消、回调、连接清理或异常传播。LongPolling 非取消错误仍先 Error、设 500 再抛原异常；SSE I/O 仍向上传播。不同阶段的上层 API / 框架日志不做全请求去重。resolver 仍大小写不敏感、同名最后注册生效，未知 / 禁用协议返回 null 且安静。
+- 四模式覆盖已安装 ASP.NET Core 10.0.8 的全部 90 个真实日志生成器、元数据身份、未知事件及配置输出；Http.Connections / resolver 使用真实框架对象、内存 HTTP / Pipe 和抽象 WebSocket 验证消费行为。未安装依赖、未启动项目服务、未绑定端口，测试通过 xUnit 进程内入口执行。
+- Socket / QUIC 仅证明日志生成器、身份及安全输出，不证明真实连接、读写、握手、关闭或平台回调分支。本机原生 QUIC 不受支持；Http.Connections 稀有分支与未触发定义的证据仍限于生成器，不能写成传输验收。生产候选开关保持关闭、L2 尚未整体完成，准确清单与验证边界见[本批记录](../records/unified-logging-l2-transport-protocol-2026-10-11.md)。
+
+## 59. L2 YARP 与出站 HTTP 框架来源
+
+- `OutboundHttpFrameworkLogSink` 精确覆盖 YARP 的 HttpForwarder、ForwarderHttpClientFactory、ForwarderMiddleware、LoadBalancingMiddleware、ProxyPipelineInitializerMiddleware、LimitsMiddleware 六来源，四个已注册 HttpClient 名称的 LogicalHandler / ClientHandler 八来源，以及 DefaultHttpClientFactory；共 60 个已知编码与 15 个未知摘要。完整类别、EventId / Name 与编码见[本批记录](../records/unified-logging-l2-outbound-http-2026-10-11.md)。
+- 四个名称固定为 `PublicHeadSnapshotClient`、`api-service`、`auth-service`、`console-service`；按来源 + EventId + EventName 匹配，不以类别前缀、模板或异常文本推断。未知目标事件重建安全摘要，非目标类别保持同一 LogEvent 实例通过。
+- 在上下文合并后适配旧链代码 / 配置 WriteTo / AuditTo 和候选链，只保留时间、原等级、类型化 trace/span、固定类别、`SourceCategory=http`、Diagnostic、事件码及受控 failureKind。URI、header、cluster / route 标识、原异常和任意 scope 不进入输出；既有诊断门禁、最低等级和 AuditTo 异常语义继续沿用。
+- 日志不改变响应、取消或异常传播。HttpClient 的 RequestFailed 保持 Information，取消及非 HttpRequestException 不新增 failure 事件；内外 handler、负载均衡与最终转发各自记录，不做跨阶段去重。YARP 原失败 feature、状态和抛出边界保留；工厂清理失败仍按框架消费，不改变释放 / 重入队规则。
+- 四模式采用真实生成器、内存中间件与替代 HTTP handler；无依赖安装、项目服务启动或网络端口。真实网络连接、TLS / WebSocket 握手、协议协商和连接池时序均未验收；少见分支只证明日志生成器与输出。生产候选开关保持关闭、L2 尚未整体完成。
+- YARP 配置加载 / 管理后续治理见第 60 节；亲和 / 健康检查后续治理见第 61 节；Socket `.Client` 当前没有产品调用，其他命名客户端与剩余框架 / 非 Serilog 通道继续后置。
+
+## 60. L2 YARP 配置加载、管理与校验
+
+- `OutboundHttpFrameworkLogSink` 精确增加 `Yarp.ReverseProxy.Configuration.ConfigProvider.ConfigurationConfigProvider`、`Yarp.ReverseProxy.Management.ProxyConfigManager`、`Yarp.ReverseProxy.Configuration.ConfigValidator` 三个类别；15 个已知事件与每来源一个未知摘要，共 18 个公共编码。按来源 + EventId + EventName 匹配，完整清单见[本批记录](../records/unified-logging-l2-yarp-configuration-2026-10-11.md)。
+- `ProxyHttpRequestValidator` 实际注入 `ILogger<ConfigValidator>`，不以生成类型充当日志来源；目标变更事件的实际 Name 为 `EndpointAdded / EndpointChanged / EndpointRemoved`。provider 的 `2 / ApplyProxyConfigFailed` 表示发布新快照后的通知失败，不代表事务回滚；`58 / Http10RequestVersionDetected` 保持 Warning，HTTP/1.0 仍被接受。
+- 沿用第 59 节的上下文合并后安全重建：旧链代码 / 配置 WriteTo / AuditTo 与候选输出均覆盖，只保留固定身份、时间、原等级、类型化 trace/span 与受控 failureKind；不复制配置值、cluster / route / destination 标识、URI、异常详情或任意 scope。Debug / Information 保持诊断语义，Warning / Error 和未知严重事件保持可见。
+- 首次转换失败继续抛原异常；provider 重载转换失败保留旧快照和 token，通知回调失败保留已发布的新快照。manager 首次加载失败保留原包装 / InnerException，不合成重载事件；重载读取失败记录 43，校验 / 应用失败记录 44，分别沿用既有状态和传播边界。校验失败发生在更新前，后期应用失败可能留下部分更新，不新增事务回滚、重试、catch 或去重。
+- 四模式验证真实安装版本的全部生成器、provider 内存重载、validator 和 manager 的增改删 / 等价配置、失败恢复、endpoint token、部分更新与回调异常。manager 使用受控配置通知并显式等待真实重载方法；健康监视 / cluster listener / HTTP 客户端使用替身，密钥只在内存中，未启动健康调度器或发送请求。
+- Gateway 当前 JSON 配置 `reloadOnChange:false` 保持；本批不启用文件监视。验证不含真实文件变更、项目宿主、网络 / DNS / TLS、主动 / 被动健康探测及五分钟轮询计时；未触发分支仅证明日志生成器与安全输出。生产候选开关关闭，L2 尚未整体完成；亲和 / 健康检查后续治理见第 61 节，其余来源继续单独确认。
+
+## 61. L2 YARP 条件性亲和与健康检查
+
+- `OutboundHttpFrameworkLogSink` 增加 `Yarp.ReverseProxy.SessionAffinity` 下的 SessionAffinityMiddleware、CookieSessionAffinityPolicy、CustomHeaderSessionAffinityPolicy、HashCookieSessionAffinityPolicy、ArrCookieSessionAffinityPolicy，以及 `Yarp.ReverseProxy.Health` 下的 ActiveHealthCheckMonitor、DestinationHealthUpdater，共 7 个精确类别；26 个已知来源 / 事件组合与 7 个未知摘要，共 33 个编码。完整身份和编码见[本批记录](../records/unified-logging-l2-yarp-affinity-health-2026-10-11.md)。
+- 只匹配来源 + EventId + EventName；共享亲和生成器借用具体策略类别，不按基类或命名空间前缀扩张。HashCookie / ARR 不映射解密事件；主动探测 16 / 17 的实际 Name 带 `Active`，状态恢复 20 保留框架 `Unkown` 原拼写。
+- 旧链代码 / 配置 WriteTo / AuditTo 与候选链继续在上下文合并后重建安全事件，保持原等级、时间、类型化 trace/span、固定来源、Diagnostic 和受控 failureKind。不输出 cookie / header、亲和键、目标 / cluster 标识、探测 URI、原异常或任意 scope；诊断门禁、未知严重事件可见性与候选等级规范保持。
+- 不启用亲和或健康配置，不修改 cookie / header 策略、阈值和传播边界。亲和匹配限制候选目标，缺失键继续安静；解密错误 / 多值 header 保持失败状态，Redistribute 继续处理，Return503Error 保持 503。响应加密失败与下游异常继续传播，不新增去重或 catch。
+- 主动探测收到 HTTP 响应仍记录原 Information 完成事件，策略按成功状态码与连续失败阈值更新健康；请求构造、发送 / 取消、策略和响应释放异常各沿用原消费边界。被动健康按转发错误 feature 和请求取消判断，不将 HTTP 500 自动视为传输失败；默认样本数、失败率、时间窗口、恢复周期保持。被动恢复仍为 Unknown，默认 HealthyOrPanic 在全部不健康时仍返回全部目标。
+- 四模式覆盖真实生成器、四种亲和策略和响应 transform、真实 monitor / 策略 / updater 与可用目标策略。测试仅使用内存 HTTP context、临时内存密钥、替代 HTTP handler、受控 TimeProvider / ITimer；显式等待真实内部异步方法以结束后台工作，区分公共 SetPassive 丢弃 Task 的既有语义。
+- 不安装依赖、不启动项目宿主、不绑定端口。真实网络 / DNS / TLS、外部健康探测、真实超时到期和调度竞态未验收；取消异常只证明消费分支。HttpSys delegation、其他框架来源及 Activity / EventSource / Metrics / Debug 等非 Serilog 通道继续独立核对。生产候选开关保持关闭，L2 尚未整体完成。
+
+## 62. L2 认证／授权框架与 API JWT 回调
+
+- `AuthenticationLogSink` 精确覆盖 `Microsoft.AspNetCore.Authentication.JwtBearer.JwtBearerHandler`、`Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationHandler`、`Microsoft.AspNetCore.Authorization.DefaultAuthorizationService`、`Microsoft.AspNetCore.Authorization.AuthorizationMiddleware`。18 个已知来源 / 事件组合、4 个来源未知摘要，加 API 两处自有回调，共 24 个编码；完整映射见[本批记录](../records/unified-logging-l2-authentication-authorization-2026-10-11.md)。
+- 只按来源 + EventId + EventName 识别；基类共同事件借用具体 JWT / Cookie 类别。授权中间件的 0 / 无名 Debug 只进入 `auth.authorization_middleware_unknown`，不按模板推断；不扩展 RemoteAuthentication、OpenIddict 或实现类名称。
+- 在上下文合并后重建旧链代码 / 配置 WriteTo / AuditTo 与候选输出。只保留固定身份、原等级与时间、类型化 trace/span、Diagnostic 和受控 failureKind；不输出 token、Cookie、claims、路径、错误文本、requirements、异常对象及任意 scope。诊断门禁与未知严重事件可见性保持。
+- `ApiJwtBearerEvents` 承接 Program 的既有凭据选择与 401 / 403 回调，两处日志改为 `auth.jwt_failure_observed` / `auth.jwt_challenge_observed`。观察发生在响应写入前，不等于写入完成；框架 challenge 完成事件只在原处理返回后产生。不改变 Hub query 范围、HandleResponse、API / 非 API 响应、Cookie、策略、取消和异常传播。
+- 认证基类读取 Failure.Message、授权服务格式化 requirements 都可能早于 logger；适配器不控制这些前置求值。日志消费阶段不合并去重，也不承诺整个请求只有一条故障事件。
+- 四模式验证真实生成器、JWT / Cookie handler、Authentication / Authorization 中间件及 API 回调。仅使用内存 HTTP context、内存密钥 / DataProtection、静态 OIDC 配置和受控响应流；进程内 xUnit 不安装依赖、不启动服务、不绑定端口。
+- 本认证批次不扩展路由（后续范围见第 63 节）、宿主健康服务、OpenIddict 与非 Serilog 通道。真实 OIDC 登录、持久 Cookie 密钥、网络 / 浏览器、数据库权限和生产外部采集未验收；生产候选开关保持关闭，L2 尚未整体完成。
+
+## 63. L2 路由框架
+
+- `RoutingLogSink` 精确覆盖 `Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware`、`Microsoft.AspNetCore.Routing.EndpointMiddleware`、`Microsoft.AspNetCore.Routing.Matching.DfaMatcher`、`Microsoft.AspNetCore.Routing.DefaultLinkGenerator`。28 个已知事件和 4 个来源未知摘要，共 32 个编码；完整身份映射见[本批记录](../records/unified-logging-l2-routing-2026-10-11.md)。
+- 完整来源 + EventId + EventName 决定身份；仅 EndpointMiddleware 的 `0 / ExecutingEndpoint` 兼容桥接省略 Id 字段，显式 null / 错误类型 / 重复字段仍拒绝。未知身份仅进入来源摘要，不按模板猜测，不接管 DefaultLinkParser 或相邻类别。
+- 在上下文合并后重建旧链代码 / 配置 WriteTo / AuditTo 和候选输出。保留原等级、时间、类型化 trace/span、固定身份、Diagnostic 和受控 failureKind；舍弃路径、route values、生成 URI、端点 / constraint 对象、原异常及任意 scope。诊断门禁与未知严重事件可见性保持。
+- `ExecutedEndpoint` 只表示执行退出，失败路径同样产生，编码使用 `exited`。不改变匹配、404、fallback、预设 endpoint、constraint / complex segment 拒绝、歧义异常、请求体限制、安全 metadata 检查、链接结果、异常或取消传播；ShortCircuit / 禁用请求体上限仅测试条件性分支，不启用产品配置。
+- DfaMatcher 的 constraint.ToString、DefaultLinkGenerator 的失败 route values 格式化可能早于 logger；不承诺控制前置求值或跨阶段去重。DiagnosticListener / Activity / Meter 等非 Serilog 通道不在适配范围。
+- 四模式验证真实生成器、内存 UseRouting / UseEndpoints 与 LinkGenerator，含敏感 scope、身份错误、请求体限制、短路 / 安全检查、退出与前置格式化失败；无项目宿主、服务启动或网络端口。宿主健康后续范围见第 64 节，OpenIddict 与其余来源继续分批确认；生产候选开关保持关闭，L2 尚未整体完成。
+
+## 64. L2 宿主健康服务
+
+- 只治理 `Microsoft.Extensions.Diagnostics.HealthChecks.DefaultHealthCheckService`，按实际 Id / Name 匹配 100–105 六个身份及 `health.unknown`，共 7 个编码；103 的 Healthy / Degraded / Unhealthy 共用 `health.check_completed`，保留原 Debug / Warning / Error。映射及证据见[本批记录](../records/unified-logging-l2-host-health-2026-10-11.md)。
+- 105 使用自定义 Data 日志状态。Serilog 桥接可能在 sink 前格式化值、允许 Data 中的 SourceContext 覆盖来源，故不能只靠输出 sink。共享 `AddSerilogSetup` 在旧 / 候选分支装饰既有 `ILoggerFactory`：仅该精确类别的 Log 输入重建固定身份 / 来源 / 诊断标记 / 异常类型分类，不读取原始 state、调用 formatter 或传递异常对象。其他类别、BeginScope、IsEnabled、AddProvider 和原工厂创建 / logger 释放所有权保留。
+- `HealthCheckLogSink` 在上下文合并后再次重建事件，接入旧链代码 / 配置 WriteTo、AuditTo 与候选输出；仅保留时间、原等级、类型化 trace/span、固定 EventCode / 来源 / Diagnostic 及受控 failureKind。不保留名称、描述、Data、URL、异常原文或任意 scope。错名、错误类型、重复身份或未知事件统一为未知摘要；严重事件不因身份未知而隐藏。
+- Trace / Debug / Information 保持诊断语义，候选 Production 或 Diagnostics 关闭时抑制，旧链等级策略不变。`run_completed` 只表示报告聚合结束，`check_completed` 只表示检查返回结果，均不代表健康、业务成功或 HTTP 响应写入完成。
+- 保持 HealthReport 的状态 / 描述 / 异常 / Data、FailureStatus、predicate / tags、最小与扩展分组、默认 HTTP 状态和响应体。健康服务抛出异常与调用方取消、UriHealthCheck 自行捕获取消并返回失败结果，继续遵循各自既有边界。
+- 工厂创建、scope 释放、异常 Message 读取以及 Data.Count / 枚举可能发生在受保护 Log 调用之外；本批不改这些失败传播或折叠行为。结构化健康响应仍可能输出 description 与 exception.Message，日志治理不构成健康响应内容治理。
+- 四模式覆盖真实生成器、健康服务 / 中间件、内存 URL handler、WriteTo / AuditTo 和共享宿主注册 / 释放。HostBuilder 只 Build，不 Start；本节批次时旧链 SelfLog 保留文件初始化，后续治理见第 68 节。未启动项目服务、绑定端口、进行网络探测或真实超时计时，未访问证书库。OpenIddict Server 后续范围见第 65 节；Core 后续范围见第 66 节；Publisher、自有日志、非 Serilog 通道与响应内容治理仍后置；生产候选开关关闭，L2 未整体完成。
+
+## 65. L2 OpenIddict Server
+
+- 只治理 `OpenIddict.Server.OpenIddictServerDispatcher` 与 `OpenIddict.Server.AspNetCore.OpenIddictServerAspNetCoreHandler`。前者由 Server / ASP.NET Core 扩展共用，当前 7.2.0 目标程序集含 178 个数字事件；后者包含 AuthenticationHandler 基类的 5 个命名事件，各加一个未知摘要，共 185 个编码。完整映射见[本批记录](../records/unified-logging-l2-openiddict-server-2026-10-11.md)。
+- 数字日志使用普通 Log 扩展，EventName 为 null，桥接后的 EventId 仅含 Id；只有 Name 字段缺省合法，显式 null、错名、错误类型、重复字段均降为未知摘要。不能从资源编号、消息文本或 payload 的 EventName 推断身份。6072 属于当前未编译分支，不作为已知事件。
+- `OpenIddictLoggerFactory` 在原 UseSerilog 工厂之后、既有健康保护之前接入，Server 批次保护这两个精确类别，Core 扩展见第 66 节。Log 不读取原 state、不调用 formatter、不向桥接传递异常对象；固定来源、事件身份与 failureKind 防止 scope 补入。其他类别、BeginScope、IsEnabled、AddProvider、原工厂创建与释放所有权保持。
+- `OpenIddictLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出，只保留时间、原等级、类型化 trace/span、固定 EventCode / 来源 / Diagnostic 及受控异常类型分类；不输出 request / response、token、claims、secret、state、URI、异常原文或任意 scope。
+- 保持低于 Warning 的诊断语义，包括原 Debug 的 handler 异常观察；候选 Production 或 Diagnostics 关闭时抑制，严重未知事件仍可见。`handler_returned` 只表示 handler 返回，`event_handled` 只表示上下文已标记 handled；6141–6145、6147–6149、6151 使用 prepared 编码，不承诺 HTTP 输出完成。
+- 保持请求提取、认证结果 / 缓存 / properties / principal、handled / skipped / rejected、client / redirect / PKCE / scope 校验、令牌结果、重放撤销与异常传播。重放撤销失败（含取消）仍由框架消费并拒绝令牌。JSON / 文本 / form-post / query / fragment / logout / challenge 响应保持协议内容；日志治理不改变响应脱敏策略。
+- 四模式覆盖全部身份与输出链、真实 dispatcher / ASP.NET Core handler、请求 / 参数处理器、内存 JWT 生成验证和 manager 替身、响应写入失败 / 取消。数字身份由已安装 IL 核对，5 个命名事件由真实 LoggerMessage 元数据与生成器核对，不宣称 178 个数字事件都是生成器或都经过完整端点流程。
+- 工厂 / filter / handler 解析、协议序列化以及 logger 前参数求值仍在保护范围之外。form-post 的既有 CopyToAsync 不传 context 取消令牌，本批只验证流抛出取消异常仍传播；其他已测正文 writer 保留 token 传递。不修正这些既有运行语义。
+- 只进行内存验证和宿主 Build / Dispose；本节批次时旧链 SelfLog 保留文件初始化，后续治理见第 68 节。不安装 / 还原依赖、不启动服务、不绑定端口、不访问网络、真实数据库或证书库。Core 后续范围见第 66 节；自有 Auth 账户／会话后续治理见第 67 节，其他自有日志、OpenIddict Client / Validation / DataProtection 与非 Serilog 通道仍后置；生产候选开关关闭，L2 未整体完成。
+
+## 66. L2 OpenIddict Core
+
+- 新增三个精确来源 `OpenIddict.Core.OpenIddictApplicationManager`、`OpenIddict.Core.OpenIddictAuthorizationManager`、`OpenIddict.Core.OpenIddictTokenManager`；实际 Logger<T> 类别不含泛型参数。7.2.0 已安装程序集的 18 个数字事件与源码一致，各加一个未知摘要，共 21 个 `oidc.core.application / authorization / token` 编码。完整映射与验证见[本批记录](../records/unified-logging-l2-openiddict-core-2026-10-11.md)。Scope manager、Core cache 与 EF store 没有本批直接日志来源，不扩大前缀匹配。
+- 复用并扩展现有 OpenIddict 桥接前保护及上下文合并后的输出适配；共享注册名统一为 `ProtectOpenIddictLogging`。Core 使用固定 `SourceCategory=application`，不把 manager 事件等同于 HTTP 完成或数据库结果。Server 的 185 个编码、来源分类与原健康保护保持。
+- 数字 EventId 的 Name 仍须缺省；未知 / 错误 / 重复身份只生成来源对应的 unknown。Log 不读取原 state 或 formatter，不传原异常；最终输出仅保留固定身份、原等级 / 时间、typed trace/span、Diagnostic 和受控 failureKind。客户端 / token / authorization 标识、密钥、URI、异常正文和任意 scope 不进入输出。8 个 Information、4 个 Debug 均为诊断，6 个 Warning 保持可见；候选 Production / Diagnostics 门禁及严重未知事件策略不变。
+- 保持 Application 的 public client 拒绝、密钥哈希验证、redirect / post-logout URI 精确比较及 native loopback 端口规则。损坏哈希可先产生 6163 Warning 再产生 6161 Information；不按操作全局去重。日志所需 GetClientIdAsync 失败仍向调用方传播，不补造拒绝事件。
+- 保持 Authorization.TryRevoke 与 Token.TryRedeem / TryReject / TryRevoke 的校验、缓存移除、存储更新、缓存回填顺序、可变实体状态和返回值。并发异常保留 Debug；更新 catch 内的非致命异常（含取消）按原逻辑返回 false，前提是 catch 中读取 ID 和写日志成功。SetStatus / redemption date 的早期异常和致命异常继续传播；catch 内二次 ID 失败仍可替代原异常。
+- `*_completed` 只表示 manager 走到原完成日志位置，不证明外围事务提交。缓存回填或日志 ID 读取失败可能发生在 Store.UpdateAsync 返回之后，`*_failed` 不承诺未写入 / 已回滚。禁用日志也不会跳过框架调用 logger 前的参数求值。WriteTo 消费 sink 失败与 AuditTo 将失败传播回 manager 的既有差异保持。
+- 真实 Server handler 联查保持授权码兑换 false 时的拒绝、刷新令牌分支对 false 的消费、撤销失败的 unsupported_token_type、invalid_token 响应归一化，以及条件性 device / logout 分支的原返回值消费和异常传播；不启用新的产品端点、流程或协议能力。
+- 四模式覆盖全部身份、真实 manager 与存储 / 缓存替身、Server 消费链、WriteTo / AuditTo、诊断门禁、scope 冲突及共享宿主 Build / Dispose；不代表真实数据库、事务提交、并发竞争或完整登录验收。自有 Auth 账户／会话后续治理见第 67 节；其他自有日志、OpenIddict Client / Validation / DataProtection 和非 Serilog 通道继续后置；生产候选开关关闭，L2 未整体完成。
+
+## 67. L2 自有 Auth 账户与 IdleSession
+
+- 治理 AccountController 的 23 处与 ValidateIdleSessionTokenRequestHandler 的 1 处旧日志调用。前者注入 `ILogger<AccountController>`，后者保留现有 ILogger；生成端只传固定命名 EventId、安全枚举、总耗时和 `RuntimeFailureSummary` 分类，不传邮箱、展示名、用户／客户端 ID、流水号、回跳 URL、Subject、活跃时间或原异常。
+- 复用 `AuthenticationLogSink`，只匹配 `Radish.Auth.Controllers.AccountController` 与 `Radish.Auth.OpenIddict.ValidateIdleSessionTokenRequestHandler` 两个完整来源及 Id / Name；9 + 1 个已知事件、每来源 1 个 unknown，共新增 12 个编码。旧链代码／配置 WriteTo、AuditTo 与候选输出在上下文合并后重建，保留时间、原等级、typed trace/span 和事件对应的受控字段；任意 scope、伪造 EventCode、字符串关联键及原异常均不透传。完整映射见[本批记录](../records/unified-logging-l2-auth-account-idle-session-2026-10-15.md)。
+- 登录中间过程与正常 returnUrl 解析日志移除；凭据错误、非法回跳和客户端未找到改为 Debug 诊断，凭据错误不区分账户不存在与密码错误。客户端读取失败降级为空摘要记 Warning；注册消费失败记 Error。候选诊断仍要求 Development + Diagnostics，旧链保留原等级配置；登录／注册 result_prepared 与 idle_session.rejected 是非诊断 Info。
+- 登录成功先等待 SignInAsync 返回并构造 IActionResult，再记录 result_prepared；注册先构造成功提示与跳转，catch 先构造错误提示与跳转，再记录消费失败。用户创建／确保奖励调用返回只记诊断，不宣称整体注册成功、新发奖励或外层事务提交。authStage 描述失败所在阶段，既有写入不因后续失败自动回滚。
+- IdleSession 先 Reject 再记录，保留过期策略、invalid_grant 与错误说明。登录的异常／取消继续向外传播；注册及客户端解析的既有 catch 仍消费异常（含取消），客户端 query fallback 读取仍在解析 catch 外。结果准备与上下文拒绝不等于 HTTP／协议响应写入完成，Auth 未接入 API 的错误处理中间件，不能把传播路径写成 API http.failed 已验收。
+- 四模式验证真实 Controller／handler、内存 Cookie + 临时 DataProtection、OpenIddict dispatcher、服务／store 替身、未知身份、scope 冲突、诊断门禁和 WriteTo／AuditTo 输出故障。WriteTo 消费输出失败；AuditTo 可抛 AggregateException，日志前已完成的拒绝／登录／用户创建副作用保留。catch 内本地化、TempData 或结果构造二次失败时不提前记录原异常已消费。
+- returnUrl 解析 catch 未稳定触发，只有真实日志生成方法、身份与安全输出证据；没有新增可注入解析器来制造分支。未安装依赖、启动项目服务、绑定端口、访问真实数据库或证书库，不代表完整 OIDC 登录、网络、存储事务或生产采集验收。Auth 启动回调 16 处日志、其余框架与非 Serilog 通道继续核对；候选开关关闭，L2 尚未整体完成。
+
+## 68. L2 SelfLog 独立自诊断通道
+
+- `RuntimeLoggingSession` 在读取自身日志配置之前注册 `SerilogSelfLogSession`，旧链、候选链及 DbMigrate 共用。旧链移除 `ConfigureSerilogSelfLog` 的每日原文追加文件；不删除或迁移历史文件。自诊断独立写入 stderr（测试可注入 writer），不经 Serilog、应用文件或数据库 sink。
+- 新增 `pipeline.self_diagnostic`，固定 Warning、非 diagnostic、SourceCategory=pipeline，只携带受控 `count`。它表示收到 provider 自诊断，不代表已确认业务失败、丢失日志或原始诊断等级；实际规范化 / 输出失败仍为 `pipeline.output_failed` Error，二者计数和限频独立。
+- 自诊断不依赖 `RadishLogging.Enabled`、主链 MinimumLevel 或 Diagnostics。来源固定使用 deploymentId=bootstrap、宿主 service、`instanceId=process-<pid>`、release=unversioned；mode 仅在宿主为 Development 时取 Development，其余为 Production。不读取可能失效或尚未完成验证的配置来源字段，不承诺与主链部署元数据相同。
+- 每个会话首次立即报告，此后每 60 秒至多尝试一次；使用单调时钟，累计回调次数，上限 9007199254740991。没有定时器；下一次回调触发窗口检查。写入 / Flush 失败保留计数，写入重入只累计不递归；部分写入可能使后续计数重叠。关闭不强制冲刷，未报告计数不持久化，不承诺恰好一次或应急介质绝不丢失。
+- 回调不解析或转发原文、异常、scope、URL 或业务身份；Serilog 在回调前可能已经格式化原始消息，本批不阻止上游求值。应急输出遵循统一单事件大小约束；writer 同步调用，限频不等于 IO 超时保障。
+- Session 构造失败时释放自己的注册并原样传播异常；正常作用域中旧 logger 随宿主先释放，候选 logger 随 Session 释放，最后注销自诊断。SelfLog 是进程全局通道：最新存活会话接收，注销后恢复最近仍存活会话；旧会话不清除新会话，全部释放后禁用。此所有权仅覆盖本组件的注册，不恢复外部直接覆盖的 SelfLog 回调，也不扩展业务 `Log.Logger` 的单宿主作用域约定。
+- 四模式、真实旧链配置 sink 的创建 / 创建失败 / 释放 / 释放失败、主链 WriteTo / AuditTo、宿主 Build / Dispose、并发、限频、写入重入和应急失败已定向验证，见[本批记录](../records/unified-logging-l2-selflog-2026-10-15.md)。初始宿主配置加载前及最后 Session 释放后的第三方自诊断不在接管期内；没有运行服务或切换生产候选链。DataProtection、Auth 启动日志与其他裸输出不在本批范围。
+
+## 69. L2 ASP.NET Core DataProtection 日志
+
+- 覆盖 ASP.NET Core 10.0.8 核心程序集的 20 个精确来源、78 个有调用点的命名事件身份，加各来源 unknown 共 98 个 `data_protection.*` 编码。按 `SourceContext + EventId.Id + EventId.Name` 联合匹配，不按命名空间前缀、消息模板或裸数字推断；两个无命名调用点进入各自 unknown，只有声明而未发现调用点的 52 / 79 不登记已启用身份。完整来源与分组见[本批记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)，逐身份映射见 `DataProtectionLogIdentity`。
+- Auth 的 MVC / antiforgery / Cookie、API 的 Hangfire Cookie、Gateway 的 RazorPages 均引入 DataProtection，包括密钥环预载服务。该范围不同于未注册的 OpenIddict DataProtection 集成包；不因包被传递引用而推定其能力已启用。
+- `AddSerilogSetup` 注册 `DataProtectionLoggerFactory`，在列明来源进入 Serilog 绑定前丢弃原 state、formatter 与异常正文，仅按异常类型生成固定 `failureKind`；保留工厂、provider、scope 与 logger 的既有所有权。`DataProtectionLogSink` 在上下文合并后重建安全事件，覆盖候选链及旧链代码 / 配置 WriteTo / AuditTo。仅保留固定编码、来源、infrastructure 分类、原时间 / 等级、Diagnostic、受控 failureKind 与强类型 trace / span；不保留 XML、密钥标识、用途、路径、撤销理由、算法类型名、注册表或证书信息。
+- 原等级低于 Warning 的事件均标为 diagnostic，候选链按既有环境 / Diagnostics 门禁过滤；Warning / Error 不降级，未知身份遵循同一规则。预载失败 66 保留框架 Information / diagnostic，不能提升成宿主启动失败或据其成功摘要推定整个宿主健康。候选链 Trace / Debug 仍统一为 Info + diagnostic；旧链保留原始等级。
+- `key_creation_started`、`key_revocation_started`、`date_revocation_started`、`file_repository.write_started` 等只表示已到达操作开始点，不承诺持久化完成。密钥处理失败 24 与详细诊断 25 安全化后，畸形 key 仍可被跳过，延迟 descriptor 导入失败仍抛出；畸形 revocation 的 21 仍中止读取。预载消费异常、缓存刷新回退、密钥轮换、撤销、加解密和持久化语义均保持框架行为。
+- 前置保护不阻止框架在调用 ILogger 之前构造 purposes 字符串或 XML 副本；scope 仍经原桥接处理，任意第三方 enricher / destructurer 的提前求值及独立 logger 不自动受控。这里只保证列明接线输出的安全重建，不宣称全进程所有日志和诊断通道已覆盖。
+- 四模式验证真实日志生成器、内存密钥环 / XML repository、篡改 / 用途隔离 / 缺失与撤销密钥、轮换、刷新失败、预载失败恢复、受控临时文件与证书 resolver 替身，以及桥接 / scope / WriteTo / AuditTo / 宿主 Build / Dispose。Windows CNG、DPAPI、Registry 分支只具备真实生成器证据，不代表原生平台验收；没有启动项目服务、访问真实密钥库、数据库或系统证书库。本节批次未扩展 Auth 启动日志；三宿主启动摘要后续见第 70 节。其他裸输出和非日志诊断仍后置；生产候选开关关闭，L2 尚未整体完成。
+
+## 70. L2 Auth / API / Gateway 启动摘要
+
+- 三宿主原 ApplicationStarted 回调的 47 处 banner / 配置日志统一为每个宿主一个 `runtime.startup_summary`（Information、非 diagnostic、lifecycle 分类）。同时移除 API 回调外的一处 JWT 初始化摘要及其证书 Subject / 验签目标拼接，共收口 48 处旧调用点。它只说明收到宿主启动完成通知，不代表认证、健康检查、下游连接或生产验收成功。
+- 精确来源为 `Radish.Extension.Log.HostStartupLog`。生成端只接受受控状态与数量；`HostStartupLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出。身份由精确来源及固定 EventCode 匹配；同来源未知编码进入 `runtime.startup_unknown`，保留原等级，低于 Warning 标为 diagnostic。相邻来源不拦截，不扩展到整个 Program 或进程。
+- 公共属性为 `startupHost=auth|api|gateway`、`startupEnvironment=development|production|staging|other`、`listenEndpointCount`、`corsOriginCount`。Auth 仅允许 `startupAuthentication=not-initialized|development-keys|file-certificates`；API 仅允许 `authority|local-certificate`；Gateway 仅允许 `healthTargetCount`、`startupHttpsRedirection=enabled|disabled`、`startupDelegation=removed|retained`。生成端计数为 int，输出要求非负；共享策略要求 0–2147483647 的整数。类型错误、跨宿主属性及未登记值丢弃。
+- 环境在创建摘要状态时归一化；CORS 数量来自已解析 origins。API 模式来自实际已加载签名证书是否存在；Auth 在既有 OpenIddict 配置委托主体完成后记录所选密钥模式，未到该点时明确为 not-initialized，不为日志强制解析 options 或初始化证书。模式是配置选择，不证明证书或认证流程可用。Gateway 复用实际 HTTPS / delegation 分支和健康检查 tags 数量；retained 不承诺 HttpSys delegation 实际可用。
+- 启动通知只读取监听地址集合的 Count，不枚举地址、不重新读取配置、不解析 URI / 路径、不探测文件、不读取证书 Subject，不拼接 CORS 或下游目标。删除仅用于旧日志的两个 BuildStartupSummary 及对应 record；健康检查使用的 issuer / certificate 解析方法和实际认证、时区、代理、健康响应行为保持。
+- 输出只保留固定来源 / 编码 / 分类、原时间 / 等级、Diagnostic、上述属性和强类型 trace/span；丢弃异常、URL、Issuer、证书路径 / 身份、原始环境名、时区名、目标名 / 状态与任意 scope。已知摘要受既有 MinimumLevel 约束，不依赖候选 Diagnostics 开关；独立 logger、任意外部 enricher 的提前求值不自动受保护。
+- 回调注册在 RunAsync 前，作用域结束时释放；注册本身不输出，停止通知不生成启动摘要。未发出 ApplicationStarted 的失败路径无摘要；后续 Auth 状态变化不补发。本节批次时既有 `runtime.started` / `runtime.stopped` 仍由 RuntimeLoggingSession 管理，未扩展旧链生命周期所有权；Gateway 停止通知的后续治理见第 72 节。WriteTo 消费输出异常、AuditTo 传播异常和候选应急输出的既有语义保留。
+- 四模式、配置后续读取失败、不可枚举地址、延迟 Auth 状态、scope 污染、输出故障与健康解析回归见[本批记录](../records/unified-logging-l2-host-startup-2026-10-15.md)。只使用受控生命周期通知与内存 / 临时文件验证，没有启动项目服务或访问真实数据库 / 证书库。本节未纳入 Common 程序集诊断、浏览器输出与其他 Program 日志；Common 后续见第 71 节，任务注册 / 固定文档同步 / Gateway 停止后续见第 72 节；生产候选开关关闭，L2 未整体完成。
+
+## 71. L2 Common 程序集加载与类型枚举诊断
+
+- 仅替换 `RuntimeExtension.GetAllAssemblies` 与 `App.GetTypes` 原有 catch 中的两条裸输出，分别生成 `runtime.assembly_load_failed` / `runtime.assembly_types_failed`。均为非致命 Error、非 diagnostic、infrastructure 分类，只携带既有封闭枚举 `failureKind`；不访问或输出程序集名称 / 路径、异常 Message / StackTrace / Data / ToString、LoaderExceptions、部分类型、任意 scope 或关联字段。
+- `AssemblyDiagnosticReporter` 位于 Common，直接复用 Common 的公共策略和 `RuntimeLogOutput` 写 stderr，不依赖 App、InternalApp、DI、LogContextTool 或 Serilog，不增加 Common 向内部业务层的引用。旧链 / 候选链与宿主环境均使用同一通道，不受主日志 MinimumLevel、Diagnostics 或候选开关控制；模式固定为 Production，表示诊断通道策略而非宿主环境。
+- `RuntimeProcess.RunAsync` 在执行宿主委托前绑定来源，覆盖 API / Auth / Gateway / DbMigrate 的配置加载前和 Session 创建 / 释放边界。service 只接受四个固定宿主值；未绑定、无存活祖先或未知绑定值使用新增的 `runtime` 来源。deploymentId=bootstrap、instanceId=process-进程号、release=unversioned，不读取配置或主机名称。`runtime` 是独立调用的来源标识，不代表新增宿主 / 容器。
+- 绑定使用 AsyncLocal；嵌套退出恢复存活祖先，外层先释放不清除内层，继承已释放作用域的任务报告时跳过该作用域。并发进程边界不交换来源；writer 不归 reporter 所有。已开始的一次写入可以在作用域释放后结束，释放不取消 IO。输出在首次诊断时惰性初始化；未显式传 writer 时使用当前 Console.Error，介质引用变化后重建对应输出状态。
+- 原有扫描目录、`Radish.Api` 前缀匹配、Default 加载上下文、即时程序集列表及延迟 EffectiveTypes 保持。单次加载失败仍跳过，类型枚举失败仍返回空集合，不回收 ReflectionTypeLoadException 中的部分类型；重复枚举仍会再次执行并报告。目录枚举、名称筛选、公共类型过滤、直接 DefinedTypes / LoadFromAssemblyName 以及独立选项扫描等原本向外传播的异常不扩大 catch、不添加重复事件，最终进程退出及 HostAbortedException 行为保持。
+- 本批有意消除诊断自身的二次故障：分类、策略初始化、序列化与写入故障不再替代原有跳过 / 空集合结果，也不因裸输出失败使 App 静态初始化持续不可用。同步及继承执行上下文的 writer 重入直接返回，不递归、不补发。不同 scope 的本通道写入串行；同步 writer 无 IO 超时保障，不承诺抵御任意外部阻塞。
+- 正常诊断按每次 catch 输出，不新增业务事件限频或聚合。规范化 / 输出失败复用 `pipeline.output_failed`，每个输出实例首次立即报告、此后 60 秒至多尝试一次；应急写入使用同一 stderr。策略不可用、应急介质也失效或重入抑制时可能无事件，不回退原文。没有持久队列、关闭补发或恰好一次承诺；输出实例 / 介质变化会重置其应急计数窗口。
+- 四模式、配置读取失败、嵌套 / 并发 / 已释放上下文、真实扫描、独立进程静态初始化、受控畸形 DLL、类型枚举替身、策略资源损坏、Write / Flush / 重入、进程退出与 CLI stdout 回归见[本批记录](../records/unified-logging-l2-common-assembly-diagnostics-2026-10-15.md)。未启动项目服务、访问真实数据库或系统证书库；ConsoleHelper 的其他通用输出、浏览器输出及其他程序集相关架构调整未扩展，生产候选开关关闭，L2 未整体完成。
+
+## 72. L2 API 启动业务与 Gateway 停止日志
+
+- 收口 API 的 16 处周期任务注册、4 处固定文档同步以及 Gateway 的 1 处尾部关闭日志。精确来源为 `Radish.Extension.Log.HostProgramLog`；`HostProgramLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出。只保留固定事件 / 分类 / 来源、原时间 / 等级、Diagnostic、事件对应的受控字段和强类型 trace / span；异常、scope、配置、路径、cron、时区和任务参数原文均不透传。相邻来源不接管，独立 logger 和外部 enricher 的提前求值不自动受保护。
+- `job.recurring_registration_returned` 是非诊断 Information、job 分类，只携带 `jobKind`，既有枚举新增 `outbox-dispatch`。16 处仍逐项调用原 `RecurringJob.AddOrUpdate` 静态入口；每次正常返回后才记录，不把“注册返回”写成任务执行成功。条件、顺序、参数、计划、时区、全局存储 / manager 和异常传播不变；默认开启 15 项，DailyStats 仍默认关闭。配置 / 注册失败不新增本地 catch，最终由既有 RuntimeProcess 处理。
+- `document.builtin_sync_skipped / completed` 为非诊断 Information，`document.builtin_sync_failed` 为非致命 Error，均为 application 分类。失败只保留 `failureKind`；成功只保留原摘要的十个非负 int 数量，不携带文档身份或内容。共享策略为新增七个计数键登记 0–9007199254740991 的整数边界，生成端 / 精确 sink 仍只接受非负 int；既有 createdCount / updatedCount / skippedCount 复用。
+- `WikiBuiltInSyncSummary.SkipReason` 与启动守卫改用 `WikiBuiltInSyncSkipReason`，移除目录文本拼接。日志字段 `builtInSyncSkipReason` 只接受 disabled、both-tables-missing、document-table-missing、revision-table-missing、directory-missing、no-markdown、unknown；无明确原因的跳过结果仅记录 unknown。该摘要只有内部启动消费者，不新增 HTTP 接口或数据迁移。缺表原因仍明确区分，处理方式仍为先执行 DbMigrate apply。
+- 启动任务注册块和文档同步块按职责移至 API Services，由 Program 在原位置调用。同步仍先建立 scope、读取实体表名、执行两次 IsAnyTable，再检查展示开关 / 缺表守卫；不会因 ShowBuiltInDocs=false 提前省略原有数据库查询。同步服务仍使用默认 CancellationToken；原 catch 保持消费同步、配置解析后的依赖解析、查询、取消及 scope 释放异常，正常日志输出返回后继续启动，不增加重试、事务或补偿。
+- 同步完成事件仅表示服务返回了非跳过摘要，发生在 scope 释放前；后续释放失败会另有 failed，不能据完成事件宣称整个启动或释放成功。部分同步后失败保留此前副作用，不新增回滚。WriteTo 仍消费 sink 异常；完成输出的 AuditTo 失败仍进入既有 catch，失败输出的 AuditTo 故障继续传播，可能影响进程退出，不能把其一概写成“必定继续启动”。
+- Gateway 改用 RuntimeLoggingSession.AttachGatewayLifetime：候选保留 started、由一个受控 stopped 回调记录；旧链补充同一 ApplicationStopped 通知的受控输出。复用 `runtime.stopped`（非诊断 Information、lifecycle，无业务属性），删除 RunAsync 返回后的额外日志；旧 logger 仍归宿主释放，候选 logger 仍归 Session 释放。停止通知不保证后续宿主 / logger Dispose 成功，不新增 Auth / API 旧链生命周期接管。注册本身、Stopping 和未发出 Stopped 的路径均不输出 stopped；Session 释放注销回调。
+- 同来源未知编码改为 `runtime.program_unknown`，保持原等级，低于 Warning 标为 diagnostic；已知事件不依赖 Diagnostics 开关，仍受 MinimumLevel 约束。字段按事件分别校验，跨事件或类型错误的属性丢弃。
+- 四模式、真实静态 Hangfire 注册 + 存储替身、SQLite 内存表查询、同步服务替身 / 既有真实服务回归、受控停止通知及 HostBuilder Build / Dispose、scope / WriteTo / AuditTo / 应急通道验证见[本批记录](../records/unified-logging-l2-program-operations-2026-10-15.md)。未启动项目服务 / Hangfire worker、访问真实数据库或绑定端口；不能代替调度执行、真实存储事务、系统停机和部署验收。浏览器输出未扩展，生产候选开关仍关闭，L2 未整体完成。

@@ -1,372 +1,60 @@
-# Rust 扩展架构使用指南
+# Rust 图片处理与原生产物
 
-## 概述
+后端图片处理使用 `Lib/radish.lib` 单一实现，C# `RustImageProcessor` 负责调度、流所有权、临时文件和最终输出提交。旧 `CSharpImageProcessor`、选择工厂和 Six Labors 引用已删除。能力约定见[实施方案](../features/rust-image-processing-implementation-plan.md)，本轮证据与未完成项见[实施记录](../records/rust-image-replacement-2026-10-20.md)。
 
-Radish 项目支持使用 Rust 原生扩展来提升图片处理和文件操作的性能。系统提供了 C# (ImageSharp) 和 Rust 两种实现，可以通过配置灵活切换。
+## 构建前提
 
-## 功能特性
+- Node.js 24、.NET SDK 10、固定 Rust 1.96.0；Rust 工具链配置在 `Lib/radish.lib/rust-toolchain.toml`。
+- 对应平台 C 编译工具链：Linux GCC / libc 开发文件、macOS Xcode Command Line Tools、Windows MSVC C++ Build Tools。
+- libwebp 与 Little CMS 从锁定 crate 的 vendored 源码静态编译；禁止通过 `LCMS2_LIB_DIR` 隐式换用系统库。
+- 使用仓库已有 DejaVu Sans 与 Noto Sans SC 字体，构建不搜索系统字体目录。
+- 安装或更新工具、依赖仍需按当前任务授权；以下构建命令不代表安装授权。
 
-### 当前支持的 Rust 扩展
+在仓库根目录执行：
 
-1. **图片水印** (`add_text_watermark`)
-   - 添加文字水印到图片
-   - 支持 5 种位置（左上、右上、左下、右下、居中）
-   - 可自定义字体大小、透明度
-
-2. **文件哈希计算** (`calculate_file_sha256`)
-   - 快速计算文件 SHA256 哈希值
-   - 用于文件去重功能
-
-3. **性能测试函数** (从 test_lib 迁移)
-   - `calculate_sum_rust`: 整数求和
-   - `calculate_fibonacci_like_rust`: 斐波那契计算
-   - `count_primes_sieve_rust`: 质数筛法
-   - `count_primes_parallel_rust`: 并行质数计算
-
-### 性能优势
-
-根据性能测试，Rust 实现在以下场景中表现更优：
-- 大图片处理（> 2MB）
-- 批量操作
-- CPU 密集型任务（哈希计算）
-
-## 快速开始
-
-### 1. 安装 Rust 工具链
-
-```bash
-# Linux / macOS
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-
-# Windows
-# 访问 https://rustup.rs/ 下载安装程序
-
-# 验证安装
-rustc --version
-cargo --version
+```sh
+node Scripts/build-native-images.mjs --debug
+dotnet build Radish.slnx -c Debug --no-restore --warnaserror
+node Scripts/build-native-images.mjs
+dotnet build Radish.slnx -c Release --no-restore --warnaserror
 ```
 
-### 2. 编译 Rust 库
+`Lib/radish.lib/build.sh` 与 `build.ps1` 转发到同一脚本。构建输出位于 `artifacts/native/<rid>/<Debug|Release>`，包含动态库、字体、第三方 notices、`dependencies.json` 和 `manifest.json`。源代码、锁文件、字体、许可文件或构建脚本变化后需重建；MSBuild 拒绝缺失或过期产物。
 
-```bash
-# Linux / macOS
-cd Lib/radish.lib
-chmod +x build.sh
-./build.sh
+构建必须在目标平台执行，支持 RID 为 `linux-x64`、`linux-arm64`、`osx-x64`、`osx-arm64`、`win-x64`。Linux Docker 原生阶段使用 Debian bookworm；macOS 最低目标为 13；Windows 使用 MSVC。矩阵配置不等于所有平台已经实测通过，结果以当批记录为准。
 
-# Windows PowerShell
-cd Radish.Core\radish-lib
-.\build.ps1
+## 配置迁移
+
+从所有共享、宿主、本地与环境变量配置中删除 `FileStorage:ImageProcessing:UseRustExtension`（环境变量形式 `FileStorage__ImageProcessing__UseRustExtension`）。旧值无论 true / false 均导致明确迁移错误；没有 C# 回退。
+
+原有缩略图、多尺寸、质量、EXIF 去除及水印开关继续生效。默认字体优先级为 `Noto Sans SC`、`DejaVu Sans`；自定义字体使用 `FileStorage:Watermark:Text:Font:CustomFontPath` 指定可信本机文件。字体缺字或不支持的参数返回失败，不无声跳过文字。Regular / Bold / Italic / BoldItalic 均有明确实现。
+
+启动先检查当前 RID、ABI、原生库与字体 SHA256。只有测试可通过绝对路径 `RADISH_TEST_NATIVE_LIBRARY` 指定包含 manifest 的同一产物目录；不要把它作为部署时跨平台加载的绕过手段。
+
+## 接口与图片语义
+
+`IImageProcessor` 保留缩略图、缩放、压缩、文字 / 图片水印、去除隐私元数据、多尺寸、信息与有效性八类操作。处理方法接受显式输出格式、动画策略与取消；`RemoveExifAsync` 返回 `ImageProcessResult`。
+
+- JPEG / PNG / WebP / GIF / BMP / ICO 按内容识别，上传同时检查扩展名一致性；不新增 SVG / AVIF / HEIC / TIFF。
+- thumbnail 默认首帧静态预览，其余操作默认保留动画。GIF / BMP / ICO 及动画 WebP 的上传派生预览使用 PNG，并返回实际路径与 MIME。
+- JPEG / WebP 的 quality 控制有损编码，PNG 不承诺体积缩小；JPEG 在白底合成透明像素。
+- EXIF orientation 先应用到像素，ICC 转为 sRGB；不支持的 CMYK 输入明确失败。16-bit PNG 静态处理保留精度，8-bit 输出显式量化。
+- `RemoveExifAsync` 去除 EXIF / ICC / XMP / IPTC / 私有文本等元数据；无需方向 / 色彩变换时 JPEG / PNG / WebP 使用容器重封装，避免无意义再次有损编码。
+- 默认输入 5 MiB、单帧 40 MP、最多 300 帧、总 120 MP、工作预算 512 MiB；单输出 32 MiB、批次 96 MiB。宿主全局并发 2、排队 8、等待 5 秒、协作截止 30 秒。预算属于预检与协作取消，不能当作进程级隔离。
+- 输入流不关闭，可定位流恢复原位置；所有输出先写私有临时目录，整批成功再提交，失败恢复既有目标并清理暂存。
+
+业务上传先验证完整内容，再处理原图隐私元数据、水印和派生尺寸，最终大小按实际文件回填。此变更不批量重写历史附件，也不改变存储架构。
+
+## 验证与交付
+
+```sh
+node Scripts/validate-native-images.mjs
+node Scripts/check-native-image-security.mjs
+dotnet test Radish.Api.Tests -c Release --filter 'FullyQualifiedName~ImageProcessorTest|FullyQualifiedName~OutboxNativeLoggingTests'
+dotnet publish Radish.Api -c Release --no-restore -o artifacts/image-publish
+dotnet artifacts/image-publish/Radish.Api.dll --check-native-images
 ```
 
-编译成功后，库文件会自动复制到 `Radish.Api/bin/Debug/net10.0/` 目录：
-- Linux: `libradish_lib.so`
-- macOS: `libradish_lib.dylib`
-- Windows: `radish_lib.dll`
+`--check-native-images` 在业务宿主创建之前执行中文水印、WebP 输出与读回测试，不监听端口、不连接业务数据库。Dockerfile 在 Linux 目标架构构建 Rust，再把原生产物随 API 发布；经任务授权后运行 `node Scripts/check-native-image-docker.mjs` 验证 amd64 / arm64，完成后删除测试镜像，不推送镜像。
 
-### 3. 启用 Rust 扩展
-
-在 `appsettings.json` 或 `appsettings.Local.json` 中配置：
-
-```json
-{
-  "FileStorage": {
-    "ImageProcessing": {
-      "UseRustExtension": true  // 设置为 true 启用 Rust 扩展
-    }
-  }
-}
-```
-
-### 4. 重启应用
-
-```bash
-dotnet run --project Radish.Api
-```
-
-启动日志会显示使用的处理器类型：
-```
-[INF] Image processor initialized: Rust
-```
-
-## 配置说明
-
-### 完整配置示例
-
-```json
-{
-  "FileStorage": {
-    "ImageProcessing": {
-      "UseRustExtension": false,      // true: 使用 Rust, false: 使用 C# (ImageSharp)
-      "GenerateThumbnail": true,
-      "ThumbnailSize": {
-        "Width": 150,
-        "Height": 150
-      },
-      "CompressQuality": 85,
-      "RemoveExif": true
-    },
-    "Watermark": {
-      "Enable": true,
-      "Type": "Text",
-      "Text": {
-        "Content": "Radish",
-        "Position": "BottomRight",
-        "FontSize": 24,
-        "Opacity": 0.5
-      }
-    }
-  }
-}
-```
-
-### 配置项说明
-
-| 配置项 | 类型 | 默认值 | 说明 |
-|--------|------|--------|------|
-| `UseRustExtension` | bool | false | 是否使用 Rust 扩展 |
-
-**注意**：
-- 如果 `UseRustExtension=true` 但 Rust 库不可用，系统会自动回退到 C# 实现
-- 日志会记录回退信息，方便排查问题
-
-## 架构设计
-
-### 组件结构
-
-```
-Lib/radish.lib/                 # 统一的 Rust 扩展库
-├── src/
-│   ├── lib.rs                          # FFI 导出
-│   ├── image/                          # 图片处理模块
-│   │   ├── mod.rs
-│   │   └── watermark.rs                # 水印功能
-│   ├── hash/                           # 文件哈希模块
-│   │   ├── mod.rs
-│   │   └── file_hash.rs                # SHA256 哈希计算
-│   ├── benchmark/                      # 性能测试模块（从 test_lib 迁移）
-│   │   ├── mod.rs
-│   │   └── math.rs                     # 数学计算测试
-│   └── utils/                          # 工具函数
-│       └── mod.rs
-├── fonts/DejaVuSans.ttf                # 字体文件
-├── build.sh / build.ps1                # 编译脚本
-├── Cargo.toml                          # Rust 项目配置
-└── README.md
-
-Radish.Infrastructure/ImageProcessing/  # C# 封装
-├── IImageProcessor.cs                  # 接口定义
-├── CSharpImageProcessor.cs             # C# 实现
-├── RustImageProcessor.cs               # Rust FFI 封装
-└── ImageProcessorFactory.cs            # 工厂类（配置切换）
-```
-
-### 工作流程
-
-1. **启动时**：`ImageProcessorFactory` 根据配置创建处理器实例
-2. **运行时**：`AttachmentService` 通过 `IImageProcessor` 接口调用
-3. **Rust 调用**：`RustImageProcessor` 通过 P/Invoke 调用 Rust 函数
-4. **自动回退**：如果 Rust 库不可用或出错，自动使用 C# 实现
-
-## 性能测试
-
-### 运行性能测试
-
-```bash
-# 运行所有性能测试
-dotnet test Radish.Api.Tests --filter "FullyQualifiedName~ImageProcessorPerformanceTest"
-
-# 运行特定测试
-dotnet test --filter "FullyQualifiedName~WatermarkPerformance_CSharpVsRust"
-```
-
-### 测试项目
-
-1. **单张图片水印** (`WatermarkPerformance_CSharpVsRust`)
-   - 测试 2000x1500 图片的水印处理时间
-   - 对比 C# 和 Rust 的性能差异
-
-2. **文件哈希计算** (`FileHashPerformance_CSharpVsRust`)
-   - 测试 10MB 文件的 SHA256 哈希计算时间
-   - 验证哈希值一致性
-
-3. **批量处理** (`BatchWatermarkPerformance_CSharpVsRust`)
-   - 测试 10 张图片的批量水印处理
-   - 计算平均每张图片的处理时间
-
-### 预期性能提升
-
-根据初步测试（具体数据需要实际运行测试获得）：
-- 图片水印：Rust 预计比 C# 快 1.5-3x
-- 文件哈希：Rust 预计比 C# 快 2-4x
-- 批量操作：性能优势更明显
-
-## 故障排查
-
-Rust FFI 的显式错误只通过返回码交给 .NET，不在 stderr 打印路径、水印或底层错误。宿主的安全事件区分能力降级、清理失败和直接操作失败；下面是字段示意，不要求旧 sink 与候选 JSONL 显示格式一致。`native-result` 只能说明原生操作失败，不能单凭它断言字体缺失，仍需核对构建资产。详细边界见[日志契约](../features/unified-logging-contract.md)。
-
-### 已知边界：临时输入扩展名
-
-2026-09-23 真实动态库复测发现：相同有效 PNG 的 `.png` 输入可以成功加水印，`.tmp` 输入返回 -1。当前 .NET wrapper 使用 `.tmp`，Rust 的 `image::open` 按扩展名识别，因而会回退到 C#；库加载成功不等于水印实际走了原生成功路径。该问题尚待独立确认修复范围，验证证据见[日志原生调用记录](../records/unified-logging-l2-outbox-native-2026-09-23.md)。
-
-### 问题 1：Rust 库未找到
-
-**症状**：
-```
-Warning native.fallback nativeOperation=watermark nativeReason=library-unavailable
-```
-
-**解决方案**：
-1. 确认已编译 Rust 库：`cd Lib/radish.lib && ./build.sh`
-2. 检查库文件是否存在于 `Radish.Api/bin/Debug/net10.0/` 目录
-3. 确认文件名正确：
-   - Linux: `libradish_lib.so`
-   - macOS: `libradish_lib.dylib`
-   - Windows: `radish_lib.dll`
-
-### 问题 2：字体文件缺失
-
-**症状**：
-```
-Warning native.fallback nativeOperation=watermark nativeReason=native-result
-```
-
-**解决方案**：
-1. 确认 `Lib/radish.lib/fonts/DejaVuSans.ttf` 存在
-2. 参考 `fonts/README.md` 获取字体文件
-3. Linux 系统可以从 `/usr/share/fonts/truetype/dejavu/` 复制
-
-### 问题 3：编译失败
-
-**症状**：
-```
-error: could not compile `radish-lib`
-```
-
-**解决方案**：
-1. 确认 Rust 工具链已安装：`rustc --version`
-2. 更新 Rust：`rustup update`
-3. 清理并重新编译：
-   ```bash
-   cargo clean
-   cargo build --release
-   ```
-
-### 问题 4：运行时错误
-
-**症状**：
-```
-[ERR] Rust watermark failed with code -1
-```
-
-**解决方案**：
-1. 检查日志中的详细错误信息
-2. 确认输入文件路径正确且文件存在
-3. 确认输出目录有写入权限
-4. 系统会自动回退到 C# 实现，不影响功能
-
-## 开发指南
-
-### 添加新的 Rust 函数
-
-1. **在 Rust 中实现**：
-   ```rust
-   // src/lib.rs
-   #[no_mangle]
-   pub extern "C" fn my_new_function(param: i32) -> i32 {
-       // 实现逻辑
-       param * 2
-   }
-   ```
-
-2. **在 C# 中声明**：
-   ```csharp
-   // RustImageProcessor.cs
-   [DllImport(LibraryName, EntryPoint = "my_new_function")]
-   private static extern int MyNewFunctionNative(int param);
-   ```
-
-3. **添加公共方法**：
-   ```csharp
-   public int MyNewFunction(int param)
-   {
-       try
-       {
-           return MyNewFunctionNative(param);
-       }
-       catch (DllNotFoundException)
-       {
-           // 回退到 C# 实现
-           return param * 2;
-       }
-   }
-   ```
-
-4. **重新编译 Rust 库**：
-   ```bash
-   cd Lib/radish.lib
-   ./build.sh
-   ```
-
-### 性能优化建议
-
-1. **选择合适的实现**：
-   - 小文件（< 1MB）：C# 和 Rust 性能差异不大
-   - 大文件（> 2MB）：Rust 优势明显
-   - 批量操作：优先使用 Rust
-
-2. **配置策略**：
-   - 开发环境：使用 C# 实现（无需编译 Rust）
-   - 生产环境：使用 Rust 实现（更高性能）
-
-3. **监控和调优**：
-   - 定期运行性能测试
-   - 根据实际负载调整配置
-   - 关注日志中的性能指标
-
-## 最佳实践
-
-1. **渐进式启用**：
-   - 先在开发环境测试 Rust 扩展
-   - 确认功能正常后再在生产环境启用
-   - 保持 C# 实现作为后备方案
-
-2. **版本管理**：
-   - Rust 库版本与项目版本保持一致
-   - 更新 Rust 代码后及时重新编译
-   - 在 CI/CD 中自动化编译流程
-
-3. **错误处理**：
-   - 始终提供 C# 实现作为回退
-   - 记录详细的错误日志
-   - 监控 Rust 扩展的可用性
-
-4. **性能监控**：
-   - 定期运行性能测试
-   - 对比 C# 和 Rust 的实际性能
-   - 根据业务需求选择合适的实现
-
-## 参考资料
-
-- [Rust 官方文档](https://www.rust-lang.org/learn)
-- [ImageSharp 文档](https://docs.sixlabors.com/articles/imagesharp/index.html)
-- [P/Invoke 指南](https://learn.microsoft.com/en-us/dotnet/standard/native-interop/pinvoke)
-- [Radish 文件上传设计文档](../features/file-upload-design.md)
-
-## 更新日志
-
-### 2025-12-23
-- ✅ 实现统一的 Rust 扩展架构（radish-lib）
-- ✅ 添加图片水印功能（Rust 实现）
-- ✅ 添加文件哈希计算（Rust 实现）
-- ✅ 迁移 test_lib 性能测试功能到 radish-lib
-- ✅ 实现 ImageProcessorFactory（配置切换）
-- ✅ 添加自动回退机制
-- ✅ 完善编译脚本（build.sh / build.ps1）
-- ✅ 更新所有 C# 代码引用（test_lib → radish_lib）
-- ✅ 完善文档和使用指南
-
----
-
-**维护者**：Radish Team
-**最后更新**：2025-12-23
+`.github/workflows/native-images.yml` 覆盖五个宿主目标和 Linux 双架构镜像，纳入候选检查。安全审计读取锁文件的实际依赖图；停止维护提示单独记录，不与可利用漏洞混为一类。字体及第三方 notices 必须随产物分发。

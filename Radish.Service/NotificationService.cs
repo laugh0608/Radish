@@ -1,7 +1,6 @@
 using System.Globalization;
 using System.Text.Json;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 using Radish.Common;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
@@ -22,7 +21,6 @@ public sealed class NotificationService : INotificationService
     private readonly INotificationTargetResolver _targetResolver;
     private readonly INotificationPushService _pushService;
     private readonly TimeProvider _timeProvider;
-    private readonly ILogger<NotificationService> _logger;
     private readonly IUserInteractionPolicyService _interactionPolicyService;
 
     public NotificationService(
@@ -31,8 +29,7 @@ public sealed class NotificationService : INotificationService
         INotificationTargetResolver targetResolver,
         INotificationPushService pushService,
         IUserInteractionPolicyService interactionPolicyService,
-        TimeProvider timeProvider,
-        ILogger<NotificationService> logger)
+        TimeProvider timeProvider)
     {
         _inboxRepository = inboxRepository;
         _userRepository = userRepository;
@@ -40,7 +37,6 @@ public sealed class NotificationService : INotificationService
         _pushService = pushService;
         _interactionPolicyService = interactionPolicyService;
         _timeProvider = timeProvider;
-        _logger = logger;
     }
 
     public async Task<long> CreateNotificationAsync(CreateNotificationDto dto)
@@ -114,10 +110,6 @@ public sealed class NotificationService : INotificationService
 
         if (recipients.Count == 0)
         {
-            _logger.LogInformation(
-                "通知 {NotificationId} 已按 {Category} 偏好抑制全部接收者",
-                notificationId,
-                definition.Category);
             return notificationId;
         }
 

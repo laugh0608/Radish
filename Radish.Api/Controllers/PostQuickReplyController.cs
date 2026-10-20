@@ -4,12 +4,14 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -67,12 +69,16 @@ public class PostQuickReplyController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.NotFound,
                 MessageInfo = ex.Message
             };
+            Log.ForContext("EventCode", "quick_reply.query_rejected")
+                .ForContext("SourceCategory", "business")
+                .Warning("Quick reply query rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            return response;
         }
     }
 
@@ -148,16 +154,23 @@ public class PostQuickReplyController : ControllerBase
         }
         catch (ArgumentException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = (int)HttpStatusCodeEnum.BadRequest,
                 MessageInfo = ex.Message
             };
+            if (ex is PostQuickReplyNotificationEnqueueException)
+            {
+                Log.ForContext("EventCode", "quick_reply.notification_enqueue_failed")
+                    .ForContext("SourceCategory", "business")
+                    .Error("Quick reply notification enqueue failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
         catch (BusinessException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = ex.StatusCode,
@@ -165,6 +178,13 @@ public class PostQuickReplyController : ControllerBase
                 Code = ex.ErrorCode,
                 MessageKey = ex.MessageKey
             };
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
     }
 
@@ -211,7 +231,7 @@ public class PostQuickReplyController : ControllerBase
         }
         catch (BusinessException ex)
         {
-            return new MessageModel
+            var response = new MessageModel
             {
                 IsSuccess = false,
                 StatusCode = ex.StatusCode,
@@ -219,6 +239,13 @@ public class PostQuickReplyController : ControllerBase
                 Code = ex.ErrorCode,
                 MessageKey = ex.MessageKey
             };
+            if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
+            {
+                Log.ForContext("EventCode", "http.failed")
+                    .ForContext("SourceCategory", "http")
+                    .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
+            }
+            return response;
         }
     }
 }

@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -159,9 +160,14 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         }
         catch (Exception ex) when (IsUniqueConstraintConflict(ex))
         {
-            _logger.LogWarning(ex,
-                "Reaction 并发冲突，准备重试一次。targetType={TargetType}, targetId={TargetId}, userId={UserId}, emojiValue={EmojiValue}",
-                normalizedTargetType, request.TargetId, userId, normalizedEmojiValue);
+            using (_logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "reaction.retrying",
+                ["SourceCategory"] = "business"
+            }))
+            {
+                _logger.LogWarning("Reaction retry selected after a conflict; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            }
 
             try
             {

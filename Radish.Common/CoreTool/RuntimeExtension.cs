@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.Loader;
+using Radish.Common.LogTool;
 
 namespace Radish.Common.CoreTool;
 
@@ -30,7 +31,7 @@ public static class RuntimeExtension
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Failed to load assembly: {fileName}. Error: {e.Message}");
+                AssemblyDiagnosticReporter.AssemblyLoadFailed(e);
             }
         }
 

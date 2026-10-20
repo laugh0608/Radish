@@ -14,6 +14,9 @@ public class ImageProcessResult
     /// 错误消息
     /// </summary>
     public string? ErrorMessage { get; set; }
+    public string? ErrorCode { get; set; }
+    public string Format { get; set; } = string.Empty;
+    public int FrameCount { get; set; } = 1;
 
     /// <summary>
     /// 输出文件路径

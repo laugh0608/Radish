@@ -35,6 +35,7 @@ using Radish.Extension.AuditLogExtension;
 using Radish.Extension.ExperienceExtension;
 using Radish.Infrastructure.FileStorage;
 using Radish.Infrastructure.ImageProcessing;
+using Radish.Extension.ImageProcessingExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
@@ -69,6 +70,12 @@ using Radish.Service.Base;
 // -------------- 容器构建阶段 ---------------
 return await RuntimeProcess.RunAsync("api", async () =>
 {
+    if (args.Contains("--check-native-images", StringComparer.Ordinal))
+    {
+        await NativeImageSelfTest.RunAsync();
+        return;
+    }
+
     var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<BusinessCalendar>();
@@ -289,13 +296,7 @@ return await RuntimeProcess.RunAsync("api", async () =>
     // 注册文件存储和图片处理服务
     // 根据 FileStorage:Type 动态选择存储后端（Local/MinIO/OSS）
     builder.Services.AddSingleton<IFileStorage>(sp => FileStorageFactory.Create(sp));
-    // 图片处理：根据 ImageProcessing:UseRustExtension 动态选择实现（C# ImageSharp / Rust）
-    builder.Services.AddSingleton<ImageProcessorFactory>();
-    builder.Services.AddScoped<IImageProcessor>(sp =>
-    {
-        var factory = sp.GetRequiredService<ImageProcessorFactory>();
-        return factory.Create();
-    });
+    builder.Services.AddImageProcessingSetup(builder.Configuration);
     builder.Services.AddSingleton<IAttachmentUrlResolver, AttachmentUrlResolver>();
     builder.Services.AddScoped<IAttachmentReferenceInspector, AttachmentReferenceInspector>();
     // 注册缓存相关服务
@@ -360,8 +361,6 @@ return await RuntimeProcess.RunAsync("api", async () =>
 
     var jwtIssuer = ApiJwtRuntimeProfile.ResolveJwtIssuer(builder.Configuration);
     var deploymentJwtValidationEnabled = ApiJwtRuntimeProfile.IsDeploymentJwtValidationEnabled(builder.Configuration);
-    var jwtValidationMode = "authority";
-    var jwtValidationTarget = ApiJwtRuntimeProfile.LocalAuthority;
     X509Certificate2? jwtSigningCertificate = null;
 
     if (deploymentJwtValidationEnabled)
@@ -376,8 +375,6 @@ return await RuntimeProcess.RunAsync("api", async () =>
             AppContext.BaseDirectory,
             builder.Environment.ContentRootPath,
             waitForCertificate: true);
-        jwtValidationMode = "local-certificate";
-        jwtValidationTarget = $"{jwtIssuer} | {jwtSigningCertificate.Subject}";
     }
 
     builder.Services.AddScoped<IHangfireDashboardSessionService, HangfireDashboardSessionService>();
@@ -408,74 +405,7 @@ return await RuntimeProcess.RunAsync("api", async () =>
                 options.RequireHttpsMetadata = false;
             }
 
-            // SignalR (WebSocket) 在浏览器端无法稳定携带 Authorization Header，
-            // 会把 token 放在 query string 的 access_token 上；这里需要显式取出来。
-            options.Events = new JwtBearerEvents
-            {
-                OnMessageReceived = context =>
-                {
-                    var accessToken = context.Request.Query["access_token"].ToString();
-                    var path = context.HttpContext.Request.Path;
-
-                    if (!string.IsNullOrWhiteSpace(accessToken)
-                        && (path.StartsWithSegments("/hub/notification") ||
-                            path.StartsWithSegments("/hub/chat") ||
-                            path.StartsWithSegments("/hub/comment")))
-                    {
-                        context.Token = accessToken;
-                    }
-
-                    return Task.CompletedTask;
-                },
-                OnAuthenticationFailed = context =>
-                {
-                    var path = context.HttpContext.Request.Path;
-                    Log.Warning(
-                        "[JWT] AuthenticationFailed - Path: {Path}, ErrorType: {ErrorType}, TraceId: {TraceId}",
-                        path,
-                        context.Exception.GetType().Name,
-                        context.HttpContext.TraceIdentifier);
-                    return Task.CompletedTask;
-                },
-                OnChallenge = context =>
-                {
-                    var path = context.HttpContext.Request.Path;
-                    Log.Warning(
-                        "[JWT] Challenge - Path: {Path}, Error: {Error}, TraceId: {TraceId}",
-                        path,
-                        context.Error,
-                        context.HttpContext.TraceIdentifier);
-
-                    if (!ApiErrorResultFactory.IsMessageModelApiRequest(context.HttpContext))
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    context.HandleResponse();
-                    return ApiErrorResultFactory.WriteAsync(
-                        context.HttpContext,
-                        StatusCodes.Status401Unauthorized,
-                        "请先登录后再继续操作",
-                        ApiErrorCodes.Unauthorized,
-                        "error.auth.unauthorized",
-                        cancellationToken: context.HttpContext.RequestAborted);
-                },
-                OnForbidden = context =>
-                {
-                    if (!ApiErrorResultFactory.IsMessageModelApiRequest(context.HttpContext))
-                    {
-                        return Task.CompletedTask;
-                    }
-
-                    return ApiErrorResultFactory.WriteAsync(
-                        context.HttpContext,
-                        StatusCodes.Status403Forbidden,
-                        "当前账号无权执行此操作",
-                        ApiErrorCodes.Forbidden,
-                        "error.auth.forbidden",
-                        cancellationToken: context.HttpContext.RequestAborted);
-                }
-            };
+            options.Events = new ApiJwtBearerEvents();
 
             options.TokenValidationParameters = ApiJwtValidationPolicy.Create(
                 jwtIssuer,
@@ -565,8 +495,6 @@ return await RuntimeProcess.RunAsync("api", async () =>
     var app = builder.Build();
     runtimeLogging.AttachLifetime(app.Lifetime);
     // -------------- App 初始化阶段 ---------------
-
-    Log.Information("[JWT] 初始化验签模式: {Mode}, 目标: {Target}", jwtValidationMode, jwtValidationTarget);
 
     // 3. 绑定 InternalApp 扩展中的服务
     app.ConfigureApplication();
@@ -675,361 +603,12 @@ return await RuntimeProcess.RunAsync("api", async () =>
         Predicate = ApiHostHealthChecks.IsMinimal,
     });
 
-    // 输出项目启动标识（使用 Serilog，与 Gateway 风格统一）
-    app.Lifetime.ApplicationStarted.Register(() =>
-    {
-        var urls = app.Urls.Count > 0 ? string.Join(", ", app.Urls) : "未配置";
-        var jwtRuntimeSummary = ApiJwtRuntimeProfile.BuildStartupSummary(
-            builder.Configuration,
-            AppContext.BaseDirectory,
-            builder.Environment.ContentRootPath);
+    var startupLog = HostStartupLog.Api(builder.Environment.EnvironmentName, allowedOrigins.Length,
+        localSigningCertificateLoaded: jwtSigningCertificate != null);
+    using var startupSummaryRegistration = startupLog.Register(app.Lifetime, app.Urls, Log.Logger);
 
-        Log.Information("====================================");
-        Log.Information("   ____           _ _     _");
-        Log.Information("  |  _ \\ __ _  __| (_)___| |__");
-        Log.Information("  | |_) / _` |/ _` | / __| '_ \\");
-        Log.Information("  |  _ < (_| | (_| | \\__ \\ | | |");
-        Log.Information("  |_| \\\\__,_|\\__,_|_|___/_| |_|");
-        Log.Information("        Radish.Api --by luobo");
-        Log.Information("====================================");
-        Log.Information("环境: {Environment}", app.Environment.EnvironmentName);
-        Log.Information("监听地址: {Urls}", urls);
-        Log.Information("CORS 允许来源: {Origins}", string.Join(", ", allowedOrigins));
-        Log.Information("默认时区: {TimeZone}", TimeZoneResolver.NormalizeToDisplayId(configuredTimeOptions.DefaultTimeZoneId));
-        Log.Information("JWT 验签模式: {Mode}", jwtRuntimeSummary.ValidationMode);
-        Log.Information("JWT 验签目标: {Target}", jwtRuntimeSummary.ValidationTarget);
-        Log.Information("JWT Issuer 解析: {Issuer}", jwtRuntimeSummary.IssuerSummary);
-        Log.Information("JWT signing 证书: {Certificate}", jwtRuntimeSummary.SigningCertificateSummary);
-    });
-
-    // 注册 Hangfire 定时任务
-    RecurringJob.AddOrUpdate<Radish.Api.Services.ReliableOutboxDispatcherJob>(
-        "reliable-outbox-dispatch",
-        job => job.DispatchAsync(50),
-        "*/1 * * * *",
-        new RecurringJobOptions
-        {
-            TimeZone = TimeZoneInfo.Utc
-        });
-
-    Log.Information("[Hangfire] 已注册可靠 Outbox 分派任务: reliable-outbox-dispatch");
-
-    RecurringJob.AddOrUpdate<ChatMessageReactionOperationCleanupJob>(
-        "cleanup-chat-reaction-operations",
-        job => job.ExecuteAsync(500),
-        "15 4 * * *",
-        new RecurringJobOptions
-        {
-            TimeZone = TimeZoneInfo.Utc
-        });
-
-    Log.Information("[Hangfire] 已注册 Chat 消息回应幂等事实清理任务: cleanup-chat-reaction-operations");
-
-    var wikiDraftCleanupConfig = builder.Configuration.GetSection("Hangfire:WikiDraftPayloadCleanup");
-    if (wikiDraftCleanupConfig.GetValue<bool>("Enable", true))
-    {
-        var schedule = wikiDraftCleanupConfig["Schedule"] ?? "45 3 * * *";
-        var batchSize = wikiDraftCleanupConfig.GetValue<int>("BatchSize", 200);
-        var retentionDays = builder.Configuration.GetValue<int>("Document:Authoring:TerminalDraftRetentionDays", 90);
-        RecurringJob.AddOrUpdate<WikiDraftPayloadCleanupJob>(
-            "cleanup-wiki-terminal-draft-payloads",
-            job => job.ExecuteAsync(retentionDays, batchSize),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = TimeZoneInfo.Utc
-            });
-
-        Log.Information(
-            "[Hangfire] 已注册 Wiki 终态草稿正文清理任务: cleanup-wiki-terminal-draft-payloads (保留: {RetentionDays} 天, 批次: {BatchSize}, 计划: {Schedule})",
-            retentionDays,
-            batchSize,
-            schedule);
-    }
-
-    var notificationCleanupConfig = builder.Configuration.GetSection("Hangfire:NotificationInboxCleanup");
-    if (notificationCleanupConfig.GetValue<bool>("Enable", true))
-    {
-        var schedule = notificationCleanupConfig["Schedule"] ?? "30 3 * * *";
-        var batchSize = notificationCleanupConfig.GetValue<int>("BatchSize", 200);
-        var softRelationLimitPerUser = notificationCleanupConfig.GetValue<int>("SoftRelationLimitPerUser", 5000);
-        RecurringJob.AddOrUpdate<NotificationInboxCleanupJob>(
-            "cleanup-notification-inbox",
-            job => job.ExecuteAsync(batchSize, softRelationLimitPerUser),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = TimeZoneInfo.Utc
-            });
-
-        Log.Information(
-            "[Hangfire] 已注册通知收件箱清理任务: cleanup-notification-inbox (批次: {BatchSize}, 软上限: {SoftLimit}, 计划: {Schedule})",
-            batchSize,
-            softRelationLimitPerUser,
-            schedule);
-    }
-
-    var fileCleanupConfig = builder.Configuration.GetSection("Hangfire:FileCleanup");
-
-    // 1. 软删除文件清理任务
-    if (fileCleanupConfig.GetValue<bool>("DeletedFiles:Enable", true))
-    {
-        var retentionDays = fileCleanupConfig.GetValue<int>("DeletedFiles:RetentionDays", 30);
-        var schedule = fileCleanupConfig["DeletedFiles:Schedule"] ?? "0 3 * * *";
-
-        RecurringJob.AddOrUpdate<FileCleanupJob>(
-            "cleanup-deleted-files",
-            job => job.CleanupDeletedFilesAsync(retentionDays),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: cleanup-deleted-files (保留 {Days} 天, 计划: {Schedule})", retentionDays, schedule);
-    }
-
-    // 2. 临时文件清理任务
-    if (fileCleanupConfig.GetValue<bool>("TempFiles:Enable", true))
-    {
-        var retentionHours = fileCleanupConfig.GetValue<int>("TempFiles:RetentionHours", 2);
-        var schedule = fileCleanupConfig["TempFiles:Schedule"] ?? "0 * * * *";
-
-        RecurringJob.AddOrUpdate<FileCleanupJob>(
-            "cleanup-temp-files",
-            job => job.CleanupTempFilesAsync(retentionHours),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: cleanup-temp-files (保留 {Hours} 小时, 计划: {Schedule})", retentionHours, schedule);
-    }
-
-    // 3. 回收站清理任务
-    if (fileCleanupConfig.GetValue<bool>("RecycleBin:Enable", true))
-    {
-        var retentionDays = fileCleanupConfig.GetValue<int>("RecycleBin:RetentionDays", 90);
-        var schedule = fileCleanupConfig["RecycleBin:Schedule"] ?? "0 4 * * *";
-
-        RecurringJob.AddOrUpdate<FileCleanupJob>(
-            "cleanup-recycle-bin",
-            job => job.CleanupRecycleBinAsync(retentionDays),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: cleanup-recycle-bin (保留 {Days} 天, 计划: {Schedule})", retentionDays, schedule);
-    }
-
-    // 4. 孤立附件清理任务
-    if (fileCleanupConfig.GetValue<bool>("OrphanAttachments:Enable", true))
-    {
-        var retentionHours = fileCleanupConfig.GetValue<int>("OrphanAttachments:RetentionHours", 24);
-        var schedule = fileCleanupConfig["OrphanAttachments:Schedule"] ?? "0 5 * * *";
-
-        RecurringJob.AddOrUpdate<FileCleanupJob>(
-            "cleanup-orphan-attachments",
-            job => job.CleanupOrphanAttachmentsAsync(retentionHours),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: cleanup-orphan-attachments (保留 {Hours} 小时, 计划: {Schedule})", retentionHours, schedule);
-    }
-
-    // 注册分片上传会话清理任务；即使禁用新上传，也要继续回收历史会话。
-    {
-        // 必须短于会话接近到期时仍可剩余的 30 分钟配额宽限，
-        // 让终态会话的幂等配额结算在预留自然过期前获得重试机会并保留调度抖动余量。
-        var schedule = "*/15 * * * *"; // 每 15 分钟
-
-        RecurringJob.AddOrUpdate<IChunkedUploadService>(
-            "cleanup-expired-upload-sessions",
-            service => service.CleanupExpiredSessionsAsync(),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: cleanup-expired-upload-sessions (计划: {Schedule})", schedule);
-    }
-
-    // 注册文件访问令牌清理任务
-    {
-        var schedule = "0 7 * * *"; // 每天凌晨 7 点
-
-        RecurringJob.AddOrUpdate<IFileAccessTokenService>(
-            "cleanup-expired-access-tokens",
-            service => service.CleanupExpiredTokensAsync(),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: cleanup-expired-access-tokens (计划: {Schedule})", schedule);
-    }
-
-    // 神评/沙发统计任务
-    var commentHighlightConfig = builder.Configuration.GetSection("Hangfire:CommentHighlight");
-    if (commentHighlightConfig.GetValue<bool>("Enable", true))
-    {
-        var schedule = commentHighlightConfig["Schedule"] ?? "0 1 * * *";
-
-        RecurringJob.AddOrUpdate<CommentHighlightJob>(
-            "comment-highlight-stat",
-            job => job.ExecuteAsync(null),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: comment-highlight-stat (计划: {Schedule})", schedule);
-    }
-
-    // 保留奖励任务（神评/沙发每周奖励）
-    var retentionRewardConfig = builder.Configuration.GetSection("Hangfire:RetentionReward");
-    if (retentionRewardConfig.GetValue<bool>("Enable", true))
-    {
-        var schedule = retentionRewardConfig["Schedule"] ?? "0 2 * * 0";
-
-        RecurringJob.AddOrUpdate<RetentionRewardJob>(
-            "retention-reward",
-            job => job.ExecuteAsync(),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: retention-reward (计划: {Schedule})", schedule);
-    }
-
-    // 论坛抽奖自动开奖任务
-    var postLotteryConfig = builder.Configuration.GetSection("Hangfire:PostLottery");
-    if (postLotteryConfig.GetValue<bool>("Enable", true))
-    {
-        var schedule = postLotteryConfig["Schedule"] ?? "*/1 * * * *";
-        var batchSize = postLotteryConfig.GetValue<int>("BatchSize", 20);
-
-        RecurringJob.AddOrUpdate<PostLotteryJob>(
-            "forum-post-lottery-auto-draw",
-            job => job.ExecuteAutoDrawAsync(batchSize),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: forum-post-lottery-auto-draw (批次: {BatchSize}, 计划: {Schedule})", batchSize, schedule);
-    }
-
-    // 商城订单超时取消任务
-    var shopConfig = builder.Configuration.GetSection("Hangfire:Shop");
-    if (shopConfig.GetValue<bool>("TimeoutOrders:Enable", true))
-    {
-        var timeoutMinutes = shopConfig.GetValue<int>("TimeoutOrders:TimeoutMinutes", 30);
-        var schedule = shopConfig["TimeoutOrders:Schedule"] ?? "*/10 * * * *"; // 默认每 10 分钟执行一次
-
-        RecurringJob.AddOrUpdate<ShopJob>(
-            "shop-cancel-timeout-orders",
-            job => job.CancelTimeoutOrdersAsync(timeoutMinutes),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: shop-cancel-timeout-orders (超时: {Timeout} 分钟, 计划: {Schedule})", timeoutMinutes, schedule);
-    }
-
-    // 商城权益过期处理任务
-    if (shopConfig.GetValue<bool>("ExpiredBenefits:Enable", true))
-    {
-        var schedule = shopConfig["ExpiredBenefits:Schedule"] ?? "0 0 * * *"; // 默认每天 00:00 执行
-
-        RecurringJob.AddOrUpdate<ShopJob>(
-            "shop-mark-expired-benefits",
-            job => job.MarkExpiredBenefitsAsync(),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: shop-mark-expired-benefits (计划: {Schedule})", schedule);
-    }
-
-    // 商城每日统计任务
-    if (shopConfig.GetValue<bool>("DailyStats:Enable", false))
-    {
-        var schedule = shopConfig["DailyStats:Schedule"] ?? "0 1 * * *"; // 默认每天 01:00 执行
-
-        RecurringJob.AddOrUpdate<ShopJob>(
-            "shop-daily-stats",
-            job => job.GenerateDailyStatsAsync(),
-            schedule,
-            new RecurringJobOptions
-            {
-                TimeZone = appDefaultTimeZone
-            });
-
-        Log.Information("[Hangfire] 已注册定时任务: shop-daily-stats (计划: {Schedule})", schedule);
-    }
-
-    try
-    {
-        using var documentSyncScope = app.Services.CreateScope();
-        var sqlSugarClient = documentSyncScope.ServiceProvider.GetRequiredService<ISqlSugarClient>();
-        var wikiDocumentTableName = sqlSugarClient.EntityMaintenance.GetEntityInfo<WikiDocument>().DbTableName;
-        var wikiDocumentRevisionTableName = sqlSugarClient.EntityMaintenance.GetEntityInfo<WikiDocumentRevision>().DbTableName;
-        var builtInSyncSkipReason = WikiBuiltInSyncStartupGuard.GetSkipReason(
-            documentOptions.ShowBuiltInDocs,
-            sqlSugarClient.DbMaintenance.IsAnyTable(wikiDocumentTableName, false),
-            sqlSugarClient.DbMaintenance.IsAnyTable(wikiDocumentRevisionTableName, false));
-
-        if (!string.IsNullOrWhiteSpace(builtInSyncSkipReason))
-        {
-            Log.Information("固定文档启动同步已跳过: {Reason}", builtInSyncSkipReason);
-        }
-        else
-        {
-            var wikiDocumentService = documentSyncScope.ServiceProvider.GetRequiredService<IWikiDocumentService>();
-            var builtInSyncSummary = await wikiDocumentService.SyncBuiltInDocumentsAsync();
-
-            if (builtInSyncSummary.IsSkipped)
-            {
-                Log.Information("固定文档启动同步已跳过: {Reason}", builtInSyncSummary.SkipReason ?? "未提供原因");
-            }
-            else
-            {
-                Log.Information(
-                    "固定文档启动同步完成: Markdown {MarkdownFileCount}, 描述符 {DescriptorCount}, 生成目录 {GeneratedNodeCount}, 同步 {SyncedCount}, 新增 {CreatedCount}, 更新 {UpdatedCount}, 恢复 {RestoredCount}, 父子调整 {ParentAdjustedCount}, 软删除 {SoftDeletedCount}, 跳过 {SkippedCount}",
-                    builtInSyncSummary.MarkdownFileCount,
-                    builtInSyncSummary.DescriptorCount,
-                    builtInSyncSummary.GeneratedNodeCount,
-                    builtInSyncSummary.SyncedCount,
-                    builtInSyncSummary.CreatedCount,
-                    builtInSyncSummary.UpdatedCount,
-                    builtInSyncSummary.RestoredCount,
-                    builtInSyncSummary.ParentAdjustedCount,
-                    builtInSyncSummary.SoftDeletedCount,
-                    builtInSyncSummary.SkippedCount);
-            }
-        }
-    }
-    catch (Exception ex)
-    {
-        Log.Error(ex, "固定文档启动同步失败");
-    }
+    ApiRecurringJobRegistration.Register(builder.Configuration, appDefaultTimeZone);
+    await WikiBuiltInDocumentStartupSync.RunAsync(app.Services, documentOptions, Log.Logger);
 
     // -------------- App 运行阶段 ---------------
     await app.RunAsync();

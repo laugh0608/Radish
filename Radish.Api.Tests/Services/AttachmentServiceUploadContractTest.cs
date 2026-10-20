@@ -184,7 +184,7 @@ public class AttachmentServiceUploadContractTest
                     sourcePath + ".thumb",
                     150,
                     150,
-                    85))
+                    85, null, ImageAnimationPolicy.FirstFrame, default))
                 .ReturnsAsync(ImageProcessResult.Fail("processor detail"));
             var service = CreateService(fileStorageMock.Object, imageProcessorMock.Object);
             var options = CreateUploadOptions();
@@ -306,7 +306,7 @@ public class AttachmentServiceUploadContractTest
                 .Setup(processor => processor.GenerateMultipleSizesAsync(
                     It.IsAny<Stream>(),
                     sourceFullPath,
-                    It.IsAny<List<ImageSize>>()))
+                    It.IsAny<List<ImageSize>>(), default))
                 .Callback(() => File.WriteAllBytes(smallFullPath, new byte[] { 9, 9 }))
                 .ThrowsAsync(new InvalidOperationException("processor interrupted"));
             var service = CreateService(fileStorageMock.Object, imageProcessorMock.Object);
@@ -885,6 +885,9 @@ public class AttachmentServiceUploadContractTest
     {
         new ServiceCollection().ConfigureApplication();
 
+        imageProcessor ??= Mock.Of<IImageProcessor>();
+        Mock.Get(imageProcessor).Setup(processor => processor.GetImageInfoAsync(It.IsAny<Stream>(), default))
+            .ReturnsAsync(new ImageInfo { Format = "PNG", Width = 4, Height = 4, FrameCount = 1 });
         return new AttachmentService(
             mapper ?? Mock.Of<IMapper>(),
             attachmentRepository ?? Mock.Of<IBaseRepository<Attachment>>(),

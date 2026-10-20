@@ -1,3 +1,4 @@
+using System.Threading;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -102,10 +103,10 @@ public sealed class AttachmentUploadLoggingTests
         foreach (var effect in new[] { "thumbnail", "watermark", "exif", "sizes" })
         {
             using var f = new Fixture(capture.Logger);
-            f.Image.Setup(i => i.GenerateThumbnailAsync(It.IsAny<Stream>(), It.IsAny<string>(), 150, 150, 85)).ReturnsAsync(ImageProcessResult.Fail(Secret));
-            f.Image.Setup(i => i.AddWatermarkAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<Radish.Infrastructure.ImageProcessing.WatermarkOptions>())).ThrowsAsync(new IOException(Secret));
-            f.Image.Setup(i => i.RemoveExifAsync(It.IsAny<Stream>(), It.IsAny<string>())).ReturnsAsync(false);
-            f.Image.Setup(i => i.GenerateMultipleSizesAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<List<ImageSize>>())).ThrowsAsync(new IOException(Secret));
+            f.Image.Setup(i => i.GenerateThumbnailAsync(It.IsAny<Stream>(), It.IsAny<string>(), 150, 150, 85, null, ImageAnimationPolicy.FirstFrame, default)).ReturnsAsync(ImageProcessResult.Fail(Secret));
+            f.Image.Setup(i => i.AddWatermarkAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<Radish.Infrastructure.ImageProcessing.WatermarkOptions>(), null, ImageAnimationPolicy.Preserve, default)).ThrowsAsync(new IOException(Secret));
+            f.Image.Setup(i => i.RemoveExifAsync(It.IsAny<Stream>(), It.IsAny<string>(), null, ImageAnimationPolicy.Preserve, default)).ReturnsAsync(ImageProcessResult.Fail("test"));
+            f.Image.Setup(i => i.GenerateMultipleSizesAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<List<ImageSize>>(), default)).ThrowsAsync(new IOException(Secret));
             var result = await f.Controller.UploadImage(f.File, generateThumbnail: effect == "thumbnail", generateMultipleSizes: effect == "sizes",
                 addWatermark: effect == "watermark", watermarkText: Secret, removeExif: effect == "exif");
             Assert.Equal(500, result.StatusCode);
@@ -184,7 +185,7 @@ public sealed class AttachmentUploadLoggingTests
         using var capture = new Capture(candidate, environment);
         using var f = new Fixture(capture.Logger);
         // A successful processor result with no output exercises the existing three move attempts.
-        f.Image.Setup(i => i.AddWatermarkAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<Radish.Infrastructure.ImageProcessing.WatermarkOptions>()))
+        f.Image.Setup(i => i.AddWatermarkAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<Radish.Infrastructure.ImageProcessing.WatermarkOptions>(), null, ImageAnimationPolicy.Preserve, default))
             .ReturnsAsync(new ImageProcessResult { Success = true });
         Assert.Equal(500, (await f.Controller.UploadImage(f.File, generateThumbnail: false, addWatermark: true, watermarkText: Secret, removeExif: false)).StatusCode);
         capture.AssertSingle("http.failed", "Error");
@@ -196,19 +197,19 @@ public sealed class AttachmentUploadLoggingTests
     {
         using var capture = new Capture(candidate, environment);
         using var f = new Fixture(capture.Logger);
-        f.Image.Setup(i => i.GenerateThumbnailAsync(It.IsAny<Stream>(), It.IsAny<string>(), 150, 150, 85))
+        f.Image.Setup(i => i.GenerateThumbnailAsync(It.IsAny<Stream>(), It.IsAny<string>(), 150, 150, 85, null, ImageAnimationPolicy.FirstFrame, default))
             .ReturnsAsync(new ImageProcessResult { Success = true });
-        f.Image.Setup(i => i.AddWatermarkAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<Radish.Infrastructure.ImageProcessing.WatermarkOptions>()))
-            .ReturnsAsync((Stream _, string path, Radish.Infrastructure.ImageProcessing.WatermarkOptions options) =>
+        f.Image.Setup(i => i.AddWatermarkAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<Radish.Infrastructure.ImageProcessing.WatermarkOptions>(), null, ImageAnimationPolicy.Preserve, default))
+            .ReturnsAsync((Stream _, string path, Radish.Infrastructure.ImageProcessing.WatermarkOptions options, ImageOutputFormat? format, ImageAnimationPolicy policy, CancellationToken token) =>
             {
                 Assert.Equal(Secret, options.Text);
                 File.WriteAllBytes(path, [5, 6]);
                 return new ImageProcessResult { Success = true, OutputPath = path };
             });
-        f.Image.Setup(i => i.RemoveExifAsync(It.IsAny<Stream>(), It.IsAny<string>()))
-            .ReturnsAsync((Stream _, string path) => { File.WriteAllBytes(path, [7, 8]); return true; });
-        f.Image.Setup(i => i.GenerateMultipleSizesAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<List<ImageSize>>()))
-            .ReturnsAsync((Stream _, string path, List<ImageSize> sizes) => sizes.Select(size => new ImageProcessResult
+        f.Image.Setup(i => i.RemoveExifAsync(It.IsAny<Stream>(), It.IsAny<string>(), null, ImageAnimationPolicy.Preserve, default))
+            .ReturnsAsync((Stream _, string path, ImageOutputFormat? format, ImageAnimationPolicy policy, CancellationToken token) => { File.WriteAllBytes(path, [7, 8]); return new ImageProcessResult { Success = true }; });
+        f.Image.Setup(i => i.GenerateMultipleSizesAsync(It.IsAny<Stream>(), It.IsAny<string>(), It.IsAny<List<ImageSize>>(), default))
+            .ReturnsAsync((Stream _, string path, List<ImageSize> sizes, CancellationToken token) => sizes.Select(size => new ImageProcessResult
             {
                 Success = true,
                 OutputPath = Path.Combine(Path.GetDirectoryName(path)!, Path.GetFileNameWithoutExtension(path) + "_" + size.Name + ".png")
@@ -216,7 +217,7 @@ public sealed class AttachmentUploadLoggingTests
         Assert.True((await f.Controller.UploadImage(f.File, generateThumbnail: true, generateMultipleSizes: true,
             addWatermark: true, watermarkText: Secret, removeExif: true)).IsSuccess);
         f.Repository.Verify(r => r.AddAsync(It.Is<Attachment>(a => a.SmallPath != null && a.MediumPath != null && a.LargePath != null)), Times.Once);
-        Assert.Equal(new byte[] { 7, 8 }, File.ReadAllBytes(Path.Combine(f.TempPath, "source.png")));
+        Assert.Equal(new byte[] { 5, 6 }, File.ReadAllBytes(Path.Combine(f.TempPath, "source.png")));
         capture.AssertQuiet();
     }
 
@@ -253,6 +254,8 @@ public sealed class AttachmentUploadLoggingTests
             Storage.Setup(s => s.DeleteAsync(It.IsAny<string>())).ReturnsAsync(true);
             Repository.Setup(r => r.AddAsync(It.IsAny<Attachment>())).ReturnsAsync(99);
             Mapper.Setup(m => m.Map<AttachmentVo>(It.IsAny<object>())).Returns((object a) => new AttachmentVo { VoId = ((Attachment)a).Id });
+            Image.Setup(i => i.GetImageInfoAsync(It.IsAny<Stream>(), default))
+                .ReturnsAsync(new ImageInfo { Format = "PNG", Width = 4, Height = 4, FrameCount = 1 });
             Service = new AttachmentService(Mapper.Object, Repository.Object, Storage.Object, Image.Object, Mock.Of<IAttachmentUrlResolver>(),
                 Mock.Of<IChatChannelAccessService>(), Mock.Of<IWikiAttachmentAccessService>(), Options.Create(new FileStorageOptions
                 { Deduplication = new DeduplicationOptions { Enable = true }, Watermark = new Radish.Common.OptionTool.WatermarkOptions { Enable = true } }));

@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Radish.IRepository;
 using Radish.IService;
@@ -129,8 +128,7 @@ public sealed class NotificationUserBlockPolicyTest
             Mock.Of<INotificationTargetResolver>(),
             Mock.Of<INotificationPushService>(),
             policy.Object,
-            new FixedTimeProvider(new DateTimeOffset(NowUtc)),
-            NullLogger<NotificationService>.Instance);
+            new FixedTimeProvider(new DateTimeOffset(NowUtc)));
         return new Fixture(service, repository, users, policy);
     }
 

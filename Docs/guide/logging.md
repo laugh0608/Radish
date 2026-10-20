@@ -1,6 +1,22 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理的生成端安全摘要同时作用于旧 / 候选 sink；Hangfire、后台业务、奖励、清理及资产操作的具体口径见该契约第 10–14 节。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端的安全摘要同时作用于旧 / 候选链，准确范围见契约第 7–72 节；L2 尚未整体完成。
+
+已治理框架及自有来源在上下文合并后重建安全事件，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出。精确来源和事件身份以契约为准，不按类别前缀扩大：
+
+| 来源组 | 契约章节 |
+| --- | --- |
+| SignalR Core、HTTP 异常 / Hosting、Kestrel 连接 / 协议 / HTTPS | 第 51–55 节 |
+| 证书监视 / 配置、服务端 Socket / QUIC、Http.Connections / 协议解析 | 第 56、58 节 |
+| YARP 转发 / 命名 HttpClient、配置、条件性亲和与健康检查 | 第 59–61 节 |
+| JWT / Cookie / 授权、API JWT 回调、路由 | 第 62–63 节 |
+| 宿主健康服务、OpenIddict Server / Core | 第 64–66 节 |
+| 自有 Auth 账户 / 会话、三宿主启动摘要、API 启动业务与 Gateway 停止 | 第 67、70、72 节 |
+| ASP.NET Core DataProtection | 第 69 节 |
+
+宿主健康服务、OpenIddict 与 DataProtection 的已列明来源另在 ILogger → Serilog 桥接前阻止读取原 state、formatter 和 exception；最终 sink 继续清理合并后的 scope。其他来源不能继承此桥接保护结论。日志治理不改变协议响应、认证结果、存储 / 缓存与事务语义，也不代表客户端已收到响应；其他自有日志、集成及非 Serilog 通道仍需独立核对。详细限制见[敏感数据保护](./logging-sensitive-data.md)与[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)。
+
+Common 程序集加载 / 类型枚举失败使用独立安全 stderr 通道，固定为 `runtime.assembly_load_failed` / `runtime.assembly_types_failed` 非致命 Error，只保留异常类型分类。该通道不经过主 logger，覆盖其建立前的诊断；未绑定宿主时来源为 `runtime`。输出失败不会再替代原有跳过 / 空集合结果，细节见[契约第 71 节](../features/unified-logging-contract.md#71-l2-common-程序集加载与类型枚举诊断)。
 
 ## 架构概述
 
@@ -58,15 +74,15 @@ builder.Host.AddSerilogSetup(runtimeLogging);
 Logs/
 ├── Radish.Api/
 │   ├── Log.txt                    # 应用日志（滚动文件）
-│   ├── AopSql/
-│   │   └── AopSql.txt            # SQL 日志
-│   └── SerilogDebug/
-│       └── Serilog20251220.txt   # Serilog 内部调试日志
+│   └── AopSql/
+│       └── AopSql.txt            # SQL 日志
 ├── Radish.Gateway/
 │   └── Log.txt
 └── Radish.Auth/
     └── Log.txt
 ```
+
+SelfLog 内部自诊断独立输出到 stderr：固定 `pipeline.self_diagnostic` Warning，仅包含累计次数，每个会话每 60 秒至多尝试一条；不受主链等级或诊断开关过滤。`SerilogDebug/Serilog*.txt` 仅为历史文件，当前不再新增或追加。应急介质失败时保留内存计数，后续回调触发重试；未报告计数不跨进程保留。初始化、释放与来源元数据边界见[事件契约第 68 节](../features/unified-logging-contract.md#68-l2-selflog-独立自诊断通道)。
 
 **自动检测机制**：
 1. 向上查找 `*.slnx` 或 `*.sln` 文件确定解决方案根目录
@@ -282,7 +298,7 @@ SELECT 'Error', COUNT(*) FROM ErrorLog_20251201;
 - `OnGetDataReadered` 观测查询读取耗时，`OnLogExecuted` 只观测非 Query 命令，避免同一查询重复生成。
 - `CheckConnectionExecuted` 观测连接检查耗时，默认阈值 500ms；慢操作默认阈值 1000ms。
 - 不再配置 SQL `OnError` 日志回调。Service AOP 已移除；事务 AOP 与 UnitOfWork 保留提交、回滚、保存点及异常传播，不重复打印失败。
-- 已处理的 API 5xx 由 `ApiExceptionHandler` 记录一次 `http.failed`，同时抑制已处理异常的框架重复诊断；普通业务 4xx 只返回原错误契约。无法处理、响应已开始等异常仍由框架最终边界处理，不把它们误称已处理。
+- API 5xx 的错误响应写入任务成功完成后，`ApiExceptionHandler` 才记录一次 `http.failed`，同时抑制该已处理分支的框架重复诊断；普通业务 4xx 只返回原错误契约，已处理 404 即使响应尚未标记开始也不再重抛。构造 / 写入失败不提前生成自有事件，响应已开始、非 API / health 等仍按原框架边界处理；ExceptionHandlerMiddleware 与已列明外层来源的旧 / 候选输出现已安全适配，不做全局去重。请求取消的既有 499 / 已开始响应行为及未覆盖来源见[事件契约第 50–55 节](../features/unified-logging-contract.md)；写入任务完成不代表客户端已接收。
 - API / Auth / Gateway / DbMigrate 的顶层使用 `RuntimeProcess`，配置加载或运行失败以安全 Fatal 事件输出 stderr，并以 1 退出；成功为 0。测试工具的 `HostAbortedException` 继续传播。无法初始化配置时来源标记为 `bootstrap / unversioned`，不伪造部署身份。
 
 ### DbMigrate 命令输出
@@ -704,7 +720,7 @@ echo "Cleaned up logs older than $TARGET_DATE"
 **解决方案**：
 1. 检查 `Program.cs` 是否调用了 `builder.Host.AddSerilogSetup(runtimeLogging)`
 2. 检查文件系统权限（确保应用有写入 `Logs/` 目录的权限）
-3. 查看 `Logs/{ProjectName}/SerilogDebug/` 目录中的调试日志
+3. 检查 stderr 的 `pipeline.self_diagnostic` 安全摘要，并结合应用失败事件与配置定位；摘要不包含底层原文
 
 ### 审计日志未写入数据库
 
@@ -724,7 +740,7 @@ echo "Cleaned up logs older than $TARGET_DATE"
 1. 检查 `Serilog.Database.Enable` 是否为 `true`
 2. 检查 `Serilog.Database.EnableApplicationLog` 或 `EnableSqlLog` 是否启用
 3. 检查日志数据库配置：`ConnId=Log` 必须存在且正确
-4. 查看 Serilog 调试日志：`Logs/{ProjectName}/SerilogDebug/Serilog*.txt`
+4. 检查 stderr 的 `pipeline.self_diagnostic`（provider 自诊断）和 `pipeline.output_failed`（已观察到规范化 / 输出失败）
 5. 确认 SqlSugar 配置正确初始化了 Log 数据库连接
 
 **常见错误**：

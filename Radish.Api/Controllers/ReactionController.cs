@@ -4,10 +4,12 @@ using Microsoft.AspNetCore.Mvc;
 using Radish.Api.Filters;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
 using Radish.Shared.CustomEnum;
+using Serilog;
 
 namespace Radish.Api.Controllers;
 
@@ -50,13 +52,7 @@ public class ReactionController : ControllerBase
         }
         catch (BusinessException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = ex.StatusCode,
-                MessageInfo = ex.Message,
-                Code = ex.ErrorCode
-            };
+            return BuildErrorResponse(ex);
         }
     }
 
@@ -94,13 +90,7 @@ public class ReactionController : ControllerBase
         }
         catch (BusinessException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = ex.StatusCode,
-                MessageInfo = ex.Message,
-                Code = ex.ErrorCode
-            };
+            return BuildErrorResponse(ex);
         }
     }
 
@@ -139,13 +129,25 @@ public class ReactionController : ControllerBase
         }
         catch (BusinessException ex)
         {
-            return new MessageModel
-            {
-                IsSuccess = false,
-                StatusCode = ex.StatusCode,
-                MessageInfo = ex.Message,
-                Code = ex.ErrorCode
-            };
+            return BuildErrorResponse(ex);
         }
+    }
+
+    private static MessageModel BuildErrorResponse(BusinessException exception)
+    {
+        var response = new MessageModel
+        {
+            IsSuccess = false,
+            StatusCode = exception.StatusCode,
+            MessageInfo = exception.Message,
+            Code = exception.ErrorCode
+        };
+        if (exception.StatusCode >= StatusCodes.Status500InternalServerError)
+        {
+            Log.ForContext("EventCode", "http.failed")
+                .ForContext("SourceCategory", "http")
+                .Error("Request failed with {statusCode}; kind={failureKind}", exception.StatusCode, RuntimeFailureSummary.Classify(exception));
+        }
+        return response;
     }
 }

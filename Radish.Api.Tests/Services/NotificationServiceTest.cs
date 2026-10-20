@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
@@ -371,8 +370,7 @@ public sealed class NotificationServiceTest
             targetResolver.Object,
             pushService.Object,
             interactionPolicy.Object,
-            new FixedTimeProvider(new DateTimeOffset(NowUtc)),
-            Mock.Of<ILogger<NotificationService>>());
+            new FixedTimeProvider(new DateTimeOffset(NowUtc)));
         return new NotificationServiceHarness(service, repository, userRepository, pushService);
     }
 

@@ -5,6 +5,7 @@ const backendImpactRuleGroups = [
     exactPaths: [
       'Radish.slnx',
       'Directory.Build.props',
+      'Directory.Build.targets',
       'appsettings.Shared.json',
     ],
     pathPrefixes: [
@@ -24,6 +25,8 @@ const backendImpactRuleGroups = [
       'Radish.Infrastructure/',
       'Radish.Shared/',
       'Radish.Api.Tests/',
+      'Lib/radish.lib/',
+      'Clients/radish.flutter/assets/fonts/noto/',
     ],
   },
   {
@@ -37,6 +40,10 @@ const backendImpactRuleGroups = [
       'Scripts/process-runner.mjs',
       'Scripts/validate-backend-regression.mjs',
       'Scripts/validate-ci.mjs',
+      'Scripts/build-native-images.mjs',
+      'Scripts/validate-native-images.mjs',
+      'Scripts/check-native-image-docker.mjs',
+      '.github/workflows/native-images.yml',
       'package.json',
       '.github/workflows/candidate-quality.yml',
       '.github/workflows/repo-quality.yml',

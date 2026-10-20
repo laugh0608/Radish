@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 
 namespace Radish.Api.Hubs;
@@ -40,7 +41,6 @@ public class ChatHub : Hub
         var userId = GetUserId();
         await Groups.AddToGroupAsync(Context.ConnectionId, $"user:{userId}");
 
-        _logger.LogInformation("[ChatHub] 连接建立，UserId: {UserId}, ConnectionId: {ConnectionId}", userId, Context.ConnectionId);
         await base.OnConnectedAsync();
     }
 
@@ -52,7 +52,11 @@ public class ChatHub : Hub
 
         if (exception != null)
         {
-            _logger.LogWarning(exception, "[ChatHub] 连接异常断开，UserId: {UserId}, ConnectionId: {ConnectionId}", userId, Context.ConnectionId);
+            using var scope = _logger.BeginScope(new Dictionary<string, object>
+            {
+                ["EventCode"] = "chat.connection_closed", ["SourceCategory"] = "business"
+            });
+            _logger.LogWarning("Chat connection closed with a failure; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
         }
 
         await base.OnDisconnectedAsync(exception);
@@ -73,8 +77,6 @@ public class ChatHub : Hub
         var channelGroup = BuildChannelGroup(tenantId, channelId);
         await Groups.AddToGroupAsync(Context.ConnectionId, channelGroup);
         _chatPresenceService.JoinChannel(Context.ConnectionId, tenantId, channelId, userId);
-
-        _logger.LogDebug("[ChatHub] 用户加入频道，UserId: {UserId}, ChannelId: {ChannelId}", userId, channelId);
     }
 
     /// <summary>离开频道</summary>
@@ -93,8 +95,6 @@ public class ChatHub : Hub
         var channelGroup = BuildChannelGroup(tenantId, channelId);
         await Groups.RemoveFromGroupAsync(Context.ConnectionId, channelGroup);
         _chatPresenceService.LeaveChannel(Context.ConnectionId, tenantId, channelId, userId);
-
-        _logger.LogDebug("[ChatHub] 用户离开频道，UserId: {UserId}, ChannelId: {ChannelId}", userId, channelId);
     }
 
     /// <summary>输入中状态</summary>

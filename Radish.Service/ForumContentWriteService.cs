@@ -452,7 +452,7 @@ public class ForumContentWriteService : IForumContentWriteService
             expectedContentRevision);
         if (!success)
         {
-            throw new InvalidOperationException(message);
+            throw new CommentOperationRejectedException(message);
         }
 
         var revision = _contentRevisionService == null

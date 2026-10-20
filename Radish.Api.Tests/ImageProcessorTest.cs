@@ -1,314 +1,203 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
 using Radish.Infrastructure.ImageProcessing;
-using Shouldly;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using Xunit;
-using CommonWatermarkOptions = Radish.Common.OptionTool.WatermarkOptions;
-using InfraWatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOptions;
+using WatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOptions;
 
 namespace Radish.Api.Tests;
 
-/// <summary>
-/// 图片处理器测试
-/// </summary>
-public class ImageProcessorTest
+public sealed class ImageProcessorTest : IDisposable
 {
-    private readonly IImageProcessor _imageProcessor;
-    private readonly string _testOutputPath;
+    private readonly IImageProcessor _processor;
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), $"radish-images-{Guid.NewGuid():N}");
 
     public ImageProcessorTest()
     {
-        // 配置图片处理选项
-        var fileStorageOptions = new FileStorageOptions
+        Directory.CreateDirectory(_directory);
+        var options = new FileStorageOptions();
+        options.Watermark.Text.Font.UseRelativeSize = false;
+        _processor = new RustImageProcessor(Options.Create(options));
+    }
+    public void Dispose() => Directory.Delete(_directory, true);
+    private string Output(string name) => Path.Combine(_directory, name);
+
+    [Theory]
+    [InlineData(".jpg", "JPEG")]
+    [InlineData(".png", "PNG")]
+    [InlineData(".webp", "WEBP")]
+    [InlineData(".gif", "GIF")]
+    [InlineData(".bmp", "BMP")]
+    [InlineData(".ico", "ICO")]
+    public async Task Thumbnail_ShouldUseRealNativeCodec(string extension, string format)
+    {
+        using var source = ImageFixture.Create();
+        source.Position = 5;
+        var result = await _processor.GenerateThumbnailAsync(source, Output("thumbnail" + extension), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(result.Success, result.ErrorCode);
+        Assert.Equal(150, result.Width);
+        Assert.Equal(112, result.Height);
+        Assert.Equal(format, result.Format);
+        Assert.Equal(5, source.Position);
+        using var encoded = File.OpenRead(result.OutputPath);
+        var info = await _processor.GetImageInfoAsync(encoded, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.NotNull(info);
+        Assert.Equal(format, info.Format);
+        Assert.Equal(result.Width, info.Width);
+    }
+
+    [Theory]
+    [InlineData(WatermarkPosition.TopLeft)]
+    [InlineData(WatermarkPosition.TopRight)]
+    [InlineData(WatermarkPosition.BottomLeft)]
+    [InlineData(WatermarkPosition.BottomRight)]
+    [InlineData(WatermarkPosition.Center)]
+    public async Task ChineseWatermark_ShouldKeepDimensions(WatermarkPosition position)
+    {
+        using var source = ImageFixture.Create();
+        var result = await _processor.AddWatermarkAsync(source, Output("text.png"), new WatermarkOptions
+        { Text = "萝卜 Radish", FontSize = 24, Position = position, Color = "#FF000080", Opacity = 0.5f }, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(result.Success, result.ErrorCode);
+        Assert.Equal((800, 600), ImageFixture.PngSize(result.OutputPath));
+        Assert.False(source.ToArray().SequenceEqual(File.ReadAllBytes(result.OutputPath)));
+    }
+
+    [Fact]
+    public async Task ImageWatermark_RequiresRealImageAndProducesOutput()
+    {
+        using var source = ImageFixture.Create();
+        using var mark = ImageFixture.Create(32, 32);
+        File.WriteAllBytes(Output("mark.png"), mark.ToArray());
+        var result = await _processor.AddWatermarkAsync(source, Output("image.png"), new WatermarkOptions
+        { Type = WatermarkType.Image, ImagePath = Output("mark.png"), Scale = 0.1f }, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(result.Success, result.ErrorCode);
+        var failure = await _processor.AddWatermarkAsync(source, Output("missing.png"), new WatermarkOptions { Type = WatermarkType.Image }, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.False(failure.Success);
+        Assert.False(File.Exists(Output("missing.png")));
+    }
+
+    [Fact]
+    public async Task MultipleSizes_AndMetadataRemoval_ShouldUseNativeOutputs()
+    {
+        using var source = ImageFixture.Create();
+        var results = await _processor.GenerateMultipleSizesAsync(source, Output("base.png"), new List<ImageSize>
+        { new() { Name = "small", Width = 100, Height = 100 }, new() { Name = "wide", Width = 400, Height = 0 } }, cancellationToken: TestContext.Current.CancellationToken);
+        Assert.All(results, result => Assert.True(result.Success, result.ErrorCode));
+        Assert.Equal((100, 75), ImageFixture.PngSize(Output("base_small.png")));
+        Assert.Equal((400, 300), ImageFixture.PngSize(Output("base_wide.png")));
+        var removed = await _processor.RemoveExifAsync(source, Output("private.png"), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(removed.Success, removed.ErrorCode);
+        using var output = File.OpenRead(removed.OutputPath);
+        Assert.False((await _processor.GetImageInfoAsync(output, cancellationToken: TestContext.Current.CancellationToken))!.HasExif);
+    }
+
+    [Fact]
+    public async Task InvalidContent_Cancellation_AndUnknownOutputMustNotSucceed()
+    {
+        using var bad = new MemoryStream("PRIVATE_SENTINEL"u8.ToArray());
+        Assert.False(await _processor.IsValidImageAsync(bad, cancellationToken: TestContext.Current.CancellationToken));
+        Assert.Null(await _processor.GetImageInfoAsync(bad, cancellationToken: TestContext.Current.CancellationToken));
+        using var source = ImageFixture.Create();
+        var unsupported = await _processor.CompressAsync(source, Output("output.tmp"), cancellationToken: TestContext.Current.CancellationToken);
+        Assert.False(unsupported.Success);
+        using var cancel = new CancellationTokenSource();
+        cancel.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => _processor.ResizeAsync(source, Output("cancel.png"), 100, 100, cancellationToken: cancel.Token));
+        Assert.False(File.Exists(Output("cancel.png")));
+    }
+
+    [Fact]
+    public async Task UnicodePath_AndBatchCommitFailure_ShouldPreserveExistingTarget()
+    {
+        using var source = ImageFixture.Create(32, 24);
+        var existing = Output("中文_small.png");
+        File.WriteAllBytes(existing, [1, 2, 3]);
+        Directory.CreateDirectory(Output("中文_large.png"));
+        var result = await _processor.GenerateMultipleSizesAsync(source, Output("中文.png"),
+            [new() { Name = "small", Width = 8, Height = 8 }, new() { Name = "large", Width = 16, Height = 16 }],
+            TestContext.Current.CancellationToken);
+        Assert.All(result, item => Assert.False(item.Success));
+        Assert.Equal(new byte[] { 1, 2, 3 }, File.ReadAllBytes(existing));
+        Assert.Empty(Directory.GetDirectories(_directory, ".radish-image-*"));
+        var success = await _processor.ResizeAsync(source, Output("恢复.png"), 8, 6,
+            cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(success.Success, success.ErrorCode);
+    }
+
+    [Theory]
+    [InlineData("Regular")]
+    [InlineData("Bold")]
+    [InlineData("Italic")]
+    [InlineData("BoldItalic")]
+    public async Task FontStyles_ShouldRenderMultilineChineseAndBidi(string style)
+    {
+        var options = new FileStorageOptions();
+        options.Watermark.Text.Font.UseRelativeSize = false;
+        options.Watermark.Text.Font.Style = style;
+        var processor = new RustImageProcessor(Options.Create(options));
+        using var source = ImageFixture.Create(400, 240);
+        var result = await processor.AddWatermarkAsync(source, Output("排版.png"),
+            new WatermarkOptions { Text = "萝卜 A\u0301\nالعربية 2026", FontSize = 24 },
+            cancellationToken: TestContext.Current.CancellationToken);
+        Assert.True(result.Success, result.ErrorCode);
+    }
+
+    [Fact]
+    public async Task RepeatedNativeRequests_ShouldKeepTemporaryOutputsBounded()
+    {
+        using var source = ImageFixture.Create(256, 192);
+        for (var i = 0; i < 20; i++)
+            Assert.True((await _processor.CompressAsync(source, Output("warmup.png"),
+                cancellationToken: TestContext.Current.CancellationToken)).Success);
+        File.Delete(Output("warmup.png"));
+        var durations = new List<double>();
+        var residentBytes = new List<long>();
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        for (var i = 0; i < 1000; i++)
         {
-            ImageProcessing = new ImageProcessingOptions
+            var started = System.Diagnostics.Stopwatch.GetTimestamp();
+            var cancellation = TestContext.Current.CancellationToken;
+            var result = (i % 4) switch
             {
-                ThumbnailSize = new ImageSizeOptions
-                {
-                    Width = 150,
-                    Height = 150
-                },
-                CompressQuality = 85
-            },
-            Watermark = new CommonWatermarkOptions
+                0 => await _processor.ResizeAsync(source, Output("repeat.png"), 128, 96,
+                    cancellationToken: cancellation),
+                1 => await _processor.CompressAsync(source, Output("repeat.jpg"),
+                    cancellationToken: cancellation),
+                2 => await _processor.CompressAsync(source, Output("repeat.webp"),
+                    cancellationToken: cancellation),
+                _ => await _processor.AddWatermarkAsync(source, Output("watermark.png"),
+                    new WatermarkOptions { Text = "中文验收", FontSize = 16 },
+                    cancellationToken: cancellation)
+            };
+            Assert.True(result.Success, result.ErrorCode);
+            durations.Add(System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            if (i % 100 == 99)
             {
-                Text = new TextWatermarkOptions
-                {
-                    Font = new FontOptions
-                    {
-                        // Linux 环境优先使用 DejaVu Sans
-                        PreferredFonts = new List<string>
-                        {
-                            "DejaVu Sans",
-                            "Ubuntu",
-                            "Liberation Sans",
-                            "Noto Sans",
-                            "Arial"
-                        },
-                        UseRelativeSize = false, // 测试使用固定大小
-                        MinFontSize = 12,
-                        MaxFontSize = 48
-                    }
-                }
+                process.Refresh();
+                residentBytes.Add(process.WorkingSet64);
             }
-        };
-
-        var options = Options.Create(fileStorageOptions);
-        _imageProcessor = new CSharpImageProcessor(options);
-
-        // 创建测试输出目录（项目根目录 DataBases 下）
-        var repoRoot = ResolveRepoRoot();
-        _testOutputPath = Path.Combine(repoRoot, "DataBases", "TestOutput");
-        Directory.CreateDirectory(_testOutputPath);
-    }
-
-    /// <summary>
-    /// 解析项目根目录
-    /// </summary>
-    private static string ResolveRepoRoot()
-    {
-        var currentDir = Directory.GetCurrentDirectory();
-        var dir = new DirectoryInfo(currentDir);
-
-        // 向上查找包含 .git 或 Radish.slnx 的目录
-        while (dir != null)
+        }
+        Assert.Equal(4, Directory.GetFiles(_directory).Length);
+        Assert.Empty(Directory.GetDirectories(_directory));
+        if (Environment.GetEnvironmentVariable("RADISH_IMAGE_STRESS_REPORT") is { Length: > 0 } report)
         {
-            if (dir.GetFiles("Radish.slnx", SearchOption.TopDirectoryOnly).Length > 0 ||
-                dir.GetFiles(".git", SearchOption.TopDirectoryOnly).Length > 0)
+            Assert.True(Path.IsPathFullyQualified(report));
+            durations.Sort();
+            process.Refresh();
+            await File.WriteAllTextAsync(report, System.Text.Json.JsonSerializer.Serialize(new
             {
-                return dir.FullName;
-            }
-            dir = dir.Parent;
+                iterations = 1000, warmup = 20, concurrency = 1, width = 256, height = 192,
+                p50Milliseconds = durations[499], p95Milliseconds = durations[949],
+                maximumMilliseconds = durations[^1],
+                peakResidentBytes = process.PeakWorkingSet64 > 0 ? (long?)process.PeakWorkingSet64 : null,
+                sampledMaximumResidentBytes = residentBytes.Max(),
+                residentBytes, outputBytes = Directory.GetFiles(_directory).Sum(path => new FileInfo(path).Length)
+            }), TestContext.Current.CancellationToken);
         }
-
-        // 如果没找到，使用当前目录
-        return currentDir;
-    }
-
-    /// <summary>
-    /// 创建测试图片
-    /// </summary>
-    private Stream CreateTestImage(int width = 800, int height = 600)
-    {
-        var image = new Image<Rgba32>(width, height);
-
-        // 填充渐变色背景
-        for (int y = 0; y < height; y++)
-        {
-            for (int x = 0; x < width; x++)
-            {
-                var r = (byte)(x * 255 / width);
-                var g = (byte)(y * 255 / height);
-                var b = (byte)((x + y) * 255 / (width + height));
-                image[x, y] = new Rgba32(r, g, b);
-            }
-        }
-
-        var stream = new MemoryStream();
-        image.SaveAsJpeg(stream);
-        stream.Position = 0;
-        return stream;
-    }
-
-    [Fact(DisplayName = "测试添加文字水印")]
-    public async Task AddTextWatermark_ShouldSucceed()
-    {
-        // Arrange
-        var sourceStream = CreateTestImage(800, 600);
-        var outputPath = Path.Combine(_testOutputPath, "watermark_test.jpg");
-
-        var watermarkOptions = new InfraWatermarkOptions
-        {
-            Type = WatermarkType.Text,
-            Text = "Radish Test",
-            FontSize = 24,
-            Opacity = 0.5f,
-            Position = WatermarkPosition.BottomRight,
-            Color = "#FFFFFF",
-            Padding = 10
-        };
-
-        // Act
-        var result = await _imageProcessor.AddWatermarkAsync(sourceStream, outputPath, watermarkOptions);
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Success.ShouldBeTrue($"水印添加失败：{result.ErrorMessage}");
-        File.Exists(outputPath).ShouldBeTrue("输出文件不存在");
-
-        var fileInfo = new FileInfo(outputPath);
-        fileInfo.Length.ShouldBeGreaterThan(0, "输出文件大小为0");
-
-        // 验证输出文件是有效的图片
-        using var outputImage = await Image.LoadAsync(outputPath, TestContext.Current.CancellationToken);
-        outputImage.Width.ShouldBe(800);
-        outputImage.Height.ShouldBe(600);
-
-        // 清理
-        sourceStream.Dispose();
-    }
-
-    [Fact(DisplayName = "测试生成缩略图")]
-    public async Task GenerateThumbnail_ShouldSucceed()
-    {
-        // Arrange
-        var sourceStream = CreateTestImage(800, 600);
-        var outputPath = Path.Combine(_testOutputPath, "thumbnail_test.jpg");
-
-        // Act
-        var result = await _imageProcessor.GenerateThumbnailAsync(
-            sourceStream,
-            outputPath,
-            150,
-            150,
-            85
-        );
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Success.ShouldBeTrue($"缩略图生成失败：{result.ErrorMessage}");
-        File.Exists(outputPath).ShouldBeTrue("输出文件不存在");
-
-        // 验证缩略图尺寸
-        using var outputImage = await Image.LoadAsync(outputPath, TestContext.Current.CancellationToken);
-        outputImage.Width.ShouldBeLessThanOrEqualTo(150);
-        outputImage.Height.ShouldBeLessThanOrEqualTo(150);
-
-        // 清理
-        sourceStream.Dispose();
-    }
-
-    [Fact(DisplayName = "测试生成多尺寸图片")]
-    public async Task GenerateMultipleSizes_ShouldSucceed()
-    {
-        // Arrange
-        var sourceStream = CreateTestImage(1920, 1080);
-        var baseOutputPath = Path.Combine(_testOutputPath, "multi_size_test.jpg");
-
-        var sizes = new List<ImageSize>
-        {
-            new() { Name = "small", Width = 400, Height = 300, KeepAspectRatio = true, Quality = 85 },
-            new() { Name = "medium", Width = 800, Height = 600, KeepAspectRatio = true, Quality = 85 },
-            new() { Name = "large", Width = 1200, Height = 900, KeepAspectRatio = true, Quality = 85 }
-        };
-
-        // Act
-        var results = await _imageProcessor.GenerateMultipleSizesAsync(
-            sourceStream,
-            baseOutputPath,
-            sizes
-        );
-
-        // Assert
-        results.ShouldNotBeNull();
-        results.Count.ShouldBe(3);
-
-        foreach (var result in results)
-        {
-            result.Success.ShouldBeTrue($"生成 {result.OutputPath} 失败：{result.ErrorMessage}");
-            File.Exists(result.OutputPath).ShouldBeTrue($"文件不存在：{result.OutputPath}");
-        }
-
-        // 验证文件尺寸
-        var smallPath = Path.Combine(_testOutputPath, "multi_size_test_small.jpg");
-        using var smallImage = await Image.LoadAsync(smallPath, TestContext.Current.CancellationToken);
-        smallImage.Width.ShouldBeLessThanOrEqualTo(400);
-
-        var mediumPath = Path.Combine(_testOutputPath, "multi_size_test_medium.jpg");
-        using var mediumImage = await Image.LoadAsync(mediumPath, TestContext.Current.CancellationToken);
-        mediumImage.Width.ShouldBeLessThanOrEqualTo(800);
-
-        var largePath = Path.Combine(_testOutputPath, "multi_size_test_large.jpg");
-        using var largeImage = await Image.LoadAsync(largePath, TestContext.Current.CancellationToken);
-        largeImage.Width.ShouldBeLessThanOrEqualTo(1200);
-
-        // 清理
-        sourceStream.Dispose();
-    }
-
-    [Fact(DisplayName = "测试水印位置 - 左上角")]
-    public async Task AddWatermark_TopLeft_ShouldSucceed()
-    {
-        // Arrange
-        var sourceStream = CreateTestImage(800, 600);
-        var outputPath = Path.Combine(_testOutputPath, "watermark_topleft.jpg");
-
-        var watermarkOptions = new InfraWatermarkOptions
-        {
-            Type = WatermarkType.Text,
-            Text = "TopLeft",
-            FontSize = 20,
-            Opacity = 0.7f,
-            Position = WatermarkPosition.TopLeft,
-            Color = "#FF0000",
-            Padding = 10
-        };
-
-        // Act
-        var result = await _imageProcessor.AddWatermarkAsync(sourceStream, outputPath, watermarkOptions);
-
-        // Assert
-        result.Success.ShouldBeTrue();
-        File.Exists(outputPath).ShouldBeTrue();
-
-        // 清理
-        sourceStream.Dispose();
-    }
-
-    [Fact(DisplayName = "测试水印位置 - 居中")]
-    public async Task AddWatermark_Center_ShouldSucceed()
-    {
-        // Arrange
-        var sourceStream = CreateTestImage(800, 600);
-        var outputPath = Path.Combine(_testOutputPath, "watermark_center.jpg");
-
-        var watermarkOptions = new InfraWatermarkOptions
-        {
-            Type = WatermarkType.Text,
-            Text = "Center Watermark",
-            FontSize = 32,
-            Opacity = 0.3f,
-            Position = WatermarkPosition.Center,
-            Color = "#000000",
-            Padding = 0
-        };
-
-        // Act
-        var result = await _imageProcessor.AddWatermarkAsync(sourceStream, outputPath, watermarkOptions);
-
-        // Assert
-        result.Success.ShouldBeTrue();
-        File.Exists(outputPath).ShouldBeTrue();
-
-        // 清理
-        sourceStream.Dispose();
-    }
-
-    [Fact(DisplayName = "测试移除 EXIF 信息")]
-    public async Task RemoveExif_ShouldSucceed()
-    {
-        // Arrange
-        var sourceStream = CreateTestImage(800, 600);
-        var outputPath = Path.Combine(_testOutputPath, "no_exif_test.jpg");
-
-        // Act
-        var removed = await _imageProcessor.RemoveExifAsync(sourceStream, outputPath);
-
-        // Assert
-        removed.ShouldBeTrue();
-        File.Exists(outputPath).ShouldBeTrue();
-
-        // 验证 EXIF 已移除
-        using var outputImage = await Image.LoadAsync(outputPath, TestContext.Current.CancellationToken);
-        outputImage.Metadata.ExifProfile.ShouldBeNull();
-
-        // 清理
-        sourceStream.Dispose();
     }
 }

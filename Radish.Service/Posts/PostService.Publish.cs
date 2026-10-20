@@ -367,7 +367,7 @@ public partial class PostService
     {
         if (tagNames == null)
         {
-            throw new ArgumentException(emptyMessage, parameterName);
+            throw new PostContentValidationException(emptyMessage, parameterName);
         }
 
         var normalizedTagNames = tagNames
@@ -378,7 +378,7 @@ public partial class PostService
 
         if (normalizedTagNames.Count is < 1 or > 5)
         {
-            throw new ArgumentException("标签数量必须在 1 到 5 个之间", parameterName);
+            throw new PostContentValidationException("标签数量必须在 1 到 5 个之间", parameterName);
         }
 
         return normalizedTagNames;

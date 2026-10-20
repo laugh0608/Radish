@@ -17,7 +17,7 @@
 - 禁止删除分支
 - 仅允许通过 Pull Request 合并
 - 单人维护阶段不要求额外审批，但仍要求已解决会话
-- 仅要求聚合检查 `Candidate Quality` 通过；它会汇总 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard` 六个组件结果
+- 仅要求聚合检查 `Candidate Quality` 通过；它会汇总 `Repo Hygiene`、`Frontend Lint`、`Baseline Quick`、`Dependency Security`、`Backend Guard`、`Identity Guard`、`Native Images` 七个组件结果
 - 允许 `merge` 与 `rebase` 两种合并方式，禁用 `squash`
 - 管理员仅可通过 Pull Request 方式绕过规则，不开放直接 push
 
@@ -45,7 +45,7 @@ gh api repos/<owner>/<repo>/rulesets --method POST --input .github/rulesets/mast
 
 本目录模板还包含 Conventional Commits 的远端校验规则。当前远端 ruleset 未启用该规则；仅调整 Actions 触发策略、required checks 或合并方式时，应基于远端现状构造精确更新，不直接导入完整模板扩大门禁范围。
 
-导入或更新前，请确认 `master-protection.json` 只要求 `.github/workflows/repo-quality.yml` 的聚合 job `Candidate Quality`；六个组件仍由仓库 contract 校验，不能从聚合依赖中静默移除。
+导入或更新前，请确认 `master-protection.json` 只要求 `.github/workflows/repo-quality.yml` 的聚合 job `Candidate Quality`；七个组件仍由仓库 contract 校验，不能从聚合依赖中静默移除。
 
 `master-protection.json` 中的 `actor_id: 5` 按“RepositoryRole = Admin”模板生成，用于管理员仅通过 PR 绕过规则。
 如果你的仓库类型或角色映射不同，导入前请按实际角色重新调整。

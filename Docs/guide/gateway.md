@@ -354,37 +354,35 @@ Gateway 是默认公开入口，但 `Api / Auth / Gateway` 三个宿主都会注
 - 允许所有请求头
 - 允许携带凭据（Credentials）
 
-部署态下，`Gateway / Auth / Api` 的启动日志里，`CORS 允许来源` 应收敛成同一个公开入口，例如 `https://10.10.10.20:5000` 或 `https://radish.example.com`。
+部署态下，`Gateway / Auth / Api` 的 CORS 配置应收敛到同一个公开入口，例如 `https://radish.example.com`。启动摘要只记录来源数量，具体来源应核对配置，并在获授权的运行验证中检查 HTTP 响应，不能从数量推断地址正确。
 
 ### 4. 日志记录
 
-Gateway 使用 Serilog 记录结构化日志。
+Gateway 通过共享 `AddSerilogSetup` 记录日志；以下文件路径适用于默认旧链，候选入口默认关闭；两条链均使用受控启动摘要，输出与级别见[日志系统](./logging.md)。
 
 **日志输出**：
 - **控制台**：彩色格式化输出，包含启动信息
-- **文件**：`Log/Gateway/Gateway.txt`（按天滚动）
+- **文件**：`Logs/Radish.Gateway/Log.txt`（按天滚动）
 
 **日志内容**：
-- 启动信息（环境、监听地址、CORS 配置、下游服务地址）
-- 请求日志（通过 Serilog Request Logging 中间件）
-- 错误日志（异常堆栈、错误上下文）
+- `runtime.startup_summary`：受控环境、监听端点 / CORS 来源 / 健康目标数量与已选择的 HTTPS 重定向、delegation 状态；不输出地址、Issuer 或证书信息
+- HTTP / YARP 请求、转发、配置与条件性亲和 / 健康事件；当前未注册 `UseSerilogRequestLogging`
+- 已治理精确来源输出固定事件与受控 failureKind，省略原始 URL、异常正文及 scope；范围见[统一日志契约第 59–64 节](../features/unified-logging-contract.md)
 
-**启动日志示例**：
+**启动摘要字段示例**（结构说明，不代表实际运行证据）：
 
+```text
+EventCode=runtime.startup_summary
+startupHost=gateway
+startupEnvironment=development
+listenEndpointCount=2
+corsOriginCount=4
+healthTargetCount=3
+startupHttpsRedirection=enabled
+startupDelegation=removed
 ```
-====================================
-   ____           _ _     _
-  |  _ \ __ _  __| (_)___| |__
-  | |_) / _` |/ _` | / __| '_ \
-  |  _ < (_| | (_| | \__ \ | | |
-  |_| \_\__,_|\__,_|_|___/_| |_|
-        Radish.Gateway --by luobo
-====================================
-环境: Development
-监听地址: https://localhost:5000, http://localhost:5001
-CORS 允许来源: http://localhost:3000, https://localhost:3000, http://localhost:3100, https://localhost:3100
-下游 API 服务: http://localhost:5100
-```
+
+摘要由 `ApplicationStarted` 通知触发，只反映已选择状态与数量，不代替健康探测。`runtime.stopped` 在 `ApplicationStopped` 通知时、logger 释放前记录；不保证后续宿主释放完成。准确字段、输出保护和时机见[事件契约第 70、72 节](../features/unified-logging-contract.md)。
 
 ## 开发指南
 
@@ -514,19 +512,7 @@ dotnet run --project Radish.Gateway/Radish.Gateway.csproj
 
 **1. 查看 YARP 路由日志**
 
-在 `appsettings.json` 中启用详细日志：
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "Yarp": "Debug"
-    }
-  }
-}
-```
+本地排障先按[日志系统](./logging.md)核对 Serilog 与各输出的级别配置；临时覆盖放入不提交的 `appsettings.Local.json`。降低级别不会恢复已治理来源的原始 URI、请求头或异常文本。候选链仍按公共策略过滤，生产策略不输出 Debug / Trace；提高框架详细度不等于取得真实网络验收。
 
 **2. 测试路由转发**
 
@@ -647,7 +633,7 @@ docker compose up -d
 
 5. **监控告警**：
    - 集成 Prometheus + Grafana 监控
-   - 配置日志聚合（ELK/Loki）
+   - 日志汇聚按[统一日志专题](../features/unified-logging-governance-design.md)推进，当前尚未切换生产链路
    - 设置关键指标告警（QPS、错误率、延迟）
 
 ## 常见问题
@@ -837,8 +823,8 @@ if (hasAccessToken()) {
 **A**: 日志输出位置：
 
 - **控制台**：启动 Gateway 的终端窗口
-- **文件**：`Log/Gateway/Gateway.txt`（按天滚动）
-- **结构化日志**：可配置输出到 Elasticsearch、Seq 等日志平台
+- **文件**：`Logs/Radish.Gateway/Log.txt`（按天滚动）
+- **后续汇聚**：按[统一日志专题](../features/unified-logging-governance-design.md)接入独立 collector、文件与内网 API 持久化及 Console 查询；尚未完成生产切换
 
 ### Q7: 如何添加新的后端服务？
 

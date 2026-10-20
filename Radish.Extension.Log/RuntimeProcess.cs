@@ -22,6 +22,7 @@ public static class RuntimeProcess
     {
         var previous = ActiveBoundary.Value;
         ActiveBoundary.Value = true;
+        using var assemblyDiagnostics = AssemblyDiagnosticReporter.BeginScope(service, error);
         try
         {
             await run();

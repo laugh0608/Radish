@@ -28,12 +28,12 @@ public partial class PostService
     {
         if (string.IsNullOrWhiteSpace(title))
         {
-            throw new ArgumentException("帖子标题不能为空", nameof(title));
+            throw new PostContentValidationException("帖子标题不能为空", nameof(title));
         }
 
         if (string.IsNullOrWhiteSpace(content))
         {
-            throw new ArgumentException("帖子内容不能为空", nameof(content));
+            throw new PostContentValidationException("帖子内容不能为空", nameof(content));
         }
 
         var normalizedTagNames = NormalizeTagNamesOrThrow(tagNames, nameof(tagNames), "编辑帖子时至少需要一个标签");
@@ -41,7 +41,7 @@ public partial class PostService
         var post = await _postRepository.QueryByIdAsync(postId);
         if (post == null || post.IsDeleted)
         {
-            throw new InvalidOperationException("帖子不存在");
+            throw new PostOperationRejectedException("帖子不存在");
         }
 
         if (expectedContentRevision <= 0 || post.ContentRevision != expectedContentRevision)
@@ -73,19 +73,19 @@ public partial class PostService
         {
             if (existingEditCount >= Math.Max(0, postOptions.MaxEditCount))
             {
-                throw new InvalidOperationException("帖子编辑次数已达上限，无法继续编辑");
+                throw new PostOperationRejectedException("帖子编辑次数已达上限，无法继续编辑");
             }
         }
 
         if (targetCategoryId <= 0)
         {
-            throw new InvalidOperationException("帖子分类不存在或不可用");
+            throw new PostOperationRejectedException("帖子分类不存在或不可用");
         }
 
         var targetCategory = await _categoryRepository.QueryByIdAsync(targetCategoryId);
         if (targetCategory == null || targetCategory.IsDeleted || !targetCategory.IsEnabled)
         {
-            throw new InvalidOperationException("帖子分类不存在或不可用");
+            throw new PostOperationRejectedException("帖子分类不存在或不可用");
         }
 
         if (targetCategoryId != post.CategoryId)

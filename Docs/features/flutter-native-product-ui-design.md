@@ -2,7 +2,7 @@
 
 > 状态：`P6 Android UI AVD RC Go`、`P7-C iOS Simulator Go`、`P7-D1 Internal TestFlight minimal readiness Go` 与 `P8-B2 macOS local runtime acceptance Go` 已关闭；`P7-D2 / D3` 暂缓，下一顺位为 `P8-C Windows toolchain + platform foundation readiness`
 >
-> 最后更新：2026-09-05（Asia/Shanghai）
+> 最后更新：2026-10-12（Asia/Shanghai；仅补第 14 节连接规划，平台证据仍按原日期）
 >
 > 关联文档：
 >
@@ -411,3 +411,9 @@ P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail*
 ## 13. 当前动作（2026-09-05）
 
 P6-B 已完成真实服务、compact / medium API 35 AVD、系统浏览器 OIDC、私域读取、冷启动、四主题代表面、真实输入法和高风险 Forum CAS，并冻结历史 APK SHA-256 `b08d0f5e0aea5d873bf61018e1ba8c1b654971fa94567e40343c9396fb2cc174`。项目所有者已确认双 AVD 足以进入下一阶段；P7-A / B 已建立 iOS 工具链、工程与真实 runtime owner，P7-C 在专用 iPhone / iPad Simulator 上给出 `Simulator Go`。P7-D1 已关闭生产 Gateway 临时复用裁决、distribution fail-closed、version / privacy / entitlement preflight 和无签名 Release 编译。项目所有者当前没有 Apple Developer Program 付费会员或可测试真机，P7-D2 / D3 按外部前置条件暂缓。P8-A / B readiness、P8-B1 与 P8-B2 已关闭 desktop 共同阻断、三宿主事实及 macOS identity、runtime、OIDC、Keychain / preferences、三档窗口、四主题和 desktop 输入矩阵；下一步进入 P8-C Windows toolchain + platform foundation readiness。
+
+## 14. 官方端点与自部署实例连接规划
+
+2026-10-12 已确认[客户端连接规划](../frontend/client-server-connection-plan.md)：同一官方 Flutter 安装包提供运行时服务器选择，支持官方端点及用户自部署的兼容 Radish 实例，无需重新编译。连接前验证兼容性，认证、私域缓存、通知 / 深链与持久状态按实例和账户隔离；切换不是账户或内容迁移。
+
+既有 `--dart-define` 只说明构建目标，P6–P8 的单实例证据不证明该能力已完成。本次仅补产品目标与验收边界；具体实现、旧状态迁移和平台运行按独立专题确认，当前工程顺位继续由[当前进行中](../planning/current.md)维护。

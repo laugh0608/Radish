@@ -29,7 +29,6 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     private readonly ISystemSettingProvider _systemSettingProvider;
     private readonly ForumQuickReplyOptions _options;
     private readonly IReliableOutboxService? _reliableOutboxService;
-    private readonly ILogger<PostQuickReplyService>? _logger;
     private readonly IBaseRepository<User>? _userRepository;
 
     public PostQuickReplyService(
@@ -53,7 +52,6 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         _options = options.Value;
         _attachmentService = attachmentService;
         _reliableOutboxService = reliableOutboxService;
-        _logger = logger;
         _userRepository = userRepository;
     }
 
@@ -431,14 +429,10 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
                 new NotificationRequestedTaskPayload(notification),
                 quickReply.CreateTime);
         }
-        catch (Exception ex)
+        catch (ArgumentException ex)
         {
-            _logger?.LogWarning(ex,
-                "[PostQuickReplyService] 发送轻回应通知失败，PostId={PostId}, QuickReplyId={QuickReplyId}, ReceiverUserId={ReceiverUserId}",
-                post.Id,
-                quickReply.Id,
-                post.AuthorId);
-            throw;
+            // 只传递失败阶段；回滚及错误结果构造完成后，由 Controller 记录。
+            throw new PostQuickReplyNotificationEnqueueException(ex);
         }
     }
 

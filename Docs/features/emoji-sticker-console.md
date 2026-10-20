@@ -4,7 +4,7 @@
 >
 > **版本**: v26.3.0
 >
-> **最后更新**: 2026.08.12
+> **最后更新**: 2026.10.07
 >
 > **关联文档**：
 > [系统总览与数据模型](./emoji-sticker-system.md) ·
@@ -252,7 +252,8 @@ interface BatchAddStickersRequest {
 失败处理策略：
 
 - 请求/冲突校验或附件验证、实体构建失败时，在插入前返回 `voConflicts / voFailedItems`，不产生部分成功 `Sticker`
-- 缩略图生成失败只记录告警并继续；数据库写入抛出异常时才由事务回滚已执行的写入
+- 缩略图为尽力生成，失败在流释放后输出安全 Warning 并继续；批量事务内向外传播的异常会回滚数据库写入，但正常返回失败结果时，先前附件更新可能提交。缩略图内部消费的异常不会自动触发整批回滚，文件副作用也不由数据库事务撤销
+- 逐项附件构建失败输出安全 Error；四个管理入口的明确拒绝保持安静，其他被消费故障在响应构造后记录。日志与已知映射限制见[系统边界](./emoji-sticker-system.md#管理写入与运行日志边界)
 - 前端保留确认表格内容与上传结果，管理员可修正后直接重试
 - 已上传 Attachment 不立即删除，交由孤儿附件清理任务处理（避免误删）
 
@@ -327,13 +328,9 @@ interface BatchAddStickersRequest {
 
 ### 当前错误与联调契约
 
-`StickerController` 当前未标注 `[ApiErrorContract]`。因此业务校验、冲突和附件构建失败通常仍以 HTTP 200
-返回，真实业务状态位于 `MessageModel.statusCode`；认证和权限拦截仍使用真实 HTTP 401/403。Console 的
-`stickerApi.ts` 仍有自行解析响应、抛普通 `Error` 的兼容实现，F3-C9 需迁移到共享
-`ParsedApiResponse / ApiResponseError`，并同步把 Sticker 领域失败切换为真实 HTTP 状态。
+`StickerController` 已标注 `[ApiErrorContract]`，有效的 `MessageModel.statusCode` 同步为真实 HTTP 状态，失败响应补 traceId；只有 code 缺失时才补默认 code / messageKey，不能假定每个已有业务 code 都有本地化键。认证 / 权限拦截继续使用真实 HTTP 401 / 403。
 
-`MessageModel<T>` 已支持 `messageKey / messageArguments / traceId`，但 Sticker 领域当前通常未填充这些字段；
-F3-C9 应补齐稳定 `code`、本地化键、参数与追踪标识，前端不得依赖中文 `messageInfo` 分支。
+Console 的 `stickerApi.ts` 已统一调用 `@radish/http`，一般失败使用 `createApiResponseError`；`batchAddStickersWithDetails` 保留 ok、HTTP / 业务状态、code、messageKey / arguments、traceId 与批量数据，供行级提示使用。前端不得依赖中文 messageInfo 分支。该边界已存在，本轮日志治理没有再次迁移前端 API。
 
 批量请求中的雪花 ID 必须使用 JSON 字符串：
 
@@ -362,7 +359,7 @@ F3-C9 应补齐稳定 `code`、本地化键、参数与追踪标识，前端不�
 - **产生场景**：管理员在确认表格删除行、取消保存，或 `BatchAddStickers` 返回失败/发生异常
 - **清理方式**：`FileCleanupJob` 调用跨域 `AttachmentReferenceInspector`，排除仍被结构化字段、消息快照、正文 Markdown 等业务真值引用的附件
 - **延迟**：仅清理创建时间超过 `24h` 的候选，避免管理员短时间重试时文件丢失
-- **日志**：记录被引用候选的跳过数、清理总数及逐文件路径
+- **日志**：清理任务按实际变更 / 故障输出安全批次摘要，不记录逐文件路径；只有引用保护跳过且无变更 / 故障时保持安静，详见[统一日志契约](./unified-logging-contract.md)
 
 ---
 
