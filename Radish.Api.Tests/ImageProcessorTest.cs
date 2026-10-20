@@ -150,14 +150,54 @@ public sealed class ImageProcessorTest : IDisposable
     [Fact]
     public async Task RepeatedNativeRequests_ShouldKeepTemporaryOutputsBounded()
     {
-        using var source = ImageFixture.Create(8, 8);
+        using var source = ImageFixture.Create(256, 192);
+        for (var i = 0; i < 20; i++)
+            Assert.True((await _processor.CompressAsync(source, Output("warmup.png"),
+                cancellationToken: TestContext.Current.CancellationToken)).Success);
+        File.Delete(Output("warmup.png"));
+        var durations = new List<double>();
+        var residentBytes = new List<long>();
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
         for (var i = 0; i < 1000; i++)
         {
-            var result = await _processor.CompressAsync(source, Output("repeat.png"),
-                cancellationToken: TestContext.Current.CancellationToken);
+            var started = System.Diagnostics.Stopwatch.GetTimestamp();
+            var cancellation = TestContext.Current.CancellationToken;
+            var result = (i % 4) switch
+            {
+                0 => await _processor.ResizeAsync(source, Output("repeat.png"), 128, 96,
+                    cancellationToken: cancellation),
+                1 => await _processor.CompressAsync(source, Output("repeat.jpg"),
+                    cancellationToken: cancellation),
+                2 => await _processor.CompressAsync(source, Output("repeat.webp"),
+                    cancellationToken: cancellation),
+                _ => await _processor.AddWatermarkAsync(source, Output("watermark.png"),
+                    new WatermarkOptions { Text = "中文验收", FontSize = 16 },
+                    cancellationToken: cancellation)
+            };
             Assert.True(result.Success, result.ErrorCode);
+            durations.Add(System.Diagnostics.Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            if (i % 100 == 99)
+            {
+                process.Refresh();
+                residentBytes.Add(process.WorkingSet64);
+            }
         }
-        Assert.Single(Directory.GetFiles(_directory));
+        Assert.Equal(4, Directory.GetFiles(_directory).Length);
         Assert.Empty(Directory.GetDirectories(_directory));
+        if (Environment.GetEnvironmentVariable("RADISH_IMAGE_STRESS_REPORT") is { Length: > 0 } report)
+        {
+            Assert.True(Path.IsPathFullyQualified(report));
+            durations.Sort();
+            process.Refresh();
+            await File.WriteAllTextAsync(report, System.Text.Json.JsonSerializer.Serialize(new
+            {
+                iterations = 1000, warmup = 20, concurrency = 1, width = 256, height = 192,
+                p50Milliseconds = durations[499], p95Milliseconds = durations[949],
+                maximumMilliseconds = durations[^1],
+                peakResidentBytes = process.PeakWorkingSet64 > 0 ? (long?)process.PeakWorkingSet64 : null,
+                sampledMaximumResidentBytes = residentBytes.Max(),
+                residentBytes, outputBytes = Directory.GetFiles(_directory).Sum(path => new FileInfo(path).Length)
+            }), TestContext.Current.CancellationToken);
+        }
     }
 }

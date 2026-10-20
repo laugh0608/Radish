@@ -31,7 +31,7 @@
 
 能力测试覆盖实际格式 / 尺寸、16-bit PNG、EXIF 八方向、JPEG 隐私清除不重编码、APNG / GIF / WebP 帧时序与透明合成、ICC、中文字体 shaping、取消、畸形输入、句柄错误边界和批次失败清理。发现并修复动画 WebP 解码背景导致透明残留的问题。旧 watermark FFI 测试改为真实新 ABI，不跳过必需原生项。
 
-1000 次连续调用目前证明调用可完成与临时输出清理；尚不能代替混合负载 p50 / p95、峰值 RSS、句柄计数或 sanitizer / fuzz 结论。
+固定 256×192 输入、20 次预热、单并发 1000 次 PNG 缩放 / JPEG / WebP 压缩 / 中文水印混合调用通过：p50 6.01 ms、p95 8.41 ms、最大 15.82 ms；每 100 次采样 RSS，从 140.0 MB 增至 146.0 MB 后保持稳定，最终四个输出共 11,448 字节、无暂存子目录。macOS 的 PeakWorkingSet64 返回 0，记录为 unavailable，不冒充真实峰值；采样最大 RSS 146,046,976 字节。该样本不代表大图或高并发性能。
 
 ## 依赖与分发核对
 
@@ -51,3 +51,11 @@
 5. 所有必需项通过后提交最终变更、创建 `dev → master` PR 并确认 CI。不得以本页文档或本机成功代替未完成门禁。
 
 本轮 PostgreSQL 容器、Docker 自检与清理均按任务中的精确授权执行，不访问生产。Docker 构建缓存保留，测试容器与镜像清理；最终状态在后续验证结束时补齐。
+
+## 首轮远端预检与修正
+
+候选 `74a8f8f9` 已推送 dev，并手动运行 [Repo Quality](https://github.com/laugh0608/Radish/actions/runs/39444567644)。Windows x64、macOS arm64 / x64、Linux x64 原生作业与联合 AddressSanitizer 作业通过；包括独立子进程 768 个固定变异样本。停止维护通告保持记录。
+
+首轮 arm64 lint 发现 c_char 在 Linux arm64 为 unsigned，使旧 SHA256 指针强转触发 unnecessary_cast；改用显式指针 cast 方法。两个 Docker 作业在 .NET publish 阶段发现 node 缺失，已将同一已授权 Node 镜像二进制复制到 SDK 构建阶段。验证入口另显式指定 cargo +1.96.0，避免仓库根目录执行时使用 runner 默认工具链。修正后需再次远端预检。
+
+隔离浏览器服务已启动；初次开发 Authority 路径出现 401，测试环境使用已有 RADISH_PUBLIC_URL / 本地开发签名证书配置恢复验签，不修改认证实现。论坛透明 PNG 上传已返回 200；完整 PC/mobile 矩阵仍进行中。

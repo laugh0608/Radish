@@ -10,6 +10,7 @@ COPY Clients/radish.flutter/assets/fonts/noto Clients/radish.flutter/assets/font
 RUN node Scripts/build-native-images.mjs
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+COPY --from=native-node /usr/local/bin/node /usr/local/bin/node
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY . .

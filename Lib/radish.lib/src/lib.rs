@@ -53,7 +53,7 @@ pub unsafe extern "C" fn calculate_file_sha256(
                     unsafe {
                         std::ptr::copy_nonoverlapping(
                             bytes.as_ptr(),
-                            hash_output as *mut u8,
+                            hash_output.cast::<u8>(),
                             bytes.len(),
                         );
                     }

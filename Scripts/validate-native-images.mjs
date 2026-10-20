@@ -1,9 +1,9 @@
 import { spawnSync } from 'node:child_process';
 const manifest = 'Lib/radish.lib/Cargo.toml';
 const commands = [
-  ['cargo', ['fmt', '--manifest-path', manifest, '--all', '--check']],
-  ['cargo', ['clippy', '--manifest-path', manifest, '--locked', '--all-targets', '--', '-D', 'warnings']],
-  ['cargo', ['test', '--manifest-path', manifest, '--locked']],
+  ['cargo', ['+1.96.0', 'fmt', '--manifest-path', manifest, '--all', '--check']],
+  ['cargo', ['+1.96.0', 'clippy', '--manifest-path', manifest, '--locked', '--all-targets', '--', '-D', 'warnings']],
+  ['cargo', ['+1.96.0', 'test', '--manifest-path', manifest, '--locked']],
   [process.execPath, ['Scripts/build-native-images.mjs']],
 ];
 for (const [command, args] of commands) {
