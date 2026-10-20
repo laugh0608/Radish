@@ -146,18 +146,32 @@ internal sealed class MemoryHttp3Connection : MultiplexedConnectionContext, IPro
     public override void Abort() => Abort(new ConnectionAbortedException("Memory connection closed"));
     public override ValueTask DisposeAsync()
     {
+        TaskCompletionSource completion;
         lock (_lifetime)
         {
+            if (_dispose != null) return new ValueTask(_dispose);
             _disposing = true;
-            return new ValueTask(_dispose ??= DisposeCore());
+            completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _dispose = completion.Task;
         }
+        _ = CompleteDispose(completion);
+        return new ValueTask(completion.Task);
     }
-    private async Task DisposeCore()
+    private async Task CompleteDispose(TaskCompletionSource completion)
     {
-        if (_abort != null) await _abort;
-        foreach (var stream in _streams) await stream.DisposeAsync();
-        _closed.Dispose();
-        Disposed.TrySetResult();
+        try
+        {
+            if (_abort != null) await _abort;
+            foreach (var stream in _streams) await stream.DisposeAsync();
+            _closed.Dispose();
+            Disposed.TrySetResult();
+            completion.TrySetResult();
+        }
+        catch (Exception exception)
+        {
+            Disposed.TrySetException(exception);
+            completion.TrySetException(exception);
+        }
     }
     public async Task CleanupClientPipes()
     {
@@ -179,6 +193,7 @@ internal sealed class MemoryHttp3Stream : DefaultConnectionContext, IStreamIdFea
     private readonly List<(Action<object?> Callback, object? State)> _onClosed = new();
     private Task? _dispose;
     private bool _aborted;
+    private bool _callbacksClosed;
     public long StreamId { get; }
     public bool CanRead { get; }
     public bool CanWrite { get; }
@@ -202,9 +217,13 @@ internal sealed class MemoryHttp3Stream : DefaultConnectionContext, IStreamIdFea
     {
         lock (_lifetime)
         {
-            if (Disposed.Task.IsCompleted) callback(state);
-            else _onClosed.Add((callback, state));
+            if (!_callbacksClosed)
+            {
+                _onClosed.Add((callback, state));
+                return;
+            }
         }
+        callback(state);
     }
     public override void Abort(ConnectionAbortedException abortReason)
     {
@@ -221,13 +240,42 @@ internal sealed class MemoryHttp3Stream : DefaultConnectionContext, IStreamIdFea
     public void AbortWrite(long errorCode, ConnectionAbortedException abortReason) => Output.Writer.CancelPendingFlush();
     public override ValueTask DisposeAsync()
     {
-        lock (_lifetime) return new ValueTask(_dispose ??= DisposeCore());
+        TaskCompletionSource completion;
+        lock (_lifetime)
+        {
+            if (_dispose != null) return new ValueTask(_dispose);
+            completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _dispose = completion.Task;
+        }
+        // DisposeCore 可能同步执行到 Kestrel 回调；不能持有 transport 锁调用它。
+        _ = CompleteDispose(completion);
+        return new ValueTask(completion.Task);
+    }
+    private async Task CompleteDispose(TaskCompletionSource completion)
+    {
+        try
+        {
+            await DisposeCore();
+            completion.TrySetResult();
+        }
+        catch (Exception exception)
+        {
+            Disposed.TrySetException(exception);
+            completion.TrySetException(exception);
+        }
     }
     private async Task DisposeCore()
     {
         await Input.Reader.CompleteAsync();
         await Output.Writer.CompleteAsync();
-        foreach (var (callback, state) in _onClosed) callback(state);
+        (Action<object?> Callback, object? State)[] callbacks;
+        lock (_lifetime)
+        {
+            _callbacksClosed = true;
+            callbacks = _onClosed.ToArray();
+            _onClosed.Clear();
+        }
+        foreach (var (callback, state) in callbacks) callback(state);
         await base.DisposeAsync();
         Disposed.TrySetResult();
     }
