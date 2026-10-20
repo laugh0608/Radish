@@ -66,8 +66,10 @@ jobs:
         include:
           - runner: ubuntu-24.04
             platform: linux/amd64
+            architecture: amd64
           - runner: ubuntu-24.04-arm
             platform: linux/arm64
+            architecture: arm64
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v5
@@ -76,4 +78,39 @@ jobs:
           node-version: '24'
       - uses: docker/setup-buildx-action@v3
       - name: Build and execute without pushing
-        run: node Scripts/check-native-image-docker.mjs --platform=${{ matrix.platform }}
+        run: node Scripts/check-native-image-docker.mjs --platform=${{ matrix.platform }} --keep-image
+      - name: Scan final API image
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0, shared release scanner
+        with:
+          scan-type: image
+          image-ref: radish-image-check:${{ matrix.architecture }}
+          format: json
+          output: native-image-vulnerabilities.json
+          exit-code: '0'
+          ignore-unfixed: false
+          vuln-type: os,library
+          severity: HIGH,CRITICAL
+          scanners: vuln
+      - name: Evaluate existing image vulnerability policy
+        run: |
+          node Scripts/evaluate-image-vulnerabilities.mjs \
+            --report native-image-vulnerabilities.json \
+            --image radish-api \
+            --exceptions .github/image-vulnerability-exceptions.json \
+            --output native-image-evaluation.json \
+            --summary "${GITHUB_STEP_SUMMARY}"
+      - name: Save platform vulnerability evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-image-security-${{ matrix.architecture }}
+          path: |
+            native-image-vulnerabilities.json
+            native-image-evaluation.json
+          if-no-files-found: ignore
+      - name: Remove disposable image
+        if: always()
+        run: |
+          if docker image inspect radish-image-check:${{ matrix.architecture }} >/dev/null 2>&1; then
+            docker image rm radish-image-check:${{ matrix.architecture }}
+          fi
