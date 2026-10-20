@@ -1,6 +1,6 @@
 # Rust 图片处理完整替代实施方案
 
-> 状态：2026-10-20 项目所有者已确认继续 .NET，先实施图片替代以恢复正常 PR；精确依赖已授权并实施，单一 Rust 处理链与构建接线已落地，正在完成 R4 / R5 验证。执行边界见[R0 清单](./rust-image-processing-dependency-proposal.md)，实际结果见[实施记录](../records/rust-image-replacement-2026-10-20.md)。
+> 状态：2026-10-20 项目所有者已确认继续 .NET，先实施图片替代以恢复正常 PR；精确依赖已授权并实施，单一 Rust 处理链与 R4 五平台 / 双架构交付已通过，R5 压力、质量、内存检查和隔离 PC / mobile 验收完成，后端夹具修正后的完整 Repo Quality 也已通过，R4 / R5 合并前验收关闭；进入 PR 检查。执行边界见[R0 清单](./rust-image-processing-dependency-proposal.md)，实际结果见[实施记录](../records/rust-image-replacement-2026-10-20.md)。
 >
 > 目标：补齐 `Lib/radish.lib`，使正式图片处理、测试和交付完全退出 Six Labors 四包链。C# 保留宿主适配职责，Rust 成为唯一图片实现；采用现有开源 codec，不自行编写通用解码器。
 >
