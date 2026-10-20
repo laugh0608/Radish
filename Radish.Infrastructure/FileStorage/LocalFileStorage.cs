@@ -456,6 +456,7 @@ public class LocalFileStorage : IFileStorage
         var directory = Path.GetDirectoryName(originalPath) ?? string.Empty;
         var fileName = Path.GetFileNameWithoutExtension(originalPath);
         var extension = Path.GetExtension(originalPath);
+        if (extension.ToLowerInvariant() is ".gif" or ".bmp" or ".ico") extension = ".png";
 
         var thumbnailFileName = $"{fileName}_thumb{extension}";
         var thumbnailPath = Path.Combine(directory, thumbnailFileName);

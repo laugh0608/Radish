@@ -35,6 +35,7 @@ using Radish.Extension.AuditLogExtension;
 using Radish.Extension.ExperienceExtension;
 using Radish.Infrastructure.FileStorage;
 using Radish.Infrastructure.ImageProcessing;
+using Radish.Extension.ImageProcessingExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Repository;
@@ -69,6 +70,12 @@ using Radish.Service.Base;
 // -------------- 容器构建阶段 ---------------
 return await RuntimeProcess.RunAsync("api", async () =>
 {
+    if (args.Contains("--check-native-images", StringComparer.Ordinal))
+    {
+        await NativeImageSelfTest.RunAsync();
+        return;
+    }
+
     var builder = WebApplication.CreateBuilder(args);
     builder.Services.AddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<BusinessCalendar>();
@@ -289,13 +296,7 @@ return await RuntimeProcess.RunAsync("api", async () =>
     // 注册文件存储和图片处理服务
     // 根据 FileStorage:Type 动态选择存储后端（Local/MinIO/OSS）
     builder.Services.AddSingleton<IFileStorage>(sp => FileStorageFactory.Create(sp));
-    // 图片处理：根据 ImageProcessing:UseRustExtension 动态选择实现（C# ImageSharp / Rust）
-    builder.Services.AddSingleton<ImageProcessorFactory>();
-    builder.Services.AddScoped<IImageProcessor>(sp =>
-    {
-        var factory = sp.GetRequiredService<ImageProcessorFactory>();
-        return factory.Create();
-    });
+    builder.Services.AddImageProcessingSetup(builder.Configuration);
     builder.Services.AddSingleton<IAttachmentUrlResolver, AttachmentUrlResolver>();
     builder.Services.AddScoped<IAttachmentReferenceInspector, AttachmentReferenceInspector>();
     // 注册缓存相关服务

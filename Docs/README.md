@@ -45,7 +45,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [全项目统一日志与跨容器汇聚专题（L1 实施中）](./features/unified-logging-governance-design.md)
 - [第三方依赖许可治理与替代方案](./features/dependency-license-governance.md)
 - [Rust 图片处理替代评估](./features/rust-image-processing-replacement-assessment.md)
-- [Rust 图片处理完整替代实施方案（待确认）](./features/rust-image-processing-implementation-plan.md)
+- [Rust 图片处理完整替代实施方案](./features/rust-image-processing-implementation-plan.md)
 - [文档篇幅治理](./guide/document-governance.md)
 
 ## 前端与交互

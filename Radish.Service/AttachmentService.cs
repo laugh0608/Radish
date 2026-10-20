@@ -116,6 +116,20 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                     AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.UnsupportedMediaType));
             }
 
+            ImageInfo? imageInfo = null;
+            if (IsImageFile(extension))
+            {
+                if (file.Length > FileStoragePolicy.GetMaxFileSize(_fileStorageOptions, normalizedBusinessType, extension))
+                    throw new BusinessException("文件过大", StatusCodes.Status413PayloadTooLarge,
+                        AttachmentErrorCodes.FileTooLarge, AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.FileTooLarge));
+                await using var imageStream = file.OpenReadStream();
+                imageInfo = await _imageProcessor.GetImageInfoAsync(imageStream);
+                var expectedFormat = extension is ".jpg" or ".jpeg" ? "JPEG" : extension[1..].ToUpperInvariant();
+                if (imageInfo == null || imageInfo.Format != expectedFormat)
+                    throw new BusinessException("图片内容与格式不匹配", StatusCodes.Status415UnsupportedMediaType,
+                        AttachmentErrorCodes.UnsupportedMediaType, AttachmentErrorCodes.ResolveMessageKey(AttachmentErrorCodes.UnsupportedMediaType));
+            }
+
             // 2. 计算文件哈希（用于去重）
             string? fileHash = null;
             if (optionsDto.CalculateHash)
@@ -187,7 +201,14 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
 
             successfulUpload = uploadResult;
 
-            // 4. 如果是图片，添加水印（在其他处理之前）
+            // 先清理原图隐私信息；所有派生图从清理后的源生成。
+            if (optionsDto.RemoveExif && imageInfo != null)
+                await RemoveExifAsync(uploadResult.StoragePath);
+            if (optionsDto.GenerateThumbnail && imageInfo != null &&
+                (imageInfo.Format is "GIF" or "BMP" or "ICO" || imageInfo.FrameCount > 1))
+                uploadResult.ThumbnailPath = Path.ChangeExtension(uploadResult.ThumbnailPath, ".png");
+
+            // 4. 如果是图片，添加水印
             if (optionsDto.AddWatermark && IsImageFile(extension))
             {
                 // 检查配置文件中的水印开关
@@ -206,14 +227,11 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             // 4.6. 如果是图片，生成多尺寸
             if (optionsDto.GenerateMultipleSizes && IsImageFile(extension))
             {
-                generatedSizes = await GenerateMultipleSizesAsync(uploadResult.StoragePath, generatedPaths);
+                generatedSizes = await GenerateMultipleSizesAsync(uploadResult.StoragePath, generatedPaths, imageInfo!);
             }
 
-            // 5. 如果是图片，移除 EXIF
-            if (optionsDto.RemoveExif && IsImageFile(extension))
-            {
-                await RemoveExifAsync(uploadResult.StoragePath);
-            }
+            if (imageInfo != null && (optionsDto.RemoveExif || optionsDto.AddWatermark && _fileStorageOptions.Watermark?.Enable == true))
+                uploadResult.FileSize = new FileInfo(_fileStorage.GetFullPath(uploadResult.StoragePath)).Length;
 
             // 6. 保存到数据库
             var attachment = new Attachment
@@ -647,7 +665,17 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             // 4. 增加下载次数。该服务为 scoped，不能在请求外的 Task.Run 中继续复用。
             await IncrementDownloadCountAsync(attachmentId);
 
-            return (stream, MapToAssetDto(attachment));
+            var asset = MapToAssetDto(attachment);
+            if (variant == AttachmentUrlVariant.Thumbnail && filePath != attachment.StoragePath)
+            {
+                asset.MimeType = Path.GetExtension(filePath).ToLowerInvariant() switch
+                {
+                    ".png" => "image/png", ".jpg" or ".jpeg" => "image/jpeg", ".webp" => "image/webp",
+                    ".gif" => "image/gif", ".bmp" => "image/bmp", ".ico" => "image/x-icon",
+                    _ => attachment.MimeType
+                };
+            }
+            return (stream, asset);
         }
         catch (Exception ex)
         {
@@ -707,8 +735,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// </summary>
     private bool IsImageFile(string extension)
     {
-        var imageExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".webp" };
-        return imageExtensions.Contains(extension.ToLowerInvariant());
+        return FileStoragePolicy.IsImageExtension(_fileStorageOptions, extension);
     }
 
     private static string ResolveAttachmentPath(Attachment attachment, AttachmentUrlVariant variant)
@@ -785,7 +812,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         string? tempPath = null;
         if (string.IsNullOrWhiteSpace(watermarkText))
         {
-            watermarkText = "Radish";
+            watermarkText = _fileStorageOptions.Watermark.Text.Content;
         }
 
         try
@@ -793,13 +820,14 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var fullPath = _fileStorage.GetFullPath(filePath);
 
             var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
-            tempPath = Path.Combine(_tempPath, tempFileName);
+            tempPath = Path.Combine(Path.GetDirectoryName(fullPath)!, tempFileName);
 
             // 使用配置文件中的水印设置
             var watermarkConfig = _fileStorageOptions.Watermark?.Text ?? new TextWatermarkOptions();
 
-            // 解析水印位置
-            var position = watermarkConfig.Position?.ToLowerInvariant() switch
+            var imageWatermark = string.Equals(_fileStorageOptions.Watermark?.Type, "image", StringComparison.OrdinalIgnoreCase);
+            var imageConfig = _fileStorageOptions.Watermark?.Image ?? new ImageWatermarkOptions();
+            var position = (imageWatermark ? imageConfig.Position : watermarkConfig.Position)?.ToLowerInvariant() switch
             {
                 "topleft" => WatermarkPosition.TopLeft,
                 "topright" => WatermarkPosition.TopRight,
@@ -815,8 +843,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                     ? WatermarkType.Image
                     : WatermarkType.Text,
                 Text = watermarkText,
+                ImagePath = imageWatermark ? Path.GetFullPath(imageConfig.Path) : null,
+                Scale = (float)imageConfig.Scale,
                 FontSize = watermarkConfig.FontSize,
-                Opacity = (float)watermarkConfig.Opacity,
+                Opacity = imageWatermark ? 1f : (float)watermarkConfig.Opacity,
                 Position = position,
                 Color = watermarkConfig.Color ?? "#FFFFFF",
                 Padding = 10
@@ -863,14 +893,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         {
             try
             {
-                // 如果目标文件存在，先删除
-                if (File.Exists(targetPath))
-                {
-                    File.Delete(targetPath);
-                }
-
-                // 移动文件
-                File.Move(sourcePath, targetPath);
+                // 同目录原子替换，失败时保留原文件。
+                File.Move(sourcePath, targetPath, true);
                 if (i > 0)
                 {
                     Log.ForContext("EventCode", "attachment.replace_recovered")
@@ -901,7 +925,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var fullPath = _fileStorage.GetFullPath(filePath);
 
             var tempFileName = $"{Path.GetFileNameWithoutExtension(fullPath)}_{Guid.NewGuid():N}{Path.GetExtension(fullPath)}";
-            tempPath = Path.Combine(_tempPath, tempFileName);
+            tempPath = Path.Combine(Path.GetDirectoryName(fullPath)!, tempFileName);
 
             // 修复文件锁问题：先读取源文件到内存，关闭文件流后再处理
             var fileBytes = await File.ReadAllBytesAsync(fullPath);
@@ -910,7 +934,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             await using (var memoryStream = new MemoryStream(fileBytes))
             {
                 var removed = await _imageProcessor.RemoveExifAsync(memoryStream, tempPath);
-                if (removed)
+                if (removed.Success)
                 {
                     // 替换原文件（添加重试机制）
                     ReplaceFileWithRetry(tempPath, fullPath, 3);
@@ -940,7 +964,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     /// </summary>
     private async Task<Dictionary<string, string>> GenerateMultipleSizesAsync(
         string sourcePath,
-        ISet<string> generatedPaths)
+        ISet<string> generatedPaths, ImageInfo imageInfo)
     {
         var result = new Dictionary<string, string>();
 
@@ -949,7 +973,8 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var sourceFullPath = _fileStorage.GetFullPath(sourcePath);
             var directory = Path.GetDirectoryName(sourceFullPath);
             var fileNameWithoutExt = Path.GetFileNameWithoutExtension(sourceFullPath);
-            var extension = Path.GetExtension(sourceFullPath);
+            var extension = imageInfo.Format is "GIF" or "BMP" or "ICO" || imageInfo.FrameCount > 1
+                ? ".png" : imageInfo.Format == "JPEG" ? ".jpg" : Path.GetExtension(sourceFullPath);
 
             // 定义尺寸配置
             var sizes = new List<ImageSize>
@@ -962,9 +987,10 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             var sourceDirectory = Path.GetDirectoryName(sourcePath) ?? string.Empty;
             foreach (var size in sizes)
             {
+                size.AnimationPolicy = ImageAnimationPolicy.FirstFrame;
                 generatedPaths.Add(Path.Combine(
                         sourceDirectory,
-                        $"{Path.GetFileNameWithoutExtension(sourcePath)}_{size.Name}{Path.GetExtension(sourcePath)}")
+                        $"{Path.GetFileNameWithoutExtension(sourcePath)}_{size.Name}{extension}")
                     .Replace('\\', '/'));
             }
 

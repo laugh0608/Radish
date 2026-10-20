@@ -15,6 +15,9 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  native-images:
+    name: Native Images
+    uses: ./.github/workflows/native-images.yml
   repo-hygiene:
     name: Repo Hygiene
     runs-on: ubuntu-latest
@@ -142,6 +145,10 @@ jobs:
         with:
           dotnet-version: '10.0.x'
 
+      - name: Install pinned Rust toolchain
+        if: steps.backend-impact.outputs.impacted == 'true'
+        run: rustup toolchain install 1.96.0 --profile minimal
+
       - name: Run backend API validation
         if: steps.backend-impact.outputs.impacted == 'true'
         run: npm run validate:backend
@@ -186,6 +193,10 @@ jobs:
         if: steps.identity-impact.outputs.impacted == 'true'
         run: npm ci
 
+      - name: Install pinned Rust toolchain
+        if: steps.identity-impact.outputs.impacted == 'true'
+        run: rustup toolchain install 1.96.0 --profile minimal
+
       - name: Run identity regression validation
         if: steps.identity-impact.outputs.impacted == 'true'
         run: npm run validate:identity
@@ -201,6 +212,7 @@ jobs:
     runs-on: ubuntu-latest
     if: always()
     needs:
+      - native-images
       - repo-hygiene
       - frontend-lint
       - baseline-quick
@@ -211,6 +223,7 @@ jobs:
       - name: Summarize PR quality gate
         shell: bash
         env:
+          NATIVE_IMAGES_RESULT: ${{ needs.native-images.result }}
           REPO_HYGIENE_RESULT: ${{ needs.repo-hygiene.result }}
           FRONTEND_LINT_RESULT: ${{ needs.frontend-lint.result }}
           BASELINE_QUICK_RESULT: ${{ needs.baseline-quick.result }}
@@ -235,6 +248,7 @@ jobs:
             fi
           }
 
+          append_result "Native Images" "${NATIVE_IMAGES_RESULT}"
           append_result "Repo Hygiene" "${REPO_HYGIENE_RESULT}"
           append_result "Frontend Lint" "${FRONTEND_LINT_RESULT}"
           append_result "Baseline Quick" "${BASELINE_QUICK_RESULT}"

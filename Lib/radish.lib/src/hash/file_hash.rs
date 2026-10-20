@@ -1,13 +1,12 @@
-use sha2::{Sha256, Digest};
+use anyhow::{Context, Result};
+use sha2::{Digest, Sha256};
 use std::fs::File;
 use std::io::{BufReader, Read};
-use anyhow::{Result, Context};
 
 /// Calculate SHA256 hash of a file
 pub fn calculate_sha256(file_path: &str) -> Result<String> {
     // Open file
-    let file = File::open(file_path)
-        .context(format!("Failed to open file: {}", file_path))?;
+    let file = File::open(file_path).context(format!("Failed to open file: {}", file_path))?;
 
     let mut reader = BufReader::new(file);
     let mut hasher = Sha256::new();
@@ -15,8 +14,7 @@ pub fn calculate_sha256(file_path: &str) -> Result<String> {
     // Read file in chunks and update hasher
     let mut buffer = [0u8; 8192]; // 8KB buffer
     loop {
-        let bytes_read = reader.read(&mut buffer)
-            .context("Failed to read file")?;
+        let bytes_read = reader.read(&mut buffer).context("Failed to read file")?;
 
         if bytes_read == 0 {
             break;
@@ -35,8 +33,8 @@ pub fn calculate_sha256(file_path: &str) -> Result<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
     use std::fs;
+    use std::io::Write;
 
     #[test]
     fn test_sha256_calculation() {

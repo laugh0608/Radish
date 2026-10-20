@@ -6,6 +6,7 @@ export const REPO_QUALITY_REQUIRED_CHECKS = [
 ];
 
 export const REPO_QUALITY_COMPONENT_CHECKS = [
+  'Native Images',
   'Repo Hygiene',
   'Frontend Lint',
   'Baseline Quick',
@@ -15,10 +16,12 @@ export const REPO_QUALITY_COMPONENT_CHECKS = [
 ];
 
 export const REPO_QUALITY_CI_ONLY_CHECKS = [
+  'Native Images',
   'Dependency Security',
 ];
 
 export const REPO_QUALITY_WORKFLOW_JOBS = [
+  { jobId: 'native-images', checkName: 'Native Images', requiredFragments: ['uses: ./.github/workflows/native-images.yml'] },
   {
     jobId: 'repo-hygiene',
     checkName: 'Repo Hygiene',
@@ -80,6 +83,7 @@ export const REPO_QUALITY_WORKFLOW_JOBS = [
     checkName: CANDIDATE_QUALITY_REQUIRED_CHECK_NAME,
     requiredFragments: [
       'if: always()',
+      '- native-images',
       '- repo-hygiene',
       '- frontend-lint',
       '- baseline-quick',

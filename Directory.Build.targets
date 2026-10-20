@@ -1,0 +1,21 @@
+<Project>
+  <!-- Explicit producer/consumer contract: build-native-images.mjs builds, MSBuild consumes. -->
+  <PropertyGroup>
+    <RadishRequiresImages Condition="'$(MSBuildProjectName)' == 'Radish.Api' or '$(MSBuildProjectName)' == 'Radish.Api.Tests'">true</RadishRequiresImages>
+    <RadishNativeRid Condition="'$(RuntimeIdentifier)' != ''">$(RuntimeIdentifier)</RadishNativeRid>
+    <RadishNativeRid Condition="'$(RadishNativeRid)' == ''">$(NETCoreSdkRuntimeIdentifier)</RadishNativeRid>
+    <RadishNativeProfileArg Condition="'$(Configuration)' == 'Debug'">--debug</RadishNativeProfileArg>
+    <RadishNativeDirectory>$(MSBuildThisFileDirectory)artifacts/native/$(RadishNativeRid)/$(Configuration)</RadishNativeDirectory>
+  </PropertyGroup>
+  <Target Name="RadishRequireNativeImages" BeforeTargets="PrepareForBuild" Condition="'$(RadishRequiresImages)' == 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <Error Condition="!Exists('$(RadishNativeDirectory)/manifest.json')" Text="Missing $(RadishNativeRid) $(Configuration) native image artifact. Run node Scripts/build-native-images.mjs (add --debug for Debug) on the target platform before building." />
+    <Exec Command="node &quot;$(MSBuildThisFileDirectory)Scripts/build-native-images.mjs&quot; --verify --rid=$(RadishNativeRid) $(RadishNativeProfileArg)" />
+  </Target>
+  <ItemGroup Condition="'$(RadishRequiresImages)' == 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <Content Include="$(RadishNativeDirectory)/**/*">
+      <Link>native/%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </Content>
+  </ItemGroup>
+</Project>

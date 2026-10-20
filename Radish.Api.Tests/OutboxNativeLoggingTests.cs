@@ -22,8 +22,6 @@ using Radish.Repository;
 using Radish.Service;
 using Serilog;
 using Radish.Extension.Log;
-using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.PixelFormats;
 using SqlSugar;
 using Xunit;
 using WatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOptions;
@@ -40,12 +38,10 @@ public sealed class OutboxNativeLoggingTests
     public async Task NativeLibraryIntegration_ShouldExerciseRealAbiAndHostFailurePaths()
     {
         var libraryPath = Environment.GetEnvironmentVariable("RADISH_TEST_NATIVE_LIBRARY");
-        Assert.SkipWhen(string.IsNullOrWhiteSpace(libraryPath), "未指定 RADISH_TEST_NATIVE_LIBRARY，跳过真实 Rust 动态库验证");
+        libraryPath ??= Path.Combine(AppContext.BaseDirectory, "native", OperatingSystem.IsWindows() ? "radish_lib.dll" : OperatingSystem.IsMacOS() ? "libradish_lib.dylib" : "libradish_lib.so");
         Assert.True(Path.IsPathFullyQualified(libraryPath!));
-        // 显式加载本次构建产物；句柄由测试进程持有，不向产品目录复制动态库。
+        // 显式加载本次构建产物；本测试释放自己的引用，产品绑定持有独立句柄。
         var library = NativeLibrary.Load(libraryPath!);
-        NativeLibrary.SetDllImportResolver(typeof(RustImageProcessor).Assembly,
-            (name, _, _) => name == "radish_lib" ? library : IntPtr.Zero);
         Assert.True(RustImageProcessor.IsRustLibraryAvailable());
 
         var directory = Path.Combine(Path.GetTempPath(), $"radish-native-interop-{Guid.NewGuid():N}");
@@ -72,23 +68,25 @@ public sealed class OutboxNativeLoggingTests
 
             var inputPath = Path.Combine(directory, "input.png");
             var outputPath = Path.Combine(directory, "output.png");
-            using var inputImage = new Image<Rgba32>(128, 128);
-            await inputImage.SaveAsPngAsync(inputPath, TestContext.Current.CancellationToken);
-            var watermark = Marshal.GetDelegateForFunctionPointer<NativeWatermark>(NativeLibrary.GetExport(library, "add_text_watermark"));
-            Assert.Equal(0, watermark(inputPath, outputPath, "native", 12, 0.5f, 0));
-            using var resultImage = await Image.LoadAsync(outputPath, TestContext.Current.CancellationToken);
-            Assert.Equal(128, resultImage.Width);
-            Assert.Equal(128, resultImage.Height);
-
-            // 当前 wrapper 使用 .tmp 输入；验证这一既有路径确实返回原生错误并安全回退。
-            using var invalidInput = new MemoryStream(Encoding.UTF8.GetBytes(Secret));
+            using var inputImage = ImageFixture.Create(128, 128);
+            await File.WriteAllBytesAsync(inputPath, inputImage.ToArray(), TestContext.Current.CancellationToken);
+            var abi = Marshal.GetDelegateForFunctionPointer<NativeAbiVersion>(NativeLibrary.GetExport(library, "radish_image_abi_version"));
+            Assert.Equal(65536u, abi());
             var processor = new RustImageProcessor(Options.Create(new FileStorageOptions()));
+            var valid = await processor.AddWatermarkAsync(inputImage, outputPath,
+                new WatermarkOptions { Text = "native", FontSize = 12, Position = WatermarkPosition.TopLeft },
+                cancellationToken: TestContext.Current.CancellationToken);
+            Assert.True(valid.Success, valid.ErrorCode);
+            Assert.Equal((128, 128), ImageFixture.PngSize(outputPath));
+
+            // 无效图片必须安全失败，不能回退为成功。
+            using var invalidInput = new MemoryStream(Encoding.UTF8.GetBytes(Secret));
             var result = await processor.AddWatermarkAsync(invalidInput, Path.Combine(directory, "invalid.png"),
-                new WatermarkOptions { Type = WatermarkType.Text, Text = Secret });
+                new WatermarkOptions { Type = WatermarkType.Text, Text = Secret }, cancellationToken: TestContext.Current.CancellationToken);
             Assert.False(result.Success);
             Assert.Single(Lines(output));
             using var fallback = JsonDocument.Parse(output.ToString());
-            Assert.Equal("native.fallback", fallback.RootElement.GetProperty("eventCode").GetString());
+            Assert.Equal("native.failed", fallback.RootElement.GetProperty("eventCode").GetString());
             Assert.Equal("native-result", fallback.RootElement.GetProperty("properties").GetProperty("nativeReason").GetString());
             Assert.DoesNotContain(Secret, output.ToString());
         }
@@ -96,15 +94,12 @@ public sealed class OutboxNativeLoggingTests
         {
             Log.Logger = previous;
             Directory.Delete(directory, recursive: true);
+            NativeLibrary.Free(library);
         }
     }
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
-    private delegate int NativeWatermark(
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string inputPath,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string outputPath,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string text,
-        uint fontSize, float opacity, byte position);
+    private delegate uint NativeAbiVersion();
 
     [Theory]
     [InlineData(false, "main")]
@@ -234,7 +229,7 @@ public sealed class OutboxNativeLoggingTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public async Task NativeWatermarkFailure_ShouldKeepFallbackResult_WithoutRawException(bool candidate)
+    public async Task NativeWatermarkFailure_ShouldFail_WithoutRawException(bool candidate)
     {
         using var output = new StringWriter();
         using var logger = CreateLogger(output, candidate);
@@ -245,7 +240,7 @@ public sealed class OutboxNativeLoggingTests
         try
         {
             Log.Logger = logger;
-            var result = await processor.AddWatermarkAsync(input, path, new WatermarkOptions { Type = WatermarkType.Text, Text = Secret });
+            var result = await processor.AddWatermarkAsync(input, path, new WatermarkOptions { Type = WatermarkType.Text, Text = Secret }, cancellationToken: TestContext.Current.CancellationToken);
             Assert.False(result.Success);
         }
         finally
@@ -254,27 +249,27 @@ public sealed class OutboxNativeLoggingTests
             if (File.Exists(path)) File.Delete(path);
         }
         Assert.Single(Lines(output));
-        Assert.Contains("native.fallback", output.ToString());
+        Assert.Contains("native.failed", output.ToString());
         Assert.DoesNotContain(Secret, output.ToString());
     }
 
     [Fact]
-    public async Task ImageWatermark_ShouldUseNormalManagedRoute_WithoutDegradationWarning()
+    public async Task ImageWatermarkWithoutSource_ShouldFailExplicitly()
     {
         using var output = new StringWriter();
         using var logger = CreateLogger(output, true);
         using var input = new MemoryStream();
-        using var image = new Image<Rgba32>(4, 4);
-        await image.SaveAsPngAsync(input, TestContext.Current.CancellationToken);
+        using var image = ImageFixture.Create(4, 4);
+        await image.CopyToAsync(input, TestContext.Current.CancellationToken);
         var path = Path.Combine(Path.GetTempPath(), $"radish-l2-image-{Guid.NewGuid():N}.png");
         var previous = Log.Logger;
         try
         {
             Log.Logger = logger;
             var result = await new RustImageProcessor(Options.Create(new FileStorageOptions())).AddWatermarkAsync(
-                input, path, new WatermarkOptions { Type = WatermarkType.Image });
-            Assert.True(result.Success);
-            Assert.Equal("", output.ToString());
+                input, path, new WatermarkOptions { Type = WatermarkType.Image }, cancellationToken: TestContext.Current.CancellationToken);
+            Assert.False(result.Success);
+            Assert.Contains("native.failed", output.ToString());
         }
         finally
         {

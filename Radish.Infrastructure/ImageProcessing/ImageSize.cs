@@ -29,6 +29,8 @@ public class ImageSize
     /// 是否保持宽高比
     /// </summary>
     public bool KeepAspectRatio { get; set; } = true;
+    public ImageOutputFormat? OutputFormat { get; set; }
+    public ImageAnimationPolicy AnimationPolicy { get; set; } = ImageAnimationPolicy.Preserve;
 
     /// <summary>
     /// 缩略图预设（150x150）

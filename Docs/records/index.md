@@ -1,5 +1,7 @@
 # 记录与验收索引
 
+- [Rust 图片处理替代实施与验证](./rust-image-replacement-2026-10-20.md)
+
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 

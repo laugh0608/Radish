@@ -414,6 +414,7 @@ if (!isQuick) {
   ], { cwd: repoRoot });
 
   steps.push(
+    { title: '构建当前平台 Rust 图片产物', phase: 'baseline', command: process.execPath, args: ['Scripts/build-native-images.mjs', '--debug'] },
     {
       title: '后端解决方案构建',
       phase: 'baseline',

@@ -25,7 +25,6 @@ Frontend/**/dist
 Frontend/**/.vite
 **/secrets.dev.yaml
 **/values.dev.yaml
-LICENSE
 README.md
 !**/.gitignore
 !.git/HEAD
@@ -39,3 +38,19 @@ Deploy/logs
 Deploy/backups
 DeployData
 DeployBackups
+
+# Native artifacts are built for the container target, never copied from the host.
+Lib/radish.lib/target
+artifacts
+.tmp
+Clients/radish.flutter/build
+Clients/radish.flutter/.dart_tool
+Clients/radish.flutter/android/.gradle
+Clients/radish.flutter/ios/Pods
+Clients/radish.flutter/macos/Pods
+Docs/.vitepress/dist
+Docs/.vitepress/cache
+# Host credentials and overrides are never production build inputs.
+**/appsettings.Local.json
+**/.env.local
+**/.env.*.local

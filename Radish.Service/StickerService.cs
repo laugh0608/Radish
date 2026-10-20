@@ -926,7 +926,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
                 return;
             }
 
-            var thumbnailRelativePath = $"stickers/thumbnails/{groupCode}/{stickerCode}.jpg";
+            var thumbnailRelativePath = $"stickers/thumbnails/{groupCode}/{stickerCode}.png";
             var thumbnailFullPath = _fileStorage.GetFullPath(thumbnailRelativePath);
             var directory = Path.GetDirectoryName(thumbnailFullPath);
             if (!string.IsNullOrWhiteSpace(directory))

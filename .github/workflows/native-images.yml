@@ -1,0 +1,79 @@
+name: Native Images
+on:
+  workflow_call:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  native-sanitizer:
+    name: Native / AddressSanitizer
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install approved test-only toolchain
+        run: rustup toolchain install nightly-2026-10-13 --profile minimal
+      - name: Rust and vendored C memory checks with isolated mutation corpus
+        working-directory: Lib/radish.lib
+        env:
+          CC: clang-18
+          CFLAGS: -fsanitize=address -fno-omit-frame-pointer
+          RUSTFLAGS: -Zsanitizer=address -Zexternal-clangrt -Clinker=clang-18 -Clink-arg=-fsanitize=address
+          RUSTDOCFLAGS: -Zsanitizer=address -Zexternal-clangrt -Clinker=clang-18 -Clink-arg=-fsanitize=address
+          ASAN_OPTIONS: detect_leaks=1:halt_on_error=1
+        run: cargo +nightly-2026-10-13 test --locked --target x86_64-unknown-linux-gnu
+      - name: Retain failing mutation input
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-fuzz-failure
+          path: artifacts/native-fuzz/
+          if-no-files-found: ignore
+  native-platforms:
+    name: Native / ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, macos-15-intel, windows-2025]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Install pinned Rust toolchain
+        run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+      - name: Rust formatting, static analysis and tests
+        run: node Scripts/validate-native-images.mjs
+      - name: Audit locked native dependencies
+        if: matrix.runner == 'ubuntu-24.04'
+        run: node Scripts/check-native-image-security.mjs
+      - name: Real C# ABI and attachment tests
+        run: dotnet test Radish.Api.Tests -c Release --filter "FullyQualifiedName~ImageProcessorTest|FullyQualifiedName~OutboxNativeLoggingTests|FullyQualifiedName~AttachmentServiceUploadContractTest|FullyQualifiedName~AttachmentUploadLoggingTests|FullyQualifiedName~StickerControllerLoggingTests"
+      - name: Published API image self-test
+        shell: bash
+        run: |
+          dotnet publish Radish.Api -c Release --no-restore -o artifacts/image-publish
+          dotnet artifacts/image-publish/Radish.Api.dll --check-native-images
+  native-docker:
+    name: Native Docker / ${{ matrix.platform }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            platform: linux/amd64
+          - runner: ubuntu-24.04-arm
+            platform: linux/arm64
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '24'
+      - uses: docker/setup-buildx-action@v3
+      - name: Build and execute without pushing
+        run: node Scripts/check-native-image-docker.mjs --platform=${{ matrix.platform }}

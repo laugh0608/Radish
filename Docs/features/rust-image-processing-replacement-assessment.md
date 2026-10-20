@@ -1,10 +1,10 @@
 # Rust 图片处理替代评估
 
-> 2026-10-20 源码审计与候选方案，尚未实施。隶属[第三方依赖许可治理](./dependency-license-governance.md)。
+> 2026-10-20 迁移前源码审计与候选方案；本页保留历史基线，当前实现与验收见[实施记录](../records/rust-image-replacement-2026-10-20.md)。隶属[第三方依赖许可治理](./dependency-license-governance.md)。
 >
 > 结论：既有 Rust 文字水印与哈希是真实实现，但目前仍是依赖 ImageSharp 的混合处理器。优先评估补齐 Rust，不能通过修改一个配置开关完成 Six Labors 移除。
 
-项目所有者已指定按补齐 Rust 的方向细化设计；后续接口、能力、构建和验收方案以[完整替代实施方案](./rust-image-processing-implementation-plan.md)为准，仍待确认实施。本文保留迁移前源码事实与候选比较，不表示原生能力已补齐。
+项目所有者已确认按补齐 Rust 的方向推进；后续接口、能力、构建和验收方案以[完整替代实施方案](./rust-image-processing-implementation-plan.md)为准，当前已进入交付与验收。本文保留迁移前源码事实与候选比较，不表示原生能力已补齐。
 
 ## 1. 已有资产与调用链
 

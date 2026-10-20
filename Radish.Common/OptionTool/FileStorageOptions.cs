@@ -135,10 +135,6 @@ public sealed class OSSStorageOptions
 /// <summary>图片处理配置</summary>
 public sealed class ImageProcessingOptions
 {
-    /// <summary>是否使用 Rust 扩展</summary>
-    /// <remarks>true: 使用 Rust 扩展, false: 使用 C# (ImageSharp)</remarks>
-    public bool UseRustExtension { get; set; } = false;
-
     /// <summary>是否生成缩略图</summary>
     public bool GenerateThumbnail { get; set; } = true;
 
@@ -236,34 +232,12 @@ public sealed class FontOptions
 {
     /// <summary>字体名称列表（按优先级排序）</summary>
     /// <remarks>
-    /// 支持跨平台字体选择，会按顺序尝试加载第一个可用的字体。
-    /// 预置常见字体：Windows (Arial/Calibri), macOS (San Francisco/Helvetica), Linux (DejaVu/Ubuntu/Noto)
+    /// 仅解析随原生产物交付的明确字体名；不依赖宿主系统字体。
     /// </remarks>
-    public List<string> PreferredFonts { get; set; } = new()
-    {
-        // Windows 系统
-        "Arial",
-        "Calibri",
-        "Microsoft Sans Serif",
-
-        // macOS 系统
-        "San Francisco",
-        "Helvetica",
-        "Helvetica Neue",
-
-        // Linux 系统
-        "DejaVu Sans",
-        "Ubuntu",
-        "Liberation Sans",
-        "Noto Sans",
-
-        // 通用备选
-        "Sans",
-        "System UI"
-    };
+    public List<string> PreferredFonts { get; set; } = new() { "Noto Sans SC", "DejaVu Sans" };
 
     /// <summary>自定义字体文件路径</summary>
-    /// <remarks>优先使用自定义字体，如果为空则使用系统字体</remarks>
+    /// <remarks>优先使用自定义字体；缺失或损坏时失败，其余字形使用随包字体</remarks>
     public string? CustomFontPath { get; set; }
 
     /// <summary>字体样式</summary>

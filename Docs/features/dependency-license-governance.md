@@ -1,8 +1,8 @@
 # 第三方依赖许可治理与替代方案
 
-> 状态：2026-10-20 完成首轮盘点与源码评估，替换实现待确认。
+> 状态：2026-10-20 完成首轮盘点与源码评估，项目所有者已确认先推进 Rust 图片替代、恢复正常 PR；其他依赖方案后置。
 >
-> 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。当前只授权审计和方案；不安装 / 更换包、不改变运行时、不申请外部许可、不恢复 PR。
+> 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代按专门实施方案推进，精确依赖安装及服务启动按各批授权执行；其他依赖仍处于审计与方案阶段。
 
 ## 1. 当前结论与阅读入口
 
@@ -10,11 +10,11 @@
 - 当前优先替代对象是 **Six Labors 四包链**与 **AutoMapper**。前者在本轮升级候选中出现构建 key 门禁；后者存在 RPL / 商业许可路线选择。不能把“免费申请”或“缺 key 只打日志”作为长期依赖决策的全部依据。
 - Hangfire、数据库传递驱动、Microsoft 专用工具 / 原生库、CC-BY / MPL 依赖分别处理，不统一推定为收费或需 key。
 - Redis 服务镜像另有版本相关许可风险；它不属于 `StackExchange.Redis` 客户端包，也不包含在上述 947 条中。
-- **图片处理已按项目所有者要求，沿补齐已有 Rust 的方向形成[完整替代实施方案](./rust-image-processing-implementation-plan.md)**，待确认后实施。迁移前事实与备选比较见[Rust 图片处理替代评估](./rust-image-processing-replacement-assessment.md)。
+- **图片处理已按项目所有者要求，沿补齐已有 Rust 的方向进入[完整替代实施方案](./rust-image-processing-implementation-plan.md)的交付与验收阶段**。精确输入见[R0 依赖清单](./rust-image-processing-dependency-proposal.md)，迁移前事实与备选比较见[Rust 图片处理替代评估](./rust-image-processing-replacement-assessment.md)。
 
 本专题承载治理目标、候选方案与实施边界；精确版本和本批统计保留在 records；即时顺位只在[当前进行中](../planning/current.md)维护。
 
-**盘点不等于全部替换**：目前仅按 Rust 方向细化图片替代设计，AutoMapper 待独立评估；没有决定整体替换 ORM 或 Redis，也没有安排文件存储重构、历史附件批量重写或 Flutter 内嵌 Rust。后续表格中的备选路线不是实施待办，本专题不授权后端语言迁移。
+**盘点不等于全部替换**：目前仅按 Rust 方向推进图片替代，AutoMapper 待独立评估；没有决定整体替换 ORM 或 Redis，也没有安排文件存储重构、历史附件批量重写或 Flutter 内嵌 Rust。其他依赖评估后置到 PR 稳定通过之后；继续 .NET，不启动后端语言迁移。
 
 ## 2. 许可判定口径
 
@@ -34,7 +34,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 
 | 对象 | 当前精确版本 / 范围 | 识别到的边界 | 建议处理 |
 | --- | --- | --- | --- |
-| `SixLabors.ImageSharp`、`SixLabors.ImageSharp.Drawing` | 工作区候选 `4.1.3 / 3.1.3`；HEAD 原为 `3.1.12 / 2.1.7` | 包内 Split License；Drawing 候选实际阻断无 key 的严格构建 / Release | 第一批：完整替代图片链；许可申请只作为明确选择后的备选 |
+| `SixLabors.ImageSharp`、`SixLabors.ImageSharp.Drawing` | 迁移前候选 `4.1.3 / 3.1.3`；本次工作区已移除 | 包内 Split License；Drawing 候选实际阻断无 key 的严格构建 / Release | 第一批：完整替代图片链；许可申请只作为明确选择后的备选 |
 | `SixLabors.Fonts`、`SixLabors.PolygonClipper` | 传递 `3.2.0 / 1.0.2` | 同一 Six Labors 许可链 | 与图片链一起退出，不只删两个直接引用 |
 | `AutoMapper` | `16.1.1`，Extension / Service 直接引用 | 包内 RPL-1.5 / 商业双许可；当前接线允许空 key | 第二批：评估 Mapperly / 显式映射；先完成映射语义清单 |
 | Hangfire 三个核心集成包 | `AspNetCore / Core / NetCore 1.8.14` | LGPL-3.0-or-later 或对应商业许可 | 核对分发义务及商用扩展缺席事实，再决定保留或替换 |
@@ -53,7 +53,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 
 ## 4. 图片链替代：优先利用已有 Rust
 
-项目已有 `Lib/radish.lib`、`IImageProcessor`、P/Invoke 和产物复制接线，避免默认丢弃既有投入。静态核对结果：
+项目已有 `Lib/radish.lib`、`IImageProcessor` 和 P/Invoke 接线。以下为迁移前静态核对事实；当前工作区已改为 Rust 单实现并移除 Six Labors，实际交付结果见[实施记录](../records/rust-image-replacement-2026-10-20.md)：
 
 - Rust FFI 真正提供文字水印与 SHA256；当前应用上传 SHA256 主路径本身使用 .NET BCL，并非全部经 Rust。
 - `RustImageProcessor` 的缩略图、缩放、压缩、EXIF 移除、多尺寸、信息与有效性检查仍调用 `CSharpImageProcessor`；图片水印也是正常 C# 路由。
@@ -69,7 +69,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 | Magick.NET | Apache-2.0，图像格式与元数据候选能力广 | 底层 ImageMagick / delegates 的许可与 CVE、包体积、解码安全策略及平台产物 |
 | 继续 Six Labors 并接许可 | API 迁移成本较小 | key / 资格 / 构建接线及外部分发主体的长期管理；不是本专题默认方向 |
 
-项目所有者已要求沿补齐 Rust 的方向细化方案；[实施方案](./rust-image-processing-implementation-plan.md)提出单一 Rust 图片实现、完整格式 / 水印语义和原生交付门禁。该路线仍待确认实施，SkiaSharp / Magick.NET 保留为历史候选比较，不与本轮 Rust 方案并行实施。
+项目所有者已确认沿补齐 Rust 的方向推进；[实施方案](./rust-image-processing-implementation-plan.md)明确单一 Rust 图片实现、完整格式 / 水印语义和原生交付门禁。SkiaSharp / Magick.NET 保留为历史候选比较，不与本轮 Rust 方案并行实施。
 
 ## 5. AutoMapper 替代方案
 

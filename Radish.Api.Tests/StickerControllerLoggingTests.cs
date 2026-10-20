@@ -5,6 +5,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
+using System.Threading;
 using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
@@ -522,8 +523,8 @@ public sealed class StickerControllerLoggingTests
                 Step("storage.path"); return Path.Combine(DirectoryPath, path);
             });
             var processor = new Mock<IImageProcessor>(MockBehavior.Strict);
-            processor.Setup(p => p.GenerateThumbnailAsync(It.IsAny<Stream>(), It.IsAny<string>(), 96, 96, 85))
-                .Returns((Stream stream, string path, int width, int height, int quality) =>
+            processor.Setup(p => p.GenerateThumbnailAsync(It.IsAny<Stream>(), It.IsAny<string>(), 96, 96, 85, null, ImageAnimationPolicy.FirstFrame, default))
+                .Returns((Stream stream, string path, int width, int height, int quality, ImageOutputFormat? format, ImageAnimationPolicy policy, CancellationToken token) =>
                 {
                     Step("image");
                     if (!ThumbnailSuccess) return Task.FromResult(ImageProcessResult.Fail(Secret));
