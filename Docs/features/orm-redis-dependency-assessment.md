@@ -140,7 +140,7 @@ manifest / config 核对不包含镜像层漏洞扫描、操作系统包许可�
 
 ## 4. 后续实验边界与完成标准
 
-本轮不请求启动或安装授权。若决定继续实施，先提交可审阅的实验清单：
+本评估已随 `47bdbfd5` 推送 `origin/dev`。按项目所有者后续要求，已整理[隔离验证方案](./nodrive-valkey-isolation-validation-plan.md)与[具体命令](./nodrive-valkey-isolation-validation-commands.md)，已于 2026-10-21 获准执行；本节是提出实验前的边界清单：
 
 1. ORM：精确候选包和显式驱动、需改的项目、剩余许可链、临时目录；SQLite 与 PostgreSQL 验证均要覆盖，数据库服务启动另列范围。
 2. Valkey：精确版本 / digest、独立测试容器、仅回环绑定端口（可提议 `16379 / 16380`，使用前检查占用）、独立测试卷与合成数据、停止和删除容器 / 卷的清理命令；不复用项目或生产卷。

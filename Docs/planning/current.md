@@ -7,7 +7,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：PR #75 已合并并完成 `master → dev` 回灌；继续使用 .NET，推进[图片替代后的依赖评估与映射迁移方案](../features/post-image-dependency-assessment.md)。AutoMapper 已按批准方案切换 Mapperly 4.3.1，本地验证与产物审计完成（[记录](../records/mapperly-migration-2026-10-21.md)）；迁移提交 `b8debb26` 已推送 `origin/dev`。[ORM / Redis 只读评估](../features/orm-redis-dependency-assessment.md)已补齐精确包、key 分类和镜像候选证据；NoDrive 只部分收缩驱动，Valkey 尚待隔离验证。二者不替换、不发布，统一日志 L2 保留后续恢复顺位。
+- **下一项工作**：PR #75 已合并并完成 `master → dev` 回灌；继续使用 .NET，推进[图片替代后的依赖评估与映射迁移方案](../features/post-image-dependency-assessment.md)。AutoMapper 已按批准方案切换 Mapperly 4.3.1，本地验证与产物审计完成（[记录](../records/mapperly-migration-2026-10-21.md)）；迁移提交 `b8debb26` 已推送 `origin/dev`。[ORM / Redis 只读评估](../features/orm-redis-dependency-assessment.md)已随 `47bdbfd5` 推送；[NoDrive / Valkey 隔离验证方案](../features/nodrive-valkey-isolation-validation-plan.md)及命令已获项目所有者批准，先提交推送方案，再按固定输入执行并清理。暂不替换、不发布，统一日志 L2 保留后续恢复顺位。
 - **状态复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
