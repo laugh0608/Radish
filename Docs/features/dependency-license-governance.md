@@ -109,7 +109,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 
 ### 6.4 Redis 服务
 
-先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。已核对 key / TTL 消费路径、上传 Lua 测试缺口、Valkey 9.1.2 / 8.1.10 镜像 manifest 与 Redis 7.4+ 数据文件兼容限制，见[后续评估](./orm-redis-dependency-assessment.md)。9.1.2 隔离对照未发现候选独有差异，恢复与重连通过，但两端共同的上传过期结算 / 超大整数问题导致完整业务验收未通过；正式迁移与修复需另行确认。
+先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。已核对 key / TTL 消费路径、上传 Lua 测试缺口、Valkey 9.1.2 / 8.1.10 镜像 manifest 与 Redis 7.4+ 数据文件兼容限制，见[后续评估](./orm-redis-dependency-assessment.md)。9.1.2 隔离对照未发现候选独有差异，恢复与重连通过，但当时两端共同的上传过期结算 / 超大整数问题导致完整业务验收未通过。随后获批的[配额修复](../records/upload-quota-boundary-fix-2026-10-21.md)已完成定向回归；正式迁移与发布仍未批准。
 
 ## 7. 分批顺序、验证与完成标准
 

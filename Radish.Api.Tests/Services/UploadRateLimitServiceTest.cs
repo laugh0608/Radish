@@ -201,6 +201,14 @@ public class UploadRateLimitServiceTest
         statistics.ReservedUploadSizeToday.ShouldBe(0);
     }
 
+    [Fact(DisplayName = "占用容量聚合溢出必须可见，不能绕回负数")]
+    public void UploadStatistics_ShouldRejectOverflowingOccupiedSize()
+    {
+        var statistics = new UploadStatistics { UploadedSizeToday = long.MaxValue, ReservedUploadSizeToday = 1 };
+        Assert.Throws<OverflowException>(() => statistics.OccupiedUploadSizeToday);
+        Assert.Throws<OverflowException>(() => statistics.IsDailySizeLimitReached);
+    }
+
     private UploadRateLimitService CreateService(UploadRateLimitOptions options)
     {
         return new UploadRateLimitService(

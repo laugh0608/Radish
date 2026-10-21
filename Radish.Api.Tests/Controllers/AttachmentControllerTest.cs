@@ -13,6 +13,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Api.Controllers;
 using Radish.Api.Resources;
+using Radish.Api.Tests.Services.UploadQuota;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
@@ -336,6 +337,32 @@ public class AttachmentControllerTest
             Times.Never);
         attachmentServiceMock.VerifyAll();
         rateLimitServiceMock.VerifyAll();
+    }
+
+    [Fact]
+    public async Task UploadImage_ShouldKeepPersistedSuccessWithoutSettlingExpiredReservation()
+    {
+        await using var scope = await UploadQuotaTestScope.OpenAsync("memory");
+        scope.Clock.Advance(TimeSpan.FromHours(-3));
+        var quota = scope.CreateService();
+        await quota.AcquireUploadAsync(10001, "other-live", 200, TimeSpan.FromHours(2));
+        var attachments = CreateAttachmentServiceMock();
+        attachments.Setup(service => service.UploadFileAsync(It.IsAny<IFormFile>(), It.IsAny<FileUploadOptionsDto>(), 10001, "Tester"))
+            .ReturnsAsync(() =>
+            {
+                scope.Clock.Advance(TimeSpan.FromHours(1));
+                return new AttachmentVo { VoId = 42, VoBusinessType = "General" };
+            });
+        var controller = CreateController(attachments.Object, new Mock<IUserService>(MockBehavior.Strict).Object,
+            new[] { "Operator" }, quota, enableRateLimit: true);
+        var result = await controller.UploadImage(CreateImageFormFile());
+        Assert.True(result.IsSuccess);
+        Assert.Equal(42, Assert.IsType<AttachmentVo>(result.ResponseData).VoId);
+        var stats = await quota.GetUploadStatisticsAsync(10001);
+        Assert.Equal(0, stats.UploadedSizeToday);
+        Assert.Equal(200, stats.ReservedUploadSizeToday);
+        Assert.Equal(1, stats.CurrentConcurrentUploads);
+        attachments.VerifyAll();
     }
 
     [Fact]

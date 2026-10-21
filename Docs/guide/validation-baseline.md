@@ -583,6 +583,7 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 
 - `Radish.Api.Tests/HttpTest/*.http`
 - 各专题文档中的最小人工验收顺序
+- 上传配额 `Cache=Redis / Valkey` 集成测试：必须显式启用 `RADISH_TEST_UPLOAD_QUOTA_INTEGRATION=1`，并提供限定本机端口、database 15 和本轮前缀；缺连接或连接失败必须失败。普通无启用入口显式跳过，不能计为运行验收；[命令与范围](../features/upload-quota-boundary-fix-plan.md#6-已实现测试入口)单独维护。
 - `npm run check:public-head-smoke`：部署后公开详情 head 注入、robots 与动态 sitemap smoke
 - 需要先启动本地服务的联调链路
 

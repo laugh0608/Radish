@@ -2,6 +2,7 @@ using System.Globalization;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Radish.Common.CacheTool;
 using Radish.Common.OptionTool;
 using Radish.Common.TimeTool;
@@ -22,121 +23,6 @@ public class UploadRateLimitService : IUploadRateLimitService
 {
     private const int DefaultReservationSeconds = 60 * 60;
 
-    private const string AcquireScript = """
-        local now = tonumber(ARGV[1])
-        local uploadId = ARGV[2]
-        local fileSize = tonumber(ARGV[3])
-        local maxConcurrent = tonumber(ARGV[4])
-        local maxPerMinute = tonumber(ARGV[5])
-        local maxDailySize = tonumber(ARGV[6])
-        local expiresAt = tonumber(ARGV[7])
-        local reservationTtl = tonumber(ARGV[8])
-
-        local entries = redis.call('HGETALL', KEYS[1])
-        for index = 1, #entries, 2 do
-            local value = entries[index + 1]
-            local _, _, _, entryExpiresAt = string.match(value, '^(%d+)|([^|]+)|([^|]+)|(%d+)$')
-            if entryExpiresAt == nil or tonumber(entryExpiresAt) <= now then
-                redis.call('HDEL', KEYS[1], entries[index])
-            end
-        end
-
-        if redis.call('HEXISTS', KEYS[1], uploadId) == 1 then
-            return {1, 0, 0}
-        end
-
-        local activeEntries = redis.call('HVALS', KEYS[1])
-        local concurrentCount = #activeEntries
-        if concurrentCount >= maxConcurrent then
-            return {2, concurrentCount, maxConcurrent}
-        end
-
-        local pendingDailySize = 0
-        for _, value in ipairs(activeEntries) do
-            local reservedSize, rateKey, dailyKey, entryExpiresAt = string.match(value, '^(%d+)|([^|]+)|([^|]+)|(%d+)$')
-            if dailyKey == KEYS[3] then
-                pendingDailySize = pendingDailySize + tonumber(reservedSize)
-            end
-        end
-
-        local attemptMinuteCount = tonumber(redis.call('GET', KEYS[2]) or '0')
-        if attemptMinuteCount >= maxPerMinute then
-            return {3, attemptMinuteCount, maxPerMinute}
-        end
-
-        local completedDailySize = tonumber(redis.call('GET', KEYS[3]) or '0')
-        local occupiedDailySize = completedDailySize + pendingDailySize
-        if occupiedDailySize + fileSize > maxDailySize then
-            return {4, occupiedDailySize, maxDailySize}
-        end
-
-        local value = tostring(fileSize) .. '|' .. KEYS[2] .. '|' .. KEYS[3] .. '|' .. tostring(expiresAt)
-        redis.call('HSET', KEYS[1], uploadId, value)
-        redis.call('INCR', KEYS[2])
-        redis.call('EXPIRE', KEYS[2], 120)
-        local currentTtl = redis.call('TTL', KEYS[1])
-        if currentTtl < reservationTtl then
-            redis.call('EXPIRE', KEYS[1], reservationTtl)
-        end
-        return {1, 0, 0}
-        """;
-
-    private const string CompleteScript = """
-        local now = tonumber(ARGV[1])
-        local uploadId = ARGV[2]
-        local dailyTtl = tonumber(ARGV[3])
-        local value = redis.call('HGET', KEYS[1], uploadId)
-        if not value then
-            return {0, 0}
-        end
-
-        local fileSize, rateKey, dailyKey, expiresAt = string.match(value, '^(%d+)|([^|]+)|([^|]+)|(%d+)$')
-        if dailyKey ~= KEYS[2] then
-            return {-1, 0}
-        end
-        redis.call('HDEL', KEYS[1], uploadId)
-        if redis.call('HLEN', KEYS[1]) == 0 then
-            redis.call('DEL', KEYS[1])
-        end
-        redis.call('INCRBY', KEYS[2], tonumber(fileSize))
-        redis.call('EXPIRE', KEYS[2], dailyTtl)
-        return {1, tonumber(fileSize)}
-        """;
-
-    private const string FailScript = """
-        local removed = redis.call('HDEL', KEYS[1], ARGV[1])
-        if redis.call('HLEN', KEYS[1]) == 0 then
-            redis.call('DEL', KEYS[1])
-        end
-        return removed
-        """;
-
-    private const string StatisticsScript = """
-        local now = tonumber(ARGV[1])
-        local entries = redis.call('HGETALL', KEYS[1])
-        for index = 1, #entries, 2 do
-            local value = entries[index + 1]
-            local _, _, _, entryExpiresAt = string.match(value, '^(%d+)|([^|]+)|([^|]+)|(%d+)$')
-            if entryExpiresAt == nil or tonumber(entryExpiresAt) <= now then
-                redis.call('HDEL', KEYS[1], entries[index])
-            end
-        end
-        local pendingDailySize = 0
-        local activeEntries = redis.call('HVALS', KEYS[1])
-        for _, value in ipairs(activeEntries) do
-            local reservedSize, rateKey, dailyKey, entryExpiresAt = string.match(value, '^(%d+)|([^|]+)|([^|]+)|(%d+)$')
-            if dailyKey == KEYS[3] then
-                pendingDailySize = pendingDailySize + tonumber(reservedSize)
-            end
-        end
-        return {
-            redis.call('HLEN', KEYS[1]),
-            tonumber(redis.call('GET', KEYS[2]) or '0'),
-            tonumber(redis.call('GET', KEYS[3]) or '0'),
-            pendingDailySize
-        }
-        """;
-
     private readonly ICaching _cache;
     private readonly UploadRateLimitOptions _options;
     private readonly RedisOptions _redisOptions;
@@ -154,6 +40,11 @@ public class UploadRateLimitService : IUploadRateLimitService
     {
         _cache = cache;
         _options = options.Value;
+        if (_options.Enable && (_options.MaxConcurrentUploads < 0 || _options.MaxUploadsPerMinute < 0 || _options.MaxDailyUploadSize < 0))
+        {
+            throw new OptionsValidationException(nameof(UploadRateLimitOptions), typeof(UploadRateLimitOptions),
+                ["启用上传限流时，并发数、分钟次数和日容量必须非负；0 表示阻止新增预留。"]);
+        }
         _redisOptions = redisOptions.Value;
         _timeProvider = timeProvider;
         _businessCalendar = businessCalendar;
@@ -265,7 +156,7 @@ public class UploadRateLimitService : IUploadRateLimitService
         var rateKey = GetRateKey(userId, now);
         var dailyKey = GetDailySizeKey(userId, now);
         var result = await _redisDatabase!.ScriptEvaluateAsync(
-            AcquireScript,
+            UploadQuotaScripts.Acquire,
             [
                 GetRedisKey(GetReservationKey(userId)),
                 GetRedisKey(rateKey),
@@ -274,16 +165,16 @@ public class UploadRateLimitService : IUploadRateLimitService
             [
                 now.ToUnixTimeSeconds(),
                 uploadId,
-                fileSize,
+                fileSize.ToString(CultureInfo.InvariantCulture),
                 _options.MaxConcurrentUploads,
                 _options.MaxUploadsPerMinute,
-                _options.MaxDailyUploadSize,
+                _options.MaxDailyUploadSize.ToString(CultureInfo.InvariantCulture),
                 now.Add(lifetime).ToUnixTimeSeconds(),
                 Math.Max(1, (long)Math.Ceiling(lifetime.TotalSeconds))
             ]);
 
         var values = (RedisResult[])result!;
-        return BuildAcquireResult((long)values[0], (long)values[1], (long)values[2], fileSize);
+        return BuildAcquireResult((long)values[0], ParseCounter(values[1].ToString()), ParseCounter(values[2].ToString()), fileSize);
     }
 
     private async Task<UploadRateLimitCheckResult> AcquireInMemoryAsync(
@@ -298,35 +189,28 @@ public class UploadRateLimitService : IUploadRateLimitService
             var state = await LoadReservationStateAsync(userId);
             PruneExpiredReservations(state, now.ToUnixTimeSeconds());
 
+            var rateKey = GetRateKey(userId, now);
+            var dailyKey = GetDailySizeKey(userId, now);
+            var attemptMinuteCount = checked((int)await GetInt64Async(rateKey));
+            var completedDailySize = await GetInt64Async(dailyKey);
+            var occupiedDailySize = checked(completedDailySize + SumReservations(state, dailyKey));
+            UploadRateLimitCheckResult? rejection = null;
             if (state.Reservations.ContainsKey(uploadId))
             {
                 await SaveReservationStateAsync(userId, state, now);
                 return UploadRateLimitCheckResult.Allowed();
             }
-
             if (state.Reservations.Count >= _options.MaxConcurrentUploads)
-            {
-                await SaveReservationStateAsync(userId, state, now);
-                return BuildAcquireResult(2, state.Reservations.Count, _options.MaxConcurrentUploads, fileSize);
-            }
+                rejection = BuildAcquireResult(2, state.Reservations.Count, _options.MaxConcurrentUploads, fileSize);
+            else if (attemptMinuteCount >= _options.MaxUploadsPerMinute)
+                rejection = BuildAcquireResult(3, attemptMinuteCount, _options.MaxUploadsPerMinute, fileSize);
+            else if (occupiedDailySize > _options.MaxDailyUploadSize || fileSize > _options.MaxDailyUploadSize - occupiedDailySize)
+                rejection = BuildAcquireResult(4, occupiedDailySize, _options.MaxDailyUploadSize, fileSize);
 
-            var rateKey = GetRateKey(userId, now);
-            var attemptMinuteCount = await GetInt64Async(rateKey);
-            if (attemptMinuteCount >= _options.MaxUploadsPerMinute)
+            if (rejection != null)
             {
                 await SaveReservationStateAsync(userId, state, now);
-                return BuildAcquireResult(3, attemptMinuteCount, _options.MaxUploadsPerMinute, fileSize);
-            }
-
-            var dailyKey = GetDailySizeKey(userId, now);
-            var completedDailySize = await GetInt64Async(dailyKey);
-            var occupiedDailySize = completedDailySize + state.Reservations.Values
-                .Where(reservation => reservation.DailyKey == dailyKey)
-                .Sum(static reservation => reservation.FileSize);
-            if (occupiedDailySize + fileSize > _options.MaxDailyUploadSize)
-            {
-                await SaveReservationStateAsync(userId, state, now);
-                return BuildAcquireResult(4, occupiedDailySize, _options.MaxDailyUploadSize, fileSize);
+                return rejection;
             }
 
             state.Reservations[uploadId] = new UploadReservation
@@ -336,7 +220,7 @@ public class UploadRateLimitService : IUploadRateLimitService
                 DailyKey = dailyKey,
                 ExpiresAtUnixSeconds = now.Add(lifetime).ToUnixTimeSeconds()
             };
-            await SetInt64Async(rateKey, attemptMinuteCount + 1, TimeSpan.FromMinutes(2));
+            await SetInt64Async(rateKey, checked(attemptMinuteCount + 1), TimeSpan.FromMinutes(2));
             await SaveReservationStateAsync(userId, state, now);
             return UploadRateLimitCheckResult.Allowed();
         }
@@ -346,13 +230,11 @@ public class UploadRateLimitService : IUploadRateLimitService
     {
         var reservationKey = GetRedisKey(GetReservationKey(userId));
         var value = await _redisDatabase!.HashGetAsync(reservationKey, uploadId);
-        if (!value.HasValue || !TryParseReservation(value.ToString(), out var reservation))
-        {
-            return null;
-        }
+        if (!value.HasValue) return null;
+        var reservation = ParseReservation(value.ToString(), userId);
 
         var result = await _redisDatabase!.ScriptEvaluateAsync(
-            CompleteScript,
+            UploadQuotaScripts.Complete,
             [reservationKey, reservation.DailyKey],
             [
                 _timeProvider.GetUtcNow().ToUnixTimeSeconds(),
@@ -360,11 +242,7 @@ public class UploadRateLimitService : IUploadRateLimitService
                 Math.Max(1, (long)Math.Ceiling(_businessCalendar.GetTimeUntilNextDate().TotalSeconds))
             ]);
         var values = (RedisResult[])result!;
-        if ((long)values[0] == -1)
-        {
-            throw new InvalidOperationException("上传预留中的业务日期键与结算键不一致。");
-        }
-        return (long)values[0] == 1 ? (long)values[1] : null;
+        return (long)values[0] == 1 ? ParseCounter(values[1].ToString()) : null;
     }
 
     private async Task<long?> CompleteInMemoryAsync(long userId, string uploadId)
@@ -373,18 +251,16 @@ public class UploadRateLimitService : IUploadRateLimitService
         {
             var now = _timeProvider.GetUtcNow();
             var state = await LoadReservationStateAsync(userId);
-            if (!state.Reservations.Remove(uploadId, out var reservation))
+            PruneExpiredReservations(state, now.ToUnixTimeSeconds());
+            if (!state.Reservations.TryGetValue(uploadId, out var reservation))
             {
-                PruneExpiredReservations(state, now.ToUnixTimeSeconds());
                 await SaveReservationStateAsync(userId, state, now);
                 return null;
             }
 
-            PruneExpiredReservations(state, now.ToUnixTimeSeconds());
-            await SetInt64Async(
-                reservation.DailyKey,
-                await GetInt64Async(reservation.DailyKey) + reservation.FileSize,
-                _businessCalendar.GetTimeUntilNextDate());
+            var completed = checked(await GetInt64Async(reservation.DailyKey) + reservation.FileSize);
+            await SetInt64Async(reservation.DailyKey, completed, _businessCalendar.GetTimeUntilNextDate());
+            state.Reservations.Remove(uploadId);
             await SaveReservationStateAsync(userId, state, now);
             return reservation.FileSize;
         }
@@ -393,7 +269,7 @@ public class UploadRateLimitService : IUploadRateLimitService
     private async Task<bool> FailInRedisAsync(long userId, string uploadId)
     {
         var result = await _redisDatabase!.ScriptEvaluateAsync(
-            FailScript,
+            UploadQuotaScripts.Fail,
             [GetRedisKey(GetReservationKey(userId))],
             [uploadId]);
         return (long)result == 1;
@@ -403,12 +279,25 @@ public class UploadRateLimitService : IUploadRateLimitService
     {
         using (await AsyncKeyedLock.AcquireAsync(GetUserLockKey(userId)))
         {
+            // 释放目标无需读取其容量，允许调用方释放已损坏的容量记录。
+            var document = await LoadReservationDocumentAsync(userId);
+            var reservations = GetReservationEntries(document);
+            var removed = reservations.Remove(uploadId);
+            if (!removed) return false;
             var now = _timeProvider.GetUtcNow();
-            var state = await LoadReservationStateAsync(userId);
-            PruneExpiredReservations(state, now.ToUnixTimeSeconds());
-            var removed = state.Reservations.Remove(uploadId);
-            await SaveReservationStateAsync(userId, state, now);
-            return removed;
+            foreach (var property in reservations.Properties().ToArray())
+            {
+                if (ReadExpiry(property.Value["ExpiresAtUnixSeconds"]) <= now.ToUnixTimeSeconds()) property.Remove();
+            }
+            if (reservations.Count == 0)
+                await _cache.Cache.RemoveAsync(GetReservationKey(userId));
+            else
+            {
+                var latestExpiry = reservations.Properties().Max(property => ReadExpiry(property.Value["ExpiresAtUnixSeconds"]));
+                await _cache.Cache.SetStringAsync(GetReservationKey(userId), document.ToString(Formatting.None),
+                    new DistributedCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(Math.Max(1, latestExpiry - now.ToUnixTimeSeconds())) });
+            }
+            return true;
         }
     }
 
@@ -416,7 +305,7 @@ public class UploadRateLimitService : IUploadRateLimitService
     {
         var now = _timeProvider.GetUtcNow();
         var result = await _redisDatabase!.ScriptEvaluateAsync(
-            StatisticsScript,
+            UploadQuotaScripts.Statistics,
             [
                 GetRedisKey(GetReservationKey(userId)),
                 GetRedisKey(GetRateKey(userId, now)),
@@ -425,10 +314,10 @@ public class UploadRateLimitService : IUploadRateLimitService
             [now.ToUnixTimeSeconds()]);
         var values = (RedisResult[])result!;
         return new UploadStatisticsSnapshot(
-            (int)(long)values[0],
-            (int)(long)values[1],
-            (long)values[2],
-            (long)values[3]);
+            checked((int)(long)values[0]),
+            checked((int)ParseCounter(values[1].ToString())),
+            ParseCounter(values[2].ToString()),
+            ParseCounter(values[3].ToString()));
     }
 
     private async Task<UploadStatisticsSnapshot> GetInMemoryStatisticsAsync(long userId)
@@ -438,15 +327,13 @@ public class UploadRateLimitService : IUploadRateLimitService
             var now = _timeProvider.GetUtcNow();
             var state = await LoadReservationStateAsync(userId);
             PruneExpiredReservations(state, now.ToUnixTimeSeconds());
-            await SaveReservationStateAsync(userId, state, now);
             var dailyKey = GetDailySizeKey(userId, now);
-            return new UploadStatisticsSnapshot(
-                state.Reservations.Count,
-                (int)await GetInt64Async(GetRateKey(userId, now)),
-                await GetInt64Async(dailyKey),
-                state.Reservations.Values
-                    .Where(reservation => reservation.DailyKey == dailyKey)
-                    .Sum(static reservation => reservation.FileSize));
+            var attempts = checked((int)await GetInt64Async(GetRateKey(userId, now)));
+            var completed = await GetInt64Async(dailyKey);
+            var pending = SumReservations(state, dailyKey);
+            _ = checked(completed + pending);
+            await SaveReservationStateAsync(userId, state, now);
+            return new UploadStatisticsSnapshot(state.Reservations.Count, attempts, completed, pending);
         }
     }
 
@@ -475,13 +362,49 @@ public class UploadRateLimitService : IUploadRateLimitService
         };
     }
 
-    private async Task<UploadReservationState> LoadReservationStateAsync(long userId)
+    private async Task<JObject> LoadReservationDocumentAsync(long userId)
     {
         var value = await _cache.Cache.GetStringAsync(GetReservationKey(userId));
-        return string.IsNullOrWhiteSpace(value)
-            ? new UploadReservationState()
-            : JsonConvert.DeserializeObject<UploadReservationState>(value) ?? new UploadReservationState();
+        return value == null
+            ? new JObject { ["Reservations"] = new JObject() }
+            : JObject.Parse(value);
     }
+
+    private static JObject GetReservationEntries(JObject document) => document["Reservations"] as JObject
+        ?? throw InvalidState();
+
+    private async Task<UploadReservationState> LoadReservationStateAsync(long userId)
+    {
+        var document = await LoadReservationDocumentAsync(userId);
+        var state = new UploadReservationState();
+        foreach (var property in GetReservationEntries(document).Properties())
+        {
+            if (property.Value is not JObject entry || string.IsNullOrWhiteSpace(property.Name)) throw InvalidState();
+            var size = ReadJsonInteger(entry["FileSize"]);
+            var expiry = ReadExpiry(entry["ExpiresAtUnixSeconds"]);
+            var rateKey = entry["RateKey"]?.Type == JTokenType.String ? entry["RateKey"]!.Value<string>() : null;
+            var dailyKey = entry["DailyKey"]?.Type == JTokenType.String ? entry["DailyKey"]!.Value<string>() : null;
+            if (size == 0 || !IsStoredKey(rateKey, $"upload:{{{userId}}}:rate:", 12)
+                || !IsStoredKey(dailyKey, $"upload:{{{userId}}}:daily:", 8)) throw InvalidState();
+            state.Reservations.Add(property.Name, new UploadReservation
+            {
+                FileSize = size, RateKey = rateKey!, DailyKey = dailyKey!, ExpiresAtUnixSeconds = expiry
+            });
+        }
+        return state;
+    }
+
+    private static long ReadJsonInteger(JToken? token) => token?.Type == JTokenType.Integer
+        ? ParseCounter(token.ToString(Formatting.None)) : throw InvalidState();
+
+    private static long ReadExpiry(JToken? token)
+    {
+        var expiry = ReadJsonInteger(token);
+        return expiry <= DateTimeOffset.MaxValue.ToUnixTimeSeconds() ? expiry : throw InvalidState();
+    }
+
+    private static long SumReservations(UploadReservationState state, string dailyKey) => state.Reservations.Values
+        .Where(reservation => reservation.DailyKey == dailyKey).Sum(static reservation => reservation.FileSize);
 
     private async Task SaveReservationStateAsync(
         long userId,
@@ -506,7 +429,7 @@ public class UploadRateLimitService : IUploadRateLimitService
     private async Task<long> GetInt64Async(string key)
     {
         var value = await _cache.Cache.GetStringAsync(key);
-        return long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : 0;
+        return value == null ? 0 : ParseCounter(value);
     }
 
     private Task SetInt64Async(string key, long value, TimeSpan expiration)
@@ -563,20 +486,31 @@ public class UploadRateLimitService : IUploadRateLimitService
         return $"upload:{{{userId}}}:daily:{date:yyyyMMdd}";
     }
 
-    private static bool TryParseReservation(string value, out ParsedReservation reservation)
+    private ParsedReservation ParseReservation(string value, long userId)
     {
         var segments = value.Split('|');
-        if (segments.Length == 4 &&
-            long.TryParse(segments[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var fileSize) &&
-            long.TryParse(segments[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out var expiresAt))
-        {
-            reservation = new ParsedReservation(fileSize, segments[1], segments[2], expiresAt);
-            return true;
-        }
-
-        reservation = default;
-        return false;
+        if (segments.Length != 4) throw InvalidState();
+        var size = ParseCounter(segments[0]);
+        var expiry = ParseCounter(segments[3]);
+        if (size == 0 || expiry > DateTimeOffset.MaxValue.ToUnixTimeSeconds()
+            || !IsStoredKey(segments[1], GetRedisKey($"upload:{{{userId}}}:rate:"), 12)
+            || !IsStoredKey(segments[2], GetRedisKey($"upload:{{{userId}}}:daily:"), 8)) throw InvalidState();
+        return new ParsedReservation(size, segments[1], segments[2], expiry);
     }
+
+    private static bool IsStoredKey(string? key, string prefix, int digits) => key != null
+        && key.StartsWith(prefix, StringComparison.Ordinal) && key.Length == prefix.Length + digits
+        && key.AsSpan(prefix.Length).ContainsAnyExceptInRange('0', '9') == false;
+
+    private static long ParseCounter(string value)
+    {
+        if (value.Length == 0 || (value.Length > 1 && value[0] == '0')
+            || value.AsSpan().ContainsAnyExceptInRange('0', '9')
+            || !long.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var result)) throw InvalidState();
+        return result;
+    }
+
+    private static InvalidOperationException InvalidState() => new("上传配额缓存状态无效或超出整数范围。");
 
     private static string FormatFileSize(long bytes)
     {

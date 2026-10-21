@@ -1,6 +1,6 @@
 # 上传配额过期与整数边界修复方案
 
-> 状态：**已获项目所有者批准，待实施**（2026-10-21）。[隔离验证结果](../records/nodrive-valkey-validation-2026-10-21.md)已随 `5f76913a` 提交并推送 `dev`。本方案只处理其中的两类上传限流问题；NoDrive、Valkey 正式替换及发布继续暂停。
+> 状态：**已实施，回归通过，清理完成**（2026-10-21）。[隔离验证结果](../records/nodrive-valkey-validation-2026-10-21.md)已随 `5f76913a` 提交并推送 `dev`。方案先随 `46d22765` 提交并推送，再实施。本方案只处理其中的两类上传限流问题；NoDrive、Valkey 正式替换及发布继续暂停。
 
 ## 1. 已确认事实与目标
 
@@ -101,3 +101,19 @@ Debug / Release 执行 `dotnet build Radish.slnx -c <configuration> --no-restore
 获批后先编写并检查本轮专用启动 / 清理脚本，注册 EXIT trap 后再创建资源。正常与异常退出均核对归属再停止并删除两台容器、两个卷及本轮控制临时文件；保留测试源码、文档和证据，不清理共享 NuGet / Docker 镜像缓存，不使用 FLUSHALL / 全局 prune。结束用标签列表与两个端口检查确认清理；清理失败保留资源标识并明确报告。
 
 本轮聚焦业务缺陷，AOF / RDB / 重连历史结果保留原证据日期，不冒称修复后重验。TLS、Cluster、Sentinel、生产数据处置、发布 / 回退、永久账本和 NoDrive / Valkey 正式采用均另行确认。
+
+
+## 6. 已实现测试入口
+
+以下为获批修复后的永久测试入口；前五节保留批准范围。实际结果见[修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)。没有显式启用时，Redis / Valkey 类显示跳过；启用后任一所选端缺连接或无法连接都失败，不退回内存。
+
+```bash
+# 仅在本任务已授权并启动的隔离容器可用后设置；不读取项目 / 生产连接。
+export RADISH_TEST_UPLOAD_QUOTA_INTEGRATION=1
+export RADISH_TEST_UPLOAD_QUOTA_PREFIX='radish-upload-quota.<本轮唯一标识>:'
+export RADISH_TEST_UPLOAD_QUOTA_REDIS='127.0.0.1:16379,password=<本轮合成密码>,defaultDatabase=15,abortConnect=true'
+export RADISH_TEST_UPLOAD_QUOTA_VALKEY='127.0.0.1:16380,password=<本轮合成密码>,defaultDatabase=15,abortConnect=true'
+dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj -c Debug --no-build --no-restore --filter 'FullyQualifiedName~UploadQuota|FullyQualifiedName~UploadRateLimitServiceTest|FullyQualifiedName~AttachmentControllerTest|FullyQualifiedName~ChunkedUploadServiceTest|FullyQualifiedName~AttachmentServiceUploadContractTest|FullyQualifiedName~AttachmentUploadLoggingTests' --logger 'trx;LogFileName=upload-quota.trx'
+```
+
+构建前确保现有 assets / native 产物可用，执行第 4 节严格构建；Release 回归使用相同 filter 并将 `-c` 改为 `Release`。无需新增包。每个测试再生成独立随机前缀、结束仅删除自身 key；测试代码不启动 Docker。原始六个失败的对应业务断言永久保留在 `UploadQuotaBoundaryTests`，真实存储与预读时序在 `UploadQuotaRedisStateTests`。

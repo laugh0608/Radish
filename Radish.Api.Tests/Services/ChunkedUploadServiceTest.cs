@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Newtonsoft.Json;
 using Radish.Common.Exceptions;
+using Radish.Api.Tests.Services.UploadQuota;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
 using Radish.IService;
@@ -357,6 +358,36 @@ public sealed class ChunkedUploadServiceTest : IDisposable
         harness.RateLimit.Verify(
             service => service.FailUploadAsync(It.IsAny<long>(), It.IsAny<string>()),
             Times.Never);
+    }
+
+    [Fact(DisplayName = "终态重放使用真实配额服务且只结算一次")]
+    public async Task CleanupExpiredSessionsAsync_ShouldReplayRealQuotaSettlementIdempotently()
+    {
+        var harness = CreateHarness();
+        await using var scope = await UploadQuotaTestScope.OpenAsync("memory");
+        scope.Clock.Advance(harness.TimeProvider.GetUtcNow() - scope.Clock.GetUtcNow());
+        var quota = scope.CreateService();
+        harness.RateLimit.Setup(service => service.AcquireUploadAsync(
+                It.IsAny<long>(), It.IsAny<string>(), It.IsAny<long>(), It.IsAny<TimeSpan?>()))
+            .Returns((long userId, string id, long bytes, TimeSpan? lifetime) => quota.AcquireUploadAsync(userId, id, bytes, lifetime));
+        var attempts = 0;
+        harness.RateLimit.Setup(service => service.CompleteUploadAsync(It.IsAny<long>(), It.IsAny<string>()))
+            .Returns((long userId, string id) => ++attempts == 1
+                ? Task.FromException(new InvalidOperationException("test accounting failure"))
+                : quota.CompleteUploadAsync(userId, id));
+        var session = await harness.Service.CreateSessionAsync(CreateRequest(totalSize: 2, chunkSize: 2), 7, "tester");
+        await harness.Service.UploadChunkAsync(session.VoSessionId, 0, CreateFormFile([1, 2]), 7);
+        var result = await harness.Service.MergeChunksAsync(new MergeChunksDto
+            { SessionId = session.VoSessionId, GenerateThumbnail = false, RemoveExif = false }, 7, "tester");
+        Assert.Equal(99, result!.VoId);
+        Assert.Equal(2, (await quota.GetUploadStatisticsAsync(7)).ReservedUploadSizeToday);
+        await harness.Service.CleanupExpiredSessionsAsync();
+        await harness.Service.CleanupExpiredSessionsAsync();
+        var stats = await quota.GetUploadStatisticsAsync(7);
+        Assert.Equal(2, stats.UploadedSizeToday);
+        Assert.Equal(0, stats.ReservedUploadSizeToday);
+        Assert.Equal(1, stats.UploadsThisMinute);
+        harness.RateLimit.Verify(service => service.CompleteUploadAsync(7, session.VoSessionId), Times.Exactly(3));
     }
 
     private Harness CreateHarness(bool enable = true)

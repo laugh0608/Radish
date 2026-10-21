@@ -2,7 +2,7 @@
 
 > 2026-10-21，基于 `dev` 的 Mapperly 迁移提交 `b8debb26`；该提交已推送 `origin/dev`。本页是 ORM / Redis 后续评估的当前入口，[前轮方案](./post-image-dependency-assessment.md)保留初始盘点。
 >
-> 首轮只读盘点的精确哈希与版本见[证据清单](../records/orm-redis-assessment-evidence-2026-10-21.json)。随后按批准方案完成隔离实验并清理：NoDrive 通过既定矩阵，Valkey 未发现候选独有差异，但两端共同暴露两类上传限流边界问题，完整业务验收未通过；详见[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。正式依赖与部署配置未变，未连接生产或发布。
+> 首轮只读盘点的精确哈希与版本见[证据清单](../records/orm-redis-assessment-evidence-2026-10-21.json)。随后按批准方案完成隔离实验并清理：NoDrive 通过既定矩阵，Valkey 未发现候选独有差异，但两端共同暴露两类上传限流边界问题，完整业务验收未通过；详见[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。随后两类问题已按[配额修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)修复并定向验证；不回写上一轮失败结论为通过。正式依赖与部署配置未变，未连接生产或发布。
 
 ## 1. 当前建议
 
@@ -10,10 +10,10 @@
 | --- | --- | --- |
 | SqlSugar | 同版本 NoDrive 已通过隔离验证，可据此裁决正式部分收缩；暂不整体更换 ORM | SQLite、PG16 / 17、严格构建与四宿主产物通过；仍带 SQL Server / SNI，不能达到“只剩 PG / SQLite” |
 | 完整 ORM 替换 | 仅当必须彻底退出额外驱动链，或 NoDrive 无法通过验证时，另立 EF Core 迁移专题 | 现有 OpenIddict 已用 EF Core；业务查询、事务、实体特性及迁移仍与 SqlSugar 深度耦合，成本明显高于映射替代 |
-| Redis 服务 | 保留 Valkey 9.1.2 候选；先裁决上传限流边界与迁移方案 | 普通业务、AUTH / ACL、AOF、同版本 RDB、重连通过；过期结算与超大整数在两端同样失败，无性能 / 生产迁移结论 |
+| Redis 服务 | 保留 Valkey 9.1.2 候选；上传限流边界已修复，迁移方案另行裁决 | 普通业务、AUTH / ACL、AOF、同版本 RDB、重连通过；过期结算与超大整数在两端同样失败，无性能 / 生产迁移结论 |
 | 实际迁移 | 先确认源版本与数据分类，再定数据方案 | 本次联网解析 `redis:7` 的 amd64 config 为 `7.4.11`，不能推定用户正在运行的版本，更不能直接换镜像挂旧卷 |
 
-实验授权与验证结果不等于正式依赖、配置、数据库支持范围或部署方案获批。后续分别裁决 NoDrive 正式收缩、限流问题修复与 Valkey 迁移，不将两者绑成一次替换。
+实验授权与验证结果不等于正式依赖、配置、数据库支持范围或部署方案获批。限流修复已获批完成，后续分别裁决 NoDrive 正式收缩与 Valkey 迁移，不将两者绑成一次替换。
 
 ## 2. ORM：精确包与现有分发边界
 
@@ -113,9 +113,9 @@ EF 的[全局过滤器](https://learn.microsoft.com/en-us/ef/core/querying/filte
 
 上传实现包含 Acquire / Complete / Fail / Statistics 四段 Lua，使用 Hash、String、TTL、INCR / INCRBY 与 DEL。key 具备用户 hash tag，但当前部署仍是单实例；本轮不扩展成 Cluster。普通 ICaching 经 IDistributedCache 存储，上传 Lua 直接操作原生类型，验收必须覆盖两条路径。
 
-现有 `UploadRateLimitServiceTest` 的 8 个用例使用 `RedisOptions.Enable=false`，可以证明内存分支的业务预期，不能证明 Lua 在 Redis / Valkey 中执行正确。后续隔离实验已以真实客户端与生产 Lua 补充两端对照，覆盖并发预留、容量上限、幂等、过期清理、跨日、InstanceName 和重连；新增夹具保存在实验 evidence，不作为正式测试代码提交。
+首轮隔离前 `UploadRateLimitServiceTest` 的 8 个用例使用 `RedisOptions.Enable=false`，可以证明内存分支的业务预期，不能证明 Lua 在 Redis / Valkey 中执行正确。后续隔离实验已以真实客户端与生产 Lua 补充两端对照，覆盖并发预留、容量上限、幂等、过期清理、跨日、InstanceName 和重连；新增夹具保存在实验 evidence，不作为正式测试代码提交。
 
-静态阅读还发现 CompleteScript 接收 `now`、解析 `expiresAt`，但未据此拒绝已过期条目；内存分支也先移出待完成条目，再清理其余过期项。隔离实验已复现“目标已过期、其他预留仍存活时，目标仍结算”的问题，且补充发现 `2^53±1` 大整数被转成科学计数法后遭解析清除；两端表现一致。缓存 key 索引采用非原子读改写，轻回应检查和写入也不是一段 Lua。以上是现有实现的关注点，未在本轮修复；切换服务本身不会自动解决这些并发 / 语义问题。
+静态阅读还发现 CompleteScript 接收 `now`、解析 `expiresAt`，但未据此拒绝已过期条目；内存分支也先移出待完成条目，再清理其余过期项。隔离实验已复现“目标已过期、其他预留仍存活时，目标仍结算”的问题，且补充发现 `2^53±1` 大整数被转成科学计数法后遭解析清除；两端表现一致。缓存 key 索引采用非原子读改写，轻回应检查和写入也不是一段 Lua。前两类上传问题随后已修复并形成永久回归；索引与轻回应原子性不属于该修复。切换服务本身不会自动解决这些并发 / 语义问题。
 
 ### 3.4 Valkey 候选与数据路径
 
@@ -148,4 +148,4 @@ manifest / config 核对不包含镜像层漏洞扫描、操作系统包许可�
 4. 运维：若后续切换，更新 server / CLI 命令、healthcheck、卷权限与路径、备份恢复和运维文档；保持服务名 / 连接端点是否不变需方案明示，不在实验中默认修改部署。
 5. 结论：明确“可安装 / 可运行 / 可迁移数据 / 可发布”的不同证据。仍需合并前回归与独立发布授权，包审计或一次 GET / SET 成功均不足以完成替换。
 
-本轮只在临时副本改变依赖和增加夹具，实验资源已清理；正式运行代码、依赖清单与部署配置未改，未形成生产迁移或发布结论。验证结果已随 `5f76913a` 推送；项目所有者指定先整理[两类上传配额问题的修复方案](./upload-quota-boundary-fix-plan.md)，现已获准实施和隔离回归。NoDrive 收缩和 Valkey 迁移继续暂停。
+隔离实验阶段只在临时副本改变依赖和增加夹具，资源已清理、结果随 `5f76913a` 推送。随后[两类上传配额修复方案](./upload-quota-boundary-fix-plan.md)获批并随 `46d22765` 推送，业务代码已修复并完成两种构建各 262 项定向回归，见修复记录。依赖清单与部署配置未改；NoDrive 收缩、Valkey 迁移和发布继续暂停。

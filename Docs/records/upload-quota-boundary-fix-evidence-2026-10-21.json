@@ -1,0 +1,181 @@
+{
+  "base": "46d227653cc56cec31f5e5a894ee841babb18750",
+  "evidenceRoot": "/private/tmp/radish-upload-quota.tj6YWc/evidence",
+  "testResults": {
+    "before": {
+      "trx": "red/before-fix.trx",
+      "sha256": "192fd10a0e861862df42c9a13e215ef26309464b8b1335a3a283aed4a3d2d6a0",
+      "counts": {
+        "total": 39,
+        "executed": 39,
+        "passed": 22,
+        "failed": 17,
+        "notExecuted": 0
+      },
+      "byClass": {
+        "UploadQuotaRedisTests": {
+          "Failed": 7,
+          "Passed": 6
+        },
+        "UploadQuotaMemoryTests": {
+          "Failed": 3,
+          "Passed": 10
+        },
+        "UploadQuotaValkeyTests": {
+          "Failed": 7,
+          "Passed": 6
+        }
+      }
+    },
+    "debug": {
+      "trx": "debug/debug-regression.trx",
+      "sha256": "e6143656da557e9ef99632d2b950819745ba2b6fa7b6d858cf1a68a8edc5e7f2",
+      "counts": {
+        "total": 262,
+        "executed": 262,
+        "passed": 262,
+        "failed": 0,
+        "notExecuted": 0
+      },
+      "byClass": {
+        "AttachmentControllerTest": {
+          "Passed": 22
+        },
+        "UploadQuotaRedisStorageTests": {
+          "Passed": 8
+        },
+        "AttachmentServiceUploadContractTest": {
+          "Passed": 34
+        },
+        "ChunkedUploadServiceTest": {
+          "Passed": 20
+        },
+        "UploadQuotaMemoryTests": {
+          "Passed": 43
+        },
+        "UploadQuotaValkeyStorageTests": {
+          "Passed": 8
+        },
+        "UploadRateLimitServiceTest": {
+          "Passed": 9
+        },
+        "UploadQuotaValkeyTests": {
+          "Passed": 43
+        },
+        "UploadQuotaRedisTests": {
+          "Passed": 43
+        },
+        "AttachmentUploadLoggingTests": {
+          "Passed": 32
+        }
+      }
+    },
+    "release": {
+      "trx": "release/release-regression.trx",
+      "sha256": "df4ca1307d3f1665b7de4dec18f82f8928965cca05262b622bb5369e87be108a",
+      "counts": {
+        "total": 262,
+        "executed": 262,
+        "passed": 262,
+        "failed": 0,
+        "notExecuted": 0
+      },
+      "byClass": {
+        "AttachmentServiceUploadContractTest": {
+          "Passed": 34
+        },
+        "UploadQuotaValkeyStorageTests": {
+          "Passed": 8
+        },
+        "UploadQuotaMemoryTests": {
+          "Passed": 43
+        },
+        "UploadQuotaValkeyTests": {
+          "Passed": 43
+        },
+        "AttachmentControllerTest": {
+          "Passed": 22
+        },
+        "UploadRateLimitServiceTest": {
+          "Passed": 9
+        },
+        "ChunkedUploadServiceTest": {
+          "Passed": 20
+        },
+        "UploadQuotaRedisTests": {
+          "Passed": 43
+        },
+        "AttachmentUploadLoggingTests": {
+          "Passed": 32
+        },
+        "UploadQuotaRedisStorageTests": {
+          "Passed": 8
+        }
+      }
+    },
+    "missingConnection": {
+      "trx": "harness-gate/missing-connection.trx",
+      "sha256": "16f0f74c381f4276d2aa50c677bcc4153edadb2f0c28a17e51d572b4eed0958c",
+      "counts": {
+        "total": 1,
+        "executed": 1,
+        "passed": 0,
+        "failed": 1,
+        "notExecuted": 0
+      },
+      "byClass": {
+        "UploadQuotaRedisTests": {
+          "Failed": 1
+        }
+      }
+    }
+  },
+  "previousFailedCasesNowPassed": 17,
+  "sourceFiles": [
+    {
+      "path": "Radish.Api.Tests/Controllers/AttachmentControllerTest.cs",
+      "sha256": "29ffdae0b5b5d18d45c0037efa2450224b1b2b0c76750c4ec35d7d72cd7d90e3"
+    },
+    {
+      "path": "Radish.Api.Tests/Services/ChunkedUploadServiceTest.cs",
+      "sha256": "09285a6d96d661d4dea1e658ba06250ef9d3a626f999ec8e8ec9f960956a60a7"
+    },
+    {
+      "path": "Radish.Api.Tests/Services/UploadRateLimitServiceTest.cs",
+      "sha256": "9b2829d78812f22327238835f3dc562c69e3c5967628738bfc29d22b65e56100"
+    },
+    {
+      "path": "Radish.Common/OptionTool/UploadRateLimitOptions.cs",
+      "sha256": "af69b2f6a0d5bcf0d9ad59a150c2d25d4115af72edaef069fe973ed47edc4c7a"
+    },
+    {
+      "path": "Radish.IService/IUploadRateLimitService.cs",
+      "sha256": "c0c8f06af31fd7574d3cba48b16552456d87773104ba2cdf88d63276dda8eeb8"
+    },
+    {
+      "path": "Radish.Service/UploadRateLimitService.cs",
+      "sha256": "2f0ccef995171b040667d5c1e4ec05e2d6c65283d18786dc5b6f4f293991ca9e"
+    },
+    {
+      "path": "Radish.Api.Tests/Services/UploadQuota/UploadQuotaBoundaryTests.cs",
+      "sha256": "f379c036cec1dcbe774b9edea36eff150eb54cd67f5d8e868e5f9de70e4e9860"
+    },
+    {
+      "path": "Radish.Api.Tests/Services/UploadQuota/UploadQuotaRedisStateTests.cs",
+      "sha256": "c108799fb88d3328cbd1d39f1dd8fe07c62755568751365f0fb2d31fa142118c"
+    },
+    {
+      "path": "Radish.Api.Tests/Services/UploadQuota/UploadQuotaTestScope.cs",
+      "sha256": "6a45b085ec88950c7c2b70861e5bff48439f96ef81914de8062e7ea957c17884"
+    },
+    {
+      "path": "Radish.Service/Internal/UploadQuotaScripts.cs",
+      "sha256": "e15b2500b1958f9f80c6c366cd71be96fba1c781437cc28da7de9a20da96c754"
+    }
+  ],
+  "cleanupExit": 0,
+  "remainingContainers": [],
+  "remainingVolumes": [],
+  "portListeners": [],
+  "manifestSha256": "35ce736c8c40265d7043a875af02defa00ef3339095f988e3a20e74c6a9454e6"
+}
