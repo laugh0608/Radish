@@ -1,5 +1,4 @@
 using System.Linq.Expressions;
-using AutoMapper;
 using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService.Base;
@@ -10,18 +9,23 @@ namespace Radish.Service.Base;
 public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntity : class, new()
 {
     private readonly IBaseRepository<TEntity> _baseRepository;
-    private readonly IMapper _mapper;
-
-    protected IMapper Mapper => _mapper;
+    private readonly Func<TEntity, TVo> _mapToVo;
 
     /// <summary>构造函数依赖注入</summary>
     /// <param name="baseRepository">IBaseRepository</param>
-    /// <param name="mapper">IMapper</param>
-    public BaseService(IMapper mapper, IBaseRepository<TEntity> baseRepository)
+    /// <param name="mapToVo">本实体的明确映射方法</param>
+    public BaseService(Func<TEntity, TVo> mapToVo, IBaseRepository<TEntity> baseRepository)
     {
         _baseRepository = baseRepository;
-        _mapper = mapper;
+        _mapToVo = mapToVo;
     }
+
+    /// <summary>使用具体业务域的映射，附件等类型可在此保留依赖服务的补全。</summary>
+    protected TVo MapToVo(TEntity entity) => _mapToVo(entity);
+
+    /// <summary>保持集合顺序与空集合契约，分页总数由仓储提供。</summary>
+    protected List<TVo> MapToVoList(IEnumerable<TEntity>? entities) =>
+        entities is null ? [] : entities.Select(_mapToVo).ToList();
 
     #region 增
 
@@ -171,7 +175,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     public async Task<TVo?> QueryByIdAsync(long id)
     {
         var entity = await _baseRepository.QueryByIdAsync(id);
-        return entity == null ? default : _mapper.Map<TVo>(entity);
+        return entity == null ? default : MapToVo(entity);
     }
 
     /// <summary>查询第一条数据（返回 ViewModel）</summary>
@@ -180,7 +184,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     public async Task<TVo?> QueryFirstAsync(Expression<Func<TEntity, bool>>? whereExpression = null)
     {
         var entity = await _baseRepository.QueryFirstAsync(whereExpression);
-        return entity == null ? default : _mapper.Map<TVo>(entity);
+        return entity == null ? default : MapToVo(entity);
     }
 
     /// <summary>查询单条数据（多条会抛异常，返回 ViewModel）</summary>
@@ -189,7 +193,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     public async Task<TVo?> QuerySingleAsync(Expression<Func<TEntity, bool>> whereExpression)
     {
         var entity = await _baseRepository.QuerySingleAsync(whereExpression);
-        return entity == null ? default : _mapper.Map<TVo>(entity);
+        return entity == null ? default : MapToVo(entity);
     }
 
     /// <summary>按照 Where 表达式查询（返回 ViewModel 列表）</summary>
@@ -199,7 +203,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     {
         // Repository 不是单例，所以多次查询的 HASH 是不一样的，对应的是 Repository 层的 DbBase 是单例
         // await Console.Out.WriteLineAsync($"Repository HashCode: {_baseRepository.GetHashCode().ToString()}");
-        return _mapper.Map<List<TVo>>(await _baseRepository.QueryAsync(whereExpression));
+        return MapToVoList(await _baseRepository.QueryAsync(whereExpression));
     }
 
     /// <summary>按照 Where 表达式查询（使用缓存，返回 ViewModel 列表）</summary>
@@ -208,7 +212,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     /// <returns>List TVo</returns>
     public async Task<List<TVo>> QueryWithCacheAsync(Expression<Func<TEntity, bool>>? whereExpression = null, int cacheTime = 10)
     {
-        return _mapper.Map<List<TVo>>(await _baseRepository.QueryWithCacheAsync(whereExpression, cacheTime));
+        return MapToVoList(await _baseRepository.QueryWithCacheAsync(whereExpression, cacheTime));
     }
 
     /// <summary>分页查询（返回 ViewModel 列表）</summary>
@@ -226,7 +230,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
         OrderByType orderByType = OrderByType.Asc)
     {
         var (data, totalCount) = await _baseRepository.QueryPageAsync(whereExpression, pageIndex, pageSize, orderByExpression, orderByType);
-        return (_mapper.Map<List<TVo>>(data), totalCount);
+        return (MapToVoList(data), totalCount);
     }
 
     /// <summary>查询数量</summary>
@@ -293,7 +297,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     {
         var (data, totalCount) = await _baseRepository.QueryPageAsync(
             whereExpression, pageIndex, pageSize, orderByExpression, orderByType, thenByExpression, thenByType);
-        return (_mapper.Map<List<TVo>>(data), totalCount);
+        return (MapToVoList(data), totalCount);
     }
 
     /// <summary>根据多个 ID 批量查询实体（返回 ViewModel 列表）</summary>
@@ -302,7 +306,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
     public async Task<List<TVo>> QueryByIdsAsync(List<long> ids)
     {
         var entities = await _baseRepository.QueryByIdsAsync(ids);
-        return _mapper.Map<List<TVo>>(entities);
+        return MapToVoList(entities);
     }
 
     /// <summary>查询不同的字段值列表（去重）</summary>
@@ -377,7 +381,7 @@ public class BaseService<TEntity, TVo> : IBaseService<TEntity, TVo> where TEntit
         int take = 0)
     {
         var entities = await _baseRepository.QueryWithOrderAsync(whereExpression, orderByExpression, orderByType, take);
-        return _mapper.Map<List<TVo>>(entities);
+        return MapToVoList(entities);
     }
 
     #endregion

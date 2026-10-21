@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
@@ -382,9 +381,7 @@ public sealed class CommentHighlightLoggingTests
                 .Callback(() => Step("settings")).ReturnsAsync(0);
             settings.Setup(s => s.GetInt32Async(SystemConfigDefaults.CommentBodyMinLengthKey)).ReturnsAsync(1);
             settings.Setup(s => s.GetInt32Async(SystemConfigDefaults.CommentBodyMaxLengthKey)).ReturnsAsync(2000);
-            var mapper = new Mock<IMapper>(MockBehavior.Strict);
-            mapper.Setup(m => m.Map<List<CommentVo>>(It.IsAny<object>())).Returns<object>(rows => ((List<Comment>)rows).Select(ToVo).ToList());
-            mapper.Setup(m => m.Map<CommentVo>(It.IsAny<object>())).Returns<object>(c => ToVo((Comment)c));
+
             var likes = new Mock<IBaseRepository<UserCommentLike>>(MockBehavior.Strict);
             likes.Setup(r => r.QueryAsync(It.IsAny<Expression<Func<UserCommentLike, bool>>?>())).ReturnsAsync([]);
             var custom = new Mock<ICommentRepository>(MockBehavior.Strict);
@@ -395,7 +392,7 @@ public sealed class CommentHighlightLoggingTests
             var adornments = new Mock<IUserAdornmentService>(MockBehavior.Strict);
             adornments.Setup(a => a.GetUserAdornmentsAsync(It.IsAny<IReadOnlyCollection<long>>())).Callback(() => Step("profiles"))
                 .ReturnsAsync(new Dictionary<long, UserAdornmentVo>());
-            Service = new CommentService(mapper.Object, comments.Object, likes.Object, highlights.Object, post.Object, cache.Object,
+            Service = new CommentService(comments.Object, likes.Object, highlights.Object, post.Object, cache.Object,
                 Mock.Of<ICoinRewardService>(), Mock.Of<INotificationService>(), Mock.Of<INotificationDedupService>(), Mock.Of<IExperienceService>(),
                 Mock.Of<IAttachmentUrlResolver>(), Microsoft.Extensions.Options.Options.Create(Options), Mock.Of<IBaseRepository<CommentEditHistory>>(),
                 Microsoft.Extensions.Options.Options.Create(new ForumEditHistoryOptions()), settings.Object,

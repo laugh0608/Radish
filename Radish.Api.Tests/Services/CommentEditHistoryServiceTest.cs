@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.CacheTool;
@@ -25,7 +24,6 @@ public class CommentEditHistoryServiceTest
     [Fact(DisplayName = "评论内容无变化时不应写入编辑历史")]
     public async Task UpdateCommentAsync_ShouldSkipHistoryAndUpdate_WhenContentIsUnchanged()
     {
-        var mapper = new Mock<IMapper>();
         var commentRepository = new Mock<IBaseRepository<Comment>>();
         var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
         var highlightRepository = new Mock<IBaseRepository<CommentHighlight>>();
@@ -56,7 +54,6 @@ public class CommentEditHistoryServiceTest
             .ReturnsAsync(comment);
 
         var service = new CommentService(
-            mapper.Object,
             commentRepository.Object,
             userCommentLikeRepository.Object,
             highlightRepository.Object,
@@ -105,7 +102,7 @@ public class CommentEditHistoryServiceTest
     public async Task UpdateCommentAsync_ShouldFail_WhenReachMaxEditCount_ForNormalUser()
     {
         // Arrange
-        var mapper = new Mock<IMapper>();
+
         var commentRepository = new Mock<IBaseRepository<Comment>>();
         var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
         var highlightRepository = new Mock<IBaseRepository<CommentHighlight>>();
@@ -160,7 +157,6 @@ public class CommentEditHistoryServiceTest
         var highlightOptions = new CommentHighlightOptions();
 
         var service = new CommentService(
-            mapper.Object,
             commentRepository.Object,
             userCommentLikeRepository.Object,
             highlightRepository.Object,
@@ -192,7 +188,6 @@ public class CommentEditHistoryServiceTest
     [Fact(DisplayName = "历史保存次数不足时仍应按编辑次数上限拦截")]
     public async Task UpdateCommentAsync_ShouldFail_WhenEditCountReachedEvenIfHistoryCountLower()
     {
-        var mapper = new Mock<IMapper>();
         var commentRepository = new Mock<IBaseRepository<Comment>>();
         var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
         var highlightRepository = new Mock<IBaseRepository<CommentHighlight>>();
@@ -245,7 +240,6 @@ public class CommentEditHistoryServiceTest
         };
 
         var service = new CommentService(
-            mapper.Object,
             commentRepository.Object,
             userCommentLikeRepository.Object,
             highlightRepository.Object,
@@ -272,7 +266,7 @@ public class CommentEditHistoryServiceTest
     public async Task UpdateCommentAsync_ShouldSucceed_WhenAdminBypassEnabled()
     {
         // Arrange
-        var mapper = new Mock<IMapper>();
+
         var commentRepository = new Mock<IBaseRepository<Comment>>();
         var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
         var highlightRepository = new Mock<IBaseRepository<CommentHighlight>>();
@@ -344,7 +338,6 @@ public class CommentEditHistoryServiceTest
         var highlightOptions = new CommentHighlightOptions();
 
         var service = new CommentService(
-            mapper.Object,
             commentRepository.Object,
             userCommentLikeRepository.Object,
             highlightRepository.Object,
@@ -376,7 +369,6 @@ public class CommentEditHistoryServiceTest
     [Fact(DisplayName = "评论超过系统设置最大长度应失败")]
     public async Task UpdateCommentAsync_ShouldFail_WhenContentExceedsConfiguredMaxLength()
     {
-        var mapper = new Mock<IMapper>();
         var commentRepository = new Mock<IBaseRepository<Comment>>();
         var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
         var highlightRepository = new Mock<IBaseRepository<CommentHighlight>>();
@@ -428,7 +420,6 @@ public class CommentEditHistoryServiceTest
         };
 
         var service = new CommentService(
-            mapper.Object,
             commentRepository.Object,
             userCommentLikeRepository.Object,
             highlightRepository.Object,

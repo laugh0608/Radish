@@ -285,9 +285,9 @@ public class ChannelMessageVo
 }
 ```
 
-**AutoMapper 策略**：
+**Mapperly 策略**：
 - `Channel → ChannelVo`：自动映射（Vo 前缀），`VoUnreadCount`/`VoHasMention`/`VoLastMessage`/`VoCanPinMessages` 由 Service 手动填充
-- `ChannelMessage → ChannelMessageVo`：自动映射，`VoIsRecalled` 映射自 `IsDeleted`；`VoContent` 在 `IsDeleted=true` 时映射为 `null`（AutoMapper 条件映射）
+- `ChannelMessage → ChannelMessageVo`：自动映射，`VoIsRecalled` 映射自 `IsDeleted`；`VoContent` 在 `IsDeleted=true` 时映射为 `null`（显式撤回内容转换）
 
 ---
 

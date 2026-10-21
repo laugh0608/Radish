@@ -24,7 +24,7 @@
    - [x] 创建 `ExpTransaction` 实体
    - [x] 创建 `LevelConfig` 实体
    - [x] 创建 `UserExpDailyStats` 实体
-   - [x] 配置 AutoMapper 映射 (`ExperienceProfile`)
+   - [x] 配置实体映射（现为 `ExperienceMapper`，使用 Mapperly）
 
 2. **Repository 层** ✅
    - [x] 使用 `IBaseRepository<UserExperience>`

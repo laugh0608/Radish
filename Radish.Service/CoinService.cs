@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
@@ -42,7 +42,6 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
     private const int BaseRetryDelayMs = 100;
 
     public CoinService(
-        IMapper mapper,
         IUserBalanceRepository userBalanceRepository,
         IBaseRepository<User> userRepository,
         IBaseRepository<CoinTransaction> coinTransactionRepository,
@@ -50,7 +49,7 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
         IPaymentPasswordService paymentPasswordService,
         IOperationIdempotencyService? operationIdempotencyService = null,
         IUnitOfWorkManage? unitOfWorkManage = null)
-        : base(mapper, userBalanceRepository)
+        : base(CoinMapper.ToUserBalanceVo, userBalanceRepository)
     {
         _userBalanceRepository = userBalanceRepository;
         _userRepository = userRepository;
@@ -78,7 +77,7 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
             userBalance = await InitializeUserBalanceAsync(userId);
         }
 
-        var balanceVo = Mapper.Map<UserBalanceVo>(userBalance);
+        var balanceVo = CoinMapper.ToUserBalanceVo(userBalance);
         balanceVo.VoUserName = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id)
             ?? User.NormalizeDisplayName(user.UserName, user.Id);
         return balanceVo;
@@ -95,7 +94,7 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
 
         return userBalances.ToDictionary(
             u => u.UserId,
-            u => Mapper.Map<UserBalanceVo>(u)
+            u => CoinMapper.ToUserBalanceVo(u)
         );
     }
 

@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
@@ -146,7 +147,7 @@ public partial class ExperienceService
         {
             VoExperience = await MapToVoAsync(writeResult.Experience)
                 ?? throw new InvalidOperationException("经验调整结果映射失败"),
-            VoTransaction = Mapper.Map<ExpTransactionVo>(writeResult.Transaction)
+            VoTransaction = ExperienceMapper.ToExpTransactionVo(writeResult.Transaction)
         };
         await FillTransactionUserNamesAsync([writeResult.Transaction], [result.VoTransaction]);
         await CompleteExperienceIdempotencyAsync(

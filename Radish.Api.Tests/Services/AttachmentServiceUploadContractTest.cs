@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -384,14 +383,10 @@ public class AttachmentServiceUploadContractTest
                 "Post/stored.png",
                 fileBytes.Length,
                 "image/png"));
-        var mapperMock = new Mock<IMapper>(MockBehavior.Strict);
-        mapperMock
-            .Setup(mapper => mapper.Map<AttachmentVo>(It.Is<Attachment>(attachment => attachment.Id == 42)))
-            .Returns(new AttachmentVo { VoId = 42 });
+
         var service = CreateService(
             fileStorageMock.Object,
-            attachmentRepository: attachmentRepositoryMock.Object,
-            mapper: mapperMock.Object);
+            attachmentRepository: attachmentRepositoryMock.Object);
         var options = CreateUploadOptions();
         options.CalculateHash = true;
 
@@ -404,7 +399,6 @@ public class AttachmentServiceUploadContractTest
         Assert.Equal(42, result?.VoId);
         fileStorageMock.VerifyAll();
         attachmentRepositoryMock.VerifyAll();
-        mapperMock.VerifyAll();
     }
 
     [Fact]
@@ -434,14 +428,10 @@ public class AttachmentServiceUploadContractTest
         fileStorageMock
             .Setup(storage => storage.ExistsAsync(candidate.StoragePath))
             .ReturnsAsync(true);
-        var mapperMock = new Mock<IMapper>(MockBehavior.Strict);
-        mapperMock
-            .Setup(mapper => mapper.Map<AttachmentVo>(candidate))
-            .Returns(new AttachmentVo { VoId = candidate.Id });
+
         var service = CreateService(
             fileStorageMock.Object,
-            attachmentRepository: attachmentRepositoryMock.Object,
-            mapper: mapperMock.Object);
+            attachmentRepository: attachmentRepositoryMock.Object);
         var options = CreateUploadOptions();
         options.CalculateHash = true;
 
@@ -454,7 +444,6 @@ public class AttachmentServiceUploadContractTest
         Assert.Equal(candidate.Id, result?.VoId);
         fileStorageMock.VerifyAll();
         attachmentRepositoryMock.VerifyAll();
-        mapperMock.VerifyAll();
     }
 
     [Theory]
@@ -554,15 +543,10 @@ public class AttachmentServiceUploadContractTest
                 "Avatar/stored.png",
                 4,
                 "image/png"));
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(item => item.Map<AttachmentVo>(It.Is<Attachment>(attachment =>
-                attachment.Id == 42 && attachment.BusinessId == null)))
-            .Returns(new AttachmentVo { VoId = 42 });
+
         var service = CreateService(
             fileStorage.Object,
-            attachmentRepository: repository.Object,
-            mapper: mapper.Object);
+            attachmentRepository: repository.Object);
         var options = CreateUploadOptions();
         options.BusinessType = AttachmentBusinessTypes.Avatar;
 
@@ -575,7 +559,6 @@ public class AttachmentServiceUploadContractTest
         Assert.Equal(42, result?.VoId);
         repository.VerifyAll();
         fileStorage.VerifyAll();
-        mapper.VerifyAll();
     }
 
     [Fact]
@@ -601,15 +584,10 @@ public class AttachmentServiceUploadContractTest
                 "Chat/stored.png",
                 4,
                 "image/png"));
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(item => item.Map<AttachmentVo>(It.Is<Attachment>(attachment =>
-                attachment.Id == 43 && !attachment.IsPublic)))
-            .Returns(new AttachmentVo { VoId = 43, VoIsPublic = false });
+
         var service = CreateService(
             fileStorage.Object,
-            attachmentRepository: repository.Object,
-            mapper: mapper.Object);
+            attachmentRepository: repository.Object);
         var options = CreateUploadOptions();
         options.BusinessType = AttachmentBusinessTypes.Chat;
 
@@ -624,7 +602,6 @@ public class AttachmentServiceUploadContractTest
         Assert.False(result.VoIsPublic);
         repository.VerifyAll();
         fileStorage.VerifyAll();
-        mapper.VerifyAll();
     }
 
     [Fact]
@@ -650,15 +627,10 @@ public class AttachmentServiceUploadContractTest
                 "Wiki/stored.png",
                 4,
                 "image/png"));
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(item => item.Map<AttachmentVo>(It.Is<Attachment>(attachment =>
-                attachment.Id == 45 && !attachment.IsPublic)))
-            .Returns(new AttachmentVo { VoId = 45, VoIsPublic = false });
+
         var service = CreateService(
             fileStorage.Object,
-            attachmentRepository: repository.Object,
-            mapper: mapper.Object);
+            attachmentRepository: repository.Object);
         var options = CreateUploadOptions();
         options.BusinessType = AttachmentBusinessTypes.Wiki;
 
@@ -673,7 +645,6 @@ public class AttachmentServiceUploadContractTest
         Assert.False(result.VoIsPublic);
         repository.VerifyAll();
         fileStorage.VerifyAll();
-        mapper.VerifyAll();
     }
 
     [Fact]
@@ -879,7 +850,7 @@ public class AttachmentServiceUploadContractTest
         IFileStorage fileStorage,
         IImageProcessor? imageProcessor = null,
         IBaseRepository<Attachment>? attachmentRepository = null,
-        IMapper? mapper = null,
+
         FileStorageOptions? fileStorageOptions = null,
         IChatChannelAccessService? chatChannelAccessService = null)
     {
@@ -889,7 +860,6 @@ public class AttachmentServiceUploadContractTest
         Mock.Get(imageProcessor).Setup(processor => processor.GetImageInfoAsync(It.IsAny<Stream>(), default))
             .ReturnsAsync(new ImageInfo { Format = "PNG", Width = 4, Height = 4, FrameCount = 1 });
         return new AttachmentService(
-            mapper ?? Mock.Of<IMapper>(),
             attachmentRepository ?? Mock.Of<IBaseRepository<Attachment>>(),
             fileStorage,
             imageProcessor ?? Mock.Of<IImageProcessor>(),

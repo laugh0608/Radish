@@ -7,7 +7,6 @@ using System.Reflection;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -416,12 +415,7 @@ public sealed class CommentControllerLoggingTests
             { Step("insert"); comment.Id = CommentId; Stored = comment; return CommentId; });
             repository.Setup(r => r.UpdateColumnsAsync(It.IsAny<Expression<Func<Comment, Comment>>>(), It.IsAny<Expression<Func<Comment, bool>>>()))
                 .ReturnsAsync(() => { Step("columns"); return 1; });
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(m => m.Map<CommentVo>(It.IsAny<Comment>())).Returns((Comment? comment) => comment == null ? null! : new CommentVo
-            {
-                VoId = comment.Id, VoPostId = comment.PostId, VoAuthorId = comment.AuthorId, VoAuthorName = comment.AuthorName,
-                VoContent = comment.Content, VoContentRevision = comment.ContentRevision
-            });
+
             var post = new Mock<IPostService>();
             post.Setup(p => p.UpdateCommentCountAsync(PostId, 1)).Callback(() => Step("post-count")).Returns(Task.CompletedTask);
             var likes = new Mock<IBaseRepository<UserCommentLike>>();
@@ -438,7 +432,7 @@ public sealed class CommentControllerLoggingTests
             var custom = new Mock<ICommentRepository>();
             custom.Setup(c => c.ToggleCommentLikeAsync(UserId, Secret, CommentId)).ReturnsAsync(() =>
             { Step("like"); return new CommentLikePersistenceResult(CommentId, TenantId, PostId, null, UserId, Secret, true, 3, 0); });
-            Service = new CommentService(mapper.Object, repository.Object, likes.Object, highlights.Object, post.Object,
+            Service = new CommentService(repository.Object, likes.Object, highlights.Object, post.Object,
                 Mock.Of<ICaching>(), Mock.Of<ICoinRewardService>(), Mock.Of<INotificationService>(), Mock.Of<INotificationDedupService>(),
                 Mock.Of<IExperienceService>(), Mock.Of<IAttachmentUrlResolver>(), Microsoft.Extensions.Options.Options.Create(new CommentHighlightOptions { RealtimeUpdate = false }),
                 Mock.Of<IBaseRepository<CommentEditHistory>>(), Microsoft.Extensions.Options.Options.Create(new ForumEditHistoryOptions

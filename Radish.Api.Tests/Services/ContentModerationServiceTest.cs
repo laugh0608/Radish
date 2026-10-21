@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
@@ -1375,7 +1374,6 @@ public class ContentModerationServiceTest
         Mock<IBaseRepository<Product>>? productRepository = null,
         Mock<IBaseRepository<ProductReview>>? productReviewRepository = null)
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var basePostRepository = postRepository ?? new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var baseCommentRepository = commentRepository ?? new Mock<IBaseRepository<Comment>>(MockBehavior.Strict);
         var baseProductRepository = productRepository ?? new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
@@ -1383,7 +1381,6 @@ public class ContentModerationServiceTest
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Strict);
 
         return new ContentModerationService(
-            mapper.Object,
             (contentReportRepository ?? new Mock<IBaseRepository<ContentReport>>(MockBehavior.Strict)).Object,
             (moderationActionRepository ?? new Mock<IBaseRepository<UserModerationAction>>(MockBehavior.Strict)).Object,
             basePostRepository.Object,

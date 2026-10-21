@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using Radish.Common.Exceptions;
@@ -848,32 +847,6 @@ public class ChatServiceTest
         ChatChannelAccessResult? accessResult = null,
         Mock<IChatReadReceiptRepository>? readReceiptRepository = null)
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(instance => instance.Map<ChannelMessageVo>(It.IsAny<ChannelMessage>()))
-            .Returns((ChannelMessage message) => new ChannelMessageVo
-            {
-                VoId = message.Id,
-                VoClientRequestId = message.ClientRequestId,
-                VoChannelId = message.ChannelId,
-                VoUserId = message.UserId,
-                VoUserName = message.UserName,
-                VoUserAvatarAttachmentId = message.UserAvatarAttachmentIdSnapshot,
-                VoType = message.Type,
-                VoContent = message.Content,
-                VoReplyToId = message.ReplyToId,
-                VoAttachmentId = message.AttachmentId,
-                VoCreateTime = message.CreateTime
-            });
-        mapper
-            .Setup(instance => instance.Map<ChannelVo>(It.IsAny<Channel>()))
-            .Returns((Channel channel) => new ChannelVo
-            {
-                VoId = channel.Id,
-                VoName = channel.Name,
-                VoType = channel.Type
-            });
-
         var baseChannelRepository = channelRepository ?? new Mock<IBaseRepository<Channel>>(MockBehavior.Strict);
         var baseMessageRepository = messageRepository ?? new Mock<IChannelMessageRepository>(MockBehavior.Strict);
         var baseReadReceiptRepository = readReceiptRepository ?? new Mock<IChatReadReceiptRepository>(MockBehavior.Strict);
@@ -920,7 +893,6 @@ public class ChatServiceTest
             .Returns(string.Empty);
 
         return new ChatService(
-            mapper.Object,
             baseChannelRepository.Object,
             baseMessageRepository.Object,
             baseReadReceiptRepository.Object,

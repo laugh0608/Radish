@@ -6,7 +6,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.OptionTool;
@@ -363,13 +362,11 @@ public class WikiDocumentBuiltInSyncTests
 
         public WikiDocumentService CreateService(string docsRoot, bool showBuiltInDocs = true)
         {
-            var mapper = CreateMapperMock();
             var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
             consoleAuthorizationService
                 .Setup(service => service.GetPermissionKeysByRolesAsync(It.IsAny<IReadOnlyCollection<string>>()))
                 .ReturnsAsync([]);
             return new WikiDocumentService(
-                mapper.Object,
                 DocumentRepository.Object,
                 RevisionRepository.Object,
                 Mock.Of<IBaseRepository<Attachment>>(),
@@ -381,51 +378,6 @@ public class WikiDocumentBuiltInSyncTests
                     BuiltInDocsPath = docsRoot,
                     StaticAssetsRequestPath = "/docs-assets"
                 }));
-        }
-
-        private Mock<IMapper> CreateMapperMock()
-        {
-            var mapper = new Mock<IMapper>();
-            mapper
-                .Setup(m => m.Map<List<WikiDocumentVo>>(It.IsAny<List<WikiDocument>>()))
-                .Returns<List<WikiDocument>>(documents => documents.Select(document => new WikiDocumentVo
-                {
-                    VoId = document.Id,
-                    VoTitle = document.Title,
-                    VoSlug = document.Slug,
-                    VoSummary = document.Summary,
-                    VoParentId = document.ParentId,
-                    VoSort = document.Sort,
-                    VoStatus = document.Status,
-                    VoVisibility = document.Visibility,
-                    VoVersion = document.Version,
-                    VoSourceType = document.SourceType,
-                    VoSourcePath = document.SourcePath,
-                    VoCreateTime = document.CreateTime,
-                    VoModifyTime = document.ModifyTime,
-                    VoPublishedAt = document.PublishedAt
-                }).ToList());
-            mapper
-                .Setup(m => m.Map<WikiDocumentDetailVo>(It.IsAny<WikiDocument>()))
-                .Returns<WikiDocument>(document => new WikiDocumentDetailVo
-                {
-                    VoId = document.Id,
-                    VoTitle = document.Title,
-                    VoSlug = document.Slug,
-                    VoSummary = document.Summary,
-                    VoMarkdownContent = document.MarkdownContent,
-                    VoParentId = document.ParentId,
-                    VoSort = document.Sort,
-                    VoStatus = document.Status,
-                    VoVisibility = document.Visibility,
-                    VoVersion = document.Version,
-                    VoSourceType = document.SourceType,
-                    VoSourcePath = document.SourcePath,
-                    VoCreateTime = document.CreateTime,
-                    VoModifyTime = document.ModifyTime,
-                    VoPublishedAt = document.PublishedAt
-                });
-            return mapper;
         }
 
         private Mock<IWikiDocumentRepository> CreateDocumentRepositoryMock()

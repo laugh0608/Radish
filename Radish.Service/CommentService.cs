@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.Extensions.Options;
 using Radish.Common.CacheTool;
 using Radish.Common.AttributeTool;
@@ -46,7 +46,6 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
     private readonly IUserAdornmentService? _userAdornmentService;
 
     public CommentService(
-        IMapper mapper,
         IBaseRepository<Comment> baseRepository,
         IBaseRepository<UserCommentLike> userCommentLikeRepository,
         IBaseRepository<CommentHighlight> highlightRepository,
@@ -66,7 +65,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         ICommentRepository? commentCustomRepository = null,
         IReliableOutboxService? reliableOutboxService = null,
         IUserAdornmentService? userAdornmentService = null)
-        : base(mapper, baseRepository)
+        : base(ForumMapper.ToCommentVo, baseRepository)
     {
         _commentRepository = baseRepository;
         _userCommentLikeRepository = userCommentLikeRepository;
@@ -196,7 +195,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             return null;
         }
 
-        var commentVo = Mapper.Map<CommentVo>(comment);
+        var commentVo = ForumMapper.ToCommentVo(comment);
         commentVo.VoChildren = [];
         commentVo.VoChildrenTotal = comment.ParentId.HasValue ? 0 : comment.ReplyCount;
 
@@ -438,7 +437,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
                 OrderByType.Asc)
         };
 
-        var commentVos = base.Mapper.Map<List<CommentVo>>(rootComments);
+        var commentVos = ForumMapper.ToCommentVoList(rootComments);
         for (var index = 0; index < commentVos.Count; index++)
         {
             commentVos[index].VoChildren = [];
@@ -643,7 +642,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         );
 
         // 转换为ViewModel
-        var commentVos = base.Mapper.Map<List<CommentVo>>(comments);
+        var commentVos = ForumMapper.ToCommentVoList(comments);
 
         // 如果用户已登录，填充点赞状态
         if (userId.HasValue && commentVos.Any())
@@ -864,7 +863,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             h => h.CreateTime,
             SqlSugar.OrderByType.Desc);
 
-        return (Mapper.Map<List<CommentEditHistoryVo>>(histories), total);
+        return (ForumMapper.ToCommentEditHistoryVoList(histories), total);
     }
 
     private async Task TrimCommentHistoryAsync(long commentId, int maxHistoryRecords)

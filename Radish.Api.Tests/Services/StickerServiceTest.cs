@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Common.AttributeTool;
@@ -181,7 +180,6 @@ public class StickerServiceTest
         Mock<ICaching>? caching = null)
     {
         return new StickerService(
-            Mock.Of<IMapper>(),
             groupRepository.Object,
             (stickerRepository ?? new Mock<IBaseRepository<Sticker>>(MockBehavior.Loose)).Object,
             Mock.Of<IBaseRepository<Attachment>>(),

@@ -1,22 +1,16 @@
-using AutoMapper;
-using Microsoft.Extensions.Logging.Abstractions;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
+using Radish.Service.Mapping;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using Radish.Shared.CustomEnum;
 using Xunit;
 
-namespace Radish.Api.Tests.Profiles;
+namespace Radish.Api.Tests.Mapping;
 
-public class ShopProfileTest
+public class ShopMappingTests
 {
     [Fact]
     public void ProductWriteMappings_ShouldNeverChangeSaleState()
     {
-        var configuration = new MapperConfiguration(
-            cfg => cfg.AddProfile<ShopProfile>(),
-            NullLoggerFactory.Instance);
-        var mapper = configuration.CreateMapper();
         var product = new Product
         {
             Id = 1001,
@@ -27,7 +21,7 @@ public class ShopProfileTest
             IsOnSale = true
         };
 
-        mapper.Map(new UpdateProductDto
+        ShopMapper.UpdateProduct(new UpdateProductDto
         {
             Id = product.Id,
             Name = "新名称",
@@ -39,7 +33,7 @@ public class ShopProfileTest
 
         Assert.True(product.IsOnSale);
         Assert.Equal("新名称", product.Name);
-        Assert.False(mapper.Map<Product>(new CreateProductDto
+        Assert.False(ShopMapper.ToProduct(new CreateProductDto
         {
             Name = "新商品",
             CategoryId = "effect",
@@ -53,10 +47,6 @@ public class ShopProfileTest
     {
         const long sourceProductId = 2042219067430928384;
 
-        var configuration = new MapperConfiguration(
-            cfg => cfg.AddProfile<ShopProfile>(),
-            NullLoggerFactory.Instance);
-        var mapper = configuration.CreateMapper();
 
         var inventory = new UserInventory
         {
@@ -69,7 +59,7 @@ public class ShopProfileTest
             SourceProductId = sourceProductId
         };
 
-        var result = mapper.Map<UserInventoryVo>(inventory);
+        var result = ShopMapper.ToUserInventoryVo(inventory);
 
         Assert.Equal(sourceProductId, result.VoSourceProductId);
     }

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Radish.Model.Models;
 using Radish.Common.HelpTool;
 using Radish.Shared.Security;
@@ -30,7 +29,6 @@ using Radish.Model.ViewModels;
 using Radish.Service;
 using Serilog;
 using Xunit;
-
 
 namespace Radish.Api.Tests;
 
@@ -237,9 +235,8 @@ public sealed class PaymentPasswordLoggingTests
             _factory = new(logger, dispose: false);
             Repository.Setup(r => r.GetByUserIdAsync(7)).ReturnsAsync(() => Row);
             Repository.Setup(r => r.AddAsync(It.IsAny<UserPaymentPassword>())).Callback<UserPaymentPassword>(row => Row = row).ReturnsAsync(1);
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(m => m.Map<UserPaymentPasswordVo>(It.IsAny<UserPaymentPassword>())).Returns(new UserPaymentPasswordVo());
-            var service = new PaymentPasswordService(Repository.Object, Audit.Object, mapper.Object, _factory.CreateLogger<PaymentPasswordService>(), new FixedTime());
+
+            var service = new PaymentPasswordService(Repository.Object, Audit.Object, _factory.CreateLogger<PaymentPasswordService>(), new FixedTime());
             var current = new Mock<ICurrentUserAccessor>();
             current.SetupGet(c => c.Current).Returns(new CurrentUser { UserId = 7, UserName = Secret, Roles = [] });
             var localizer = new Mock<IStringLocalizer<Errors>>();

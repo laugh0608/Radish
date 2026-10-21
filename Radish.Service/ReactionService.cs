@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
@@ -27,7 +27,6 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public ReactionService(
-        IMapper mapper,
         IBaseRepository<Reaction> baseRepository,
         IBaseRepository<Post> postRepository,
         IBaseRepository<Comment> commentRepository,
@@ -35,7 +34,7 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         IBaseRepository<Sticker> stickerRepository,
         ILogger<ReactionService> logger,
         IAttachmentUrlResolver attachmentUrlResolver)
-        : base(mapper, baseRepository)
+        : base(ForumMapper.ToReactionSummaryVo, baseRepository)
     {
         _reactionRepository = baseRepository;
         _postRepository = postRepository;

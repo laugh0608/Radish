@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Linq.Expressions;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.CoreTool;
@@ -34,7 +34,6 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     private readonly TimeProvider _timeProvider;
 
     public UserInventoryService(
-        IMapper mapper,
         IBaseRepository<UserInventory> inventoryRepository,
         IUserInventoryRepository userInventoryRepository,
         IBaseRepository<ShopEntitlementOperation> operationRepository,
@@ -44,7 +43,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         IAttachmentUrlResolver attachmentUrlResolver,
         IExperienceService experienceService,
         TimeProvider? timeProvider = null)
-        : base(mapper, inventoryRepository)
+        : base(ShopMapper.ToUserInventoryVo, inventoryRepository)
     {
         _inventoryRepository = inventoryRepository;
         _userInventoryRepository = userInventoryRepository;
@@ -63,7 +62,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     public async Task<List<UserInventoryVo>> GetUserInventoryAsync(long userId)
     {
         var items = await _inventoryRepository.QueryAsync(i => i.UserId == userId && i.Quantity > 0);
-        var itemVos = Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
+        var itemVos = ShopMapper.ToUserInventoryVoList(items.OrderByDescending(i => i.CreateTime).ToList());
         FillInventoryUrls(itemVos);
         return itemVos;
     }
@@ -73,7 +72,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
     {
         var items = await _inventoryRepository.QueryAsync(
             i => i.UserId == userId && i.ConsumableType == consumableType && i.Quantity > 0);
-        var itemVos = Mapper.Map<List<UserInventoryVo>>(items.OrderByDescending(i => i.CreateTime).ToList());
+        var itemVos = ShopMapper.ToUserInventoryVoList(items.OrderByDescending(i => i.CreateTime).ToList());
         FillInventoryUrls(itemVos);
         return itemVos;
     }

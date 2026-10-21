@@ -254,26 +254,6 @@
       "issue": "文件末尾缺少换行。"
     },
     {
-      "file": "Radish.Extension/AutoMapperExtension/AutoMapperSetup.cs",
-      "issue": "包含 UTF-8 BOM，请改为无 BOM UTF-8。"
-    },
-    {
-      "file": "Radish.Extension/AutoMapperExtension/CustomProfiles/AuditSqlLogProfile.cs",
-      "issue": "文件末尾缺少换行。"
-    },
-    {
-      "file": "Radish.Extension/AutoMapperExtension/CustomProfiles/CustomProfile.cs",
-      "issue": "文件末尾缺少换行。"
-    },
-    {
-      "file": "Radish.Extension/AutoMapperExtension/CustomProfiles/RoleProfile.cs",
-      "issue": "文件末尾缺少换行。"
-    },
-    {
-      "file": "Radish.Extension/AutoMapperExtension/CustomProfiles/ViewModelProfile.cs",
-      "issue": "文件末尾缺少换行。"
-    },
-    {
       "file": "Radish.Extension/AutofacExtension/AutofacModuleRegister.cs",
       "issue": "存在行尾空格或制表符。"
     },

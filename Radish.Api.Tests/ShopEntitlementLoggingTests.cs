@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -336,18 +335,9 @@ public sealed class ShopEntitlementLoggingTests
             var experience = new Mock<IExperienceService>();
             experience.Setup(s => s.GrantExperienceOnceAsync(1, 10, "USE_EXP_CARD", It.IsAny<string>(), It.IsAny<string?>(), It.IsAny<long?>(), It.IsAny<string?>()))
                 .ReturnsAsync(ExperienceGrantOnceResult.NewGrant());
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(m => m.Map<UserBenefitVo>(It.IsAny<object>())).Returns((object o) =>
-            {
-                var b = (UserBenefit)o;
-                return new UserBenefitVo { VoId = b.Id, VoUserId = b.UserId, VoBenefitValue = b.BenefitValue };
-            });
-            mapper.Setup(m => m.Map<List<UserBenefitVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<UserBenefit>)o).Select(b => mapper.Object.Map<UserBenefitVo>(b)).ToList());
-            mapper.Setup(m => m.Map<List<UserInventoryVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<UserInventory>)o).Select(i => new UserInventoryVo { VoId = i.Id, VoQuantity = i.Quantity }).ToList());
-            Benefit = new UserBenefitService(mapper.Object, Benefits.Object, Operations.Object, BenefitCommands.Object, InventoryCommands.Object, Mock.Of<IAttachmentUrlResolver>());
-            Inventory = new UserInventoryService(mapper.Object, Items.Object, InventoryCommands.Object, Operations.Object,
+
+            Benefit = new UserBenefitService(Benefits.Object, Operations.Object, BenefitCommands.Object, InventoryCommands.Object, Mock.Of<IAttachmentUrlResolver>());
+            Inventory = new UserInventoryService(Items.Object, InventoryCommands.Object, Operations.Object,
                 User.Object, coin.Object, Idempotency.Object, Mock.Of<IAttachmentUrlResolver>(), experience.Object);
             var current = new Mock<ICurrentUserAccessor>();
             current.SetupGet(c => c.Current).Returns(new CurrentUser { UserId = 1, UserName = Secret });

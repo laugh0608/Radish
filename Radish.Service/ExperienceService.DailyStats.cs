@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using Radish.Common.AttributeTool;
 using Radish.IRepository;
 using Radish.Model;
@@ -30,7 +31,7 @@ public partial class ExperienceService
         );
 
         var sortedStats = stats.OrderByDescending(s => s.StatDate).ToList();
-        var statVos = Mapper.Map<List<UserExpDailyStatsVo>>(sortedStats);
+        var statVos = ExperienceMapper.ToUserExpDailyStatsVoList(sortedStats);
         for (var index = 0; index < sortedStats.Count && index < statVos.Count; index++)
         {
             statVos[index].VoStatDate = GetStoredBusinessDate(sortedStats[index].StatDate);

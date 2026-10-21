@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -342,24 +341,9 @@ public sealed class ExperienceQueryGovernanceLoggingTests
                     c.Targets.Select(t => new LevelConfig { Level = t.Level, ExpRequired = t.ExpRequired, ExpCumulative = t.ExpCumulative }).ToList(),
                     new ExperienceLevelRecalculationAudit { Id = 8, Reason = c.Reason, PreviewFingerprint = c.ExpectedFingerprint,
                         FormulaType = c.FormulaType, FormulaSummary = c.FormulaSummary, ChangedLevelCount = 1, CreateId = c.ActorUserId, CreateBy = c.ActorName }));
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(m => m.Map<UserExperienceVo>(It.IsAny<object>())).Returns((object o) =>
-            {
-                var e = (UserExperience)o;
-                return new UserExperienceVo { VoUserId = e.UserId, VoVersion = e.Version, VoCurrentLevel = e.CurrentLevel, VoTotalExp = e.TotalExp };
-            });
-            mapper.Setup(m => m.Map<LevelConfigVo>(It.IsAny<object>())).Returns((object o) =>
-            {
-                var e = (LevelConfig)o;
-                return new LevelConfigVo { VoLevel = e.Level, VoLevelName = e.LevelName, VoExpRequired = e.ExpRequired, VoExpCumulative = e.ExpCumulative };
-            });
-            mapper.Setup(m => m.Map<List<LevelConfigVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<LevelConfig>)o).Select(e => mapper.Object.Map<LevelConfigVo>(e)).ToList());
-            mapper.Setup(m => m.Map<List<UserExpDailyStatsVo>>(It.IsAny<object>())).Returns([]);
-            mapper.Setup(m => m.Map<List<ExpTransactionVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<ExpTransaction>)o).Select(e => new ExpTransactionVo { VoUserId = e.UserId, VoRemark = e.Remark }).ToList());
+
             var clock = TimeProvider.System;
-            Service = new ExperienceService(mapper.Object, Experiences.Object, Transactions.Object, Levels.Object, Stats.Object,
+            Service = new ExperienceService(Experiences.Object, Transactions.Object, Levels.Object, Stats.Object,
                 users.Object, Governance.Object, Calculator.Object, Mock.Of<ICoinService>(), Mock.Of<IAttachmentUrlResolver>(),
                 Mock.Of<INotificationService>(), Cache.Object, clock,
                 new BusinessCalendar(clock, Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" })),

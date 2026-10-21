@@ -769,7 +769,7 @@ comment:highlight:sofa:{parentCommentId}
 - **控制器**：`Radish.Api/Controllers/CommentHighlightController.cs`
 - **评论 Hub**：`Radish.Api/Hubs/CommentHub.cs`
 - **评论推送服务**：`Radish.Api/Services/CommentRealtimePushService.cs`
-- **AutoMapper**：`Radish.Extension/AutoMapperExtension/CustomProfiles/ForumProfile.cs`
+- **Mapperly**：`Radish.Service/Mapping/ForumMapper.cs`
 - **配置文件**：`Radish.Api/appsettings.json`
 - **任务注册**：`Radish.Api/Program.cs`
 - **测试文件**：`Radish.Api.Tests/HttpTest/Radish.Api.CommentHighlight.http`

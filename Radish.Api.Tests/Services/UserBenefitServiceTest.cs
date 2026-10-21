@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -41,11 +39,8 @@ public class UserBenefitServiceTest
                 new UserActiveBenefit { UserId = 9527, BenefitType = BenefitType.Badge, BenefitId = 6102 },
                 new UserActiveBenefit { UserId = 9527, BenefitType = BenefitType.Theme, BenefitId = 6103 }
             ]);
-        var mapperConfiguration = new MapperConfiguration(
-            config => config.AddProfile<ShopProfile>(),
-            NullLoggerFactory.Instance);
+
         var service = new UserBenefitService(
-            mapperConfiguration.CreateMapper(),
             repository.Object,
             Mock.Of<IBaseRepository<ShopEntitlementOperation>>(),
             customRepository.Object,
@@ -116,7 +111,6 @@ public class UserBenefitServiceTest
                 },
                 2));
         var service = new UserBenefitService(
-            Mock.Of<IMapper>(),
             Mock.Of<IBaseRepository<UserBenefit>>(),
             operationRepository.Object,
             Mock.Of<IUserBenefitRepository>(),
@@ -160,7 +154,6 @@ public class UserBenefitServiceTest
                 1))
             .ReturnsAsync(7301);
         var service = new UserBenefitService(
-            Mock.Of<IMapper>(),
             Mock.Of<IBaseRepository<UserBenefit>>(),
             Mock.Of<IBaseRepository<ShopEntitlementOperation>>(),
             customRepository.Object,
@@ -197,10 +190,8 @@ public class UserBenefitServiceTest
         var userBenefitRepository = CreateUserBenefitRepository(benefit);
         var userInventoryRepository = new Mock<IUserInventoryRepository>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         var service = new UserBenefitService(
-            mapper.Object,
             userBenefitRepository.Object,
             Mock.Of<IBaseRepository<ShopEntitlementOperation>>(),
             Mock.Of<IUserBenefitRepository>(),
@@ -236,11 +227,8 @@ public class UserBenefitServiceTest
         customRepository
             .Setup(repository => repository.ActivateAsync(userId, benefitId, userId, "User", nowUtc))
             .ReturnsAsync(new UserBenefitPersistenceResult(benefit, true, benefitId, null));
-        var mapperConfiguration = new MapperConfiguration(
-            config => config.AddProfile<ShopProfile>(),
-            NullLoggerFactory.Instance);
+
         var service = new UserBenefitService(
-            mapperConfiguration.CreateMapper(),
             userBenefitRepository.Object,
             Mock.Of<IBaseRepository<ShopEntitlementOperation>>(),
             customRepository.Object,
@@ -285,7 +273,6 @@ public class UserBenefitServiceTest
         var userBenefitRepository = new Mock<IBaseRepository<UserBenefit>>(MockBehavior.Strict);
         var userInventoryRepository = new Mock<IUserInventoryRepository>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         userInventoryRepository
             .Setup(repository => repository.GrantConsumableForOrderAsync(
@@ -301,7 +288,6 @@ public class UserBenefitServiceTest
             .ReturnsAsync(new UserInventoryGrantPersistenceResult(inventoryId, false, 0, 5));
 
         var service = new UserBenefitService(
-            mapper.Object,
             userBenefitRepository.Object,
             Mock.Of<IBaseRepository<ShopEntitlementOperation>>(),
             Mock.Of<IUserBenefitRepository>(),
@@ -347,7 +333,6 @@ public class UserBenefitServiceTest
             .Callback<UserBenefit>(benefit => createdBenefit = benefit)
             .ReturnsAsync(9101);
         var service = new UserBenefitService(
-            Mock.Of<IMapper>(),
             userBenefitRepository.Object,
             Mock.Of<IBaseRepository<ShopEntitlementOperation>>(),
             Mock.Of<IUserBenefitRepository>(),

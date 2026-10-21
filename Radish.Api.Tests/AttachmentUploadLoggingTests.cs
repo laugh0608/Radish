@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -140,7 +139,7 @@ public sealed class AttachmentUploadLoggingTests
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task AccountingAndNullResult_ShouldKeepResponseWithSafeConsumedFailure(bool candidate, string environment)
+    public async Task AccountingAndMappingFailure_ShouldKeepResponseWithSafeConsumedFailure(bool candidate, string environment)
     {
         using var capture = new Capture(candidate, environment);
         foreach (var image in new[] { true, false })
@@ -150,9 +149,9 @@ public sealed class AttachmentUploadLoggingTests
             Assert.True((await f.Upload(image)).IsSuccess);
             capture.AssertSingle("upload.cleanup.failed", "Error");
             capture.Clear();
-            f.Mapper.Setup(m => m.Map<AttachmentVo>(It.IsAny<object>())).Returns((AttachmentVo)null!);
+            f.UrlResolver.Setup(r => r.ResolveAttachmentUrl(It.IsAny<long>())).Throws(new IOException(Secret));
             f.Quota.Setup(q => q.FailUploadAsync(7, It.IsAny<string>())).ThrowsAsync(new IOException(Secret));
-            Assert.Equal(500, (await f.Upload(image)).StatusCode);
+            await InvokeApiAsync(async () => await f.Upload(image), capture.Logger, 500);
             Assert.Equal(2, capture.Lines.Length);
             Assert.Contains("upload.cleanup.failed", capture.Lines[0]);
             Assert.Contains("http.failed", capture.Lines[1]);
@@ -234,7 +233,7 @@ public sealed class AttachmentUploadLoggingTests
         public Mock<IBaseRepository<Attachment>> Repository { get; } = new();
         public Mock<IFileStorage> Storage { get; } = new();
         public Mock<IImageProcessor> Image { get; } = new();
-        public Mock<IMapper> Mapper { get; } = new();
+        public Mock<IAttachmentUrlResolver> UrlResolver { get; } = new();
         public Mock<IUploadRateLimitService> Quota { get; } = new();
         public AttachmentService Service { get; }
         public AttachmentController Controller { get; }
@@ -253,10 +252,9 @@ public sealed class AttachmentUploadLoggingTests
             Storage.Setup(s => s.GetFullPath(Thumbnail)).Returns(Path.Combine(TempPath, "thumb.png"));
             Storage.Setup(s => s.DeleteAsync(It.IsAny<string>())).ReturnsAsync(true);
             Repository.Setup(r => r.AddAsync(It.IsAny<Attachment>())).ReturnsAsync(99);
-            Mapper.Setup(m => m.Map<AttachmentVo>(It.IsAny<object>())).Returns((object a) => new AttachmentVo { VoId = ((Attachment)a).Id });
             Image.Setup(i => i.GetImageInfoAsync(It.IsAny<Stream>(), default))
                 .ReturnsAsync(new ImageInfo { Format = "PNG", Width = 4, Height = 4, FrameCount = 1 });
-            Service = new AttachmentService(Mapper.Object, Repository.Object, Storage.Object, Image.Object, Mock.Of<IAttachmentUrlResolver>(),
+            Service = new AttachmentService(Repository.Object, Storage.Object, Image.Object, UrlResolver.Object,
                 Mock.Of<IChatChannelAccessService>(), Mock.Of<IWikiAttachmentAccessService>(), Options.Create(new FileStorageOptions
                 { Deduplication = new DeduplicationOptions { Enable = true }, Watermark = new Radish.Common.OptionTool.WatermarkOptions { Enable = true } }));
             // Confine image helper output and cleanup to this fixture's unique directory.

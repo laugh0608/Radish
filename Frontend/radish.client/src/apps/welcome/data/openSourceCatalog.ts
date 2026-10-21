@@ -141,19 +141,18 @@ export const openSourceProjects: OpenSourceProject[] = [
     isCore: false
   },
   {
-    id: 'automapper',
-    name: 'AutoMapper',
+    id: 'mapperly',
+    name: 'Mapperly',
     groupId: 'backend',
-    purposeKey: 'welcome.openSource.projects.automapper.purpose',
-    scopeKey: 'welcome.openSource.projects.automapper.scope',
-    license: '',
-    licenseKey: 'welcome.openSource.license.commercialRestricted',
-    repository: 'https://github.com/LuckyPennySoftware/AutoMapper',
-    website: 'https://automapper.io/',
-    usedInKeys: ['welcome.openSource.usedIn.api', 'welcome.openSource.usedIn.auth', 'welcome.openSource.usedIn.extension'],
+    purposeKey: 'welcome.openSource.projects.mapperly.purpose',
+    scopeKey: 'welcome.openSource.projects.mapperly.scope',
+    license: 'Apache-2.0',
+    repository: 'https://github.com/riok/mapperly',
+    website: 'https://mapperly.riok.app/',
+    usedInKeys: ['welcome.openSource.usedIn.api', 'welcome.openSource.usedIn.auth'],
     isCore: false,
-    noteKey: 'welcome.openSource.projects.automapper.note',
-    licenseNoteKey: 'welcome.openSource.projects.automapper.licenseNote'
+    noteKey: 'welcome.openSource.projects.mapperly.note',
+    licenseNoteKey: 'welcome.openSource.projects.mapperly.licenseNote'
   },
   {
     id: 'sqlsugar',

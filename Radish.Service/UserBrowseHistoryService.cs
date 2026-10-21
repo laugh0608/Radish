@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -16,10 +16,9 @@ public class UserBrowseHistoryService : BaseService<UserBrowseHistory, UserBrows
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public UserBrowseHistoryService(
-        IMapper mapper,
         IBaseRepository<UserBrowseHistory> baseRepository,
         IAttachmentUrlResolver attachmentUrlResolver)
-        : base(mapper, baseRepository)
+        : base(UserMapper.ToUserBrowseHistoryVo, baseRepository)
     {
         _browseHistoryRepository = baseRepository;
         _attachmentUrlResolver = attachmentUrlResolver;
@@ -103,7 +102,7 @@ public class UserBrowseHistoryService : BaseService<UserBrowseHistory, UserBrows
             history => history.Id,
             OrderByType.Desc);
 
-        var historyVos = Mapper.Map<List<UserBrowseHistoryVo>>(items);
+        var historyVos = UserMapper.ToUserBrowseHistoryVoList(items);
         FillBrowseHistoryUrls(historyVos);
         return (historyVos, total);
     }

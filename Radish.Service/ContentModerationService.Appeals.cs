@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.Model;
@@ -426,7 +427,7 @@ public partial class ContentModerationService
 
     private UserModerationActionVo MapAppealUserAction(UserModerationAction action)
     {
-        return Mapper.Map<UserModerationActionVo>(action);
+        return ContentModerationMapper.ToUserModerationActionVo(action);
     }
 
     private static ContentModerationUserActionSummaryVo MapAppealUserActionSummary(

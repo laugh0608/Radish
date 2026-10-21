@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.AspNetCore.Http;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
@@ -16,7 +16,6 @@ namespace Radish.Service;
 /// </summary>
 public class ConsoleAuthorizationService : IConsoleAuthorizationService
 {
-    private readonly IMapper _mapper;
     private readonly IBaseRepository<Role> _roleRepository;
     private readonly IBaseRepository<ConsoleResource> _consoleResourceRepository;
     private readonly IBaseRepository<RoleConsoleResource> _roleConsoleResourceRepository;
@@ -25,7 +24,6 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
     private readonly IBaseRepository<ApiModule> _apiModuleRepository;
 
     public ConsoleAuthorizationService(
-        IMapper mapper,
         IBaseRepository<Role> roleRepository,
         IBaseRepository<ConsoleResource> consoleResourceRepository,
         IBaseRepository<RoleConsoleResource> roleConsoleResourceRepository,
@@ -33,7 +31,6 @@ public class ConsoleAuthorizationService : IConsoleAuthorizationService
         IBaseRepository<RoleModulePermission> roleModulePermissionRepository,
         IBaseRepository<ApiModule> apiModuleRepository)
     {
-        _mapper = mapper;
         _roleRepository = roleRepository;
         _consoleResourceRepository = consoleResourceRepository;
         _roleConsoleResourceRepository = roleConsoleResourceRepository;

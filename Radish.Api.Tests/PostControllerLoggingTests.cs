@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -398,12 +397,7 @@ public sealed class PostControllerLoggingTests
             repository.Setup(r => r.UpdateAsync(It.IsAny<Post>())).ReturnsAsync(() => { Step("top-write"); return true; });
             repository.Setup(r => r.UpdateColumnsAsync(It.IsAny<Expression<Func<Post, Post>>>(), It.IsAny<Expression<Func<Post, bool>>>()))
                 .ReturnsAsync(() => { Step("columns"); return CasRows; });
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(m => m.Map<PostVo>(It.IsAny<Post>())).Returns((Post? post) => post == null ? null! : new PostVo
-            {
-                VoId = post.Id, VoPublicId = post.PublicId, VoTitle = post.Title, VoContent = post.Content,
-                VoAuthorId = post.AuthorId, VoCategoryId = post.CategoryId, VoIsTop = post.IsTop, VoContentRevision = post.ContentRevision
-            });
+
             var category = new Mock<IBaseRepository<Category>>();
             category.Setup(c => c.QueryByIdAsync(It.IsAny<long>())).ReturnsAsync((long id) => { Step("category-read"); return Categories.GetValueOrDefault(id); });
             category.Setup(c => c.UpdateAsync(It.IsAny<Category>())).ReturnsAsync(() => { Step("category-write"); return true; });
@@ -430,7 +424,7 @@ public sealed class PostControllerLoggingTests
                     SystemConfigDefaults.PostBodyMinLengthKey => MinBody, SystemConfigDefaults.PostBodyMaxLengthKey => MaxBody, _ => 100
                 };
             });
-            Service = new PostService(mapper.Object, realPosts ?? repository.Object, Mock.Of<IBaseRepository<UserPostLike>>(), relations.Object,
+            Service = new PostService(realPosts ?? repository.Object, Mock.Of<IBaseRepository<UserPostLike>>(), relations.Object,
                 category.Object, tags.Object, Mock.Of<IBaseRepository<PostPoll>>(), Mock.Of<IBaseRepository<PostPollOption>>(), Mock.Of<IBaseRepository<PostPollVote>>(),
                 Mock.Of<IBaseRepository<PostQuestion>>(), Mock.Of<IBaseRepository<PostAnswer>>(), tagService.Object, Mock.Of<ICoinRewardService>(),
                 Mock.Of<INotificationService>(), Mock.Of<INotificationDedupService>(), Mock.Of<IExperienceService>(), Mock.Of<IBaseRepository<PostEditHistory>>(),

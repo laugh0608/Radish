@@ -1,10 +1,10 @@
+using Radish.Service.Mapping;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -24,7 +24,6 @@ using Radish.Common.CoreTool;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.Extension.Log;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -302,7 +301,6 @@ public sealed class CategoryControllerLoggingTests
 
     private sealed class Fixture : IDisposable
     {
-        private static readonly IMapper Mapper = new MapperConfiguration(c => c.AddProfile<ForumProfile>(), NullLoggerFactory.Instance).CreateMapper();
         private readonly string _operation;
         private readonly DateTime _startedAt = DateTime.UtcNow.AddSeconds(-1);
         private int _queryCalls;
@@ -341,9 +339,13 @@ public sealed class CategoryControllerLoggingTests
             }).ExecuteCommand();
             var proxy = new ProxyGenerator();
             var repository = proxy.CreateInterfaceProxyWithTarget<IBaseRepository<Category>>(new BaseRepository<Category>(Unit), new RepositoryInterceptor(this));
-            var mapper = proxy.CreateInterfaceProxyWithTarget(Mapper, new MapperInterceptor(this));
+            CategoryVo MapCategory(Category category)
+            {
+                if (category is not null) Step(category.Id == CategoryId ? "target-map" : "parent-map");
+                return ForumMapper.ToCategoryVo(category)!;
+            }
             var service = proxy.CreateInterfaceProxyWithTarget<IBaseService<Category, CategoryVo>>(
-                new BaseService<Category, CategoryVo>(mapper, repository), new TranAop(Unit));
+                new BaseService<Category, CategoryVo>(MapCategory, repository), new TranAop(Unit));
             var accessor = new Mock<ICurrentUserAccessor>();
             accessor.SetupGet(a => a.Current).Returns(new CurrentUser { UserId = UserId, UserName = Secret, IsAuthenticated = true });
             Controller = new CategoryController(service, accessor.Object, new Mock<IAttachmentUrlResolver>(MockBehavior.Strict).Object);
@@ -353,15 +355,6 @@ public sealed class CategoryControllerLoggingTests
         {
             Steps.Add(stage);
             if (stage == FailedStage) throw Failure;
-        }
-        private sealed class MapperInterceptor(Fixture fixture) : IInterceptor
-        {
-            public void Intercept(Castle.DynamicProxy.IInvocation invocation)
-            {
-                if (invocation.Method.Name == "Map" && invocation.Arguments[0] is Category category)
-                    fixture.Step(category.Id == CategoryId ? "target-map" : "parent-map");
-                invocation.Proceed();
-            }
         }
         private sealed class RepositoryInterceptor(Fixture fixture) : IInterceptor
         {

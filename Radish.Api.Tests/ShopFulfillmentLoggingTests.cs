@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -352,9 +351,9 @@ public sealed class ShopFulfillmentLoggingTests
             var transaction = new CoinTransaction { Id = 9, FromUserId = 1, TransactionType = "CONSUME", Status = "SUCCESS", BusinessType = "Order", BusinessId = 4, Amount = 46 };
             transactions.Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<CoinTransaction, bool>>>()))
                 .ReturnsAsync((Expression<Func<CoinTransaction, bool>> expression) => expression.Compile()(transaction) ? transaction : null);
-            Product = new ProductService(Mock.Of<IMapper>(), Products.Object, Mock.Of<IBaseRepository<ProductCategory>>(), Orders.Object, Mock.Of<IAttachmentUrlResolver>());
-            Benefit = new UserBenefitService(Mock.Of<IMapper>(), Benefits.Object, Mock.Of<IBaseRepository<ShopEntitlementOperation>>(), Mock.Of<IUserBenefitRepository>(), Inventory.Object, Mock.Of<IAttachmentUrlResolver>());
-            Order = new OrderService(Mock.Of<IMapper>(), Orders.Object, Products.Object, Mock.Of<IBaseRepository<User>>(), transactions.Object,
+            Product = new ProductService(Products.Object, Mock.Of<IBaseRepository<ProductCategory>>(), Orders.Object, Mock.Of<IAttachmentUrlResolver>());
+            Benefit = new UserBenefitService(Benefits.Object, Mock.Of<IBaseRepository<ShopEntitlementOperation>>(), Mock.Of<IUserBenefitRepository>(), Inventory.Object, Mock.Of<IAttachmentUrlResolver>());
+            Order = new OrderService(Orders.Object, Products.Object, Mock.Of<IBaseRepository<User>>(), transactions.Object,
                 Product, Benefit, Coin.Object, payment.Object, Mock.Of<IAttachmentUrlResolver>(), reliableOutboxService: Mock.Of<IReliableOutboxService>());
             var current = new Mock<ICurrentUserAccessor>();
             current.SetupGet(c => c.Current).Returns(new CurrentUser { UserId = 1, UserName = Secret });

@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using System.Linq.Expressions;
 using Radish.Common;
 using Radish.IRepository;
@@ -19,10 +19,9 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
     private readonly ITagDiscoveryRepository _tagDiscoveryRepository;
 
     public TagService(
-        IMapper mapper,
         IBaseRepository<Tag> baseRepository,
         ITagDiscoveryRepository tagDiscoveryRepository)
-        : base(mapper, baseRepository)
+        : base(ForumMapper.ToTagVo, baseRepository)
     {
         _tagRepository = baseRepository;
         _tagDiscoveryRepository = tagDiscoveryRepository;
@@ -83,7 +82,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
     public async Task<List<TagVo>> GetHotTagsAsync(int topCount = 20)
     {
         var tags = await _tagDiscoveryRepository.QueryHotPublicTagsAsync(Math.Clamp(topCount, 1, 20));
-        var tagVos = Mapper.Map<List<TagVo>>(tags);
+        var tagVos = ForumMapper.ToTagVoList(tags);
         NormalizeVoSlugs(tagVos);
         return tagVos;
     }
@@ -101,7 +100,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
 
         await EnsureCanonicalSlugAsync(resolvedTag);
 
-        var tagVo = Mapper.Map<TagVo>(resolvedTag);
+        var tagVo = ForumMapper.ToTagVo(resolvedTag);
         tagVo.VoSlug = TagSlugHelper.BuildCanonicalSlug(resolvedTag.Name, resolvedTag.Slug);
         tagVo.VoPostCount = await _tagDiscoveryRepository.QueryPublicPostCountAsync(resolvedTag.Id);
         return tagVo;
@@ -123,7 +122,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
         var tags = await _tagDiscoveryRepository.QueryRelatedPublicTagsAsync(
             sourceTag.Id,
             Math.Clamp(topCount, 1, 20));
-        var tagVos = Mapper.Map<List<TagVo>>(tags);
+        var tagVos = ForumMapper.ToTagVoList(tags);
         NormalizeVoSlugs(tagVos);
         return tagVos;
     }
@@ -181,7 +180,7 @@ public class TagService : BaseService<Tag, TagVo>, ITagService
             thenByExpression: t => t.Id,
             thenByType: OrderByType.Asc,
             includeDeleted: includeDeleted);
-        var data = Mapper.Map<List<TagVo>>(entities);
+        var data = ForumMapper.ToTagVoList(entities);
 
         NormalizeVoSlugs(data);
         return new PageModel<TagVo>

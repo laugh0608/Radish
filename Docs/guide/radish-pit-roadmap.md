@@ -182,7 +182,7 @@
 **代码质量优化**:
 - ✅ 后端编译成功（0个错误）
 - ✅ 前端类型检查通过
-- ✅ AutoMapper配置完整（PaymentPasswordProfile已注册）
+- ✅ 支付口令映射完整（现由 `PaymentPasswordMapper` 编译生成并显式补全状态）
 - ✅ PasswordStrengthVo已存在
 - ⏸️ 后端代码规范问题修复 - 待实现（非阻塞）
 - ⏸️ 前端代码规范问题修复 - 待实现（非阻塞）

@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -218,7 +217,7 @@ public sealed class UserFollowLoggingTests
             var policy = new Mock<IUserInteractionPolicyService>();
             policy.Setup(p => p.GetSnapshotAsync(TenantId, FollowerId, TargetId))
                 .ReturnsAsync(new UserInteractionPolicySnapshot(TargetId, false, false));
-            Service = new UserFollowService(Mock.Of<IMapper>(), Follows.Object, Users.Object, Mock.Of<IPostService>(),
+            Service = new UserFollowService(Follows.Object, Users.Object, Mock.Of<IPostService>(),
                 Attachments.Object, Mock.Of<INotificationService>(), _factory.CreateLogger<UserFollowService>(),
                 Options.Create(new FeedDistributionOptions()), Mock.Of<IAttachmentUrlResolver>(), policy.Object,
                 missingOutbox ? null : new ReliableOutboxService(Outbox.Object));

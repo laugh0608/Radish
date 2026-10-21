@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.HelpTool;
@@ -25,11 +25,11 @@ public class UserService : BaseService<User, UserVo>, IUserService
     private readonly IConsoleAuthorizationService _consoleAuthorizationService;
     private readonly ISystemSettingProvider _systemSettingProvider;
 
-    public UserService(IMapper mapper,
+    public UserService(
         IBaseRepository<User> baseRepository, IUserRepository userRepository,
         IBaseRepository<UserDisplayNameChangeRecord> displayNameChangeRecordRepository,
         IConsoleAuthorizationService consoleAuthorizationService,
-        ISystemSettingProvider systemSettingProvider) : base(mapper, baseRepository)
+        ISystemSettingProvider systemSettingProvider) : base(UserMapper.ToUserVo, baseRepository)
     {
         _userBaseRepository = baseRepository;
         _userRepository = userRepository;
@@ -121,7 +121,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
             keyword,
             query.IsEnabled,
             roleName));
-        var users = Mapper.Map<List<UserVo>>(result.Items);
+        var users = UserMapper.ToUserVoList(result.Items);
         await FillRoleNamesAsync(users);
         return (users, result.Total);
     }
@@ -140,7 +140,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
             return null;
         }
 
-        var userVo = Mapper.Map<UserVo>(user);
+        var userVo = UserMapper.ToUserVo(user);
         await FillRoleNamesAsync([userVo]);
         return userVo;
     }
@@ -215,7 +215,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
         }
 
         await EnsureUserPublicIdentityBackfilledAsync(user);
-        return Mapper.Map<UserVo>(user);
+        return UserMapper.ToUserVo(user);
     }
 
     /// <summary>
@@ -737,7 +737,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
         );
 
         await EnsureUsersPublicIdentityBackfilledAsync(users);
-        var data = Mapper.Map<List<UserVo>>(users);
+        var data = UserMapper.ToUserVoList(users);
 
         var sorted = data
             .OrderBy(u => GetMentionMatchRank(u, search))
@@ -746,7 +746,7 @@ public class UserService : BaseService<User, UserVo>, IUserService
             .Take(limit)
             .ToList();
 
-        var result = Mapper.Map<List<UserMentionVo>>(sorted);
+        var result = UserMapper.ToUserMentionVoList(sorted);
         return result;
     }
 

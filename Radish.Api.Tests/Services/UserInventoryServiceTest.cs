@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
@@ -340,14 +339,12 @@ public class UserInventoryServiceTest
                 It.IsAny<OperationIdempotencyCompletionRequest>()))
             .Returns(Task.CompletedTask);
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var inventoryCustomRepository = new Mock<IUserInventoryRepository>(MockBehavior.Loose);
         var userService = new Mock<IUserService>(MockBehavior.Loose);
         var coinService = new Mock<ICoinService>(MockBehavior.Loose);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Loose);
         var experienceService = new Mock<IExperienceService>(MockBehavior.Loose);
         var service = new UserInventoryService(
-            mapper.Object,
             inventoryRepository.Object,
             inventoryCustomRepository.Object,
             operationRepository.Object,

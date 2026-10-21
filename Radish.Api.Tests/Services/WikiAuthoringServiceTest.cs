@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.AttributeTool;
@@ -705,7 +704,6 @@ public sealed class WikiAuthoringServiceTest
         int documentVersion = 1,
         long? activeDraftId = 30001)
     {
-        var mapper = Mock.Of<IMapper>();
         var documents = new Mock<IWikiDocumentRepository>(MockBehavior.Strict);
         var revisions = new Mock<IBaseRepository<WikiDocumentRevision>>(MockBehavior.Strict);
         var consoleAuthorization = new Mock<IConsoleAuthorizationService>(MockBehavior.Strict);
@@ -768,7 +766,6 @@ public sealed class WikiAuthoringServiceTest
                 It.IsAny<Expression<Func<WikiDocumentReviewEvent, bool>>?>()))
             .ReturnsAsync([]);
         var service = new WikiDocumentService(
-            mapper,
             documents.Object,
             revisions.Object,
             attachments.Object,

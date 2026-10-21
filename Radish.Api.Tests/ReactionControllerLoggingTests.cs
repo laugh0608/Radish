@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -26,7 +25,6 @@ using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.LogTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.Extension.Log;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -402,7 +400,6 @@ public sealed class ReactionControllerLoggingTests
 
     private sealed class Fixture : IDisposable
     {
-        private static readonly IMapper Mapper = new MapperConfiguration(c => c.AddProfile<ForumProfile>(), NullLoggerFactory.Instance).CreateMapper();
         private readonly string _operation;
         private readonly ILoggerFactory _logs;
         private int _firstQueries;
@@ -442,7 +439,7 @@ public sealed class ReactionControllerLoggingTests
                 Step("thumbnail");
                 return "https://private.invalid/" + Secret;
             });
-            var service = new ReactionService(Mapper, Repository<Reaction>("reactions"), Repository<Post>("posts"),
+            var service = new ReactionService(Repository<Reaction>("reactions"), Repository<Post>("posts"),
                 Repository<Comment>("comments"), Repository<StickerGroup>("groups"), Repository<Sticker>("stickers"),
                 _logs.CreateLogger<ReactionService>(), urls.Object);
             var proxy = new ProxyGenerator().CreateInterfaceProxyWithTarget<IReactionService>(service, new TranAop(Unit));

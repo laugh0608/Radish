@@ -1,6 +1,5 @@
 using System;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -71,7 +70,6 @@ public sealed class WikiAuthoringTransactionIntegrationTest
                 It.IsAny<WikiAttachmentReferenceSyncCommand>()))
             .ThrowsAsync(new InvalidOperationException("revision evidence unavailable"));
         var target = new WikiDocumentService(
-            Mock.Of<IMapper>(),
             documentRepository,
             revisionRepository,
             attachmentRepository,

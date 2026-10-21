@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Radish.Common;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -31,7 +31,6 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public ChatService(
-        IMapper mapper,
         IBaseRepository<Channel> baseRepository,
         IChannelMessageRepository messageRepository,
         IChatReadReceiptRepository readReceiptRepository,
@@ -43,7 +42,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         IChatChannelAccessService chatChannelAccessService,
         IDirectConversationService directConversationService,
         IAttachmentUrlResolver attachmentUrlResolver)
-        : base(mapper, baseRepository)
+        : base(ChatMapper.ToChannelVo, baseRepository)
     {
         _channelRepository = baseRepository;
         _messageRepository = messageRepository;
@@ -104,7 +103,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
                 continue;
             }
 
-            var channelVo = Mapper.Map<ChannelVo>(channel);
+            var channelVo = ChatMapper.ToChannelVo(channel);
             ApplyConversationMetadata(channelVo, access, directSummary);
             channelVo.VoLastMessage = await GetLastMessagePreviewAsync(channel.Id);
 
@@ -141,7 +140,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
             return null;
         }
 
-        var channelVo = Mapper.Map<ChannelVo>(channel);
+        var channelVo = ChatMapper.ToChannelVo(channel);
         var directSummaries = await _directConversationService.GetChannelSummariesAsync(
             tenantId,
             userId,
@@ -1268,7 +1267,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
         Dictionary<long, ChannelMessage>? replyMap,
         Dictionary<long, long>? avatarMap = null)
     {
-        var messageVo = Mapper.Map<ChannelMessageVo>(message);
+        var messageVo = ChatMapper.ToChannelMessageVo(message);
         messageVo.VoUserAvatarAttachmentId = message.UserAvatarAttachmentIdSnapshot;
         messageVo.VoUserAvatarUrl = ResolveAttachmentUrl(message.UserAvatarAttachmentIdSnapshot);
         messageVo.VoImageUrl = ResolveAttachmentUrl(message.AttachmentId);
@@ -1284,7 +1283,7 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 
         if (message.ReplyToId.HasValue && replyMap != null && replyMap.TryGetValue(message.ReplyToId.Value, out var replyMessage))
         {
-            messageVo.VoReplyTo = Mapper.Map<ChannelMessageVo>(replyMessage);
+            messageVo.VoReplyTo = ChatMapper.ToChannelMessageVo(replyMessage);
             messageVo.VoReplyTo.VoUserAvatarAttachmentId = replyMessage.UserAvatarAttachmentIdSnapshot;
             messageVo.VoReplyTo.VoUserAvatarUrl = ResolveAttachmentUrl(replyMessage.UserAvatarAttachmentIdSnapshot);
             messageVo.VoReplyTo.VoImageUrl = ResolveAttachmentUrl(replyMessage.AttachmentId);
@@ -1324,5 +1323,4 @@ public class ChatService : BaseService<Channel, ChannelVo>, IChatService
 
         return _attachmentUrlResolver.ResolveAttachmentUrl(attachmentId.Value, variant);
     }
-
 }

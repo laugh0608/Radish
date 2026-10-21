@@ -144,7 +144,7 @@ Radish/
 ├── Radish.Core/                 # 🏛️ 领域模型层
 ├── Radish.Model/                # 📦 实体、DTO、视图模型
 ├── Radish.Common/               # 🔧 通用工具（日志、配置、缓存）
-├── Radish.Extension/            # 🔌 扩展功能（Swagger、AutoMapper、AOP）
+├── Radish.Extension/            # 🔌 扩展功能（Swagger、Autofac、AOP）
 ├── Radish.Infrastructure/       # 🏗️ 基础设施（SqlSugar 扩展、多租户）
 ├── Radish.IService/             # 📋 服务接口契约
 ├── Radish.IRepository/          # 📋 仓储接口契约

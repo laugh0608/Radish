@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -26,7 +25,6 @@ using Radish.Common.CoreTool;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.Extension.Log;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -341,7 +339,6 @@ public sealed class TagControllerLoggingTests
 
     private sealed class Fixture : IDisposable
     {
-        private static readonly IMapper Mapper = new MapperConfiguration(c => c.AddProfile<ForumProfile>(), NullLoggerFactory.Instance).CreateMapper();
         private readonly string _operation;
         private int _existsCalls;
         private readonly DateTime _startedAt = DateTime.UtcNow.AddSeconds(-1);
@@ -377,7 +374,7 @@ public sealed class TagControllerLoggingTests
             InsertTag(TagId, "Original", "original");
             var repository = new ProxyGenerator().CreateInterfaceProxyWithTarget<IBaseRepository<Tag>>(
                 new BaseRepository<Tag>(Unit), new RepositoryInterceptor(this));
-            var service = new TagService(Mapper, repository, new Mock<ITagDiscoveryRepository>(MockBehavior.Strict).Object);
+            var service = new TagService(repository, new Mock<ITagDiscoveryRepository>(MockBehavior.Strict).Object);
             Service = new ProxyGenerator().CreateInterfaceProxyWithTarget<ITagService>(service, new TranAop(Unit));
             Controller = CreateController(Service, () => new CurrentUser { UserId = UserId, UserName = OperatorName, IsAuthenticated = true });
         }

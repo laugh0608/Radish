@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
@@ -94,7 +94,6 @@ namespace Radish.Service;
     };
 
     public ExperienceService(
-        IMapper mapper,
         IBaseRepository<UserExperience> userExpRepository,
         IBaseRepository<ExpTransaction> expTransactionRepository,
         IBaseRepository<LevelConfig> levelConfigRepository,
@@ -111,7 +110,7 @@ namespace Radish.Service;
         IUnitOfWorkManage? unitOfWorkManage = null,
         IReliableOutboxService? reliableOutboxService = null,
         IOperationIdempotencyService? operationIdempotencyService = null)
-        : base(mapper, userExpRepository)
+        : base(ExperienceMapper.ToUserExperienceVo, userExpRepository)
     {
         _userExpRepository = userExpRepository;
         _expTransactionRepository = expTransactionRepository;
@@ -569,7 +568,7 @@ namespace Radish.Service;
     /// </summary>
     private async Task<UserExperienceVo?> MapToVoAsync(UserExperience userExp)
     {
-        var vo = Mapper.Map<UserExperienceVo>(userExp);
+        var vo = ExperienceMapper.ToUserExperienceVo(userExp);
         if (vo == null) return null;
 
         // 获取等级配置

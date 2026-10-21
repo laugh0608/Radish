@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -238,7 +237,7 @@ public sealed class AttachmentAccessLoggingTests
             Repository.Setup(r => r.UpdateAsync(It.IsAny<Attachment>())).ReturnsAsync(true);
             Repository.Setup(r => r.UpdateColumnsAsync(It.IsAny<Expression<Func<Attachment, Attachment>>>(), It.IsAny<Expression<Func<Attachment, bool>>>())).ReturnsAsync(1);
             Storage.Setup(s => s.DownloadAsync(It.IsAny<string>())).ReturnsAsync(() => (Stream)new MemoryStream(new byte[] { 1, 2, 3 }));
-            Service = new AttachmentService(Mock.Of<IMapper>(), Repository.Object, storage ?? Storage.Object, Mock.Of<IImageProcessor>(),
+            Service = new AttachmentService(Repository.Object, storage ?? Storage.Object, Mock.Of<IImageProcessor>(),
                 Mock.Of<IAttachmentUrlResolver>(), Mock.Of<IChatChannelAccessService>(), Wiki.Object, Options.Create(new FileStorageOptions()));
             var current = new Mock<ICurrentUserAccessor>();
             current.SetupGet(c => c.Current).Returns(new CurrentUser { UserId = 7, UserName = Secret, Roles = [] });

@@ -568,19 +568,9 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 
 新测试 / 生产环境首次部署后，当系统检测到还没有 `System / Admin` 管理员时，前端会进入首个管理员初始化页。当前代码由 `BrowserAppRouter` 在顶层统一挂载 `BootstrapGate`，覆盖公开路由、Workbench、登录态私域、WebOS 历史 Root 和 OIDC 回调；各业务入口不再重复包裹门禁。只有 bootstrap 状态为 `ready` 时才挂载实际页面和 OIDC 回调，避免初始化未完成时提前进入认证或业务路由。初始化页要求部署人员输入展示名、邮箱和强密码，后端会做服务端校验和并发保护；已有管理员后，初始化接口不可再创建账号。
 
-### 4. AutoMapper 许可证
+### 4. 编译期映射
 
-如果你购买了 AutoMapper 的商业许可证：
-
-```json
-{
-  "AutoMapper": {
-    "LicenseKey": "your-license-key-here"
-  }
-}
-```
-
-当前注册代码在配置为空时跳过 `expression.LicenseKey` 赋值；这是运行时接线事实，不代表当前包可在任意条件下免费使用。仓库使用 `AutoMapper 16.1.1`，包内为 RPL-1.5 / 厂商协议选择；Radish 的 Source-Available 定位不能直接替代适用条款判断。许可盘点与替代方案见[第三方依赖许可治理](../features/dependency-license-governance.md)。
+实体映射使用 `Riok.Mapperly 4.3.1` 与 `Radish.Service/Mapping` 中的显式转换，不需要运行时许可配置。旧 `AutoMapper:LicenseKey` / `AutoMapper__LicenseKey` 已无读取入口，可从本地和部署 Secret 配置中删除；无需为 Mapperly 新建配置文件。映射规范见[开发规范](../architecture/specifications.md)。
 
 ### 5. CORS 配置
 
@@ -720,7 +710,6 @@ environment:
   - Hangfire__ConnectionString=Host=postgres-prod;Port=5432;Database=radish_hangfire;Username=radish_user;Password=${DB_PASSWORD}
   - Redis__Enable=true
   - Redis__ConnectionString=redis-prod:6379,password=${REDIS_PASSWORD},ssl=true
-  - AutoMapper__LicenseKey=${AUTOMAPPER_LICENSE}
 ```
 
 环境变量使用双下划线 `__` 表示嵌套层级。

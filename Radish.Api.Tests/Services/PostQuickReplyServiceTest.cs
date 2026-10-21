@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -29,7 +28,6 @@ public class PostQuickReplyServiceTest
     [Fact(DisplayName = "创建轻回应后应给帖子作者发送通知")]
     public async Task CreateAsync_ShouldSendNotification_WhenPostAuthorIsDifferent()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var caching = new Mock<ICaching>(MockBehavior.Strict);
@@ -80,19 +78,6 @@ public class PostQuickReplyServiceTest
                 It.IsAny<TimeSpan>()))
             .Returns(Task.CompletedTask);
 
-        mapper
-            .Setup(m => m.Map<PostQuickReplyVo>(It.IsAny<PostQuickReply>()))
-            .Returns((PostQuickReply reply) => new PostQuickReplyVo
-            {
-                VoId = reply.Id,
-                VoPostId = reply.PostId,
-                VoAuthorId = reply.AuthorId,
-                VoAuthorName = reply.AuthorName,
-                VoContent = reply.Content,
-                VoStatus = reply.Status,
-                VoCreateTime = reply.CreateTime
-            });
-
         notificationService
             .Setup(service => service.CreateNotificationAsync(It.Is<CreateNotificationDto>(dto =>
                 dto.Type == NotificationType.PostQuickReplied &&
@@ -111,7 +96,6 @@ public class PostQuickReplyServiceTest
             .ReturnsAsync(7001);
 
         var service = CreateService(
-            mapper,
             quickReplyRepository,
             postRepository,
             caching,
@@ -134,7 +118,6 @@ public class PostQuickReplyServiceTest
     [Fact(DisplayName = "帖子作者自己发轻回应时不应给自己发送通知")]
     public async Task CreateAsync_ShouldNotSendNotification_WhenAuthorRepliesOwnPost()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var caching = new Mock<ICaching>(MockBehavior.Strict);
@@ -180,21 +163,7 @@ public class PostQuickReplyServiceTest
                 It.IsAny<TimeSpan>()))
             .Returns(Task.CompletedTask);
 
-        mapper
-            .Setup(m => m.Map<PostQuickReplyVo>(It.IsAny<PostQuickReply>()))
-            .Returns((PostQuickReply reply) => new PostQuickReplyVo
-            {
-                VoId = reply.Id,
-                VoPostId = reply.PostId,
-                VoAuthorId = reply.AuthorId,
-                VoAuthorName = reply.AuthorName,
-                VoContent = reply.Content,
-                VoStatus = reply.Status,
-                VoCreateTime = reply.CreateTime
-            });
-
         var service = CreateService(
-            mapper,
             quickReplyRepository,
             postRepository,
             caching,
@@ -212,7 +181,6 @@ public class PostQuickReplyServiceTest
     [Fact(DisplayName = "我的轻回应列表应并行返回帖子 PublicId")]
     public async Task GetMinePageAsync_ShouldReturnPostPublicId_WhenPostHasPublicId()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var caching = new Mock<ICaching>(MockBehavior.Strict);
@@ -254,7 +222,6 @@ public class PostQuickReplyServiceTest
             });
 
         var service = CreateService(
-            mapper,
             quickReplyRepository,
             postRepository,
             caching,
@@ -278,7 +245,6 @@ public class PostQuickReplyServiceTest
     [Fact(DisplayName = "轻回应墙应使用系统设置中的返回条数上限")]
     public async Task GetRecentByPostIdAsync_ShouldUseSystemSettingTakeLimits()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var caching = new Mock<ICaching>(MockBehavior.Strict);
@@ -303,12 +269,7 @@ public class PostQuickReplyServiceTest
                 OrderByType.Desc))
             .ReturnsAsync((new List<PostQuickReply>(), 0));
 
-        mapper
-            .Setup(m => m.Map<List<PostQuickReplyVo>>(It.IsAny<List<PostQuickReply>>()))
-            .Returns(new List<PostQuickReplyVo>());
-
         var service = CreateService(
-            mapper,
             quickReplyRepository,
             postRepository,
             caching,
@@ -323,13 +284,11 @@ public class PostQuickReplyServiceTest
         result.VoTotal.ShouldBe(0);
         quickReplyRepository.VerifyAll();
         postRepository.VerifyAll();
-        mapper.VerifyAll();
     }
 
     [Fact(DisplayName = "轻回应墙应拒绝默认返回条数大于最大返回条数的系统设置")]
     public async Task GetRecentByPostIdAsync_ShouldExposeInvalidTakeSettings()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var caching = new Mock<ICaching>(MockBehavior.Strict);
@@ -337,7 +296,6 @@ public class PostQuickReplyServiceTest
         var logger = new Mock<ILogger<PostQuickReplyService>>();
 
         var service = CreateService(
-            mapper,
             quickReplyRepository,
             postRepository,
             caching,
@@ -355,7 +313,6 @@ public class PostQuickReplyServiceTest
     [Fact(DisplayName = "创建轻回应应使用系统设置中的内容长度上限")]
     public async Task CreateAsync_ShouldUseSystemSettingMaxContentLength()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var caching = new Mock<ICaching>(MockBehavior.Strict);
@@ -363,7 +320,6 @@ public class PostQuickReplyServiceTest
         var logger = new Mock<ILogger<PostQuickReplyService>>();
 
         var service = CreateService(
-            mapper,
             quickReplyRepository,
             postRepository,
             caching,
@@ -384,7 +340,6 @@ public class PostQuickReplyServiceTest
     [Fact(DisplayName = "创建轻回应应使用系统设置中的冷却秒数")]
     public async Task CreateAsync_ShouldUseSystemSettingCooldownSeconds()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var quickReplyRepository = new Mock<IBaseRepository<PostQuickReply>>(MockBehavior.Strict);
         var postRepository = new Mock<IBaseRepository<Post>>(MockBehavior.Strict);
         var caching = new Mock<ICaching>(MockBehavior.Strict);
@@ -405,7 +360,6 @@ public class PostQuickReplyServiceTest
             .ReturnsAsync(true);
 
         var service = CreateService(
-            mapper,
             quickReplyRepository,
             postRepository,
             caching,
@@ -426,7 +380,6 @@ public class PostQuickReplyServiceTest
     }
 
     private static PostQuickReplyService CreateService(
-        Mock<IMapper> mapper,
         Mock<IBaseRepository<PostQuickReply>> quickReplyRepository,
         Mock<IBaseRepository<Post>> postRepository,
         Mock<ICaching> caching,
@@ -456,7 +409,6 @@ public class PostQuickReplyServiceTest
             .ReturnsAsync(quickReplyDuplicateWindowSeconds);
 
         return new PostQuickReplyService(
-            mapper.Object,
             quickReplyRepository.Object,
             postRepository.Object,
             caching.Object,

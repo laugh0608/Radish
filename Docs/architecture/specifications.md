@@ -302,7 +302,7 @@ git push origin v26.1.1.3003
   - 职责：服务门户展示、健康检查聚合、API 路由转发（P1+）、统一认证（P2+）、请求聚合（P3+）
 - 后端项目按层次结构依赖：
   - Radish.Api 引用 radish.client（用于 SPA 代理）与 Radish.Service，并通过 Program.cs 注入 `IUserService/IUserRepository` 等接口实现；同时依赖 Radish.Common 以注册 `AppSettings` 扩展，避免在其他层重复创建配置源。
-  - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（推荐 AutoMapper）。
+  - Radish.Service 依赖 Radish.IService（接口契约）与 Radish.Repository（数据访问实现），负责聚合业务逻辑；Service 层对外仅暴露 DTO/Vo，必须在返回前将仓储层实体映射为视图模型（使用 Mapperly 与显式业务转换）。
     - **简单 CRUD 场景**：Controller 直接注入 `IBaseService<TEntity, TVo>`，无需创建专门的 Service 实现
     - **复杂业务逻辑场景**：创建继承自 `BaseService<TEntity, TVo>` 的自定义 Service，添加特定业务方法
     - **判断标准**：如果只需要增删改查，直接用泛型；涉及多表事务、复杂验证才创建自定义 Service
@@ -322,7 +322,7 @@ git push origin v26.1.1.3003
     - **仓储扩展策略**（按优先级顺序）：
       1. **优先**：在 BaseRepository 中添加泛型方法（如 `QueryDistinctAsync`、`QuerySumAsync`）- 可跨实体复用，适用于通用聚合、去重、排序等操作
       2. **次选**：创建实体专属仓储类（如 `UserRepository : BaseRepository<User>, IUserRepository`）- 适用于复杂联表查询、特定业务查询、性能优化场景
-- Radish.Extension 仅由宿主（Radish.Api、Radish.Gateway）引用，用于集中管理 Autofac/AutoMapper/配置扩展；该项目可以引用 Service/Repository 以及 Infrastructure 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
+- Radish.Extension 仅由宿主（Radish.Api、Radish.Gateway）引用，用于集中管理 Autofac/配置扩展；该项目可以引用 Service/Repository 以及 Infrastructure 以注册实现，但 Service/Repository 项目禁止反向依赖。凡是需要宿主信息的模块（如 Controller 程序集、配置源等）必须通过构造函数参数由宿主传入，例如 `new AutofacPropertyModuleReg(typeof(Program).Assembly)`，避免因为直接引用 `Program` 造成循环依赖。
   - Radish.Core 暂时保留，无直接依赖关系
 - `UserController -> IUserService -> IUserRepository` 构成的示例链路是官方范例，任何新功能应当沿用"Controller 调用 Service，再由 Service 访问 Repository"的模式
   - **简单 CRUD 示例**：`CategoryController` 直接注入 `IBaseService<Category, CategoryVo>`，使用 `QueryAsync(c => c.IsEnabled)` 等方法
@@ -436,7 +436,7 @@ git push origin v26.1.1.3003
 - 必须为这类字段定义**语义明确的枚举或常量**，统一放在 `Radish.Shared.CustomEnum`（推荐，用于跨模块/跨前后端共享）或 `Radish.Model` 中，例如：`UserStatusCodeEnum.Normal/Unknown`、`UserSexEnum.Male/Female`、`DepartmentStatusCodeEnum.Normal`、`AuthorityScopeKindEnum.Self/All`。
 - 实体类中应使用枚举类型或整型字段 + 枚举映射的方式，Controller 和 Service 逻辑一律基于枚举名/常量判断，避免出现 `if (status == 1)` 这类难以理解的比较。
 - 枚举命名需体现业务语义，避免 `Status0/Status1` 这类无含义命名；建议按业务维度划分命名空间，例如统一集中在 `Radish.Shared.CustomEnum` 下管理用户状态、性别、部门状态、权限范围、HTTP 状态码等。
-- 数据库存储可以使用 `int` 或 `smallint`，但必须在代码层用枚举封装，并在 AutoMapper 或转换逻辑中保持枚举与整型之间的映射一致。
+- 数据库存储可以使用 `int` 或 `smallint`，但必须在代码层用枚举封装，并在 Mapperly 或显式转换逻辑中保持枚举与整型之间的映射一致。
 - 新增或修改状态码时，优先扩展枚举，而不是在各处散落新增数字常量；涉及前端时也应在前后端共享的枚举/常量文件中保持同步。
 
 ## 新增实体与字段的标准流程
@@ -453,7 +453,7 @@ git push origin v26.1.1.3003
 2. **代码层变更（实体/枚举）**
    - 修改实体字段时同步更新：
      - 对应的 ViewModel/Vo（位于 `Radish.Model/ViewModels`）。
-     - AutoMapper 配置（位于 `Radish.Extension/AutoMapperExtension`）。
+     - Mapperly 映射（位于 `Radish.Service/Mapping`）。
      - 相关 Service/Controller 中对该字段的使用（避免遗漏）。
    - 新增状态/类型字段时，禁止直接写 `-1/0/1`，必须通过 `Radish.Shared.CustomEnum` 中的枚举来表达语义。
 
@@ -526,41 +526,18 @@ git push origin v26.1.1.3003
     - **其他Vo模型**: `Vo`前缀 + 清晰字段名（如VoName, VoDescription, VoCreateTime, VoStatus）- 便于理解和维护
   - **前端适配**: 前端必须适配后端的Vo模型字段名，不得要求后端修改
   - **匿名对象禁用**: Controller方法严禁返回匿名对象，必须使用定义好的Vo类
-  - **AutoMapper映射最佳实践** (关键):
-    - **优先使用前缀识别自动映射** (推荐，减少90%+代码量):
-      ```csharp
-      // 适用条件：Entity和Vo字段只有Vo前缀差异、字段类型完全一致、不需要特殊转换
-      RecognizeDestinationPrefixes("Vo");  // Entity -> Vo
-      CreateMap<Category, CategoryVo>();
-      RecognizePrefixes("Vo");             // Vo -> Entity
-      CreateMap<CategoryVo, Category>();
-      ```
-    - **仅在必要时使用手动映射**:
-      ```csharp
-      // 适用场景：
-      // 1. 字段名完全不同（如 Id -> VoUserId）
-      // 2. 需要忽略某些字段（如Service层手动填充的计算属性）
-      // 3. 需要特殊的转换逻辑（如计算字段、null默认值）
-      // 4. 字段类型不同需要转换
-      CreateMap<Post, PostVo>()
-          .ForMember(dest => dest.CategoryName, opt => opt.Ignore())  // Service层填充
-          .ForMember(dest => dest.Tags, opt => opt.Ignore());
-
-      CreateMap<User, CurrentUserVo>()
-          .ForMember(dest => dest.VoUserId, opt => opt.MapFrom(src => src.Id))  // 字段名不同
-          .ForMember(dest => dest.VoAvatarUrl, opt => opt.MapFrom(src => (string?)null)); // 默认值
-      ```
-- AutoMapper Profile 中维护实体与视图模型的对应关系；如需手动映射，也必须在 Service 层完成，确保 Controller 不访问实体。
+  - **映射约定**：在 `Radish.Service/Mapping` 按业务域维护 Mapperly 映射；使用 `MapProperty` 明确声明 `Vo` 前缀和异名字段，使用 `MapperIgnoreTarget` 标明服务补全或写入保护字段。
+  - 格式化、身份展示、权限归一化、撤回内容隐藏等语义保留为显式方法；禁止依赖属性同名推断敏感字段可以回写。
+- Service 调用具体域映射方法，Controller / Repository 不承担实体与视图模型转换。
 - DTO/Vo 定义集中在 `Radish.Model` 或 `Radish.Shared` 的对应目录下，提交前请自检实体与视图模型字段是否同步更新。
 
-## AutoMapper 与配置扩展
+## 编译期映射与配置扩展
 
-- `Radish.Extension/AutoMapperSetup` 负责集中注册全部 profile，并通过 `expression.ConstructServicesUsing` 使用 DI 容器解析依赖；新增 profile 时直接在 `AutoMapperConfig.RegisterProfiles` 中挂载。
-- `AutoMapperConfig.RegisterCustomProfile` 可以配置全局规则（例如识别属性前缀/后缀、通用转换器），之后的 `RegisterProfiles` 列表挂载业务 profile（`RoleProfile`、`UserProfile`、`AuditSqlLogProfile` 等）；保持两段式注册可以避免 profile 顺序造成的耦合。
-- `AuditSqlLogProfile` 已示范如何同时识别源和目标的 `Vo` 前缀：`RecognizeDestinationPrefixes("Vo")` + `RecognizePrefixes("Vo")` 使 `AuditSqlLog` 与 `AuditSqlLogVo` 能够双向自动映射，开发其他 Vo 模型时直接复用该写法即可。
-- AutoMapper 授权：
-  - 不要新增额外 `appsettings.*.json` 文件来存放 `AutoMapper:LicenseKey`；本地调试使用 `appsettings.Local.json`，部署环境通过环境变量或 Secret Manager 注入，严禁提交真实 key。
-  - 运行时通过 `AppSettings.RadishApp(new[] { "AutoMapper", "LicenseKey" }).ObjToString()` 读取，并在 `expression.LicenseKey` 上设置；为空时跳过赋值。该技术行为不代表已满足许可条件；精确版本许可和待确认的替代方案见[依赖许可治理专题](../features/dependency-license-governance.md)，当前仍按既有映射分层执行。
+- `Radish.Service` 仅以 `PrivateAssets="all"` 引用 `Riok.Mapperly 4.3.1`（Apache-2.0）；生成器在编译期生成转换代码，宿主没有映射许可 key 配置。
+- Mapper 默认检查所有目标字段（`RequiredMappingStrategy.Target`），严格构建阻断未处理目标字段；忽略项必须对应明确的保护、默认值或服务补全职责。集合保持顺序，null 集合转换为空集合；对象缺失返回 null。
+- `BaseService<TEntity,TVo>` 接收明确的 `Func<TEntity,TVo>`；派生 Service 在构造函数传入域方法。`ServiceMappingRegistration.AddServiceMappings` 只为实际泛型服务实体对注册委托，API / Auth 宿主调用该入口。不得恢复通用 `Map<T>` 分派器或运行时扫描注册。
+- 附件映射通过 scoped `IAttachmentUrlResolver` 生成原图与缩略图 URL，不使用静态服务定位器。普通纯映射方法不依赖 DI。
+- 更新现有实体时使用专门的更新映射；ID、审计、上架状态、销量等保护项须有回归测试。修改映射时同步验证身份、租户、敏感字段、null / 集合和分页契约。
 - `Radish.Common.AppSettings` 为自定义配置入口，Program.cs 使用 `builder.Services.AddSingleton(new AppSettings(builder.Configuration));` 注册后即可在任何层注入/静态调用。
   - 当需要分段读取配置时，统一调用 `AppSettings.RadishApp(params string[] sections)`，禁止在业务代码中自行 new ConfigurationBuilder，以保证配置来源一致。
   - 强类型配置建议实现 `IConfigurableOptions`（位于 `Radish.Common.Option.Core`），由 `ConfigurableOptions` + `AllOptionRegister` 自动绑定，再通过 `IOptions<T>` 注入。
@@ -670,7 +647,7 @@ git push origin v26.1.1.3003
 3. Controller Action 默认遵循 `[Produces("application/json")]` 与 RESTful 设计原则，除非业务场景要求其他内容类型或风格。
 4. `UserController.GetUserById` 使用 `[HttpGet("{id:long}")]` 声明路径参数，访问 `/api/v1/User/GetUserById/1` 可验证模型绑定；对应 `ApiModule.LinkUrl` 必须使用 `/api/v1/User/GetUserById/\d+`，后续路由参数沿用显式约束与权限正则配套的写法。
 5. 实体类存放在 Model 层 `Models` 命名空间并继承 `RootEntityTKey<TKey>`（含主键 Id）；若有自定义外键实体，同样继承该基类。视图模型位于 `ViewModels` 命名空间，按对外暴露字段设计，无继承硬性要求。
-6. 实体与视图模型的映射集中在 Extension 层 `AutoMapper` 命名空间，每组实体定义独立 `CustomProfile`，避免在 Controller 或仓储中手动映射。
+6. 实体与视图模型的映射集中在 `Radish.Service/Mapping`，按业务域定义 Mapperly 映射与显式转换，避免在 Controller 或仓储中手动映射。
 7. 新增对外接口遵循以下流程：
    （1）在 Model 层定义实体与视图模型；
    （2）在 Extension 层配置映射关系；

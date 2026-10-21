@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -17,15 +17,12 @@ namespace Radish.Service;
 public class AuditLogService : BaseService<AuditLog, AuditLogVo>, IAuditLogService
 {
     private readonly IBaseRepository<AuditLog> _auditLogRepository;
-    private readonly IMapper _mapper;
 
     public AuditLogService(
-        IMapper mapper,
         IBaseRepository<AuditLog> auditLogRepository)
-        : base(mapper, auditLogRepository)
+        : base(AuditLogMapper.ToAuditLogVo, auditLogRepository)
     {
         _auditLogRepository = auditLogRepository;
-        _mapper = mapper;
     }
 
     /// <summary>
@@ -102,7 +99,7 @@ public class AuditLogService : BaseService<AuditLog, AuditLogVo>, IAuditLogServi
             orderDirection);
 
         // 映射到 VO
-        var voList = _mapper.Map<List<AuditLogVo>>(data);
+        var voList = AuditLogMapper.ToAuditLogVoList(data);
 
         // 计算总页数
         var pageCount = (int)Math.Ceiling((double)totalCount / queryDto.PageSize);

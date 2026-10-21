@@ -50,7 +50,7 @@ Radish 采用自研分层架构，核心约束如下（更完整规范见 [开�
 - `Radish.Infrastructure`：多租户、连接解析、SqlSugar 基础设施
 - `Radish.IRepository` + `Radish.Repository`：仓储契约与实现（返回实体）
 - `Radish.IService` + `Radish.Service`：用例编排与业务规则（对外返回 DTO/Vo）
-- `Radish.Extension`：宿主扩展（Autofac/AutoMapper/Redis/Serilog/Swagger/Scalar 等注册）
+- `Radish.Extension`：宿主扩展（Autofac/Redis/Serilog/Swagger/Scalar 等注册）
 - `Radish.Api`：宿主层（只做入口与薄 Controller，业务落在 Service）
 
 ## 5. 实时能力（通知/在线/交互）

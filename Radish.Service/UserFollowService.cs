@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -30,7 +30,6 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
     private readonly IUserInteractionPolicyService _interactionPolicyService;
 
     public UserFollowService(
-        IMapper mapper,
         IUserFollowRepository baseRepository,
         IBaseRepository<User> userRepository,
         IPostService postService,
@@ -41,7 +40,7 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         IAttachmentUrlResolver attachmentUrlResolver,
         IUserInteractionPolicyService interactionPolicyService,
         IReliableOutboxService? reliableOutboxService = null)
-        : base(mapper, baseRepository)
+        : base(UserFollowMapper.ToUserFollowVo, baseRepository)
     {
         _userFollowRepository = baseRepository;
         _userRepository = userRepository;

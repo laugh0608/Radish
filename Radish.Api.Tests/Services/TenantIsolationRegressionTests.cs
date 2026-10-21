@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -37,7 +36,7 @@ public class TenantIsolationRegressionTests
         EnsurePublicTenantAppContext();
 
         // Arrange
-        var mapper = new Mock<IMapper>();
+
         var userRepository = new Mock<IUserRepository>();
         var baseRepository = new Mock<IBaseRepository<User>>();
         var displayNameChangeRecordRepository = new Mock<IBaseRepository<UserDisplayNameChangeRecord>>();
@@ -68,33 +67,7 @@ public class TenantIsolationRegressionTests
                 }
             }, 1));
 
-        mapper.Setup(m => m.Map<List<UserVo>>(It.IsAny<List<User>>()))
-            .Returns<List<User>>(users => users.Select(u => new UserVo
-            {
-                Uuid = u.Id,
-                VoPublicId = u.PublicId,
-                VoPublicIndex = u.PublicIndex,
-                VoUserName = u.UserName,
-                VoDisplayName = u.UserName,
-                VoDisplayHandle = User.BuildDisplayHandle(u.UserName, u.PublicIndex, u.Id),
-                VoTenantId = u.TenantId,
-                VoIsEnable = u.IsEnable,
-                VoIsDeleted = u.IsDeleted
-            }).ToList());
-
-        mapper.Setup(m => m.Map<List<UserMentionVo>>(It.IsAny<List<UserVo>>()))
-            .Returns<List<UserVo>>(users => users.Select(u => new UserMentionVo
-            {
-                VoId = u.Uuid,
-                VoPublicId = u.VoPublicId,
-                VoPublicIndex = u.VoPublicIndex,
-                VoUserName = u.VoUserName,
-                VoDisplayName = u.VoDisplayName,
-                VoDisplayHandle = u.VoDisplayHandle
-            }).ToList());
-
         var service = new UserService(
-            mapper.Object,
             baseRepository.Object,
             userRepository.Object,
             displayNameChangeRecordRepository.Object,

@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using System.Linq.Expressions;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -40,7 +41,7 @@ public partial class PostService
             pageSize,
             sortBy);
 
-        return (Mapper.Map<List<PostVo>>(posts), totalCount);
+        return (ForumMapper.ToPostVoList(posts), totalCount);
     }
 
     /// <summary>
@@ -56,7 +57,7 @@ public partial class PostService
 
         await EnsurePostPublicIdBackfilledAsync(post);
 
-        var postVo = Mapper.Map<PostVo>(post);
+        var postVo = ForumMapper.ToPostVo(post);
         if (viewerUserId is > 0 && _userPostBookmarkRepository != null)
         {
             postVo.VoIsBookmarked = await _userPostBookmarkRepository.QueryActiveAsync(
@@ -197,7 +198,7 @@ public partial class PostService
             pageSize,
             sortBy);
 
-        return (Mapper.Map<List<PostVo>>(posts), totalCount);
+        return (ForumMapper.ToPostVoList(posts), totalCount);
     }
 
     /// <summary>
@@ -731,7 +732,7 @@ public partial class PostService
             return null;
         }
 
-        var pollVo = Mapper.Map<PostPollVo>(poll);
+        var pollVo = ForumMapper.ToPostPollVo(poll);
         pollVo.VoPollId = poll.Id;
         pollVo.VoIsClosed = IsPollClosed(poll);
 
@@ -749,7 +750,7 @@ public partial class PostService
         pollVo.VoOptions = orderedOptions
             .Select(option =>
             {
-                var optionVo = Mapper.Map<PostPollOptionVo>(option);
+                var optionVo = ForumMapper.ToPostPollOptionVo(option);
                 optionVo.VoOptionId = option.Id;
                 optionVo.VoVotePercent = totalVoteCount <= 0
                     ? 0
@@ -784,7 +785,7 @@ public partial class PostService
             return null;
         }
 
-        var lotteryVo = Mapper.Map<PostLotteryVo>(lottery);
+        var lotteryVo = ForumMapper.ToPostLotteryVo(lottery);
         lotteryVo.VoLotteryId = lottery.Id;
 
         if (_commentRepository != null)
@@ -812,7 +813,7 @@ public partial class PostService
             winner.LotteryId == lottery.Id &&
             !winner.IsDeleted);
 
-        lotteryVo.VoWinners = Mapper.Map<List<PostLotteryWinnerVo>>(winners
+        lotteryVo.VoWinners = ForumMapper.ToPostLotteryWinnerVoList(winners
             .OrderBy(winner => winner.CreateTime)
             .ThenBy(winner => winner.Id)
             .ToList());
@@ -893,7 +894,7 @@ public partial class PostService
             return null;
         }
 
-        var questionVo = Mapper.Map<PostQuestionVo>(question);
+        var questionVo = ForumMapper.ToPostQuestionVo(question);
         var normalizedAnswerSort = answerSort?.Trim().ToLowerInvariant() ?? "default";
         var answers = await _postAnswerRepository.QueryAsync(answer =>
             answer.PostId == postId &&
@@ -912,7 +913,7 @@ public partial class PostService
 
         questionVo.VoAnswers = orderedAnswers
             .Take(20)
-            .Select(answer => Mapper.Map<PostAnswerVo>(answer))
+            .Select(answer => ForumMapper.ToPostAnswerVo(answer))
             .ToList();
         questionVo.VoAcceptedAnswerPublicId = questionVo.VoAnswers
             .FirstOrDefault(answer => answer.VoAnswerId == question.AcceptedAnswerId)

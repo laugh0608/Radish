@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -157,7 +156,7 @@ public sealed class CoinMovementLoggingTests
             coin.Setup(s => s.ConsumeCoinAsync(1, 23, "Order", 4, It.IsAny<string>())).ReturnsAsync((11L, Secret));
             benefits.Setup(s => s.GrantOrderFulfillmentAsync(It.IsAny<Order>())).ThrowsAsync(new IOException(Secret));
         }
-        var service = new OrderService(Mock.Of<IMapper>(), orders.Object, products.Object, Mock.Of<IBaseRepository<User>>(),
+        var service = new OrderService(orders.Object, products.Object, Mock.Of<IBaseRepository<User>>(),
             Mock.Of<IBaseRepository<CoinTransaction>>(), productService.Object, benefits.Object, coin.Object, payment.Object, Mock.Of<IAttachmentUrlResolver>());
         var result = await service.PurchaseAsync(1, new CreateOrderDto { ProductId = 3, Quantity = 1, PaymentPassword = "274958", UserRemark = Secret });
         Assert.False(result.Success);
@@ -180,7 +179,7 @@ public sealed class CoinMovementLoggingTests
         var repository = new Mock<IPaymentPasswordRepository>();
         var stored = new UserPaymentPassword { UserId = 1, PasswordHash = PasswordHasher.HashPassword("274958"), PasscodeVersion = PaymentPasscodeRules.CurrentPasscodeVersion, FailedAttempts = 4 };
         repository.Setup(r => r.GetByUserIdAsync(1)).ReturnsAsync(stored);
-        var service = new PaymentPasswordService(repository.Object, Mock.Of<IAuditLogService>(), Mock.Of<IMapper>(), factory.CreateLogger<PaymentPasswordService>(), TimeProvider.System);
+        var service = new PaymentPasswordService(repository.Object, Mock.Of<IAuditLogService>(), factory.CreateLogger<PaymentPasswordService>(), TimeProvider.System);
         var good = await service.VerifyPaymentPasswordAsync(1, new VerifyPaymentPasswordRequest { Password = "274958", BusinessType = Secret });
         Assert.True(good.IsSuccess);
         repository.Verify(r => r.ResetFailedAttemptsAsync(1, It.IsAny<DateTime>()), Times.Once);
@@ -242,7 +241,7 @@ public sealed class CoinMovementLoggingTests
             Idempotency.Setup(s => s.NormalizeKey(Secret)).Returns(Secret);
             Idempotency.Setup(s => s.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>())).Returns(new OperationIdempotencyRequestSnapshot { RequestHash = Secret, RequestSummary = Secret });
             Idempotency.Setup(s => s.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>())).ReturnsAsync(new OperationIdempotencyBeginResult { Status = OperationIdempotencyBeginStatus.Started, RecordId = 3 });
-            Coin = new CoinService(Mock.Of<IMapper>(), Balances.Object, users.Object, Transactions.Object, Changes.Object, Payment.Object, Idempotency.Object);
+            Coin = new CoinService(Balances.Object, users.Object, Transactions.Object, Changes.Object, Payment.Object, Idempotency.Object);
         }
         public void Dispose() => AppSettingsTool.Configuration = _previous;
     }

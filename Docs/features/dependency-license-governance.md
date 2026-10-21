@@ -1,20 +1,20 @@
 # 第三方依赖许可治理与替代方案
 
-> 状态：2026-10-20 完成首轮盘点与源码评估，项目所有者已确认先推进 Rust 图片替代、恢复正常 PR；其他依赖方案后置。
+> 状态：Rust 图片替代已通过 PR #75 合并与回灌；2026-10-21 开始后续依赖评估，映射替代已获批并完成 Mapperly 4.3.1 切换，ORM / Redis 保持只评估。
 >
-> 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代按专门实施方案推进，精确依赖安装及服务启动按各批授权执行；其他依赖仍处于审计与方案阶段。
+> 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代已交付；后续精确依赖安装及服务启动按各批授权执行，其他依赖仍处于审计与方案阶段。
 
 ## 1. 当前结论与阅读入口
 
 - 首轮统计覆盖正式 .NET、Web、Flutter、Rust 的 **947 个依赖条目**；精确口径、例外、未解析项与证据见[盘点记录](../records/dependency-license-audit-2026-10-20.md)和[逐包清单 CSV](../records/dependency-license-inventory-2026-10-20.csv)。条目不等于独立软件产品或许可证数量。
-- 当前优先替代对象是 **Six Labors 四包链**与 **AutoMapper**。前者在本轮升级候选中出现构建 key 门禁；后者存在 RPL / 商业许可路线选择。不能把“免费申请”或“缺 key 只打日志”作为长期依赖决策的全部依据。
+- 首轮优先替代对象是 **Six Labors 四包链**与 **AutoMapper**；两者均已按批准方案移除。前者曾在升级候选中出现构建 key 门禁；后者存在 RPL / 商业许可路线选择。不能把“免费申请”或“缺 key 只打日志”作为长期依赖决策的全部依据。
 - Hangfire、数据库传递驱动、Microsoft 专用工具 / 原生库、CC-BY / MPL 依赖分别处理，不统一推定为收费或需 key。
 - Redis 服务镜像另有版本相关许可风险；它不属于 `StackExchange.Redis` 客户端包，也不包含在上述 947 条中。
-- **图片处理已按项目所有者要求，沿补齐已有 Rust 的方向进入[完整替代实施方案](./rust-image-processing-implementation-plan.md)的交付与验收阶段**。精确输入见[R0 依赖清单](./rust-image-processing-dependency-proposal.md)，迁移前事实与备选比较见[Rust 图片处理替代评估](./rust-image-processing-replacement-assessment.md)。
+- **图片处理已按[完整替代实施方案](./rust-image-processing-implementation-plan.md)完成交付、验收与 PR 集成**。精确输入见[R0 依赖清单](./rust-image-processing-dependency-proposal.md)，迁移前事实与备选比较见[Rust 图片处理替代评估](./rust-image-processing-replacement-assessment.md)。
 
 本专题承载治理目标、候选方案与实施边界；精确版本和本批统计保留在 records；即时顺位只在[当前进行中](../planning/current.md)维护。
 
-**盘点不等于全部替换**：目前仅按 Rust 方向推进图片替代，AutoMapper 待独立评估；没有决定整体替换 ORM 或 Redis，也没有安排文件存储重构、历史附件批量重写或 Flutter 内嵌 Rust。其他依赖评估后置到 PR 稳定通过之后；继续 .NET，不启动后端语言迁移。
+**盘点不等于全部替换**：Rust 图片替代已完成，AutoMapper 已按[独立迁移方案](./post-image-dependency-assessment.md)替换为 Mapperly 4.3.1；没有决定整体替换 ORM 或 Redis，也没有安排文件存储重构、历史附件批量重写或 Flutter 内嵌 Rust。PR 已通过并合并，现按已确认顺序继续其他依赖评估；继续 .NET，不启动后端语言迁移。
 
 ## 2. 许可判定口径
 
@@ -36,7 +36,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 | --- | --- | --- | --- |
 | `SixLabors.ImageSharp`、`SixLabors.ImageSharp.Drawing` | 迁移前候选 `4.1.3 / 3.1.3`；本次工作区已移除 | 包内 Split License；Drawing 候选实际阻断无 key 的严格构建 / Release | 第一批：完整替代图片链；许可申请只作为明确选择后的备选 |
 | `SixLabors.Fonts`、`SixLabors.PolygonClipper` | 传递 `3.2.0 / 1.0.2` | 同一 Six Labors 许可链 | 与图片链一起退出，不只删两个直接引用 |
-| `AutoMapper` | `16.1.1`，Extension / Service 直接引用 | 包内 RPL-1.5 / 商业双许可；当前接线允许空 key | 第二批：评估 Mapperly / 显式映射；先完成映射语义清单 |
+| `AutoMapper` | 迁移前 `16.1.1`，现已移除 | 旧包为 RPL-1.5 / 商业双许可 | 第二批已切换 Mapperly 4.3.1（Apache-2.0），见[实施记录](../records/mapperly-migration-2026-10-21.md) |
 | Hangfire 三个核心集成包 | `AspNetCore / Core / NetCore 1.8.14` | LGPL-3.0-or-later 或对应商业许可 | 核对分发义务及商用扩展缺席事实，再决定保留或替换 |
 | `Hangfire.PostgreSql` | `1.20.12` | 包内 LGPLv3；第三方插件不能套用 Hangfire 核心商业许可 | 与核心调度方案一起评估 |
 | `Oracle.ManagedDataAccess.Core` | 传递 `23.8.0` | Oracle Free Distribution, Hosting, and Use 条款 | 优先评估未使用 provider 的依赖收缩；不是发现 Oracle 名称即要求付费 |
@@ -73,7 +73,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 
 ## 5. AutoMapper 替代方案
 
-先盘点 `CustomProfiles`、`IMapper`、`Map`、`ReverseMap`、Vo 前缀、转换器、DI 依赖、集合 / nullable、映射既有对象和 IQueryable 投影等真实语义。当前源码关键词命中约百个文件，只用于判断跨层影响，不能当成精确迁移工作量。
+迁移前源码已核对 18 个已注册 Profile、104 个有向映射与 Service 中 98 处 Map 调用；附件有两个依赖 DI 的 URL resolver，商品更新需保留现有对象受保护字段。完整语义、候选版本、BaseService 接线及验证边界见[后续依赖评估与映射方案](./post-image-dependency-assessment.md)。迁移结果为 101 个旧方向保持、3 个无调用的空反向映射删除，并新增 AuditLog 读取映射；测试和产物证据见[实施记录](../records/mapperly-migration-2026-10-21.md)。
 
 | 方案 | 适合边界 | 决策点 |
 | --- | --- | --- |
@@ -81,7 +81,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 | 显式映射方法 | 关键业务映射、存在语义转换的少量类型 | 可读性高、无新增第三方 mapper；大量平铺模型时需控制重复 |
 | 保留 AutoMapper 并选择适用许可 | 当前版本行为基本延续 | 必须明确适用路径；“空 key 不影响运行”不构成许可结论 |
 
-优先评估“生成映射 + 少量显式语义映射”，不引入仅转发的通用 mapper 抽象。实体 → Vo / DTO 仍由 Service 层负责，不将映射搬到 Controller 或 Repository。替换成功后清理 `LicenseKey` 配置、注册、旧 Profile、测试及对外依赖展示；完成前不修改现行分层规范。
+已采用“生成映射 + 少量显式语义映射”，不引入仅转发的通用 mapper 抽象。实体 → Vo / DTO 仍由 Service 层负责，不将映射搬到 Controller 或 Repository。已清理 `LicenseKey` 配置、注册、旧 Profile、测试依赖及对外展示，并同步开发规范。
 
 ## 6. 其他依赖的替代边界
 
@@ -96,7 +96,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugarCore` 传递引入 Oracle、神通、达梦、金仓和 SQL Server 相关资产。处理顺位：
 
 1. 检查实际配置支持范围、resolved graph、publish 内容和运行时动态加载。
-2. 调查上游受支持的 provider 分包 / 精简方案；当前尚未确认存在满足项目要求的官方拆分组合。
+2. 调查上游受支持的 provider 分包 / 精简方案；已发现同一发布者的 `SqlSugarCoreNoDrive`，但其较新版本通过 `SystemCommon` 仍引入 SQL Server 客户端，尚未证明精确候选满足分发要求，见[详细评估](./post-image-dependency-assessment.md)。
 3. 若无法安全收缩，再比较维护受控分发与 ORM 迁移的长期成本；后者属于跨 Repository 的独立架构裁决。
 
 不能只删除输出 DLL、修改本地 NuGet 缓存、隐藏扫描命中或添加 `ExcludeAssets` 来假装分发与运行边界已经解决。也不能因为客户端驱动免费分发，就推导数据库服务器本身免费。
@@ -109,7 +109,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 
 ### 6.4 Redis 服务
 
-先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。
+先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。已核对上传限流的四段 Lua、缓存接线及 Redis 7.4+ 数据文件兼容限制，见[后续评估](./post-image-dependency-assessment.md)。
 
 ## 7. 分批顺序、验证与完成标准
 
@@ -121,7 +121,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 | 分发收口 | Hangfire、数据库驱动、Microsoft EULA、署名与字体 | 保留 / 收缩 / 替代的逐项裁决与发行材料 |
 | 服务候选 | Redis 固定候选或 Valkey 方案 | 数据、运维、协议和回滚方案，独立服务授权 |
 
-当前 `dev → master` PR 继续暂停；原 Community 申请路线改为备选，不以“先取得 key”作为唯一恢复方式。此前已授权的 NuGet 安全修复 / 图片 API 适配保留为开发候选，不因提交保存或本次审计而宣称严格构建通过、替代完成。
+图片替代已通过严格构建、平台与成组验收，并随 [PR #75](https://github.com/laugh0608/Radish/pull/75) 合并及回灌；原许可 key 阻断已解除。映射替代已按批准方案实施并单独验证，见[映射迁移记录](../records/mapperly-migration-2026-10-21.md)；既有图片验收不替代新依赖的验证；本轮不发布。
 
 候选完成至少满足：
 

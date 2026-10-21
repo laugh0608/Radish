@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -49,10 +49,9 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
     private readonly IBaseRepository<PetStatLog> _logRepository;
 
     public PetService(
-        IMapper mapper,
         IBaseRepository<PetProfile> baseRepository,
         IBaseRepository<PetStatLog> logRepository)
-        : base(mapper, baseRepository)
+        : base(PetMapper.ToPetProfileVo, baseRepository)
     {
         _petRepository = baseRepository;
         _logRepository = logRepository;
@@ -160,7 +159,7 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
                 return new PetCareResultVo
                 {
                     VoPet = await BuildPetVoAsync(currentPet),
-                    VoLog = Mapper.Map<PetStatLogVo>(existingLog),
+                    VoLog = PetMapper.ToPetStatLogVo(existingLog),
                     VoMessage = existingLog.Message
                 };
             }
@@ -215,7 +214,7 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
         return new PetCareResultVo
         {
             VoPet = await BuildPetVoAsync(pet),
-            VoLog = Mapper.Map<PetStatLogVo>(log),
+            VoLog = PetMapper.ToPetStatLogVo(log),
             VoMessage = rule.Message
         };
     }
@@ -246,7 +245,7 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
 
         return new VoPagedResult<PetStatLogVo>
         {
-            VoItems = Mapper.Map<List<PetStatLogVo>>(items),
+            VoItems = PetMapper.ToPetStatLogVoList(items),
             VoTotal = total,
             VoPageIndex = safePageIndex,
             VoPageSize = safePageSize
@@ -325,7 +324,7 @@ public class PetService : BaseService<PetProfile, PetProfileVo>, IPetService
 
     private async Task<PetProfileVo> BuildPetVoAsync(PetProfile pet)
     {
-        var vo = Mapper.Map<PetProfileVo>(pet);
+        var vo = PetMapper.ToPetProfileVo(pet);
         vo.VoCareActions = await BuildCareActionStatesAsync(pet);
         return vo;
     }

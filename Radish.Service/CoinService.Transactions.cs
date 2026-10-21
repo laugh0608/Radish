@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using Radish.Model;
 using Radish.Model.ViewModels;
 using SqlSugar;
@@ -53,7 +54,7 @@ public partial class CoinService
             OrderByType.Desc,
             transaction => transaction.Id,
             OrderByType.Desc);
-        var transactionVos = Mapper.Map<List<CoinTransactionVo>>(transactions);
+        var transactionVos = CoinMapper.ToCoinTransactionVoList(transactions);
         await FillCoinTransactionUserNamesAsync(transactionVos);
 
         return new PageModel<CoinTransactionVo>
@@ -76,7 +77,7 @@ public partial class CoinService
             return null;
         }
 
-        var transactionVo = Mapper.Map<CoinTransactionVo>(transaction);
+        var transactionVo = CoinMapper.ToCoinTransactionVo(transaction);
         await FillCoinTransactionUserNamesAsync([transactionVo]);
         return transactionVo;
     }

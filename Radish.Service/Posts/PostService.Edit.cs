@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
 using Radish.Model;
@@ -211,7 +212,7 @@ public partial class PostService
             h => h.CreateTime,
             SqlSugar.OrderByType.Desc);
 
-        return (Mapper.Map<List<PostEditHistoryVo>>(histories), total);
+        return (ForumMapper.ToPostEditHistoryVoList(histories), total);
     }
 
     private async Task TrimPostHistoryAsync(long postId, int maxHistoryRecords)

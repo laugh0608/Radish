@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using Radish.Common.AttributeTool;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
@@ -145,7 +146,7 @@ public partial class ExperienceService
 
         _experienceCalculator.ClearCache();
         await InvalidateLevelConfigsCacheAsync();
-        var levelVos = Mapper.Map<List<LevelConfigVo>>(writeResult.LevelConfigs);
+        var levelVos = ExperienceMapper.ToLevelConfigVoList(writeResult.LevelConfigs);
         FillLevelConfigUrls(levelVos);
         return new ExperienceLevelRecalculationResultVo
         {

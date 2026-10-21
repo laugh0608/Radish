@@ -12,7 +12,7 @@ export const welcomeOpenSourceEn = {
   'welcome.openSource.boundary.note2':
     'For licenses, commercial use, and additional clauses, always follow the official repository, website, and release notes of the corresponding project.',
   'welcome.openSource.boundary.note3':
-    'Projects such as AutoMapper and Hangfire that have version-specific or additional licensing considerations will continue to carry extra notes in their entries.',
+    'Projects such as Hangfire that have version-specific or additional licensing considerations will continue to carry extra notes in their entries.',
   'welcome.openSource.meta.scope': 'Current scope',
   'welcome.openSource.meta.source': 'List source',
   'welcome.openSource.meta.maintenance': 'Maintenance mode',
@@ -62,12 +62,12 @@ export const welcomeOpenSourceEn = {
   'welcome.openSource.projects.serilog.scope': 'Used for host logs, SQL AOP logs, and the audit pipeline.',
   'welcome.openSource.projects.autofac.purpose': 'Provides the DI container and modular registration capabilities.',
   'welcome.openSource.projects.autofac.scope': 'Used for host composition, layered service registration, and part of the interception capabilities.',
-  'welcome.openSource.projects.automapper.purpose': 'Handles mapping between entities, DTOs, and VOs.',
-  'welcome.openSource.projects.automapper.scope': 'Used for Service / Controller output mapping and Profile configuration.',
-  'welcome.openSource.projects.automapper.note':
-    'The current repository uses AutoMapper 15.x and already keeps an entry point for reading a LicenseKey from configuration.',
-  'welcome.openSource.projects.automapper.licenseNote':
-    'Its license model is no longer the early MIT version. Always follow the official site and the version-specific documentation for exact terms.',
+  'welcome.openSource.projects.mapperly.purpose': 'Handles mapping between entities, DTOs, and VOs.',
+  'welcome.openSource.projects.mapperly.scope': 'Generates entity, DTO, and VO conversion code in the Service layer at compile time.',
+  'welcome.openSource.projects.mapperly.note':
+    'The repository uses Mapperly 4.3.1, combining generated mappings with explicit business conversions.',
+  'welcome.openSource.projects.mapperly.licenseNote':
+    'Mapperly 4.3.1 is licensed under Apache-2.0.',
   'welcome.openSource.projects.sqlsugar.purpose':
     'Acts as the main business ORM, handling most entity queries, paging, and multi-tenant capabilities.',
   'welcome.openSource.projects.sqlsugar.scope': 'Used in Repository, base CRUD, auditing, and multi-tenant scenarios.',

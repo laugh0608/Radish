@@ -24,7 +24,7 @@ using Microsoft.Extensions.FileProviders;
 using Radish.Common.TimeTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
-using Radish.Extension.AutoMapperExtension;
+using Radish.Service.Mapping;
 using Radish.Extension.PermissionExtension;
 using Radish.Extension.RedisExtension;
 using Radish.Extension.Log;
@@ -285,10 +285,8 @@ return await RuntimeProcess.RunAsync("api", async () =>
     });
     // 配置 OpenAPI 和 Scalar 文档
     builder.Services.AddScalarSetup();
-    // 注册 AddAutoMapper 服务
-    builder.Services.AddAutoMapperSetup(builder.Configuration);
-    // builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
-    // AutoMapperConfig.RegisterMappings();
+    // 注册 Service 映射委托
+    builder.Services.AddServiceMappings();
     // 注册 AppSetting 自定义扩展服务
     builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
     // 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务

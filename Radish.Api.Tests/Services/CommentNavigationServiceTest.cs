@@ -1,7 +1,6 @@
 using System;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.CacheTool;
@@ -176,7 +175,6 @@ public class CommentNavigationServiceTest
 
     private static CommentService CreateService(Mock<IBaseRepository<Comment>> commentRepository)
     {
-        var mapper = new Mock<IMapper>();
         var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
         var highlightRepository = new Mock<IBaseRepository<CommentHighlight>>();
         var commentEditHistoryRepository = new Mock<IBaseRepository<CommentEditHistory>>();
@@ -189,7 +187,6 @@ public class CommentNavigationServiceTest
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>();
 
         return new CommentService(
-            mapper.Object,
             commentRepository.Object,
             userCommentLikeRepository.Object,
             highlightRepository.Object,

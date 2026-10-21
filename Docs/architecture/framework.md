@@ -138,7 +138,7 @@ PostgreSQL / SQLite
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
   - 依赖 `Radish.Core` 接口与 `Radish.Repository` 实现，通过 `IUnitOfWork` 控制 SQLSugar 上下文。
-  - 对外仅返回 DTO/Vo，禁止把 `Radish.Model` 中的实体直接暴露给 Controller；实体需在此层通过 AutoMapper（一律在 `Radish.Extension/AutoMapperSetup` 注册）转换为视图模型。
+  - 对外仅返回 DTO/Vo，禁止把 `Radish.Model` 中的实体直接暴露给 Controller；实体需在此层通过 `Radish.Service/Mapping` 中的 Mapperly 与显式业务转换转换为视图模型。
   - 当单个服务承担同一聚合下的多段复杂逻辑时，可在服务目录下继续按聚合建子目录，并使用 `partial class` 按职责拆分实现文件；例如论坛帖子服务可落在 `Radish.Service/Posts/PostService*.cs`，分别承载查询、发布、编辑、互动逻辑。
   - 业务运营参数统一通过 `ISystemSettingProvider` 读取代码默认值叠加 Console 覆盖值后的强类型设置；部署配置、密钥和启动前配置仍走 `appsettings` / 环境变量，不进入系统设置中心。
 - `Radish.Core`
@@ -153,7 +153,7 @@ PostgreSQL / SQLite
   - 提供 `PagedRequest`, `PagedResponse<T>`, `ApiError` 等复用结构。
   - 视图模型需以 `Vo` 开头，并结合业务含义做缩写/扩写（如 `VoUsrAudit`, `VoAssetReport`），避免简单加前缀即可猜测真实用途。
 - `Radish.Extension`
-  - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器；按照职责拆分 `AutofacExtension/*`, `AutoMapperExtension/*`, `RedisExtension/*` 等子目录。
+  - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器；按照职责拆分 `AutofacExtension/*`, `RedisExtension/*` 等子目录。
   - `RedisExtension.CacheSetup` 提供统一入口 `AddCacheSetup()`，根据 `Redis.Enable` 自动在 Redis（StackExchange.Redis）与内存缓存间切换，并在启用 Redis 时预先创建 `IConnectionMultiplexer`；当前约定 `Redis.Enable/ConnectionString` 放在 `appsettings.Shared.json`，`Redis.InstanceName` 保留在各宿主配置中做命名空间隔离。
   - `ICaching` 的过期时间参数中，`0` 或负数会回落到组件默认 TTL，避免异常配置导致缓存写入失败；确需不缓存时，应在调用侧显式跳过写入。
   - Redis 目前只作为统一缓存后端与少量 Redis List / Queue 能力预留；多实例 SignalR Backplane、聊天室在线状态、上传限流、商城 / 萝卜币幂等和排行榜等 Redis 专项增强已后置到 [Redis 与缓存治理专题](/planning/redis-cache-governance)，不作为普通业务开发的默认前置条件。通知未读正确性以数据库 `GetInboxSummary` 与单调 `revision` 为权威，不依赖客户端计数或 Redis 原子增减；未来 Redis 工作只承担多实例广播和性能增强，不能成为通知一致性的第二真值。

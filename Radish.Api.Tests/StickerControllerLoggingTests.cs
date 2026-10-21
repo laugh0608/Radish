@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Threading;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -32,7 +31,6 @@ using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.LogTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.Extension.Log;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -430,7 +428,6 @@ public sealed class StickerControllerLoggingTests
 
     private sealed class Fixture : IDisposable
     {
-        private static readonly IMapper Mapper = new MapperConfiguration(c => c.AddProfile<ForumProfile>(), NullLoggerFactory.Instance).CreateMapper();
         private readonly string _operation;
         private readonly ILoggerFactory _logs;
         private readonly Dictionary<string, int> _calls = [];
@@ -533,7 +530,7 @@ public sealed class StickerControllerLoggingTests
                     return Task.FromResult(ImageProcessResult.Ok(path, 17, 96, 96));
                 });
             _logs = LoggerFactory.Create(b => b.ClearProviders().SetMinimumLevel(LogLevel.Trace).AddSerilog(Log.Logger, dispose: false));
-            Service = proxy.CreateInterfaceProxyWithTarget<IStickerService>(new StickerService(Mapper, groupRepository,
+            Service = proxy.CreateInterfaceProxyWithTarget<IStickerService>(new StickerService(groupRepository,
                 stickerRepository, attachmentRepository, cache.Object, storage.Object, processor.Object,
                 _logs.CreateLogger<StickerService>(), new Mock<IAttachmentUrlResolver>().Object), new TranAop(Unit));
             var accessor = new Mock<ICurrentUserAccessor>();
