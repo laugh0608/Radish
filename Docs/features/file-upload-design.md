@@ -110,6 +110,8 @@
 
 ### 3) 上传限流（UploadRateLimit）
 
+> 2026-10-21 隔离验证发现过期目标仍结算与超大整数统计丢失；[修复方案](./upload-quota-boundary-fix-plan.md)已获批准、待实施。下述“过期释放”为目标契约，当前这两处实现缺口尚未关闭。
+
 - 触发位置：`UploadImage`、`UploadDocument` 与 `ChunkedUpload/CreateSession`
 - 返回码：触发限流时返回 `429`
 - 限流维度：

@@ -48,6 +48,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [ORM 与 Redis 依赖评估](./features/orm-redis-dependency-assessment.md)：精确包、分发边界、缓存数据分类与候选实验停止线。
 - [NoDrive 与 Valkey 隔离验证方案](./features/nodrive-valkey-isolation-validation-plan.md)：本次隔离实验的固定输入、对照矩阵、启动与清理边界。
 - [NoDrive 与 Valkey 隔离验证记录](./records/nodrive-valkey-validation-2026-10-21.md)：双数据库与产物结果、缓存业务边界失败、恢复验证和清理证据。
+- [上传配额边界修复方案](./features/upload-quota-boundary-fix-plan.md)：过期结算、Int64 精确容量与内存 / Redis / Valkey 回归范围，已获批实施。
 - [Mapperly 映射迁移记录](./records/mapperly-migration-2026-10-21.md)：映射对照、依赖清理和本地验证边界。
 - [Rust 图片处理替代评估](./features/rust-image-processing-replacement-assessment.md)
 - [Rust 图片处理完整替代实施方案](./features/rust-image-processing-implementation-plan.md)
