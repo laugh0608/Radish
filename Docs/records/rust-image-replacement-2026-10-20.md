@@ -1,6 +1,6 @@
 # Rust 图片处理替代实施与验证记录
 
-> 日期：2026-10-20–21。状态：原生交付、图片能力、隔离浏览器验收及修正后完整预检均通过，进入 PR 集成阶段；PR 实时状态以 GitHub 为准。方案见[完整替代实施方案](../features/rust-image-processing-implementation-plan.md)，精确授权见[依赖清单](../features/rust-image-processing-dependency-proposal.md)。
+> 日期：2026-10-20–21。状态：原生交付、图片能力、隔离浏览器验收及修正后完整预检均通过，已由 [PR #75](https://github.com/laugh0608/Radish/pull/75) 合并为 `4a8589b6` 并完成 dev 回灌。方案见[完整替代实施方案](../features/rust-image-processing-implementation-plan.md)，精确授权见[依赖清单](../features/rust-image-processing-dependency-proposal.md)。
 
 ## 本批范围
 
@@ -44,7 +44,7 @@
 
 ## 当前集成状态
 
-HTTP/3 测试夹具修正后的完整 Repo Quality 已通过；R4 / R5 合并前验收关闭。最终文档核对后创建 `dev → master` PR，并以 PR 上的 Candidate Quality 为合并门禁。本轮不合并、发布或部署；后续合并后须先将 origin/master 回灌 dev。
+HTTP/3 测试夹具修正后的完整 Repo Quality 已通过；R4 / R5 合并前验收关闭。后续 [PR #75](https://github.com/laugh0608/Radish/pull/75) 于 2026-10-21 合并为 `4a8589b6`，dev 已完成回灌，随后开始 Mapperly 批次。合并结果与 PR 的 dev 侧父提交 `726d2a84` 树一致；此次集成没有新增实现差异，也没有创建 tag、发布或部署。以下保留各轮预检及失败修正事实。
 
 ## 首轮远端预检与修正
 

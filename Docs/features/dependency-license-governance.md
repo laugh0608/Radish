@@ -135,7 +135,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 
 ## 8. 外部依据
 
-所有链接核对日期为 2026-10-20；精确包内文件及 SHA256 另见 CSV。
+除 Mapperly 精确版本补核外，以下链接的首轮核对日期为 2026-10-20；精确包内文件及 SHA256 另见 CSV。
 
 - [Six Labors 许可与申请说明](https://sixlabors.com/pricing/)；当前四包内 `LICENSE` 为 Six Labors Split License 1.0，不能只以官网概述代替包内条款。
 - [AutoMapper 16.1.1 许可正文](https://raw.githubusercontent.com/AutoMapper/AutoMapper/v16.1.1/LICENSE.md)、[许可配置与日志执行方式](https://docs.automapper.io/en/latest/License-configuration.html)。
@@ -143,4 +143,4 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 - [Quartz.NET 候选许可](https://github.com/quartznet/quartznet/blob/main/license.txt)、[DejaVu 字体许可与 notices](https://dejavu-fonts.github.io/License.html)。
 - [Oracle 23.8.0 发布页](https://www.nuget.org/packages/Oracle.ManagedDataAccess.Core/23.8.0)、[Oscar 4.0.4 元数据页](https://www.nuget.org/packages/Oscar.Data.SqlClient/4.0.4)。
 - [Redis 版本与许可表](https://redis.io/legal/licenses/)、[Valkey COPYING](https://raw.githubusercontent.com/valkey-io/valkey/unstable/COPYING)。
-- [Mapperly 许可](https://raw.githubusercontent.com/riok/mapperly/main/LICENSE)、[SkiaSharp 许可](https://github.com/mono/SkiaSharp/blob/main/LICENSE.txt)、[Magick.NET 许可](https://github.com/dlemstra/Magick.NET/blob/main/License.txt)。候选未选定精确版本，安装前须再核对版本、全部传递依赖与实际包内条款。
+- [Mapperly 4.3.1 许可](https://raw.githubusercontent.com/riok/mapperly/v4.3.1/LICENSE)：2026-10-21 已选定并核对精确包，见[迁移记录](../records/mapperly-migration-2026-10-21.md)。[SkiaSharp 许可](https://github.com/mono/SkiaSharp/blob/main/LICENSE.txt)、[Magick.NET 许可](https://github.com/dlemstra/Magick.NET/blob/main/License.txt)仅为未采用的历史候选；若以后选用，须再核对精确版本、全部传递依赖与实际包内条款。

@@ -7,8 +7,9 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：Mapperly 迁移、ORM / Redis 评估及隔离验证已完成；上传配额[修复方案](../features/upload-quota-boundary-fix-plan.md)随 `46d22765` 推送后完成实现，Debug / Release 各 262 项定向回归通过、测试资源已清理，见[修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)。实现及结果文档尚未提交，下一步确认收口与后续依赖治理范围；NoDrive、Valkey 暂不正式替换或发布，统一日志 L2 保留后续恢复顺位。
-- **状态复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **下一项工作**：上传配额修复及结果文档已随 `31973553` 提交，Debug / Release 各 262 项定向回归通过、测试资源已清理，见[修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)。下一次先确认下方“接下来的事项”中的依赖治理范围；NoDrive、Valkey 暂不正式替换或发布，统一日志 L2 保留后续恢复顺位。
+- **状态复核日期**：`2026-10-21`；当日 9 个提交与代码 / 文档对照见[日终回顾](../records/day-end-doc-review-2026-10-21.md)。
+- **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -21,6 +22,15 @@
 2026-10-20 [首轮许可盘点](../records/dependency-license-audit-2026-10-20.md)覆盖正式 .NET / Web / Rust / Flutter 的 947 个依赖条目。项目所有者已确认先按[Rust 实施方案](../features/rust-image-processing-implementation-plan.md)替代 Six Labors 四包链，完成正常 PR 后再详细评估 AutoMapper、ORM、Redis 等其他方案。
 
 图片替代与合并前候选门禁已通过，[PR #75](https://github.com/laugh0608/Radish/pull/75) 已合并并完成回灌；[合并前检查](../records/master-pr-regression-2026-10-20.md)的安全升级及图片 API 适配已随 `250cd8f6` 保存，工作区已删除 Six Labors 四包链，本机 Debug / Release 严格构建通过。五宿主原生平台、Linux 双架构最终镜像 / 漏洞策略、联合 ASan 和 PC / mobile 成组验收已通过；HTTP/3 测试夹具修正后全量 Repo Quality 通过，见[实施记录](../records/rust-image-replacement-2026-10-20.md)；服务启动和新增工具链仍按各批清单授权。2026-10-21 接续评估形成独立映射方案，并经批准完成 Mapperly 4.3.1 替代；本地验证见[映射迁移记录](../records/mapperly-migration-2026-10-21.md)。ORM / Redis 已完成获批的隔离评估与清理，随后获批的两类上传配额修复已实现并验证；正式依赖替换和其他运行时变更仍须单独批准，不启动后端语言迁移或发布。
+
+## 接下来的事项
+
+1. **优先确认 NoDrive 正式收缩范围**：依据[ORM / Redis 评估](../features/orm-redis-dependency-assessment.md)和隔离证据，确认仅保留 PostgreSQL / SQLite 的支持边界、四宿主产物及回退方式；`SqlSugarCoreNoDrive 5.1.4.207` 仍携带 SqlClient / SNI，不能当作全部驱动许可问题已解决。批准具体依赖方案后再实施。
+2. **补齐剩余分发材料**：按[许可治理专题](../features/dependency-license-governance.md)复核 Hangfire、Argon2、Microsoft 工具 / SNI 及字体的声明与分发边界；更新迁移后的依赖清单和 notices，保留原 947 条历史盘点，不默认更换密码或调度实现。
+3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
+4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与本次 262 项定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。
+
+以上是待确认的后续建议，不因写入待办而取得依赖替换、服务启动或部署授权。
 
 ## 产品线成熟度
 
@@ -39,8 +49,8 @@
 
 ## 最近结论
 
-- `2026-10-20` 建立[第三方依赖许可治理专题](../features/dependency-license-governance.md)和[Rust 图片替代评估](../features/rust-image-processing-replacement-assessment.md)；947 条依赖清单、20 项 NuGet 特别复核及 5 项明确证据缺口见[盘点记录](../records/dependency-license-audit-2026-10-20.md)。仅审计与文档，不代表替代已完成或所有许可已放行。
-- `2026-10-20` 按项目所有者要求细化[Rust 完整替代实施方案](../features/rust-image-processing-implementation-plan.md)：单实现、八类操作、动画 / 字体 / 隐私契约、ABI / 资源边界及 Linux 双架构交付；方案及精确依赖已获批，单实现与构建接线已落地，验收未全部关闭。
+- `2026-10-21` 完成 PR #75 合并回灌、Mapperly 替代、NoDrive / Valkey 隔离验证，以及上传配额过期和 Int64 边界修复；[日终回顾](../records/day-end-doc-review-2026-10-21.md)汇总全部提交、验证范围和后续事项。NoDrive / Valkey 未正式采用，本批未发布。
+- `2026-10-20` 建立[第三方依赖许可治理专题](../features/dependency-license-governance.md)与[Rust 完整替代方案](../features/rust-image-processing-implementation-plan.md)；947 条依赖清单保留为迁移前快照。图片替代的交付、平台与成组验收已关闭，并于次日完成 PR 集成，见[实施记录](../records/rust-image-replacement-2026-10-20.md)。
 
 - `2026-10-15` 完成六个日志 L2 开发提交，覆盖自有 Auth 账户 / 会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断及 API 启动业务 / Gateway 停止通知；[日终回顾](../records/day-end-doc-review-2026-10-15.md)汇总全部批次、代码与文档对照、验证限制及后续事项。L2 尚未关闭，生产链路未切换。
 
@@ -68,7 +78,7 @@
 
 ## 日志专题恢复顺位（保留 2026-10-15 结论）
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，今日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。
+继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，该日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。
 
 1. **继续剩余框架与非日志通道只读核对**：ASP.NET Core DataProtection 的已列明来源已治理；OpenIddict Client / Validation / DataProtection 依赖存在但未注册。IdentityModel 默认空 logger、仓库无诊断订阅器不等于外部 EventPipe / DiagnosticListener / Activity / metrics 已受控；详细边界见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 继续后置。
 2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。API 周期任务注册 / 固定文档同步与 Gateway 停止日志已治理；继续只读核对其他自有来源与相邻透传边界，尤其是既有 Hangfire provider 在 enrichment / scope 合并后经过旧链 WriteTo / AuditTo 的实际输出，不把生成端受控等同最终输出已重建；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。

@@ -17,6 +17,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [首版 dev 边界](./planning/dev-first-scope.md)
 - [首版 dev 功能矩阵状态表](./planning/dev-first-status-matrix.md)
 - [当前进行中](./planning/current.md)
+- [2026-10-21 日终代码与文档回顾](./records/day-end-doc-review-2026-10-21.md)：当日提交、文档校准与接续事项。
 - [工程改进候选清单](./planning/engineering-improvement-candidates.md)
 - [Console 权限治理 V1](./guide/console-permission-governance.md)
 - [Console 权限覆盖矩阵](./guide/console-permission-coverage-matrix.md)

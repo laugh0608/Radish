@@ -105,6 +105,6 @@ Valkey 9.1.2 / 8.1.10 的精确 manifest、支持期、数据兼容停止线与�
 
 ## 5. 当前建议与停止线
 
-第 2 节已获批准并完成映射代码切换，验证事实见[实施记录](../records/mapperly-migration-2026-10-21.md)。NoDrive / Valkey 已按单独批准的范围完成隔离验证与清理，结论及两类既有业务问题见[记录](../records/nodrive-valkey-validation-2026-10-21.md)；二者均未正式替换。AuditLog 的旧注册缺口经测试确认后已补齐读取映射，未启用未使用的写入配置。
+第 2 节已获批准并完成映射代码切换，验证事实见[实施记录](../records/mapperly-migration-2026-10-21.md)。NoDrive / Valkey 已按单独批准的范围完成隔离验证与清理，结论及两类既有业务问题见[记录](../records/nodrive-valkey-validation-2026-10-21.md)；两类问题随后已随 `31973553` 修复并完成定向回归，见[修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)，不改写原实验失败事实。二者均未正式替换。AuditLog 的旧注册缺口经测试确认后已补齐读取映射，未启用未使用的写入配置。
 
 本文没有改变现行架构规范、业务接口或数据库行为。实施需要项目所有者批准；依赖实验与服务启动分别遵守 [AGENTS.md](../../AGENTS.md) 的单独授权要求。

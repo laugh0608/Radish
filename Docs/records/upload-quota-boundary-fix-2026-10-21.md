@@ -65,9 +65,9 @@ Release 使用 `-c Release` 与独立 `release-regression.trx`。文档与文本
 
 本轮根目录 `/private/tmp/radish-upload-quota.tj6YWc` 的两个容器、两个命名卷已按 `io.radish.upload-quota` owner 标签核验后删除。清理退出码 0，标签筛选无剩余资源，端口 `16379 / 16380` 无监听；控制目录及外部启动入口已删除，只保留 `.owner` 与 `evidence/`。镜像缓存保留，未执行 FLUSHALL / 全局 prune，未清理其他任务资源。
 
-原始 evidence 保存修复前代码、最终十个 C# 文件、源码 diff、构建日志、各轮 TRX、测试逐名对照、镜像 / 容器元数据与清理结果；manifest SHA256 进入仓库证据摘要。本机临时目录不是永久远程归档，永久回归源码已放入仓库工作区。
+原始 evidence 保存修复前代码、最终十个 C# 文件、源码 diff、构建日志、各轮 TRX、测试逐名对照、镜像 / 容器元数据与清理结果；manifest SHA256 进入仓库证据摘要。本机临时目录不是永久远程归档，永久回归源码已随 `31973553` 提交到仓库。
 
 - 旧科学计数法记录已损失精度，无法推测还原；现在报错并保留，未访问或批量修正生产数据。
 - 本轮没有新增持久化 settlement ledger / outbox、网络故障 exactly-once、内存多次缓存 IO 的事务回滚或上传 ID 重用支持。
 - AOF / RDB / 重连仍引用上一轮独立实验结果，本次未重跑；未验证 TLS、Cluster、Sentinel、负载容量、Linux .NET 宿主或 amd64。
-- NoDrive、Valkey 的正式采用、部署数据迁移与发布继续等待独立裁决。本次方案提交之外的实现与结果文档尚未提交。
+- NoDrive、Valkey 的正式采用、部署数据迁移与发布继续等待独立裁决。实现与结果文档已随 `31973553` 提交；后续事项统一见[当前进行中](../planning/current.md)。
