@@ -2,18 +2,18 @@
 
 > 2026-10-21，基于 `dev` 的 Mapperly 迁移提交 `b8debb26`；该提交已推送 `origin/dev`。本页是 ORM / Redis 后续评估的当前入口，[前轮方案](./post-image-dependency-assessment.md)保留初始盘点。
 >
-> 本轮只读核对源码、已有依赖图与本地产物、公开 NuGet 包及镜像 manifest / config。未安装候选依赖、执行候选 restore、拉取镜像层、启动服务、连接生产或迁移数据。精确哈希与版本见[证据清单](../records/orm-redis-assessment-evidence-2026-10-21.json)。
+> 首轮只读盘点的精确哈希与版本见[证据清单](../records/orm-redis-assessment-evidence-2026-10-21.json)。随后按批准方案完成隔离实验并清理：NoDrive 通过既定矩阵，Valkey 未发现候选独有差异，但两端共同暴露两类上传限流边界问题，完整业务验收未通过；详见[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。正式依赖与部署配置未变，未连接生产或发布。
 
 ## 1. 当前建议
 
-| 对象 | 建议 | 本轮能证明的边界 |
+| 对象 | 建议 | 当前证据边界 |
 | --- | --- | --- |
-| SqlSugar | 先评估 `SqlSugarCoreNoDrive 5.1.4.207` 的部分驱动收缩；暂不整体更换 ORM | 精确包的主 DLL 与现用版本相同，但 `SystemCommon` 仍带 SQL Server / SNI，不能达到“只剩 PG / SQLite” |
+| SqlSugar | 同版本 NoDrive 已通过隔离验证，可据此裁决正式部分收缩；暂不整体更换 ORM | SQLite、PG16 / 17、严格构建与四宿主产物通过；仍带 SQL Server / SNI，不能达到“只剩 PG / SQLite” |
 | 完整 ORM 替换 | 仅当必须彻底退出额外驱动链，或 NoDrive 无法通过验证时，另立 EF Core 迁移专题 | 现有 OpenIddict 已用 EF Core；业务查询、事务、实体特性及迁移仍与 SqlSugar 深度耦合，成本明显高于映射替代 |
-| Redis 服务 | 优先把 `valkey/valkey:9.1.2` 作为独立兼容实验候选；`8.1.10` 保留为比较项 | 已核对官方版本、许可、支持政策、Linux 双架构 manifest；尚未证明 Radish Lua、恢复及性能兼容 |
+| Redis 服务 | 保留 Valkey 9.1.2 候选；先裁决上传限流边界与迁移方案 | 普通业务、AUTH / ACL、AOF、同版本 RDB、重连通过；过期结算与超大整数在两端同样失败，无性能 / 生产迁移结论 |
 | 实际迁移 | 先确认源版本与数据分类，再定数据方案 | 本次联网解析 `redis:7` 的 amd64 config 为 `7.4.11`，不能推定用户正在运行的版本，更不能直接换镜像挂旧卷 |
 
-不把上述建议当作依赖、配置、数据库支持范围或部署方案已经获批。下一步若获批，分别开展 ORM 包级实验和 Valkey 隔离实验，不将两者绑成一次替换。
+实验授权与验证结果不等于正式依赖、配置、数据库支持范围或部署方案获批。后续分别裁决 NoDrive 正式收缩、限流问题修复与 Valkey 迁移，不将两者绑成一次替换。
 
 ## 2. ORM：精确包与现有分发边界
 
@@ -34,7 +34,7 @@ Gateway 虽不承载业务数据库，仍通过 `Common` 依赖链携带这些�
 
 ### 2.2 NoDrive 的已证实收益与剩余问题
 
-从 NuGet 官方 flat-container 下载 `SqlSugarCoreNoDrive 5.1.4.207` 与 `SystemCommon 8.5.0` 到临时目录，只读取 ZIP 内容；未安装到项目或修改 NuGet 缓存。
+首轮只读评估从 NuGet 官方 flat-container 下载 `SqlSugarCoreNoDrive 5.1.4.207` 与 `SystemCommon 8.5.0` 到临时目录，只读取 ZIP 内容；未安装到项目或修改 NuGet 缓存。
 
 | 包 | `.NETStandard2.1` 声明依赖 | 包内程序集 |
 | --- | --- | --- |
@@ -43,14 +43,14 @@ Gateway 虽不承载业务数据库，仍通过 `Common` 依赖链携带这些�
 
 NoDrive 主 DLL 的 SHA256 为 `38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b`，与现用 `SqlSugarCore 5.1.4.207` DLL 逐字节一致。[上游安装说明](https://www.donet5.com/home/Doc?typeId=1226)也将两者描述为相同代码、不同驱动打包方式。这支持优先验证同版本 NoDrive，避免同时升级 ORM 行为。
 
-仍有四个不能跳过的检查：
+分包需要区分以下四项；隔离结果只关闭相应技术检查：
 
 1. **仍带 SQL Server 链**：SystemCommon 的精确包仍依赖 SqlClient；现有 SqlClient 5.2.2 图进一步依赖 SNI 5.2.0。因此 NoDrive 只能作为部分收缩候选。
-2. **同名程序集选择**：两个候选包均包含 `lib/netstandard2.1/SqlSugar.dll`，内容不同。需要实际 restore / build / publish 证明最终选择了预期的 5.1.4.207 文件；本轮未安装候选，不能宣称会冲突，也不能宣称自动解决正确。
+2. **同名程序集选择**：两个候选包均包含 `lib/netstandard2.1/SqlSugar.dll`，内容不同。后续隔离实验已通过 restore / build / 运行时探针 / 十二份 publish 证明固定输入选择了预期 5.1.4.207；包版本变化时仍需复核。
 3. **依赖图增加项**：SystemCommon 新增 JWT 等依赖边，须检查整个图的版本统一、漏洞、构建警告与产物，不能只计算删除了几种驱动。
 4. **许可材料**：两包元数据指向 Apache-2.0，但 ZIP 中没有独立 LICENSE 正文。后续分发需补足对应上游许可与 copyright 材料；各传递包继续独立判定，不能由上层包许可覆盖。
 
-从声明图推断，NoDrive 有望去掉由通用包引入的 Oracle / Oscar / Dm / Kdbndp / MySqlConnector；这仍是候选预期，最终必须以新 resolved graph 与完整 publish 清单确认。禁止删 DLL、修改缓存或用 `ExcludeAssets` 隐藏命中。
+隔离实验的 resolved graph 与四宿主 publish 已确认退出由通用包引入的 Oracle / Oscar / Dm / Kdbndp / MySqlConnector 及辅助链；正式工作区仍使用原包，不能将临时产物当作正式替换完成。禁止删 DLL、修改缓存或用 `ExcludeAssets` 隐藏命中。
 
 ### 2.3 与完整 ORM 迁移的比较
 
@@ -59,7 +59,7 @@ NoDrive 主 DLL 的 SHA256 为 `38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d
 | 路线 | 实际收益 | 主要代价 / 选择条件 |
 | --- | --- | --- |
 | 保留当前包并补许可材料 | 不改变数据库行为 | 继续分发未使用驱动，Oscar 等证据缺口仍待关闭 |
-| 同版本 NoDrive + 明确驱动引用 | 可以保留 ORM 实现，缩小部分厂商链 | SQL Server / SNI 不会自然消失；需解决程序集选择与双数据库验证 |
+| 同版本 NoDrive + 明确驱动引用 | 可以保留 ORM 实现，缩小部分厂商链 | SQL Server / SNI 不会自然消失；固定输入的程序集选择与双数据库验证已通过，正式配置和许可边界仍待裁决 |
 | 自维护精简 fork | 能自行控制 provider 分发 | 必须承担上游同步、构建来源、安全修复与测试；当前不建议作为默认路线 |
 | EF Core | 可按正式 PG / SQLite provider 边界组织；已有 OpenIddict 经验可复用 | 需要重写 SqlSugar 查询、实体映射、仓储及事务接线，不能把现有 Auth 迁移经验当作业务库已兼容 |
 | Dapper / 手写 SQL | SQL 与驱动选择直接可见 | Dapper 提供 SQL 执行 / 结果映射；分页、软删除、租户过滤、更新保护、schema 管理仍须项目承担，不宜仅为许可治理扩大自维护面 |
@@ -68,9 +68,9 @@ EF 的[全局过滤器](https://learn.microsoft.com/en-us/ef/core/querying/filte
 
 完整替换至少要逐项保持：Main / Log / Message / Chat 切库与租户连接、公共租户可见性、软删除、Snowflake / PublicId、分页 / 分表、原地更新与乐观并发、金额 / UTC / nullable 映射、嵌套事务 / savepoint、SQLite WAL / busy 行为、PostgreSQL 大小写标识符、SQL 日志 AOP、既有 schema ledger。OpenIddict 的 EF migrations 与 Hangfire 自有 schema 保持各自边界，不能顺带重建业务表。
 
-### 2.4 后续包级实验的裁决标准
+### 2.4 包级实验与正式采用的裁决标准
 
-若批准实验，先提出 Common / Infrastructure 两处替换、驱动精确版本、临时还原目录与验证命令清单。必须同时满足：
+已批准实验固定 Common / Infrastructure 两处候选引用、驱动版本及隔离目录；前三项技术证据已完成，第四项仍属于正式采用前的范围裁决：
 
 - 主 SqlSugar DLL 的最终哈希与预期一致；两套包不混留；所有入口的 PG / SQLite 驱动完整。
 - Debug / Release 严格构建、身份 / 租户 / 事务 / schema 定向测试及全量后端通过；本轮 Mapperly 验证中跳过的 42 个 PostgreSQL 用例不能继续作为双数据库证据缺口。
@@ -109,13 +109,13 @@ EF 的[全局过滤器](https://learn.microsoft.com/en-us/ef/core/querying/filte
 
 `CacheConst` 中存在验证码、在线用户、权限等名称，但未发现对应业务写入；不能据常量推断 Redis 承载会话权威。当前 OIDC token 在数据库，DataProtection 使用文件路径；未发现 Redis session / DataProtection 持久化接线。`RedisBasketRepository` 保留 String / List / key 方法，但未找到业务消费者；API SignalR 当前也未接 Redis backplane。
 
-### 3.3 协议兼容的证据缺口
+### 3.3 业务验证与现有问题
 
 上传实现包含 Acquire / Complete / Fail / Statistics 四段 Lua，使用 Hash、String、TTL、INCR / INCRBY 与 DEL。key 具备用户 hash tag，但当前部署仍是单实例；本轮不扩展成 Cluster。普通 ICaching 经 IDistributedCache 存储，上传 Lua 直接操作原生类型，验收必须覆盖两条路径。
 
-现有 `UploadRateLimitServiceTest` 的 8 个用例使用 `RedisOptions.Enable=false`，可以证明内存分支的业务预期，不能证明 Lua 在 Redis / Valkey 中执行正确。后续实验须用同一组输入对照两个服务，检查并发预留、容量上限、重复完成 / 失败、过期清理、跨业务日、非空 InstanceName、超时与断线重连。
+现有 `UploadRateLimitServiceTest` 的 8 个用例使用 `RedisOptions.Enable=false`，可以证明内存分支的业务预期，不能证明 Lua 在 Redis / Valkey 中执行正确。后续隔离实验已以真实客户端与生产 Lua 补充两端对照，覆盖并发预留、容量上限、幂等、过期清理、跨日、InstanceName 和重连；新增夹具保存在实验 evidence，不作为正式测试代码提交。
 
-静态阅读还发现 CompleteScript 接收 `now`、解析 `expiresAt`，但未据此拒绝已过期条目；内存分支也先移出待完成条目，再清理其余过期项。因此“已过期但因其他在途预留仍留在集合中的条目能否结算”需要明确预期并实测，不能把内存用例通过视为这一边界已覆盖。缓存 key 索引采用非原子读改写，轻回应检查和写入也不是一段 Lua。以上是现有实现的验证关注点，不在本轮顺手修复；切换服务本身不会自动解决这些并发 / 语义问题。
+静态阅读还发现 CompleteScript 接收 `now`、解析 `expiresAt`，但未据此拒绝已过期条目；内存分支也先移出待完成条目，再清理其余过期项。隔离实验已复现“目标已过期、其他预留仍存活时，目标仍结算”的问题，且补充发现 `2^53±1` 大整数被转成科学计数法后遭解析清除；两端表现一致。缓存 key 索引采用非原子读改写，轻回应检查和写入也不是一段 Lua。以上是现有实现的关注点，未在本轮修复；切换服务本身不会自动解决这些并发 / 语义问题。
 
 ### 3.4 Valkey 候选与数据路径
 
@@ -128,7 +128,7 @@ EF 的[全局过滤器](https://learn.microsoft.com/en-us/ef/core/querying/filte
 | registry 中 linux/amd64、linux/arm64 | 均存在 | 均存在 |
 | 顶层 COPYING | [BSD-3-Clause](https://raw.githubusercontent.com/valkey-io/valkey/9.1.2/COPYING) | [BSD-3-Clause](https://raw.githubusercontent.com/valkey-io/valkey/8.1.10/COPYING) |
 
-manifest / config 核对不包含镜像层漏洞扫描、操作系统包许可或功能验收。以上 digest 是只读评估快照，未写入 Compose，未批准安装或运行；正式实验前仍需核对当前安全状态。
+manifest / config 核对不包含镜像层漏洞扫描、操作系统包许可或功能验收。以上 digest 未写入 Compose；其中 9.1.2 已获批完成 Linux arm64 隔离实验，8.1.10 未运行。实际版本与运行范围见验证记录，正式分发仍需独立安全与许可材料。
 
 [官方迁移文档](https://valkey.io/topics/migration/)支持 Redis OSS 7.2 及以前的兼容迁移，明确 Redis CE 7.4+ 数据文件不能按该路径直接使用。因此需按源版本分流：
 
@@ -138,9 +138,9 @@ manifest / config 核对不包含镜像层漏洞扫描、操作系统包许可�
 
 即便暂停上传等在途操作，当前业务日已用配额仍不会自动消失；“等待一分钟后清空”不足以保留限制。切换后如已产生新写入，回退必须处理增量，不能直接指回旧卷造成配额或去重状态倒退。
 
-## 4. 后续实验边界与完成标准
+## 4. 隔离结果与后续停止线
 
-本评估已随 `47bdbfd5` 推送 `origin/dev`。按项目所有者后续要求，已整理[隔离验证方案](./nodrive-valkey-isolation-validation-plan.md)与[具体命令](./nodrive-valkey-isolation-validation-commands.md)，已于 2026-10-21 获准执行；本节是提出实验前的边界清单：
+本评估已随 `47bdbfd5` 推送；[隔离方案](./nodrive-valkey-isolation-validation-plan.md)与[命令](./nodrive-valkey-isolation-validation-commands.md)获批后随 `77549e95` 推送并执行。完整[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)区分 NoDrive 通过、Valkey 对照一致但两类业务边界失败，以及已通过的独立恢复场景。以下仍是后续变更的范围约束：
 
 1. ORM：精确候选包和显式驱动、需改的项目、剩余许可链、临时目录；SQLite 与 PostgreSQL 验证均要覆盖，数据库服务启动另列范围。
 2. Valkey：精确版本 / digest、独立测试容器、仅回环绑定端口（可提议 `16379 / 16380`，使用前检查占用）、独立测试卷与合成数据、停止和删除容器 / 卷的清理命令；不复用项目或生产卷。
@@ -148,4 +148,4 @@ manifest / config 核对不包含镜像层漏洞扫描、操作系统包许可�
 4. 运维：若后续切换，更新 server / CLI 命令、healthcheck、卷权限与路径、备份恢复和运维文档；保持服务名 / 连接端点是否不变需方案明示，不在实验中默认修改部署。
 5. 结论：明确“可安装 / 可运行 / 可迁移数据 / 可发布”的不同证据。仍需合并前回归与独立发布授权，包审计或一次 GET / SET 成功均不足以完成替换。
 
-本轮未修改任何运行代码、依赖清单或部署配置。新评估文档通过文档、仓库卫生与 diff 检查；没有候选功能测试或生产环境结论。
+本轮只在临时副本改变依赖和增加夹具，实验资源已清理；正式运行代码、依赖清单与部署配置未改，未形成生产迁移或发布结论。两类业务问题、正式 NoDrive 收缩和 Valkey 迁移分别等待范围裁决。

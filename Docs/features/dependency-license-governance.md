@@ -1,6 +1,6 @@
 # 第三方依赖许可治理与替代方案
 
-> 状态：Rust 图片替代已通过 PR #75 合并与回灌；2026-10-21 开始后续依赖评估，映射替代已获批并完成 Mapperly 4.3.1 切换，ORM / Redis 保持只评估。
+> 状态：Rust 图片替代已通过 PR #75 合并与回灌；2026-10-21 开始后续依赖评估，映射替代已获批并完成 Mapperly 4.3.1 切换，ORM / Redis 已完成获批的隔离验证与清理，正式依赖 / 部署配置保持不变。
 >
 > 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代已交付；后续精确依赖安装及服务启动按各批授权执行，其他依赖仍处于审计与方案阶段。
 
@@ -96,7 +96,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugarCore` 传递引入 Oracle、神通、达梦、金仓和 SQL Server 相关资产。处理顺位：
 
 1. 检查实际配置支持范围、resolved graph、publish 内容和运行时动态加载。
-2. 调查上游受支持的 provider 分包 / 精简方案；已核对 `SqlSugarCoreNoDrive 5.1.4.207` 精确包，主 DLL 与现用版本相同，但 `SystemCommon 8.5.0` 仍引入 SQL Server / SNI；它只能作为部分收缩候选，见[详细评估](./orm-redis-dependency-assessment.md)。
+2. 调查上游受支持的 provider 分包 / 精简方案；已核对 `SqlSugarCoreNoDrive 5.1.4.207` 精确包，主 DLL 与现用版本相同，但 `SystemCommon 8.5.0` 仍引入 SQL Server / SNI；它已通过固定输入的隔离验证，仍只能部分收缩，见[详细评估](./orm-redis-dependency-assessment.md)与[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。
 3. 若无法安全收缩，再比较维护受控分发与 ORM 迁移的长期成本；后者属于跨 Repository 的独立架构裁决。
 
 不能只删除输出 DLL、修改本地 NuGet 缓存、隐藏扫描命中或添加 `ExcludeAssets` 来假装分发与运行边界已经解决。也不能因为客户端驱动免费分发，就推导数据库服务器本身免费。
@@ -109,7 +109,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 
 ### 6.4 Redis 服务
 
-先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。已核对 key / TTL 消费路径、上传 Lua 测试缺口、Valkey 9.1.2 / 8.1.10 镜像 manifest 与 Redis 7.4+ 数据文件兼容限制，见[后续评估](./orm-redis-dependency-assessment.md)。
+先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。已核对 key / TTL 消费路径、上传 Lua 测试缺口、Valkey 9.1.2 / 8.1.10 镜像 manifest 与 Redis 7.4+ 数据文件兼容限制，见[后续评估](./orm-redis-dependency-assessment.md)。9.1.2 隔离对照未发现候选独有差异，恢复与重连通过，但两端共同的上传过期结算 / 超大整数问题导致完整业务验收未通过；正式迁移与修复需另行确认。
 
 ## 7. 分批顺序、验证与完成标准
 

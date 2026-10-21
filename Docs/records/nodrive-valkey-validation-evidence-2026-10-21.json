@@ -1,0 +1,711 @@
+{
+  "date": "2026-10-21",
+  "planCommit": "77549e95fa1eec55dc57718054fc2867476f3f42",
+  "sourceCommit": "47bdbfd5b225f5f3d809c2283686d7a80f6d154b",
+  "runId": "radish-deplab.0rQ0BY",
+  "sdk": "10.0.300",
+  "runtime": "10.0.8",
+  "clientPlatform": "macOS arm64",
+  "serverPlatform": "linux arm64",
+  "evidenceDirectory": "/private/tmp/radish-deplab.0rQ0BY/evidence",
+  "evidenceManifestSha256": "ccb1948b112b272f70f03028532faa66d9f65378296819225c3d1ff72b6bd6a5",
+  "fixturePatchSha256": "469f6d035b98479ff605cae290f1a7f6cbd145cdbd6f24b1084318acc3b704b0",
+  "images": [
+    {
+      "id": "sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+      "repoDigests": [
+        "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939"
+      ],
+      "architecture": "arm64",
+      "os": "linux"
+    },
+    {
+      "id": "sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+      "repoDigests": [
+        "postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690"
+      ],
+      "architecture": "arm64",
+      "os": "linux"
+    },
+    {
+      "id": "sha256:44960b3100c48159a66d28c18b0588c193492e25f7551d60e51dd464fc3eca5b",
+      "repoDigests": [
+        "redis@sha256:44960b3100c48159a66d28c18b0588c193492e25f7551d60e51dd464fc3eca5b"
+      ],
+      "architecture": "arm64",
+      "os": "linux"
+    },
+    {
+      "id": "sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd",
+      "repoDigests": [
+        "valkey/valkey@sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd"
+      ],
+      "architecture": "arm64",
+      "os": "linux"
+    }
+  ],
+  "candidatePackages": {
+    "sqlsugarcorenodrive": {
+      "version": "5.1.4.207",
+      "nupkgSha256": "6f5f41957dc83bf729a4d74309123cf08ae80a877877102c0f456479ebc3ec2a",
+      "dlls": {
+        "lib/netstandard2.1/SqlSugar.dll": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b"
+      }
+    },
+    "systemcommon": {
+      "version": "8.5.0",
+      "nupkgSha256": "d45acf8bfc8b10e179f2b4f1e84581471717bf0f42070a795015811b8abfce20",
+      "dlls": {
+        "lib/netstandard2.1/SqlSugar.dll": "062c457dc941dcd1f063ebc40d8c4286132fa8682f09762ba16c54f758be21f0"
+      }
+    },
+    "npgsql": {
+      "version": "10.0.0",
+      "nupkgSha256": "5152b3f5d1ffad50826ccc8576a037d5162986dd5780344b22a532d03a7d0024",
+      "dlls": {}
+    },
+    "microsoft.data.sqlite": {
+      "version": "10.0.0",
+      "nupkgSha256": "a787e8342fe25835b0832133171755c9a360eb111ead34c8a2ec64ee0d86d5d3",
+      "dlls": {}
+    }
+  },
+  "variants": {
+    "baseline": {
+      "assetGraphs": 19,
+      "packageIdentities": 237,
+      "reportedVulnerabilities": [],
+      "restoreDiagnostics": [],
+      "debugBuild": "passed; zero warnings/errors",
+      "releaseBuild": "passed; zero warnings/errors",
+      "tests": {
+        "pg17": {
+          "counts": {
+            "total": "4034",
+            "executed": "4034",
+            "passed": "4034",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "originalPostgresCasesPassed": 42,
+          "driverProbeCases": {
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.PostgreSQLProvider_ShouldExecuteRealParameterizedQuery": "Passed",
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.SQLiteProvider_ShouldExecuteRealParameterizedQuery": "Passed",
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.LoadedSqlSugar_ShouldMatchApprovedAssembly": "Passed"
+          }
+        },
+        "pg16": {
+          "counts": {
+            "total": "43",
+            "executed": "43",
+            "passed": "43",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "originalPostgresCasesPassed": 42,
+          "driverProbeCases": {
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.PostgreSQLProvider_ShouldExecuteRealParameterizedQuery": "Passed"
+          }
+        }
+      },
+      "publish": {
+        "Radish.Api": {
+          "files": 389,
+          "bytes": 149157132,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 89
+        },
+        "Radish.Auth": {
+          "files": 581,
+          "bytes": 154761071,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 118
+        },
+        "Radish.Gateway": {
+          "files": 102,
+          "bytes": 32896341,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 59
+        },
+        "Radish.DbMigrate": {
+          "files": 207,
+          "bytes": 124244295,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 80
+        }
+      }
+    },
+    "drivers": {
+      "assetGraphs": 19,
+      "packageIdentities": 232,
+      "reportedVulnerabilities": [],
+      "restoreDiagnostics": [],
+      "debugBuild": "passed; zero warnings/errors",
+      "releaseBuild": "passed; zero warnings/errors",
+      "tests": {
+        "pg17": {
+          "counts": {
+            "total": "4034",
+            "executed": "4034",
+            "passed": "4034",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "originalPostgresCasesPassed": 42,
+          "driverProbeCases": {
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.LoadedSqlSugar_ShouldMatchApprovedAssembly": "Passed",
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.SQLiteProvider_ShouldExecuteRealParameterizedQuery": "Passed",
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.PostgreSQLProvider_ShouldExecuteRealParameterizedQuery": "Passed"
+          }
+        },
+        "pg16": {
+          "counts": {
+            "total": "43",
+            "executed": "43",
+            "passed": "43",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "originalPostgresCasesPassed": 42,
+          "driverProbeCases": {
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.PostgreSQLProvider_ShouldExecuteRealParameterizedQuery": "Passed"
+          }
+        }
+      },
+      "publish": {
+        "Radish.Api": {
+          "files": 389,
+          "bytes": 149157150,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 89
+        },
+        "Radish.Auth": {
+          "files": 581,
+          "bytes": 154761135,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 118
+        },
+        "Radish.Gateway": {
+          "files": 102,
+          "bytes": 33429921,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 59
+        },
+        "Radish.DbMigrate": {
+          "files": 207,
+          "bytes": 124244313,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 80
+        }
+      }
+    },
+    "nodrive": {
+      "assetGraphs": 19,
+      "packageIdentities": 226,
+      "reportedVulnerabilities": [],
+      "restoreDiagnostics": [],
+      "debugBuild": "passed; zero warnings/errors",
+      "releaseBuild": "passed; zero warnings/errors",
+      "tests": {
+        "pg17": {
+          "counts": {
+            "total": "4034",
+            "executed": "4034",
+            "passed": "4034",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "originalPostgresCasesPassed": 42,
+          "driverProbeCases": {
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.SQLiteProvider_ShouldExecuteRealParameterizedQuery": "Passed",
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.LoadedSqlSugar_ShouldMatchApprovedAssembly": "Passed",
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.PostgreSQLProvider_ShouldExecuteRealParameterizedQuery": "Passed"
+          }
+        },
+        "pg16": {
+          "counts": {
+            "total": "43",
+            "executed": "43",
+            "passed": "43",
+            "failed": "0",
+            "error": "0",
+            "timeout": "0",
+            "aborted": "0",
+            "inconclusive": "0",
+            "passedButRunAborted": "0",
+            "notRunnable": "0",
+            "notExecuted": "0",
+            "disconnected": "0",
+            "warning": "0",
+            "completed": "0",
+            "inProgress": "0",
+            "pending": "0"
+          },
+          "originalPostgresCasesPassed": 42,
+          "driverProbeCases": {
+            "Radish.Api.Tests.DependencyLab.DependencyLabDriverProbeTests.PostgreSQLProvider_ShouldExecuteRealParameterizedQuery": "Passed"
+          }
+        }
+      },
+      "publish": {
+        "Radish.Api": {
+          "files": 378,
+          "bytes": 140148018,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 83
+        },
+        "Radish.Auth": {
+          "files": 570,
+          "bytes": 145751317,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 112
+        },
+        "Radish.Gateway": {
+          "files": 91,
+          "bytes": 24424661,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 53
+        },
+        "Radish.DbMigrate": {
+          "files": 196,
+          "bytes": 115235185,
+          "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+          "packages": 74
+        }
+      }
+    }
+  },
+  "redisValkey": {
+    "persistence-seed.trx": {
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    "persistence-verify-rdb.trx": {
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    "persistence-verify-restart.trx": {
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    "recovery-redis.trx": {
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    "recovery-valkey.trx": {
+      "counts": {
+        "total": "1",
+        "executed": "1",
+        "passed": "1",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": []
+    },
+    "redis-valkey-boundary-diagnostics.trx": {
+      "counts": {
+        "total": "6",
+        "executed": "6",
+        "passed": "0",
+        "failed": "6",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.ExpiredTargetHeldByLiveReservation_ShouldNotSettleExpiredBytes(target: \"valkey\")",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   100"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.LargeInt64Reservation_ShouldRetainExactAcceptedByteCount(target: \"valkey\", bytes: 9007199254740993)",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 9007199254740993\nActual:   0"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.LargeInt64Reservation_ShouldRetainExactAcceptedByteCount(target: \"redis\", bytes: 9007199254740993)",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 9007199254740993\nActual:   0"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.LargeInt64Reservation_ShouldRetainExactAcceptedByteCount(target: \"valkey\", bytes: 9007199254740991)",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 9007199254740991\nActual:   0"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.LargeInt64Reservation_ShouldRetainExactAcceptedByteCount(target: \"redis\", bytes: 9007199254740991)",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 9007199254740991\nActual:   0"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.ExpiredTargetHeldByLiveReservation_ShouldNotSettleExpiredBytes(target: \"redis\")",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   100"
+        }
+      ]
+    },
+    "redis-valkey-contract.trx": {
+      "counts": {
+        "total": "22",
+        "executed": "22",
+        "passed": "16",
+        "failed": "6",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "failures": [
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.LargeInt64Reservation_ShouldRetainExactAcceptedByteCount(target: \"valkey\", bytes: 9007199254740993)",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 9007199254740993\nActual:   0"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.LargeInt64Reservation_ShouldRetainExactAcceptedByteCount(target: \"redis\", bytes: 9007199254740993)",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 9007199254740993\nActual:   0"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.LargeInt64Reservation_ShouldRetainExactAcceptedByteCount(target: \"valkey\", bytes: 9007199254740991)",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 9007199254740991\nActual:   0"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.LargeInt64Reservation_ShouldRetainExactAcceptedByteCount(target: \"redis\", bytes: 9007199254740991)",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 9007199254740991\nActual:   0"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.ExpiredTargetHeldByLiveReservation_ShouldNotSettleExpiredBytes(target: \"valkey\")",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   100"
+        },
+        {
+          "name": "Radish.Api.Tests.DependencyLab.DependencyLabRedisContractTests.ExpiredTargetHeldByLiveReservation_ShouldNotSettleExpiredBytes(target: \"redis\")",
+          "message": "Assert.Equal() Failure: Values differ\nExpected: 0\nActual:   100"
+        }
+      ]
+    }
+  },
+  "cleanup": {
+    "exitCode": 0,
+    "containersRemaining": [],
+    "volumesRemaining": [],
+    "removedDirectories": [
+      "src",
+      "packages",
+      "publish",
+      "http-cache",
+      "dotnet-home",
+      "control"
+    ],
+    "retained": [
+      "evidence",
+      ".owner"
+    ],
+    "imageCacheRetained": true,
+    "portsReleased": [
+      15432,
+      16379,
+      16380,
+      16381
+    ]
+  },
+  "formalReplacement": false,
+  "release": false,
+  "dependencyDiffs": {
+    "baseline-to-drivers": {
+      "removed": [
+        "Microsoft.Data.Sqlite.Core/9.0.0",
+        "Microsoft.Data.Sqlite/9.0.0",
+        "Npgsql/5.0.18",
+        "SQLitePCLRaw.bundle_e_sqlite3/2.1.10",
+        "SQLitePCLRaw.core/2.1.10",
+        "SQLitePCLRaw.provider.e_sqlite3/2.1.10"
+      ],
+      "added": [
+        "Microsoft.Data.Sqlite/10.0.0"
+      ]
+    },
+    "drivers-to-nodrive": {
+      "removed": [
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905",
+        "SqlSugarCore/5.1.4.207",
+        "System.Diagnostics.PerformanceCounter/8.0.0",
+        "System.DirectoryServices.Protocols/8.0.0"
+      ],
+      "added": [
+        "SqlSugarCoreNoDrive/5.1.4.207",
+        "SystemCommon/8.5.0"
+      ]
+    }
+  },
+  "publishDiffs": {
+    "Radish.Api": {
+      "removedPackages": [
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905",
+        "SqlSugarCore/5.1.4.207",
+        "System.Diagnostics.PerformanceCounter/8.0.0",
+        "System.DirectoryServices.Protocols/8.0.0"
+      ],
+      "addedPackages": [
+        "SqlSugarCoreNoDrive/5.1.4.207",
+        "SystemCommon/8.5.0"
+      ],
+      "removedFiles": [
+        "DM.DmProvider.dll",
+        "Kdbndp.dll",
+        "MySqlConnector.dll",
+        "Oracle.ManagedDataAccess.dll",
+        "Oscar.Data.SqlClient.dll",
+        "System.Diagnostics.PerformanceCounter.dll",
+        "System.DirectoryServices.Protocols.dll",
+        "runtimes/linux/lib/net8.0/System.DirectoryServices.Protocols.dll",
+        "runtimes/osx/lib/net8.0/System.DirectoryServices.Protocols.dll",
+        "runtimes/win/lib/net8.0/System.Diagnostics.PerformanceCounter.dll",
+        "runtimes/win/lib/net8.0/System.DirectoryServices.Protocols.dll"
+      ],
+      "addedFiles": []
+    },
+    "Radish.Auth": {
+      "removedPackages": [
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905",
+        "SqlSugarCore/5.1.4.207",
+        "System.Diagnostics.PerformanceCounter/8.0.0",
+        "System.DirectoryServices.Protocols/8.0.0"
+      ],
+      "addedPackages": [
+        "SqlSugarCoreNoDrive/5.1.4.207",
+        "SystemCommon/8.5.0"
+      ],
+      "removedFiles": [
+        "DM.DmProvider.dll",
+        "Kdbndp.dll",
+        "MySqlConnector.dll",
+        "Oracle.ManagedDataAccess.dll",
+        "Oscar.Data.SqlClient.dll",
+        "System.Diagnostics.PerformanceCounter.dll",
+        "System.DirectoryServices.Protocols.dll",
+        "runtimes/linux/lib/net8.0/System.DirectoryServices.Protocols.dll",
+        "runtimes/osx/lib/net8.0/System.DirectoryServices.Protocols.dll",
+        "runtimes/win/lib/net8.0/System.Diagnostics.PerformanceCounter.dll",
+        "runtimes/win/lib/net8.0/System.DirectoryServices.Protocols.dll"
+      ],
+      "addedFiles": []
+    },
+    "Radish.Gateway": {
+      "removedPackages": [
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905",
+        "SqlSugarCore/5.1.4.207",
+        "System.Diagnostics.PerformanceCounter/8.0.0",
+        "System.DirectoryServices.Protocols/8.0.0"
+      ],
+      "addedPackages": [
+        "SqlSugarCoreNoDrive/5.1.4.207",
+        "SystemCommon/8.5.0"
+      ],
+      "removedFiles": [
+        "DM.DmProvider.dll",
+        "Kdbndp.dll",
+        "MySqlConnector.dll",
+        "Oracle.ManagedDataAccess.dll",
+        "Oscar.Data.SqlClient.dll",
+        "System.Diagnostics.PerformanceCounter.dll",
+        "System.DirectoryServices.Protocols.dll",
+        "runtimes/linux/lib/net8.0/System.DirectoryServices.Protocols.dll",
+        "runtimes/osx/lib/net8.0/System.DirectoryServices.Protocols.dll",
+        "runtimes/win/lib/net8.0/System.Diagnostics.PerformanceCounter.dll",
+        "runtimes/win/lib/net8.0/System.DirectoryServices.Protocols.dll"
+      ],
+      "addedFiles": []
+    },
+    "Radish.DbMigrate": {
+      "removedPackages": [
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905",
+        "SqlSugarCore/5.1.4.207",
+        "System.Diagnostics.PerformanceCounter/8.0.0",
+        "System.DirectoryServices.Protocols/8.0.0"
+      ],
+      "addedPackages": [
+        "SqlSugarCoreNoDrive/5.1.4.207",
+        "SystemCommon/8.5.0"
+      ],
+      "removedFiles": [
+        "DM.DmProvider.dll",
+        "Kdbndp.dll",
+        "MySqlConnector.dll",
+        "Oracle.ManagedDataAccess.dll",
+        "Oscar.Data.SqlClient.dll",
+        "System.Diagnostics.PerformanceCounter.dll",
+        "System.DirectoryServices.Protocols.dll",
+        "runtimes/linux/lib/net8.0/System.DirectoryServices.Protocols.dll",
+        "runtimes/osx/lib/net8.0/System.DirectoryServices.Protocols.dll",
+        "runtimes/win/lib/net8.0/System.Diagnostics.PerformanceCounter.dll",
+        "runtimes/win/lib/net8.0/System.DirectoryServices.Protocols.dll"
+      ],
+      "addedFiles": []
+    }
+  }
+}

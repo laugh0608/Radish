@@ -1,6 +1,6 @@
 # NoDrive 与 Valkey 隔离验证方案
 
-> 状态：**项目所有者已于 2026-10-21 批准，执行前先提交并推送方案**。2026-10-21 已将[评估文档](./orm-redis-dependency-assessment.md)以 `47bdbfd5` 提交并推送 `origin/dev`。
+> 状态：**已获批执行并完成清理**。方案先以 `77549e95` 推送 `origin/dev`，再执行固定输入实验。NoDrive 通过；Valkey 对照未见候选独有差异，但两端共同的两类业务边界失败，完整验收未通过。详见[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)；下文保留获批范围。
 >
 > 本文定义实验范围、版本、验收与停止线；完整准备、启动、验证和清理命令见[命令附录](./nodrive-valkey-isolation-validation-commands.md)。批准实验不等于批准正式依赖替换、部署配置修改或发布。
 
