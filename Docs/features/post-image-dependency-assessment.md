@@ -91,47 +91,17 @@ dotnet restore Radish.slnx --disable-parallel
 
 迁移失败时回退本批代码 / 依赖变更；不保留运行时双 mapper fallback，不变更数据库结构或 API 响应来适配生成器。
 
-## 3. ORM：先调查驱动收缩
+## 3. ORM：后续精确包调查
 
-本机 `Radish.Api/obj/project.assets.json` 确认 `SqlSugarCore 5.1.4.207` 传递引入 Oracle、Oscar、Dm、Kdbndp、Microsoft.Data.SqlClient 等包。对应 runtime 条目存在，但本轮没有重新 publish，不能据此宣称新发布物已逐文件复核。
+初轮建议为保留 SqlSugar 行为、优先调查驱动收缩。Mapperly 提交 `b8debb26` 推送后，已取得 `SqlSugarCoreNoDrive 5.1.4.207` 精确包：主 DLL 与现用通用包相同，但 `SystemCommon 8.5.0` 仍引入 SqlClient / SNI，并携带另一份同名程序集。
 
-源码中 `SqlSugar` 命中 379 个文件（含测试）；耦合涉及实体特性、IRepository / IService 的查询参数、分页 / 分表、租户过滤、事务、数据库迁移和日志 AOP。正式数据库仍为 PostgreSQL / 本地 SQLite，但 `BaseDbConfig` 和数据库枚举保留其他类型路径，不能仅由文档推断这些代码已禁止运行。
+完整包证据、四宿主分发边界、EF Core / Dapper 比较和实验标准以[ORM 与 Redis 依赖评估](./orm-redis-dependency-assessment.md)为准。本轮没有安装候选或替换 ORM。
 
-**新增发现**：[SqlSugarCoreNoDrive](https://www.nuget.org/packages/SqlSugarCoreNoDrive/)与[SqlSugarCore](https://www.nuget.org/packages/SqlSugarCore/)的 NuGet owner 同为 `jhl52771`，项目链接指向 SqlSugar 上游。NoDrive 当前页为 `5.1.4.221`，版本表列出 `5.1.4.207`；精确旧版本页本轮读取失败，尚未确认其包内依赖与构建差异。
+## 4. Redis：后续服务与数据调查
 
-NoDrive `5.1.4.221` 页面声明依赖 Newtonsoft.Json 与 `SystemCommon >= 8.5.0`；[SystemCommon 8.5.0](https://www.nuget.org/packages/SystemCommon/8.5.0)仍依赖 `Microsoft.Data.SqlClient >= 5.2.2`。因此它是**部分收缩候选**，不能直接认定已去除 SQL Server / SNI，也不能将较新版本图套在 `5.1.4.207` 上。
+初轮已识别上传四段 Lua 与持久化边界。后续已完成源码 key 分类，确认现有上传测试仅验证内存分支；公开 registry 当前 `redis:7` 的 amd64 config 为 7.4.11，但实际部署源版本未知。
 
-| 路线 | 判断 | 继续前必须证明 |
-| --- | --- | --- |
-| 保留当前 SqlSugar，补齐逐包分发依据 | 近期行为成本最低 | Oscar / 厂商驱动等许可缺口仍需关闭 |
-| 上游 NoDrive + 明确 PG / SQLite 驱动 | 优先做包级验证 | 精确包的程序集内容、全部传递图、动态加载与双数据库功能；剩余 SQL Server 链另处理 |
-| 自维护精简 fork | 可控制分发 | 持续同步上游、安全修复、发布来源及测试成本；当前不推荐直接进入 |
-| 迁移 EF Core / 其他 ORM | 可重新整理 provider 边界 | 跨层查询、事务、租户过滤、schema / SQL / 时间兼容的大范围迁移；独立架构专题 |
-
-下一步先只读核对 NoDrive 精确包、源代码和支持说明，提出独立依赖实验清单。若需关闭非正式数据库配置路径，同样先批准运行时行为边界。不删输出 DLL、不用 ExcludeAssets 或更改缓存隐藏依赖；本批不替换 ORM。
-
-## 4. Redis：将服务候选与数据迁移分开
-
-已确认源码边界：
-
-- Compose 使用浮动 `redis:7`，开启 AOF 与密码，挂载持久数据；本轮不推断实际生产 patch / digest。
-- `CacheSetup` 注册共享连接和 `IDistributedCache`；`RedisBasketRepository` 提供字符串、List 与键操作，但扫描未找到业务调用方，不能称其队列已在生产使用。
-- `UploadRateLimitService` 有四段 Lua，涉及 Hash、计数、TTL、并发预留、完成结算、失败释放与统计；这些不是可随意丢弃的普通页面缓存。
-- API 当前 `AddSignalR().AddJsonProtocol()` 未接 Redis backplane；本批不因切换 Redis 引入新的多实例实时架构。
-
-[Redis 官方版本许可表](https://redis.io/legal/licenses/)区分：7.2 及以前 BSD-3-Clause，7.4 系列 RSALv2 / SSPLv1，8+ 增加 AGPLv3 选择。不能将客户端包的 MIT 代替服务许可，也不建议仅为许可固定一个未核实安全维护状况的旧版本。
-
-推荐独立评估 Valkey；[上游 COPYING](https://raw.githubusercontent.com/valkey-io/valkey/unstable/COPYING)采用 BSD-3-Clause，但最终镜像仍需精确版本、digest 与镜像内第三方材料审计。[官方迁移文档](https://valkey.io/topics/migration/)说明兼容 Redis OSS 7.2 及以前，7.4+ 的数据文件不能按同样方式直接迁移。这是当前不能直接换镜像复用卷的关键边界。
-
-候选验收必须包含：
-
-1. 固定 Valkey 镜像版本 / 多架构 digest，在隔离实例验证现有 StackExchange.Redis 与分布式缓存，保持配置键和序列化格式。
-2. 测试四段 Lua 的并发预留、重复完成 / 失败、过期释放、跨日结算、容量上界与连接中断；不以 GET / SET 成功替代业务验收。
-3. 对当前所有 ICaching 消费者分类，列出可重建缓存、会影响限流 / 会话 / 安全状态的 key 与 TTL。未完成分类前，不决定清空重建。
-4. 验证密码 / ACL、TLS 配置适配、AOF / RDB 恢复、断线重连与停机流程；只验收当前需要的部署拓扑，不顺带引入 Cluster。
-5. 由所有者提供或另行授权只读确认源版本；根据源数据格式制定迁移和回退。保留不可变旧备份，新写入后的回退需要处理增量，不能简单指回旧卷。
-
-本批不改 Compose、不迁移数据；Valkey 精确候选与临时容器、端口、测试数据、清理方式在独立方案中确认。
+Valkey 9.1.2 / 8.1.10 的精确 manifest、支持期、数据兼容停止线与隔离实验要求以[ORM 与 Redis 依赖评估](./orm-redis-dependency-assessment.md)为准。本轮不改 Compose、不启动服务、不迁移数据。
 
 ## 5. 当前建议与停止线
 

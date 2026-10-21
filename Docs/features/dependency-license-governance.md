@@ -96,7 +96,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugarCore` 传递引入 Oracle、神通、达梦、金仓和 SQL Server 相关资产。处理顺位：
 
 1. 检查实际配置支持范围、resolved graph、publish 内容和运行时动态加载。
-2. 调查上游受支持的 provider 分包 / 精简方案；已发现同一发布者的 `SqlSugarCoreNoDrive`，但其较新版本通过 `SystemCommon` 仍引入 SQL Server 客户端，尚未证明精确候选满足分发要求，见[详细评估](./post-image-dependency-assessment.md)。
+2. 调查上游受支持的 provider 分包 / 精简方案；已核对 `SqlSugarCoreNoDrive 5.1.4.207` 精确包，主 DLL 与现用版本相同，但 `SystemCommon 8.5.0` 仍引入 SQL Server / SNI；它只能作为部分收缩候选，见[详细评估](./orm-redis-dependency-assessment.md)。
 3. 若无法安全收缩，再比较维护受控分发与 ORM 迁移的长期成本；后者属于跨 Repository 的独立架构裁决。
 
 不能只删除输出 DLL、修改本地 NuGet 缓存、隐藏扫描命中或添加 `ExcludeAssets` 来假装分发与运行边界已经解决。也不能因为客户端驱动免费分发，就推导数据库服务器本身免费。
@@ -109,7 +109,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 
 ### 6.4 Redis 服务
 
-先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。已核对上传限流的四段 Lua、缓存接线及 Redis 7.4+ 数据文件兼容限制，见[后续评估](./post-image-dependency-assessment.md)。
+先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。已核对 key / TTL 消费路径、上传 Lua 测试缺口、Valkey 9.1.2 / 8.1.10 镜像 manifest 与 Redis 7.4+ 数据文件兼容限制，见[后续评估](./orm-redis-dependency-assessment.md)。
 
 ## 7. 分批顺序、验证与完成标准
 

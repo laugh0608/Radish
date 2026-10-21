@@ -45,6 +45,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [全项目统一日志与跨容器汇聚专题（L1 实施中）](./features/unified-logging-governance-design.md)
 - [第三方依赖许可治理与替代方案](./features/dependency-license-governance.md)
 - [图片替代后的依赖评估与映射迁移方案](./features/post-image-dependency-assessment.md)
+- [ORM 与 Redis 依赖评估](./features/orm-redis-dependency-assessment.md)：精确包、分发边界、缓存数据分类与候选实验停止线。
 - [Mapperly 映射迁移记录](./records/mapperly-migration-2026-10-21.md)：映射对照、依赖清理和本地验证边界。
 - [Rust 图片处理替代评估](./features/rust-image-processing-replacement-assessment.md)
 - [Rust 图片处理完整替代实施方案](./features/rust-image-processing-implementation-plan.md)
