@@ -7,8 +7,8 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：上传配额修复及结果文档已随 `31973553` 提交，Debug / Release 各 262 项定向回归通过、测试资源已清理，见[修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)。下一次先确认下方“接下来的事项”中的依赖治理范围；NoDrive、Valkey 暂不正式替换或发布，统一日志 L2 保留后续恢复顺位。
-- **状态复核日期**：`2026-10-21`；当日 9 个提交与代码 / 文档对照见[日终回顾](../records/day-end-doc-review-2026-10-21.md)。
+- **下一项工作**：2026-10-26 已确认继续 NoDrive 部分驱动收缩与分发材料收口；[正式方案](../features/nodrive-adoption-plan.md)已列明精确包命令、配置支持边界和 PG16 / PG17 测试资源，待具体范围确认后实施。NoDrive 尚未正式替换，Valkey 保持独立后置，统一日志 L2 保留后续恢复顺位。
+- **状态复核日期**：`2026-10-26`；本次只读核对与材料缺口见[采用前核对](../records/dependency-distribution-preflight-2026-10-26.md)。最近代码批次仍为 10 月 21 日，提交与验证见[日终回顾](../records/day-end-doc-review-2026-10-21.md)。
 - **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
@@ -25,12 +25,12 @@
 
 ## 接下来的事项
 
-1. **优先确认 NoDrive 正式收缩范围**：依据[ORM / Redis 评估](../features/orm-redis-dependency-assessment.md)和隔离证据，确认仅保留 PostgreSQL / SQLite 的支持边界、四宿主产物及回退方式；`SqlSugarCoreNoDrive 5.1.4.207` 仍携带 SqlClient / SNI，不能当作全部驱动许可问题已解决。批准具体依赖方案后再实施。
+1. **推进 NoDrive 正式收缩方案**：已确认部分收缩方向，精确引用、业务 / 分库租户 / OpenIddict / Hangfire 配置消费边界、四宿主产物与回退方式见[正式方案](../features/nodrive-adoption-plan.md)。`SqlSugarCoreNoDrive 5.1.4.207` 仍携带 SqlClient / SNI，不能当作全部驱动许可问题已解决；具体安装命令、运行行为与测试容器范围确认后再实施。
 2. **补齐剩余分发材料**：按[许可治理专题](../features/dependency-license-governance.md)复核 Hangfire、Argon2、Microsoft 工具 / SNI 及字体的声明与分发边界；更新迁移后的依赖清单和 notices，保留原 947 条历史盘点，不默认更换密码或调度实现。
 3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
 4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与本次 262 项定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。
 
-以上是待确认的后续建议，不因写入待办而取得依赖替换、服务启动或部署授权。
+NoDrive 部分收缩方向已确认；具体安装 / 运行范围仍按正式方案裁决。其余事项不因写入待办而取得依赖替换、服务启动或部署授权。
 
 ## 产品线成熟度
 

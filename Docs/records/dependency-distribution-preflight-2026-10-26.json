@@ -1,0 +1,724 @@
+{
+  "reviewDate": "2026-10-26",
+  "sourceCommit": "d64bd00571ef21f8e4f6567d87f938452a46d9d0",
+  "scope": "Read-only local package metadata and source packaging review; existing assets, not a fresh restore or new publish; no legal or release clearance.",
+  "assets": [
+    {
+      "path": "Radish.Api/obj/project.assets.json",
+      "sha256": "92b097d663b4de5343f86c69ec0d43b13d198d18d6bb2519b9a03a6a35a27f4b"
+    },
+    {
+      "path": "Radish.Api.Tests/obj/project.assets.json",
+      "sha256": "edd8e8464aa106b91dddec8c0547f8e456d4c3fb956677b8696fa7295e08ffbe"
+    },
+    {
+      "path": "Radish.Auth/obj/project.assets.json",
+      "sha256": "78c0d1cdbe53387726b47d58966e0054025fb33042a156cedc75581fb10e5580"
+    },
+    {
+      "path": "Radish.Auth.Migrations.PostgreSql/obj/project.assets.json",
+      "sha256": "894f3adc04d2e5b22a69de464dfbde6ec84c7352b82a6f4fe02847c3c9a192f0"
+    },
+    {
+      "path": "Radish.Auth.Migrations.Sqlite/obj/project.assets.json",
+      "sha256": "db984e5b03efb0fd9861a093631a341bbf0735b4272040147f65f28ebc2c7cc6"
+    },
+    {
+      "path": "Radish.Auth.Persistence/obj/project.assets.json",
+      "sha256": "5a9c956fc2e62273bdedab7028f87b41e46a748c68b1e7c4507036da6d3dba2f"
+    },
+    {
+      "path": "Radish.Common/obj/project.assets.json",
+      "sha256": "62b128990ab41bd75d5adf5226a409e1ee507942ff8ac7fcc4dd9906fb48d2b9"
+    },
+    {
+      "path": "Radish.Core/obj/project.assets.json",
+      "sha256": "381c5142e6045888ced195e6ebce3a6fbdc9dbb767612462b9e53659598e2131"
+    },
+    {
+      "path": "Radish.DbMigrate/obj/project.assets.json",
+      "sha256": "978a97d453b5fba2d1d19ed83cb7dac90f73cf4764e38e60d185db9793f13b2f"
+    },
+    {
+      "path": "Radish.Extension/obj/project.assets.json",
+      "sha256": "17371433119c76c3c86ade366c86501558ff9db943987429b00349ae2024b10d"
+    },
+    {
+      "path": "Radish.Extension.Log/obj/project.assets.json",
+      "sha256": "4147433fe173d6b48758cadde6fbded3996506e01fa1246deef43f3aca2d3140"
+    },
+    {
+      "path": "Radish.Gateway/obj/project.assets.json",
+      "sha256": "b40046cc5ee70045094e16700e2ee496facfdf7e275794433f16b05e4c63cf47"
+    },
+    {
+      "path": "Radish.IRepository/obj/project.assets.json",
+      "sha256": "606bb7bea880497abfbea34987f37b993a57c33631901ba7c7815c835bae1a60"
+    },
+    {
+      "path": "Radish.IService/obj/project.assets.json",
+      "sha256": "940065f0636e7f9f74bfd04d198293692fa09a28336dd09bbaadb522c7214d8e"
+    },
+    {
+      "path": "Radish.Infrastructure/obj/project.assets.json",
+      "sha256": "df4cedb3fa3eaf21f6ffbeb200dceb71b1565633a82755da362ac1062066b23a"
+    },
+    {
+      "path": "Radish.Model/obj/project.assets.json",
+      "sha256": "6f034f6a03d20561850e60523607e2aa2bdb93d933be30fdb94d3acfe2ac2a94"
+    },
+    {
+      "path": "Radish.Repository/obj/project.assets.json",
+      "sha256": "a10a6af3b507a2f46900a6e0a09eaae151a47ca8af3ef31e01a9e918e665f2d1"
+    },
+    {
+      "path": "Radish.Service/obj/project.assets.json",
+      "sha256": "a449162f4c857b8af6e961b0dfea5134213ef51ec5ebb2c147977a9de4bb9233"
+    },
+    {
+      "path": "Radish.Shared/obj/project.assets.json",
+      "sha256": "7cc428d8e9fe575e4aee6def44a12bdd7431f70799cee5f2e96a04a973c59889"
+    }
+  ],
+  "resolvedPackageIdentityCount": 237,
+  "packages": [
+    {
+      "package": "Hangfire.AspNetCore/1.8.14",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests"
+      ],
+      "metadata": {
+        "authors": "Sergey Odinokov",
+        "copyright": "Copyright © 2017-2024 Hangfire OÜ",
+        "projectUrl": "https://www.hangfire.io/",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE.md"
+        },
+        "repository": {
+          "type": "git",
+          "url": "https://github.com/HangfireIO/Hangfire.git",
+          "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f"
+        }
+      },
+      "nuspec": {
+        "path": "hangfire.aspnetcore.nuspec",
+        "sha256": "2dcc9ed2b1c3608a4d7f94a31d2868eb83a5513530ab5033b470e0d1700a3398"
+      },
+      "noticeFiles": [
+        {
+          "path": "COPYING",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "path": "COPYING.LESSER",
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        },
+        {
+          "path": "LICENSE.md",
+          "sha256": "3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953"
+        },
+        {
+          "path": "LICENSE_ROYALTYFREE",
+          "sha256": "4ca53ffd44e5c64d00cc1d61ad6095a7f9aa24d3e8e0422fbc4fce43c5f9b12a"
+        },
+        {
+          "path": "LICENSE_STANDARD",
+          "sha256": "f7fea42684435a253ab56432842b124d57a407f619ae4499bf9d8211f78341d5"
+        },
+        {
+          "path": "NOTICES",
+          "sha256": "9c330aa46c8c30de312f5fff05b658e95b6b7ef8947b200d86aad245027afbf4"
+        }
+      ]
+    },
+    {
+      "package": "Hangfire.Core/1.8.14",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests"
+      ],
+      "metadata": {
+        "authors": "Sergey Odinokov",
+        "copyright": "Copyright © 2013-2024 Hangfire OÜ",
+        "projectUrl": "https://www.hangfire.io/",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE.md"
+        },
+        "repository": {
+          "type": "git",
+          "url": "https://github.com/HangfireIO/Hangfire.git",
+          "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f"
+        }
+      },
+      "nuspec": {
+        "path": "hangfire.core.nuspec",
+        "sha256": "bcec12ad4fbfe284d1f5ebcd6e36bb8069dc182b55d64b69a6d0d673cf87c143"
+      },
+      "noticeFiles": [
+        {
+          "path": "COPYING",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "path": "COPYING.LESSER",
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        },
+        {
+          "path": "LICENSE.md",
+          "sha256": "3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953"
+        },
+        {
+          "path": "LICENSE_ROYALTYFREE",
+          "sha256": "4ca53ffd44e5c64d00cc1d61ad6095a7f9aa24d3e8e0422fbc4fce43c5f9b12a"
+        },
+        {
+          "path": "LICENSE_STANDARD",
+          "sha256": "f7fea42684435a253ab56432842b124d57a407f619ae4499bf9d8211f78341d5"
+        },
+        {
+          "path": "NOTICES",
+          "sha256": "9c330aa46c8c30de312f5fff05b658e95b6b7ef8947b200d86aad245027afbf4"
+        }
+      ]
+    },
+    {
+      "package": "Hangfire.NetCore/1.8.14",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests"
+      ],
+      "metadata": {
+        "authors": "Sergey Odinokov",
+        "copyright": "Copyright © 2019-2024 Hangfire OÜ",
+        "projectUrl": "https://www.hangfire.io/",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE.md"
+        },
+        "repository": {
+          "type": "git",
+          "url": "https://github.com/HangfireIO/Hangfire.git",
+          "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f"
+        }
+      },
+      "nuspec": {
+        "path": "hangfire.netcore.nuspec",
+        "sha256": "667b36843934746fcc6b051f1ce2277fe913022c40c6b0a4e7eea1319f65ab79"
+      },
+      "noticeFiles": [
+        {
+          "path": "COPYING",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
+        },
+        {
+          "path": "COPYING.LESSER",
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768"
+        },
+        {
+          "path": "LICENSE.md",
+          "sha256": "3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953"
+        },
+        {
+          "path": "LICENSE_ROYALTYFREE",
+          "sha256": "4ca53ffd44e5c64d00cc1d61ad6095a7f9aa24d3e8e0422fbc4fce43c5f9b12a"
+        },
+        {
+          "path": "LICENSE_STANDARD",
+          "sha256": "f7fea42684435a253ab56432842b124d57a407f619ae4499bf9d8211f78341d5"
+        },
+        {
+          "path": "NOTICES",
+          "sha256": "9c330aa46c8c30de312f5fff05b658e95b6b7ef8947b200d86aad245027afbf4"
+        }
+      ]
+    },
+    {
+      "package": "Hangfire.PostgreSql/1.20.12",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests"
+      ],
+      "metadata": {
+        "authors": "Frank Hommers, Vytautas Kasparavičius, Žygimantas Arūna",
+        "copyright": "Copyright © 2014-2024 Frank Hommers and others",
+        "projectUrl": "http://hmm.rs/Hangfire.PostgreSql",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE.md"
+        },
+        "repository": {
+          "type": "git",
+          "url": "https://github.com/frankhommers/Hangfire.PostgreSql",
+          "branch": "master",
+          "commit": "a5a728233ac8feb447695acb01f607bd848b00f7"
+        }
+      },
+      "nuspec": {
+        "path": "hangfire.postgresql.nuspec",
+        "sha256": "74c803a6fec5589fa3c12d7294b816d7d68305974da6d59fe0730e996e8ced3d"
+      },
+      "noticeFiles": [
+        {
+          "path": "LICENSE.md",
+          "sha256": "e3388ea0c5d8cb570d6baf32937523640c942a46b99ec509c8ca2e2d1a5c6e46"
+        }
+      ]
+    },
+    {
+      "package": "Hangfire.Storage.SQLite/0.4.2",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests"
+      ],
+      "metadata": {
+        "authors": "RaisedApp",
+        "copyright": "Copyright © 2019 - Present",
+        "projectUrl": "https://github.com/raisedapp/Hangfire.Storage.SQLite",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE"
+        },
+        "repository": {
+          "type": "git",
+          "url": "https://github.com/raisedapp/Hangfire.Storage.SQLite",
+          "commit": "1850239fd093fdd7722b91812b8788ade8555399"
+        }
+      },
+      "nuspec": {
+        "path": "hangfire.storage.sqlite.nuspec",
+        "sha256": "1354e4b9f789da58bfafc3d3c9d77e211a85feecd8c9166335ab4fc418e2c172"
+      },
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "c9e912ac05f1bb4ff104905e130e4831386d31a72f2dd67d007d4a40c6ce84a4"
+        }
+      ]
+    },
+    {
+      "package": "Isopoh.Cryptography.Argon2/2.0.0",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests",
+        "Radish.Auth",
+        "Radish.Auth.Migrations.PostgreSql",
+        "Radish.Auth.Migrations.Sqlite",
+        "Radish.Auth.Persistence",
+        "Radish.Common",
+        "Radish.DbMigrate",
+        "Radish.Extension",
+        "Radish.Extension.Log",
+        "Radish.Gateway",
+        "Radish.IRepository",
+        "Radish.IService",
+        "Radish.Infrastructure",
+        "Radish.Model",
+        "Radish.Repository",
+        "Radish.Service"
+      ],
+      "metadata": {
+        "authors": "Michael Heyman",
+        "copyright": "Michael Heyman 2022",
+        "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE"
+        },
+        "repository": {
+          "type": "git",
+          "url": "https://github.com/mheyman/Isopoh.Cryptography.Argon2.git",
+          "commit": "288c52b4a75e8bef6dcb5d4b0c8395a87358f100"
+        }
+      },
+      "nuspec": {
+        "path": "isopoh.cryptography.argon2.nuspec",
+        "sha256": "64a4c18680f17ad62af7aec2b2d5de2728572853e3913bfc11b5cee35e8715ab"
+      },
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430"
+        }
+      ]
+    },
+    {
+      "package": "Isopoh.Cryptography.Blake2b/2.0.0",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests",
+        "Radish.Auth",
+        "Radish.Auth.Migrations.PostgreSql",
+        "Radish.Auth.Migrations.Sqlite",
+        "Radish.Auth.Persistence",
+        "Radish.Common",
+        "Radish.DbMigrate",
+        "Radish.Extension",
+        "Radish.Extension.Log",
+        "Radish.Gateway",
+        "Radish.IRepository",
+        "Radish.IService",
+        "Radish.Infrastructure",
+        "Radish.Model",
+        "Radish.Repository",
+        "Radish.Service"
+      ],
+      "metadata": {
+        "authors": "Michael Heyman",
+        "copyright": "Michael Heyman 2022",
+        "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE"
+        },
+        "repository": {
+          "type": "git",
+          "url": "https://github.com/mheyman/Isopoh.Cryptography.Argon2.git",
+          "commit": "288c52b4a75e8bef6dcb5d4b0c8395a87358f100"
+        }
+      },
+      "nuspec": {
+        "path": "isopoh.cryptography.blake2b.nuspec",
+        "sha256": "9f32a0f79f0c328cad77277912a839847448ce82fed8adaffdfd83429d5d58a1"
+      },
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430"
+        }
+      ]
+    },
+    {
+      "package": "Isopoh.Cryptography.SecureArray/2.0.0",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests",
+        "Radish.Auth",
+        "Radish.Auth.Migrations.PostgreSql",
+        "Radish.Auth.Migrations.Sqlite",
+        "Radish.Auth.Persistence",
+        "Radish.Common",
+        "Radish.DbMigrate",
+        "Radish.Extension",
+        "Radish.Extension.Log",
+        "Radish.Gateway",
+        "Radish.IRepository",
+        "Radish.IService",
+        "Radish.Infrastructure",
+        "Radish.Model",
+        "Radish.Repository",
+        "Radish.Service"
+      ],
+      "metadata": {
+        "authors": "Michael Heyman",
+        "copyright": "Michael Heyman 2022",
+        "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE"
+        },
+        "repository": null
+      },
+      "nuspec": {
+        "path": "isopoh.cryptography.securearray.nuspec",
+        "sha256": "0898c096c923b64cd997affdf647fae6453893508134c4f377aa5245fc2f147e"
+      },
+      "noticeFiles": [
+        {
+          "path": "LICENSE",
+          "sha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430"
+        }
+      ]
+    },
+    {
+      "package": "Microsoft.Data.SqlClient.SNI.runtime/5.2.0",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests",
+        "Radish.Auth",
+        "Radish.Auth.Migrations.PostgreSql",
+        "Radish.Auth.Migrations.Sqlite",
+        "Radish.Auth.Persistence",
+        "Radish.Common",
+        "Radish.DbMigrate",
+        "Radish.Extension",
+        "Radish.Extension.Log",
+        "Radish.Gateway",
+        "Radish.IRepository",
+        "Radish.IService",
+        "Radish.Infrastructure",
+        "Radish.Model",
+        "Radish.Repository",
+        "Radish.Service"
+      ],
+      "metadata": {
+        "authors": "Microsoft",
+        "copyright": "© Microsoft Corporation. All rights reserved.",
+        "projectUrl": "https://aka.ms/sqlclientproject",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "LICENSE.txt"
+        },
+        "repository": null
+      },
+      "nuspec": {
+        "path": "microsoft.data.sqlclient.sni.runtime.nuspec",
+        "sha256": "48ad9c2f2891d0dd6fc2716465c3ba7970666f14cb06e4e3e65fe1b137cd95e9"
+      },
+      "noticeFiles": [
+        {
+          "path": "LICENSE.txt",
+          "sha256": "9335e8bad875dd7be4eebd55d2335eb6433d1cea61aadb3817af7807bef8932a"
+        }
+      ]
+    },
+    {
+      "package": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets/1.23.0",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests"
+      ],
+      "metadata": {
+        "authors": "Microsoft",
+        "copyright": "© Microsoft Corporation. All rights reserved.",
+        "projectUrl": "https://aka.ms/vscontainertools",
+        "licenseUrl": "https://aka.ms/deprecateLicenseUrl",
+        "license": {
+          "type": "file",
+          "value": "EULA.md"
+        },
+        "repository": {
+          "type": "git",
+          "commit": "9b098373e85a4daf3f0cf716ab3a27b02470f7dc"
+        }
+      },
+      "nuspec": {
+        "path": "microsoft.visualstudio.azure.containers.tools.targets.nuspec",
+        "sha256": "7b70e19851a4c265ccb9ba2d9adb37e696d8b2cbde75a8f4410d3eea20a62a4c"
+      },
+      "noticeFiles": [
+        {
+          "path": "EULA.md",
+          "sha256": "afcc73c553cdbe610d1bb137eb234805c432dcc73c9035f275eb6b1bd48e2f03"
+        },
+        {
+          "path": "ThirdPartyNotices.txt",
+          "sha256": "3e901aea45ceaa6512ce848332859c3147995ce6c4acfe9c452ffb4b6518b19e"
+        }
+      ]
+    },
+    {
+      "package": "Riok.Mapperly/4.3.1",
+      "scopes": [
+        "Radish.Service"
+      ],
+      "metadata": {
+        "authors": "Mapperly Contributors, Lars Tönz, Manuel Allenspach",
+        "copyright": null,
+        "projectUrl": "https://mapperly.riok.app/",
+        "licenseUrl": "https://licenses.nuget.org/Apache-2.0",
+        "license": {
+          "type": "expression",
+          "value": "Apache-2.0"
+        },
+        "repository": {
+          "type": "git",
+          "url": "https://github.com/riok/mapperly",
+          "commit": "036698914bd48be888b25322938b565db72ff7ff"
+        }
+      },
+      "nuspec": {
+        "path": "riok.mapperly.nuspec",
+        "sha256": "631d2b2fb3164b9763cee1c632a16b7fd5885c25dfd2652e0ecdfbcd5de4d010"
+      },
+      "noticeFiles": []
+    },
+    {
+      "package": "SqlSugarCore/5.1.4.207",
+      "scopes": [
+        "Radish.Api",
+        "Radish.Api.Tests",
+        "Radish.Auth",
+        "Radish.Auth.Migrations.PostgreSql",
+        "Radish.Auth.Migrations.Sqlite",
+        "Radish.Auth.Persistence",
+        "Radish.Common",
+        "Radish.DbMigrate",
+        "Radish.Extension",
+        "Radish.Extension.Log",
+        "Radish.Gateway",
+        "Radish.IRepository",
+        "Radish.IService",
+        "Radish.Infrastructure",
+        "Radish.Model",
+        "Radish.Repository",
+        "Radish.Service"
+      ],
+      "metadata": {
+        "authors": "sunkaixuan",
+        "copyright": "Copyright 2016",
+        "projectUrl": "https://github.com/sunkaixuan/SqlSugar",
+        "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0.html",
+        "license": null,
+        "repository": null
+      },
+      "nuspec": {
+        "path": "sqlsugarcore.nuspec",
+        "sha256": "98475ef48df4786eeb01dd52cc3dfa500f8cd839b7ee0bd1d3dc3fb03c7d08ab"
+      },
+      "noticeFiles": []
+    }
+  ],
+  "notResolvedCandidates": [
+    "sqlsugarcorenodrive",
+    "systemcommon"
+  ],
+  "fonts": [
+    {
+      "source": "Lib/radish.lib/fonts/LICENSE-DejaVu.txt",
+      "sha256": "f88d5294af5a772f9114eb385009e3478d62b21f3e5bbc34d159d328047c8867",
+      "nativeCopies": [
+        {
+          "configuration": "Debug",
+          "sha256": "f88d5294af5a772f9114eb385009e3478d62b21f3e5bbc34d159d328047c8867",
+          "matchesSource": true
+        },
+        {
+          "configuration": "Release",
+          "sha256": "f88d5294af5a772f9114eb385009e3478d62b21f3e5bbc34d159d328047c8867",
+          "matchesSource": true
+        }
+      ]
+    },
+    {
+      "source": "Clients/radish.flutter/assets/fonts/noto/licenses/OFL-NotoSansCJK.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "nativeCopies": [
+        {
+          "configuration": "Debug",
+          "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+          "matchesSource": true
+        },
+        {
+          "configuration": "Release",
+          "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+          "matchesSource": true
+        }
+      ]
+    },
+    {
+      "source": "Clients/radish.flutter/assets/fonts/noto/licenses/OFL-NotoSerifCJK.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "nativeCopies": []
+    }
+  ],
+  "inputs": [
+    {
+      "path": "Directory.Build.props",
+      "sha256": "1b3b497e329e0904450bcc1067fda847bd4de85fc59f0f0c746d6784c8b32687"
+    },
+    {
+      "path": "Directory.Build.targets",
+      "sha256": "e30db95e9eeb3024181aa8aa374c022962e9883793176def438ad319122340e4"
+    },
+    {
+      "path": "NuGet.Config",
+      "sha256": "3ca16f574fe23074235831a6cecb5111fe5242b43a89c01835537e3bf2c81f0d"
+    },
+    {
+      "path": "Scripts/build-native-images.mjs",
+      "sha256": "d49eceff040301aec529b41609aef3e3fcc0bbb607b21757fb6d1af79b330217"
+    },
+    {
+      "path": "Clients/radish.flutter/pubspec.yaml",
+      "sha256": "f53927b305feb8128879a32e862ad8ba1f4ef6eeb204da9a9cff01afe1e1bc8b"
+    },
+    {
+      "path": "Radish.Api/Radish.Api.csproj",
+      "sha256": "1e8dc791cabe9d7c6a9ca67dbb24dcc1db818fdcbf8f33db02e5180e440ef944"
+    },
+    {
+      "path": "Radish.Api.Tests/Radish.Api.Tests.csproj",
+      "sha256": "10d185ab67626041c517a2742ef6eb964996e8a90913b6e4307de47094dcb7f9"
+    },
+    {
+      "path": "Radish.Auth/Radish.Auth.csproj",
+      "sha256": "db68943039e56e01e7b0a9aba12fea5a218b47af18e75a45d8f364825704f17b"
+    },
+    {
+      "path": "Radish.Auth.Migrations.PostgreSql/Radish.Auth.Migrations.PostgreSql.csproj",
+      "sha256": "a6cd068af93783cd637a364b424e7f2f5a978b48f7bb7a422115f1da38830ce2"
+    },
+    {
+      "path": "Radish.Auth.Migrations.Sqlite/Radish.Auth.Migrations.Sqlite.csproj",
+      "sha256": "6f9527c830dbd7533c78c248b5f4e96b84625cc6a279a335abf4757238d35326"
+    },
+    {
+      "path": "Radish.Auth.Persistence/Radish.Auth.Persistence.csproj",
+      "sha256": "6ae7c41dbef7208f5c3fdef10e8b99d7b09050fa57aff3a900f5f1164959aefb"
+    },
+    {
+      "path": "Radish.Common/Radish.Common.csproj",
+      "sha256": "157d7de056a3ec1e6060fca3e5f5e5be922ef86386e9ac43d8305fe5c52709f4"
+    },
+    {
+      "path": "Radish.Core/Radish.Core.csproj",
+      "sha256": "11c0c110e19c9eaeaef66a0382f7a3e4ff6ab395d99ca6664e1ba378371cc47c"
+    },
+    {
+      "path": "Radish.DbMigrate/Radish.DbMigrate.csproj",
+      "sha256": "2d8dda318f5b523e84c35084589e1170c6b52aefb8013ab1d5c7ee322adc8beb"
+    },
+    {
+      "path": "Radish.Extension/Radish.Extension.csproj",
+      "sha256": "d583c8e0f2ccefb428b982828aa4fe4203e49fd76ebfdd9f0af058ca16b71cba"
+    },
+    {
+      "path": "Radish.Extension.Log/Radish.Extension.Log.csproj",
+      "sha256": "2c2a07f6bf0f7472690162fad88365d089c7099d5d9a5c3c599e53a57e8640a4"
+    },
+    {
+      "path": "Radish.Gateway/Radish.Gateway.csproj",
+      "sha256": "a7b98a056c15d9bd6699dc8c0d0af384d5822d2037d134a87278dae72177e9b4"
+    },
+    {
+      "path": "Radish.IRepository/Radish.IRepository.csproj",
+      "sha256": "485158922ffe46c312e181053fe7c81d187d7336f7a7bbddec6b926c594094d9"
+    },
+    {
+      "path": "Radish.IService/Radish.IService.csproj",
+      "sha256": "485158922ffe46c312e181053fe7c81d187d7336f7a7bbddec6b926c594094d9"
+    },
+    {
+      "path": "Radish.Infrastructure/Radish.Infrastructure.csproj",
+      "sha256": "d920867a8046a473af6547344c147af051fd91b00b485087db3180120f149a85"
+    },
+    {
+      "path": "Radish.Model/Radish.Model.csproj",
+      "sha256": "521cc38e8315729394c6fd45f7000dcaee4d983c0db4eeeb24832f30d616afb9"
+    },
+    {
+      "path": "Radish.Repository/Radish.Repository.csproj",
+      "sha256": "964cece928db5def6d683aeeb294567483a3282890581f36c73f21628d2c0964"
+    },
+    {
+      "path": "Radish.Service/Radish.Service.csproj",
+      "sha256": "dd2c5fa855dd460842fe4963fc9431dfffd8b7faa19ff8261e2053a7616b03ad"
+    },
+    {
+      "path": "Radish.Shared/Radish.Shared.csproj",
+      "sha256": "11c0c110e19c9eaeaef66a0382f7a3e4ff6ab395d99ca6664e1ba378371cc47c"
+    }
+  ]
+}

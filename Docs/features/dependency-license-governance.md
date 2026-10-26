@@ -4,6 +4,8 @@
 >
 > 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代已交付；后续精确依赖安装及服务启动按各批授权执行，其他依赖仍处于审计与方案阶段。
 
+2026-10-26 已确认继续 NoDrive 部分收缩与分发材料收口，详见[正式采用方案](./nodrive-adoption-plan.md)及[分发预检](../records/dependency-distribution-preflight-2026-10-26.md)。精确安装与测试服务范围待确认，正式依赖尚未修改；本轮已核对现有字体接线，剩余材料以新候选产物复核为准。
+
 ## 1. 当前结论与阅读入口
 
 - 首轮统计覆盖正式 .NET、Web、Flutter、Rust 的 **947 个依赖条目**；精确口径、例外、未解析项与证据见[盘点记录](../records/dependency-license-audit-2026-10-20.md)和[逐包清单 CSV](../records/dependency-license-inventory-2026-10-20.csv)。条目不等于独立软件产品或许可证数量。
@@ -104,7 +106,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 ### 6.3 密码、字体与原生工具
 
 - Argon2 三包目前的事项是 CC-BY 声明。若更换实现，必须保留历史编码哈希验证、参数、失败语义和渐进迁移；不能顺带改成另一种哈希或要求用户重置密码。
-- Noto 随 Flutter 打包并有 OFL 正文；Rust 嵌入 DejaVu，需把字体原始许可 / notices 纳入原生产物分发。仅在 README 写“Free”不够。
+- Noto 的 Sans / Serif OFL 已纳入 Flutter assets 声明；Rust 图片构建已复制 DejaVu / Noto Sans 原文，并通过 MSBuild 随 native 树进入 API publish。2026-10-26 本机 Debug / Release 四份许可副本哈希与源文件一致，见[分发预检](../records/dependency-distribution-preflight-2026-10-26.md)；后续复核当前平台候选实际交付，不把接线或本机证据替代所有安装包 / 镜像验收。
 - Microsoft 构建工具 EULA 与原生 SNI 条款分别处理，既不统一归为 MIT，也不自动归为付费 key。
 
 ### 6.4 Redis 服务

@@ -4,6 +4,8 @@
 >
 > 首轮只读盘点的精确哈希与版本见[证据清单](../records/orm-redis-assessment-evidence-2026-10-21.json)。随后按批准方案完成隔离实验并清理：NoDrive 通过既定矩阵，Valkey 未发现候选独有差异，但两端共同暴露两类上传限流边界问题，完整业务验收未通过；详见[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。随后两类问题已按[配额修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)修复并定向验证；不回写上一轮失败结论为通过。正式依赖与部署配置未变，未连接生产或发布。
 
+2026-10-26 已确认继续 NoDrive 部分收缩方向；当前待执行范围以[正式采用方案](./nodrive-adoption-plan.md)为准，具体依赖安装、配置行为与测试服务范围待确认。本文保留评估依据；Valkey 未因此取得迁移授权。
+
 ## 1. 当前建议
 
 | 对象 | 建议 | 当前证据边界 |
