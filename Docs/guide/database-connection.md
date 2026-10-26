@@ -56,6 +56,12 @@ ORM 使用 `SqlSugarCoreNoDrive 5.1.4.207`，由 Common 显式引用 `Npgsql 10.
 
 `Slaves` 是历史配置模型，目前没有接入 `SqlSugarSetup` 的主从路由；本次 provider 收缩不新增读写分离或自动切换行为。
 
+### SQLite 原生资产核对
+
+托管驱动版本与实际加载的 SQLite 原生版本需要分别确认。当前 `Directory.Build.props` 引用 `SQLitePCLRaw.lib.e_sqlite3 3.50.3`，而 Extension 的 `SQLitePCLRaw.bundle_e_sqlite3 3.0.3` 又引入 `SourceGear.sqlite3 3.50.4.5`；两条资产链存在同名 runtime 文件。2026-10-26 本机核对发现 Tests Release 使用 SQLite **3.50.3**，API publish 使用 **3.50.4**，详见[来源与产物记录](../records/hangfire-source-inputs-2026-10-26.md#4-新发现sqlite-测试与发布基线不同)。
+
+因此，不能仅凭包引用、`.deps.json` 索引或测试目录结果认定发布 native 身份。排查时对照实际文件 SHA256、来源包以及运行时 `sqlite3_libversion()`；[Core 替换试验](../records/hangfire-core-replacement-2026-10-26.md)已验证当前本机 publish 的 3.50.4，但未统一两条依赖链，也不替代其他平台验证。依赖统一先按[接续事项](../planning/current.md#接下来的事项)形成方案，不能通过手工删除 DLL 或任意排除资产掩盖冲突。
+
 ## ConfigId 大小写规则
 
 ### 重要说明

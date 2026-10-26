@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-10-26 日终代码与文档回顾](./day-end-doc-review-2026-10-26.md)：当日 7 个提交、代码与文档对照、验证边界及下一步建议
+
 - [2026-10-21 日终代码与文档回顾](./day-end-doc-review-2026-10-21.md)：当日 9 个提交、PR #75 集成、Mapperly 替代、隔离验证、上传配额修复及接续事项
 - [NoDrive 正式采用](./nodrive-adoption-2026-10-26.md) · [NoDrive 来源补证与分发预审](./nodrive-source-review-2026-10-26.md) · [重点 NuGet notices 分发接线](./nuget-notices-distribution-2026-10-26.md)
 - [剩余依赖发行边界核对](./dependency-distribution-boundaries-2026-10-26.md)：Hangfire 精确源码快照、库替换 / 授权边界、NoDrive 询证与 SNI 分发事项

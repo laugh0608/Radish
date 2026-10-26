@@ -75,7 +75,7 @@ NuGet 联网漏洞检查覆盖 19 个项目，返回零漏洞条目、零报告�
 - NoDrive / SystemCommon 已保存 nuspec 的作者 / copyright 和其指向的[Apache-2.0 正文](https://www.apache.org/licenses/LICENSE-2.0.txt)。包未提供源码 commit，精确源码对应关系及上游 NOTICE 仍需补证；不把上层声明覆盖到全部传递包。
 - API publish 的 native 字体许可沿既有接线交付；Flutter 两份 OFL 资源声明未改。本轮没有构建 Flutter 安装包。
 
-**材料包尚未接入四宿主的通用 publish。** 此次四份新产物证明重点 NuGet 包正文未由公共构建接线统一带入，不能将缓存或审查包称为发行材料已完整。下一批需要确认原文保存位置、各宿主 / 构建工具的分发映射、MSBuild 接线及缺失材料失败策略；按已批准方案，该接线另列可审查范围。
+**本批结束时，材料包尚未接入四宿主的通用 publish。** 当时四份新产物证明重点 NuGet 包正文未由公共构建接线统一带入，不能将缓存或审查包称为发行材料已完整。同日后续已另获批准并完成[重点 notices 接线](./nuget-notices-distribution-2026-10-26.md)，再补入 [Cronos 正文](./hangfire-source-inputs-2026-10-26.md)；本记录保留采用阶段的产物计数，最新材料与发行缺口按后续记录判断。
 
 ## 5. 证据与后续边界
 

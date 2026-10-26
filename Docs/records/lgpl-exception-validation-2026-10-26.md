@@ -53,7 +53,7 @@ dotnet publish <host>/<host>.csproj -c Release --no-build --no-restore --warnase
 
 ## 3. 未关闭事项
 
-- Hangfire 完整对应源码、构建输入和适当修改库的实际可替换性仍需补证；独立 DLL 与许可例外不代替这些结果。
+- 本批时点 Hangfire 完整对应源码、构建输入和适当修改库的实际可替换性仍需补证；随后已完成[源码 / 输入核对](./hangfire-source-inputs-2026-10-26.md)和 [Core 本机 SQLite 替换验证](./hangfire-core-replacement-2026-10-26.md)。这些后续结果不扩展为完整对应源码交付、其他目标或 provider 已通过。
 - 本轮仅重建本机 `osx-arm64`。其余四个平台必须在各自正式候选中按新 LICENSE 重建，历史平台结果不证明当前 fingerprint 有效。
 - NoDrive / SystemCommon 精确来源及许可差异、SNI 下游条款与分发平台、全生态材料覆盖仍未关闭；未发送上游询证。
 - 本批没有 push、PR、tag、Release、镜像发布或部署。后续按[当前进行中](../planning/current.md)推进。

@@ -379,12 +379,12 @@ git push origin v26.1.1.3003
 }
 ```
 
-  - `MainDb` 指定默认主库的 `ConnId`；当配置多库/主从时，`BaseDbConfig.MutiConnectionString` 会把该连接放在集合首位。
-  - `Databases` 中至少包含 `ConnId=Main` 与 `ConnId=Log` 两条记录，后者名称固定（`SqlSugarConst.LogConfigId`），缺失时启动会抛出异常；其余库可自定义 `DbType` 与从库 `Slaves` 列表。
+  - `MainDb` 指定默认主库的 `ConnId`；`BaseDbConfig.MutiConnectionString` 会把该启用连接放在集合首位。
+  - `Databases` 中至少包含 `ConnId=Main` 与 `ConnId=Log` 两条记录，后者名称固定（`SqlSugarConst.LogConfigId`），缺失时启动会抛出异常。启用连接只支持 `Sqlite (2)` / `PostgreSql (4)`，先整组校验 provider 再处理 SQLite 路径；`Slaves` 仅保留历史模型，当前未接入主从路由或自动切换。
 - `Snowflake` 段存放雪花 ID 的 `WorkId` 与 `DataCenterId`，本地/测试/生产必须配置为互不相同的整数（0~30），避免多节点冲突；`appsettings.json` 只保存兜底值，本地差异请放到 `appsettings.Local.json`，部署差异请通过环境变量覆盖，以便按服务器或容器分配固定编号。
 - Program 在调用 `builder.Services.AddSqlSugarSetup()` 后会立即读取 `Snowflake` 段并设置 `SnowFlakeSingle.WorkId/DatacenterId`，因此只要在环境配置中写好差异值即可，无需在扩展或仓储层重复配置；若服务器时间曾被回拨，务必同步调整新的 WorkId。
 - `BaseRepository` 通过 `IUnitOfWorkManage` 获取 `SqlSugarScope` 单例，内部根据泛型实体的 `[Tenant(configId)]` 特性切换连接；未标注特性的实体沿用 `MainDb`，标注了 `configId="Log"` 等值（大小写不敏感）的实体会自动访问对应库。需要写入日志库或其他独立库的模型务必显式添加 `TenantAttribute`，以免错写入主库；若实体启用了 `[MultiTenant(TenantTypeEnum.DataBases)]`，`BaseRepository` 会通过 `TenantUtil.GetConnectionConfig()` 在运行期动态添加租户库配置。
-- 使用 SQLite 时 `ConnectionString` 只需传数据库文件名，运行期会自动拼接 `Environment.CurrentDirectory`；对于 MySQL/SQLServer 等外部数据库，可通过 `dbCountPsw1_*.txt` 本地文件或环境变量隐藏真实连接串，`BaseDbConfig.SpecialDbString` 会优先读取文件值。
+- 业务 SQLite 的 `ConnectionString` 使用数据库文件名，由 `BaseDbConfig.SpecialDbString` 归入解决方案根目录的 `DataBases`；从 `AppContext.BaseDirectory` 向上未找到 `Radish.slnx` 时，使用 `Environment.CurrentDirectory` 作为根目录。PostgreSQL 保留配置连接串，本地敏感配置放入不提交的 `appsettings.Local.json`，部署通过环境变量覆盖。其他 provider 的历史明文连接文件读取分支已删除；分库租户及 OpenIddict / Hangfire 同样只允许 SQLite / PostgreSQL，详见[数据库连接管理](/guide/database-connection)。
 - SQL AOP 通过 `SqlSugarAop.Executing / Executed / ConnectionChecked` 生成受控操作、参数数量及耗时摘要，不输出 SQL 正文、参数名 / 值、用户或表名。普通诊断需要 Development 宿主、Development 日志模式、Diagnostics 与 `SqlAopLog.Enabled` 同时开启；CRUD 与 SkipTables / SkipUsers 只筛选普通诊断，慢操作 / 连接独立启用。PostgreSQL 时间参数规范化不依赖日志开关，SqlSugar 缓存仍使用 `Radish.Common.CacheTool.SqlSugarCache`。
 - 宿主使用 `RuntimeLoggingSession + AddSerilogSetup` 选择旧 / 候选链路。旧链路按 Serilog 配置分流应用与 SQL 日志，候选启用后仅生成规范 JSONL；默认候选开关关闭。介质、路径及背压边界见[日志系统](/guide/logging)，生成规则见[统一事件契约](/features/unified-logging-contract)。
 

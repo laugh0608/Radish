@@ -2,6 +2,8 @@
 
 > 项目所有者批准[具体方案](../features/nuget-notices-distribution-plan.md)后，在 `dev` 完成材料归档、四宿主构建 / publish 接线及定向验证。源代码基线为 `5fe407ce`，原文与来源缺口见[补证记录](./nodrive-source-review-2026-10-26.md)；本批不改变依赖版本、业务行为、Dockerfile 或根 LICENSE。
 
+> 后续补充：同日[Hangfire 源码补证](./hangfire-source-inputs-2026-10-26.md)将合入 Core 的 Cronos MIT 正文接入 API，notices 文件数由本记录的 41 增至 42；下文计数和哈希保留本批时点。
+
 ## 1. 已完成范围
 
 - [材料目录](../../ThirdParty/nuget/NOTICE-INDEX.txt)覆盖 13 个重点 NuGet 组件；11 个 runtime 组件按实际宿主交付，Mapperly / VS Container Tools 两个 build-only 组件保留仓库材料。

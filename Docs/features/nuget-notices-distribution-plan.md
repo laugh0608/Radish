@@ -29,7 +29,7 @@ NoDrive / SystemCommon 同时保留包声明的 Apache 正文、metadata 署名�
 
 | 组件 | 版本 | 本批材料 | 分发范围 |
 | --- | --- | --- | --- |
-| Hangfire.AspNetCore / Core / NetCore | `1.8.14` | 各自 LICENSE.md、COPYING、COPYING.LESSER、NOTICES、LICENSE_STANDARD、LICENSE_ROYALTYFREE 及署名 | 仅 API |
+| Hangfire.AspNetCore / Core / NetCore | `1.8.14` | 各自 LICENSE.md、COPYING、COPYING.LESSER、NOTICES、LICENSE_STANDARD、LICENSE_ROYALTYFREE 及署名；Core 另含合入的 Cronos 0.8.3 MIT 正文 | 仅 API |
 | Hangfire.PostgreSql | `1.20.12` | 自身 LICENSE.md 与署名 | 仅 API |
 | Hangfire.Storage.SQLite | `0.4.2` | 自身 LICENSE 与署名 | 仅 API |
 | Isopoh.Cryptography.Argon2 / Blake2b / SecureArray | `2.0.0` | 逐包 LICENSE、作者、来源及原包代码未经本批修改的说明 | 四宿主 |
@@ -40,7 +40,7 @@ NoDrive / SystemCommon 同时保留包声明的 Apache 正文、metadata 署名�
 
 Hangfire 商业条款保留为包附带备选条款，不表示选择该路线或已购买授权。PostgreSql 插件单独保留，不能套用核心的商业条款。
 
-当前四宿主共享 6 个 runtime 组件，API 再增加 5 个。保持按组件独立目录，允许正文重复，避免相同文件名互相覆盖。字体继续由既有 native / Flutter assets 接线，不重复生成或复制为 NuGet 包。
+同日[源码补证](../records/hangfire-source-inputs-2026-10-26.md)后，Cronos 正文以 `LICENSE-Cronos-0.8.3.txt` 归入 Core 材料目录，API notices 从 41 个文件增至 42 个；它是合入 Core 的组件材料，不增加独立 NuGet 包条目。当前四宿主共享 6 个 runtime 组件，API 再增加 5 个。保持按组件独立目录，允许正文重复，避免相同文件名互相覆盖。字体继续由既有 native / Flutter assets 接线，不重复生成或复制为 NuGet 包。
 
 ## 4. MSBuild 行为与失败策略
 
