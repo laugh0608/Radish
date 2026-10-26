@@ -1,0 +1,66 @@
+<Project>
+  <PropertyGroup>
+    <RadishNoticeRepositoryRoot>$(MSBuildThisFileDirectory)../../</RadishNoticeRepositoryRoot>
+    <RadishNoticeHost Condition="'$(MSBuildProjectName)' == 'Radish.Api' or '$(MSBuildProjectName)' == 'Radish.Auth' or '$(MSBuildProjectName)' == 'Radish.Gateway' or '$(MSBuildProjectName)' == 'Radish.DbMigrate'">true</RadishNoticeHost>
+  </PropertyGroup>
+  <Import Project="$(MSBuildThisFileDirectory)nuget-notices.props" Condition="'$(RadishNoticeHost)' == 'true'" />
+
+  <!-- Invoke the SDK task into private items; do not enable global legacy asset items. -->
+  <Target Name="RadishValidateNugetNotices" BeforeTargets="PrepareForBuild;ComputeFilesToPublish"
+          Condition="'$(RadishNoticeHost)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <ResolvePackageDependencies ProjectPath="$(MSBuildProjectFullPath)" ProjectAssetsFile="$(ProjectAssetsFile)"
+                                ProjectLanguage="$(Language)" TargetFramework="$(TargetFramework)">
+      <Output TaskParameter="PackageDefinitions" ItemName="_RadishNoticeResolvedPackages" />
+    </ResolvePackageDependencies>
+    <PropertyGroup>
+      <_RadishNoticeResolvedNames>;@(_RadishNoticeResolvedPackages->'%(Name)');</_RadishNoticeResolvedNames>
+      <_RadishNoticeResolvedNames>$([System.String]::Copy('$(_RadishNoticeResolvedNames)').ToLowerInvariant())</_RadishNoticeResolvedNames>
+    </PropertyGroup>
+    <ItemGroup>
+      <_RadishNoticeExpectedPackages Include="@(RadishNoticePackage)"
+          Condition="$([System.String]::Copy(';%(Hosts);').Contains(';$(MSBuildProjectName);')) or $([System.String]::Copy('$(_RadishNoticeResolvedNames)').Contains(';%(Name);'))" />
+      <_RadishNoticeMissingPackages Include="@(_RadishNoticeExpectedPackages)" Exclude="@(_RadishNoticeResolvedPackages)" />
+      <_RadishNoticeUnexpectedHosts Include="@(RadishNoticePackage)"
+          Condition="'%(Usage)' == 'runtime' and !$([System.String]::Copy(';%(Hosts);').Contains(';$(MSBuildProjectName);')) and $([System.String]::Copy('$(_RadishNoticeResolvedNames)').Contains(';%(Name);'))" />
+      <_RadishNoticeCopies Include="@(RadishNoticeFile)"
+          Condition="$([System.String]::Copy(';%(Hosts);').Contains(';$(MSBuildProjectName);'))" />
+    </ItemGroup>
+    <Error Condition="'@(_RadishNoticeMissingPackages)' != ''" Text="NuGet notice package version or presence mismatch: @(_RadishNoticeMissingPackages). Review ThirdParty/nuget/manifest.json and regenerate the notices mapping." />
+    <Error Condition="'@(_RadishNoticeUnexpectedHosts)' != ''" Text="NuGet notice host mapping mismatch: @(_RadishNoticeUnexpectedHosts) is present in $(MSBuildProjectName)." />
+    <Error Condition="'@(_RadishNoticeCopies)' == ''" Text="No NuGet notices mapped to $(MSBuildProjectName)." />
+    <PropertyGroup>
+      <_RadishNoticeCopyDestinations>;@(_RadishNoticeCopies->'%(TargetPath)');</_RadishNoticeCopyDestinations>
+    </PropertyGroup>
+    <Error Condition="!$([System.String]::Copy('$(_RadishNoticeCopyDestinations)').Contains(';NOTICE-INDEX.txt;')) or !$([System.String]::Copy('$(_RadishNoticeCopyDestinations)').Contains(';manifest.json;'))"
+           Text="Missing NuGet notice index or manifest mapping for $(MSBuildProjectName)." />
+    <Error Condition="!Exists('%(RadishNoticeFile.Identity)')" Text="Missing NuGet notice material: %(RadishNoticeFile.Identity)." />
+    <GetFileHash Files="@(RadishNoticeFile)" Algorithm="SHA256">
+      <Output TaskParameter="Items" ItemName="_RadishNoticeHashedFiles" />
+    </GetFileHash>
+    <Error Condition="'%(_RadishNoticeHashedFiles.FileHash)' != '%(_RadishNoticeHashedFiles.ExpectedHash)'"
+           Text="NuGet notice material hash mismatch: %(_RadishNoticeHashedFiles.Identity)." />
+    <Error Condition="!$([System.Text.RegularExpressions.Regex]::IsMatch('%(_RadishNoticeCopies.TargetPath)', '^[A-Za-z0-9_.-]+(/[A-Za-z0-9_.-]+)*$')) or $([System.String]::Copy('/%(_RadishNoticeCopies.TargetPath)/').Contains('/../')) or $([System.String]::Copy('/%(_RadishNoticeCopies.TargetPath)/').Contains('/./'))"
+           Text="Unsafe NuGet notice destination: %(_RadishNoticeCopies.TargetPath)." />
+    <RemoveDuplicates Inputs="@(_RadishNoticeCopies->'%(TargetPath)')">
+      <Output TaskParameter="Filtered" ItemName="_RadishNoticeUniqueTargets" />
+    </RemoveDuplicates>
+    <Error Condition="'@(_RadishNoticeCopies->Count())' != '@(_RadishNoticeUniqueTargets->Count())'" Text="Duplicate NuGet notice destination in $(MSBuildProjectName)." />
+  </Target>
+
+  <!-- Copy privately instead of using Content items: host project references must not merge notices. -->
+  <Target Name="RadishCopyNugetNoticesToOutput" AfterTargets="CopyFilesToOutputDirectory"
+          DependsOnTargets="RadishValidateNugetNotices"
+          Condition="'$(RadishNoticeHost)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <RemoveDir Directories="$(TargetDir)third-party-notices/nuget" />
+    <Copy SourceFiles="@(_RadishNoticeCopies)" DestinationFiles="@(_RadishNoticeCopies->'$(TargetDir)third-party-notices/nuget/%(TargetPath)')">
+      <Output TaskParameter="CopiedFiles" ItemName="FileWrites" />
+    </Copy>
+  </Target>
+
+  <Target Name="RadishCopyNugetNoticesToPublish" AfterTargets="Publish"
+          DependsOnTargets="RadishValidateNugetNotices"
+          Condition="'$(RadishNoticeHost)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <RemoveDir Directories="$(PublishDir)third-party-notices/nuget" />
+    <Copy SourceFiles="@(_RadishNoticeCopies)" DestinationFiles="@(_RadishNoticeCopies->'$(PublishDir)third-party-notices/nuget/%(TargetPath)')" />
+  </Target>
+</Project>

@@ -1,0 +1,24 @@
+SqlSugarCoreNoDrive 5.1.4.207
+Authors: sunkaixuan
+Copyright: Copyright 2016
+Package license metadata: url:http://www.apache.org/licenses/LICENSE-2.0.html
+Project: https://github.com/sunkaixuan/SqlSugar
+Package source commit: (not supplied; candidate evidence does not establish this)
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- APACHE-2.0.txt (package-declared-license)
+  Source: https://www.apache.org/licenses/LICENSE-2.0.txt
+  Original SHA256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  Distributed SHA256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- CANDIDATE-SOURCE-LICENSE.txt (candidate-source-evidence)
+  Source: https://github.com/DotNetNext/SqlSugar/blob/7a7ba892f30fd2f2e2b826721ed520f288104815/LICENSE [LICENSE]
+  Original SHA256: 3425e680fe63ed62e86c63602016780a7c033340ccb945a02cc04ba5b9d959ae
+  Distributed SHA256: 3425e680fe63ed62e86c63602016780a7c033340ccb945a02cc04ba5b9d959ae
+
+Remaining evidence:
+- Exact published binary to source commit mapping is not established.
+- NuGet declares Apache-2.0 while the candidate source root LICENSE is MIT; preserve both assertions without relabeling or claiming a confirmed dual-license choice.
+- No NOTICE filename was found in the two inspected candidate trees; this does not establish absence for the exact published binary.

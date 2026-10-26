@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "host": "Radish.Gateway",
+  "scope": "13 reviewed NuGet components only; this is not complete redistribution clearance.",
+  "components": [
+    {
+      "package": "Isopoh.Cryptography.Argon2",
+      "version": "2.0.0",
+      "authors": "Michael Heyman",
+      "copyright": "Michael Heyman 2022",
+      "licenseMetadata": "file:LICENSE",
+      "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+      "repositoryCommit": "288c52b4a75e8bef6dcb5d4b0c8395a87358f100",
+      "nuspecSha256": "64a4c18680f17ad62af7aec2b2d5de2728572853e3913bfc11b5cee35e8715ab",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [],
+      "files": [
+        {
+          "path": "LICENSE",
+          "source": "https://api.nuget.org/v3-flatcontainer/isopoh.cryptography.argon2/2.0.0/isopoh.cryptography.argon2.2.0.0.nupkg",
+          "sourcePath": "LICENSE",
+          "role": "package-license",
+          "sourceSha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430",
+          "sha256": "cb166fb7b076985f2c62fb0b9f875ec0ab5808fbb33eebecae559866cf89ac9d"
+        }
+      ]
+    },
+    {
+      "package": "Isopoh.Cryptography.Blake2b",
+      "version": "2.0.0",
+      "authors": "Michael Heyman",
+      "copyright": "Michael Heyman 2022",
+      "licenseMetadata": "file:LICENSE",
+      "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+      "repositoryCommit": "288c52b4a75e8bef6dcb5d4b0c8395a87358f100",
+      "nuspecSha256": "9f32a0f79f0c328cad77277912a839847448ce82fed8adaffdfd83429d5d58a1",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [],
+      "files": [
+        {
+          "path": "LICENSE",
+          "source": "https://api.nuget.org/v3-flatcontainer/isopoh.cryptography.blake2b/2.0.0/isopoh.cryptography.blake2b.2.0.0.nupkg",
+          "sourcePath": "LICENSE",
+          "role": "package-license",
+          "sourceSha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430",
+          "sha256": "cb166fb7b076985f2c62fb0b9f875ec0ab5808fbb33eebecae559866cf89ac9d"
+        }
+      ]
+    },
+    {
+      "package": "Isopoh.Cryptography.SecureArray",
+      "version": "2.0.0",
+      "authors": "Michael Heyman",
+      "copyright": "Michael Heyman 2022",
+      "licenseMetadata": "file:LICENSE",
+      "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+      "repositoryCommit": "",
+      "nuspecSha256": "0898c096c923b64cd997affdf647fae6453893508134c4f377aa5245fc2f147e",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [],
+      "files": [
+        {
+          "path": "LICENSE",
+          "source": "https://api.nuget.org/v3-flatcontainer/isopoh.cryptography.securearray/2.0.0/isopoh.cryptography.securearray.2.0.0.nupkg",
+          "sourcePath": "LICENSE",
+          "role": "package-license",
+          "sourceSha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430",
+          "sha256": "cb166fb7b076985f2c62fb0b9f875ec0ab5808fbb33eebecae559866cf89ac9d"
+        }
+      ]
+    },
+    {
+      "package": "Microsoft.Data.SqlClient.SNI.runtime",
+      "version": "5.2.0",
+      "authors": "Microsoft",
+      "copyright": "© Microsoft Corporation. All rights reserved.",
+      "licenseMetadata": "file:LICENSE.txt",
+      "projectUrl": "https://aka.ms/sqlclientproject",
+      "repositoryCommit": "",
+      "nuspecSha256": "48ad9c2f2891d0dd6fc2716465c3ba7970666f14cb06e4e3e65fe1b137cd95e9",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [
+        "Redistribution conditions must be reviewed for the actual release, separately from the MIT managed SqlClient package."
+      ],
+      "files": [
+        {
+          "path": "LICENSE.txt",
+          "source": "https://api.nuget.org/v3-flatcontainer/microsoft.data.sqlclient.sni.runtime/5.2.0/microsoft.data.sqlclient.sni.runtime.5.2.0.nupkg",
+          "sourcePath": "LICENSE.txt",
+          "role": "package-license",
+          "sourceSha256": "9335e8bad875dd7be4eebd55d2335eb6433d1cea61aadb3817af7807bef8932a",
+          "sha256": "892c48ab2d09702f089b593536544a4cb0d33d6f9e92c96ce768a3a94c44a7d5"
+        }
+      ]
+    },
+    {
+      "package": "SqlSugarCoreNoDrive",
+      "version": "5.1.4.207",
+      "authors": "sunkaixuan",
+      "copyright": "Copyright 2016",
+      "licenseMetadata": "url:http://www.apache.org/licenses/LICENSE-2.0.html",
+      "projectUrl": "https://github.com/sunkaixuan/SqlSugar",
+      "repositoryCommit": "",
+      "nuspecSha256": "b504f9a3e347266862ad912437390548c4bda8dbc727177abfe20bf69e3c50d6",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [
+        "Exact published binary to source commit mapping is not established.",
+        "NuGet declares Apache-2.0 while the candidate source root LICENSE is MIT; preserve both assertions without relabeling or claiming a confirmed dual-license choice.",
+        "No NOTICE filename was found in the two inspected candidate trees; this does not establish absence for the exact published binary."
+      ],
+      "files": [
+        {
+          "path": "APACHE-2.0.txt",
+          "source": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "sourcePath": "",
+          "role": "package-declared-license",
+          "sourceSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "CANDIDATE-SOURCE-LICENSE.txt",
+          "source": "https://github.com/DotNetNext/SqlSugar/blob/7a7ba892f30fd2f2e2b826721ed520f288104815/LICENSE",
+          "sourcePath": "LICENSE",
+          "role": "candidate-source-evidence",
+          "sourceSha256": "3425e680fe63ed62e86c63602016780a7c033340ccb945a02cc04ba5b9d959ae",
+          "sha256": "3425e680fe63ed62e86c63602016780a7c033340ccb945a02cc04ba5b9d959ae"
+        }
+      ]
+    },
+    {
+      "package": "SystemCommon",
+      "version": "8.5.0",
+      "authors": "sunkaixuan",
+      "copyright": "Copyright 2016",
+      "licenseMetadata": "url:http://www.apache.org/licenses/LICENSE-2.0.html",
+      "projectUrl": "https://github.com/sunkaixuan/SqlSugar",
+      "repositoryCommit": "",
+      "nuspecSha256": "24b84abad5c481239ac88a7b6365a80ed4c20c4eb0b225acf67647e8aa692934",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [
+        "Exact published binary to source commit mapping is not established.",
+        "NuGet declares Apache-2.0 while the candidate source root LICENSE is MIT; preserve both assertions without relabeling or claiming a confirmed dual-license choice.",
+        "No NOTICE filename was found in the two inspected candidate trees; this does not establish absence for the exact published binary.",
+        "The inspected source pack nuspec says 8.3, not the published 8.5.0."
+      ],
+      "files": [
+        {
+          "path": "APACHE-2.0.txt",
+          "source": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+          "sourcePath": "",
+          "role": "package-declared-license",
+          "sourceSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "CANDIDATE-SOURCE-LICENSE.txt",
+          "source": "https://github.com/DotNetNext/SqlSugar/blob/f1f3b3100f18fb286d6c177bcffd3fda893249d8/LICENSE",
+          "sourcePath": "LICENSE",
+          "role": "candidate-source-evidence",
+          "sourceSha256": "a901a4a8487ad7bd1e8b0ef562f9791e725a4e4c43b5012409085f1fac580584",
+          "sha256": "a901a4a8487ad7bd1e8b0ef562f9791e725a4e4c43b5012409085f1fac580584"
+        }
+      ]
+    }
+  ],
+  "files": [
+    {
+      "path": "isopoh.cryptography.argon2/2.0.0/LICENSE",
+      "sha256": "cb166fb7b076985f2c62fb0b9f875ec0ab5808fbb33eebecae559866cf89ac9d"
+    },
+    {
+      "path": "isopoh.cryptography.argon2/2.0.0/ATTRIBUTION.txt",
+      "sha256": "39e6c2adead48f0e1f471d2fdc5115557ce28120e1440637a47cd1723c5606d4"
+    },
+    {
+      "path": "isopoh.cryptography.blake2b/2.0.0/LICENSE",
+      "sha256": "cb166fb7b076985f2c62fb0b9f875ec0ab5808fbb33eebecae559866cf89ac9d"
+    },
+    {
+      "path": "isopoh.cryptography.blake2b/2.0.0/ATTRIBUTION.txt",
+      "sha256": "0e0031a355d616581829a6d0dca90dfb8aca3789411a3b4d76d9fd9c4e07e798"
+    },
+    {
+      "path": "isopoh.cryptography.securearray/2.0.0/LICENSE",
+      "sha256": "cb166fb7b076985f2c62fb0b9f875ec0ab5808fbb33eebecae559866cf89ac9d"
+    },
+    {
+      "path": "isopoh.cryptography.securearray/2.0.0/ATTRIBUTION.txt",
+      "sha256": "b67e03b3e8aeba9a37f729cdcad776ae447f54ae228e0a911e6cda6558484a80"
+    },
+    {
+      "path": "microsoft.data.sqlclient.sni.runtime/5.2.0/LICENSE.txt",
+      "sha256": "892c48ab2d09702f089b593536544a4cb0d33d6f9e92c96ce768a3a94c44a7d5"
+    },
+    {
+      "path": "microsoft.data.sqlclient.sni.runtime/5.2.0/ATTRIBUTION.txt",
+      "sha256": "1851a1607bb41e4e8bc7015b983521205e10a80ab8f7b6094bfee68b9aafe964"
+    },
+    {
+      "path": "sqlsugarcorenodrive/5.1.4.207/APACHE-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "sqlsugarcorenodrive/5.1.4.207/CANDIDATE-SOURCE-LICENSE.txt",
+      "sha256": "3425e680fe63ed62e86c63602016780a7c033340ccb945a02cc04ba5b9d959ae"
+    },
+    {
+      "path": "sqlsugarcorenodrive/5.1.4.207/ATTRIBUTION.txt",
+      "sha256": "fc4755d503bd00d99c16c788dcd7d260d5b7d57ff9e996d6b26be0c7049b3802"
+    },
+    {
+      "path": "systemcommon/8.5.0/APACHE-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "systemcommon/8.5.0/CANDIDATE-SOURCE-LICENSE.txt",
+      "sha256": "a901a4a8487ad7bd1e8b0ef562f9791e725a4e4c43b5012409085f1fac580584"
+    },
+    {
+      "path": "systemcommon/8.5.0/ATTRIBUTION.txt",
+      "sha256": "7243cebf946b6e72afdfdc957a792d7c5e3d3d377414583efd2cd547de3de567"
+    }
+  ]
+}

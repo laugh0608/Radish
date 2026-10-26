@@ -104,6 +104,10 @@ npm run validate:candidate
   - 联网执行 `npm audit --omit=dev --json` 与 NuGet 直接 / 传递依赖漏洞审计
   - npm 或 NuGet 存在 High / Critical 时失败；命令失败、审计源不可用或 JSON 无法解析时同样失败
   - 属于 `master` PR 的 CI-only 必需组件，暂不并入日常本地 `validate:ci`；准备合并或处理依赖时单独执行
+- `check:nuget-notices` / `check:nuget-notices:self-test`
+  - 前者校验重点 NuGet 材料、派生 MSBuild 映射、宿主索引与四宿主现有 assets；后者使用临时副本验证缺失、篡改、版本 / 宿主漂移、目标路径和清理边界，不 restore 或启动服务
+  - 材料变更经审查后使用 `node Scripts/check-nuget-notices.mjs --write --assets` 重建派生文件；可追加 `--source-root=<原始材料目录>` 核对原始 SHA256 与规范化关系，目录布局为小写 package ID / version / 文件名
+  - 四宿主正常 build / publish 已通过 MSBuild 执行材料、版本与宿主校验，无需 Node；这里只覆盖[接线方案](../features/nuget-notices-distribution-plan.md)列明的组件，不等于全生态发行审核，也未增加独立 CI job
 - `check:sensitive-literals`
   - 扫描 Git 已跟踪文件和未忽略的工作区新文件，阻断完整 JWT、硬编码 Bearer Token 与私钥 PEM 头
   - 只报告文件、行号和规则，不回显命中值；环境变量、模板变量、占位值和 `invalid_token` 测试值不会被误判

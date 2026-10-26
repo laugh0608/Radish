@@ -4,13 +4,13 @@
 >
 > 首轮只读盘点的精确哈希与版本见[证据清单](../records/orm-redis-assessment-evidence-2026-10-21.json)。随后按批准方案完成隔离实验并清理：NoDrive 通过既定矩阵，Valkey 未发现候选独有差异，但两端共同暴露两类上传限流边界问题，完整业务验收未通过；详见[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。随后两类问题已按[配额修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)修复并定向验证；不回写上一轮失败结论为通过。10 月 21 日阶段未修改正式 ORM 依赖或部署配置。
 
-2026-10-26 已获批完成 NoDrive 正式部分收缩与配置支持边界，当前结果见[实施记录](../records/nodrive-adoption-2026-10-26.md)，范围以[正式采用方案](./nodrive-adoption-plan.md)为准。本文保留原评估依据；分发材料接线尚未收口，Valkey 未因此取得迁移授权，未连接生产或发布。
+2026-10-26 已获批完成 NoDrive 正式部分收缩与配置支持边界，当前结果见[实施记录](../records/nodrive-adoption-2026-10-26.md)，范围以[正式采用方案](./nodrive-adoption-plan.md)为准。本文保留原评估依据；重点 notices 接线随后已按[独立方案](./nuget-notices-distribution-plan.md)完成，剩余来源 / 发行审核未收口；Valkey 未因此取得迁移授权，未连接生产或发布。
 
 ## 1. 当前建议
 
 | 对象 | 建议 | 当前证据边界 |
 | --- | --- | --- |
-| SqlSugar | 同版本 NoDrive 已于 10 月 26 日正式采用，不整体更换 ORM | 新候选 SQLite、PG16 / 17、严格构建与四宿主产物通过；仍带 SQL Server / SNI，分发材料接线待收口 |
+| SqlSugar | 同版本 NoDrive 已于 10 月 26 日正式采用，不整体更换 ORM | 新候选 SQLite、PG16 / 17、严格构建与四宿主产物通过；仍带 SQL Server / SNI，重点 notices 已交付，精确来源 / 发行审核待收口 |
 | 完整 ORM 替换 | 仅当必须彻底退出额外驱动链，或 NoDrive 无法通过验证时，另立 EF Core 迁移专题 | 现有 OpenIddict 已用 EF Core；业务查询、事务、实体特性及迁移仍与 SqlSugar 深度耦合，成本明显高于映射替代 |
 | Redis 服务 | 保留 Valkey 9.1.2 候选；上传限流边界已修复，迁移方案另行裁决 | 普通业务、AUTH / ACL、AOF、同版本 RDB、重连通过；过期结算与超大整数在两端同样失败，无性能 / 生产迁移结论 |
 | 实际迁移 | 先确认源版本与数据分类，再定数据方案 | 本次联网解析 `redis:7` 的 amd64 config 为 `7.4.11`，不能推定用户正在运行的版本，更不能直接换镜像挂旧卷 |
@@ -63,7 +63,7 @@ NoDrive 主 DLL 的 SHA256 为 `38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d
 | 路线 | 实际收益 | 主要代价 / 选择条件 |
 | --- | --- | --- |
 | 保留当前包并补许可材料 | 不改变数据库行为 | 继续分发未使用驱动，Oscar 等证据缺口仍待关闭 |
-| 同版本 NoDrive + 明确驱动引用 | 保留 ORM 实现，缩小部分厂商链；已采用 | SQL Server / SNI 不会自然消失；正式配置边界和双数据库验证已完成，许可来源补证及分发接线继续推进 |
+| 同版本 NoDrive + 明确驱动引用 | 保留 ORM 实现，缩小部分厂商链；已采用 | SQL Server / SNI 不会自然消失；正式配置边界和双数据库验证已完成，重点 notices 接线已完成，许可来源补证继续推进 |
 | 自维护精简 fork | 能自行控制 provider 分发 | 必须承担上游同步、构建来源、安全修复与测试；当前不建议作为默认路线 |
 | EF Core | 可按正式 PG / SQLite provider 边界组织；已有 OpenIddict 经验可复用 | 需要重写 SqlSugar 查询、实体映射、仓储及事务接线，不能把现有 Auth 迁移经验当作业务库已兼容 |
 | Dapper / 手写 SQL | SQL 与驱动选择直接可见 | Dapper 提供 SQL 执行 / 结果映射；分页、软删除、租户过滤、更新保护、schema 管理仍须项目承担，不宜仅为许可治理扩大自维护面 |

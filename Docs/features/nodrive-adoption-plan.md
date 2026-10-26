@@ -1,6 +1,6 @@
 # NoDrive 正式收缩实施方案
 
-> 2026-10-26：方案已随 `571054e8` 提交，随后项目所有者批准并完成本文的正式依赖、配置行为及本地验证；测试容器与卷已清理。SpaProxy 固定到已有 `10.0.13` 另获批准。结果见[实施记录](../records/nodrive-adoption-2026-10-26.md)，分发材料接线与发布尚未关闭。
+> 2026-10-26：方案已随 `571054e8` 提交，随后项目所有者批准并完成本文的正式依赖、配置行为及本地验证；测试容器与卷已清理。SpaProxy 固定到已有 `10.0.13` 另获批准。结果见[实施记录](../records/nodrive-adoption-2026-10-26.md)，重点分发接线随后按[独立方案](./nuget-notices-distribution-plan.md)获批完成；来源 / 发行审核与发布尚未关闭。
 >
 > 当前评估入口为[ORM / Redis 评估](./orm-redis-dependency-assessment.md)，历史实验见[隔离验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。本文承接正式采用，不重新授权历史实验，也不包含 Valkey 切换。
 

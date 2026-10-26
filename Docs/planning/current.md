@@ -7,7 +7,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：NoDrive 正式部分收缩已完成，双数据库回归与四宿主产物通过、测试资源已清理，见[实施记录](../records/nodrive-adoption-2026-10-26.md)。下一批补齐精确来源证据并确认重点 NuGet notices 的分发接线；Valkey 保持独立后置，统一日志 L2 保留后续恢复顺位。
+- **下一项工作**：NoDrive 正式部分收缩与[重点 NuGet notices 分发接线](../records/nuget-notices-distribution-2026-10-26.md)已完成。继续处理 NoDrive / SystemCommon 的精确来源与 Apache / MIT 声明差异，并核对 Hangfire 等剩余发行条件；Valkey 保持独立后置，统一日志 L2 保留后续恢复顺位。
 - **状态复核日期**：`2026-10-26`；本次实现、226 条 NuGet 清单、材料包和未关闭项见[实施记录](../records/nodrive-adoption-2026-10-26.md)，准备阶段快照见[采用前核对](../records/dependency-distribution-preflight-2026-10-26.md)。
 - **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
@@ -21,16 +21,16 @@
 
 2026-10-20 [首轮许可盘点](../records/dependency-license-audit-2026-10-20.md)覆盖正式 .NET / Web / Rust / Flutter 的 947 个依赖条目。项目所有者已确认先按[Rust 实施方案](../features/rust-image-processing-implementation-plan.md)替代 Six Labors 四包链，完成正常 PR 后再详细评估 AutoMapper、ORM、Redis 等其他方案。
 
-图片替代与合并前候选门禁已通过，[PR #75](https://github.com/laugh0608/Radish/pull/75) 已合并并完成回灌；[合并前检查](../records/master-pr-regression-2026-10-20.md)的安全升级及图片 API 适配已随 `250cd8f6` 保存，工作区已删除 Six Labors 四包链，本机 Debug / Release 严格构建通过。五宿主原生平台、Linux 双架构最终镜像 / 漏洞策略、联合 ASan 和 PC / mobile 成组验收已通过；HTTP/3 测试夹具修正后全量 Repo Quality 通过，见[实施记录](../records/rust-image-replacement-2026-10-20.md)；服务启动和新增工具链仍按各批清单授权。2026-10-21 接续评估形成独立映射方案，并经批准完成 Mapperly 4.3.1 替代；本地验证见[映射迁移记录](../records/mapperly-migration-2026-10-21.md)。ORM / Redis 隔离评估与两类上传配额修复已完成。2026-10-26 又独立批准并完成 NoDrive 正式采用，见[实施记录](../records/nodrive-adoption-2026-10-26.md)；剩余分发材料接线、Valkey 迁移和其他运行时变更继续按具体范围确认，不启动后端语言迁移或发布。
+图片替代与合并前候选门禁已通过，[PR #75](https://github.com/laugh0608/Radish/pull/75) 已合并并完成回灌；[合并前检查](../records/master-pr-regression-2026-10-20.md)的安全升级及图片 API 适配已随 `250cd8f6` 保存，工作区已删除 Six Labors 四包链，本机 Debug / Release 严格构建通过。五宿主原生平台、Linux 双架构最终镜像 / 漏洞策略、联合 ASan 和 PC / mobile 成组验收已通过；HTTP/3 测试夹具修正后全量 Repo Quality 通过，见[实施记录](../records/rust-image-replacement-2026-10-20.md)；服务启动和新增工具链仍按各批清单授权。2026-10-21 接续评估形成独立映射方案，并经批准完成 Mapperly 4.3.1 替代；本地验证见[映射迁移记录](../records/mapperly-migration-2026-10-21.md)。ORM / Redis 隔离评估与两类上传配额修复已完成。2026-10-26 又独立批准并完成 NoDrive 正式采用，见[实施记录](../records/nodrive-adoption-2026-10-26.md)；重点分发接线随后已独立批准并完成，剩余发行证据、Valkey 迁移和其他运行时变更继续按具体范围确认，不启动后端语言迁移或发布。
 
 ## 接下来的事项
 
-1. **补齐剩余来源证据**：NoDrive 已采用，仍携带 SqlClient / SNI；NoDrive / SystemCommon 的精确源码对应关系与上游 NOTICE 继续补证。按[许可治理专题](../features/dependency-license-governance.md)核对 Hangfire、Argon2、Microsoft 工具 / SNI 的实际分发路径，不默认更换密码或调度实现。
-2. **确认 notices 的分发接线**：已整理 13 个重点组件与三份字体原文审查材料，并更新 [226 条 NuGet 清单](../records/nodrive-nuget-inventory-2026-10-26.csv)，原 947 条历史盘点保持。下一批明确原文保存位置、四宿主 / 构建工具映射、MSBuild 接线及缺失材料失败策略；当前材料包不等于最终产物声明已完整。
+1. **处理剩余来源证据**：已定位 `DotNetNext/SqlSugar` 的版本候选提交，核对两个包的实际 archive 哈希，并发现包 Apache 声明与源码 MIT 声明差异、SystemCommon 打包版本不一致；详见[来源补证](../records/nodrive-source-review-2026-10-26.md)。两个候选 tree 未见 NOTICE 文件，不能推定精确发行物无其他声明。继续按[许可治理专题](../features/dependency-license-governance.md)核对发行边界，不默认更换密码或调度实现。
+2. **处理剩余发行条件**：[重点 notices 接线](../records/nuget-notices-distribution-2026-10-26.md)已获批完成，API 交付 11 个 runtime 组件，其余三宿主各 6 个，两个 build-only 组件保留仓库材料。该批没有覆盖全部 226 条 NuGet 依赖、全生态 / 镜像发行材料，也未代替 Hangfire 源码提供 / 可替换链接等条件的核对；继续按[许可治理专题](../features/dependency-license-governance.md)补齐，不默认更换调度器或密码算法。
 3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
 4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与本次 262 项定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。
 
-NoDrive 本轮实现与本地验证已关闭；后续材料接线、服务迁移、集成和发布分别按范围推进，不因写入待办而取得新的依赖安装、服务启动或部署授权。
+NoDrive 本轮实现、本地验证与重点 notices 接线已关闭；剩余发行审核、服务迁移、集成和发布分别按范围推进，不因写入待办而取得新的依赖安装、服务启动或部署授权。
 
 ## 产品线成熟度
 
@@ -49,7 +49,7 @@ NoDrive 本轮实现与本地验证已关闭；后续材料接线、服务迁移
 
 ## 最近结论
 
-- `2026-10-26` 完成 NoDrive 正式部分收缩、业务 / 租户 / OpenIddict / Hangfire provider 边界和 58 项新回归。Debug / Release 严格构建、PG17 全量各 4,135 项通过（102 项 Redis / Valkey 预期跳过）、PG16 专项各 43 项及四宿主产物检查通过；资源已清理。材料接线与 Valkey 迁移未完成，本批未发布，详见[实施记录](../records/nodrive-adoption-2026-10-26.md)。
+- `2026-10-26` 完成 NoDrive 正式部分收缩、业务 / 租户 / OpenIddict / Hangfire provider 边界和 58 项新回归。Debug / Release 严格构建、PG17 全量各 4,135 项通过（102 项 Redis / Valkey 预期跳过）、PG16 专项各 43 项及四宿主产物检查通过；资源已清理。随后已完成[重点 notices 分发接线](../records/nuget-notices-distribution-2026-10-26.md)，来源 / 发行证据与 Valkey 迁移仍未关闭。本批未发布，采用结果见[实施记录](../records/nodrive-adoption-2026-10-26.md)。
 - `2026-10-21` 完成 PR #75 合并回灌、Mapperly 替代、NoDrive / Valkey 隔离验证，以及上传配额过期和 Int64 边界修复；[日终回顾](../records/day-end-doc-review-2026-10-21.md)汇总全部提交、验证范围和后续事项。NoDrive / Valkey 未正式采用，本批未发布。
 - `2026-10-20` 建立[第三方依赖许可治理专题](../features/dependency-license-governance.md)与[Rust 完整替代方案](../features/rust-image-processing-implementation-plan.md)；947 条依赖清单保留为迁移前快照。图片替代的交付、平台与成组验收已关闭，并于次日完成 PR 集成，见[实施记录](../records/rust-image-replacement-2026-10-20.md)。
 

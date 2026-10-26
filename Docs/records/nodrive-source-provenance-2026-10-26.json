@@ -1,0 +1,197 @@
+{
+  "reviewedOn": "2026-10-26",
+  "repository": "DotNetNext/SqlSugar",
+  "formerProjectUrl": "https://github.com/sunkaixuan/SqlSugar",
+  "repositoryId": 38992233,
+  "scope": "Source provenance observations only; package-to-binary provenance and license reconciliation remain open.",
+  "candidateCommits": [
+    {
+      "sha": "7a7ba892f30fd2f2e2b826721ed520f288104815",
+      "date": "2025-10-28T03:15:11Z",
+      "url": "https://github.com/DotNetNext/SqlSugar/commit/7a7ba892f30fd2f2e2b826721ed520f288104815",
+      "message": "5.1.4.207",
+      "changedPaths": [
+        "Src/Asp.NetCore2/SqlSugar/SqlSugar.csproj",
+        "Src/Asp.NetCore2/SqlSugar/SqlSugarForCore.nuspec",
+        "Src/Asp.NetCore2/SqlSugar/SqlSugarForCoreNoDrive.nuspec"
+      ]
+    },
+    {
+      "sha": "e873a48188ea7d344cc563801a518c37f08f6399",
+      "date": "2025-10-28T03:20:51Z",
+      "url": "https://github.com/DotNetNext/SqlSugar/commit/e873a48188ea7d344cc563801a518c37f08f6399",
+      "message": "5.1.4.207",
+      "changedPaths": [
+        "Src/Asp.Net/SqlSugar/Realization/Oracle/SqlBuilder/OracleQueryBuilder.cs"
+      ]
+    },
+    {
+      "sha": "a0e52cf1e5dd2be821f2952b695146ae7455b4fd",
+      "date": "2025-10-28T03:21:23Z",
+      "url": "https://github.com/DotNetNext/SqlSugar/commit/a0e52cf1e5dd2be821f2952b695146ae7455b4fd",
+      "message": "5.1.4.207",
+      "changedPaths": [
+        "Src/Asp.Net/SqlSugar/Properties/AssemblyInfo.cs",
+        "Src/Asp.Net/SqlSugar/SqlSugar.nuspec"
+      ]
+    }
+  ],
+  "trees": [
+    {
+      "sha": "7a7ba892f30fd2f2e2b826721ed520f288104815",
+      "truncated": false,
+      "entryCount": 5126,
+      "licenseNoticeFilenameMatches": [
+        {
+          "path": "LICENSE",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "67fa0c61f13f1444f0115cf91b0555b8b986efbd",
+          "size": 1065,
+          "url": "https://api.github.com/repos/DotNetNext/SqlSugar/git/blobs/67fa0c61f13f1444f0115cf91b0555b8b986efbd"
+        }
+      ],
+      "systemCommonPackFile": {
+        "path": "Src/Asp.NetCore2/SqlSugar/SqlSugarForCoreNoDriveSystemCommon.nuspec",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "d0d6f1eb84baa9db5c999d3b695b1315ce0689b2",
+        "size": 1172,
+        "url": "https://api.github.com/repos/DotNetNext/SqlSugar/git/blobs/d0d6f1eb84baa9db5c999d3b695b1315ce0689b2"
+      }
+    },
+    {
+      "sha": "f1f3b3100f18fb286d6c177bcffd3fda893249d8",
+      "truncated": false,
+      "entryCount": 4631,
+      "licenseNoticeFilenameMatches": [
+        {
+          "path": "LICENSE",
+          "mode": "100644",
+          "type": "blob",
+          "sha": "de980666b33174dcf1b225c25452291a06173e10",
+          "size": 1065,
+          "url": "https://api.github.com/repos/DotNetNext/SqlSugar/git/blobs/de980666b33174dcf1b225c25452291a06173e10"
+        }
+      ],
+      "systemCommonPackFile": {
+        "path": "Src/Asp.NetCore2/SqlSugar/SqlSugarForCoreNoDriveSystemCommon.nuspec",
+        "mode": "100644",
+        "type": "blob",
+        "sha": "d0d6f1eb84baa9db5c999d3b695b1315ce0689b2",
+        "size": 1172,
+        "url": "https://api.github.com/repos/DotNetNext/SqlSugar/git/blobs/d0d6f1eb84baa9db5c999d3b695b1315ce0689b2"
+      }
+    }
+  ],
+  "retrievedTextEvidence": [
+    {
+      "content": "MIT License\n\nCopyright (c) 2025 jacktang\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+      "encoding": "utf-8",
+      "sha": "67fa0c61f13f1444f0115cf91b0555b8b986efbd",
+      "display_url": "https://github.com/DotNetNext/SqlSugar/blob/7a7ba892f30fd2f2e2b826721ed520f288104815/LICENSE",
+      "display_title": "LICENSE",
+      "retrievedTextSha256": "3425e680fe63ed62e86c63602016780a7c033340ccb945a02cc04ba5b9d959ae",
+      "computedGitBlobSha1": "67fa0c61f13f1444f0115cf91b0555b8b986efbd",
+      "gitBlobMatches": true
+    },
+    {
+      "content": "MIT License\n\nCopyright (c) 2022 jacktang\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.\n",
+      "encoding": "utf-8",
+      "sha": "de980666b33174dcf1b225c25452291a06173e10",
+      "display_url": "https://github.com/DotNetNext/SqlSugar/blob/f1f3b3100f18fb286d6c177bcffd3fda893249d8/LICENSE",
+      "display_title": "LICENSE",
+      "retrievedTextSha256": "a901a4a8487ad7bd1e8b0ef562f9791e725a4e4c43b5012409085f1fac580584",
+      "computedGitBlobSha1": "de980666b33174dcf1b225c25452291a06173e10",
+      "gitBlobMatches": true
+    },
+    {
+      "content": "﻿<?xml version=\"1.0\"?>\n<package >\n  <metadata>\n    <id>SqlSugarCoreNoDrive</id>\n    <version>5.1.4.207</version>\n    <authors>sunkaixuan</authors>\n    <owners>Landa</owners>\n    <licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>\n    <projectUrl>https://github.com/sunkaixuan/SqlSugar</projectUrl>\n    <iconUrl>https://secure.gravatar.com/avatar/a82c03402497b2e58fd65038a3699b30</iconUrl>\n    <requireLicenseAcceptance>false</requireLicenseAcceptance>\n    <description> .Net Core/.net5+ SqlSugar ORM ,High-performance, lightweight https://github.com/sunkaixuan/SqlSugar</description>\n    <copyright>Copyright 2016</copyright>\n    <tags>SqlSugar Sql Sugar Core Asp.net core orm</tags>\n    <dependencies>\n      <group targetFramework=\".NETStandard2.1\"> \n        <dependency id=\"Newtonsoft.Json\" version=\"13.0.2\" /> \n\t    <dependency id=\"SystemCommon \" version=\"8.5.0\" />\n      </group>\n    </dependencies>\n  </metadata>\n  <files>\n    <file src=\"G:\\Git\\SqlSugar\\Src\\Asp.NetCore2\\SqlSugar\\bin\\Debug\\netstandard2.1\\SqlSugar.dll\" target=\"lib\\netstandard2.1\"></file>\n  </files>\n</package>",
+      "encoding": "utf-8",
+      "sha": "4b5a1d5fd2053b8fbca26a6bcd22e986371ebfa5",
+      "display_url": "https://github.com/DotNetNext/SqlSugar/blob/7a7ba892f30fd2f2e2b826721ed520f288104815/Src/Asp.NetCore2/SqlSugar/SqlSugarForCoreNoDrive.nuspec",
+      "display_title": "SqlSugarForCoreNoDrive.nuspec",
+      "retrievedTextSha256": "c15b7e451bda4510179575e55bf49dc4f311329c39d02aa6ceeca664f4e12e33",
+      "computedGitBlobSha1": "4b5a1d5fd2053b8fbca26a6bcd22e986371ebfa5",
+      "gitBlobMatches": true
+    },
+    {
+      "content": "﻿<?xml version=\"1.0\"?>\n<package >\n\t<metadata>\n\t\t<id>SystemCommon</id>\n\t\t<version>8.3</version>\n\t\t<authors>sunkaixuan</authors>\n\t\t<owners>果糖大数据</owners>\n\t\t<licenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</licenseUrl>\n\t\t<projectUrl>https://github.com/sunkaixuan/SqlSugar</projectUrl>\n\t\t<iconUrl>https://secure.gravatar.com/avatar/a82c03402497b2e58fd65038a3699b30</iconUrl>\n\t\t<requireLicenseAcceptance>false</requireLicenseAcceptance>\n\t\t<description>SystemCommon</description>\n\t\t<copyright>Copyright 2016</copyright>\n\t\t<tags>SystemCommon</tags>\n\t\t<dependencies>\n\t\t\t<group targetFramework=\".NETStandard2.1\">\n\t\t\t\t<dependency id=\"Microsoft.Data.SqlClient\" version=\"5.2.2\" />\n\t\t\t\t<dependency id=\"System.Data.Common\" version=\"4.3.0\" />\n\t\t\t\t<dependency id=\"System.Reflection.Emit.Lightweight\" version=\"4.3.0\" />\n\t\t\t\t<dependency id=\"System.Text.RegularExpressions\" version=\"4.3.1\" /> \n\t\t\t\t<dependency id=\"System.IdentityModel.Tokens.Jwt\" version=\"7.6.3\" />\n\t\t\t</group>\n\t\t</dependencies>\n\t</metadata>\n\t<files>\n\t\t<file src=\"G:\\Git\\SqlSugar\\Src\\Asp.NetCore2\\SqlSugar\\bin\\Debug\\netstandard2.1\\SqlSugar.dll\" target=\"lib\\netstandard2.1\"></file>\n\t</files>\n</package>",
+      "encoding": "utf-8",
+      "sha": "d0d6f1eb84baa9db5c999d3b695b1315ce0689b2",
+      "display_url": "https://github.com/DotNetNext/SqlSugar/blob/7a7ba892f30fd2f2e2b826721ed520f288104815/Src/Asp.NetCore2/SqlSugar/SqlSugarForCoreNoDriveSystemCommon.nuspec",
+      "display_title": "SqlSugarForCoreNoDriveSystemCommon.nuspec",
+      "retrievedTextSha256": "08ab3573dbd12bbe4b8a74589b39d34c6d0a953f2c1db74a7ecf62dec60ca306",
+      "computedGitBlobSha1": "d0d6f1eb84baa9db5c999d3b695b1315ce0689b2",
+      "gitBlobMatches": true
+    },
+    {
+      "content": "<Project Sdk=\"Microsoft.NET.Sdk\">\n\n  <PropertyGroup>\n    <TargetFramework>netstandard2.1</TargetFramework>\n    <Version>5.1.4.207</Version>\n    <Copyright>sun_kai_xuan</Copyright>\n    <PackageProjectUrl>https://github.com/sunkaixuan/SqlSugar</PackageProjectUrl>\n    <PackageLicenseUrl></PackageLicenseUrl>\n    <PackageIconUrl></PackageIconUrl>\n    <PackageId>SqlSugar</PackageId>\n    <Description>果糖大数据科技（南通）有限公司</Description>\n    <Company>果糖大数据科技（南通）有限公司</Company>\n    <Authors>果糖大数据科技（南通）有限公司</Authors>\n  </PropertyGroup>\n\n  <ItemGroup>\n    <Compile Remove=\"dll\\**\" />\n    <EmbeddedResource Remove=\"dll\\**\" />\n    <None Remove=\"dll\\**\" />\n  </ItemGroup>\n\n  <ItemGroup>\n    <PackageReference Include=\"Microsoft.Data.Sqlite\" Version=\"9.0.0\" />\n    <PackageReference Include=\"MySqlConnector\" Version=\"2.2.5\" />\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"13.0.2\" />\n    <PackageReference Include=\"Npgsql\" Version=\"5.0.18\" />\n    <PackageReference Include=\"Oracle.ManagedDataAccess.Core\" Version=\"23.8.0\" />\n    <PackageReference Include=\"Oscar.Data.SqlClient\" Version=\"4.0.4\" />\n    <PackageReference Include=\"SqlSugarCore.Dm\" Version=\"8.8.1\" />\n    <PackageReference Include=\"SqlSugarCore.Kdbndp\" Version=\"9.3.7.905\" />\n    <PackageReference Include=\"System.Data.Common\" Version=\"4.3.0\" />\n\t<PackageReference Include=\"Microsoft.Data.SqlClient\" Version=\"5.2.1\" />\n    <PackageReference Include=\"System.Reflection.Emit.Lightweight\" Version=\"4.3.0\" />\n    <PackageReference Include=\"System.Text.RegularExpressions\" Version=\"4.3.1\" />\n  </ItemGroup>\n\n</Project>\n",
+      "encoding": "utf-8",
+      "sha": "60f7860e36726b424c92190cecf1f35730d72621",
+      "display_url": "https://github.com/DotNetNext/SqlSugar/blob/7a7ba892f30fd2f2e2b826721ed520f288104815/Src/Asp.NetCore2/SqlSugar/SqlSugar.csproj",
+      "display_title": "SqlSugar.csproj",
+      "retrievedTextSha256": "f14a3011cd083cd736a3c854dea462f3836a20186cab7e696f2d8af4c1e45693",
+      "computedGitBlobSha1": "60f7860e36726b424c92190cecf1f35730d72621",
+      "gitBlobMatches": true
+    },
+    {
+      "content": "%~dp0nuget.exe pack %~dp0SqlSugarForCoreNoDrive.nuspec -OutputDirectory %~dp0",
+      "encoding": "utf-8",
+      "sha": "305aae3036e7502ae5e55acc99bb7fc6bc8c94d1",
+      "display_url": "https://github.com/DotNetNext/SqlSugar/blob/7a7ba892f30fd2f2e2b826721ed520f288104815/Src/Asp.NetCore2/SqlSugar/nugetNoDrive.bat",
+      "display_title": "nugetNoDrive.bat",
+      "retrievedTextSha256": "8444f8ef3a376122847dd264b5697fd60bbeba8498ae7d51b48355a4055d30dd",
+      "computedGitBlobSha1": "305aae3036e7502ae5e55acc99bb7fc6bc8c94d1",
+      "gitBlobMatches": true
+    }
+  ],
+  "unresolved": [
+    "No package repository commit, SourceLink or reproducible binary mapping established.",
+    "Repository root LICENSE is MIT, while package nuspec and corresponding NoDrive pack nuspec point to Apache-2.0; do not replace either assertion.",
+    "The observed SystemCommon pack nuspec remains version 8.3, not the distributed 8.5.0.",
+    "No NOTICE-named file was present in the two complete trees inspected; this is not proof of absence for the exact published binary or embedded source notices."
+  ],
+  "packages": [
+    {
+      "id": "SqlSugarCoreNoDrive",
+      "version": "5.1.4.207",
+      "registrationUrl": "https://api.nuget.org/v3/registration5-semver1/sqlsugarcorenodrive/5.1.4.207.json",
+      "catalogUrl": "https://api.nuget.org/v3/catalog0/data/2025.10.28.03.23.52/sqlsugarcorenodrive.5.1.4.207.json",
+      "published": "2025-10-28T03:19:43.827+00:00",
+      "catalogPackageHash": "mUQ5e6xQh3RQwjxzUy7ez0iIEBimyMS9aihIxnKDHsjqdrZPcEPUHJa1Yc4xP6V2VNGb4ByRZbdfw02OwpcEKw==",
+      "catalogPackageHashAlgorithm": "SHA512",
+      "localCachePackageSha512": "mUQ5e6xQh3RQwjxzUy7ez0iIEBimyMS9aihIxnKDHsjqdrZPcEPUHJa1Yc4xP6V2VNGb4ByRZbdfw02OwpcEKw==",
+      "nuspecSha256": "b504f9a3e347266862ad912437390548c4bda8dbc727177abfe20bf69e3c50d6",
+      "dllSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "localFileNames": [
+        "lib/netstandard2.1/SqlSugar.dll",
+        "sqlsugarcorenodrive.5.1.4.207.nupkg",
+        "sqlsugarcorenodrive.5.1.4.207.nupkg.sha512",
+        "sqlsugarcorenodrive.nuspec"
+      ],
+      "computedArchiveSha512": "mUQ5e6xQh3RQwjxzUy7ez0iIEBimyMS9aihIxnKDHsjqdrZPcEPUHJa1Yc4xP6V2VNGb4ByRZbdfw02OwpcEKw==",
+      "archiveMatchesNugetCatalog": true
+    },
+    {
+      "id": "SystemCommon",
+      "version": "8.5.0",
+      "registrationUrl": "https://api.nuget.org/v3/registration5-semver1/systemcommon/8.5.0.json",
+      "catalogUrl": "https://api.nuget.org/v3/catalog0/data/2024.09.16.14.25.52/systemcommon.8.5.0.json",
+      "published": "2024-09-16T14:22:47.117+00:00",
+      "catalogPackageHash": "5F7XypEHGntwtOLUgs1Henemd4UrvChEcGbQucRlHk2fIy1euU0RleBXbNBX4jKCm9rcF8FI8jWHwlowVBVW8A==",
+      "catalogPackageHashAlgorithm": "SHA512",
+      "localCachePackageSha512": "5F7XypEHGntwtOLUgs1Henemd4UrvChEcGbQucRlHk2fIy1euU0RleBXbNBX4jKCm9rcF8FI8jWHwlowVBVW8A==",
+      "nuspecSha256": "24b84abad5c481239ac88a7b6365a80ed4c20c4eb0b225acf67647e8aa692934",
+      "dllSha256": "062c457dc941dcd1f063ebc40d8c4286132fa8682f09762ba16c54f758be21f0",
+      "localFileNames": [
+        "lib/netstandard2.1/SqlSugar.dll",
+        "systemcommon.8.5.0.nupkg",
+        "systemcommon.8.5.0.nupkg.sha512",
+        "systemcommon.nuspec"
+      ],
+      "computedArchiveSha512": "5F7XypEHGntwtOLUgs1Henemd4UrvChEcGbQucRlHk2fIy1euU0RleBXbNBX4jKCm9rcF8FI8jWHwlowVBVW8A==",
+      "archiveMatchesNugetCatalog": true
+    }
+  ]
+}

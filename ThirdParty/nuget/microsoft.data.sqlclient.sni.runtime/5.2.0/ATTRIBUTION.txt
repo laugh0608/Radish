@@ -1,0 +1,18 @@
+Microsoft.Data.SqlClient.SNI.runtime 5.2.0
+Authors: Microsoft
+Copyright: © Microsoft Corporation. All rights reserved.
+Package license metadata: file:LICENSE.txt
+Project: https://aka.ms/sqlclientproject
+Package source commit: (not supplied; candidate evidence does not establish this)
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- LICENSE.txt (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/microsoft.data.sqlclient.sni.runtime/5.2.0/microsoft.data.sqlclient.sni.runtime.5.2.0.nupkg [LICENSE.txt]
+  Original SHA256: 9335e8bad875dd7be4eebd55d2335eb6433d1cea61aadb3817af7807bef8932a
+  Distributed SHA256: 892c48ab2d09702f089b593536544a4cb0d33d6f9e92c96ce768a3a94c44a7d5
+
+Remaining evidence:
+- Redistribution conditions must be reviewed for the actual release, separately from the MIT managed SqlClient package.

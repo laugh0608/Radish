@@ -1,0 +1,18 @@
+Hangfire.PostgreSql 1.20.12
+Authors: Frank Hommers, Vytautas Kasparavičius, Žygimantas Arūna
+Copyright: Copyright © 2014-2024 Frank Hommers and others
+Package license metadata: file:LICENSE.md
+Project: http://hmm.rs/Hangfire.PostgreSql
+Package source commit: a5a728233ac8feb447695acb01f607bd848b00f7
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- LICENSE.md (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/hangfire.postgresql/1.20.12/hangfire.postgresql.1.20.12.nupkg [LICENSE.md]
+  Original SHA256: e3388ea0c5d8cb570d6baf32937523640c942a46b99ec509c8ca2e2d1a5c6e46
+  Distributed SHA256: e3388ea0c5d8cb570d6baf32937523640c942a46b99ec509c8ca2e2d1a5c6e46
+
+Remaining evidence:
+- This independent LGPLv3 plugin requires its own distribution review, including source availability and replacement/linking conditions. The Hangfire core commercial alternatives do not cover it.
