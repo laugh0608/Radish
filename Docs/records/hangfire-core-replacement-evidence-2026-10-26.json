@@ -1,0 +1,441 @@
+{
+  "date": "2026-10-26",
+  "radishRevision": "98ba293db3727e3a018065841d894a8d8a661d30",
+  "runtimePublishSourceRevision": "7a449453 (following changes affect only notices/documentation)",
+  "sourceRevision": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+  "sdk": "10.0.300",
+  "runtime": "10.0.8",
+  "platform": "osx-arm64",
+  "target": "netstandard2.0",
+  "sourcePublishFiles": 420,
+  "sourcePublishUnchanged": true,
+  "groups": {
+    "original": {
+      "identity": "Hangfire.Core, Version=1.8.14.0, Culture=neutral, PublicKeyToken=null",
+      "location": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/original/Hangfire.Core.dll",
+      "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+      "publicKey": "",
+      "types": 214,
+      "surfaceLines": 2738,
+      "references": [
+        "Microsoft.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        "netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51",
+        "Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed"
+      ],
+      "publicSurfaceSha256": "b9e020de2ada83d15d75626f1e1a65fae10acfc723a699b84954599b726f8ae3",
+      "changedOriginalFiles": [],
+      "unchangedOriginalFileCount": 420,
+      "additionalProbeSha256": "c2f6bd44305d2ed5fc608b0e44bae423b1f2f8f47a7b86534b626c2e4e4f9ba4",
+      "sqliteVersion": "3.50.4",
+      "registrations": 16,
+      "queue": "radish-replacement-probe",
+      "finalState": "Succeeded",
+      "executionCount": 1,
+      "diagnosticRecurring": 0,
+      "diagnosticCreate": 0,
+      "remainingBusinessJobsBeforeWorker": 0,
+      "workerDisposed": true,
+      "processExitCode": 0
+    },
+    "baseline": {
+      "identity": "Hangfire.Core, Version=1.8.14.0, Culture=neutral, PublicKeyToken=null",
+      "location": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/baseline/Hangfire.Core.dll",
+      "sha256": "1173000b7e3d49c4a2f9bbc1ac604dbde804a8461c2bb3da854450092f0e419c",
+      "publicKey": "",
+      "types": 214,
+      "surfaceLines": 2738,
+      "references": [
+        "Microsoft.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        "netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51",
+        "Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed"
+      ],
+      "publicSurfaceSha256": "b9e020de2ada83d15d75626f1e1a65fae10acfc723a699b84954599b726f8ae3",
+      "changedOriginalFiles": [
+        "Hangfire.Core.dll"
+      ],
+      "unchangedOriginalFileCount": 419,
+      "additionalProbeSha256": "c2f6bd44305d2ed5fc608b0e44bae423b1f2f8f47a7b86534b626c2e4e4f9ba4",
+      "sqliteVersion": "3.50.4",
+      "registrations": 16,
+      "queue": "radish-replacement-probe",
+      "finalState": "Succeeded",
+      "executionCount": 1,
+      "diagnosticRecurring": 0,
+      "diagnosticCreate": 0,
+      "remainingBusinessJobsBeforeWorker": 0,
+      "workerDisposed": true,
+      "processExitCode": 0
+    },
+    "modified": {
+      "identity": "Hangfire.Core, Version=1.8.14.0, Culture=neutral, PublicKeyToken=null",
+      "location": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/modified/Hangfire.Core.dll",
+      "sha256": "f4c67526faa37682159cc04bc54e24d3d2184d86ee43835845eb27b2a9af3281",
+      "publicKey": "",
+      "types": 214,
+      "surfaceLines": 2738,
+      "references": [
+        "Microsoft.CSharp, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a",
+        "netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51",
+        "Newtonsoft.Json, Version=11.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed"
+      ],
+      "publicSurfaceSha256": "b9e020de2ada83d15d75626f1e1a65fae10acfc723a699b84954599b726f8ae3",
+      "changedOriginalFiles": [
+        "Hangfire.Core.dll"
+      ],
+      "unchangedOriginalFileCount": 419,
+      "additionalProbeSha256": "c2f6bd44305d2ed5fc608b0e44bae423b1f2f8f47a7b86534b626c2e4e4f9ba4",
+      "sqliteVersion": "3.50.4",
+      "registrations": 16,
+      "queue": "radish-replacement-probe",
+      "finalState": "Succeeded",
+      "executionCount": 1,
+      "diagnosticRecurring": 16,
+      "diagnosticCreate": 1,
+      "remainingBusinessJobsBeforeWorker": 0,
+      "workerDisposed": true,
+      "processExitCode": 0
+    }
+  },
+  "cleanup": [
+    {
+      "path": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/original/probe.sqlite",
+      "sha256": "cf3eef6f0f2622fb8cc8ef5795857a165007af7b49363f64872e0575b9ce3e74",
+      "bytes": 184320
+    },
+    {
+      "path": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/original/probe.sqlite.executed.txt",
+      "sha256": "72fd168b2afbe32bbf3dd9c035a34214d3169136b27835ae7ff5736e6b9ef888",
+      "bytes": 9
+    },
+    {
+      "path": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/baseline/probe.sqlite",
+      "sha256": "db7066e89edd5583cfef8188f792e511e9a8148b5b00dc293fcf4760a45dd224",
+      "bytes": 184320
+    },
+    {
+      "path": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/baseline/probe.sqlite.executed.txt",
+      "sha256": "72fd168b2afbe32bbf3dd9c035a34214d3169136b27835ae7ff5736e6b9ef888",
+      "bytes": 9
+    },
+    {
+      "path": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/modified/probe.sqlite",
+      "sha256": "018d7500dcb4b105915419126a14b2191fe0eba31874ea03ff4261b6eddd1858",
+      "bytes": 184320
+    },
+    {
+      "path": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/cases/modified/probe.sqlite.executed.txt",
+      "sha256": "72fd168b2afbe32bbf3dd9c035a34214d3169136b27835ae7ff5736e6b9ef888",
+      "bytes": 9
+    }
+  ],
+  "stableRegistrationsEqual": true,
+  "registrations": [
+    {
+      "id": "reliable-outbox-dispatch",
+      "cron": "*/1 * * * *",
+      "timeZone": "UTC",
+      "type": "Radish.Api.Services.ReliableOutboxDispatcherJob",
+      "method": "DispatchAsync",
+      "arguments": "[50]"
+    },
+    {
+      "id": "cleanup-chat-reaction-operations",
+      "cron": "15 4 * * *",
+      "timeZone": "UTC",
+      "type": "Radish.Api.Services.ChatMessageReactionOperationCleanupJob",
+      "method": "ExecuteAsync",
+      "arguments": "[500]"
+    },
+    {
+      "id": "cleanup-wiki-terminal-draft-payloads",
+      "cron": "45 3 * * *",
+      "timeZone": "UTC",
+      "type": "Radish.Api.Services.WikiDraftPayloadCleanupJob",
+      "method": "ExecuteAsync",
+      "arguments": "[90,200]"
+    },
+    {
+      "id": "cleanup-notification-inbox",
+      "cron": "30 3 * * *",
+      "timeZone": "UTC",
+      "type": "Radish.Api.Services.NotificationInboxCleanupJob",
+      "method": "ExecuteAsync",
+      "arguments": "[200,5000]"
+    },
+    {
+      "id": "cleanup-deleted-files",
+      "cron": "0 3 * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.FileCleanupJob",
+      "method": "CleanupDeletedFilesAsync",
+      "arguments": "[30]"
+    },
+    {
+      "id": "cleanup-temp-files",
+      "cron": "0 * * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.FileCleanupJob",
+      "method": "CleanupTempFilesAsync",
+      "arguments": "[2]"
+    },
+    {
+      "id": "cleanup-recycle-bin",
+      "cron": "0 4 * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.FileCleanupJob",
+      "method": "CleanupRecycleBinAsync",
+      "arguments": "[90]"
+    },
+    {
+      "id": "cleanup-orphan-attachments",
+      "cron": "0 5 * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.FileCleanupJob",
+      "method": "CleanupOrphanAttachmentsAsync",
+      "arguments": "[24]"
+    },
+    {
+      "id": "cleanup-expired-upload-sessions",
+      "cron": "*/15 * * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.IService.IChunkedUploadService",
+      "method": "CleanupExpiredSessionsAsync",
+      "arguments": "[]"
+    },
+    {
+      "id": "cleanup-expired-access-tokens",
+      "cron": "0 7 * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.IService.IFileAccessTokenService",
+      "method": "CleanupExpiredTokensAsync",
+      "arguments": "[]"
+    },
+    {
+      "id": "comment-highlight-stat",
+      "cron": "0 1 * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.CommentHighlightJob",
+      "method": "ExecuteAsync",
+      "arguments": "[null]"
+    },
+    {
+      "id": "retention-reward",
+      "cron": "0 2 * * 0",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.RetentionRewardJob",
+      "method": "ExecuteAsync",
+      "arguments": "[]"
+    },
+    {
+      "id": "forum-post-lottery-auto-draw",
+      "cron": "*/1 * * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.PostLotteryJob",
+      "method": "ExecuteAutoDrawAsync",
+      "arguments": "[20]"
+    },
+    {
+      "id": "shop-cancel-timeout-orders",
+      "cron": "*/10 * * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.ShopJob",
+      "method": "CancelTimeoutOrdersAsync",
+      "arguments": "[30]"
+    },
+    {
+      "id": "shop-mark-expired-benefits",
+      "cron": "0 0 * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.ShopJob",
+      "method": "MarkExpiredBenefitsAsync",
+      "arguments": "[]"
+    },
+    {
+      "id": "shop-daily-stats",
+      "cron": "0 1 * * *",
+      "timeZone": "Asia/Shanghai",
+      "type": "Radish.Service.Jobs.ShopJob",
+      "method": "GenerateDailyStatsAsync",
+      "arguments": "[]"
+    }
+  ],
+  "nativeAssets": {
+    "runtimes/android-arm/native/libe_sqlite3.so": "1b74b20791081922fd00e001385815da007597709607eda9488322ff60996ee4",
+    "runtimes/android-arm64/native/libe_sqlite3.so": "8570990253a2143b4792af64314402a9b419c9366b69ba2ab5a668416ea4bad4",
+    "runtimes/android-x64/native/libe_sqlite3.so": "01b7c8739b22eb4b41e58cbe83b0f5f71a3fb1d9d4159ad1565d0db27a539520",
+    "runtimes/android-x86/native/libe_sqlite3.so": "f4b2193c775e8c103e200710087266a9dc24f928bd73842acdd5f10b66ffb9a0",
+    "runtimes/linux-arm/native/libe_sqlite3.so": "2d854f448fb938223535a57e721d3340139d38211f79d8a382f0fbe7b10143bc",
+    "runtimes/linux-arm64/native/libe_sqlite3.so": "1e3d72f01195cd8fc1e9f17a7d1e9a8fa589b390c08f81b4d3a7af721effe0eb",
+    "runtimes/linux-armel/native/libe_sqlite3.so": "3f03680395719e579d6057d5c1a6b983ed3aee104ca66cf008f4ac293120d4e6",
+    "runtimes/linux-mips64/native/libe_sqlite3.so": "efb1664a6d8c6f0317bf0befb30717073b6b61e1ac5c9c902df77e1561c64eab",
+    "runtimes/linux-musl-arm/native/libe_sqlite3.so": "12dc07f3d53f941048e34c6b89a85111b920078d88609196ce3205c20183f14a",
+    "runtimes/linux-musl-arm64/native/libe_sqlite3.so": "d881b6b8a258f5e3fe1419b46366fc1afd90e941818d30aa2d2cec650449fed0",
+    "runtimes/linux-musl-riscv64/native/libe_sqlite3.so": "c2c1068ebd1f84c6e4a2836d9a8bb2f560ca02fdb14bcd5128c5e8f99747156b",
+    "runtimes/linux-musl-s390x/native/libe_sqlite3.so": "1672540e0af343d62f5c9a8e1b66df267833a25de520552243dfd0f0a410914b",
+    "runtimes/linux-musl-x64/native/libe_sqlite3.so": "73b683c168b3cdc68f1fd005645da7fdedf17895378c2b41903172e296a990c2",
+    "runtimes/linux-ppc64le/native/libe_sqlite3.so": "11439415dedc32206271497acb9eb5d471ad4ed4d49a673736a9f86e74bae2c9",
+    "runtimes/linux-riscv64/native/libe_sqlite3.so": "88f772c63a08ea586020d40bb02e443ad7cf39e213d02fbb853646534307d0aa",
+    "runtimes/linux-s390x/native/libe_sqlite3.so": "f1d66857efe72dce75c280b1c3a60fbaf365d2445b40622056b0da93cf8cf58a",
+    "runtimes/linux-x64/native/libe_sqlite3.so": "a5e8aed525023e6c209d37d3e762e2e76ed3a830464569a419abfc3cf12d7a6c",
+    "runtimes/linux-x86/native/libe_sqlite3.so": "2bfc22ddf99e8e0d0aa8bb20818b99f164935547b1940d8700e3d1d3398a16a4",
+    "runtimes/maccatalyst-arm64/native/libe_sqlite3.dylib": "5f7258e3d9ef0d863a223a0ece5dd7aa71903fe26a7b5f7f77a1b94c6eae8c4f",
+    "runtimes/maccatalyst-x64/native/libe_sqlite3.dylib": "292d34ba0fee9cc57fbc51866c9ef076cadee22cfb073e7e10695c5a9b4663d6",
+    "runtimes/osx-arm64/native/libe_sqlite3.dylib": "7b319cd32435ab28c97041fad74b892be218e6f0f74790802105309c1ec515a9",
+    "runtimes/osx-x64/native/libe_sqlite3.dylib": "68cbf7a2b78587bcfde9ec55f56a2d0f061260209daafd41bb3ac6f2650dfeae",
+    "runtimes/win-arm64/native/e_sqlite3.dll": "c2088aec5eeb223e810cea6745d257ce8e05f65b0665ad6325c660975a0feb40",
+    "runtimes/win-x64/native/e_sqlite3.dll": "aabf85d7a8b416fb15203cb754fcfc9858c8f1dd3bbc7eab82335f6c362ba0d6",
+    "runtimes/win-x86/native/e_sqlite3.dll": "61544338560ccf41a665bac6faba5a2270cd0088dcdf63f6906ab7ccf6b34e5e"
+  },
+  "restoredPackages": [
+    "Cronos/0.8.3",
+    "LibLog/1.5.0",
+    "Microsoft.Build.Tasks.Git/8.0.0",
+    "Microsoft.CSharp/4.4.0",
+    "Microsoft.NETCore.Platforms/1.1.0",
+    "Microsoft.SourceLink.Common/8.0.0",
+    "Microsoft.SourceLink.GitHub/8.0.0",
+    "MoreLinq.Source.MoreEnumerable.Pairwise/1.0.1",
+    "NETStandard.Library/2.0.3",
+    "Newtonsoft.Json/11.0.1",
+    "StackTraceFormatter.Source/1.1.0",
+    "StackTraceParser.Source/1.3.0"
+  ],
+  "packageFolders": [
+    "/private/tmp/radish-hangfire-replacement-5bb6rlfu/packages"
+  ],
+  "feed": [
+    {
+      "package": "Microsoft.CodeAnalysis.NetAnalyzers",
+      "version": "8.0.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/microsoft.codeanalysis.netanalyzers.8.0.0.nupkg",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.codeanalysis.netanalyzers/8.0.0/microsoft.codeanalysis.netanalyzers.8.0.0.nupkg",
+      "sha256": "67a3086fd949b2460e122059477ea9c05239c167a46a3c79589bd50366bf7fd6",
+      "expectedContentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg==",
+      "computedContentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg=="
+    },
+    {
+      "package": "Microsoft.SourceLink.GitHub",
+      "version": "8.0.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/microsoft.sourcelink.github.8.0.0.nupkg",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.sourcelink.github/8.0.0/microsoft.sourcelink.github.8.0.0.nupkg",
+      "sha256": "84d4e4a4a7422d8e6422e3a6ce70f5998fa945d2743cabb61f2a725e883dbdbd",
+      "expectedContentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+      "computedContentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ=="
+    },
+    {
+      "package": "Cronos",
+      "version": "0.8.3",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/cronos.0.8.3.nupkg",
+      "source": "existing-archive",
+      "sha256": "00cdd68c48002ac3a64cbd690025b8836f0757de473027f90efe30fdc80334f7",
+      "expectedContentHash": "lep1gKd68dBEt7isLnnHadJHwUlhctMd+gYGMk3p8eOT9dIfw6fXJFkreYBQ8dIXm23S01ilHgpk2ttou5Wvtw==",
+      "computedContentHash": "lep1gKd68dBEt7isLnnHadJHwUlhctMd+gYGMk3p8eOT9dIfw6fXJFkreYBQ8dIXm23S01ilHgpk2ttou5Wvtw=="
+    },
+    {
+      "package": "LibLog",
+      "version": "1.5.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/liblog.1.5.0.nupkg",
+      "source": "existing-archive",
+      "sha256": "c34a6783ca318476a780f86d56ff316bfe98c8e1d4ecb954e40f13fedd9f1f09",
+      "expectedContentHash": "0bNoz50GPHYnS3fv/qTS2dFBeYgoppM1t//gWULGxY/TM5TNxxknUWqOqzE8eZgLIa2ENfIwzumvbeWFnx14rg==",
+      "computedContentHash": "0bNoz50GPHYnS3fv/qTS2dFBeYgoppM1t//gWULGxY/TM5TNxxknUWqOqzE8eZgLIa2ENfIwzumvbeWFnx14rg=="
+    },
+    {
+      "package": "Microsoft.Build.Tasks.Git",
+      "version": "8.0.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/microsoft.build.tasks.git.8.0.0.nupkg",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.build.tasks.git/8.0.0/microsoft.build.tasks.git.8.0.0.nupkg",
+      "sha256": "bd7ebf90f8a3f2f340bbc7fbaebbc71e13eb369876d0872e7e6ac1819371a500",
+      "expectedContentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ==",
+      "computedContentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ=="
+    },
+    {
+      "package": "Microsoft.CSharp",
+      "version": "4.4.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/microsoft.csharp.4.4.0.nupkg",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.csharp/4.4.0/microsoft.csharp.4.4.0.nupkg",
+      "sha256": "10c200a56dd98f457ce65785ec32e0145bdfa8f76c21dbef277043ef30fe3eda",
+      "expectedContentHash": "vvVR/B08YVghQ4jHEloxqw2ZWzEGE1AOA5E0DioUM3ujbXz6FD3AfB/0Jl2ohJPd0nXYGwmPe1En6HTsSriq1A==",
+      "computedContentHash": "vvVR/B08YVghQ4jHEloxqw2ZWzEGE1AOA5E0DioUM3ujbXz6FD3AfB/0Jl2ohJPd0nXYGwmPe1En6HTsSriq1A=="
+    },
+    {
+      "package": "Microsoft.SourceLink.Common",
+      "version": "8.0.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/microsoft.sourcelink.common.8.0.0.nupkg",
+      "source": "https://api.nuget.org/v3-flatcontainer/microsoft.sourcelink.common/8.0.0/microsoft.sourcelink.common.8.0.0.nupkg",
+      "sha256": "01f52a95e544a96b8713bcf684d8b038b9eab81277b6e62d6e4746329a473977",
+      "expectedContentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw==",
+      "computedContentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw=="
+    },
+    {
+      "package": "MoreLinq.Source.MoreEnumerable.Pairwise",
+      "version": "1.0.1",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/morelinq.source.moreenumerable.pairwise.1.0.1.nupkg",
+      "source": "existing-archive",
+      "sha256": "9d4ff811acc7ab29333b87c0350815d658fbc2d70b5d7ffd26f9e2873e3e0577",
+      "expectedContentHash": "N1bmYqxItSwixZ72KJ/V4e3mEnIO5AtMcmjtilqe+Ulp4GpSje9DP+1Cv4j01s3uG4h7P4G1axUEODL1yWB5Og==",
+      "computedContentHash": "N1bmYqxItSwixZ72KJ/V4e3mEnIO5AtMcmjtilqe+Ulp4GpSje9DP+1Cv4j01s3uG4h7P4G1axUEODL1yWB5Og=="
+    },
+    {
+      "package": "Newtonsoft.Json",
+      "version": "11.0.1",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/newtonsoft.json.11.0.1.nupkg",
+      "source": "existing-archive",
+      "sha256": "95b47bae94bf117809f13a90b29b8822a02c8a8aeb65bd6838ae07170f90c8fc",
+      "expectedContentHash": "pNN4l+J6LlpIvHOeNdXlwxv39NPJ2B5klz+Rd2UQZIx30Squ5oND1Yy3wEAUoKn0GPUj6Yxt9lxlYWQqfZcvKg==",
+      "computedContentHash": "pNN4l+J6LlpIvHOeNdXlwxv39NPJ2B5klz+Rd2UQZIx30Squ5oND1Yy3wEAUoKn0GPUj6Yxt9lxlYWQqfZcvKg=="
+    },
+    {
+      "package": "StackTraceFormatter.Source",
+      "version": "1.1.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/stacktraceformatter.source.1.1.0.nupkg",
+      "source": "existing-archive",
+      "sha256": "423acb95be9bf7713ee72a8e51d60da34d491e672eaa70218990393958f99abf",
+      "expectedContentHash": "69Zxg50Sm1kq9hvxPgEo0w9li8oiD2qVT87GGsqXJP2vfYs33LVKGHRMSP2Z4iTP3UC0PJTeurCeWY2t7X/76Q==",
+      "computedContentHash": "69Zxg50Sm1kq9hvxPgEo0w9li8oiD2qVT87GGsqXJP2vfYs33LVKGHRMSP2Z4iTP3UC0PJTeurCeWY2t7X/76Q=="
+    },
+    {
+      "package": "StackTraceParser.Source",
+      "version": "1.3.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/stacktraceparser.source.1.3.0.nupkg",
+      "source": "existing-archive",
+      "sha256": "6138aa4e2fca5c85e4351b04011e40747db44a536b7251a22e4af5c64acafc83",
+      "expectedContentHash": "tOdf1XpHE2YQJpBERplZA2kMTJQtJnKzSc7GMO/yeNNGuXNueVqySfIr/gfU1vx9k2FO8u0zD4mtnZGwKQM+Zg==",
+      "computedContentHash": "tOdf1XpHE2YQJpBERplZA2kMTJQtJnKzSc7GMO/yeNNGuXNueVqySfIr/gfU1vx9k2FO8u0zD4mtnZGwKQM+Zg=="
+    },
+    {
+      "package": "NETStandard.Library",
+      "version": "2.0.3",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/netstandard.library.2.0.3.nupkg",
+      "source": "https://api.nuget.org/v3-flatcontainer/netstandard.library/2.0.3/netstandard.library.2.0.3.nupkg",
+      "sha256": "3eb87644f79bcffb3c0331dbdac3c7837265f2cdf58a7bfd93e431776f77c9ba",
+      "expectedContentHash": "st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A==",
+      "computedContentHash": "st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A=="
+    },
+    {
+      "package": "Microsoft.NETCore.Platforms",
+      "version": "1.1.0",
+      "file": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/downloads/microsoft.netcore.platforms.1.1.0.nupkg",
+      "source": "existing-archive",
+      "sha256": "15e338d24b5c39b4099389cc612841eb51ff13c07bb4829f97d39b27420e7023",
+      "expectedContentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A==",
+      "computedContentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A=="
+    }
+  ],
+  "limitations": [
+    "Only Core netstandard2.0 rebuilt; Cronos original DLL internalized",
+    "No original byte-for-byte reproducibility claim",
+    "Reflection surface covers visible type/member signatures and flags; not exhaustive custom-attribute/IL equivalence",
+    "Existing SDK analyzers substituted with explicit approval; original strict-build failure retained",
+    "ILRepack macOS source-server data warning retained",
+    "Probe compiler CS1701 System.Runtime 8 to 10 identity assumption retained; actual .NET 10 execution passed",
+    "No Razor regeneration, other TFM, PG plugin rebuild, other OS/provider, or public source delivery validation"
+  ],
+  "reviewPackage": {
+    "path": "/private/tmp/radish-hangfire-replacement-5bb6rlfu/hangfire-core-replacement-review-2026-10-26.zip",
+    "bytes": 18175377,
+    "entries": 67,
+    "sha256": "8a996f0e0723a10bfdd852a646e766688fea77a3258ea6549e70c064e29d0413",
+    "allEntriesReverified": true
+  }
+}

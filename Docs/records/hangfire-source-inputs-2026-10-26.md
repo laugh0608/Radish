@@ -59,7 +59,7 @@
 
 ## 5. 下一批与停止线
 
-[Core 替换试验方案](../features/hangfire-source-replacement-plan.md)已冻结 13 个 restore 输入、现有 ILRepack、实际 publish 副本和临时 SQLite worker 的验证范围，等待明确批准；没有先执行源码重建或 worker。该试验以实际发布包的 native hash / version 为基线。
+[Core 替换试验方案](../features/hangfire-source-replacement-plan.md)已冻结 13 个 restore 输入、现有 ILRepack、实际 publish 副本和临时 SQLite worker 的验证范围，本记录形成时等待明确批准，未先执行源码重建或 worker；随后获批的实施结果见[Core 替换验证](./hangfire-core-replacement-2026-10-26.md)。该试验以实际发布包的 native hash / version 为基线。
 
 统一 SQLite 原生依赖与 build / publish 一致性需要单独方案；完整上游 Windows / Razor 流程、PostgreSql 独立重建、正式源码获取入口、NoDrive 询证与 SNI 条款继续保留未关闭。本批未推送、发 PR、打 tag 或发布。
 

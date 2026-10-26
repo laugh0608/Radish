@@ -1,6 +1,6 @@
 # Hangfire 源码材料与 Core 替换验证方案
 
-> 2026-10-26：源码 / PDB 核对和 Cronos 许可补充已完成，见[本批记录](../records/hangfire-source-inputs-2026-10-26.md)。第 3 节为待批准的下一批试验，不改变 Radish 正式依赖或默认构建；完整发行审核仍未关闭。
+> 2026-10-26：第 3 节及第 3.4 节 SDK 分析器调整均已获批准并执行。Core 基线 / 诊断修改库严格构建与三组 SQLite 替换验证通过，详见[实施记录](../records/hangfire-core-replacement-2026-10-26.md)。Radish 正式依赖与默认构建未变；本批不等于完整官方发行重建或对应源码交付。
 
 ## 1. 已确定的输入
 
@@ -20,7 +20,7 @@
 
 四个当前 Hangfire DLL 的 metadata 公钥均为空；试验仍须核对程序集身份和公共接口，不通过修改加载策略、关闭签名检查或失败后换回原 DLL 取得通过结果。
 
-## 3. 待批准的精确试验范围
+## 3. 已批准的精确试验范围
 
 ### 3.1 工具、源码与 restore
 
@@ -72,6 +72,14 @@ ILRepack 使用本批已核对的 `2.0.27` archive，其 runtimeconfig 声明 `.
 本次发现测试目录 `osx-arm64` SQLite 为 `3.50.3`，API publish 为 `3.50.4`；来源分别是 `SQLitePCLRaw.lib.e_sqlite3 3.50.3` 与 `SourceGear.sqlite3 3.50.4.5`。两条原生资产链同时存在，普通 publish 的 deps 冲突索引与实际复制文件也不能混为一谈。
 
 此试验以实际 publish 的 SHA256 和 `sqlite3_libversion()` 为基线，不能继承“发布也固定为 3.50.3”的假设。统一 SQLite 原生依赖、修正 build / publish 一致性属于独立依赖方案；本批试验授权不包含该修复。
+
+### 3.4 首次构建失败与已批准调整
+
+13 个包的内容 hash、实际 restore 图和隔离缓存路径均已核对。原方案第一次 `--warnaserror` 构建在 NetAnalyzers 包的 `_ReportUpgradeNetAnalyzersNuGetWarning` 失败：该 target 直接比较分析器程序集版本，与 `AnalysisLevel` 无关；现有包为 8.0.0，SDK 自带为 10.0.300。没有设置提示中的 `_SkipUpgradeNetAnalyzersNuGetWarning`，也没有使用失败构建产生的 DLL 作为通过产物。
+
+项目所有者随后单独批准只调整临时 Hangfire 源码：去掉 `src/Directory.Build.props` 的 `Microsoft.CodeAnalysis.NetAnalyzers 8.0.0` 引用，并从派生锁文件移除对应一项，使用现有 SDK 自带分析器。其余 12 个包、`EnableNETAnalyzers=true`、`AnalysisLevel=latest`、`AnalysisMode=Recommended`、既有 `NoWarn` 和 `--warnaserror` 保持原样。不安装新 SDK / 包，不关闭分析器或审计；新分析器若报告其他错误，继续按原停止线处理。
+
+该调整改变试验的分析器来源和 restore 输入，已在取得单独批准后应用；保留的 patch 位于 `/private/tmp/radish-hangfire-replacement-5bb6rlfu/evidence/proposed-sdk-analyzers.patch`。该改动未回写 Radish 工程；实际恢复为 12 个包，基线与完整双标记修改库严格构建均为 0 警告 / 0 错误，不代表重建结果与上游原包逐字节一致。
 
 ## 4. 仍待单独处理的发行工作
 

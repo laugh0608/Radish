@@ -7,7 +7,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：Hangfire 源码 / PDB 与锁定输入已完成[补证](../records/hangfire-source-inputs-2026-10-26.md)，Cronos MIT 正文已进入 API publish；下一步确认 [Core 受控替换试验](../features/hangfire-source-replacement-plan.md)。新发现的 SQLite 测试 / 发布原生版本差异需独立收敛；NoDrive 询证、SNI 平台分发与 Valkey 仍保持独立边界，统一日志 L2 保留后续恢复顺位。
+- **下一项工作**：Hangfire [Core 受控替换试验](../records/hangfire-core-replacement-2026-10-26.md)已通过，源码基线 / 诊断修改库在实际 API publish 副本完成三组 SQLite 验证；下一步拟定 SQLite 原生依赖统一与 build / publish 一致性方案，并继续补齐对应源码发行材料。NoDrive 询证、SNI 平台分发与 Valkey 仍保持独立边界，统一日志 L2 保留后续恢复顺位。
 - **状态复核日期**：`2026-10-26`；本次实现、226 条 NuGet 清单、材料包和未关闭项见[实施记录](../records/nodrive-adoption-2026-10-26.md)，准备阶段快照见[采用前核对](../records/dependency-distribution-preflight-2026-10-26.md)。
 - **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
@@ -25,7 +25,7 @@
 
 ## 接下来的事项
 
-1. **执行获批后的 Hangfire Core 替换试验**：233 个源码 checksum 与 Cronos 精确来源已验证，27 项构建输入已锁定；[下一批方案](../features/hangfire-source-replacement-plan.md)限于 Core 的 13 个包、既有 SDK / ILRepack、实际 publish 副本与临时 SQLite worker，尚未执行。测试输出 SQLite 3.50.3 与发布包 3.50.4 的既有差异已单列，原生依赖统一另需确认。完整源码交付、其他 provider / 平台与 Razor 再生成仍未关闭。
+1. **收敛 SQLite 原生依赖并推进 Hangfire 发行材料**：[Core 试验](../records/hangfire-core-replacement-2026-10-26.md)已按批准范围通过，214 个公开类型 / 2,738 条签名记录一致，三组各验证 16 项真实注册和一次探针执行；临时资源已清理。先拟定测试 SQLite 3.50.3 与发布 SQLite 3.50.4 的依赖统一方案，再按具体范围确认实现。完整对应源码交付、Cronos 源码重建、其他 provider / 平台与 Razor 再生成仍未关闭。
 2. **保留独立来源 / 发行缺口**：NoDrive / SystemCommon 本地 PE debug 核对未取得新的源码 commit，已准备上游询证草案但未发送。SNI 仍随通用 publish 分发 Windows runtime；后续按实际平台核对正常 RID 发布与下游条款。已完成的[重点 notices 接线](../records/nuget-notices-distribution-2026-10-26.md)不覆盖全部 NuGet / 全生态材料，也不自动关闭这些条件。
 3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
 4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与历史定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。

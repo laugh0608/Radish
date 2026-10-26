@@ -8,9 +8,9 @@
 
 同日[来源补证](../records/nodrive-source-review-2026-10-26.md)已确认仓库迁移、NoDrive 版本候选提交与两个包的官方 archive 哈希；发现包 Apache 声明与候选源码 MIT 声明差异，以及 SystemCommon 仓库打包版本仍为 8.3。保持两侧证据，不改标许可或推定二进制精确对应。[接线方案](./nuget-notices-distribution-plan.md)已实施：runtime 材料按实际宿主交付，Mapperly / Container Tools 仅保留仓库构建材料，缺失 / 哈希 / 版本 / 宿主映射异常直接失败。该门禁不自动放行源码提供、商业路线或全生态发行义务。
 
-接续的[发行边界核对](../records/dependency-distribution-boundaries-2026-10-26.md)已校验 Hangfire 两份精确仓库快照及四个未修改 DLL，识别 Core 合并 / 源码包输入、应用侧 LGPL 例外与 SNI 下游条款等具体事项。[裁决方案](./dependency-distribution-decisions.md)的狭义 LGPL 例外及首批验证已获批准并实施，根 LICENSE 第 5 节已补充对应文本；本机 native 离线重建、双配置严格构建与四宿主发布核对见[实施记录](../records/lgpl-exception-validation-2026-10-26.md)。完整对应源码与替换运行验证尚未成立。
+接续的[发行边界核对](../records/dependency-distribution-boundaries-2026-10-26.md)已校验 Hangfire 两份精确仓库快照及四个未修改 DLL，识别 Core 合并 / 源码包输入、应用侧 LGPL 例外与 SNI 下游条款等具体事项。[裁决方案](./dependency-distribution-decisions.md)的狭义 LGPL 例外及首批验证已获批准并实施，根 LICENSE 第 5 节已补充对应文本；本机 native 离线重建、双配置严格构建与四宿主发布核对见[实施记录](../records/lgpl-exception-validation-2026-10-26.md)。完整对应源码交付仍未成立；后续 Core 替换证据见下段。
 
-进一步的[源码 / PDB 补证](../records/hangfire-source-inputs-2026-10-26.md)已匹配 233 个源码 checksum，核验 Cronos 精确 commit 并补齐其随 API 交付的 MIT 正文；[Core 替换方案](./hangfire-source-replacement-plan.md)待批准。同时发现测试 SQLite 3.50.3 与发布 SQLite 3.50.4 的既有原生资产链差异，后续验证须按实际产物冻结基线，不能只依据依赖声明。
+进一步的[源码 / PDB 补证](../records/hangfire-source-inputs-2026-10-26.md)已匹配 233 个源码 checksum，核验 Cronos 精确 commit 并补齐其随 API 交付的 MIT 正文；[Core 替换方案](./hangfire-source-replacement-plan.md)及 SDK 分析器调整已获批准，[三组本机 SQLite 验证](../records/hangfire-core-replacement-2026-10-26.md)通过，证明该目标下源码重建及诊断修改库进入真实注册 / 入队 / 执行路径。同时发现测试 SQLite 3.50.3 与发布 SQLite 3.50.4 的既有原生资产链差异，后续验证须按实际产物冻结基线，不能只依据依赖声明。
 
 ## 1. 当前结论与阅读入口
 

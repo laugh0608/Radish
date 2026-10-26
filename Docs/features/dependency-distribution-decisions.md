@@ -1,12 +1,12 @@
 # 依赖发行边界裁决与后续工作包
 
-> 2026-10-26：项目所有者已批准第 2 节狭义 LGPL 例外及第 3 节首批许可 / 本机 native 验证范围，根 LICENSE 已写入批准文本。实施结果见[许可补充与本机验证](../records/lgpl-exception-validation-2026-10-26.md)；后续源码构建、替换运行试验、NoDrive 询证发送与 SNI 平台方案仍按各自范围确认。
+> 2026-10-26：项目所有者已批准第 2 节狭义 LGPL 例外及第 3 节首批许可 / 本机 native 验证范围，根 LICENSE 已写入批准文本。实施结果见[许可补充与本机验证](../records/lgpl-exception-validation-2026-10-26.md)；Core 源码重建及替换运行试验已随后获批并完成，见[试验记录](../records/hangfire-core-replacement-2026-10-26.md)；其他源码 / 平台工作、NoDrive 询证发送与 SNI 方案仍按各自范围确认。
 
 ## 1. 当前事项与后续边界
 
 | 对象 | 已确认的技术事实 | 尚需处理的边界 | 下一步建议 |
 | --- | --- | --- | --- |
-| Hangfire 核心与 PostgreSql 插件 | 四个 DLL 与原 NuGet asset 相同且独立发布；两个精确源码快照已校验；狭义例外与本机验证已完成 | 对应源码完整性、实际可替换性与正式分发材料 | 保留当前调度能力，源码 / PDB 与锁定输入已补证，按 [Core 试验方案](./hangfire-source-replacement-plan.md)确认独立运行验证范围 |
+| Hangfire 核心与 PostgreSql 插件 | 四个 DLL 与原 NuGet asset 相同且独立发布；两个精确源码快照已校验；狭义例外与本机验证已完成 | 对应源码完整性、其他目标 / provider 替换证据与正式分发材料 | 保留当前调度能力，源码 / PDB 与锁定输入已补证；[Core 本机 SQLite 试验](../records/hangfire-core-replacement-2026-10-26.md)已通过 |
 | NoDrive / SystemCommon | 包声明 Apache、候选源码 MIT；无包内 PDB 或嵌入式 portable PDB 可进一步绑定 commit | 上游版本 / 打包来源与许可声明差异 | 保持现有依赖，准备第 4 节询证内容；发送需项目所有者单独授权 |
 | Microsoft SNI | Windows 原生 DLL 随当前四宿主通用 publish 交付；包内是 Microsoft 专用条款 | 下游条款、分发条件及各平台实际交付范围 | 先选择正式分发平台；Linux 可独立评估明确 RID 的发布方式，Windows 分发单独核对条款 |
 
@@ -46,7 +46,7 @@ the applicable library license requires to be permitted for the combined work.
 1. **应用条款与 native 输入**：根 LICENSE 仅增加第 2 节批准文本。`Scripts/build-native-images.mjs` 将该文件纳入 fingerprint，并复制为 `native/licenses/LICENSE-Radish.txt`；因此修改后需用已有 Rust `1.96.0` 重建本机 `osx-arm64` Debug / Release 并重新验证，不能只改 Markdown 后沿用旧原生证据。执行 `CARGO_NET_OFFLINE=true node Scripts/build-native-images.mjs --debug` 及无 `--debug` 的 Release 命令，随后执行对应 `--verify`。覆盖范围仅这两个既有 native 目录与 Cargo 构建缓存；脚本自清理 `.building-*` 暂存目录。缺工具链 / 缓存即停止，不下载；其他四个平台留待其正式候选重建。本机通过后执行 .NET Debug / Release 严格构建与四宿主 publish（全部 `--no-restore`），核对根许可副本及现有 notices，不启动任何产品服务。
 2. **对应源码交付**：Hangfire / PostgreSql 两份快照及新增 Cronos 精确快照、实际 Core 源码包文件、27 项锁定输入已完成[本地补证](../records/hangfire-source-inputs-2026-10-26.md)；完整发行材料仍需核对。明确 release 下载点旁的源码入口、精确版本、哈希、许可与可获得性；本地临时 tar.gz 不作为对外源码交付已完成的证据。
 3. **源码构建输入**：当前 Core 上游使用 `Hangfire.Build 0.4.4`、LibLog / MoreLinq / StackTrace 源码包与 ILRepack；PostgreSql 插件使用 `GitVersion.MsBuild 5.11.1`，不能仅凭 csproj 中旧 VersionPrefix 判断包版本错误。冻结需要获取的版本和构建环境后再执行构建，不先运行上游脚本或自动安装 SDK。
-4. **可替换性验证**：下一批 [Core 试验方案](./hangfire-source-replacement-plan.md)已明确 13 个 restore 输入、合并工具与临时 SQLite 资源，尚待批准。先验证库加载、程序集身份与接口兼容，再在隔离测试中验证适当修改的库可用于实际调度调用。仅存在独立 DLL 不等于 LGPL 4d1 的运行条件已证明；不使用关闭真实错误或删除签名检查的方式伪造通过。需要数据库时按精确测试资源另获启动授权。
+4. **可替换性验证**：[Core 试验方案](./hangfire-source-replacement-plan.md)及 SDK 分析器调整已获批并完成：13 个归档校验、最终 12 包隔离恢复、严格源码构建、程序集身份 / 接口比较和三组实际 SQLite 注册 / 执行均通过；修改组捕获 16 次注册与 1 次创建标记。证据仅覆盖 Core netstandard2.0 与本机 publish 的 SQLite 3.50.4，不扩展为完整发行结论。仅存在独立 DLL 不等于 LGPL 4d1 的运行条件已证明；不使用关闭真实错误或删除签名检查的方式伪造通过。需要数据库时按精确测试资源另获启动授权。
 5. **条件性执行期声明**：核对实际向接收者展示版权的执行期界面是否需要补齐相关库版权与许可入口；未证明必要性前不扩建通用版权页面或改写业务 UI。
 
 完成本工作包也不自动关闭 SNI、NoDrive 或其他生态发行事项。根 LICENSE、发行流程、构建契约变更同步其 Docs 真相源；实际产物与检查证据保存在 records。

@@ -10,6 +10,7 @@
 - [剩余依赖发行边界核对](./dependency-distribution-boundaries-2026-10-26.md)：Hangfire 精确源码快照、库替换 / 授权边界、NoDrive 询证与 SNI 分发事项
 - [LGPL 狭义例外与本机验证](./lgpl-exception-validation-2026-10-26.md)：已批准许可补充、离线 native 重建、双配置严格构建及四宿主发布核对
 - [Hangfire 源码 / 构建输入补证](./hangfire-source-inputs-2026-10-26.md)：PDB checksum、Cronos 声明、锁定输入与 SQLite 测试 / 发布差异
+- [Hangfire Core 源码替换验证](./hangfire-core-replacement-2026-10-26.md)：获批的分析器调整、严格构建、接口对照与三组真实 SQLite 注册 / 执行
 - [Mapperly 映射迁移](./mapperly-migration-2026-10-21.md) · [NoDrive / Valkey 隔离验证](./nodrive-valkey-validation-2026-10-21.md) · [上传配额边界修复](./upload-quota-boundary-fix-2026-10-21.md)
 
 - [2026-10-20 第三方依赖许可盘点](./dependency-license-audit-2026-10-20.md)：947 条依赖、重点许可边界与待补证据；[逐包 CSV](./dependency-license-inventory-2026-10-20.csv)
