@@ -1,5 +1,7 @@
 # NoDrive 正式收缩与配置边界实施记录（2026-10-26）
 
+> 后续证据修正：同日[Hangfire 来源补证](./hangfire-source-inputs-2026-10-26.md)发现测试 native SQLite 为 3.50.3，而实际 publish 为 3.50.4；本记录中的 3.50.3 引用 / 测试结论不能替代发布原生文件身份核对。
+
 > 方案先以 `571054e8` 提交，项目所有者随后批准精确依赖、配置行为和 PostgreSQL 测试资源。实现基于该提交，在 `dev` 直接推进；新增 SpaProxy 固定版本另获确认。范围与回退见[实施方案](../features/nodrive-adoption-plan.md)。当前代码、严格构建、PG17 双配置全量、PG16 双配置专项与四宿主 publish 已通过，测试资源已清理。结构化计数、输入哈希与清理结果见[证据摘要](./nodrive-adoption-evidence-2026-10-26.json)。
 
 ## 1. 实际变更

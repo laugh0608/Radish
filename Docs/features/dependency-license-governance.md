@@ -10,6 +10,8 @@
 
 接续的[发行边界核对](../records/dependency-distribution-boundaries-2026-10-26.md)已校验 Hangfire 两份精确仓库快照及四个未修改 DLL，识别 Core 合并 / 源码包输入、应用侧 LGPL 例外与 SNI 下游条款等具体事项。[裁决方案](./dependency-distribution-decisions.md)的狭义 LGPL 例外及首批验证已获批准并实施，根 LICENSE 第 5 节已补充对应文本；本机 native 离线重建、双配置严格构建与四宿主发布核对见[实施记录](../records/lgpl-exception-validation-2026-10-26.md)。完整对应源码与替换运行验证尚未成立。
 
+进一步的[源码 / PDB 补证](../records/hangfire-source-inputs-2026-10-26.md)已匹配 233 个源码 checksum，核验 Cronos 精确 commit 并补齐其随 API 交付的 MIT 正文；[Core 替换方案](./hangfire-source-replacement-plan.md)待批准。同时发现测试 SQLite 3.50.3 与发布 SQLite 3.50.4 的既有原生资产链差异，后续验证须按实际产物冻结基线，不能只依据依赖声明。
+
 ## 1. 当前结论与阅读入口
 
 - 首轮统计覆盖正式 .NET、Web、Flutter、Rust 的 **947 个依赖条目**；精确口径、例外、未解析项与证据见[盘点记录](../records/dependency-license-audit-2026-10-20.md)和[逐包清单 CSV](../records/dependency-license-inventory-2026-10-20.csv)。条目不等于独立软件产品或许可证数量。

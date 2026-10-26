@@ -1,0 +1,319 @@
+{
+  "sources": [
+    {
+      "path": ".nuget/packages.lock.json",
+      "sha256": "95f255c64bc0a302b70b2e99ef22ebfca006edb56ef4bb30701e54751e590b4f",
+      "tfm": "Any,Version=v0.0"
+    },
+    {
+      "path": "src/Hangfire.AspNetCore/packages.lock.json",
+      "sha256": "f105d88efdfc577364f83260bc8d3485aed407e1ec3691cbaad51ef401c655a2",
+      "tfm": ".NETCoreApp,Version=v3.0"
+    },
+    {
+      "path": "src/Hangfire.Core/packages.lock.json",
+      "sha256": "7e52fb6cd7254605d5aa8303ce3deae72abfe7d03759319c859065c54d65f03c",
+      "tfm": ".NETStandard,Version=v2.0"
+    },
+    {
+      "path": "src/Hangfire.NetCore/packages.lock.json",
+      "sha256": "1aaa76c8f5f1bd786f8acdbef33b91b825623d43a88dc0653af6771d57e455fb",
+      "tfm": ".NETStandard,Version=v2.1"
+    }
+  ],
+  "packages": [
+    {
+      "package": "Hangfire.Build",
+      "version": "0.4.4",
+      "contentHash": "CCHrwgG0oSr5uPSx6ONcDpSAYkcUyEkd5EC/qS6Mb1//8dmaxYzfPP/GYGUdKoKgHI5J2/NqsrBP3MprstLPIg==",
+      "usedBy": [
+        ".nuget/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "caf73ce3c7bce259d1ee65e110e4cd57c421632fc048f7a1cb95a74d23556232",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "ILRepack",
+      "version": "2.0.27",
+      "contentHash": "N5nhVwlgU2ipeonLBVuv1HpsIclJI/5QujuLeo3BW7irD2KnSFXkHa5FmXwzdCkB36D0XGOxNMxh99P7kjgU2A==",
+      "usedBy": [
+        ".nuget/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "b4d43d96c781a8b837d95f649a753ec68f49c9f7dfbeddf38f63fb3c7f208dad",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "psake",
+      "version": "4.4.1",
+      "contentHash": "Hn5kdGPEoapi+wAAjaGjKEZVnuYp7fUrPK3IivLYG6Bn4adhd8l+KXXPMEmte41RmrLvfV7XGZa9KsSTc0gjDA==",
+      "usedBy": [
+        ".nuget/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "318bffa3cd9d982d76631ef39280a788e24881c6f8d26cb665c3c4421391221d",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "RazorGenerator.MsBuild",
+      "version": "2.5.0",
+      "contentHash": "yOu2KEjDFvE20b+YK/+Ovf4czUHWH2DlBB9lIKDXdBjcMh3PXrPJTxPzi468XrFvE1dVEiWu+pGNkVFE9+VpMA==",
+      "usedBy": [
+        ".nuget/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "1f2c549056cff967cdf4d1c92f9fa78e7f5a2d292a15d5a427bf76caa542c064",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "Microsoft.CodeAnalysis.NetAnalyzers",
+      "version": "8.0.0",
+      "contentHash": "DxiTgkCl3CGq1rYmBX2wjY7XGbxiBdL4J+/AJIAFLKy5z70NxhnVRnPghnicXZ8oF6JKVXlW3xwznRbI3ioEKg==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "Microsoft.SourceLink.GitHub",
+      "version": "8.0.0",
+      "contentHash": "G5q7OqtwIyGTkeIOAc3u2ZuV/kicQaec5EaRnc0pIeSnh9LUjj+PYQrJYBURvDt7twGl2PKA7nSN0kz1Zw5bnQ==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "Cronos",
+      "version": "0.8.3",
+      "contentHash": "lep1gKd68dBEt7isLnnHadJHwUlhctMd+gYGMk3p8eOT9dIfw6fXJFkreYBQ8dIXm23S01ilHgpk2ttou5Wvtw==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "00cdd68c48002ac3a64cbd690025b8836f0757de473027f90efe30fdc80334f7",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "LibLog",
+      "version": "1.5.0",
+      "contentHash": "0bNoz50GPHYnS3fv/qTS2dFBeYgoppM1t//gWULGxY/TM5TNxxknUWqOqzE8eZgLIa2ENfIwzumvbeWFnx14rg==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "c34a6783ca318476a780f86d56ff316bfe98c8e1d4ecb954e40f13fedd9f1f09",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "Microsoft.Build.Tasks.Git",
+      "version": "8.0.0",
+      "contentHash": "bZKfSIKJRXLTuSzLudMFte/8CempWjVamNUR5eHJizsy+iuOuO/k2gnh7W0dHJmYY0tBf+gUErfluCv5mySAOQ==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "Microsoft.CSharp",
+      "version": "4.4.0",
+      "contentHash": "vvVR/B08YVghQ4jHEloxqw2ZWzEGE1AOA5E0DioUM3ujbXz6FD3AfB/0Jl2ohJPd0nXYGwmPe1En6HTsSriq1A==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "Microsoft.Extensions.Configuration.Abstractions",
+      "version": "3.0.0",
+      "contentHash": "Lge/PbXC53jI1MF2J92X5EZOeKV8Q/rlB1aV3H9I/ZTDyQGOyBcL03IAvnviWpHKj43BDkNy6kU2KKoh8kAS0g==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    },
+    {
+      "package": "Microsoft.Extensions.DependencyInjection.Abstractions",
+      "version": "3.0.0",
+      "contentHash": "ofQRroDlzJ0xKOtzNuaVt6QKNImFkhkG0lIMpGl7PtXnIf5SuLWBeiQZAP8DNSxDBJJdcsPkiJiMYK2WA5H8dQ==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    },
+    {
+      "package": "Microsoft.Extensions.FileProviders.Abstractions",
+      "version": "3.0.0",
+      "contentHash": "kahEeykb6FyQytoZNNXuz74X85B4weIEt8Kd+0klK48bkXDWOIHAOvNjlGsPMcS9CL935Te8QGQS83JqCbpdHA==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    },
+    {
+      "package": "Microsoft.Extensions.Hosting.Abstractions",
+      "version": "3.0.0",
+      "contentHash": "qeDWS5ErmkUN96BdQqpmeCmLk5HJWQ/SPw3ux5v5/Qb0hKZS5wojBMulnBC7JUEiBwg7Ir71Yjf1lFiRT5MdtQ==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    },
+    {
+      "package": "Microsoft.Extensions.Logging.Abstractions",
+      "version": "3.0.0",
+      "contentHash": "+PsosTYZn+omucI0ff9eywo9QcPLwcbIWf7dz7ZLM1zGR8gVZXJ3wo6+tkuIedUNW5iWENlVJPEvrGjiVeoNNQ==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    },
+    {
+      "package": "Microsoft.Extensions.Primitives",
+      "version": "3.0.0",
+      "contentHash": "6gwewTbmOh+ZVBicVkL1XRp79sx4O7BVY6Yy+7OYZdwn3pyOKe9lOam+3gXJ3TZMjhJZdV0Ub8hxHt2vkrmN5Q==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    },
+    {
+      "package": "Microsoft.SourceLink.Common",
+      "version": "8.0.0",
+      "contentHash": "dk9JPxTCIevS75HyEQ0E4OVAFhB2N+V9ShCXf8Q6FkUQZDkgLI12y679Nym1YqsiSysuQskT7Z+6nUf3yab6Vw==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "MoreLinq.Source.MoreEnumerable.Pairwise",
+      "version": "1.0.1",
+      "contentHash": "N1bmYqxItSwixZ72KJ/V4e3mEnIO5AtMcmjtilqe+Ulp4GpSje9DP+1Cv4j01s3uG4h7P4G1axUEODL1yWB5Og==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "9d4ff811acc7ab29333b87c0350815d658fbc2d70b5d7ffd26f9e2873e3e0577",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "Newtonsoft.Json",
+      "version": "11.0.1",
+      "contentHash": "pNN4l+J6LlpIvHOeNdXlwxv39NPJ2B5klz+Rd2UQZIx30Squ5oND1Yy3wEAUoKn0GPUj6Yxt9lxlYWQqfZcvKg==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    },
+    {
+      "package": "StackTraceFormatter.Source",
+      "version": "1.1.0",
+      "contentHash": "69Zxg50Sm1kq9hvxPgEo0w9li8oiD2qVT87GGsqXJP2vfYs33LVKGHRMSP2Z4iTP3UC0PJTeurCeWY2t7X/76Q==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "423acb95be9bf7713ee72a8e51d60da34d491e672eaa70218990393958f99abf",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "StackTraceParser.Source",
+      "version": "1.3.0",
+      "contentHash": "tOdf1XpHE2YQJpBERplZA2kMTJQtJnKzSc7GMO/yeNNGuXNueVqySfIr/gfU1vx9k2FO8u0zD4mtnZGwKQM+Zg==",
+      "usedBy": [
+        "src/Hangfire.AspNetCore/packages.lock.json",
+        "src/Hangfire.Core/packages.lock.json",
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "reviewArchiveSha256": "6138aa4e2fca5c85e4351b04011e40747db44a536b7251a22e4af5c64acafc83",
+      "reviewContentHashVerified": true,
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "NETStandard.Library",
+      "version": "2.0.3",
+      "contentHash": "st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A==",
+      "usedBy": [
+        "src/Hangfire.Core/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "Microsoft.NETCore.Platforms",
+      "version": "1.1.0",
+      "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A==",
+      "usedBy": [
+        "src/Hangfire.Core/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    },
+    {
+      "package": "System.Buffers",
+      "version": "4.4.0",
+      "contentHash": "AwarXzzoDwX6BgrhjoJsk6tUezZEozOT5Y9QKF94Gl4JK91I4PIIBkBco9068Y9/Dra8Dkbie99kXB8+1BaYKw==",
+      "usedBy": [
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "System.Memory",
+      "version": "4.5.2",
+      "contentHash": "fvq1GNmUFwbKv+aLVYYdgu/+gc8Nu9oFujOxIjPrsf+meis9JBzTPDL6aP/eeGOz9yPj6rRLUbOjKMpsMEWpNg==",
+      "usedBy": [
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "System.Numerics.Vectors",
+      "version": "4.4.0",
+      "contentHash": "UiLzLW+Lw6HLed1Hcg+8jSRttrbuXv7DANVj0DkL9g6EnnzbL75EB7EWsw5uRbhxd/4YdG8li5XizGWepmG3PQ==",
+      "usedBy": [
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": false
+    },
+    {
+      "package": "System.Runtime.CompilerServices.Unsafe",
+      "version": "4.6.0",
+      "contentHash": "HxozeSlipUK7dAroTYwIcGwKDeOVpQnJlpVaOkBz7CM4TsE5b/tKlQBZecTjh6FzcSbxndYaxxpsBMz+wMJeyw==",
+      "usedBy": [
+        "src/Hangfire.NetCore/packages.lock.json"
+      ],
+      "cachedBeforeReview": true
+    }
+  ],
+  "scope": "Three selected runtime targets and four upstream packaging helpers; not an all-target restore closure. Core-only proposed restore set is the 13 entries usedBy src/Hangfire.Core/packages.lock.json.",
+  "coreRestoreCount": 13,
+  "cachedBeforeReviewCount": 9,
+  "reviewedArchiveCount": 9
+}

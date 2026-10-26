@@ -26,7 +26,7 @@ PostgreSql nuspec 实际写 `1.20.12+2`，NuGet 解析版本为 `1.20.12`；源�
 - [Hangfire 许可页](https://www.hangfire.io/licenses.html)列明其覆盖包与可选路线，并提醒第三方集成可有不同条款；PostgreSql 插件须独立处理。
 - LGPL 第 4 节同时涉及应用侧条款、声明 / 正文、共享库替换或重链接路径，以及条件适用的安装信息。当前独立 DLL 和 notices 已成立，实际接口兼容修改后的可用性尚未证明。
 - GPL 第 6 节的对应源码交付不能由本机缓存代替；网络分发路线需要与二进制相应的获取方式和清楚入口，并承担持续可获得性责任。此处以[包内 COPYING](../../ThirdParty/nuget/hangfire.core/1.8.14/COPYING)为准。
-- Radish 根 LICENSE 第 3 节一般性禁止修改 / 逆向，第 5 节只明确第三方自身条款。因此应用侧为库修改调试所需的例外仍需权利人裁决；狭义草案已写入[方案第 2 节](../features/dependency-distribution-decisions.md#_2-hangfire-路线狭义例外草案)，未改根 LICENSE。
+- Radish 根 LICENSE 第 3 节一般性禁止修改 / 逆向，第 5 节只明确第三方自身条款。因此应用侧为库修改调试所需的例外仍需权利人裁决；狭义草案已写入[方案第 2 节](../features/dependency-distribution-decisions.md)，未改根 LICENSE。
 - SNI `5.2.0` 第 3 节还有应用内分发及下游条款等条件；原文随包交付只是其中一项材料事实。通用 publish 当前仍带 Windows runtime，不能用 Linux 部署意图假设已经不分发它。
 
 GNU 官网 HTML / text 在本轮 web fetch 超时；LGPL 同时核对到 Hangfire 发布方[全文页](https://www.hangfire.io/licensing/lgpl.html)，GPL 使用已归档的精确包原文。不以未成功读取的网页作为额外验证证据。
