@@ -7,7 +7,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：NoDrive 正式部分收缩与[重点 NuGet notices 分发接线](../records/nuget-notices-distribution-2026-10-26.md)已完成。继续处理 NoDrive / SystemCommon 的精确来源与 Apache / MIT 声明差异，并核对 Hangfire 等剩余发行条件；Valkey 保持独立后置，统一日志 L2 保留后续恢复顺位。
+- **下一项工作**：NoDrive 正式收缩与重点 notices 接线已完成；[剩余发行核对](../records/dependency-distribution-boundaries-2026-10-26.md)已收敛到具体裁决。下一步由项目所有者确认[Hangfire 保留路线及 LGPL 狭义例外草案](../features/dependency-distribution-decisions.md)，获批后处理许可文本与本机 native / 构建复核。NoDrive 上游询证、SNI 平台分发与 Valkey 继续独立推进，统一日志 L2 保留后续恢复顺位。
 - **状态复核日期**：`2026-10-26`；本次实现、226 条 NuGet 清单、材料包和未关闭项见[实施记录](../records/nodrive-adoption-2026-10-26.md)，准备阶段快照见[采用前核对](../records/dependency-distribution-preflight-2026-10-26.md)。
 - **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
@@ -25,10 +25,10 @@
 
 ## 接下来的事项
 
-1. **处理剩余来源证据**：已定位 `DotNetNext/SqlSugar` 的版本候选提交，核对两个包的实际 archive 哈希，并发现包 Apache 声明与源码 MIT 声明差异、SystemCommon 打包版本不一致；详见[来源补证](../records/nodrive-source-review-2026-10-26.md)。两个候选 tree 未见 NOTICE 文件，不能推定精确发行物无其他声明。继续按[许可治理专题](../features/dependency-license-governance.md)核对发行边界，不默认更换密码或调度实现。
-2. **处理剩余发行条件**：[重点 notices 接线](../records/nuget-notices-distribution-2026-10-26.md)已获批完成，API 交付 11 个 runtime 组件，其余三宿主各 6 个，两个 build-only 组件保留仓库材料。该批没有覆盖全部 226 条 NuGet 依赖、全生态 / 镜像发行材料，也未代替 Hangfire 源码提供 / 可替换链接等条件的核对；继续按[许可治理专题](../features/dependency-license-governance.md)补齐，不默认更换调度器或密码算法。
+1. **裁决 Hangfire 保留路线**：两个精确仓库快照已核验，但 Core 上游合并 Cronos 并使用源码包，不能把仓库 tar.gz 称作完整对应源码；当前四个 DLL 独立且未改动，可替换性仍需运行证据。根 LICENSE 的应用侧限制与 LGPL 例外草案、native fingerprint 影响及首批验证范围见[裁决方案](../features/dependency-distribution-decisions.md)。尚未修改授权文本，不默认更换调度器。
+2. **保留独立来源 / 发行缺口**：NoDrive / SystemCommon 本地 PE debug 核对未取得新的源码 commit，已准备上游询证草案但未发送。SNI 仍随通用 publish 分发 Windows runtime；后续按实际平台核对正常 RID 发布与下游条款。已完成的[重点 notices 接线](../records/nuget-notices-distribution-2026-10-26.md)不覆盖全部 NuGet / 全生态材料，也不自动关闭这些条件。
 3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
-4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与本次 262 项定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。
+4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与历史定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。
 
 NoDrive 本轮实现、本地验证与重点 notices 接线已关闭；剩余发行审核、服务迁移、集成和发布分别按范围推进，不因写入待办而取得新的依赖安装、服务启动或部署授权。
 
