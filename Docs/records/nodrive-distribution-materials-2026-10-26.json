@@ -1,0 +1,373 @@
+{
+  "scope": "Review bundle, not yet connected to product publish and not a complete redistribution clearance",
+  "components": [
+    {
+      "package": "Hangfire.AspNetCore",
+      "version": "1.8.14",
+      "authors": "Sergey Odinokov",
+      "copyright": "Copyright © 2017-2024 Hangfire OÜ",
+      "licenseMetadata": "file:LICENSE.md",
+      "projectUrl": "https://www.hangfire.io/",
+      "repositoryCommit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "publishHosts": [
+        "Radish.Api"
+      ],
+      "files": [
+        {
+          "path": "COPYING",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "COPYING.LESSER",
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE.md",
+          "sha256": "3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE_ROYALTYFREE",
+          "sha256": "4ca53ffd44e5c64d00cc1d61ad6095a7f9aa24d3e8e0422fbc4fce43c5f9b12a",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE_STANDARD",
+          "sha256": "f7fea42684435a253ab56432842b124d57a407f619ae4499bf9d8211f78341d5",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "NOTICES",
+          "sha256": "9c330aa46c8c30de312f5fff05b658e95b6b7ef8947b200d86aad245027afbf4",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "2dcc9ed2b1c3608a4d7f94a31d2868eb83a5513530ab5033b470e0d1700a3398"
+    },
+    {
+      "package": "Hangfire.Core",
+      "version": "1.8.14",
+      "authors": "Sergey Odinokov",
+      "copyright": "Copyright © 2013-2024 Hangfire OÜ",
+      "licenseMetadata": "file:LICENSE.md",
+      "projectUrl": "https://www.hangfire.io/",
+      "repositoryCommit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "publishHosts": [
+        "Radish.Api"
+      ],
+      "files": [
+        {
+          "path": "COPYING",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "COPYING.LESSER",
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE.md",
+          "sha256": "3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE_ROYALTYFREE",
+          "sha256": "4ca53ffd44e5c64d00cc1d61ad6095a7f9aa24d3e8e0422fbc4fce43c5f9b12a",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE_STANDARD",
+          "sha256": "f7fea42684435a253ab56432842b124d57a407f619ae4499bf9d8211f78341d5",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "NOTICES",
+          "sha256": "9c330aa46c8c30de312f5fff05b658e95b6b7ef8947b200d86aad245027afbf4",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "bcec12ad4fbfe284d1f5ebcd6e36bb8069dc182b55d64b69a6d0d673cf87c143"
+    },
+    {
+      "package": "Hangfire.NetCore",
+      "version": "1.8.14",
+      "authors": "Sergey Odinokov",
+      "copyright": "Copyright © 2019-2024 Hangfire OÜ",
+      "licenseMetadata": "file:LICENSE.md",
+      "projectUrl": "https://www.hangfire.io/",
+      "repositoryCommit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "publishHosts": [
+        "Radish.Api"
+      ],
+      "files": [
+        {
+          "path": "COPYING",
+          "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "COPYING.LESSER",
+          "sha256": "da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE.md",
+          "sha256": "3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE_ROYALTYFREE",
+          "sha256": "4ca53ffd44e5c64d00cc1d61ad6095a7f9aa24d3e8e0422fbc4fce43c5f9b12a",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "LICENSE_STANDARD",
+          "sha256": "f7fea42684435a253ab56432842b124d57a407f619ae4499bf9d8211f78341d5",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "NOTICES",
+          "sha256": "9c330aa46c8c30de312f5fff05b658e95b6b7ef8947b200d86aad245027afbf4",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "667b36843934746fcc6b051f1ce2277fe913022c40c6b0a4e7eea1319f65ab79"
+    },
+    {
+      "package": "Hangfire.PostgreSql",
+      "version": "1.20.12",
+      "authors": "Frank Hommers, Vytautas Kasparavičius, Žygimantas Arūna",
+      "copyright": "Copyright © 2014-2024 Frank Hommers and others",
+      "licenseMetadata": "file:LICENSE.md",
+      "projectUrl": "http://hmm.rs/Hangfire.PostgreSql",
+      "repositoryCommit": "a5a728233ac8feb447695acb01f607bd848b00f7",
+      "publishHosts": [
+        "Radish.Api"
+      ],
+      "files": [
+        {
+          "path": "LICENSE.md",
+          "sha256": "e3388ea0c5d8cb570d6baf32937523640c942a46b99ec509c8ca2e2d1a5c6e46",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "74c803a6fec5589fa3c12d7294b816d7d68305974da6d59fe0730e996e8ced3d"
+    },
+    {
+      "package": "Hangfire.Storage.SQLite",
+      "version": "0.4.2",
+      "authors": "RaisedApp",
+      "copyright": "Copyright © 2019 - Present",
+      "licenseMetadata": "file:LICENSE",
+      "projectUrl": "https://github.com/raisedapp/Hangfire.Storage.SQLite",
+      "repositoryCommit": "1850239fd093fdd7722b91812b8788ade8555399",
+      "publishHosts": [
+        "Radish.Api"
+      ],
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "c9e912ac05f1bb4ff104905e130e4831386d31a72f2dd67d007d4a40c6ce84a4",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "1354e4b9f789da58bfafc3d3c9d77e211a85feecd8c9166335ab4fc418e2c172"
+    },
+    {
+      "package": "Isopoh.Cryptography.Argon2",
+      "version": "2.0.0",
+      "authors": "Michael Heyman",
+      "copyright": "Michael Heyman 2022",
+      "licenseMetadata": "file:LICENSE",
+      "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+      "repositoryCommit": "288c52b4a75e8bef6dcb5d4b0c8395a87358f100",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "64a4c18680f17ad62af7aec2b2d5de2728572853e3913bfc11b5cee35e8715ab"
+    },
+    {
+      "package": "Isopoh.Cryptography.Blake2b",
+      "version": "2.0.0",
+      "authors": "Michael Heyman",
+      "copyright": "Michael Heyman 2022",
+      "licenseMetadata": "file:LICENSE",
+      "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+      "repositoryCommit": "288c52b4a75e8bef6dcb5d4b0c8395a87358f100",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "9f32a0f79f0c328cad77277912a839847448ce82fed8adaffdfd83429d5d58a1"
+    },
+    {
+      "package": "Isopoh.Cryptography.SecureArray",
+      "version": "2.0.0",
+      "authors": "Michael Heyman",
+      "copyright": "Michael Heyman 2022",
+      "licenseMetadata": "file:LICENSE",
+      "projectUrl": "https://github.com/mheyman/Isopoh.Cryptography.Argon2",
+      "repositoryCommit": "",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "0898c096c923b64cd997affdf647fae6453893508134c4f377aa5245fc2f147e"
+    },
+    {
+      "package": "Microsoft.Data.SqlClient.SNI.runtime",
+      "version": "5.2.0",
+      "authors": "Microsoft",
+      "copyright": "© Microsoft Corporation. All rights reserved.",
+      "licenseMetadata": "file:LICENSE.txt",
+      "projectUrl": "https://aka.ms/sqlclientproject",
+      "repositoryCommit": "",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "files": [
+        {
+          "path": "LICENSE.txt",
+          "sha256": "9335e8bad875dd7be4eebd55d2335eb6433d1cea61aadb3817af7807bef8932a",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "48ad9c2f2891d0dd6fc2716465c3ba7970666f14cb06e4e3e65fe1b137cd95e9"
+    },
+    {
+      "package": "Microsoft.VisualStudio.Azure.Containers.Tools.Targets",
+      "version": "1.23.0",
+      "authors": "Microsoft",
+      "copyright": "© Microsoft Corporation. All rights reserved.",
+      "licenseMetadata": "file:EULA.md",
+      "projectUrl": "https://aka.ms/vscontainertools",
+      "repositoryCommit": "9b098373e85a4daf3f0cf716ab3a27b02470f7dc",
+      "publishHosts": [],
+      "files": [
+        {
+          "path": "EULA.md",
+          "sha256": "afcc73c553cdbe610d1bb137eb234805c432dcc73c9035f275eb6b1bd48e2f03",
+          "source": "NuGet package contents"
+        },
+        {
+          "path": "ThirdPartyNotices.txt",
+          "sha256": "3e901aea45ceaa6512ce848332859c3147995ce6c4acfe9c452ffb4b6518b19e",
+          "source": "NuGet package contents"
+        }
+      ],
+      "nuspecSha256": "7b70e19851a4c265ccb9ba2d9adb37e696d8b2cbde75a8f4410d3eea20a62a4c"
+    },
+    {
+      "package": "Riok.Mapperly",
+      "version": "4.3.1",
+      "authors": "Mapperly Contributors, Lars Tönz, Manuel Allenspach",
+      "copyright": "",
+      "licenseMetadata": "expression:Apache-2.0",
+      "projectUrl": "https://mapperly.riok.app/",
+      "repositoryCommit": "036698914bd48be888b25322938b565db72ff7ff",
+      "publishHosts": [],
+      "files": [
+        {
+          "path": "LICENSE",
+          "sha256": "886c1a1452f7e0d047947276305bf3eb2a54f0db7fa842332d5749303fce7315",
+          "source": "https://github.com/riok/mapperly/blob/036698914bd48be888b25322938b565db72ff7ff/LICENSE"
+        }
+      ],
+      "nuspecSha256": "631d2b2fb3164b9763cee1c632a16b7fd5885c25dfd2652e0ecdfbcd5de4d010"
+    },
+    {
+      "package": "SqlSugarCoreNoDrive",
+      "version": "5.1.4.207",
+      "authors": "sunkaixuan",
+      "copyright": "Copyright 2016",
+      "licenseMetadata": "url:http://www.apache.org/licenses/LICENSE-2.0.html",
+      "projectUrl": "https://github.com/sunkaixuan/SqlSugar",
+      "repositoryCommit": "",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "files": [],
+      "nuspecSha256": "b504f9a3e347266862ad912437390548c4bda8dbc727177abfe20bf69e3c50d6",
+      "remainingEvidence": "Apache-2.0 text and package copyright/author metadata collected; nuspec supplies no source commit, so precise source correspondence and any upstream NOTICE remain to be verified.",
+      "sharedLicenseText": "APACHE-2.0.txt"
+    },
+    {
+      "package": "SystemCommon",
+      "version": "8.5.0",
+      "authors": "sunkaixuan",
+      "copyright": "Copyright 2016",
+      "licenseMetadata": "url:http://www.apache.org/licenses/LICENSE-2.0.html",
+      "projectUrl": "https://github.com/sunkaixuan/SqlSugar",
+      "repositoryCommit": "",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "files": [],
+      "nuspecSha256": "24b84abad5c481239ac88a7b6365a80ed4c20c4eb0b225acf67647e8aa692934",
+      "remainingEvidence": "Apache-2.0 text and package copyright/author metadata collected; nuspec supplies no source commit, so precise source correspondence and any upstream NOTICE remain to be verified.",
+      "sharedLicenseText": "APACHE-2.0.txt"
+    }
+  ],
+  "fontFiles": [
+    {
+      "path": "fonts/LICENSE-DejaVu.txt",
+      "sha256": "f88d5294af5a772f9114eb385009e3478d62b21f3e5bbc34d159d328047c8867"
+    },
+    {
+      "path": "fonts/OFL-NotoSansCJK.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+    },
+    {
+      "path": "fonts/OFL-NotoSerifCJK.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2"
+    }
+  ],
+  "sharedLicenseTexts": [
+    {
+      "path": "APACHE-2.0.txt",
+      "source": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    }
+  ],
+  "archiveSha256": "2e6702e4d9506b41c7b414ec94ff71161a4e6c67311ee680624eb98bf5167d1d"
+}

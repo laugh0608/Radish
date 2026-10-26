@@ -14,6 +14,7 @@ public static class RuntimeDatabaseConfigResolver
     {
         var section = configuration.GetSection(sectionPath);
         var dbType = ResolveDbType(section, legacyConnectionString);
+        DatabaseProviderPolicy.EnsureSupported(dbType, sectionPath);
         var configuredConnectionString = section.GetValue<string>("ConnectionString");
         var connectionString = string.IsNullOrWhiteSpace(configuredConnectionString)
             ? legacyConnectionString
@@ -54,12 +55,14 @@ public static class RuntimeDatabaseConfigResolver
                 return (DataBaseType)dbTypeValue;
             }
 
-            if (Enum.TryParse<DataBaseType>(configuredDbType, ignoreCase: true, out var dbType))
+            if (!configuredDbType.Contains(',') &&
+                Enum.TryParse<DataBaseType>(configuredDbType, ignoreCase: true, out var dbType))
             {
                 return dbType;
             }
 
-            throw new InvalidOperationException($"{section.Path}:DbType={configuredDbType} 不是受支持的数据库类型。");
+            throw new InvalidOperationException(
+                $"{section.Path}:DbType 不是有效的数据库类型；仅支持 Sqlite (2) 和 PostgreSql (4)。");
         }
 
         return LooksLikePostgreSqlConnectionString(legacyConnectionString)

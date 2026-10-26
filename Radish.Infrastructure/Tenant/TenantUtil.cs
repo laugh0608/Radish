@@ -1,4 +1,5 @@
 using System.Reflection;
+using Radish.Common.DbTool;
 using Radish.Common.TenantTool;
 using SqlSugar;
 
@@ -81,6 +82,8 @@ public static class TenantUtil
         {
             throw new ArgumentException("Tenant DbType Must");
         }
+
+        DatabaseProviderPolicy.EnsureSupported((DataBaseType)tenant.DbType.Value, "Tenant");
 
         return new ConnectionConfig()
         {

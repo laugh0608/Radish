@@ -445,7 +445,7 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 }
 ```
 
-**DbType 枚举对照表**：
+**DbType 历史枚举对照表**（正式支持仅 `2=Sqlite`、`4=PostgreSql`）：
 ```
 0 = MySql
 1 = SqlServer
@@ -455,6 +455,10 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 5 = DaMeng (达梦)
 6 = Kdbndp (金仓)
 ```
+
+启用的 `Databases` 连接、分库租户以及 `OpenIddict:Database` / `Hangfire` 配置都执行相同的 provider 支持校验。其他已知类型或未知整数在连接前明确失败；业务配置整组校验通过后才处理 SQLite 路径。错误提示只包含配置位置、provider 和支持类型，不回显连接串。`Enabled=false` 的历史业务条目不加载，重新启用时仍须满足支持范围；枚举数值保持不变，不自动转换存量配置或租户数据。SQL Server / MySQL / Oracle 的历史 `dbCountPsw1_*Conn.txt` 读取路径已移除。
+
+正式依赖为 `SqlSugarCoreNoDrive 5.1.4.207`，Common 显式提供 Npgsql / Microsoft.Data.Sqlite `10.0.0` 并固定 SystemCommon `8.5.0`；SQL Server / SNI 仍为传递资产，不表示支持 SQL Server 配置。采用与验证边界见[NoDrive 正式收缩方案](../features/nodrive-adoption-plan.md)。
 
 ### 3. Redis 配置
 

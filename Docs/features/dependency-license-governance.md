@@ -1,10 +1,10 @@
 # 第三方依赖许可治理与替代方案
 
-> 状态：Rust 图片替代已通过 PR #75 合并与回灌；2026-10-21 开始后续依赖评估，映射替代已获批并完成 Mapperly 4.3.1 切换，ORM / Redis 已完成获批的隔离验证与清理，正式依赖 / 部署配置保持不变。
+> 状态：Rust 图片替代已通过 PR #75 合并与回灌；Mapperly 4.3.1 替代已完成。2026-10-26 已获批完成 NoDrive 正式部分收缩、双数据库本地回归与测试资源清理；分发材料接线尚未关闭，Valkey 与部署配置保持不变。
 >
 > 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代已交付；后续精确依赖安装及服务启动按各批授权执行，其他依赖仍处于审计与方案阶段。
 
-2026-10-26 已确认继续 NoDrive 部分收缩与分发材料收口，详见[正式采用方案](./nodrive-adoption-plan.md)及[分发预检](../records/dependency-distribution-preflight-2026-10-26.md)。精确安装与测试服务范围待确认，正式依赖尚未修改；本轮已核对现有字体接线，剩余材料以新候选产物复核为准。
+2026-10-26 的[正式采用方案](./nodrive-adoption-plan.md)已获批实施，新候选结果见[实施记录](../records/nodrive-adoption-2026-10-26.md)。已更新 [226 条 NuGet 清单](../records/nodrive-nuget-inventory-2026-10-26.csv)并整理 13 个重点组件与三份字体许可的[材料清单](../records/nodrive-distribution-materials-2026-10-26.json)；审查材料包尚未接入四宿主 publish，NoDrive / SystemCommon 的精确源码与上游 NOTICE 仍须补证，不能宣称整个许可专题已关闭。
 
 ## 1. 当前结论与阅读入口
 
@@ -41,9 +41,9 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 | `AutoMapper` | 迁移前 `16.1.1`，现已移除 | 旧包为 RPL-1.5 / 商业双许可 | 第二批已切换 Mapperly 4.3.1（Apache-2.0），见[实施记录](../records/mapperly-migration-2026-10-21.md) |
 | Hangfire 三个核心集成包 | `AspNetCore / Core / NetCore 1.8.14` | LGPL-3.0-or-later 或对应商业许可 | 核对分发义务及商用扩展缺席事实，再决定保留或替换 |
 | `Hangfire.PostgreSql` | `1.20.12` | 包内 LGPLv3；第三方插件不能套用 Hangfire 核心商业许可 | 与核心调度方案一起评估 |
-| `Oracle.ManagedDataAccess.Core` | 传递 `23.8.0` | Oracle Free Distribution, Hosting, and Use 条款 | 优先评估未使用 provider 的依赖收缩；不是发现 Oracle 名称即要求付费 |
-| `Oscar.Data.SqlClient` | 传递 `4.0.4` | 包元数据缺 license / URL，包内未见对应许可正文 | 补证据或通过受支持方案退出；不能借用 ORM 的许可替它放行 |
-| `SqlSugarCore.Dm / Kdbndp` | 传递 `8.8.1 / 9.3.7.905` | 元数据只有 Apache URL，未据此证明所含厂商二进制全部同许可 | 核对精确包内容与分发权；先收缩 provider 方案，不默认更换整个 ORM |
+| `Oracle.ManagedDataAccess.Core` | 迁移前传递 `23.8.0` | Oracle Free Distribution, Hosting, and Use 条款 | 已随 NoDrive 退出新图与四宿主产物；保留历史证据，不推定其必收费 |
+| `Oscar.Data.SqlClient` | 迁移前传递 `4.0.4` | 包元数据缺 license / URL，包内未见对应许可正文 | 已随 NoDrive 退出；不是用 ORM 的许可替它放行 |
+| `SqlSugarCore.Dm / Kdbndp` | 迁移前传递 `8.8.1 / 9.3.7.905` | 元数据只有 Apache URL，未据此证明所含厂商二进制全部同许可 | 已随 NoDrive 退出；本轮不更换整个 ORM |
 | `Microsoft.Data.SqlClient.SNI.runtime` | 传递 `5.2.0` | 包内 Microsoft 软件许可；Windows 原生库分发条件 | 与未使用 SQL Server provider 一并核对，区别于 MIT 客户端源码 |
 | Visual Studio Container Tools Targets | `1.23.0` | Microsoft 工具 EULA，开发 / 构建用途 | 评估是否仍需 VS 容器调试接线；删除前验证 IDE / 构建影响 |
 | `Isopoh.Cryptography.Argon2 / Blake2b / SecureArray` | `2.0.0` 三包 | 包内 CC-BY-4.0，署名和许可保留 | 优先补分发清单；不为去掉署名义务直接改变密码算法 |
@@ -95,10 +95,10 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 
 ### 6.2 ORM 的传递数据库驱动
 
-Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugarCore` 传递引入 Oracle、神通、达梦、金仓和 SQL Server 相关资产。处理顺位：
+Radish 正式数据库边界为 PostgreSQL / 本地 SQLite。原通用 `SqlSugarCore` 曾引入 Oracle、神通、达梦、金仓和 SQL Server 资产；10 月 26 日采用 NoDrive 后，前四类及 MySqlConnector 已退出新图与四宿主产物，SQL Server / SNI 仍保留。处理依据与后续边界：
 
 1. 检查实际配置支持范围、resolved graph、publish 内容和运行时动态加载。
-2. 调查上游受支持的 provider 分包 / 精简方案；已核对 `SqlSugarCoreNoDrive 5.1.4.207` 精确包，主 DLL 与现用版本相同，但 `SystemCommon 8.5.0` 仍引入 SQL Server / SNI；它已通过固定输入的隔离验证，仍只能部分收缩，见[详细评估](./orm-redis-dependency-assessment.md)与[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。
+2. `SqlSugarCoreNoDrive 5.1.4.207` 主 DLL 与原版本相同，`SystemCommon 8.5.0` 仍引入 SQL Server / SNI；它已通过隔离及正式候选验证，只形成部分收缩，见[详细评估](./orm-redis-dependency-assessment.md)与[正式采用记录](../records/nodrive-adoption-2026-10-26.md)。
 3. 若无法安全收缩，再比较维护受控分发与 ORM 迁移的长期成本；后者属于跨 Repository 的独立架构裁决。
 
 不能只删除输出 DLL、修改本地 NuGet 缓存、隐藏扫描命中或添加 `ExcludeAssets` 来假装分发与运行边界已经解决。也不能因为客户端驱动免费分发，就推导数据库服务器本身免费。

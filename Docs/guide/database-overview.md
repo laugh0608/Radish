@@ -10,6 +10,8 @@
 
 ## 1. 当前逻辑库划分
 
+正式数据库 provider 仅支持 PostgreSQL 与 SQLite。业务连接和分库租户由 SqlSugar 管理；OpenIddict 使用 EF Core，Hangfire 使用各自的存储 provider。枚举中保留其他数据库的历史数值以兼容配置 / 数据标识，但启用或使用时会在连接前明确拒绝，不会自动改用 SQLite。依赖采用 `SqlSugarCoreNoDrive` 与显式 PG / SQLite 驱动，仍包含 SqlClient / SNI 传递资产，不能据包内存在驱动推定产品支持该数据库。
+
 共享配置 [`appsettings.Shared.json`](../../appsettings.Shared.json) 当前定义了四个逻辑库连接：
 
 | ConnId | 默认本地类型 | 默认连接串名 | 主要职责 |

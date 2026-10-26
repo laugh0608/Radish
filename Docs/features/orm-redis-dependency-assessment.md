@@ -2,22 +2,24 @@
 
 > 2026-10-21，基于 `dev` 的 Mapperly 迁移提交 `b8debb26`；该提交已推送 `origin/dev`。本页是 ORM / Redis 后续评估的当前入口，[前轮方案](./post-image-dependency-assessment.md)保留初始盘点。
 >
-> 首轮只读盘点的精确哈希与版本见[证据清单](../records/orm-redis-assessment-evidence-2026-10-21.json)。随后按批准方案完成隔离实验并清理：NoDrive 通过既定矩阵，Valkey 未发现候选独有差异，但两端共同暴露两类上传限流边界问题，完整业务验收未通过；详见[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。随后两类问题已按[配额修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)修复并定向验证；不回写上一轮失败结论为通过。正式依赖与部署配置未变，未连接生产或发布。
+> 首轮只读盘点的精确哈希与版本见[证据清单](../records/orm-redis-assessment-evidence-2026-10-21.json)。随后按批准方案完成隔离实验并清理：NoDrive 通过既定矩阵，Valkey 未发现候选独有差异，但两端共同暴露两类上传限流边界问题，完整业务验收未通过；详见[验证记录](../records/nodrive-valkey-validation-2026-10-21.md)。随后两类问题已按[配额修复记录](../records/upload-quota-boundary-fix-2026-10-21.md)修复并定向验证；不回写上一轮失败结论为通过。10 月 21 日阶段未修改正式 ORM 依赖或部署配置。
 
-2026-10-26 已确认继续 NoDrive 部分收缩方向；当前待执行范围以[正式采用方案](./nodrive-adoption-plan.md)为准，具体依赖安装、配置行为与测试服务范围待确认。本文保留评估依据；Valkey 未因此取得迁移授权。
+2026-10-26 已获批完成 NoDrive 正式部分收缩与配置支持边界，当前结果见[实施记录](../records/nodrive-adoption-2026-10-26.md)，范围以[正式采用方案](./nodrive-adoption-plan.md)为准。本文保留原评估依据；分发材料接线尚未收口，Valkey 未因此取得迁移授权，未连接生产或发布。
 
 ## 1. 当前建议
 
 | 对象 | 建议 | 当前证据边界 |
 | --- | --- | --- |
-| SqlSugar | 同版本 NoDrive 已通过隔离验证，可据此裁决正式部分收缩；暂不整体更换 ORM | SQLite、PG16 / 17、严格构建与四宿主产物通过；仍带 SQL Server / SNI，不能达到“只剩 PG / SQLite” |
+| SqlSugar | 同版本 NoDrive 已于 10 月 26 日正式采用，不整体更换 ORM | 新候选 SQLite、PG16 / 17、严格构建与四宿主产物通过；仍带 SQL Server / SNI，分发材料接线待收口 |
 | 完整 ORM 替换 | 仅当必须彻底退出额外驱动链，或 NoDrive 无法通过验证时，另立 EF Core 迁移专题 | 现有 OpenIddict 已用 EF Core；业务查询、事务、实体特性及迁移仍与 SqlSugar 深度耦合，成本明显高于映射替代 |
 | Redis 服务 | 保留 Valkey 9.1.2 候选；上传限流边界已修复，迁移方案另行裁决 | 普通业务、AUTH / ACL、AOF、同版本 RDB、重连通过；过期结算与超大整数在两端同样失败，无性能 / 生产迁移结论 |
 | 实际迁移 | 先确认源版本与数据分类，再定数据方案 | 本次联网解析 `redis:7` 的 amd64 config 为 `7.4.11`，不能推定用户正在运行的版本，更不能直接换镜像挂旧卷 |
 
-实验授权与验证结果不等于正式依赖、配置、数据库支持范围或部署方案获批。限流修复已获批完成，后续分别裁决 NoDrive 正式收缩与 Valkey 迁移，不将两者绑成一次替换。
+实验授权与验证结果不等于正式依赖、配置、数据库支持范围或部署方案获批。限流修复与 NoDrive 正式收缩已分别获得批准并完成；Valkey 数据 / 运维迁移继续独立裁决，不将两者绑成一次替换。
 
 ## 2. ORM：精确包与现有分发边界
+
+本节包内与对照数据保留 2026-10-21 的评估输入；2026-10-26 正式图已统一驱动并退出部分厂商链，最新逐包结果见[226 条 NuGet 清单](../records/nodrive-nuget-inventory-2026-10-26.csv)。
 
 ### 2.1 现状不只涉及业务宿主
 
@@ -52,7 +54,7 @@ NoDrive 主 DLL 的 SHA256 为 `38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d
 3. **依赖图增加项**：SystemCommon 新增 JWT 等依赖边，须检查整个图的版本统一、漏洞、构建警告与产物，不能只计算删除了几种驱动。
 4. **许可材料**：两包元数据指向 Apache-2.0，但 ZIP 中没有独立 LICENSE 正文。后续分发需补足对应上游许可与 copyright 材料；各传递包继续独立判定，不能由上层包许可覆盖。
 
-隔离实验的 resolved graph 与四宿主 publish 已确认退出由通用包引入的 Oracle / Oscar / Dm / Kdbndp / MySqlConnector 及辅助链；正式工作区仍使用原包，不能将临时产物当作正式替换完成。禁止删 DLL、修改缓存或用 `ExcludeAssets` 隐藏命中。
+隔离实验的 resolved graph 与四宿主 publish 已确认退出由通用包引入的 Oracle / Oscar / Dm / Kdbndp / MySqlConnector 及辅助链；当时正式工作区仍使用原包，临时产物不作为正式替换完成证据。10 月 26 日正式候选已另行重复图 / 产物核对；禁止删 DLL、修改缓存或用 `ExcludeAssets` 隐藏命中。
 
 ### 2.3 与完整 ORM 迁移的比较
 
@@ -61,7 +63,7 @@ NoDrive 主 DLL 的 SHA256 为 `38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d
 | 路线 | 实际收益 | 主要代价 / 选择条件 |
 | --- | --- | --- |
 | 保留当前包并补许可材料 | 不改变数据库行为 | 继续分发未使用驱动，Oscar 等证据缺口仍待关闭 |
-| 同版本 NoDrive + 明确驱动引用 | 可以保留 ORM 实现，缩小部分厂商链 | SQL Server / SNI 不会自然消失；固定输入的程序集选择与双数据库验证已通过，正式配置和许可边界仍待裁决 |
+| 同版本 NoDrive + 明确驱动引用 | 保留 ORM 实现，缩小部分厂商链；已采用 | SQL Server / SNI 不会自然消失；正式配置边界和双数据库验证已完成，许可来源补证及分发接线继续推进 |
 | 自维护精简 fork | 能自行控制 provider 分发 | 必须承担上游同步、构建来源、安全修复与测试；当前不建议作为默认路线 |
 | EF Core | 可按正式 PG / SQLite provider 边界组织；已有 OpenIddict 经验可复用 | 需要重写 SqlSugar 查询、实体映射、仓储及事务接线，不能把现有 Auth 迁移经验当作业务库已兼容 |
 | Dapper / 手写 SQL | SQL 与驱动选择直接可见 | Dapper 提供 SQL 执行 / 结果映射；分页、软删除、租户过滤、更新保护、schema 管理仍须项目承担，不宜仅为许可治理扩大自维护面 |
@@ -72,12 +74,12 @@ EF 的[全局过滤器](https://learn.microsoft.com/en-us/ef/core/querying/filte
 
 ### 2.4 包级实验与正式采用的裁决标准
 
-已批准实验固定 Common / Infrastructure 两处候选引用、驱动版本及隔离目录；前三项技术证据已完成，第四项仍属于正式采用前的范围裁决：
+已批准实验固定 Common / Infrastructure 两处候选引用、驱动版本及隔离目录；以下标准随后已纳入 10 月 26 日正式方案并验证，其中 provider 校验覆盖业务配置、分库租户和 OpenIddict / Hangfire 解析：
 
 - 主 SqlSugar DLL 的最终哈希与预期一致；两套包不混留；所有入口的 PG / SQLite 驱动完整。
 - Debug / Release 严格构建、身份 / 租户 / 事务 / schema 定向测试及全量后端通过；本轮 Mapperly 验证中跳过的 42 个 PostgreSQL 用例不能继续作为双数据库证据缺口。
 - API / Auth / Gateway / DbMigrate 的新依赖图与 publish 清单给出真实退出和剩余条目，联网安全审计无新增不可接受项。
-- 明确非正式数据库配置的行为。`BaseDbConfig` 与数据库枚举当前仍允许其他类型；关闭配置路径需要单独确认，不能以删除驱动制造不明确的运行失败。
+- 明确非正式数据库配置的行为。正式实现保留枚举历史数值，但只允许实际消费 SQLite / PostgreSQL；已获批关闭其他 provider 的配置路径，不能以删除驱动制造不明确的运行失败。
 
 若目标坚持“完全退出 SQL Server / SNI”，现有 NoDrive 候选不满足完成标准；应转入上游更细分包调查或完整 ORM 方案裁决，而不是继续叠加隐藏依赖的手段。
 
@@ -150,4 +152,4 @@ manifest / config 核对不包含镜像层漏洞扫描、操作系统包许可�
 4. 运维：若后续切换，更新 server / CLI 命令、healthcheck、卷权限与路径、备份恢复和运维文档；保持服务名 / 连接端点是否不变需方案明示，不在实验中默认修改部署。
 5. 结论：明确“可安装 / 可运行 / 可迁移数据 / 可发布”的不同证据。仍需合并前回归与独立发布授权，包审计或一次 GET / SET 成功均不足以完成替换。
 
-隔离实验阶段只在临时副本改变依赖和增加夹具，资源已清理、结果随 `5f76913a` 推送。随后[两类上传配额修复方案](./upload-quota-boundary-fix-plan.md)获批并随 `46d22765` 推送，业务代码已修复并完成两种构建各 262 项定向回归，见修复记录。依赖清单与部署配置未改；NoDrive 收缩、Valkey 迁移和发布继续暂停。
+隔离实验阶段只在临时副本改变依赖和增加夹具，资源已清理、结果随 `5f76913a` 推送。随后[两类上传配额修复方案](./upload-quota-boundary-fix-plan.md)获批并随 `46d22765` 推送，业务代码已修复并完成两种构建各 262 项定向回归，见修复记录。10 月 26 日又独立批准并完成 NoDrive 正式采用；部署配置未改，Valkey 迁移和发布继续暂停。

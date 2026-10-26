@@ -1,0 +1,382 @@
+{
+  "date": "2026-10-26",
+  "implementationBaseCommit": "571054e874abb5093dfbe8ebecfc83dd449f4c27",
+  "scope": "Local NoDrive adoption; macOS arm64 .NET SDK 10.0.300, PostgreSQL Linux arm64 containers. No service migration or release.",
+  "sourceFiles": [
+    {
+      "path": "Radish.Api/Radish.Api.csproj",
+      "sha256": "0374a3f045668333935e0617217d5607facb800bdb6faf6efd62a477c863720f"
+    },
+    {
+      "path": "Radish.Common/Radish.Common.csproj",
+      "sha256": "68d75f4d8381956bd9381fb6da7f32b2a46172713e025a7dc4d8ea813b4ca3ae"
+    },
+    {
+      "path": "Radish.Infrastructure/Radish.Infrastructure.csproj",
+      "sha256": "129593553757bf69f10b36d18ed4ef46b2e239bdf342fadd6e3fe3c1de31a7d0"
+    },
+    {
+      "path": "Radish.Common/DbTool/DatabaseProviderPolicy.cs",
+      "sha256": "cad2bb2a69bc0e26cd9182d8313229fa82197a4e19e8343fa07eb85303a973be"
+    },
+    {
+      "path": "Radish.Common/DbTool/BaseDbConfig.cs",
+      "sha256": "a5e6db166057b7ece5e2de38ef348751e5008dee75d53d57124cbe4ad50e3057"
+    },
+    {
+      "path": "Radish.Common/DbTool/RuntimeDatabaseConfig.cs",
+      "sha256": "2bc330a16630b22b30a5e791e9af0783d309dedb4267c5fb31a6142241b01b75"
+    },
+    {
+      "path": "Radish.Infrastructure/Tenant/TenantUtil.cs",
+      "sha256": "dce4b565a4b584b745c90dbfaa0d472b91687706d967f12af3f4860c635e05c1"
+    },
+    {
+      "path": "Radish.Api.Tests/Configuration/DatabaseProviderBoundaryTests.cs",
+      "sha256": "24f0842f8ec0e33ceaeccf52a8dde8555567ee0cb1fdbbc236a3dc316ee126be"
+    },
+    {
+      "path": "Radish.Api.Tests/Repositories/DatabaseDriverContractTests.cs",
+      "sha256": "7cb614495da040128cc8b213f02204c49e6fbd0d41a6f8bbf921bfe105043ca7"
+    },
+    {
+      "path": "Directory.Build.props",
+      "sha256": "1b3b497e329e0904450bcc1067fda847bd4de85fc59f0f0c746d6784c8b32687"
+    },
+    {
+      "path": "Directory.Build.targets",
+      "sha256": "e30db95e9eeb3024181aa8aa374c022962e9883793176def438ad319122340e4"
+    }
+  ],
+  "dependencyDelta": {
+    "beforeCount": 237,
+    "afterCount": 226,
+    "removed": [
+      "Microsoft.Data.Sqlite.Core/9.0.0",
+      "Microsoft.Data.Sqlite/9.0.0",
+      "MySqlConnector/2.2.5",
+      "Npgsql/5.0.18",
+      "Oracle.ManagedDataAccess.Core/23.8.0",
+      "Oscar.Data.SqlClient/4.0.4",
+      "SQLitePCLRaw.bundle_e_sqlite3/2.1.10",
+      "SQLitePCLRaw.core/2.1.10",
+      "SQLitePCLRaw.provider.e_sqlite3/2.1.10",
+      "SqlSugarCore.Dm/8.8.1",
+      "SqlSugarCore.Kdbndp/9.3.7.905",
+      "SqlSugarCore/5.1.4.207",
+      "System.Diagnostics.PerformanceCounter/8.0.0",
+      "System.DirectoryServices.Protocols/8.0.0"
+    ],
+    "added": [
+      "Microsoft.Data.Sqlite/10.0.0",
+      "SqlSugarCoreNoDrive/5.1.4.207",
+      "SystemCommon/8.5.0"
+    ],
+    "diagnostics": []
+  },
+  "nugetAudit": {
+    "projects": 19,
+    "vulnerabilities": 0,
+    "reportSha256": "d987acbbe6b2c340a5e8ce641d1036e71d46f32f8fe63c428c23faee34130113"
+  },
+  "builds": [
+    {
+      "configuration": "Debug",
+      "warnings": 0,
+      "errors": 0,
+      "logSha256": "264d74c575ad28b3d08f4c6e1312a240773d845c679a57cdc495cacee9aff112"
+    },
+    {
+      "configuration": "Release",
+      "warnings": 0,
+      "errors": 0,
+      "logSha256": "f6b9aeee0ff6ef17e965b1773451323e512f95c630d23ab400a90180a6a7cd44"
+    }
+  ],
+  "tests": [
+    {
+      "postgres": "17",
+      "configuration": "Debug",
+      "total": 4237,
+      "passed": 4135,
+      "skipped": 102,
+      "failed": 0,
+      "trx": "evidence/Debug/pg17/postgres17.trx",
+      "trxSha256": "c7c226d3ae65327c7e03bc803bdbccc9d6b1cae0db4ed8c04d0935db8f6c186c"
+    },
+    {
+      "postgres": "17",
+      "configuration": "Release",
+      "total": 4237,
+      "passed": 4135,
+      "skipped": 102,
+      "failed": 0,
+      "trx": "evidence/Release/pg17/postgres17.trx",
+      "trxSha256": "236a6e274eacfa1e9e70e240ceff67213435fc352b9871aa06cf6d1b15394f5a"
+    },
+    {
+      "postgres": "16",
+      "configuration": "Debug",
+      "total": 43,
+      "passed": 43,
+      "skipped": 0,
+      "failed": 0,
+      "trx": "evidence/Debug/pg16/postgres16.trx",
+      "trxSha256": "41c7a38633993fbca38e7e75620e40231033da9c5462ebec45a19f9a2218e313"
+    },
+    {
+      "postgres": "16",
+      "configuration": "Release",
+      "total": 43,
+      "passed": 43,
+      "skipped": 0,
+      "failed": 0,
+      "trx": "evidence/Release/pg16/postgres16.trx",
+      "trxSha256": "81dfed96908f1d27991591847c6bbcf4cd8f19912ed989463f11e08621c3e51f"
+    }
+  ],
+  "newTestCases": 58,
+  "postgresCasesMatchedAcrossAllFourRuns": [
+    "Radish.Api.Tests.Auth.AuthOpenIddictMigrationTest.ApplyMigrationsAsync_ShouldAdoptPostgreSqlEnsureCreatedSchema",
+    "Radish.Api.Tests.Auth.AuthOpenIddictMigrationTest.ApplyMigrationsAsync_ShouldInitializeEmptyPostgreSqlAndBeIdempotent",
+    "Radish.Api.Tests.Auth.AuthOpenIddictMigrationTest.DbMigrateApply_ShouldInitializeEmptyPostgreSqlOpenIddictAndBeIdempotent",
+    "Radish.Api.Tests.Repositories.ChannelMessageSearchRepositoryTest.SearchAsync_ShouldUsePostgreSqlLiteralContains",
+    "Radish.Api.Tests.Repositories.ChatMessagePinRepositoryTest.SetAsync_ShouldConvergeConcurrentDesiredStateOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatMessageReactionRepositoryTest.SetAsync_ShouldConvergeConcurrentDesiredStateOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatReadReceiptRepositoryTest.AdvanceAsync_ShouldConvergeConcurrentTargetsOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatReadReceiptSchemaMigrationTest.Migration_ShouldCreateReadCursorIndexAndRemainRepeatableOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatSchemaMigrationTest.ChatChannelDiscoverabilityMigration_ShouldSupportPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatSchemaMigrationTest.ChatDirectConversationMigration_ShouldSupportPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatSchemaMigrationTest.ChatMessagePinMigration_ShouldSupportPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatSchemaMigrationTest.ChatMessageReactionMigration_ShouldSupportPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatSchemaMigrationTest.ChatMessageSearchMigration_ShouldSupportPostgreSql",
+    "Radish.Api.Tests.Repositories.ChatSchemaMigrationTest.ChatReliableMessageMigration_ShouldSupportPostgreSql",
+    "Radish.Api.Tests.Repositories.ContentModerationCaseSchemaMigrationTest.Migration_ShouldRemainRepeatableOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ContentRewardSchemaMigrationTest.Migrations_ShouldApplyAndVerifyOnPostgreSql",
+    "Radish.Api.Tests.Repositories.DatabaseDriverContractTests.PostgreSqlDriver_ExecutesParameterizedInt64Query",
+    "Radish.Api.Tests.Repositories.DirectConversationRepositoryTest.CreateOrGetAsync_ShouldConvergeConcurrentPairCreationOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ExperienceAuthoritativeGovernanceSchemaMigrationTest.Apply_ShouldBeRepeatableOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ExperienceNaturalDateSchemaMigrationTest.ApplyPending_ShouldResolveLowercasePostgreSqlPhysicalIdentifiers",
+    "Radish.Api.Tests.Repositories.ExperienceNaturalDateSchemaMigrationTest.ApplyPending_ShouldSerializeConcurrentPostgreSqlWriters",
+    "Radish.Api.Tests.Repositories.ExperienceNaturalDateSchemaMigrationTest.Apply_ShouldConvertLegacyPostgreSqlValuesAndPreserveIndexes",
+    "Radish.Api.Tests.Repositories.FileAccessTokenPostgresIntegrationTest.Consume_ShouldEnforceLimitAcrossPostgreSqlWorkers",
+    "Radish.Api.Tests.Repositories.ForumAnswerLifecycleSchemaMigrationTest.Migration_ShouldApplyAndRemainRepeatableOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ForumContentRevisionSchemaMigrationTest.Migration_ShouldBackfillAndVerifyOnPostgreSql",
+    "Radish.Api.Tests.Repositories.ForumInteractionRepositoryTest.InteractorsAndLikes_ShouldWorkWithProductionLowercasePostgresNames",
+    "Radish.Api.Tests.Repositories.ForumPostBookmarkSchemaMigrationTest.Migration_ShouldApplyAndVerifyOnPostgreSql",
+    "Radish.Api.Tests.Repositories.LeaderboardRepositoryTest.Repository_ShouldTranslateEligibilityAndAggregateQueriesOnPostgreSql",
+    "Radish.Api.Tests.Repositories.NotificationInboxSchemaMigrationTest.Apply_ShouldUpgradeLegacyPostgreSqlSchema",
+    "Radish.Api.Tests.Repositories.ReliableOutboxPostgresIntegrationTest.Outbox_ShouldPreserveTransactionAndClaimSemantics_OnPostgreSql",
+    "Radish.Api.Tests.Repositories.ShopEntitlementOperationSchemaMigrationTest.SubjectNullabilityApply_ShouldSupportPostgreSql",
+    "Radish.Api.Tests.Repositories.TagDiscoveryRepositoryTest.Repository_Should_Translate_Public_Tag_Aggregates_On_PostgreSql",
+    "Radish.Api.Tests.Repositories.TimeSemanticsPostgresIntegrationTest.Audit_ShouldRecognizePostgreSqlDateContracts",
+    "Radish.Api.Tests.Repositories.TimeSemanticsPostgresIntegrationTest.Audit_ShouldValidateTimestamptzInDatabaseTimeZones",
+    "Radish.Api.Tests.Repositories.UnitOfWorkManageTest.ExecuteInSavepointAsync_Should_Recover_PostgresTransaction_After_UniqueConflict",
+    "Radish.Api.Tests.Repositories.UserBlockAuthoritySchemaMigrationTest.Migration_ShouldBackfillAndVerifyOnPostgreSql",
+    "Radish.Api.Tests.Repositories.UserBlockRepositoryTest.MutateAsync_ShouldConvergeConcurrentBlockAndReplayOnPostgreSql",
+    "Radish.Api.Tests.Repositories.UserPostBookmarkRepositoryTest.SetStateAsync_ShouldSerializeConcurrentFirstBookmarkOnPostgreSql",
+    "Radish.Api.Tests.Repositories.WikiAttachmentAuthoritySchemaMigrationTest.Migration_ShouldBackfillAndVerifyOnPostgreSql",
+    "Radish.Api.Tests.Repositories.WikiAttachmentReferenceRepositoryTest.Repository_ShouldSupportPostgreSqlTargetSetAndSoftDeleteRecovery",
+    "Radish.Api.Tests.Repositories.WikiAuthorCollaborationSchemaMigrationTest.Migration_ShouldCreateAuthoringSchemaAndRemainRepeatableOnPostgreSql",
+    "Radish.Api.Tests.Repositories.WikiAuthoringRepositoryTest.QueryLatestTerminalDraftsAsync_ShouldTranslateOnPostgreSql",
+    "Radish.Api.Tests.Repositories.WikiDocumentGovernanceSchemaMigrationTest.Migration_ShouldSupportPostgreSql"
+  ],
+  "expectedSkippedRedisValkeyCases": [
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisStorageTests.ExpiredBetweenPreReadAndScript_ShouldNotSettle",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisStorageTests.RedisStorage_ShouldKeepCanonicalDecimalAndExistingKeyTypes(bytes: 9007199254740991)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisStorageTests.RedisStorage_ShouldKeepCanonicalDecimalAndExistingKeyTypes(bytes: 9007199254740993)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisStorageTests.RedisStorage_ShouldKeepCanonicalDecimalAndExistingKeyTypes(bytes: 9223372036854775807)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisStorageTests.ServerExpiry_ShouldRemoveSoleReservationWithoutSettlement",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisStorageTests.WrongKeyType_ShouldFailBeforeWriting(kind: \"daily\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisStorageTests.WrongKeyType_ShouldFailBeforeWriting(kind: \"rate\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisStorageTests.WrongKeyType_ShouldFailBeforeWriting(kind: \"reservation\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.CapacityArithmetic_ShouldMatchBigIntegerOracleForDeterministicInt64Samples",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 1)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 2147483647)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 2147483648)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 4000000001)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 8000000002)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9007199254740991)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9007199254740992)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9007199254740993)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9223372036854775806)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9223372036854775807)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Complete_ShouldRespectTargetExpiryWithAnotherLiveReservation(advanceSeconds: 0, expectedCompleted: 100)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Complete_ShouldRespectTargetExpiryWithAnotherLiveReservation(advanceSeconds: 1, expectedCompleted: 0)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.Complete_ShouldRespectTargetExpiryWithAnotherLiveReservation(advanceSeconds: 2, expectedCompleted: 0)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.ConcurrentAcquire_ShouldRespectLimitsAcrossIndependentClients(concurrent: 3, daily: 10000, bytes: 100, accepted: 3)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.ConcurrentAcquire_ShouldRespectLimitsAcrossIndependentClients(concurrent: 30, daily: 9007199254740993, bytes: 3002399751580331, accepted: 3)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.ConcurrentCompleteFailAndStatistics_ShouldSettleAtMostOnce",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.CrossBusinessDay_ShouldSettleOriginalDateWithExactCapacity",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.DisabledLimits_ShouldNotAccountButStillRejectInvalidArguments",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.HealthyStoredReservation_ShouldSettleDespiteReducedConfiguration",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"-1\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"01\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"9.007199254741e+15\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"9223372036854775808\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"broken\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidMinuteCounter_ShouldNotConsumeCapacity(counter: \"2147483648\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidMinuteCounter_ShouldNotConsumeCapacity(counter: \"broken\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidReservation_ShouldRemainVisibleAndNotBePrunedOrConsumeAttempt(size: \"-1\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidReservation_ShouldRemainVisibleAndNotBePrunedOrConsumeAttempt(size: \"9.007199254741e+15\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidReservation_ShouldRemainVisibleAndNotBePrunedOrConsumeAttempt(size: \"9223372036854775808\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.InvalidReservation_ShouldRemainVisibleAndNotBePrunedOrConsumeAttempt(size: \"broken\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.MissingOrSoleExpiredTarget_ShouldNotSettle",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.MultipleReservations_ShouldPreserveExactSumAndRemainingCapacity(first: 9007199254740991, second: 3)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.MultipleReservations_ShouldPreserveExactSumAndRemainingCapacity(first: 9223372036854775806, second: 1)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.NegativeEnabledConfiguration_ShouldFailAtConstruction(concurrent: -1, minute: 10, daily: 100)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.NegativeEnabledConfiguration_ShouldFailAtConstruction(concurrent: 10, minute: -1, daily: 100)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.NegativeEnabledConfiguration_ShouldFailAtConstruction(concurrent: 10, minute: 10, daily: -1)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.OverflowingPendingSum_ShouldFailWithoutPruningExpiredEntries",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.OverflowingStoredState_ShouldFailBeforeSettlementOrCleanup",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.ZeroLimits_ShouldRejectNewReservations(concurrent: 0, minute: 10, daily: 100, reason: ConcurrentUploads)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.ZeroLimits_ShouldRejectNewReservations(concurrent: 10, minute: 0, daily: 100, reason: UploadFrequency)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaRedisTests.ZeroLimits_ShouldRejectNewReservations(concurrent: 10, minute: 10, daily: 0, reason: DailyUploadSize)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyStorageTests.ExpiredBetweenPreReadAndScript_ShouldNotSettle",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyStorageTests.RedisStorage_ShouldKeepCanonicalDecimalAndExistingKeyTypes(bytes: 9007199254740991)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyStorageTests.RedisStorage_ShouldKeepCanonicalDecimalAndExistingKeyTypes(bytes: 9007199254740993)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyStorageTests.RedisStorage_ShouldKeepCanonicalDecimalAndExistingKeyTypes(bytes: 9223372036854775807)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyStorageTests.ServerExpiry_ShouldRemoveSoleReservationWithoutSettlement",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyStorageTests.WrongKeyType_ShouldFailBeforeWriting(kind: \"daily\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyStorageTests.WrongKeyType_ShouldFailBeforeWriting(kind: \"rate\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyStorageTests.WrongKeyType_ShouldFailBeforeWriting(kind: \"reservation\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.CapacityArithmetic_ShouldMatchBigIntegerOracleForDeterministicInt64Samples",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 1)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 2147483647)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 2147483648)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 4000000001)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 8000000002)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9007199254740991)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9007199254740992)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9007199254740993)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9223372036854775806)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Capacity_ShouldRetainExactAcceptedBytesThroughStatisticsAndSettlement(bytes: 9223372036854775807)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Complete_ShouldRespectTargetExpiryWithAnotherLiveReservation(advanceSeconds: 0, expectedCompleted: 100)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Complete_ShouldRespectTargetExpiryWithAnotherLiveReservation(advanceSeconds: 1, expectedCompleted: 0)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.Complete_ShouldRespectTargetExpiryWithAnotherLiveReservation(advanceSeconds: 2, expectedCompleted: 0)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.ConcurrentAcquire_ShouldRespectLimitsAcrossIndependentClients(concurrent: 3, daily: 10000, bytes: 100, accepted: 3)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.ConcurrentAcquire_ShouldRespectLimitsAcrossIndependentClients(concurrent: 30, daily: 9007199254740993, bytes: 3002399751580331, accepted: 3)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.ConcurrentCompleteFailAndStatistics_ShouldSettleAtMostOnce",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.CrossBusinessDay_ShouldSettleOriginalDateWithExactCapacity",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.DisabledLimits_ShouldNotAccountButStillRejectInvalidArguments",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.HealthyStoredReservation_ShouldSettleDespiteReducedConfiguration",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"-1\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"01\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"9.007199254741e+15\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"9223372036854775808\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidDailyCounter_ShouldNotDeleteTargetOrMutateState(counter: \"broken\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidMinuteCounter_ShouldNotConsumeCapacity(counter: \"2147483648\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidMinuteCounter_ShouldNotConsumeCapacity(counter: \"broken\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidReservation_ShouldRemainVisibleAndNotBePrunedOrConsumeAttempt(size: \"-1\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidReservation_ShouldRemainVisibleAndNotBePrunedOrConsumeAttempt(size: \"9.007199254741e+15\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidReservation_ShouldRemainVisibleAndNotBePrunedOrConsumeAttempt(size: \"9223372036854775808\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.InvalidReservation_ShouldRemainVisibleAndNotBePrunedOrConsumeAttempt(size: \"broken\")",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.MissingOrSoleExpiredTarget_ShouldNotSettle",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.MultipleReservations_ShouldPreserveExactSumAndRemainingCapacity(first: 9007199254740991, second: 3)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.MultipleReservations_ShouldPreserveExactSumAndRemainingCapacity(first: 9223372036854775806, second: 1)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.NegativeEnabledConfiguration_ShouldFailAtConstruction(concurrent: -1, minute: 10, daily: 100)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.NegativeEnabledConfiguration_ShouldFailAtConstruction(concurrent: 10, minute: -1, daily: 100)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.NegativeEnabledConfiguration_ShouldFailAtConstruction(concurrent: 10, minute: 10, daily: -1)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.OverflowingPendingSum_ShouldFailWithoutPruningExpiredEntries",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.OverflowingStoredState_ShouldFailBeforeSettlementOrCleanup",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.ZeroLimits_ShouldRejectNewReservations(concurrent: 0, minute: 10, daily: 100, reason: ConcurrentUploads)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.ZeroLimits_ShouldRejectNewReservations(concurrent: 10, minute: 0, daily: 100, reason: UploadFrequency)",
+    "Radish.Api.Tests.Services.UploadQuota.UploadQuotaValkeyTests.ZeroLimits_ShouldRejectNewReservations(concurrent: 10, minute: 10, daily: 0, reason: DailyUploadSize)"
+  ],
+  "publish": [
+    {
+      "host": "Radish.Api",
+      "packages": 83,
+      "files": 378,
+      "bytes": 140204082,
+      "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "retainedSni": [
+        "runtimes/win-arm/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
+      ]
+    },
+    {
+      "host": "Radish.Auth",
+      "packages": 112,
+      "files": 570,
+      "bytes": 145807661,
+      "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "retainedSni": [
+        "runtimes/win-arm/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
+      ]
+    },
+    {
+      "host": "Radish.Gateway",
+      "packages": 53,
+      "files": 91,
+      "bytes": 24428665,
+      "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "retainedSni": [
+        "runtimes/win-arm/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
+      ]
+    },
+    {
+      "host": "Radish.DbMigrate",
+      "packages": 74,
+      "files": 196,
+      "bytes": 115290901,
+      "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "retainedSni": [
+        "runtimes/win-arm/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
+      ]
+    }
+  ],
+  "publishFontNotices": [
+    {
+      "source": "Lib/radish.lib/fonts/LICENSE-DejaVu.txt",
+      "sha256": "f88d5294af5a772f9114eb385009e3478d62b21f3e5bbc34d159d328047c8867",
+      "publishPath": "native/licenses/LICENSE-DejaVu.txt"
+    },
+    {
+      "source": "Clients/radish.flutter/assets/fonts/noto/licenses/OFL-NotoSansCJK.txt",
+      "sha256": "6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2",
+      "publishPath": "native/licenses/OFL-NotoSansCJK.txt"
+    }
+  ],
+  "cleanup": {
+    "containersRemaining": [],
+    "volumesRemaining": [],
+    "port15432Free": true,
+    "sharedImageCacheRetained": true
+  },
+  "inventorySha256": "f727832d26e9666fea4fb705c4cf0f8cd8985150cd2f76764aa60b910c4a7a66",
+  "distributionMaterialsSha256": "a0dc78f3e226d18095ecfcf2bf5a571bb4879aebe5ad97bba20a50a15fbddc07",
+  "images": [
+    {
+      "Id": "sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+      "RepoDigests": [
+        "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939"
+      ],
+      "Architecture": "arm64",
+      "Os": "linux",
+      "serverVersion": "17.11 (Debian 17.11-1.pgdg13+2)"
+    },
+    {
+      "Id": "sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+      "RepoDigests": [
+        "postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690"
+      ],
+      "Architecture": "arm64",
+      "Os": "linux",
+      "serverVersion": "16.15 (Debian 16.15-1.pgdg13+2)"
+    }
+  ]
+}
