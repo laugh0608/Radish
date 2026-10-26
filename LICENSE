@@ -35,6 +35,21 @@ This license applies only to the original content of this repository.
 Third-party components, dependencies, fonts, icons, or assets remain subject
 to their own licenses.
 
+For a distribution of Radish that includes a library governed by the GNU
+Lesser General Public License, Sections 2, 3 and 9 of this license do not
+limit the rights granted by that library's applicable license in the library.
+
+A recipient otherwise lawfully entitled to use that distribution may:
+(a) replace the library with a modified, interface-compatible version;
+(b) reverse engineer Radish solely to the extent necessary to debug such
+    modifications to the library; and
+(c) make and use copies of Radish solely as necessary to carry out that
+    replacement and execute the resulting combined work.
+
+This exception does not grant a general right to modify or redistribute
+Radish's original code. It does not restrict any additional rights that
+the applicable library license requires to be permitted for the combined work.
+
 6. Disclaimer of Warranty
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO MERCHANTABILITY, FITNESS FOR A PARTICULAR

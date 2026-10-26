@@ -8,6 +8,7 @@
 - [2026-10-21 日终代码与文档回顾](./day-end-doc-review-2026-10-21.md)：当日 9 个提交、PR #75 集成、Mapperly 替代、隔离验证、上传配额修复及接续事项
 - [NoDrive 正式采用](./nodrive-adoption-2026-10-26.md) · [NoDrive 来源补证与分发预审](./nodrive-source-review-2026-10-26.md) · [重点 NuGet notices 分发接线](./nuget-notices-distribution-2026-10-26.md)
 - [剩余依赖发行边界核对](./dependency-distribution-boundaries-2026-10-26.md)：Hangfire 精确源码快照、库替换 / 授权边界、NoDrive 询证与 SNI 分发事项
+- [LGPL 狭义例外与本机验证](./lgpl-exception-validation-2026-10-26.md)：已批准许可补充、离线 native 重建、双配置严格构建及四宿主发布核对
 - [Mapperly 映射迁移](./mapperly-migration-2026-10-21.md) · [NoDrive / Valkey 隔离验证](./nodrive-valkey-validation-2026-10-21.md) · [上传配额边界修复](./upload-quota-boundary-fix-2026-10-21.md)
 
 - [2026-10-20 第三方依赖许可盘点](./dependency-license-audit-2026-10-20.md)：947 条依赖、重点许可边界与待补证据；[逐包 CSV](./dependency-license-inventory-2026-10-20.csv)

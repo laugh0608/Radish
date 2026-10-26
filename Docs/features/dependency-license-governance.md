@@ -8,7 +8,7 @@
 
 同日[来源补证](../records/nodrive-source-review-2026-10-26.md)已确认仓库迁移、NoDrive 版本候选提交与两个包的官方 archive 哈希；发现包 Apache 声明与候选源码 MIT 声明差异，以及 SystemCommon 仓库打包版本仍为 8.3。保持两侧证据，不改标许可或推定二进制精确对应。[接线方案](./nuget-notices-distribution-plan.md)已实施：runtime 材料按实际宿主交付，Mapperly / Container Tools 仅保留仓库构建材料，缺失 / 哈希 / 版本 / 宿主映射异常直接失败。该门禁不自动放行源码提供、商业路线或全生态发行义务。
 
-接续的[发行边界核对](../records/dependency-distribution-boundaries-2026-10-26.md)已校验 Hangfire 两份精确仓库快照及四个未修改 DLL，识别 Core 合并 / 源码包输入、应用侧 LGPL 例外与 SNI 下游条款等具体事项。[裁决草案](./dependency-distribution-decisions.md)给出保留路线、狭义许可补充与 native 重建影响；当前根 LICENSE 未改，完整对应源码与替换运行验证尚未成立。
+接续的[发行边界核对](../records/dependency-distribution-boundaries-2026-10-26.md)已校验 Hangfire 两份精确仓库快照及四个未修改 DLL，识别 Core 合并 / 源码包输入、应用侧 LGPL 例外与 SNI 下游条款等具体事项。[裁决方案](./dependency-distribution-decisions.md)的狭义 LGPL 例外及首批验证已获批准并实施，根 LICENSE 第 5 节已补充对应文本；本机 native 离线重建、双配置严格构建与四宿主发布核对见[实施记录](../records/lgpl-exception-validation-2026-10-26.md)。完整对应源码与替换运行验证尚未成立。
 
 ## 1. 当前结论与阅读入口
 
@@ -34,7 +34,7 @@
 4. **在哪个边界出现**：直接 / 传递，生产 / 测试 / 构建，应用 / 原生二进制 / 字体 / 服务镜像。
 5. **替换的真实成本**：行为等价性、数据兼容、平台构建、供应链、安全更新及长期维护成本。
 
-Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三方库的互惠开源条款。保留该项目许可定位；本专题不改变 Radish 的发行授权，也不对所有可能的部署主体做统一许可结论。
+Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三方库的互惠开源条款。保留该项目许可定位；已批准的 LGPL 狭义例外以根 LICENSE 第 5 节为准，不授予 Radish 原创代码的一般修改或再分发权，也不对所有可能的部署主体做统一许可结论。
 
 ## 3. 首轮重点清单
 
