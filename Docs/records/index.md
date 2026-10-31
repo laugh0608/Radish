@@ -5,6 +5,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [Windows Razor 准备快照](./hangfire-windows-razor-readiness-2026-10-31.json) · [待确认方案](../features/hangfire-windows-razor-validation-plan.md)：官方 runner 清单、11 项包、23 对输入与生成文件 / LF 与 CRLF、24 个包内 DLL；未运行 Windows 或改 CI
 - [Hangfire 本机源码重建与验证](./hangfire-rebuild-2026-10-31.md) · [结果 JSON](./hangfire-rebuild-2026-10-31.json)：42 项封存、五目标字节一致重放、18 组最终调用及清理完成；Windows Razor 与正式源码入口未关闭
 - [Hangfire 重建准备清单](./hangfire-rebuild-readiness-2026-10-31.json) · [实施方案](../features/hangfire-rebuild-delivery-plan.md)：保留准备期 34 个精确源文件、SDK / ref pack、42 项候选及旧输入审计；实际 tree 字段更正、构建和运行结果见上一条
 - [PostgreSQL 回归与托管 CI 本地接线](./postgres-regression-2026-10-31.md) · [结果 JSON](./postgres-regression-2026-10-31.json)：PG17 两配置全量、PG16 两配置专项与四组 worker 通过，任务资源清理完成；本地 CI 验证通过，未 push / 远端触发

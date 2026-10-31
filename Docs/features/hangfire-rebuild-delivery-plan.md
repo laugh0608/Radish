@@ -204,6 +204,6 @@ docker --context orbstack run -d --pull=never --platform linux/arm64 \
 
 ## 7. Windows 与外部事项
 
-Windows Razor 需要单独准备的 Full MSBuild 与 RazorGenerator.MsBuild `2.5.0`，并核对 `Razor.build` 固定的 packages 路径；本机没有这些工具。本批保留 .cshtml 与已生成 .cshtml.cs 的 hash，**不声称重现了 Razor 生成**。后续优先 windows-2025 托管 runner，先形成实际工具库存 / 精确命令与证据方案，再单独确认 CI 改动、push 和远端执行；不复用 SQLite 手动矩阵触发它。
+Windows Razor 需要单独准备的 Full MSBuild 与 RazorGenerator.MsBuild `2.5.0`，并核对 `Razor.build` 固定的 packages 路径；本机没有这些工具。本批保留 .cshtml 与已生成 .cshtml.cs 的 hash，**不声称重现了 Razor 生成**。后续 [Windows Razor 托管方案](./hangfire-windows-razor-validation-plan.md)已完成静态准备，固定 11 项包、23 对模板 / 生成 C# 和 LF / CRLF 验证关系；实际 Full MSBuild 版本仍待远端库存。先单独确认本地 CI 接线，之后分别授权 push、inventory 与 verify；不复用 SQLite 矩阵触发它。
 
 NoDrive 询证、SNI、Valkey、公开源码托管、对外通信、master PR、tag / Release、发布和部署均不在本批授权请求内。

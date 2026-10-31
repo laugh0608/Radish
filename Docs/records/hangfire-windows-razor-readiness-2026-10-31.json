@@ -1,0 +1,759 @@
+{
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "status": "prepared-not-approved-or-run",
+  "repositoryRevision": "762f5fbd227c46232539ee21ff93ad14a8225af4",
+  "scope": "Windows x64 Razor generation, Core compilation and headless fragment proof; local CI implementation only after confirmation",
+  "source": {
+    "hangfire": {
+      "repository": "hangfire",
+      "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "preparationApiShaField": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "actualCommitTree": "b5ee5d721d64442d4bff4d9592bd05e9f5fda421",
+      "allBlobPathsModesAndHashesEqual": true,
+      "blobCount": 607,
+      "reviewedFileHashesEqual": true
+    },
+    "cronos": {
+      "repository": "cronos",
+      "commit": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+      "preparationApiShaField": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+      "actualCommitTree": "d6fe40daf2b07b26f837fa36fb47002ca38ca9c7",
+      "allBlobPathsModesAndHashesEqual": true,
+      "blobCount": 38,
+      "reviewedFileHashesEqual": true
+    }
+  },
+  "runner": {
+    "label": "windows-2025",
+    "architecture": "x64",
+    "observedReadmeUrl": "https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-Readme.md",
+    "observedReadmeGitBlob": "84e8dbd2b71809e9315cf0085ce5c3f37c0ffa75",
+    "readmeSha256": "6a31290e61267f4fabe9edfdf713df7721e4a50cc1b8f2c09f1600ac60814927",
+    "imageVersion": "20261021.299.1",
+    "osVersion": "10.0.26100 Build 33650",
+    "visualStudio": "17.14.37806.7",
+    "vswhere": "3.1.7",
+    "frameworks": [
+      "4.8",
+      "4.8.1"
+    ],
+    "powershell": "7.6.7",
+    "actualRunnerObserved": false,
+    "exactMsbuildPatchVersion": "not-published-in-readme; inventory required before build",
+    "driftPolicy": "Inventory actual image/VS/MSBuild; do not execute upstream tasks on unreviewed image/version drift; never install or repair VS automatically",
+    "clrCompatibilityRequired": "CLR 4; Microsoft.Build.Utilities.v4.0 and Microsoft.Build.Framework assembly version 4.0.0.0; actual binding to be inspected"
+  },
+  "sdk": {
+    "version": "10.0.403",
+    "runtime": "10.0.14",
+    "rid": "win-x64",
+    "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.403/dotnet-sdk-10.0.403-win-x64.zip",
+    "sha512": "7a114c318fa7f1d9822991b534b2814d0e78386ceda816b371f5141acefe741d87ccb606ede06cadac8f9ac5070e32b708a67bbd1619ff5e5a7858a27874ef48",
+    "downloaded": false,
+    "installed": false
+  },
+  "packages": [
+    {
+      "package": "cronos",
+      "version": "0.8.3",
+      "url": "https://api.nuget.org/v3-flatcontainer/cronos/0.8.3/cronos.0.8.3.nupkg",
+      "archiveSha256": "00cdd68c48002ac3a64cbd690025b8836f0757de473027f90efe30fdc80334f7",
+      "size": 159289,
+      "contentHash": "lep1gKd68dBEt7isLnnHadJHwUlhctMd+gYGMk3p8eOT9dIfw6fXJFkreYBQ8dIXm23S01ilHgpk2ttou5Wvtw=="
+    },
+    {
+      "package": "ilrepack",
+      "version": "2.0.27",
+      "url": "https://api.nuget.org/v3-flatcontainer/ilrepack/2.0.27/ilrepack.2.0.27.nupkg",
+      "archiveSha256": "b4d43d96c781a8b837d95f649a753ec68f49c9f7dfbeddf38f63fb3c7f208dad",
+      "size": 726162,
+      "contentHash": "N5nhVwlgU2ipeonLBVuv1HpsIclJI/5QujuLeo3BW7irD2KnSFXkHa5FmXwzdCkB36D0XGOxNMxh99P7kjgU2A=="
+    },
+    {
+      "package": "liblog",
+      "version": "1.5.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/liblog/1.5.0/liblog.1.5.0.nupkg",
+      "archiveSha256": "c34a6783ca318476a780f86d56ff316bfe98c8e1d4ecb954e40f13fedd9f1f09",
+      "size": 21728,
+      "contentHash": "0bNoz50GPHYnS3fv/qTS2dFBeYgoppM1t//gWULGxY/TM5TNxxknUWqOqzE8eZgLIa2ENfIwzumvbeWFnx14rg=="
+    },
+    {
+      "package": "microsoft.csharp",
+      "version": "4.4.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.csharp/4.4.0/microsoft.csharp.4.4.0.nupkg",
+      "archiveSha256": "10c200a56dd98f457ce65785ec32e0145bdfa8f76c21dbef277043ef30fe3eda",
+      "size": 655160,
+      "contentHash": "vvVR/B08YVghQ4jHEloxqw2ZWzEGE1AOA5E0DioUM3ujbXz6FD3AfB/0Jl2ohJPd0nXYGwmPe1En6HTsSriq1A=="
+    },
+    {
+      "package": "microsoft.netcore.platforms",
+      "version": "1.1.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.platforms/1.1.0/microsoft.netcore.platforms.1.1.0.nupkg",
+      "archiveSha256": "15e338d24b5c39b4099389cc612841eb51ff13c07bb4829f97d39b27420e7023",
+      "size": 17960,
+      "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A=="
+    },
+    {
+      "package": "morelinq.source.moreenumerable.pairwise",
+      "version": "1.0.1",
+      "url": "https://api.nuget.org/v3-flatcontainer/morelinq.source.moreenumerable.pairwise/1.0.1/morelinq.source.moreenumerable.pairwise.1.0.1.nupkg",
+      "archiveSha256": "9d4ff811acc7ab29333b87c0350815d658fbc2d70b5d7ffd26f9e2873e3e0577",
+      "size": 14262,
+      "contentHash": "N1bmYqxItSwixZ72KJ/V4e3mEnIO5AtMcmjtilqe+Ulp4GpSje9DP+1Cv4j01s3uG4h7P4G1axUEODL1yWB5Og=="
+    },
+    {
+      "package": "netstandard.library",
+      "version": "2.0.3",
+      "url": "https://api.nuget.org/v3-flatcontainer/netstandard.library/2.0.3/netstandard.library.2.0.3.nupkg",
+      "archiveSha256": "3eb87644f79bcffb3c0331dbdac3c7837265f2cdf58a7bfd93e431776f77c9ba",
+      "size": 3146139,
+      "contentHash": "st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A=="
+    },
+    {
+      "package": "newtonsoft.json",
+      "version": "13.0.4",
+      "url": "https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg",
+      "archiveSha256": "f09081d457405baf35a973fa0c50d6bf272ed683f2568c5a620a49da952f6529",
+      "size": 2484726,
+      "contentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A=="
+    },
+    {
+      "package": "stacktraceformatter.source",
+      "version": "1.1.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/stacktraceformatter.source/1.1.0/stacktraceformatter.source.1.1.0.nupkg",
+      "archiveSha256": "423acb95be9bf7713ee72a8e51d60da34d491e672eaa70218990393958f99abf",
+      "size": 18269,
+      "contentHash": "69Zxg50Sm1kq9hvxPgEo0w9li8oiD2qVT87GGsqXJP2vfYs33LVKGHRMSP2Z4iTP3UC0PJTeurCeWY2t7X/76Q=="
+    },
+    {
+      "package": "stacktraceparser.source",
+      "version": "1.3.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/stacktraceparser.source/1.3.0/stacktraceparser.source.1.3.0.nupkg",
+      "archiveSha256": "6138aa4e2fca5c85e4351b04011e40747db44a536b7251a22e4af5c64acafc83",
+      "size": 17229,
+      "contentHash": "tOdf1XpHE2YQJpBERplZA2kMTJQtJnKzSc7GMO/yeNNGuXNueVqySfIr/gfU1vx9k2FO8u0zD4mtnZGwKQM+Zg=="
+    },
+    {
+      "package": "razorgenerator.msbuild",
+      "version": "2.5.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/razorgenerator.msbuild/2.5.0/razorgenerator.msbuild.2.5.0.nupkg",
+      "archiveSha256": "1f2c549056cff967cdf4d1c92f9fa78e7f5a2d292a15d5a427bf76caa542c064",
+      "contentHash": "yOu2KEjDFvE20b+YK/+Ovf4czUHWH2DlBB9lIKDXdBjcMh3PXrPJTxPzi468XrFvE1dVEiWu+pGNkVFE9+VpMA==",
+      "size": 1416977,
+      "role": "Full MSBuild code-generation task only, not runtime PackageReference"
+    }
+  ],
+  "razor": {
+    "project": "src/Hangfire.Core/Razor.build",
+    "import": "../../packages/RazorGenerator.MsBuild.2.5.0/build/RazorGenerator.MsBuild.targets",
+    "target": "PrecompileRazorFiles",
+    "rootNamespace": "Hangfire",
+    "inputCount": 23,
+    "outputCount": 23,
+    "pairs": [
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/AwaitingJobsPage.cshtml",
+        "gitBlob": "ad4419ed37ba33a4543fc6811c9f9d687a03f4ac",
+        "lfSha256": "a3d8612fd0c11947f09a67bf9d791a68a45f4f2abd0d118f9949f84d19d28a8e",
+        "windowsCrlfSha256": "79a3935a59a5866d14a5cc2c9fc6f8641e344bca0761ac1648bcfedc20a270d6",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/AwaitingJobsPage.cshtml.cs",
+        "checkedInOutputSha256": "ef4b0644fd57bab6b0d9ac9e15b868f74365487076b794435646d23afaed0610"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/DeletedJobsPage.cshtml",
+        "gitBlob": "f18367ead5c41ad654e1096b0cef6746bbe3df9c",
+        "lfSha256": "f0fd63e53738c7c02278cbacef4939ecba5aa8afdb0b0cd05604c8ab976c6238",
+        "windowsCrlfSha256": "71733975deb3b5f7cc7a8b9b2071ff472be7bc27dbd5146b09f032fbb2ed7313",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/DeletedJobsPage.cshtml.cs",
+        "checkedInOutputSha256": "c0e04ffe34c5115d22d58faa4a50d4c6ebd2bfcccfabd50ac3ca4725be3a89a8"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/EnqueuedJobsPage.cshtml",
+        "gitBlob": "a4678ccb9ffed2064b06db13a43ee112ee944da3",
+        "lfSha256": "bea11ca9ccec5ee58e21fed1c3a5774c12dd914d2425c2264bb8d5c889977f37",
+        "windowsCrlfSha256": "14d4c2726f89d30e2960c7a1514154d414187ebf96f1baddbce0d8a95e08e524",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/EnqueuedJobsPage.cshtml.cs",
+        "checkedInOutputSha256": "46cabac0453df39e384497f0f8f18dedeca779f788d03de3b9973e8b980e8ea1"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/FailedJobsPage.cshtml",
+        "gitBlob": "7457d665aff642ece159522cc8656bb17c6ce412",
+        "lfSha256": "19c9229f077168af9ce484b01484aa5d40887f97d27941ff2ab50ee149a73630",
+        "windowsCrlfSha256": "0780f37279eb2aedea2168d8ff2fbcbe12ca46cd3af88389749f6ab61658caaf",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/FailedJobsPage.cshtml.cs",
+        "checkedInOutputSha256": "c2ce66cc487acc306cd3c811e5639d68f74fb8dbcd8bacfff6105a3753fa4a50"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/FetchedJobsPage.cshtml",
+        "gitBlob": "3cb05c790fe19b9dbbfc524d941e2232789ea113",
+        "lfSha256": "3ed860c80b45ef0b8721d52ade41bfe3a899ccd5b92d56eaec20c942e7d9fc9b",
+        "windowsCrlfSha256": "54c133abbb83b2cbe83fa0404b7795d9d50d9b8c3d78923a795280f0857a5fda",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/FetchedJobsPage.cshtml.cs",
+        "checkedInOutputSha256": "69c7f3f9cda106972658a92aa1be13cf1685e9dad8dccc1b6acbc1fba44493d2"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/HomePage.cshtml",
+        "gitBlob": "1470dcb88d5b9b4624182b16a1344917cbf75a46",
+        "lfSha256": "8e6a9bd50123aa03586373b67e833e77d9b91f51396e24dba9f4d672fb63b56e",
+        "windowsCrlfSha256": "c9621a6d931b930e9d304b2b36ada75e64ea0e5da03a8ddd201572ad360d228f",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/HomePage.cshtml.cs",
+        "checkedInOutputSha256": "d52194931610fcc78a3b64079eb5390dafe7ae6d98b6509890a7ff6118a7f39f"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/JobDetailsPage.cshtml",
+        "gitBlob": "0137693a45732abf47a9b2dd07fd5dcdb99573ea",
+        "lfSha256": "39b5784f5fedc8ed96cc064166c311870e75624bc8ae0182497a725e46778518",
+        "windowsCrlfSha256": "926514d64cc141b5abb089dae3b9a778fd3457a2aeb0a71be4b5ffcf60bae4fd",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/JobDetailsPage.cshtml.cs",
+        "checkedInOutputSha256": "5f1071cc58705824fa370ee2c830c9f26397c62e8754d1d9a5c5ddd3ba9bee0a"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/LayoutPage.cshtml",
+        "gitBlob": "25d7ce16a38d52fd0c68ff3fd66f6259c3aff022",
+        "lfSha256": "ef29a9fc0238ea495279d8ffa04dafb8d1552c0e1aaf5829dd97b2d7523aab04",
+        "windowsCrlfSha256": "82644ee7924a2be659bd8c4a522684eb31b832c9b91b184e11d603ec96f4129a",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/LayoutPage.cshtml.cs",
+        "checkedInOutputSha256": "a6d119a03bc7d3c0c9cd936f488c6c993a5c45ebe6f34aacdd1e49240365bf65"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/ProcessingJobsPage.cshtml",
+        "gitBlob": "c0558fa04a2c246794fc2cd44053be2ed121124b",
+        "lfSha256": "227c29232e6f710de96ddbab3d683b0576a07d577cb9d67f08db0573743eaa52",
+        "windowsCrlfSha256": "45ee6e8060104309c4f08ead00d43cc48782b44a7acdb2733680e1dac6080934",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/ProcessingJobsPage.cshtml.cs",
+        "checkedInOutputSha256": "814b83659d95bc2b864809ed25c2c59d0d492c5013ab1ae06408fd97e0efdc90"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/QueuesPage.cshtml",
+        "gitBlob": "c03bcadf4bf8c1e9ca62ca551546f03163a14f87",
+        "lfSha256": "56fc84d658e59f5f563c33409533a267dfc5c8706f38a8e2afe3f14d524ab8f0",
+        "windowsCrlfSha256": "0a3c68a02010aaa5718625b27d6559a617465131582c464169047b3d2c72b245",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/QueuesPage.cshtml.cs",
+        "checkedInOutputSha256": "3c17eb9b299814e5fa57409507b56ae1af24de712cd941d0fc07a893af809a81"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/RecurringJobsPage.cshtml",
+        "gitBlob": "c89e8ad7342429143fb175ee45daed0b575d9aec",
+        "lfSha256": "dfad923c490170d2014184924470d0f4586fa8a0e0f94f9ecc7266ad92c2f5ce",
+        "windowsCrlfSha256": "3c23917c83e85b51a976fdc9f0e5ccbf81d969546e375dc5ddb9cfa4d808ed81",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/RecurringJobsPage.cshtml.cs",
+        "checkedInOutputSha256": "55c2154f6c406ed9e8e44fcb4ce721495065e2ac2d3fbd28a6f6675d465e42ee"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/RetriesPage.cshtml",
+        "gitBlob": "63572adc804e344e91f260e56d2b8cb1557624e3",
+        "lfSha256": "61b2363231f4583b63e6f7da6082c76c4b56427871a8ef650f0952e2e297af55",
+        "windowsCrlfSha256": "7d4b7268748c099752ced4f9e329e7d805473a36451cac0ad7fe970380290708",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/RetriesPage.cshtml.cs",
+        "checkedInOutputSha256": "1c86eab5dfaa68657cdd94dd6cd67ba195ee134c917c29a02fe5a2e4aba83505"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/ScheduledJobsPage.cshtml",
+        "gitBlob": "23463f62d9402f37e5892044e56d2c53dc349d08",
+        "lfSha256": "47f757a87f4f6c6256a7f69075e215bd021a02ebaea706be2a3179c1c009d5f3",
+        "windowsCrlfSha256": "60ccae5032e3aa264aa25ed59ea6ca5e448dd7e944c2f83594e8e8851a57a73f",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/ScheduledJobsPage.cshtml.cs",
+        "checkedInOutputSha256": "106e708f2d882af00f8aefbff25b0396ad799f165157c6c5ee847766489b27bb"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/ServersPage.cshtml",
+        "gitBlob": "87d85a89a9c0560410fe62812f45b8256aab5347",
+        "lfSha256": "bd881f7652f7f55333691e839055dbcc2d1d1276964ce1a4a60f35e8adf0cce0",
+        "windowsCrlfSha256": "c195f87ad9d8b3657a105551f4b41b08c90b5e99ab4df06c0c6d50737e26df3a",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/ServersPage.cshtml.cs",
+        "checkedInOutputSha256": "fa4e78969e73b018091449e65ee5947c2c808a8f1585120dd979cc22072162ae"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/SucceededJobs.cshtml",
+        "gitBlob": "75f4e6c785fa04889d5188cc9850fd0ad9fe08bb",
+        "lfSha256": "442685bfd7ba784760a31f5cfabe67d2d8688744b2832b9d596d074c1bc6325a",
+        "windowsCrlfSha256": "920fe0fe5ce603b9047b11be1d260e04246e79b504902f11882844e0681040ab",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/SucceededJobs.cshtml.cs",
+        "checkedInOutputSha256": "18ba3f8dd3475f41b5f9ce5f69da0255a20d06db8de9e681aea1aaa430529954"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/_BlockMetric.cshtml",
+        "gitBlob": "ca1bf9189ef055100886819788aad874fcf4ffab",
+        "lfSha256": "f93f07f218a0f034aae020639a780cfda3741c24bd4f93ee3b20cd0da34d8d32",
+        "windowsCrlfSha256": "0ad2ef5a85f021e0535ceef6e8b18404d7466710f9124485f5974af2aa67b8cd",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/_BlockMetric.cshtml.cs",
+        "checkedInOutputSha256": "04689aea56ae3d6162dfd63cd655c3945d5fc5deb8fa4ba8ca9a96041ed9d1eb"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/_Breadcrumbs.cshtml",
+        "gitBlob": "542c380dc74ee2e5395be03845576e918a0cb32f",
+        "lfSha256": "61fe1d9073c1aa37cd793013c1cfdd3f99031b98633be9ec503cef95004c6adc",
+        "windowsCrlfSha256": "1367af4f4558e7f8dd9270fb49f6dbf828f7c25754b721a60955b25cbe7b9daa",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/_Breadcrumbs.cshtml.cs",
+        "checkedInOutputSha256": "622dfe7263d4f6a267d7c80cfce5a87d00a0a0d78f7d58b1878282f6fb172a59"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/_ErrorAlert.cshtml",
+        "gitBlob": "151a261853dec782bbd31c65ae6b7e8a73866ab4",
+        "lfSha256": "b8922d7e2a2b19414c2539e80777b954e2ee06a698769f1bc5c739d4aafeee64",
+        "windowsCrlfSha256": "66729413dbe2e20fbe0e57a9180e498fbb0076493178aa9ee8c9a2ba2b5b3584",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/_ErrorAlert.cshtml.cs",
+        "checkedInOutputSha256": "1de76af5c8e58d37833609e705abc8aadf6136302bdced95e329961159a447f4"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/_InlineMetric.cshtml",
+        "gitBlob": "1e2ce76276cc2d5fcd2ba880e2fd9697aa7a7192",
+        "lfSha256": "4c7a8ab9413e5825868b079e50e84affd7b969a20fec7b66de11901a89edf729",
+        "windowsCrlfSha256": "a4fb549b70ffba451df898d69c200984553eed3365db77d973c4ee3a165e4f7e",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/_InlineMetric.cshtml.cs",
+        "checkedInOutputSha256": "cf402ac7952515463c65a4453646bf112cc27b144b3c1fd72fc37f45f5f0b258"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/_Navigation.cshtml",
+        "gitBlob": "3fb39007e641b49bd4db3708bb49560f9ca10224",
+        "lfSha256": "c091d21fc266e02691be94fa59fedca31324769209b2288f6b242187e120a57e",
+        "windowsCrlfSha256": "0b890f021d7b80defb167501dc9b6457cc3cda7f2851286de688e19d9094283e",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/_Navigation.cshtml.cs",
+        "checkedInOutputSha256": "234aaad9e713400ff5cd02b4d837618d4083eb2b1eeed1446e675bf4407a731b"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/_Paginator.cshtml",
+        "gitBlob": "19d055c47dfae60b8cc353a9bf399213cbf03b90",
+        "lfSha256": "bf1c57512cb18ef3acf5763b0be5ef8b69f9dc9de2f471c1f2334d47a47b9507",
+        "windowsCrlfSha256": "1d0e17d0dbd3c983ae615f306d4d88da962199bfbfea4451b8baa08bef2d11dd",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/_Paginator.cshtml.cs",
+        "checkedInOutputSha256": "d03eb949e28a952654754a0234749c535f69d3b44c61b27b6e2e087b9873abf2"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/_PerPageSelector.cshtml",
+        "gitBlob": "33d83e5c6594c3bc44feb9d6bb5155a5e49cc917",
+        "lfSha256": "ffba167b54388b4b0365286ffd41c6ab5b7f54ce05604097feaf266f2cfaa7a2",
+        "windowsCrlfSha256": "96de5889b180c8be1ade6f6065498ded97eae603eeca35266d0bd5c389b71ec2",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/_PerPageSelector.cshtml.cs",
+        "checkedInOutputSha256": "1a3c7f7564c63c7b3804f10746a41b611321b8efb40ce1e6bfda28e5ffdb3a6f"
+      },
+      {
+        "input": "src/Hangfire.Core/Dashboard/Pages/_SidebarMenu.cshtml",
+        "gitBlob": "caf6b8e3d07f3af9f0cfca844143496f9ded4b73",
+        "lfSha256": "c32e35343197e241daf952db7d5f3e16d02aeaf4b1da93281d24d42f11131b13",
+        "windowsCrlfSha256": "0a9b5a6da017d57ebb8e0d380604fcb1425fe266e1ac1e4cfd9118425ce1a435",
+        "bomPreserved": true,
+        "output": "src/Hangfire.Core/Dashboard/Pages/_SidebarMenu.cshtml.cs",
+        "checkedInOutputSha256": "a60a0bc89ada13b96c1fe6b0345306dc22f475fb3ca4267cea7299f3c323c09d"
+      }
+    ],
+    "generatorPackagePayload": [
+      {
+        "path": "_rels/.rels",
+        "size": 507,
+        "sha256": "e65a9e4dca8714c0a3d906b047566b1babe1a33a765295d31d7ad98e49d61a02"
+      },
+      {
+        "path": "RazorGenerator.MsBuild.nuspec",
+        "size": 866,
+        "sha256": "c906572fcf6b59f4241d627c8183a6ef13743a13f38ae1cbd4f37ee7ef1c645a"
+      },
+      {
+        "path": "build/RazorGenerator.MsBuild.targets",
+        "size": 3020,
+        "sha256": "df95066668fa288f189e3e93dbf6cdfc348bac88ae792645b3e4d837ce7fb3e0"
+      },
+      {
+        "path": "tools/RazorGenerator.Core.dll",
+        "size": 23040,
+        "sha256": "50ca0f01b3280ab7a8b5e993d4b7892c02ff0a36802e9286ea317bbf9b8df8b4"
+      },
+      {
+        "path": "tools/v1/Microsoft.Web.Infrastructure.dll",
+        "size": 45416,
+        "sha256": "fe18f4259c947c1fd6d74f1827370e72d7ad09aefb4b720af227333583e0169f"
+      },
+      {
+        "path": "tools/v1/RazorGenerator.Core.v1.dll",
+        "size": 26624,
+        "sha256": "04c1edb6072749e798959f566c689c65c0b0cb78385310e32e2f7db8150b6cfb"
+      },
+      {
+        "path": "tools/v1/System.Web.Mvc.dll",
+        "size": 445280,
+        "sha256": "e296e80285b315f5f6320a18ab713e85b143f487304dac04a1f86e67b0dae011"
+      },
+      {
+        "path": "tools/v1/System.Web.Razor.dll",
+        "size": 178536,
+        "sha256": "78438397669ef90dea8f71576744cc1259c710a7da902cb168c60649be6b20c6"
+      },
+      {
+        "path": "tools/v1/System.Web.WebPages.Deployment.dll",
+        "size": 25960,
+        "sha256": "130fe2b8282263c77d9bee89d636166848291432696c449d708c819b17bf053a"
+      },
+      {
+        "path": "tools/v1/System.Web.WebPages.dll",
+        "size": 136552,
+        "sha256": "1d0a33125cccaec0042175c42a8bdb5292aae7927bb9b6793671bb2d8c66c47d"
+      },
+      {
+        "path": "tools/v1/System.Web.WebPages.Razor.dll",
+        "size": 37224,
+        "sha256": "ac9eee6c9a15a95c2c27851f3ae26b136335d9887c10e52511f51476dce6f59e"
+      },
+      {
+        "path": "tools/v2/Microsoft.Web.Infrastructure.dll",
+        "size": 45416,
+        "sha256": "fe18f4259c947c1fd6d74f1827370e72d7ad09aefb4b720af227333583e0169f"
+      },
+      {
+        "path": "tools/v2/RazorGenerator.Core.v2.dll",
+        "size": 26624,
+        "sha256": "508f9e2a1c31c83a2fb514aa3f880c8c08fe612f575a0901370792ca039d13ae"
+      },
+      {
+        "path": "tools/v2/System.Web.Mvc.dll",
+        "size": 506976,
+        "sha256": "5dc4e38ac4b2df151a9cd3bef3e60770511be9ca9cc050cc123b5fb5b717ae5a"
+      },
+      {
+        "path": "tools/v2/System.Web.Razor.dll",
+        "size": 264792,
+        "sha256": "9bd41c16f1df358b60c76eb8aca4aa879acf581fd12833b4073f24762be265c1"
+      },
+      {
+        "path": "tools/v2/System.Web.WebPages.Deployment.dll",
+        "size": 41048,
+        "sha256": "4b6a3efb03f142a18817397a2c4e7a5fc21ce4a9e0a751bb2d6ccc0497fb0301"
+      },
+      {
+        "path": "tools/v2/System.Web.WebPages.dll",
+        "size": 204400,
+        "sha256": "c4eeb99435283f03e71dddf2e1035647c0928a4e7f1043dce3cbaea9e7032b35"
+      },
+      {
+        "path": "tools/v2/System.Web.WebPages.Razor.dll",
+        "size": 39536,
+        "sha256": "36390d195d290cedffeb931825402664fa2f67e037076c7b6ed096bda63b7ef9"
+      },
+      {
+        "path": "tools/v3/Microsoft.Web.Infrastructure.dll",
+        "size": 45416,
+        "sha256": "fe18f4259c947c1fd6d74f1827370e72d7ad09aefb4b720af227333583e0169f"
+      },
+      {
+        "path": "tools/v3/RazorGenerator.Core.v3.dll",
+        "size": 26624,
+        "sha256": "e691e59ae069058b892ec2564b92fb7273a0361d5d63dc2fd34afe7eb6b57754"
+      },
+      {
+        "path": "tools/v3/System.Web.Helpers.dll",
+        "size": 139976,
+        "sha256": "882a4f7af4425f41805925fc9a2aa77726ecae618b00315d1d6e9541b4977a56"
+      },
+      {
+        "path": "tools/v3/System.Web.Mvc.dll",
+        "size": 566472,
+        "sha256": "d216c993edf6672b9cd91f59f5a0c85c2d0b9f3398d086f4f6b05c97c13d3ee2"
+      },
+      {
+        "path": "tools/v3/System.Web.Razor.dll",
+        "size": 272072,
+        "sha256": "0f9e8f8741097e3da70e27368b3c5af469c1a58f249677442cb2c0fba6a7a85b"
+      },
+      {
+        "path": "tools/v3/System.Web.WebPages.Deployment.dll",
+        "size": 41672,
+        "sha256": "44ec4482f01b7adc5b52bc00f48bcb21acde68b49552446ddab570dae4e3cc99"
+      },
+      {
+        "path": "tools/v3/System.Web.WebPages.dll",
+        "size": 211656,
+        "sha256": "908b6a0359ca8547a8cb3ec719f1b3046ad67197851fd6ba49aafbc110757a1d"
+      },
+      {
+        "path": "tools/v3/System.Web.WebPages.Razor.dll",
+        "size": 39624,
+        "sha256": "060be52e12fd0d2ccd44dee11d5ccb049e1a38903b63368f0f0d286bcdb1c945"
+      },
+      {
+        "path": "tools/RazorGenerator.MsBuild.dll",
+        "size": 8704,
+        "sha256": "b45e0e1c611c52095c93f794e0407b0eb60fbd28a8903fe52704888b436907af"
+      },
+      {
+        "path": "package/services/metadata/core-properties/c0d561e755b042eeaddf5e43cd9b1cb8.psmdcp",
+        "size": 689,
+        "sha256": "1951d113119ba3994af13a7b09fb4afad33e651fbe17342812473973806c5726"
+      },
+      {
+        "path": "[Content_Types].xml",
+        "size": 511,
+        "sha256": "bf0bebd6de59745505808db8a01c85c2174f5c5315085abb9674ee0902ec1565"
+      },
+      {
+        "path": ".signature.p7s",
+        "size": 9475,
+        "sha256": "800ff94434e487fb1a597e2bef3863854e5735e5b2015003d5bba7540dc8f0fd"
+      }
+    ],
+    "assemblies": [
+      {
+        "path": "tools/RazorGenerator.Core.dll",
+        "name": "RazorGenerator.Core",
+        "version": "2.0.0.0",
+        "sha256": "50ca0f01b3280ab7a8b5e993d4b7892c02ff0a36802e9286ea317bbf9b8df8b4"
+      },
+      {
+        "path": "tools/RazorGenerator.MsBuild.dll",
+        "name": "RazorGenerator.MsBuild",
+        "version": "2.0.0.0",
+        "sha256": "b45e0e1c611c52095c93f794e0407b0eb60fbd28a8903fe52704888b436907af"
+      },
+      {
+        "path": "tools/v1/Microsoft.Web.Infrastructure.dll",
+        "name": "Microsoft.Web.Infrastructure",
+        "version": "1.0.0.0",
+        "sha256": "fe18f4259c947c1fd6d74f1827370e72d7ad09aefb4b720af227333583e0169f"
+      },
+      {
+        "path": "tools/v1/RazorGenerator.Core.v1.dll",
+        "name": "RazorGenerator.Core.v1",
+        "version": "2.0.0.0",
+        "sha256": "04c1edb6072749e798959f566c689c65c0b0cb78385310e32e2f7db8150b6cfb"
+      },
+      {
+        "path": "tools/v1/System.Web.Mvc.dll",
+        "name": "System.Web.Mvc",
+        "version": "3.0.0.0",
+        "sha256": "e296e80285b315f5f6320a18ab713e85b143f487304dac04a1f86e67b0dae011"
+      },
+      {
+        "path": "tools/v1/System.Web.Razor.dll",
+        "name": "System.Web.Razor",
+        "version": "1.0.0.0",
+        "sha256": "78438397669ef90dea8f71576744cc1259c710a7da902cb168c60649be6b20c6"
+      },
+      {
+        "path": "tools/v1/System.Web.WebPages.Deployment.dll",
+        "name": "System.Web.WebPages.Deployment",
+        "version": "1.0.0.0",
+        "sha256": "130fe2b8282263c77d9bee89d636166848291432696c449d708c819b17bf053a"
+      },
+      {
+        "path": "tools/v1/System.Web.WebPages.Razor.dll",
+        "name": "System.Web.WebPages.Razor",
+        "version": "1.0.0.0",
+        "sha256": "ac9eee6c9a15a95c2c27851f3ae26b136335d9887c10e52511f51476dce6f59e"
+      },
+      {
+        "path": "tools/v1/System.Web.WebPages.dll",
+        "name": "System.Web.WebPages",
+        "version": "1.0.0.0",
+        "sha256": "1d0a33125cccaec0042175c42a8bdb5292aae7927bb9b6793671bb2d8c66c47d"
+      },
+      {
+        "path": "tools/v2/Microsoft.Web.Infrastructure.dll",
+        "name": "Microsoft.Web.Infrastructure",
+        "version": "1.0.0.0",
+        "sha256": "fe18f4259c947c1fd6d74f1827370e72d7ad09aefb4b720af227333583e0169f"
+      },
+      {
+        "path": "tools/v2/RazorGenerator.Core.v2.dll",
+        "name": "RazorGenerator.Core.v2",
+        "version": "2.0.0.0",
+        "sha256": "508f9e2a1c31c83a2fb514aa3f880c8c08fe612f575a0901370792ca039d13ae"
+      },
+      {
+        "path": "tools/v2/System.Web.Mvc.dll",
+        "name": "System.Web.Mvc",
+        "version": "4.0.0.0",
+        "sha256": "5dc4e38ac4b2df151a9cd3bef3e60770511be9ca9cc050cc123b5fb5b717ae5a"
+      },
+      {
+        "path": "tools/v2/System.Web.Razor.dll",
+        "name": "System.Web.Razor",
+        "version": "2.0.0.0",
+        "sha256": "9bd41c16f1df358b60c76eb8aca4aa879acf581fd12833b4073f24762be265c1"
+      },
+      {
+        "path": "tools/v2/System.Web.WebPages.Deployment.dll",
+        "name": "System.Web.WebPages.Deployment",
+        "version": "2.0.0.0",
+        "sha256": "4b6a3efb03f142a18817397a2c4e7a5fc21ce4a9e0a751bb2d6ccc0497fb0301"
+      },
+      {
+        "path": "tools/v2/System.Web.WebPages.Razor.dll",
+        "name": "System.Web.WebPages.Razor",
+        "version": "2.0.0.0",
+        "sha256": "36390d195d290cedffeb931825402664fa2f67e037076c7b6ed096bda63b7ef9"
+      },
+      {
+        "path": "tools/v2/System.Web.WebPages.dll",
+        "name": "System.Web.WebPages",
+        "version": "2.0.0.0",
+        "sha256": "c4eeb99435283f03e71dddf2e1035647c0928a4e7f1043dce3cbaea9e7032b35"
+      },
+      {
+        "path": "tools/v3/Microsoft.Web.Infrastructure.dll",
+        "name": "Microsoft.Web.Infrastructure",
+        "version": "1.0.0.0",
+        "sha256": "fe18f4259c947c1fd6d74f1827370e72d7ad09aefb4b720af227333583e0169f"
+      },
+      {
+        "path": "tools/v3/RazorGenerator.Core.v3.dll",
+        "name": "RazorGenerator.Core.v3",
+        "version": "2.0.0.0",
+        "sha256": "e691e59ae069058b892ec2564b92fb7273a0361d5d63dc2fd34afe7eb6b57754"
+      },
+      {
+        "path": "tools/v3/System.Web.Helpers.dll",
+        "name": "System.Web.Helpers",
+        "version": "3.0.0.0",
+        "sha256": "882a4f7af4425f41805925fc9a2aa77726ecae618b00315d1d6e9541b4977a56"
+      },
+      {
+        "path": "tools/v3/System.Web.Mvc.dll",
+        "name": "System.Web.Mvc",
+        "version": "5.2.3.0",
+        "sha256": "d216c993edf6672b9cd91f59f5a0c85c2d0b9f3398d086f4f6b05c97c13d3ee2"
+      },
+      {
+        "path": "tools/v3/System.Web.Razor.dll",
+        "name": "System.Web.Razor",
+        "version": "3.0.0.0",
+        "sha256": "0f9e8f8741097e3da70e27368b3c5af469c1a58f249677442cb2c0fba6a7a85b"
+      },
+      {
+        "path": "tools/v3/System.Web.WebPages.Deployment.dll",
+        "name": "System.Web.WebPages.Deployment",
+        "version": "3.0.0.0",
+        "sha256": "44ec4482f01b7adc5b52bc00f48bcb21acde68b49552446ddab570dae4e3cc99"
+      },
+      {
+        "path": "tools/v3/System.Web.WebPages.Razor.dll",
+        "name": "System.Web.WebPages.Razor",
+        "version": "3.0.0.0",
+        "sha256": "060be52e12fd0d2ccd44dee11d5ccb049e1a38903b63368f0f0d286bcdb1c945"
+      },
+      {
+        "path": "tools/v3/System.Web.WebPages.dll",
+        "name": "System.Web.WebPages",
+        "version": "3.0.0.0",
+        "sha256": "908b6a0359ca8547a8cb3ec719f1b3046ad67197851fd6ba49aafbc110757a1d"
+      }
+    ],
+    "declaredDependencies": [],
+    "masterTaskSourceReference": {
+      "url": "https://github.com/RazorGenerator/RazorGenerator/blob/master/RazorGenerator.MsBuild/RazorGenerator.cs",
+      "blob": "3d1649ddda7159484af4b33c66bfc58c0331c1d9",
+      "boundToPackage250": false
+    },
+    "existingPdbRazorDocumentsWithoutChecksum": 22,
+    "pageWithoutExistingRazorPdbDocument": "_ErrorAlert.cshtml",
+    "generationExecuted": false,
+    "msbuildTaskAssemblyReferences": [
+      {
+        "name": "mscorlib",
+        "version": "4.0.0.0",
+        "publicKeyToken": "b77a5c561934e089"
+      },
+      {
+        "name": "Microsoft.Build.Utilities.v4.0",
+        "version": "4.0.0.0",
+        "publicKeyToken": "b03f5f7f11d50a3a"
+      },
+      {
+        "name": "System",
+        "version": "4.0.0.0",
+        "publicKeyToken": "b77a5c561934e089"
+      },
+      {
+        "name": "Microsoft.Build.Framework",
+        "version": "4.0.0.0",
+        "publicKeyToken": "b03f5f7f11d50a3a"
+      },
+      {
+        "name": "RazorGenerator.Core",
+        "version": "2.0.0.0",
+        "publicKeyToken": ""
+      },
+      {
+        "name": "System.Core",
+        "version": "4.0.0.0",
+        "publicKeyToken": "b77a5c561934e089"
+      }
+    ]
+  },
+  "matrix": {
+    "independentRoots": 2,
+    "coreVariants": [
+      "checked-in",
+      "regenerated-lf",
+      "regenerated-crlf",
+      "marked-crlf"
+    ],
+    "sourceConfiguration": "Release",
+    "cronosBuilds": 2,
+    "coreBuilds": 8,
+    "probeConfigurations": [
+      "Debug",
+      "Release"
+    ],
+    "coldRenderProbes": 16,
+    "marker": "RADISH_RAZOR_SOURCE_PROBE_20261031",
+    "ports": [],
+    "database": null
+  },
+  "workflowProposal": {
+    "file": ".github/workflows/native-images.yml",
+    "scopeInput": "hangfire-razor",
+    "job": "hangfire-windows-razor",
+    "manualOnly": true,
+    "timeoutMinutes": 60,
+    "contentsPermission": "read",
+    "checkoutSha": "fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+    "uploadArtifactSha": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+    "artifactRetentionDays": 7,
+    "implemented": false,
+    "pushAllowed": false,
+    "dispatchAllowed": false,
+    "expectedHeadShaRequired": true
+  },
+  "localPreparation": {
+    "upstreamProjectsExecuted": false,
+    "packagesInstalled": false,
+    "sdkInstalled": false,
+    "readonlyPeReaderBuiltWithExistingSdk": "10.0.300",
+    "peInspectionOnlyNoUpstreamAssemblyLoad": true,
+    "temporaryReadersAndGitObjectStoresRemoved": true
+  },
+  "preservedEvidence": "artifacts/source-readiness/hangfire-windows-razor-20261031",
+  "openItems": [
+    "Actual Windows image / exact Full MSBuild inventory",
+    "Which Razor engine is actually loaded from package v1/v2/v3",
+    "Actual LF and CRLF regeneration / token and render differences",
+    "Generated PDB source mapping and known missing Razor checksums",
+    "Windows execution not performed; no full distribution clearance"
+  ],
+  "evidenceIndex": {
+    "files": 66,
+    "bytes": 3134458,
+    "sha256": "725a9731a29f4980805a352a10dc04fbdd6ad00b7ddc9a7e88dab0da7e6f7147"
+  }
+}
