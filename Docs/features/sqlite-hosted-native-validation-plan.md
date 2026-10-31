@@ -1,10 +1,10 @@
 # SQLite 剩余原生平台的 GitHub 托管执行方案
 
-> 2026-10-31（Asia/Shanghai），**所有者已批准并完成指定 SHA 的 push 与一次托管验证；结果为 Linux x64 通过、其余六项失败，证据与清理完成，未自动重试；发布 / 部署未执行**。准备阶段只读输入见[准备清单](../records/postgres-native-readiness-2026-10-31.json)。本机 PG 回归另按[其执行方案](./postgres-regression-execution-plan.md)推进；本地 CI 接线不等于三个原生平台已经验收。
+> 2026-10-31（Asia/Shanghai），**修正候选 `daf5a4d48d86deee2b259b1d8a76e16ec62a778a` 已按授权 push 并完成第二次独立单次验收：Linux / Intel macOS / 四个 AMD64 final 通过，Windows 在 Release 定向测试清理临时 SQLite 时有 3 项失败；七份证据与清理完整，未重试、发布或部署**。结果见[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)；当前 Windows 完整验收仍未关闭。
 
-首轮本地实现及验证见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。执行前复核发现 SHA 授权、失败证据和清理结果存在缺口；所有者已另行批准本地成组修正，现已完成并通过 38 项检查，见[执行契约修正记录](../records/sqlite-hosted-execution-contracts-2026-10-31.md)。候选 `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 已按授权 push，并完成[首次托管执行](../records/sqlite-hosted-native-run-2026-10-31.md)：Linux x64 双配置各 60 项、16 份发布、48 个冷进程通过；Windows argv、macOS SDK、非 API 探针编译依赖和 API 容器写权限问题使其余六项失败。七项证据与清理均完成；后续四类问题的本地修正已获批并完成，真实新候选仍未执行，不自动重跑。
+首轮本地实现及验证见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。执行前复核发现 SHA 授权、失败证据和清理结果存在缺口；所有者已另行批准本地成组修正，现已完成并通过 38 项检查，见[执行契约修正记录](../records/sqlite-hosted-execution-contracts-2026-10-31.md)。候选 `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 已按授权 push，并完成[首次托管执行](../records/sqlite-hosted-native-run-2026-10-31.md)：Linux x64 双配置各 60 项、16 份发布、48 个冷进程通过；Windows argv、macOS SDK、非 API 探针编译依赖和 API 容器写权限问题使其余六项失败。七项证据与清理均完成；随后四类问题已完成本地修正，并按授权完成上述第二次独立运行；历史首次结果不改写。
 
-四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；新完整 SHA 的远端执行待确认，本页继续维护执行矩阵与授权边界。
+四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；候选已完成第二次独立运行，原四类边界取得真实行为证据；Windows 新测试清理问题和其未执行部分另行确认，本页继续维护执行矩阵与授权边界。
 
 ## 1. 资源核对与目标
 
@@ -157,7 +157,7 @@ scanner 的 DB 准备与断网 archive 扫描沿用[Linux 方案第 5.4 节](./s
 
 ## 6. 远端操作的后续确认清单
 
-指定 SHA `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 的 push 和一次 dispatch 已按授权完成，见首次执行记录。以下只保留后续候选的操作模板，不授权重复执行；新的完整 SHA、修正范围和远端执行仍需单独确认：
+两个指定 SHA 的 push 和各一次 dispatch 已按各自授权完成：`915f6359` 见首次记录，`daf5a4d4` 见[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)。以下只保留后续候选的操作模板，不授权重复执行；新的完整 SHA、修正范围和远端执行仍需单独确认：
 
 ```bash
 git push origin "$candidate:refs/heads/dev"
@@ -177,4 +177,4 @@ push 前读取最新远端 dev 并检查快进关系，禁止 force / rebase；�
 - 普通图精确比较批准的 219 项，RID 图只额外允许本 SDK 对应的指定 x64 runtime / apphost pack；所有实际输入继续留痕。generic / RID 分批完成，输出及其原始 assets、实际冷加载结果与 notices hash 分别保存。
 - 宿主执行验证 `RUNNER_ARCH`、OS / Node / dotnet / Rust 架构以及 ELF / PE / Mach-O；macOS 拒绝 Rosetta。Docker 还要求 runner 本机 Unix socket、原生 amd64 daemon 与既有 docker driver，不安装新 builder 或自动连接远端引擎。
 - 三个 native job 在正式构建前执行实际 MSBuild argv 夹具；Windows 24 组、Unix 12 组，包含驱动器根 / UNC 的 Windows 组不访问网络共享。七 job 执行新增宿主 / SDK 契约，Docker job 另执行容器身份契约；这些前置检查单独计数，不混入目标测试 / 冷进程数。
-- 本地验证包含 Node 语法、编排器 / 原门禁 / 漏洞策略契约、YAML 解析、旧 job 内容保持以及真实旧 TRX 兼容性；本轮补充的行为检查见修正记录，Windows 环境加载、编译器 x64 样本及 Rust 双配置已在首次托管运行通过，taskkill 超时路径未在本次触发；Linux 全矩阵通过，其余两平台及四个镜像尚未完成全部验收，具体停止位置与证据以首次执行记录为准。
+- 本地验证包含 Node 语法、编排器 / 原门禁 / 漏洞策略契约、YAML 解析、旧 job 内容保持以及真实旧 TRX 兼容性；本轮补充的行为检查见修正记录，Windows 环境加载、编译器 x64 样本及 Rust 双配置已在首次托管运行通过，taskkill 超时路径未在本次触发；第二次运行已完成 Linux / Intel macOS / 四 final 全矩阵；Windows 已通过参数夹具、Rust 双配置和 Release 严格构建，但 Release 测试清理有三项失败，Debug 应用构建 / publish / 冷进程未执行，具体证据以第二次记录为准。
