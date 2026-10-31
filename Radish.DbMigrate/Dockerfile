@@ -1,4 +1,6 @@
+FROM node:24-bookworm-slim AS sqlite-node
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+COPY --from=sqlite-node /usr/local/bin/node /usr/local/bin/node
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 COPY . .

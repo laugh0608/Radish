@@ -9,7 +9,7 @@
   <ItemGroup>
     <PackageReference Include="Isopoh.Cryptography.Argon2" Version="2.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.0" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="[10.0.0]" />
+    <PackageReference Include="Microsoft.Data.Sqlite.Core" Version="[10.0.0]" />
     <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.0" />
@@ -23,6 +23,8 @@
     <PackageReference Include="Serilog.Sinks.Async" Version="2.1.0" />
     <PackageReference Include="Serilog.Sinks.PeriodicBatching" Version="5.0.0" />
     <PackageReference Include="SqlSugarCoreNoDrive" Version="[5.1.4.207]" />
+    <PackageReference Include="SQLitePCLRaw.config.e_sqlite3" Version="[3.0.3]" />
+    <PackageReference Include="SQLitePCLRaw.lib.e_sqlite3" Version="[3.53.3]" />
     <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="SystemCommon" Version="[8.5.0]" />

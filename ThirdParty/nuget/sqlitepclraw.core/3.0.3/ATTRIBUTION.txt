@@ -1,0 +1,22 @@
+SQLitePCLRaw.core 3.0.3
+Authors: Eric Sink
+Copyright: Copyright 2014-2025 SourceGear, LLC
+Package license metadata: expression:Apache-2.0
+Project: https://github.com/ericsink/SQLitePCL.raw
+Package source commit: f3f967adafad853375597a6387cacb7573c5b343
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- LICENSE-Apache-2.0.txt (upstream-license)
+  Source: https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/f3f967adafad853375597a6387cacb7573c5b343/LICENSE.TXT [LICENSE.TXT]
+  Original SHA256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+  Distributed SHA256: cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30
+- NOTICE.txt (upstream-notice)
+  Source: https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/f3f967adafad853375597a6387cacb7573c5b343/NOTICE.TXT [NOTICE.TXT]
+  Original SHA256: 5a1ab2f670f86dd2f8d42e40a8459cc278ca6d5225a7e2a5fa3ea0184396a6d9
+  Distributed SHA256: 1ccf7f1fb53ce0402ce160838113c3d104f7b6a710f20e9379863883d581dc1e
+
+Remaining evidence:
+- No additional component-specific gap recorded in this focused material review. This is not full release clearance.

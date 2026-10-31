@@ -1,0 +1,20 @@
+<Project>
+  <PropertyGroup>
+    <RadishSqliteCheckScript>$(MSBuildThisFileDirectory)../check-sqlite-native.mjs</RadishSqliteCheckScript>
+    <RadishSqliteOutputOwner Condition="'$(MSBuildProjectName)' == 'Radish.Api' or '$(MSBuildProjectName)' == 'Radish.Auth' or '$(MSBuildProjectName)' == 'Radish.Gateway' or '$(MSBuildProjectName)' == 'Radish.DbMigrate' or '$(MSBuildProjectName)' == 'Radish.Api.Tests'">true</RadishSqliteOutputOwner>
+  </PropertyGroup>
+  <!-- Read the unfiltered assets graph, before both SDK conflict-resolution passes. -->
+  <Target Name="RadishValidateSqliteSources" BeforeTargets="_HandlePackageFileConflicts;_HandlePackageFileConflictsForPublish"
+          DependsOnTargets="ResolvePackageAssets"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <Exec Command="node &quot;$(RadishSqliteCheckScript)&quot; --assets=&quot;$(ProjectAssetsFile)&quot; --framework=&quot;$(TargetFramework)&quot; --rid=&quot;$(RuntimeIdentifier)&quot;" />
+  </Target>
+  <Target Name="RadishValidateSqliteBuildOutput" AfterTargets="CopyFilesToOutputDirectory"
+          Condition="'$(RadishSqliteOutputOwner)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <Exec Command="node &quot;$(RadishSqliteCheckScript)&quot; --assets=&quot;$(ProjectAssetsFile)&quot; --framework=&quot;$(TargetFramework)&quot; --rid=&quot;$(RuntimeIdentifier)&quot; --output=&quot;$(TargetDir)&quot; --deps=&quot;$(AssemblyName).deps.json&quot;" />
+  </Target>
+  <Target Name="RadishValidateSqlitePublishOutput" AfterTargets="Publish" DependsOnTargets="RadishValidateSqliteSources"
+          Condition="'$(RadishSqliteOutputOwner)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <Exec Command="node &quot;$(RadishSqliteCheckScript)&quot; --assets=&quot;$(ProjectAssetsFile)&quot; --framework=&quot;$(TargetFramework)&quot; --rid=&quot;$(RuntimeIdentifier)&quot; --output=&quot;$(PublishDir)&quot; --deps=&quot;$(AssemblyName).deps.json&quot;" />
+  </Target>
+</Project>

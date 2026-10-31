@@ -107,7 +107,12 @@ npm run validate:candidate
 - `check:nuget-notices` / `check:nuget-notices:self-test`
   - 前者校验重点 NuGet 材料、派生 MSBuild 映射、宿主索引与四宿主现有 assets；后者使用临时副本验证缺失、篡改、版本 / 宿主漂移、目标路径和清理边界，不 restore 或启动服务
   - 材料变更经审查后使用 `node Scripts/check-nuget-notices.mjs --write --assets` 重建派生文件；可追加 `--source-root=<原始材料目录>` 核对原始 SHA256 与规范化关系，目录布局为小写 package ID / version / 文件名
-  - 四宿主正常 build / publish 已通过 MSBuild 执行材料、版本与宿主校验，无需 Node；这里只覆盖[接线方案](../features/nuget-notices-distribution-plan.md)列明的组件，不等于全生态发行审核，也未增加独立 CI job
+  - notices 的 MSBuild 校验本身无需 Node；四宿主正常 build / publish 还执行下述 SQLite Node 门禁。材料覆盖原[接线方案](../features/nuget-notices-distribution-plan.md)及后续 SQLite 六组件，不等于全生态发行审核，也未增加独立 CI job
+- `check:sqlite-native:self-test` / `Scripts/check-sqlite-native.mjs`
+  - 自测覆盖第二来源、退出包返回、版本漂移、缺失 / 损坏 native、旧输出和 deps 不一致；`Scripts/build/sqlite-native.targets` 在 SDK 冲突消解前检查原始 assets，四宿主 / Tests build 与四宿主 publish 检查真实输出
+  - 检查使用 Node 24；四宿主 Dockerfile 的构建阶段提供 Node，最终运行镜像不增加 Node。完整版本与 SHA256 输入见 `Scripts/sqlite-native-contract.json`，不添加 ExcludeAssets、复制优先级或警告抑制来选取胜者
+  - 本机实际加载验证使用 `node Scripts/run-sqlite-runtime-probe.mjs --compile-from=<API输出> --scratch=<全新编译目录>`，再以 `--output=<宿主输出> --host=<宿主名> --scratch=<全新运行目录>` 执行；将编译目录中的探针 DLL 复制到运行目录作为输入。临时 SDK 工程无 PackageReference，沿用 SDK 默认编译策略；运行时使用原宿主 deps / runtimeconfig，探针仅暂存于原输出旁，结束即删除
+  - 探针覆盖 Microsoft / SqlSugar / 可用 EF / Hangfire 首用路径、实际模块路径与 hash；Hangfire 只在临时 storage 和专用队列执行探针成功 / 重试，不启动宿主或监听端口。它仍属于需当前任务明确授权的运行验证，不并入日常默认门禁；不同平台和最终镜像各自验收，见[SQLite 方案](../features/sqlite-native-unification-plan.md)
 - `check:sensitive-literals`
   - 扫描 Git 已跟踪文件和未忽略的工作区新文件，阻断完整 JWT、硬编码 Bearer Token 与私钥 PEM 头
   - 只报告文件、行号和规则，不回显命中值；环境变量、模板变量、占位值和 `invalid_token` 测试值不会被误判

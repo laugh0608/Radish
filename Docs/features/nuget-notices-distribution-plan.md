@@ -8,6 +8,8 @@
 
 本批覆盖 13 个已核对组件，其中 11 个属于当前 runtime 图，2 个仅构建使用；不宣称覆盖全部 226 条 NuGet 依赖或整个 .NET / Web / Flutter / Rust / 镜像生态。完整分发状态、源码提供等独立义务仍在[许可治理专题](./dependency-license-governance.md)维护。
 
+2026-10-31 按已批准的[SQLite 统一方案](./sqlite-native-unification-plan.md)追加六个 runtime 组件及其原文 / attribution，当前 catalog 共 19 个组件（17 runtime / 2 build-only）；具体输入以仓库 manifest 为准。原批次计数保留其历史含义，不扩大为全生态许可放行。
+
 ## 2. 原文与目录
 
 已按以下边界新增文件，实施未安装包、下载或执行第三方代码：

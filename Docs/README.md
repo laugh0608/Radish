@@ -45,7 +45,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [本地运行与排障手册](./guide/operations-runbook.md)
 - [全项目统一日志与跨容器汇聚专题（L1 实施中）](./features/unified-logging-governance-design.md)
 - [第三方依赖许可治理与替代方案](./features/dependency-license-governance.md)
-- [SQLite 原生依赖统一与构建产物一致性方案](./features/sqlite-native-unification-plan.md)：两条 native 链核对、精确候选、回退与平台验证矩阵，待确认后实施。
+- [SQLite 原生依赖统一方案](./features/sqlite-native-unification-plan.md) · [实施与本机验证](./records/sqlite-native-unification-2026-10-31.md)：单一 native 来源、限定门禁、分发材料与其他平台边界。
 - [图片替代后的依赖评估与映射迁移方案](./features/post-image-dependency-assessment.md)
 - [ORM 与 Redis 依赖评估](./features/orm-redis-dependency-assessment.md)：精确包、分发边界、缓存数据分类与候选实验停止线。
 - [NoDrive 与 Valkey 隔离验证方案](./features/nodrive-valkey-isolation-validation-plan.md)：本次隔离实验的固定输入、对照矩阵、启动与清理边界。

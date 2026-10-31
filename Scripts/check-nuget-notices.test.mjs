@@ -20,7 +20,7 @@ test('normalization retains wording and internal paragraphs', () => {
 });
 
 test('reviewed catalog and all derived artifacts agree', () => {
-  assert.equal(checkNotices(repositoryRoot).components, 13);
+  assert.equal(checkNotices(repositoryRoot).components, 19);
 });
 
 test('catalog rejects conflicting destinations and traversal before reading files', () => {
@@ -145,7 +145,7 @@ test('MSBuild copies exactly the host materials and replaces stale owned output'
         assert.equal(readFileSync(other, 'utf8'), 'keep');
         const published = JSON.parse(readFileSync(path.join(notices, 'manifest.json')));
         assert.equal(published.host, 'Radish.Gateway');
-        assert.equal(published.components.length, 6);
+        assert.equal(published.components.length, 11);
         assert.equal(existsSync(path.join(notices, 'riok.mapperly')), false);
         assert.equal(existsSync(path.join(notices, 'hangfire.core')), false);
         for (const file of published.files) {

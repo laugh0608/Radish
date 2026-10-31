@@ -1,6 +1,6 @@
 # SQLite 原生依赖统一与构建产物一致性方案
 
-> 2026-10-31（Asia/Shanghai），**待项目所有者确认，尚未实施**。本轮只核对已有依赖图、包内文件、SDK 规则和本机既有输出，并读取官方候选包；未 restore、build、publish、访问数据库或启动服务。
+> 2026-10-31（Asia/Shanghai），**依赖 / 门禁 / 材料与本机批次已完成**，结果见[实施记录](../records/sqlite-native-unification-2026-10-31.md)。方案与只读证据已先提交为 `5c676296`；本轮授权依赖统一、限定门禁、分发材料及本机 restore / build / test / publish，随后单独批准三份 Dockerfile 的 Node 构建阶段接线。不包含容器执行、VM、发布或部署。
 >
 > 建议：采用 Microsoft SQLite `.Core` 包、SQLitePCLRaw `config 3.0.3` 与唯一 native 包 `SQLitePCLRaw.lib.e_sqlite3 [3.53.3]`，移除引入第二套 native 的 `bundle_e_sqlite3 / SourceGear.sqlite3` 链。保留现有 ORM、EF、Hangfire provider 和数据库支持边界。
 
@@ -16,9 +16,9 @@
 | `Radish.Extension` | `bundle_e_sqlite3 3.0.3 → config.e_sqlite3 3.0.3 + SourceGear.sqlite3 3.50.4.5` | 后者提供实际 SQLite **3.50.4** |
 | Microsoft / Hangfire 传递链 | `Microsoft.Data.Sqlite 10.0.0` 与 EF SQLite 包要求 `bundle_e_sqlite3 >= 2.1.11`；`Hangfire.Storage.SQLite 0.4.2 → sqlite-net-pcl 1.8.116 → bundle_green 2.0.4 → lib.e_sqlite3 >= 2.0.4` | Microsoft 的 bundle 在不同项目图解析为 2.1.11 或 3.0.3；Hangfire 保留旧 native 包 ID 的要求 |
 
-当前 net10.0 图中，旧 native 包有 29 项 runtimeTargets，SourceGear 包有 31 项，其中 **29 个路径重叠**。因此，只删除全局旧包引用，API / Tests 仍会因 Hangfire 引回旧 native；只把 SourceGear 加到 Gateway，也会扩大双链，均不能作为统一方案。
+调查时的 net10.0 图中，旧 native 包有 29 项 runtimeTargets，SourceGear 包有 31 项，其中 **29 个路径重叠**。因此，只删除全局旧包引用，API / Tests 仍会因 Hangfire 引回旧 native；只把 SourceGear 加到 Gateway，也会扩大双链，均不能作为统一方案。
 
-| 当前项目图 | bundle / core / provider.e_sqlite3 | native 包 |
+| 调查时项目图 | bundle / core / provider.e_sqlite3 | native 包 |
 | --- | --- | --- |
 | API、Auth、DbMigrate、Tests | 3.0.3 | lib.e_sqlite3 3.50.3 + SourceGear 3.50.4.5 |
 | Gateway、Common 及多数下层库 | 2.1.11 | lib.e_sqlite3 3.50.3 |
@@ -45,7 +45,7 @@ API / Tests 另保留 `bundle_green 2.0.4`、`provider.dynamic_cdecl 2.0.4`；�
 | `Radish.Common.csproj` | 将 `Microsoft.Data.Sqlite` 换成 `Microsoft.Data.Sqlite.Core` | `[10.0.0]`，保留同一 `Microsoft.Data.Sqlite.dll` 实现 |
 | 同上 | 显式加入 provider 初始化配置包 | `SQLitePCLRaw.config.e_sqlite3 [3.0.3]` |
 | 同上 | 显式加入唯一 native 包，正常向消费者传递 | `SQLitePCLRaw.lib.e_sqlite3 [3.53.3]`，不设置 `PrivateAssets=all` |
-| `Radish.Auth.Persistence.csproj`、`Radish.Auth.Migrations.Sqlite.csproj` | 将 `Microsoft.EntityFrameworkCore.Sqlite` 换成 `.Sqlite.Core` | `[10.0.0]`，不更换 EF provider 程序集或迁移模型 |
+| `Radish.Auth.csproj`、`Radish.Auth.Persistence.csproj`、`Radish.Auth.Migrations.Sqlite.csproj` | 将 `Microsoft.EntityFrameworkCore.Sqlite` 换成 `.Sqlite.Core` | `[10.0.0]`，不更换 EF provider 程序集或迁移模型 |
 | `Radish.Extension.csproj` | 删除 `bundle_e_sqlite3 3.0.3` 引用 | 既有 `Batteries_V2.Init()` 从 Common 传递的 config 包取得 |
 | `Directory.Build.props` | 删除旧 native 版本属性与逐项目 PackageReference ItemGroup | native 来源归 Common，不再对无关项目注入全局覆盖 |
 | 托管传递输入 | core / provider.e_sqlite3 由 config 引入 | 两者预期均为 **3.0.3**；与批准图不符即停止 |
@@ -81,7 +81,7 @@ Microsoft 官方支持使用 [Microsoft.Data.Sqlite.Core 自选原生库](https:
 ## 3. 影响范围与实现边界
 
 - **四宿主**：API 的业务 SQLite / Hangfire；Auth 的业务 SQLite / EF OpenIddict；DbMigrate 的 schema / OpenIddict；Gateway 继承 Common 的数据库驱动资产，即使不主动打开 SQLite，也必须核对其独立输出。
-- **下层库与测试**：触达 Common 消费者和两个 EF 项目，Tests 同时引用四宿主，必须补独立进程 / 产物验证，避免聚合测试图掩盖 Gateway 单独依赖错误。
+- **下层库与测试**：触达 Common 消费者和三处 EF 引用，Tests 同时引用四宿主，必须补独立进程 / 产物验证，避免聚合测试图掩盖 Gateway 单独依赖错误。
 - **托管初始化**：保留 `SqlSugarSetup.EnsureSqliteProviderInitialized`；验证 Microsoft.Data.Sqlite 反射发现 batteries、EF 先用、Hangfire 先用及 SqlSugar 先用的独立冷进程路径。若需改宿主启动逻辑或 provider 注册顺序，视为方案变化，先报告再确认。
 - **正式服务平台**：`osx-arm64 / osx-x64 / win-x64 / linux-x64 / linux-arm64`。Linux 最终容器沿用 glibc 路线。通用输出中其他 RID 文件也须逐项匹配唯一包，但不因此承诺新增平台支持。
 - **产品边界**：不修改 Web / Flutter 依赖、移动端 SQLite、Rust 图片 ABI、数据库配置语义、业务 schema、根 LICENSE、Compose 或生产数据库。
@@ -95,7 +95,7 @@ Microsoft 官方支持使用 [Microsoft.Data.Sqlite.Core 自选原生库](https:
 
 1. 在还原图中检查精确输入、退出包与同名 native 来源。所有消费 Common 的图只允许一个 native 包；green / dynamic provider 保留项单独列明。
 2. 在 SDK 冲突消解前检查 SQLite native 的来源，不能只查看已经过滤后的胜出文件；发现第二个来源或不同 hash 的同目标路径立即失败，不设置新 override。
-3. build 与 publish 分别核对实际输出，记录源包、RID、路径、size、SHA256；通用输出检查所有实际复制的 native，RID 输出检查对应目标文件，拒绝旧输出残留。
+3. build 与 publish 分别核对实际输出，记录源包、RID、路径、size、SHA256；通用输出检查本次输出根与自身 runtimes 子树中的 native，RID 输出检查对应目标文件，拒绝旧输出残留。SDK 嵌套在通用目录下的其他 RID / publish 输出由各自门禁验证，不能混算。
 4. 检查 `.deps.json` 与复制文件一致；它是辅助证据，不能代替文件 hash。额外核对实际加载的 batteries / core / provider 来源。
 5. 独立进程在原输出旁运行探针，记录 .NET 实际加载模块路径 / hash、`sqlite3_libversion()`、source ID，并通过 Microsoft.Data.Sqlite / SqlSugar / EF / sqlite-net 查询 `sqlite_version()`。不能从临时目录显式加载包文件后，反推宿主加载已经正确。
 6. 同 RID 的 Debug、Release、Tests、四宿主 build / publish，以及普通 publish / `--no-build` 的 native hash 必须一致；跨 RID 只比较各自批准 hash，不能要求不同架构逐字节相同。
@@ -104,7 +104,7 @@ Microsoft 官方支持使用 [Microsoft.Data.Sqlite.Core 自选原生库](https:
 
 ## 5. 验证矩阵与结论分层
 
-所有条目目前均为**拟执行**。先完成本机开发验证；其余平台只在对应条件及运行授权齐备后执行。未执行项明确保持未关闭。
+下表定义验收口径；本轮实际结果由实施记录维护。先完成本机开发验证；其余平台只在对应条件及运行授权齐备后执行。未执行项明确保持未关闭。
 
 | 层次 | 目标 / 配置 | 核对内容与通过条件 |
 | --- | --- | --- |
@@ -128,7 +128,7 @@ Microsoft 官方支持使用 [Microsoft.Data.Sqlite.Core 自选原生库](https:
 
 ## 6. 执行顺序、命令与授权边界
 
-确认本方案后才进行以下实现。本轮没有执行这些命令：
+以下为本轮已经确认的实现与命令范围，执行事实由实施记录维护；未来任务不沿用本轮的依赖 / 运行授权：
 
 1. 保存本批基线引用 / assets / native hash；在 `dev` 修改第 2 节声明、限定门禁、回归和 notices；不创建新分支。
 2. 包声明通过审阅后直接编辑 XML，不额外执行 `dotnet add package`。执行 `dotnet restore Radish.slnx --force-evaluate --warnaserror`，仅使用仓库 NuGet.Config 的 nuget.org 与 `.nuget/packages`；HTTP 缓存放本批临时目录。不新增永久 lockfile 策略、不写用户全局缓存。
@@ -147,8 +147,8 @@ Microsoft 官方支持使用 [Microsoft.Data.Sqlite.Core 自选原生库](https:
 - **数据库回退**：本批仅接触临时夹具，不更改既有数据库。停止并释放所有连接 / worker 后，清理本批数据库、WAL / SHM 和探针文件；不删除其他数据库的 WAL / SHM。将来若部署新 native，必须另做停写备份与恢复方案，不能把文件格式兼容等同数据恢复保证。
 - **资源清理**：保留候选 hashes、依赖图、探针源码 / 日志和审阅材料；精确清理本批临时进程与运行数据。NuGet 包是正常缓存，不通过删除 / 改写缓存内容控制选择。
 
-## 8. 本轮待确认的具体范围
+## 8. 本轮确认与独立边界
 
-请求确认第 2 节精确依赖与元包替换、第 4 节限定门禁及 notices，以及第 5 节本机无服务回归 / 第 6 节仓库 restore、build、test、publish 范围。**确认前不实施**；确认本方案不自动授权安装工具链、启动服务 / 容器 / VM、访问生产、推送、PR、tag、镜像发布或部署。
+项目所有者已确认第 2 节精确依赖与元包替换、第 4 节限定门禁及 notices，以及第 5 节本机无服务回归 / 第 6 节仓库 restore、build、test、publish 范围；随后单独批准 Auth / Gateway / DbMigrate Dockerfile 各增加两行，从现有 `node:24-bookworm-slim` 复制 Node 到 build 阶段，最终运行镜像不增加 Node。本轮不安装新工具链，不启动项目服务 / 容器 / VM，不访问生产，也不推送、创建 PR / tag、发布镜像或部署。
 
-本轮只读调查已完成；正式源码 / 依赖 / 构建接线未改。下一步由项目所有者确认上述方案后进入实施，其他独立发行与服务迁移事项继续按[当前顺位](../planning/current.md)推进。
+其他平台验证、完整源码 / 发行材料与服务迁移事项继续按[当前顺位](../planning/current.md)独立推进。本机证据不替代这些边界。

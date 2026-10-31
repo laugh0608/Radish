@@ -1,0 +1,18 @@
+Microsoft.Data.Sqlite.Core 10.0.0
+Authors: Microsoft
+Copyright: © Microsoft Corporation. All rights reserved.
+Package license metadata: expression:MIT
+Project: https://docs.microsoft.com/dotnet/standard/data/sqlite/
+Package source commit: b0f34d51fccc69fd334253924abd8d6853fad7aa
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- LICENSE-MIT.txt (upstream-license)
+  Source: https://raw.githubusercontent.com/dotnet/dotnet/b0f34d51fccc69fd334253924abd8d6853fad7aa/src/efcore/LICENSE.txt [src/efcore/LICENSE.txt]
+  Original SHA256: ae48df11a335dc1a615f4f938b69cba73bcf4485c4f97af49b38efb0f216353b
+  Distributed SHA256: cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310
+
+Remaining evidence:
+- No additional component-specific gap recorded in this focused material review. This is not full release clearance.

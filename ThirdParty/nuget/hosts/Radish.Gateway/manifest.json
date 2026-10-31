@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "host": "Radish.Gateway",
-  "scope": "13 reviewed NuGet components only; this is not complete redistribution clearance.",
+  "scope": "19 reviewed NuGet components only; this is not complete redistribution clearance.",
   "components": [
     {
       "package": "Isopoh.Cryptography.Argon2",
@@ -197,6 +197,172 @@
           "sha256": "a901a4a8487ad7bd1e8b0ef562f9791e725a4e4c43b5012409085f1fac580584"
         }
       ]
+    },
+    {
+      "package": "SQLitePCLRaw.lib.e_sqlite3",
+      "version": "3.53.3",
+      "authors": "Eric Sink",
+      "copyright": "Copyright 2014-2026 SourceGear, LLC",
+      "licenseMetadata": "file:LICENSE.txt",
+      "projectUrl": "https://sqlite.org/",
+      "repositoryCommit": "e7d537a1576bac9d7452411c4468640fa730de3e",
+      "nuspecSha256": "a9ada8f3c708991b46e236b5900e5ef49bc8635eb8d76631b42bb755c0276a6e",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [],
+      "files": [
+        {
+          "path": "LICENSE.txt",
+          "source": "https://api.nuget.org/v3-flatcontainer/sqlitepclraw.lib.e_sqlite3/3.53.3/sqlitepclraw.lib.e_sqlite3.3.53.3.nupkg",
+          "sourcePath": "LICENSE.txt",
+          "role": "package-license",
+          "sourceSha256": "99464c3a88df7b708ce59e462cdcb85f72dfc9b1335b4fcc68be56131b634b95",
+          "sha256": "6ea0f46456e631703902146c937a94c7664d433b0671cd1c75af19a87de02fe9"
+        }
+      ]
+    },
+    {
+      "package": "SQLitePCLRaw.config.e_sqlite3",
+      "version": "3.0.3",
+      "authors": "Eric Sink",
+      "copyright": "Copyright 2014-2026 SourceGear, LLC",
+      "licenseMetadata": "expression:Apache-2.0",
+      "projectUrl": "https://github.com/ericsink/SQLitePCL.raw",
+      "repositoryCommit": "96043b8cff323f21919df86a431c136655d81b4a",
+      "nuspecSha256": "edd55a8d7d5c2b2bc825d0b98bedc02dbc271b5a4cb37e5daef9fd6f41e51b73",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [
+        "Package metadata records config commit 96043b8cff323f21919df86a431c136655d81b4a; Apache license and NOTICE are preserved from the 3.0.3 release commit. This does not establish byte-for-byte source rebuild correspondence."
+      ],
+      "files": [
+        {
+          "path": "LICENSE-Apache-2.0.txt",
+          "source": "https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/f3f967adafad853375597a6387cacb7573c5b343/LICENSE.TXT",
+          "sourcePath": "LICENSE.TXT",
+          "role": "upstream-license",
+          "sourceSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "NOTICE.txt",
+          "source": "https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/f3f967adafad853375597a6387cacb7573c5b343/NOTICE.TXT",
+          "sourcePath": "NOTICE.TXT",
+          "role": "upstream-notice",
+          "sourceSha256": "5a1ab2f670f86dd2f8d42e40a8459cc278ca6d5225a7e2a5fa3ea0184396a6d9",
+          "sha256": "1ccf7f1fb53ce0402ce160838113c3d104f7b6a710f20e9379863883d581dc1e"
+        }
+      ]
+    },
+    {
+      "package": "SQLitePCLRaw.core",
+      "version": "3.0.3",
+      "authors": "Eric Sink",
+      "copyright": "Copyright 2014-2025 SourceGear, LLC",
+      "licenseMetadata": "expression:Apache-2.0",
+      "projectUrl": "https://github.com/ericsink/SQLitePCL.raw",
+      "repositoryCommit": "f3f967adafad853375597a6387cacb7573c5b343",
+      "nuspecSha256": "919536f6c822c5171cd3ffbeec2095ad0db70abf7b3a67ebd9858d25607fd15d",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [],
+      "files": [
+        {
+          "path": "LICENSE-Apache-2.0.txt",
+          "source": "https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/f3f967adafad853375597a6387cacb7573c5b343/LICENSE.TXT",
+          "sourcePath": "LICENSE.TXT",
+          "role": "upstream-license",
+          "sourceSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "NOTICE.txt",
+          "source": "https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/f3f967adafad853375597a6387cacb7573c5b343/NOTICE.TXT",
+          "sourcePath": "NOTICE.TXT",
+          "role": "upstream-notice",
+          "sourceSha256": "5a1ab2f670f86dd2f8d42e40a8459cc278ca6d5225a7e2a5fa3ea0184396a6d9",
+          "sha256": "1ccf7f1fb53ce0402ce160838113c3d104f7b6a710f20e9379863883d581dc1e"
+        }
+      ]
+    },
+    {
+      "package": "SQLitePCLRaw.provider.e_sqlite3",
+      "version": "3.0.3",
+      "authors": "Eric Sink",
+      "copyright": "Copyright 2014-2025 SourceGear, LLC",
+      "licenseMetadata": "expression:Apache-2.0",
+      "projectUrl": "https://github.com/ericsink/SQLitePCL.raw",
+      "repositoryCommit": "f3f967adafad853375597a6387cacb7573c5b343",
+      "nuspecSha256": "8ab3cfd53943c6695e22db9977b6f28e8979e8ab1bce4a7b4a70cddd9a0fe055",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [],
+      "files": [
+        {
+          "path": "LICENSE-Apache-2.0.txt",
+          "source": "https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/f3f967adafad853375597a6387cacb7573c5b343/LICENSE.TXT",
+          "sourcePath": "LICENSE.TXT",
+          "role": "upstream-license",
+          "sourceSha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+          "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+        },
+        {
+          "path": "NOTICE.txt",
+          "source": "https://raw.githubusercontent.com/ericsink/SQLitePCL.raw/f3f967adafad853375597a6387cacb7573c5b343/NOTICE.TXT",
+          "sourcePath": "NOTICE.TXT",
+          "role": "upstream-notice",
+          "sourceSha256": "5a1ab2f670f86dd2f8d42e40a8459cc278ca6d5225a7e2a5fa3ea0184396a6d9",
+          "sha256": "1ccf7f1fb53ce0402ce160838113c3d104f7b6a710f20e9379863883d581dc1e"
+        }
+      ]
+    },
+    {
+      "package": "Microsoft.Data.Sqlite.Core",
+      "version": "10.0.0",
+      "authors": "Microsoft",
+      "copyright": "© Microsoft Corporation. All rights reserved.",
+      "licenseMetadata": "expression:MIT",
+      "projectUrl": "https://docs.microsoft.com/dotnet/standard/data/sqlite/",
+      "repositoryCommit": "b0f34d51fccc69fd334253924abd8d6853fad7aa",
+      "nuspecSha256": "ab42befb78a634e50af1ce4e1b6ad39ae068f6dd7f822fba10abe117fef92814",
+      "usage": "runtime",
+      "publishHosts": [
+        "Radish.Api",
+        "Radish.Auth",
+        "Radish.Gateway",
+        "Radish.DbMigrate"
+      ],
+      "remainingEvidence": [],
+      "files": [
+        {
+          "path": "LICENSE-MIT.txt",
+          "source": "https://raw.githubusercontent.com/dotnet/dotnet/b0f34d51fccc69fd334253924abd8d6853fad7aa/src/efcore/LICENSE.txt",
+          "sourcePath": "src/efcore/LICENSE.txt",
+          "role": "upstream-license",
+          "sourceSha256": "ae48df11a335dc1a615f4f938b69cba73bcf4485c4f97af49b38efb0f216353b",
+          "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+        }
+      ]
     }
   ],
   "files": [
@@ -255,6 +421,58 @@
     {
       "path": "systemcommon/8.5.0/ATTRIBUTION.txt",
       "sha256": "7243cebf946b6e72afdfdc957a792d7c5e3d3d377414583efd2cd547de3de567"
+    },
+    {
+      "path": "sqlitepclraw.lib.e_sqlite3/3.53.3/LICENSE.txt",
+      "sha256": "6ea0f46456e631703902146c937a94c7664d433b0671cd1c75af19a87de02fe9"
+    },
+    {
+      "path": "sqlitepclraw.lib.e_sqlite3/3.53.3/ATTRIBUTION.txt",
+      "sha256": "2fef66ada4e16656bda810d4b14c388752837577f477479b77bbab423b1ba931"
+    },
+    {
+      "path": "sqlitepclraw.config.e_sqlite3/3.0.3/LICENSE-Apache-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "sqlitepclraw.config.e_sqlite3/3.0.3/NOTICE.txt",
+      "sha256": "1ccf7f1fb53ce0402ce160838113c3d104f7b6a710f20e9379863883d581dc1e"
+    },
+    {
+      "path": "sqlitepclraw.config.e_sqlite3/3.0.3/ATTRIBUTION.txt",
+      "sha256": "31f888442693f588ef1bf3bb9887e9f28fbfdd0eb5615bd2d70244ee5ca6dc2f"
+    },
+    {
+      "path": "sqlitepclraw.core/3.0.3/LICENSE-Apache-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "sqlitepclraw.core/3.0.3/NOTICE.txt",
+      "sha256": "1ccf7f1fb53ce0402ce160838113c3d104f7b6a710f20e9379863883d581dc1e"
+    },
+    {
+      "path": "sqlitepclraw.core/3.0.3/ATTRIBUTION.txt",
+      "sha256": "1a608fc0fed67d04fe4f8878a743ff134c6c5bf11e83d6c7315389a47da3fefa"
+    },
+    {
+      "path": "sqlitepclraw.provider.e_sqlite3/3.0.3/LICENSE-Apache-2.0.txt",
+      "sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    },
+    {
+      "path": "sqlitepclraw.provider.e_sqlite3/3.0.3/NOTICE.txt",
+      "sha256": "1ccf7f1fb53ce0402ce160838113c3d104f7b6a710f20e9379863883d581dc1e"
+    },
+    {
+      "path": "sqlitepclraw.provider.e_sqlite3/3.0.3/ATTRIBUTION.txt",
+      "sha256": "224becbea38c0e5862b014c209d094e12c6357c64b426b1f9aa03a19437c44dd"
+    },
+    {
+      "path": "microsoft.data.sqlite.core/10.0.0/LICENSE-MIT.txt",
+      "sha256": "cfc21f5e8bd655ae997eec916138b707b1d290b83272c02a95c9f821b8c87310"
+    },
+    {
+      "path": "microsoft.data.sqlite.core/10.0.0/ATTRIBUTION.txt",
+      "sha256": "dfa8ca7dcb9a419ea2f73c4f71eeaa33133a6e05d0b378f9dbad789f2665dd99"
     }
   ]
 }

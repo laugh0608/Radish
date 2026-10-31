@@ -52,17 +52,19 @@ Kdbndp = 6      // 金仓
 
 `BaseDbConfig` 会先检查所有启用连接的 provider，再处理 SQLite 路径；非正式类型在驱动加载前明确失败。禁用的历史条目不加载，不自动删除或改写。分库租户从数据库字段生成连接配置时也执行相同支持校验；OpenIddict / Hangfire 的独立配置解析同样只接受两种 provider。失败信息不含连接串或密码。
 
-ORM 使用 `SqlSugarCoreNoDrive 5.1.4.207`，由 Common 显式引用 `Npgsql 10.0.0`、`Microsoft.Data.Sqlite 10.0.0` 并固定 `SystemCommon 8.5.0`。这次调整减少未使用驱动，保留查询、事务与 schema 语义；SqlClient / SNI 仍随传递链存在，不构成 SQL Server 产品支持。详见[正式收缩方案](../features/nodrive-adoption-plan.md)。
+ORM 使用 `SqlSugarCoreNoDrive 5.1.4.207`，由 Common 显式引用 `Npgsql 10.0.0`、`Microsoft.Data.Sqlite.Core 10.0.0` 并固定 `SystemCommon 8.5.0`。SQLite 的 `.Core` 包保留 `Microsoft.Data.Sqlite.dll` 实现，native 选择见下一节。SqlClient / SNI 仍随传递链存在，不构成 SQL Server 产品支持。详见[正式收缩方案](../features/nodrive-adoption-plan.md)和后续[SQLite 统一方案](../features/sqlite-native-unification-plan.md)。
 
 `Slaves` 是历史配置模型，目前没有接入 `SqlSugarSetup` 的主从路由；本次 provider 收缩不新增读写分离或自动切换行为。
 
 ### SQLite 原生资产核对
 
-托管驱动版本与实际加载的 SQLite 原生版本需要分别确认。当前 `Directory.Build.props` 引用 `SQLitePCLRaw.lib.e_sqlite3 3.50.3`，而 Extension 的 `SQLitePCLRaw.bundle_e_sqlite3 3.0.3` 又引入 `SourceGear.sqlite3 3.50.4.5`；两条资产链存在同名 runtime 文件。2026-10-26 本机核对发现 Tests Release 使用 SQLite **3.50.3**，API publish 使用 **3.50.4**，详见[来源与产物记录](../records/hangfire-source-inputs-2026-10-26.md#4-新发现sqlite-测试与发布基线不同)。
+托管驱动版本与实际加载的 SQLite 原生版本需要分别确认。Common 统一引用 `SQLitePCLRaw.config.e_sqlite3 [3.0.3]` 与唯一 native `SQLitePCLRaw.lib.e_sqlite3 [3.53.3]`；托管 core / provider 解析为 3.0.3。Auth、Auth.Persistence 与 Auth.Migrations.Sqlite 使用 EF `.Sqlite.Core [10.0.0]`。不在全局 props 逐项目注入 native，不再引入 `bundle_e_sqlite3 / SourceGear.sqlite3`。
 
-因此，不能仅凭包引用、`.deps.json` 索引或测试目录结果认定发布 native 身份。排查时对照实际文件 SHA256、来源包以及运行时 `sqlite3_libversion()`；[Core 替换试验](../records/hangfire-core-replacement-2026-10-26.md)已验证当前本机 publish 的 3.50.4，但未统一两条依赖链，也不替代其他平台验证。依赖统一先按[接续事项](../planning/current.md#接下来的事项)形成方案，不能通过手工删除 DLL 或任意排除资产掩盖冲突。
+Hangfire 仍传递引入 `bundle_green 2.0.4 / provider.dynamic_cdecl 2.0.4`；其旧 native 包 ID 要求由同一个 `[3.53.3]` 满足。green 的旧 batteries 重名候选仍存在，但最终复制 / 加载必须匹配 config 3.0.3。不要将“单一 native 来源”理解为所有历史托管包均已移除。
 
-2026-10-31 的[统一方案](../features/sqlite-native-unification-plan.md)已完成只读调查并提交确认，包含 Microsoft `.Core` 替换、唯一 native 来源、初始化边界及验证矩阵；尚未实施，本节上述现用依赖事实保持有效。
+`Scripts/build/sqlite-native.targets` 在 SDK 冲突消解前校验原始 assets，并在四宿主 / Tests build、四宿主 publish 后校验实际文件及 deps；`Scripts/sqlite-native-contract.json` 固定各平台来源文件 SHA256。排查必须对照复制文件与实际加载模块路径、`sqlite3_libversion()`，不能只看 deps。Node 24 用于该检查；四宿主 Dockerfile 仅在 build 阶段提供 Node，不加入最终运行镜像。2026-10-31 本机通用 / osx-arm64 RID 产物与加载均为 3.53.3，见[实施记录](../records/sqlite-native-unification-2026-10-31.md)；其他平台运行及最终镜像仍按[统一方案](../features/sqlite-native-unification-plan.md)独立验证。
+
+旧双链曾导致本机 Tests 3.50.3、API publish 3.50.4，历史证据见[来源与产物记录](../records/hangfire-source-inputs-2026-10-26.md#4-新发现sqlite-测试与发布基线不同)。升级后首次构建若报告旧 native 残留，执行标准 `dotnet clean` 后重建；不得手改 NuGet 缓存、选择性覆盖 DLL 或关闭门禁。
 
 ## ConfigId 大小写规则
 
