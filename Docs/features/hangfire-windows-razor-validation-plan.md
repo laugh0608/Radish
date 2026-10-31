@@ -1,6 +1,6 @@
 # Hangfire Windows Razor 托管验证方案
 
-> 2026-10-31（Asia/Shanghai）。[首次 inventory](../records/hangfire-windows-razor-inventory-2026-10-31.md)已执行并因 VS 2022 查询为空停止，失败证据及清理完成。随后批准并完成[本地修复](../records/hangfire-windows-razor-inventory-repair-2026-10-31.md)：Razor 专项改为 `windows-2022` + VS 2022，修复命令身份覆盖，增加早期进度证据和 PowerShell 契约前置检查。**修复尚未 push / dispatch，Windows 实际运行与 verify 均待分别授权。**
+> 2026-10-31（Asia/Shanghai）。[首次 inventory](../records/hangfire-windows-razor-inventory-2026-10-31.md)已执行并因 VS 2022 查询为空停止，失败证据及清理完成。随后批准并完成[本地修复](../records/hangfire-windows-razor-inventory-repair-2026-10-31.md)：Razor 专项改为 `windows-2022` + VS 2022，修复命令身份覆盖，增加早期进度证据和 PowerShell 契约前置检查。修复提交 `464910ddfa5f1df076128e86fdc618742ebeee0e` 已获授权 push；[第二次 inventory](../records/hangfire-windows-razor-inventory-second-2026-10-31.md)及 8 组 PowerShell 契约、上传 / 下载校验和清理通过。**runner 初始化日志与库存 ImageVersion 不一致，身份审阅未关闭；verify 未获授权、未执行。** 随后已批准[身份诊断采集增强](../records/hangfire-windows-razor-image-identity-diagnostics-2026-10-31.md)的本地实施；新候选尚未 push / dispatch。
 
 精确源码、11 项包 / hash、SDK、23 对模板与生成文件、包内 24 DLL 仍沿用[准备 JSON](../records/hangfire-windows-razor-readiness-2026-10-31.json)。其中旧 Windows 2025 软件清单为历史准备快照；当前 runner 依据见下文第 2 节。[原本地实施](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)和[本机重建](../records/hangfire-rebuild-2026-10-31.md)的证据边界不变。
 
@@ -8,7 +8,7 @@
 
 证明固定 Hangfire 源码中的 23 个 Dashboard 模板确实由固定 RazorGenerator 再生成，并进入 Core 编译及真实片段渲染；明确 Git LF、Windows CRLF、既有生成 C#、PE / PDB 和实际输出之间的关系。
 
-本次修复确认覆盖**本地代码、测试接线、文档及本地静态检查**；不安装 PowerShell / VS、不执行 Windows 任务、不 push、不触发 runner。此前 `26ba4390752b85e06ce10043b9bfe4496c83033a` 的一次 push / inventory 授权已经执行，不沿用到修复提交。之后按新的完整 SHA 单独批准：
+当前批准覆盖**身份诊断采集增强的本地代码、契约、文档与检查**。不安装 PowerShell / VS，不以本地批准执行 Windows 任务。前两次指定 SHA 的 push / inventory 授权均已执行；不沿用为新候选或 verify 授权。诊断增强完成后，仍按以下分段确认：
 
 1. 将指定提交 push 到 `dev`，不自动执行其他工作流。
 2. 手动运行 `inventory`，采集实际 VM / Full MSBuild 精确版本和 hash；不执行上游 task。
@@ -46,7 +46,7 @@ RazorGenerator 的包版本为 2.5.0，内部 Core / MsBuild 程序集版本仍�
 
 ## 3. 精确输入及范围
 
-原 Radish 准备基线为 `762f5fbd227c46232539ee21ff93ad14a8225af4`；首次 inventory 使用 `26ba4390752b85e06ce10043b9bfe4496c83033a`。本地修复完成后另行冻结新完整提交供未来远端执行，不猜未来 SHA。
+原 Radish 准备基线为 `762f5fbd227c46232539ee21ff93ad14a8225af4`；首次 inventory 使用 `26ba4390752b85e06ce10043b9bfe4496c83033a`。第二次 inventory 使用 `464910ddfa5f1df076128e86fdc618742ebeee0e`；后续 verify 仍须重新确认精确提交与工具身份。
 
 | 源码 | Commit | Tree |
 | --- | --- | --- |
@@ -93,13 +93,23 @@ RazorGenerator 的包版本为 2.5.0，内部 Core / MsBuild 程序集版本仍�
 
 已新增 `Scripts/hangfire/windows/`：PowerShell 阶段入口、独立输入契约、只读库存 / 包验证、23 对生成检查、SDK Roslyn token / PE / PDB 比较器、无 PackageReference 的片段渲染探针及清理 / 契约测试。既有 macOS 工具保留原平台边界，不把它的 Task 初始化伪装成支持 Windows。
 
-入口初始化 owned root 后先保存 `inventory-progress.json`（schemaVersion 2 / `complete=false`）：run / attempt / head SHA、`GITHUB_WORKFLOW_SHA / REF`、runner / 进程 / OS 架构、ImageOS / ImageVersion、OS、PowerShell。然后执行 `Contracts.ps1` 的 8 组自有行为契约，成功才采集实际 VS / MSBuild；契约失败同样走 finally 清理与证据上传。
+入口初始化 owned root 后先保存 `inventory-progress.json`（schemaVersion 3 / `complete=false`）：run / attempt / head SHA、`GITHUB_WORKFLOW_SHA / REF`、runner / 进程 / OS 架构、ImageOS / ImageVersion、OS、PowerShell。随后采集下述 image 身份来源，再执行原有 8 组及新增 12 组自有行为契约，成功才采集实际 VS / MSBuild；契约失败同样走 finally 清理与证据上传。原 8 组在第二次 inventory 已通过，新增 12 组尚未实际运行。
+
+新增 `ImageIdentity.ps1` 只读采集并保存 `image-identity.json`：
+
+- 从当前 PowerShell 进程沿最多 16 层父进程定位 `Runner.Worker.exe`，核对父进程创建时间以拒绝 PID 复用，再由其 `bin` 父目录定位 `.setup_info`；不扫描磁盘或导出进程命令行。找不到、权限不足或布局不符记录 unavailable，不猜路径。
+- 读取该 `.setup_info` 与固定 `C:\imagedata.json`，拒绝目录 / 文件 reparse point，单文件最多 1 MiB；以禁止并发写入 / 删除的只读句柄读取。记录实际读取字节的 SHA256、大小、路径、最后写入时间与采集时间。缺失、过大、读取或解析错误显式分类，不填默认成功。
+- 只导出唯一 `Runner Image` 组的四项已校验字段及对应原始 detail：Image、Version、Included Software、Image Release。只接受 windows-2022 及固定官方 URL 形态，链接版本必须与字段一致。原文件全字节仅取 hash，不上传完整 `.setup_info`、内部组或未知键值；非法内容只留 hash / 分类，不输出原始文本或异常消息。
+- 环境只读 Process / Machine / User 三层 `ImageOS`、`ImageVersion`；Process / Machine 为必需项，User 未设置可为 null，存在时必须一致。文件和环境字段不互相覆盖、不按优先级选值；缺失或不一致记录 `unresolved` 与具体来源。
+- 库存记录诊断报告路径 / hash、采集时进程版本与一致性结果。保存完整工具库存后才断言一致性，因此可保留失败现场；inventory 和 verify 都会因 unresolved 失败，verify 还须通过原四项已审阅精确身份匹配。
+
+`inventory.complete=true` 只表示工具库存字段采集完成；身份门禁失败时 `result.status=failed`，不得据此宣称可用于 verify。诊断报告明确 `startupLogCompared=false`：本机读取的是采样时文件，不能证明它从 job 初始化至采样期间未变化；下载后仍须独立对照初始化日志。新运行不能倒推第二次 inventory 的旧 VM 根因。新增契约覆盖文件 hash / 白名单、非法或重复 JSON 组、额外字段、链接版本冲突、缺失 / 过大 / 编码错误、来源一致与冲突、必需来源 / OS 缺失、旧库存拒绝以及 worker 定位 / PID 复用。
 
 契约通过现有 owned command helper 启动两个本机 pwsh 子进程，分别验证成功退出与预期 exit 23，单个超时 30 秒；同时检查命令名、日志名、错误消息和环境变量互不覆盖。另用虚构 VS 记录验证零 / 一 / 多实例、VS 18 拒绝、非法 JSON 原始响应留存以及不完整库存禁止用于 verify。fixture 只写 `work/powershell-contracts` 并在 finally 删除；`powershell-contracts.json` 明确 `fixtureOnly=true`，不能当作真实工具身份。预期 exit 23 在命令记录中保留，不掩盖为 exit 0。
 
-采集过程先保存 vswhere 路径 / hash / 查询参数，再保存原始响应和解析结果，之后才做唯一实例与 17.x 校验；MSBuild / Framework 分阶段保存已取得身份。缺失字段保持 null / 未完成阶段，失败消息另存；完整检查通过后才生成 `inventory.json`（`complete=true`），进度报告始终为不完整快照。Verify 还必须通过完整库存检查及原四项已审阅身份匹配，才能获取输入或执行上游任务。`Common.ps1` 使用 `$CommandName` 与 `$environmentKey` 分离命令标识和环境变量键。
+采集过程先保存 vswhere 路径 / hash / 查询参数，再保存原始响应和解析结果，之后才做唯一实例与 17.x 校验；MSBuild / Framework 分阶段保存已取得身份。缺失字段保持 null / 未完成阶段，失败消息另存；完整检查通过后才生成 `inventory.json`（`complete=true`），进度报告始终为不完整快照。Verify 还必须通过完整库存检查、新的来源一致性门禁及原四项已审阅身份匹配，才能获取输入或执行上游任务。`Common.ps1` 使用 `$CommandName` 与 `$environmentKey` 分离命令标识和环境变量键。
 
-以下是已实现入口的**Windows 命令**，本次修复后尚未执行。任务根固定在 `$env:RUNNER_TEMP`，所有权包含 run ID / attempt / commit，禁止使用共享根目录：
+以下是已实现入口的**Windows 命令**，修复后 Inventory 已执行，Verify 尚未执行。任务根固定在 `$env:RUNNER_TEMP`，所有权包含 run ID / attempt / commit，禁止使用共享根目录：
 
 ```powershell
 $TaskId = "radish-hangfire-razor-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
@@ -187,7 +197,7 @@ PDB 逐文件核对生成 C# 的实际 checksum、嵌入字节、SourceLink 路�
 
 [GitHub 手动运行规则](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)要求 workflow 存在于默认分支，再用 ref 选择其他分支；因此不新建只能通过修改 master 才可发现的孤立工作流。未来实际触发前仍核实远端默认分支 / workflow 存在、dev 已推送提交与输入 schema，不从本地 origin/master 快照推定当时远端状态，不为执行试验自动合并 master。
 
-下列只是未来授权后的命令形态，**本轮及仅批准本地实施后均不执行**：
+下列为手动执行命令形态；已授权的第二次 inventory 已完成，**任何再次 dispatch 或 verify 仍需独立授权**：
 
 ```bash
 gh workflow run native-images.yml --repo laugh0608/Radish --ref dev \

@@ -9,8 +9,10 @@ param(
     [string]$ExpectedMsbuildSha256 = ''
 )
 . "$PSScriptRoot/Common.ps1"
+. "$PSScriptRoot/ImageIdentity.ps1"
 . "$PSScriptRoot/Inventory.ps1"
 . "$PSScriptRoot/Contracts.ps1"
+. "$PSScriptRoot/ImageIdentity.Contracts.ps1"
 . "$PSScriptRoot/Acquire.ps1"
 . "$PSScriptRoot/Sources.ps1"
 . "$PSScriptRoot/Verification.ps1"
@@ -28,6 +30,7 @@ try {
     $progress = New-WindowsInventory
     Invoke-PowerShellContracts
     $inventory = Get-WindowsInventory $progress
+    Assert-ConsistentImageIdentity $inventory
     if ($Phase -eq 'Verify') {
         Assert-ReviewedInventory $inventory $ExpectedImageVersion $ExpectedVsVersion $ExpectedMsbuildVersion $ExpectedMsbuildSha256
         Invoke-WindowsVerification $inventory

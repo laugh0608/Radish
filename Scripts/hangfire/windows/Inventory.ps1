@@ -1,6 +1,6 @@
 function New-WindowsInventory {
     $inventory = @{
-        schemaVersion = 2; complete = $false; stage = 'powershell-contracts'
+        schemaVersion = 3; complete = $false; stage = 'powershell-contracts'
         runId = $env:GITHUB_RUN_ID; attempt = $env:GITHUB_RUN_ATTEMPT; commit = $env:GITHUB_SHA
         workflowSha = $env:GITHUB_WORKFLOW_SHA; workflowRef = $env:GITHUB_WORKFLOW_REF
         runnerArchitecture = $env:RUNNER_ARCH
@@ -9,8 +9,10 @@ function New-WindowsInventory {
         imageOS = $env:ImageOS; imageVersion = $env:ImageVersion; os = [Environment]::OSVersion.VersionString
         powershell = $PSVersionTable.PSVersion.ToString()
         vswhere = $null; visualStudio = $null; msbuild = $null; frameworkRelease = $null
-        compatibility = @(); upstreamTasksExecuted = $false
+        compatibility = @(); upstreamTasksExecuted = $false; imageIdentity = $null
     }
+    Write-Json (Join-Path $script:Evidence 'inventory-progress.json') $inventory
+    $inventory.imageIdentity = Get-RunnerImageIdentity
     Write-Json (Join-Path $script:Evidence 'inventory-progress.json') $inventory
     return $inventory
 }
@@ -93,6 +95,7 @@ function Get-WindowsInventory([hashtable]$Inventory) {
 
 function Assert-ReviewedInventory($Inventory, [string]$Image, [string]$Vs, [string]$Msbuild, [string]$MsbuildSha256) {
     Assert-Condition ($Inventory.complete -eq $true) 'Complete inventory required for verify'
+    Assert-ConsistentImageIdentity $Inventory
     Assert-Condition (-not [string]::IsNullOrWhiteSpace($Image) -and -not [string]::IsNullOrWhiteSpace($Vs) -and -not [string]::IsNullOrWhiteSpace($Msbuild) -and $MsbuildSha256 -cmatch '^[a-f0-9]{64}$') 'All four reviewed inventory values required'
     Assert-Condition ($Inventory.imageVersion -ceq $Image -and $Inventory.visualStudio.version -ceq $Vs -and $Inventory.msbuild.version -ceq $Msbuild -and $Inventory.msbuild.sha256 -ceq $MsbuildSha256) 'Unreviewed image / VS / Full MSBuild drift'
 }

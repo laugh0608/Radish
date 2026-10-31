@@ -53,7 +53,7 @@ test('failure cleanup still publishes reviewed evidence and never requires verif
 test('child processes are isolated from Actions tokens, have timeouts and verified PID cleanup', () => {
   const common = script('Common');assert.match(common, /\.Environment\.Clear\(\)/u);assert.match(common, /ArgumentList\.Add/u);assert.match(common, /WaitForExit\(\$TimeoutSeconds/u);assert.match(common, /creationTime/u);assert.match(common, /Process executable differs/u);
   assert.match(common, /DOTNET_GENERATE_ASPNET_CERTIFICATE = 'false'/u);assert.match(common, /ReparsePoint/u);
-  const all = ['Common', 'Cleanup', 'Acquire', 'Sources', 'Verification', 'Inventory', 'Contracts'].map(script).join('\n');assert.ok(!/taskkill|build-server shutdown|dotnet run|npm (?:install|ci)|Set-ExecutionPolicy|Set-ItemProperty|Start-Service/u.test(all));
+  const all = ['Common', 'Cleanup', 'Acquire', 'Sources', 'Verification', 'Inventory', 'Contracts', 'ImageIdentity', 'ImageIdentity.Contracts'].map(script).join('\n');assert.ok(!/taskkill|build-server shutdown|dotnet run|npm (?:install|ci)|Set-ExecutionPolicy|Set-ItemProperty|Start-Service/u.test(all));
 });
 test('generation calls the explicit CLR4 task and snapshots the loaded engine instead of using stale output', () => {
   const source = script('Sources');assert.match(source, /Razor\.Verification\.proj/u);assert.match(source, /\/t:PrecompileRazorFiles/u);assert.match(source, /AfterTargets="PrecompileRazorFiles"/u);assert.match(source, /Assert-RazorSnapshot/u);assert.match(source, /Loaded Razor assembly hash differs/u);
@@ -110,4 +110,46 @@ test('CI entry runs owned PowerShell contracts after identity capture and before
   assert.match(contracts, /Remove-Owned \$fixtureRoot/u);
   assert.match(contracts, /finally \{ Write-Json \$reportPath \$report \}/u);
   assert.ok(!/Invoke-WindowsVerification|Initialize-VerificationInputs|Invoke-RazorGeneration|Get-WindowsInventory|Invoke-WebRequest|Install-Module/u.test(contracts));
+});
+
+test('image identity diagnostics are retained before contracts and gate both inventory and verify', () => {
+  const entry = script('Invoke-Validation');
+  assert.match(entry, /\. "\$PSScriptRoot\/ImageIdentity\.ps1"/u);
+  assert.match(entry, /\. "\$PSScriptRoot\/ImageIdentity\.Contracts\.ps1"/u);
+  assert.ok(entry.indexOf('Get-WindowsInventory $progress') < entry.indexOf('Assert-ConsistentImageIdentity $inventory'));
+  assert.ok(entry.indexOf('Assert-ConsistentImageIdentity $inventory') < entry.indexOf("if ($Phase -eq 'Verify')"));
+  const inventory = script('Inventory');
+  assert.match(inventory, /schemaVersion = 3/u);
+  assert.ok(inventory.indexOf("'inventory-progress.json'") < inventory.indexOf('Get-RunnerImageIdentity'));
+  const gate = inventory.split('function Assert-ReviewedInventory(')[1];
+  assert.ok(gate.indexOf('Assert-ConsistentImageIdentity') < gate.indexOf('All four reviewed inventory values required'));
+});
+
+test('image sources are read by bounded ancestry and file reads with a narrow export allowlist', () => {
+  const code = script('ImageIdentity');
+  assert.match(code, /\$depth -lt 16/u);
+  assert.match(code, /-Filter "ProcessId = \$ProcessId"/u);
+  assert.match(code, /AncestorPidReused/u);
+  assert.match(code, /Read-RunnerImageMetadata 'C:\\imagedata\.json'/u);
+  assert.match(code, /\[IO\.FileAccess\]::Read, \[IO\.FileShare\]::Read/u);
+  assert.match(code, /\$stream\.Length -gt 1MB/u);
+  assert.match(code, /SHA256\]::HashData\(\$bytes\)/u);
+  assert.match(code, /'Process', 'Machine', 'User'/u);
+  assert.deepEqual([...code.matchAll(/GetEnvironmentVariable\('([^']+)'/gu)].map(match => match[1]), ['ImageOS', 'ImageVersion']);
+  assert.ok(!/GetEnvironmentVariables\(|SetEnvironmentVariable|Get-ChildItem|CommandLine|Invoke-WebRequest|Copy-Item/u.test(code));
+  assert.match(code, /\$group\[\$groupKeys\[0\]\] -ceq 'Runner Image'/u);
+  assert.match(code, /ImageVersionLinksDisagree/u);
+  assert.match(code, /'image-identity.json'/u);
+});
+
+test('image behavioral contracts are wired into the same owned fixture lifecycle', () => {
+  assert.match(script('Contracts'), /Invoke-ImageIdentityContracts \$fixtureRoot \$report/u);
+  const checks = script('ImageIdentity.Contracts');
+  const cases = [...checks.matchAll(/\$Report\.cases \+= '([^']+)'/gu)].map(match => match[1]);
+  assert.equal(cases.length, 12);
+  assert.equal(new Set(cases).size, 12);
+  assert.match(checks, /DO_NOT_EXPORT_INTERNAL_SENTINEL/u);
+  assert.match(checks, /'image-unreviewable-inventory-rejected'/u);
+  assert.match(checks, /'image-ancestor-reuse-and-missing-rejection'/u);
+  assert.ok(!/Invoke-WindowsVerification|Get-RunnerImageIdentity|Invoke-WebRequest|Install-Module/u.test(checks));
 });

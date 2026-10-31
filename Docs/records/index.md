@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [Windows Razor image 身份诊断增强](./hangfire-windows-razor-image-identity-diagnostics-2026-10-31.md)：只读来源核对后补齐本地采集、来源一致性门禁及 12 组 PowerShell 契约；31 项 Node 通过，新候选未 push / dispatch
+- [Windows Razor 第二次 inventory 与身份差异](./hangfire-windows-razor-inventory-second-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-second-2026-10-31.json)：修复 SHA 已 push；8 组 PowerShell 契约、库存、归档与清理通过，image 两处版本不一致，verify 未执行
 - [Windows Razor inventory 本地修复](./hangfire-windows-razor-inventory-repair-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-repair-2026-10-31.json)：专项改用 windows-2022 / VS 2022，修复命令身份、补齐早期证据与 8 组 PowerShell 契约接线；28 项 Node 通过，未重跑 Windows
 - [Windows Razor 首次 inventory 与失败清理](./hangfire-windows-razor-inventory-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-2026-10-31.json)：指定 SHA 已 push；实际 image 为 VS 2026，VS 2022 限定查询为空，未完成库存；失败证据已归档、清理通过，未重跑或 verify
 - [Windows Razor 本地工具与限定 CI](./hangfire-windows-razor-local-implementation-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-local-implementation-2026-10-31.json)：25 项 Node / 11 组 C# 契约、两组原 Core 片段和四类拒绝通过；未执行 Windows / 远端

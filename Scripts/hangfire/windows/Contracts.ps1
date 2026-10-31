@@ -72,6 +72,7 @@ function Invoke-PowerShellContracts {
         Assert-ContractRejection { Assert-ReviewedInventory @{ complete = $false } 'image' 'vs' 'msbuild' ('a' * 64) } 'Complete inventory required for verify'
         $report.cases += 'incomplete-inventory-rejected-for-verify'
         Assert-Condition (-not (Test-Path -LiteralPath (Join-Path $script:Evidence 'inventory.json'))) 'Contracts produced a real inventory snapshot'
+        Invoke-ImageIdentityContracts $fixtureRoot $report
         $report.status = 'passed'
     } catch {
         $report.status = 'failed'
