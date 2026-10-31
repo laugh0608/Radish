@@ -7,7 +7,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：SQLite [原生依赖统一与本机验证](../records/sqlite-native-unification-2026-10-31.md)已完成；下一步按[平台矩阵](../features/sqlite-native-unification-plan.md#5-验证矩阵与结论分层)确认其余正式服务平台 / 最终镜像验证范围，并接续 Hangfire 对应源码发行材料。NoDrive 询证、SNI 平台分发与 Valkey 仍保持独立边界，统一日志 L2 保留后续恢复顺位。
+- **下一项工作**：SQLite [原生依赖统一与本机验证](../records/sqlite-native-unification-2026-10-31.md)已完成；[Linux 双架构执行准备](../features/sqlite-linux-platform-validation-plan.md)已只读盘点，MCR SDK / ASP.NET digest 未取得，先补齐输入并确认命令后执行，其他平台与 Hangfire 对应源码发行材料顺序接续。NoDrive 询证、SNI 平台分发与 Valkey 仍保持独立边界，统一日志 L2 保留后续恢复顺位。
 - **状态复核日期**：`2026-10-31`；本轮 SQLite 依赖、限定门禁、六组件材料及本机验证见[实施记录](../records/sqlite-native-unification-2026-10-31.md)，当前 .NET 图共 219 个不同 package/version 条目。此前 NoDrive 实施、历史 226 条清单与未关闭项见[10 月 26 日记录](../records/nodrive-adoption-2026-10-26.md)和[日终回顾](../records/day-end-doc-review-2026-10-26.md)。
 - **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
@@ -25,7 +25,7 @@
 
 ## 接下来的事项
 
-1. **接续 SQLite 其他平台与 Hangfire 发行材料**：SQLite 已获批统一到 config 3.0.3 与唯一 native `lib.e_sqlite3 [3.53.3]`，本机普通 / osx-arm64 RID 两配置构建、全量测试、32 组 publish、160 组加载和六组件材料已通过，见[实施记录](../records/sqlite-native-unification-2026-10-31.md)。其余四个正式服务平台和最终镜像未关闭，先按[矩阵](../features/sqlite-native-unification-plan.md#5-验证矩阵与结论分层)确认精确运行资源 / 命令 / 清理范围再执行；不以本机 native hash 或历史图片门禁替代。Hangfire [Core 旧基线试验](../records/hangfire-core-replacement-2026-10-26.md)保留原证据，后续完整对应源码、Cronos 重建、其他 provider / 平台及 Razor 再生成仍独立待办。
+1. **接续 SQLite 其他平台与 Hangfire 发行材料**：SQLite 已获批统一到 config 3.0.3 与唯一 native `lib.e_sqlite3 [3.53.3]`，本机验证见[实施记录](../records/sqlite-native-unification-2026-10-31.md)。其余四个正式服务平台和最终镜像未关闭；现已形成[Linux 优先执行方案](../features/sqlite-linux-platform-validation-plan.md)及[只读证据](../records/sqlite-linux-platform-readiness-2026-10-31.json)，MCR 两类镜像输入未冻结，尚未执行容器验证。本机 ARM64 原生 / AMD64 仿真分开留结论，不以仿真或历史图片门禁关闭原生 AMD64。Hangfire [Core 旧基线试验](../records/hangfire-core-replacement-2026-10-26.md)保留原证据，后续完整对应源码、Cronos 重建、其他 provider / 平台及 Razor 再生成仍独立待办。
 2. **保留独立来源 / 发行缺口**：NoDrive / SystemCommon 本地 PE debug 核对未取得新的源码 commit，已准备上游询证草案但未发送。SNI 仍随通用 publish 分发 Windows runtime；后续按实际平台核对正常 RID 发布与下游条款。已完成的[重点 notices 接线](../records/nuget-notices-distribution-2026-10-26.md)不覆盖全部 NuGet / 全生态材料，也不自动关闭这些条件。
 3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
 4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与历史定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。

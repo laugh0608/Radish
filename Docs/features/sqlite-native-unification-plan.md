@@ -4,6 +4,8 @@
 >
 > 建议：采用 Microsoft SQLite `.Core` 包、SQLitePCLRaw `config 3.0.3` 与唯一 native 包 `SQLitePCLRaw.lib.e_sqlite3 [3.53.3]`，移除引入第二套 native 的 `bundle_e_sqlite3 / SourceGear.sqlite3` 链。保留现有 ORM、EF、Hangfire provider 和数据库支持边界。
 
+后续平台验证先按[Linux 双架构执行准备方案](./sqlite-linux-platform-validation-plan.md)推进：只读盘点已完成，MCR 输入仍缺，待补齐精确镜像与所有者确认后执行；不沿用本机批次的容器授权。
+
 ## 1. 核对事实与根因
 
 核对基线为 `dev / 29e70301`、SDK `10.0.300`。机器可读证据见[依赖链与文件核对](../records/sqlite-native-chain-inspection-2026-10-31.json)：包含 19 份既有 assets 的 SHA256 / 解析图、两个现用 native 包、10 份本机既有 build 输出，以及拟采用 native 包的文件哈希和只读探针。已有 assets / bin 可能包含前批构建结果，本轮没有重新还原或构建，不能据此宣称新候选已通过。
