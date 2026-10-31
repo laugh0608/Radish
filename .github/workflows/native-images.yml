@@ -237,7 +237,7 @@ jobs:
           dotnet-version: '10.0.403'
       - name: Install approved Rust toolchain in runner
         run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
-      - name: Build, test, publish and probe the native platform
+      - name: Check contracts and MSBuild argv, build, test, publish and probe the native platform
         timeout-minutes: 38
         run: node Scripts/ci/validate-sqlite-platform.mjs --mode=native --rid=${{ matrix.rid }}
       - name: Clean task resources and validate evidence
@@ -280,7 +280,7 @@ jobs:
           dotnet-version: '10.0.403'
       - name: Install approved Rust toolchain in runner
         run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
-      - name: Build, probe and scan one final image without pushing
+      - name: Check contracts and container identity, build, probe and scan one final image without pushing
         timeout-minutes: 38
         run: node Scripts/ci/validate-sqlite-platform.mjs --mode=docker --rid=linux-x64 --service=${{ matrix.service }}
       - name: Clean task resources and validate evidence

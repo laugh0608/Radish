@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [SQLite 四类托管失败的本地成组修正](./sqlite-hosted-validation-repair-2026-10-31.md) · [结果 JSON](./sqlite-hosted-validation-repair-2026-10-31.json)：50 项 Node、12 组真实 MSBuild 参数、四宿主探针严格编译与 ARM64 C / C++ 链接通过；未 push / 远端运行
+
 - [Windows runner image 询证审阅与下一步](./hangfire-windows-runner-image-inquiry-review-2026-10-31.md) · [英文 Issue 草稿](./hangfire-windows-runner-image-inquiry-draft-2026-10-31.md)：诊断记录已提交；询证及证据 ZIP 已获批提交至 [actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，远端内容与附件下载校验通过，未触发新运行
 - [SQLite 托管三平台与 AMD64 镜像单次验证](./sqlite-hosted-native-run-2026-10-31.md) · [结果 JSON](./sqlite-hosted-native-run-2026-10-31.json)：Linux x64 通过，其余六项失败；七份 artifact 已校验，清理完成，未重试
 - [SQLite 托管执行契约复核与本地修正](./sqlite-hosted-execution-contracts-2026-10-31.md)：批准 SHA、失败证据、清理结果、实际编译器与 notices 留痕；38 项本地检查通过，未 push / dispatch

@@ -201,17 +201,17 @@ node Scripts/check-sqlite-native.mjs --assets="$assets" --framework=net10.0 \
   --rid="$reportRid" --output="$output" --deps="$host.deps.json" --report="$report"
 ```
 
-`reportRid` 普通图为空、RID 图为对应 rid。使用现有脚本在 SDK 容器内编译探针，对 32 份独立 publish 运行冷进程验证；每份按其实际文件选择 Microsoft / SqlSugar / EF / Hangfire，保存结果：
+`reportRid` 普通图为空、RID 图为对应 rid。使用现有脚本在 SDK 容器内编译探针，对 32 份独立 publish 运行冷进程验证；每份按固定宿主能力选择 Microsoft / SqlSugar / EF / Hangfire（API 4、Auth / DbMigrate 3、Gateway 2），缺少必需依赖直接失败，保存结果：
 
 ```bash
 node Scripts/run-sqlite-runtime-probe.mjs \
-  --compile-from="/evidence/publish/$arch/Release/generic/Radish.Api" --scratch=/evidence/probe-compiler
-# 每个 output 对应全新 scratch，预先放入上一命令生成的 SqliteNativeRuntimeProbe.dll。
+  --compile-from="$output" --host="$host" --scratch="$caseScratch"
+# 每个 output 对应全新 caseScratch；编译与运行使用同一目录及其绑定清单。
 node Scripts/run-sqlite-runtime-probe.mjs --output="$output" --host="$host" --scratch="$caseScratch"
 dotnet "$apiOutput/Radish.Api.dll" --check-native-images
 ```
 
-每个架构先准备 Release generic API 以编译探针，再对各配置 / 布局输出执行；不在原工作区输出插入文件。API 的 generic / RID 输出均做上述图片自检，不启动 HTTP 服务。
+每份 publish 单独按其原 deps 的托管 runtime 资产编译探针，清单绑定 host / 输出 / 源码 / 依赖与 DLL hash，不跨产物复用；不在原工作区输出插入文件。API 的 generic / RID 输出均做上述图片自检，不启动 HTTP 服务。
 
 ### 5.3 八份最终镜像与实际加载
 
@@ -229,12 +229,12 @@ docker --context orbstack buildx build --builder orbstack \
 
 使用任务专属停止态容器 `docker create` / `docker cp` 提取 final `/app` 清单，再立即删除该容器；不执行其入口。将 final 文件与 build stage `/app/publish` 的 SQLite / notices 哈希逐项比对，检查 final 不存在 Node、旧 SQLite 来源或不同托管 batteries。
 
-用隔离编译的托管探针 DLL 挂入 `/app`，保留原宿主的 deps / runtimeconfig。每种 first-use mode 使用全新进程 / 目录：
+每个 final 用自身提取输出单独编译探针并校验绑定清单，DLL 只读挂入 `/app`，保留原宿主的 deps / runtimeconfig。后续执行采用当前[托管修正契约](./sqlite-hosted-validation-repair-plan.md)的明确 uid / gid 与目录读写前置检查；旧执行事实仍以历史记录为准。每种 first-use mode 使用全新进程 / 目录：
 
 ```bash
 docker --context orbstack run --rm --name "$taskId-$service-$arch-$mode" \
   --label "io.radish.sqlite-linux=$taskId" --platform "linux/$arch" \
-  --network none --read-only --memory 1g --cpus 2 --pids-limit 256 \
+  --user "$runnerUid:$runnerGid" --network none --read-only --memory 1g --cpus 2 --pids-limit 256 \
   --cap-drop ALL --security-opt no-new-privileges \
   --tmpfs /tmp:rw,nosuid,nodev,size=256m \
   --mount "type=bind,src=$probeDll,dst=/app/SqliteNativeRuntimeProbe.dll,readonly" \

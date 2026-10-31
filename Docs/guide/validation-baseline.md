@@ -111,8 +111,9 @@ npm run validate:candidate
 - `check:sqlite-native:self-test` / `Scripts/check-sqlite-native.mjs`
   - 自测覆盖第二来源、退出包返回、版本漂移、缺失 / 损坏 native、旧输出和 deps 不一致；`Scripts/build/sqlite-native.targets` 在 SDK 冲突消解前检查原始 assets，四宿主 / Tests build 与四宿主 publish 检查真实输出
   - 检查使用 Node 24；四宿主 Dockerfile 的构建阶段提供 Node，最终运行镜像不增加 Node。完整版本与 SHA256 输入见 `Scripts/sqlite-native-contract.json`，不添加 ExcludeAssets、复制优先级或警告抑制来选取胜者
-  - 本机实际加载验证使用 `node Scripts/run-sqlite-runtime-probe.mjs --compile-from=<API输出> --scratch=<全新编译目录>`，再以 `--output=<宿主输出> --host=<宿主名> --scratch=<全新运行目录>` 执行；将编译目录中的探针 DLL 复制到运行目录作为输入。临时 SDK 工程无 PackageReference，沿用 SDK 默认编译策略；运行时使用原宿主 deps / runtimeconfig，探针仅暂存于原输出旁，结束即删除
-  - 探针覆盖 Microsoft / SqlSugar / 可用 EF / Hangfire 首用路径、实际模块路径与 hash；Hangfire 只在临时 storage 和专用队列执行探针成功 / 重试，不启动宿主或监听端口。它仍属于需当前任务明确授权的运行验证，不并入日常默认门禁；不同平台和最终镜像各自验收，见[SQLite 方案](../features/sqlite-native-unification-plan.md)
+  - 每份产物单独使用 `node Scripts/run-sqlite-runtime-probe.mjs --compile-from=<宿主输出> --host=<宿主名> --scratch=<全新case目录>` 编译，再以 `--output=<同一宿主输出> --host=<同一宿主名> --scratch=<同一case目录>` 执行。探针按固定宿主能力选择公共 / EF / Hangfire 源码，从原 deps 的托管 runtime 资产选择引用；不把 Windows 原生 DLL 当作托管引用。临时 SDK 工程无 PackageReference，保留严格编译。清单绑定 host、SDK、源码 / 引用 / 其他根目录 DLL、原 deps / runtimeconfig 和探针 hash，执行前核对，拒绝跨产物复用；运行时仍使用原宿主依赖图，探针仅暂存于原输出旁，结束即删除
+  - 探针固定覆盖 API 四 mode、Auth / DbMigrate 三 mode、Gateway 两 mode（Microsoft / SqlSugar 共用，EF / Hangfire 按宿主能力）；依赖缺失直接失败。检查包括首用路径、实际模块路径与 hash；Hangfire 只在临时 storage 和专用队列执行探针成功 / 重试，不启动宿主或监听端口。它仍属于需当前任务明确授权的运行验证，不并入日常默认门禁；不同平台和最终镜像各自验收，见[SQLite 方案](../features/sqlite-native-unification-plan.md)
+  - MSBuild 参数行为夹具：`node Scripts/ci/check-sqlite-msbuild-argv.mjs --scratch=<全新目录> --evidence=<证据目录>`；真实 Exec → Node，覆盖 sources / build / publish、普通 / RID、特殊路径及末尾分隔符。Windows 额外检查盘符根 / UNC 字符串；本机通过不能替代 Windows runner。托管修正范围见[成组方案](../features/sqlite-hosted-validation-repair-plan.md)
 - `check:sensitive-literals`
   - 扫描 Git 已跟踪文件和未忽略的工作区新文件，阻断完整 JWT、硬编码 Bearer Token 与私钥 PEM 头
   - 只报告文件、行号和规则，不回显命中值；环境变量、模板变量、占位值和 `invalid_token` 测试值不会被误判

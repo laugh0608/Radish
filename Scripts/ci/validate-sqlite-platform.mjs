@@ -4,6 +4,9 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { runnerIdentity, privateEvidenceDirectory, restrictedContainerArgs, verifyContainerDirectory } from './sqlite-container-identity.mjs';
+import { selectMacToolchain, compileMacIdentity } from './sqlite-macos-toolchain.mjs';
+import { probeProfile, verifyProbe, requireProbeMode } from '../sqlite/probe-contract.mjs';
 import { sqliteContract, validateSqliteGraph, validateSqliteSources, validateSqliteOutput } from '../check-sqlite-native.mjs';
 
 const repository = fs.realpathSync(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..'));
@@ -130,7 +133,7 @@ export function retainProbeEvidence(source, destination) {
   if (!fs.existsSync(source)) return;
   for (const file of files(source)) {
     const name = path.basename(file);
-    if (!['result.json', 'hangfire-result.json', 'process.log', 'sdk-version.log', 'probe-restore.log', 'compile-sdk.log'].includes(name)
+    if (!['result.json', 'hangfire-result.json', 'process.log', 'sdk-version.log', 'probe-restore.log', 'compile-sdk.log', 'job-states.json', 'probe-inputs.json', 'probe-manifest.json'].includes(name)
       && !/^Radish\.[A-Za-z.]+-summary\.json$/u.test(name)) continue;
     const target = path.join(destination, path.relative(source, file));
     fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(file, target);
@@ -323,14 +326,19 @@ async function inspectCompiler(execution, rid) {
     execution.environment.CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER = linker;
     sdk = { ...selected, linker, linkerSha256: sha(linker) };
   } else if (process.platform === 'darwin') {
-    compiler = fs.realpathSync((await execution.run('xcrun', ['--find', 'clang'], 'clang-path')).trim());
-    cxx = fs.realpathSync((await execution.run('xcrun', ['--find', 'clang++'], 'clangxx-path')).trim());
-    sdk = { xcode: (await execution.run('xcodebuild', ['-version'], 'xcode-version')).trim(),
-      sdkPath: (await execution.run('xcrun', ['--show-sdk-path'], 'macos-sdk')).trim() };
+    ({ compiler, cxx, sdk } = await selectMacToolchain(execution));
   } else { compiler = findExecutable('cc'); cxx = findExecutable('c++'); }
   const target = { 'linux-x64': 'x86_64_unknown_linux_gnu', 'win-x64': 'x86_64_pc_windows_msvc', 'osx-x64': 'x86_64_apple_darwin' }[rid];
   execution.environment[`CC_${target}`] = compiler; execution.environment[`CXX_${target}`] = cxx;
   if (process.platform !== 'win32') execution.environment[`CARGO_TARGET_${target.toUpperCase()}_LINKER`] = compiler;
+  if (process.platform === 'darwin') {
+    const version = await execution.run(compiler, ['--version'], 'compiler-version');
+    const cxxVersion = await execution.run(cxx, ['--version'], 'cxx-version');
+    const samples = await compileMacIdentity(execution, directory, { compiler, cxx, sdk }, 'x64');
+    return { sdk, compiler, compilerRealpath: fs.realpathSync(compiler), compilerSha256: sha(compiler),
+      cxx, cxxRealpath: fs.realpathSync(cxx), cxxSha256: sha(cxx), version, cxxVersion,
+      samples: samples.map(sample => ({ ...sample, sha256: sha(sample.binary) })) };
+  }
   const source = path.join(directory, 'identity.cpp'); fs.writeFileSync(source, 'int main() { return 0; }\n');
   const binary = path.join(directory, process.platform === 'win32' ? 'identity.exe' : 'identity');
   let version;
@@ -403,6 +411,7 @@ function checkOutput(execution, host, output, assetsFile, rid, caseName) {
 }
 
 async function native(execution, rid, expected) {
+  await execution.node('Scripts/ci/check-sqlite-msbuild-argv.mjs', [`--scratch=${path.join(execution.root, 'msbuild-argv')}`, `--evidence=${path.join(execution.evidence, 'msbuild-argv')}`], 'msbuild-argv', { timeout: 180_000 });
   for (const configuration of configurations) {
     await execution.node('Scripts/build-native-images.mjs', [`--rid=${rid}`, ...(configuration === 'Debug' ? ['--debug'] : [])], `native-${configuration}`, { timeout: 900_000 });
     const artifact = path.join(execution.source, 'artifacts/native', rid, configuration);
@@ -412,7 +421,6 @@ async function native(execution, rid, expected) {
   }
   await execution.run('dotnet', ['restore', 'Radish.slnx', '--force-evaluate', '--warnaserror'], 'restore', { timeout: 600_000 });
   checkGraph(execution, expected, 'initial'); await audit(execution);
-  const compiler = path.join(execution.root, 'compiler');
   for (const configuration of configurations) {
     if (configuration !== configurations[0]) await execution.run('dotnet', ['restore', 'Radish.slnx', '--force-evaluate', '--warnaserror'], 'restore-generic', { timeout: 600_000 });
     checkGraph(execution, expected, configuration);
@@ -428,12 +436,11 @@ async function native(execution, rid, expected) {
         const output = path.join(execution.root, 'publish', caseName);
         await execution.run('dotnet', ['publish', project, '-c', configuration, ...(reportRid ? ['-r', rid, '--self-contained', 'false'] : []), '--no-restore', '--warnaserror', '-o', output], `publish-${caseName}`, { timeout: 600_000 });
         checkOutput(execution, host, output, path.join(execution.source, host, 'obj/project.assets.json'), reportRid, caseName);
-        if (!fs.existsSync(path.join(compiler, 'SqliteNativeRuntimeProbe.dll'))) await withProbeEvidence(
-          () => execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--compile-from=${output}`, `--scratch=${compiler}`], 'compile-probe'), compiler, path.join(execution.evidence, 'compiler'));
-        const scratch = path.join(execution.root, 'probes', caseName); fs.mkdirSync(scratch, { recursive: true });
-        fs.copyFileSync(path.join(compiler, 'SqliteNativeRuntimeProbe.dll'), path.join(scratch, 'SqliteNativeRuntimeProbe.dll'));
-        await withProbeEvidence(() => execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--output=${output}`, `--host=${host}`, `--scratch=${scratch}`], `probe-${caseName}`),
-          scratch, path.join(execution.evidence, 'probes', caseName));
+        const scratch = path.join(execution.root, 'probes', caseName);
+        await withProbeEvidence(async () => {
+          await execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--compile-from=${output}`, `--host=${host}`, `--scratch=${scratch}`], `compile-${caseName}`);
+          await execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--output=${output}`, `--host=${host}`, `--scratch=${scratch}`], `probe-${caseName}`);
+        }, scratch, path.join(execution.evidence, 'probes', caseName));
         if (host === 'Radish.Api') await execution.run('dotnet', [path.join(output, `${host}.dll`), '--check-native-images'], `selftest-${caseName}`);
         fs.rmSync(output, { recursive: true }); fs.rmSync(scratch, { recursive: true });
       }
@@ -452,7 +459,7 @@ async function buildImage(execution, dockerfile, service, target) {
   const info = JSON.parse(await execution.docker(['image', 'inspect', tag], 'image-identity'))[0];
   requireCondition(info.Architecture === 'amd64' && info.Os === 'linux', 'Image platform mismatch');
   execution.images.find(entry => entry.tag === tag).id = info.Id; execution.persist();
-  write(path.join(execution.evidence, `image-${target}.json`), { id: info.Id, architecture: info.Architecture, os: info.Os, labels: info.Config.Labels });
+  write(path.join(execution.evidence, `image-${target}.json`), { id: info.Id, architecture: info.Architecture, os: info.Os, user: info.Config.User, labels: info.Config.Labels });
   return tag;
 }
 
@@ -471,6 +478,9 @@ async function dockerValidation(execution, service) {
   write(path.join(execution.evidence, 'docker-inputs.json'), { from: frozen, dockerfileSha256: sha(dockerfile), scanner });
   const build = await buildImage(execution, dockerfile, service, 'build');
   const final = await buildImage(execution, dockerfile, service, 'final');
+  const identity = runnerIdentity();
+  const finalIdentity = json(path.join(execution.evidence, 'image-final.json'));
+  write(path.join(execution.evidence, 'container-identity.json'), { runner: identity, finalUser: finalIdentity.user, actualUser: `${identity.uid}:${identity.gid}` });
   const buildName = `${execution.taskId}-build`;
   await execution.container(['create', '--name', buildName, '--label', `${label}=${execution.taskId}`, '--entrypoint', '/bin/true', build], buildName);
   const graphFile = path.join(execution.root, 'assets.json');
@@ -501,13 +511,24 @@ async function dockerValidation(execution, service) {
   const nodeCheck = `${execution.taskId}-node-check`;
   await execution.container(['run', '--rm', '--name', nodeCheck, '--label', `${label}=${execution.taskId}`, '--network', 'none', '--entrypoint', '/bin/sh', final, '-c', 'test ! -e /usr/local/bin/node && test ! -e /usr/bin/node'], nodeCheck);
   const compiler = path.join(execution.root, 'compiler');
-  await withProbeEvidence(() => execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--compile-from=${output}`, `--scratch=${compiler}`], 'compile-probe'),
+  await withProbeEvidence(() => execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--compile-from=${output}`, `--host=${host}`, `--scratch=${compiler}`], 'compile-probe'),
     compiler, path.join(execution.evidence, 'compiler'));
   const dll = path.join(compiler, 'SqliteNativeRuntimeProbe.dll');
-  const modes = ['microsoft', 'sqlsugar', ...(service !== 'gateway' ? ['ef'] : []), ...(service === 'api' ? ['hangfire'] : [])];
+  const modes = probeProfile(host).modes;
+  verifyProbe(output, host, compiler);
+  fs.mkdirSync(path.join(execution.root, 'cases'));
+  const denied = path.join(execution.root, 'cases', 'unwritable');
+  write(path.join(execution.evidence, 'permissions', 'unwritable-directory.json'), privateEvidenceDirectory(denied, identity, 0o500));
+  const probeMounts = directory => [`type=bind,src=${dll},dst=/app/SqliteNativeRuntimeProbe.dll,readonly`, `type=bind,src=${directory},dst=/probe-data`];
+  await verifyContainerDirectory(execution, final, denied, identity, probeMounts(denied), false, path.join(execution.evidence, 'permissions', 'unwritable.json'));
   for (const mode of modes) {
-    const name = `${execution.taskId}-${mode}`; const caseRoot = path.join(execution.root, 'cases', mode);fs.mkdirSync(caseRoot, { recursive: true });
-    const args = ['run', '--rm', '--name', name, '--label', `${label}=${execution.taskId}`, '--platform', 'linux/amd64', '--network', 'none', '--read-only', '--memory', '1g', '--cpus', '2', '--pids-limit', '256', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--tmpfs', '/tmp:rw,nosuid,nodev,size=256m', '--mount', `type=bind,src=${dll},dst=/app/SqliteNativeRuntimeProbe.dll,readonly`, '--mount', `type=bind,src=${caseRoot},dst=/probe-data`, '--entrypoint', 'dotnet', final, 'exec', '--runtimeconfig', `/app/${host}.runtimeconfig.json`, '--depsfile', `/app/${host}.deps.json`, '/app/SqliteNativeRuntimeProbe.dll', mode, '/probe-data'];
+    requireProbeMode(host, mode);
+    verifyProbe(output, host, compiler);
+    const name = `${execution.taskId}-${mode}`; const caseRoot = path.join(execution.root, 'cases', mode);
+    write(path.join(execution.evidence, 'permissions', `${mode}-directory.json`), privateEvidenceDirectory(caseRoot, identity));
+    await verifyContainerDirectory(execution, final, caseRoot, identity, probeMounts(caseRoot), true, path.join(execution.evidence, 'permissions', `${mode}.json`));
+    const args = [...restrictedContainerArgs(execution.taskId, name, identity, probeMounts(caseRoot)), '--entrypoint', 'dotnet', final,
+      'exec', '--runtimeconfig', `/app/${host}.runtimeconfig.json`, '--depsfile', `/app/${host}.deps.json`, '/app/SqliteNativeRuntimeProbe.dll', mode, '/probe-data'];
     await withProbeEvidence(() => execution.container(args, name), caseRoot, path.join(execution.evidence, 'probes', mode));
     const report = json(path.join(caseRoot, 'result.json'));
     requireCondition(report.native.startsWith('/app/') && report.nativeSha256 === sqliteContract.native.files['runtimes/linux-x64/native/libe_sqlite3.so']
@@ -518,16 +539,17 @@ async function dockerValidation(execution, service) {
   }
   if (service === 'api') {
     const name = `${execution.taskId}-images`;
-    await execution.container(['run', '--rm', '--name', name, '--label', `${label}=${execution.taskId}`, '--network', 'none', '--read-only', '--memory', '1g', '--cpus', '2', '--pids-limit', '256', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--tmpfs', '/tmp:rw,nosuid,nodev,size=256m', '--entrypoint', 'dotnet', final, '/app/Radish.Api.dll', '--check-native-images'], name);
+    await execution.container([...restrictedContainerArgs(execution.taskId, name, identity), '--entrypoint', 'dotnet', final, '/app/Radish.Api.dll', '--check-native-images'], name);
   }
   const archive = path.join(execution.root, 'image.tar'); await execution.docker(['save', '-o', archive, final], 'save', { timeout: 180_000 });
-  const cache = path.join(execution.root, 'scan-cache'); const scan = path.join(execution.evidence, 'scan'); fs.mkdirSync(cache); fs.mkdirSync(scan);
+  const cache = path.join(execution.root, 'scan-cache'); const scan = path.join(execution.evidence, 'scan');
+  write(path.join(execution.evidence, 'permissions', 'scanner-directories.json'), { cache: privateEvidenceDirectory(cache, identity), scan: privateEvidenceDirectory(scan, identity), actualUser: `${identity.uid}:${identity.gid}` });
   await execution.docker(['pull', '--platform', 'linux/amd64', scanner], 'pull-scanner', { timeout: 180_000 });
   const scanInfo = JSON.parse(await execution.docker(['image', 'inspect', scanner], 'scanner-identity'))[0]; requireCondition(scanInfo.Architecture === 'amd64', 'Wrong scanner architecture');
   const versionName = `${execution.taskId}-scanner-version`;
   const version = await execution.container(['run', '--rm', '--name', versionName, '--label', `${label}=${execution.taskId}`, '--network', 'none', scanner, '--version'], versionName); requireCondition(version.includes('0.70.0'), 'Wrong scanner version');
   const dbName = `${execution.taskId}-db`;
-  const scanUser = `${process.getuid()}:${process.getgid()}`;
+  const scanUser = `${identity.uid}:${identity.gid}`;
   await execution.container(['run', '--rm', '--name', dbName, '--label', `${label}=${execution.taskId}`, '--user', scanUser, '--mount', `type=bind,src=${cache},dst=/cache`, scanner, 'image', '--cache-dir', '/cache', '--download-db-only'], dbName);
   write(path.join(scan, 'database.json'), { scanner, id: scanInfo.Id, version, files: files(cache).map(file => ({ file: path.relative(cache, file), sha256: sha(file) })) });
   const scanName = `${execution.taskId}-scan`;
@@ -566,6 +588,8 @@ export async function main(args, environment = process.env) {
     write(path.join(location.source, 'global.json'), { sdk: { version: '10.0.403', rollForward: 'disable', allowPrerelease: false } });
     write(path.join(location.evidence, 'candidate.json'), { revision, expectedHeadSha: environment.EXPECTED_HEAD_SHA, workflowSha: environment.GITHUB_WORKFLOW_SHA,
       runId: environment.GITHUB_RUN_ID, runAttempt: environment.GITHUB_RUN_ATTEMPT, globalJsonSha256: sha(path.join(location.source, 'global.json')) });
+    await execution.run(process.execPath, ['--test', 'Scripts/sqlite/probe-contract.test.mjs', 'Scripts/ci/sqlite-macos-toolchain.test.mjs',
+      ...(options.mode === 'docker' ? ['Scripts/ci/sqlite-container-identity.test.mjs'] : [])], 'validation-contracts');
     await inspectPlatform(execution, options.rid);
     const expected = json(path.join(location.source, 'Docs/records/sqlite-native-unification-evidence-2026-10-31.json')).packageIdentities;
     if (options.mode === 'native') await native(execution, options.rid, expected);

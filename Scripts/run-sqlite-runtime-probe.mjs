@@ -3,54 +3,51 @@ import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, realpat
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sqliteContract } from './check-sqlite-native.mjs';
+import { probeHash, probeInputs, probeProfile, probeProject, verifyProbe } from './sqlite/probe-contract.mjs';
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
-const options = new Map(process.argv.slice(2).map((argument) => {
+const options = new Map();
+for (const argument of process.argv.slice(2)) {
   const match = /^--(compile-from|scratch|output|host)=(.+)$/u.exec(argument);
-  if (!match) throw new Error(`Invalid SQLite probe option: ${argument}`);
-  return [match[1], match[2]];
-}));
+  if (!match || options.has(match[1])) throw new Error(`Invalid SQLite probe option: ${argument}`);
+  options.set(match[1], match[2]);
+}
 const scratch = path.resolve(options.get('scratch') ?? '');
 if (!options.has('scratch') || (!options.has('compile-from') && !options.has('output'))) throw new Error('SQLite probe needs scratch and compile-from/output');
+const host = options.get('host');
+const profile = probeProfile(host);
 mkdirSync(scratch, { recursive: true });
 const compiled = path.join(scratch, 'SqliteNativeRuntimeProbe.dll');
 const run = (arguments_, log, timeout = 45_000) => {
-  const result = spawnSync('dotnet', arguments_, { encoding: 'utf8', timeout, maxBuffer: 16 * 1024 * 1024 });
+  const result = spawnSync('dotnet', arguments_, { encoding: 'utf8', timeout, maxBuffer: 16 * 1024 * 1024,
+    env: { ...process.env, DOTNET_CLI_USE_MSBUILD_SERVER: '0', MSBUILDDISABLENODEREUSE: '1', UseSharedCompilation: 'false' } });
   writeFileSync(log, `${result.stdout ?? ''}${result.stderr ?? ''}`);
   if (result.error || result.status !== 0) throw new Error(`SQLite probe failed (${result.status}): ${log}\n${result.error?.message ?? ''}\n${result.stdout ?? ''}${result.stderr ?? ''}`);
   return result.stdout;
 };
 
 if (options.has('compile-from')) {
+  if (existsSync(compiled) || existsSync(path.join(scratch, 'Probe.csproj'))) throw new Error('Probe compilation scratch must be fresh');
+  const inputs = probeInputs(path.resolve(options.get('compile-from')), host);
   const sdkVersion = run(['--version'], path.join(scratch, 'sdk-version.log')).trim();
-  const output = path.resolve(options.get('compile-from'));
-  const xml = (value) => value.replaceAll('&', '&amp;').replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
-  const references = readdirSync(output).filter((name) => name.endsWith('.dll')).map((name) =>
-    `    <Reference Include="${xml(name.slice(0, -4))}" HintPath="${xml(path.join(output, name))}" Private="false" />`);
-  // No PackageReference or warning overrides. Let the same .NET SDK used by the hosts
-  // supply framework references and the standard assembly-unification compiler policy.
-  const project = ['<Project Sdk="Microsoft.NET.Sdk">',
-    '  <PropertyGroup><TargetFramework>net10.0</TargetFramework><OutputType>Exe</OutputType><Nullable>enable</Nullable><EnableDefaultCompileItems>false</EnableDefaultCompileItems><AssemblyName>SqliteNativeRuntimeProbe</AssemblyName></PropertyGroup>',
-    '  <ItemGroup><FrameworkReference Include="Microsoft.AspNetCore.App" /></ItemGroup>', '  <ItemGroup>',
-    `    <Compile Include="${xml(path.join(scriptDirectory, 'sqlite/RuntimeProbe.cs'))}" />`, ...references, '  </ItemGroup>', '</Project>', ''].join('\n');
+  const project = probeProject(inputs);
+  writeFileSync(path.join(scratch, 'probe-inputs.json'), `${JSON.stringify({ sdkVersion, inputs }, null, 2)}\n`);
   const projectFile = path.join(scratch, 'Probe.csproj');
   writeFileSync(projectFile, project);
   run(['restore', projectFile, '--configfile', path.join(scriptDirectory, '../NuGet.Config'), '--warnaserror'], path.join(scratch, 'probe-restore.log'));
   run(['build', projectFile, '-c', 'Release', '--no-restore', '--warnaserror'], path.join(scratch, 'compile-sdk.log'));
   copyFileSync(path.join(scratch, 'bin/Release/net10.0/SqliteNativeRuntimeProbe.dll'), compiled);
-  process.stdout.write(`[sqlite-probe] compiled with SDK ${sdkVersion}, no package references.\n`);
+  writeFileSync(path.join(scratch, 'probe-manifest.json'), `${JSON.stringify({ schemaVersion: 1, sdkVersion, inputs, probeSha256: probeHash(compiled) }, null, 2)}\n`);
+  verifyProbe(inputs.output, host, scratch);
+  process.stdout.write(`[sqlite-probe] ${host} compiled with SDK ${sdkVersion}, no package references.\n`);
 }
 
 if (options.has('output')) {
   const output = realpathSync(path.resolve(options.get('output')));
-  const host = options.get('host');
-  if (!host || !/^Radish\.[A-Za-z.]+$/u.test(host)) throw new Error('Invalid SQLite probe host');
-  if (!existsSync(compiled)) throw new Error('Compile the SQLite probe first');
+  verifyProbe(output, host, scratch);
   const destination = path.join(output, 'SqliteNativeRuntimeProbe.dll');
   if (existsSync(destination)) throw new Error(`Refusing to overwrite ${destination}`);
-  const modes = ['microsoft', 'sqlsugar'];
-  if (existsSync(path.join(output, 'Microsoft.EntityFrameworkCore.Sqlite.dll'))) modes.push('ef');
-  if (existsSync(path.join(output, 'Hangfire.Storage.SQLite.dll'))) modes.push('hangfire');
+  const modes = profile.modes;
   copyFileSync(compiled, destination);
   const results = [];
   try {
@@ -76,7 +73,9 @@ if (options.has('output')) {
       if (leftovers.length > 0) throw new Error(`SQLite probe left running data: ${leftovers.join(', ')}`);
       results.push({ mode, evidence: directory, native: result.native, sha256: result.nativeSha256 });
     }
-  } finally { rmSync(destination); }
-  writeFileSync(path.join(scratch, `${host}-summary.json`), `${JSON.stringify({ output, host, results }, null, 2)}\n`);
+  } finally {
+    rmSync(destination);
+    writeFileSync(path.join(scratch, `${host}-summary.json`), `${JSON.stringify({ output, host, expectedModes: modes, results, completed: results.length === modes.length }, null, 2)}\n`);
+  }
   process.stdout.write(`[sqlite-probe] ${host}: ${modes.join(', ')} cold starts passed at ${output}.\n`);
 }
