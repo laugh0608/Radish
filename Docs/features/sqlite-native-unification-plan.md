@@ -4,7 +4,7 @@
 >
 > 建议：采用 Microsoft SQLite `.Core` 包、SQLitePCLRaw `config 3.0.3` 与唯一 native 包 `SQLitePCLRaw.lib.e_sqlite3 [3.53.3]`，移除引入第二套 native 的 `bundle_e_sqlite3 / SourceGear.sqlite3` 链。保留现有 ORM、EF、Hangfire provider 和数据库支持边界。
 
-后续已另获授权完成[Linux 双架构验证](../records/sqlite-linux-platform-validation-2026-10-31.md)：ARM64 原生 / AMD64 仿真两配置、32 份 publish、120 个独立冷进程与八 final 镜像门禁通过，任务资源和临时代理设置已清理恢复。原生 AMD64、Windows x64 / Intel macOS 及 PG 接库回归仍未关闭；本机或 Linux 批次授权不沿用到未来任务。
+后续已另获授权完成[Linux 双架构验证](../records/sqlite-linux-platform-validation-2026-10-31.md)：ARM64 原生 / AMD64 仿真两配置、32 份 publish、120 个独立冷进程与八 final 镜像门禁通过，任务资源和临时代理设置已清理恢复。后续 [PG17 / PG16 回归](../records/postgres-regression-2026-10-31.md)与[修正后托管验收](../records/sqlite-hosted-native-second-run-2026-10-31.md)已另获授权完成：Linux x64、Intel macOS 和四个 AMD64 final 通过，Windows Release 57 / 60，三项临时 SQLite 删除失败，Debug / publish / 冷进程未执行。七份证据与任务清理完整，Windows 验收仍未关闭；各批一次性授权不沿用到未来任务。
 
 ## 1. 核对事实与根因
 
