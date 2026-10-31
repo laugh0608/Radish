@@ -14,6 +14,8 @@
 2. 手动运行 `inventory`，采集实际 VM / Full MSBuild 精确版本和 hash；不执行上游 task。
 3. 审阅库存，冻结期望 image / VS / MSBuild 后，另行确认指定提交的 `verify` 及证据上传。
 
+[上游询证草稿、证据子集和后续判定方案](../records/hangfire-windows-runner-image-inquiry-review-2026-10-31.md)已获批准并提交为 [actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，指定证据 ZIP 已上传并下载校验；身份冲突仍 unresolved，等待上游回复，不据此触发新的远端运行。
+
 官方 runner 清单不是实际 VM 执行证据。本机成功也不替代本批 Windows 验证；不把本批解释为原包字节重现、正式对应源码入口或完整发行审查已经完成。
 
 ## 2. 已核对工具链与缺口
