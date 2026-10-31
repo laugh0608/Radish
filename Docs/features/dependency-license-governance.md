@@ -14,6 +14,8 @@
 
 2026-10-31 已获批完成[SQLite 原生依赖统一](./sqlite-native-unification-plan.md)：Microsoft `.Core` 包、config 3.0.3 与唯一 `lib.e_sqlite3 [3.53.3]` 消除 native 竞争，保留 Hangfire 旧传递包边界。普通 / osx-arm64 RID 两配置严格构建、后端全量各 4,094 项通过（145 项环境跳过）、32 组 publish 和 160 组冷进程加载通过，追加六组件材料；结果及其他平台未关闭范围见[实施记录](../records/sqlite-native-unification-2026-10-31.md)。当前 .NET 图共 219 个不同 package/version 条目；旧清单保留其历史口径，不代表完整发行审核已关闭。
 
+后续另获授权完成[Linux ARM64 原生 / AMD64 仿真批次](../records/sqlite-linux-platform-validation-2026-10-31.md)：两配置定向测试各 60 项、32 份 publish、120 个独立冷进程和八 final 镜像 / 分发文件 / HIGH 与 CRITICAL 策略通过，资源及代理设置已清理恢复。原生 AMD64、Windows x64 / Intel macOS、PG 接库及剩余对应源码 / 发行边界仍未关闭。
+
 ## 1. 当前结论与阅读入口
 
 - 首轮统计覆盖正式 .NET、Web、Flutter、Rust 的 **947 个依赖条目**；精确口径、例外、未解析项与证据见[盘点记录](../records/dependency-license-audit-2026-10-20.md)和[逐包清单 CSV](../records/dependency-license-inventory-2026-10-20.csv)。条目不等于独立软件产品或许可证数量。

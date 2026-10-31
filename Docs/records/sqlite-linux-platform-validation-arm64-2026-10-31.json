@@ -1,0 +1,1167 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "sourceRevision": "6d952fc46d178a92e9adc9268d847a79bb62a317",
+  "architecture": "arm64",
+  "executionMode": "native-on-OrbStack-arm64",
+  "status": "passed-for-this-execution-mode",
+  "doesNotCloseNativeAmd64": false,
+  "sdk": "10.0.403",
+  "dotnetRuntime": "10.0.14",
+  "containerOs": "Ubuntu 24.04",
+  "actualGlibc": "2.39",
+  "sqliteVersion": "3.53.3",
+  "sqliteSourceId": "2026-06-26 20:14:12 d4c0e51e4aeb96955b99185ab9cde75c339e2c29c3f3f12428d364a10d782c62",
+  "sqliteNativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+  "applicationPackageVersions": 219,
+  "probeSourceSha256": "c922553bf0601b067cbb68cb6bec0ffba44ecef68793cd46ab2a7a9a994c44f2",
+  "probeDllSha256": "c5bae93409c0b670eb7ab2119a525166e080b1e5ee25dcdd9c1268aba81fd0a8",
+  "nativeRust": [
+    {
+      "abi": 65536,
+      "rid": "linux-arm64",
+      "target": "aarch64-unknown-linux-gnu",
+      "profile": "debug",
+      "rustVersion": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+      "sha256": "d24b8e95d2704c0c3d9784183180ede7cded06356e2d59f4c74e12ab29b15255",
+      "inputSha256": "3ddf3e2eb0e9c57e328e04eee805098aac8ea40c8e9b3a962559498d54589447",
+      "minimumPlatform": "glibc 2.36",
+      "cargoLockSha256": "b49f8c1f810f6daa259407345af50d91c8f84b16d3423893405507816ec61b90",
+      "fonts": {
+        "DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+        "NotoSansSC-VF.ttf": "d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964"
+      }
+    },
+    {
+      "abi": 65536,
+      "rid": "linux-arm64",
+      "target": "aarch64-unknown-linux-gnu",
+      "profile": "release",
+      "rustVersion": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+      "sha256": "41efd103239351b6958fd2827e5b31ce374a5ff4cf2ba50d05ec5e50a6e481d4",
+      "inputSha256": "3ddf3e2eb0e9c57e328e04eee805098aac8ea40c8e9b3a962559498d54589447",
+      "minimumPlatform": "glibc 2.36",
+      "cargoLockSha256": "b49f8c1f810f6daa259407345af50d91c8f84b16d3423893405507816ec61b90",
+      "fonts": {
+        "DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+        "NotoSansSC-VF.ttf": "d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964"
+      }
+    }
+  ],
+  "tests": [
+    {
+      "configuration": "Debug",
+      "total": 60,
+      "passed": 60,
+      "failed": 0,
+      "skipped": 0,
+      "trx": {
+        "path": "evidence/arm64/tests/arm64-Debug.trx",
+        "sha256": "8d9267a20be079db126c943fa3f9da39024720c9c2839fd680eebaeee292c762"
+      }
+    },
+    {
+      "configuration": "Release",
+      "total": 60,
+      "passed": 60,
+      "failed": 0,
+      "skipped": 0,
+      "trx": {
+        "path": "evidence/arm64/tests/arm64-Release.trx",
+        "sha256": "5c718c3157a0bebd4fc30cdae27c70b8b1dcb1b0f7cad4d1151be7f2691a4250"
+      }
+    }
+  ],
+  "publishOutputs": [
+    {
+      "configuration": "Debug",
+      "layout": "generic",
+      "host": "Radish.Api",
+      "gateFileCount": 49,
+      "gate": {
+        "path": "evidence/arm64/reports/Debug-generic-Radish.Api.json",
+        "sha256": "873fbfd49e3d9a274e200f79d87684cf73a268c40ec5f07bb5bd73216c0b1f6c"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Debug-generic-Radish.Api.json",
+        "sha256": "434eeb1616e1cb1919313e8a10bde082c8c471c2d0e01ac376c1accbde61c96c"
+      },
+      "distributedNoticesFiles": 57
+    },
+    {
+      "configuration": "Debug",
+      "layout": "generic",
+      "host": "Radish.Auth",
+      "gateFileCount": 49,
+      "gate": {
+        "path": "evidence/arm64/reports/Debug-generic-Radish.Auth.json",
+        "sha256": "0d95d16927b9edb1d64474e64f11f5b4d3855639684c40a2131f61381b7a707d"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Debug-generic-Radish.Auth.json",
+        "sha256": "6605fbcde06b9eba37c2ec53e7be72fbfe012e957730569b3fdf60d2b11545de"
+      },
+      "distributedNoticesFiles": 31
+    },
+    {
+      "configuration": "Debug",
+      "layout": "generic",
+      "host": "Radish.Gateway",
+      "gateFileCount": 48,
+      "gate": {
+        "path": "evidence/arm64/reports/Debug-generic-Radish.Gateway.json",
+        "sha256": "c51b7975d3ecc5025bdcd7c3946bf0e5781f2b0f84c572dc4c0940a702269cda"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Debug-generic-Radish.Gateway.json",
+        "sha256": "43c74a7eef1de3aa88724a425d819a2e3a85751872c6cd9ed799acd60583e6aa"
+      },
+      "distributedNoticesFiles": 29
+    },
+    {
+      "configuration": "Debug",
+      "layout": "generic",
+      "host": "Radish.DbMigrate",
+      "gateFileCount": 49,
+      "gate": {
+        "path": "evidence/arm64/reports/Debug-generic-Radish.DbMigrate.json",
+        "sha256": "1b176029b343be84941144caedfba8fae8ae9b658acb51c6858d23b48353b02f"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Debug-generic-Radish.DbMigrate.json",
+        "sha256": "59270d992ef19acfee5c1e7b8428b5fd8efc8f3551452c7b56e85df64170c561"
+      },
+      "distributedNoticesFiles": 31
+    },
+    {
+      "configuration": "Debug",
+      "layout": "rid",
+      "host": "Radish.Api",
+      "gateFileCount": 7,
+      "gate": {
+        "path": "evidence/arm64/reports/Debug-rid-Radish.Api.json",
+        "sha256": "0b734c6c651b9c20293694ed1e122432410357ff28c0cd101459f24adbd4618f"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Debug-rid-Radish.Api.json",
+        "sha256": "8513c1a19a1437e4b885f6bc2e646d1115b9cc067ba99c5e8376ab1d18ef13b7"
+      },
+      "distributedNoticesFiles": 57
+    },
+    {
+      "configuration": "Debug",
+      "layout": "rid",
+      "host": "Radish.Auth",
+      "gateFileCount": 7,
+      "gate": {
+        "path": "evidence/arm64/reports/Debug-rid-Radish.Auth.json",
+        "sha256": "49b20a66244b91f73dac966b42a8849bf6a2d4e51e2db98e12561dd00149860f"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Debug-rid-Radish.Auth.json",
+        "sha256": "2f95bdaacf2908e668ef74045eaafd25306d254f058892a7e2c53dfdbd74ec87"
+      },
+      "distributedNoticesFiles": 31
+    },
+    {
+      "configuration": "Debug",
+      "layout": "rid",
+      "host": "Radish.Gateway",
+      "gateFileCount": 6,
+      "gate": {
+        "path": "evidence/arm64/reports/Debug-rid-Radish.Gateway.json",
+        "sha256": "34ac96875d962e38f1a00ad295b1c9f4332cf903f5928d7171a1909c92050d8a"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Debug-rid-Radish.Gateway.json",
+        "sha256": "0544458513e456dad69127d8109750031d8740c360c0d8f16b86979e11fbeaa0"
+      },
+      "distributedNoticesFiles": 29
+    },
+    {
+      "configuration": "Debug",
+      "layout": "rid",
+      "host": "Radish.DbMigrate",
+      "gateFileCount": 7,
+      "gate": {
+        "path": "evidence/arm64/reports/Debug-rid-Radish.DbMigrate.json",
+        "sha256": "436db9346f5136ecf8a19849abee32ca19684d54b363718e671fa5a914501df2"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Debug-rid-Radish.DbMigrate.json",
+        "sha256": "482b2224f5bf8789f7fecb0c1c566983bf987f0a5f3238bd97d81811e8ca15f3"
+      },
+      "distributedNoticesFiles": 31
+    },
+    {
+      "configuration": "Release",
+      "layout": "generic",
+      "host": "Radish.Api",
+      "gateFileCount": 49,
+      "gate": {
+        "path": "evidence/arm64/reports/Release-generic-Radish.Api.json",
+        "sha256": "02c5632bc2ec865221879303a702d9c6f2175a936c61ef37b022b61e709f9230"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Release-generic-Radish.Api.json",
+        "sha256": "8b4cb181c55175a92bb22b230b9d27e71cc91cc717d10eac8a9902f64791365f"
+      },
+      "distributedNoticesFiles": 57
+    },
+    {
+      "configuration": "Release",
+      "layout": "generic",
+      "host": "Radish.Auth",
+      "gateFileCount": 49,
+      "gate": {
+        "path": "evidence/arm64/reports/Release-generic-Radish.Auth.json",
+        "sha256": "4f510185ec4e021f2df4aef444e74f722be30530cf738f8ff0b711b5ca3ae51e"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Release-generic-Radish.Auth.json",
+        "sha256": "e096ece8a0c9141770c7691673218fc9db5de2ece43acbd371e36aac3e6dcd69"
+      },
+      "distributedNoticesFiles": 31
+    },
+    {
+      "configuration": "Release",
+      "layout": "generic",
+      "host": "Radish.Gateway",
+      "gateFileCount": 48,
+      "gate": {
+        "path": "evidence/arm64/reports/Release-generic-Radish.Gateway.json",
+        "sha256": "07d8f4a2415e99bd153c7b0d0862efcdf4a47502740671b468d50068c258c3ad"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Release-generic-Radish.Gateway.json",
+        "sha256": "0375bc1a1f21773503ce01f3630e4c2a7e6997bd697b9107a1279ace848b06d6"
+      },
+      "distributedNoticesFiles": 29
+    },
+    {
+      "configuration": "Release",
+      "layout": "generic",
+      "host": "Radish.DbMigrate",
+      "gateFileCount": 49,
+      "gate": {
+        "path": "evidence/arm64/reports/Release-generic-Radish.DbMigrate.json",
+        "sha256": "5aec8cab58ba23697b3ae4ce54fb185d2d2a4777a8de9da3ec45c4c337bcb455"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Release-generic-Radish.DbMigrate.json",
+        "sha256": "6b270ed46fe9658155915940343543126e1b12f03475b9fa6ee49e634d9366a3"
+      },
+      "distributedNoticesFiles": 31
+    },
+    {
+      "configuration": "Release",
+      "layout": "rid",
+      "host": "Radish.Api",
+      "gateFileCount": 7,
+      "gate": {
+        "path": "evidence/arm64/reports/Release-rid-Radish.Api.json",
+        "sha256": "79ed27ba741904153062799aad4793f98fd8893087efc82798ec00afea169ed7"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Release-rid-Radish.Api.json",
+        "sha256": "00c2d84df0e07646eb08b03b74c7d1fcfee6859d003683ee0bbe1f6491463aef"
+      },
+      "distributedNoticesFiles": 57
+    },
+    {
+      "configuration": "Release",
+      "layout": "rid",
+      "host": "Radish.Auth",
+      "gateFileCount": 7,
+      "gate": {
+        "path": "evidence/arm64/reports/Release-rid-Radish.Auth.json",
+        "sha256": "9fdd9e1a9aceb767c8da3c92876eced17a02dce825390d162a314dcbaccbc4e6"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Release-rid-Radish.Auth.json",
+        "sha256": "717365b19e2ec021338b396ae34a7ad7049acb167273ae5c48a0b971cff3f275"
+      },
+      "distributedNoticesFiles": 31
+    },
+    {
+      "configuration": "Release",
+      "layout": "rid",
+      "host": "Radish.Gateway",
+      "gateFileCount": 6,
+      "gate": {
+        "path": "evidence/arm64/reports/Release-rid-Radish.Gateway.json",
+        "sha256": "70764420ed75066df00c232cc59d6e8a9e040e8745e923d61758018d66751c79"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Release-rid-Radish.Gateway.json",
+        "sha256": "0a2a1d86ff7fa0acef07a73be9a4eaf4084984240e1804df4c2c624514225323"
+      },
+      "distributedNoticesFiles": 29
+    },
+    {
+      "configuration": "Release",
+      "layout": "rid",
+      "host": "Radish.DbMigrate",
+      "gateFileCount": 7,
+      "gate": {
+        "path": "evidence/arm64/reports/Release-rid-Radish.DbMigrate.json",
+        "sha256": "4e2e1022249770f909aaa6e7a905d60df36d94268a1fefe8afc5dd4b35e17ac9"
+      },
+      "filesManifest": {
+        "path": "evidence/arm64/file-manifests/Release-rid-Radish.DbMigrate.json",
+        "sha256": "15c12cb4a9b2f2a78e76c632bbf51e94f7b915eb030e801f52f2f9d09ad781fc"
+      },
+      "distributedNoticesFiles": 31
+    }
+  ],
+  "runtimeCases": [
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Api/Radish.Api-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Api/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Api/Radish.Api-ef/result.json",
+        "sha256": "02cab3e1b051e32304f936591fd38878f3234f1135801d6d088623d3485a2b55"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Api/Radish.Api-hangfire",
+      "first": "hangfire",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Api/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Api/Radish.Api-hangfire/result.json",
+        "sha256": "fa81e771c7b6f65019187011c7feac5eeab903f1d831fe9d32199e214b53b012"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Api/Radish.Api-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Api/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Api/Radish.Api-microsoft/result.json",
+        "sha256": "d6709faba4e26ab848536193051aeb6ae7aee1799cef66009a0afca68d41647b"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Api/Radish.Api-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Api/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Api/Radish.Api-sqlsugar/result.json",
+        "sha256": "39f3c4e67881cff482cd80b32e417c4a27f2752a23abdcd8529e6d20c768f9a8"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Auth/Radish.Auth-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Auth/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Auth/Radish.Auth-ef/result.json",
+        "sha256": "870315491147b6f7dd1a49d00d46c73c912bcc7b59288de39557bd64f030ed81"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Auth/Radish.Auth-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Auth/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Auth/Radish.Auth-microsoft/result.json",
+        "sha256": "b25620b48d5be535f94537adb3888dacc34e19966224627f189880ab8bc824ba"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Auth/Radish.Auth-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Auth/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Auth/Radish.Auth-sqlsugar/result.json",
+        "sha256": "bfac0b55a77f59c1d1c977ea9b15ff8c8428b2616351cdbef535213940ac7220"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.DbMigrate/Radish.DbMigrate-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.DbMigrate/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.DbMigrate/Radish.DbMigrate-ef/result.json",
+        "sha256": "301565bfb7950c03f6694ccda1921632434cdc3b8e3d2dba8b2b08a0cfe826d7"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.DbMigrate/Radish.DbMigrate-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.DbMigrate/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.DbMigrate/Radish.DbMigrate-microsoft/result.json",
+        "sha256": "53841a2ba03e61a6cee4b9cdcfb1a74590c542324827526a1a8f6feeb750bcfa"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.DbMigrate/Radish.DbMigrate-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.DbMigrate/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.DbMigrate/Radish.DbMigrate-sqlsugar/result.json",
+        "sha256": "869584e4c8d03d381a021fa110e4e59f3abf95e48f810d87c292770359ad8bee"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Gateway/Radish.Gateway-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Gateway/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Gateway/Radish.Gateway-microsoft/result.json",
+        "sha256": "6d1d66dfb33d86b4be723eb08ed8bb977b54bc4cb8b49a030198103d2110703e"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Gateway/Radish.Gateway-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Debug/generic/Radish.Gateway/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Gateway/Radish.Gateway-sqlsugar/result.json",
+        "sha256": "43f28dd921e45c68606cb2da6559fd001511632e1d780400509a3f0aeabbe47c"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Api/Radish.Api-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Api/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Api/Radish.Api-ef/result.json",
+        "sha256": "e9b757adf6e45a7f0213c28533bc7fcf60c5829e107ea29091c4734c241a4c77"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Api/Radish.Api-hangfire",
+      "first": "hangfire",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Api/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Api/Radish.Api-hangfire/result.json",
+        "sha256": "0aba0ad35544e768f3d4cc3105a997027fb4c936d322232da4d37fe3a5f7ab26"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Api/Radish.Api-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Api/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Api/Radish.Api-microsoft/result.json",
+        "sha256": "dc8d68717bd7b8ccf57594a665aaea08723182ce56bd67ebbb2365c032d49101"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Api/Radish.Api-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Api/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Api/Radish.Api-sqlsugar/result.json",
+        "sha256": "7878785f035ad738d905ab3919190a76ff31d067425888af1e25418a2afa4170"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Auth/Radish.Auth-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Auth/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Auth/Radish.Auth-ef/result.json",
+        "sha256": "3d51302dbb8fc9a3b67e9086dfdf5b2d3df0350dc3b15924e3aef1f46e3266fc"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Auth/Radish.Auth-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Auth/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Auth/Radish.Auth-microsoft/result.json",
+        "sha256": "5fec09fe0b15297662ce2c482f8c78afebd523cf4d51cd52e560ad107084aea0"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Auth/Radish.Auth-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Auth/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Auth/Radish.Auth-sqlsugar/result.json",
+        "sha256": "8ba5a8f56894e56963f3b8a0d7480c6a5b5a12e7d234b145095fbab2acd6d0cb"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.DbMigrate/Radish.DbMigrate-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.DbMigrate/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.DbMigrate/Radish.DbMigrate-ef/result.json",
+        "sha256": "aeeb03fc12880c791ae176c6129ebf528d7a785e66865e7e5b0030aa0210374a"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.DbMigrate/Radish.DbMigrate-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.DbMigrate/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.DbMigrate/Radish.DbMigrate-microsoft/result.json",
+        "sha256": "97226fbe72b90c7c4896e6c4db76d3d859efa0eff97a16a989ac5be65c9c63a2"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.DbMigrate/Radish.DbMigrate-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.DbMigrate/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.DbMigrate/Radish.DbMigrate-sqlsugar/result.json",
+        "sha256": "85efc06d9f9abb770fe77bd86974965a23e39305d51936625084c132f1e2d19e"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Gateway/Radish.Gateway-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Gateway/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Gateway/Radish.Gateway-microsoft/result.json",
+        "sha256": "b0dc61573c5f7f2e116b1aa96ac40a0ca92888da975a8b118b0b9748068e6214"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Gateway/Radish.Gateway-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Debug/rid/Radish.Gateway/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Gateway/Radish.Gateway-sqlsugar/result.json",
+        "sha256": "3a8d2113bc4605f23bdb8add8d8d64740406664fc79fcc4ed5c57c72fc9eec41"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Api/Radish.Api-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Api/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Api/Radish.Api-ef/result.json",
+        "sha256": "57a33957910734b1f76eaa8a5a48716fd99c76123c8a5006e912a201158cac5f"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Api/Radish.Api-hangfire",
+      "first": "hangfire",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Api/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Api/Radish.Api-hangfire/result.json",
+        "sha256": "a49c0787f018d6a85486804032608f7d629740793b7f91228e78498e1f5e2893"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Api/Radish.Api-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Api/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Api/Radish.Api-microsoft/result.json",
+        "sha256": "df0ae97928f1598e30268fa6a58ac4a8ba9d1b3a9901ba1c0c6e91192459c62b"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Api/Radish.Api-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Api/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Api/Radish.Api-sqlsugar/result.json",
+        "sha256": "bf4751168f44314482a0919abbdc207ffbe6893faf8c7f9ff961ad19d3d06fdd"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Auth/Radish.Auth-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Auth/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Auth/Radish.Auth-ef/result.json",
+        "sha256": "65b5c163230df8f860ba606352953fd76d41629d01f7a2f76bd727fad81dd9db"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Auth/Radish.Auth-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Auth/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Auth/Radish.Auth-microsoft/result.json",
+        "sha256": "1b63b470f23a068a661860f17511276bb01a9c9ee36250034e4e2ab43def07a0"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Auth/Radish.Auth-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Auth/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Auth/Radish.Auth-sqlsugar/result.json",
+        "sha256": "0236c8eeaef2a3d64771f4f96933a698d2b27b70532393b0ecb3e976d4dd9b62"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.DbMigrate/Radish.DbMigrate-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.DbMigrate/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.DbMigrate/Radish.DbMigrate-ef/result.json",
+        "sha256": "8e4243006291388849413d164b8a25d1cb4740d7479dd80857e525ee5fc20e59"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.DbMigrate/Radish.DbMigrate-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.DbMigrate/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.DbMigrate/Radish.DbMigrate-microsoft/result.json",
+        "sha256": "dae099a9c009599723f9c538e5412c4d4aa895bf1efc92eb1059c9cac9a1e57a"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.DbMigrate/Radish.DbMigrate-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.DbMigrate/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.DbMigrate/Radish.DbMigrate-sqlsugar/result.json",
+        "sha256": "2afd2a0cf0a1701bf6855101ee453bfa08d30c4c4e383071fb179445bbbcf25e"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Gateway/Radish.Gateway-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Gateway/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Gateway/Radish.Gateway-microsoft/result.json",
+        "sha256": "60bde8eca041413d6a6c8c8a2e47e64a641482d58be390b3f8bb405743d35ff5"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Gateway/Radish.Gateway-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Release/generic/Radish.Gateway/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Gateway/Radish.Gateway-sqlsugar/result.json",
+        "sha256": "89fdf6afcd03ff7c85e0b3ba9657c6198ae806994a53138731db257b598e15ac"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Api/Radish.Api-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Api/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Api/Radish.Api-ef/result.json",
+        "sha256": "26409b6a2341d5824e3e0e7610f68b71fd38c4beef6cd26228224e72bdeb0ceb"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Api/Radish.Api-hangfire",
+      "first": "hangfire",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Api/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Api/Radish.Api-hangfire/result.json",
+        "sha256": "5ccfdedf900f43a18bdec188f1551d0e70c4e286f311934ff663bf87eee0585e"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Api/Radish.Api-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Api/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Api/Radish.Api-microsoft/result.json",
+        "sha256": "77188cd59ddd308f6542a4cbb803569c5a3ee33f8c84014f7189eba58a9ed5ad"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Api/Radish.Api-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Api/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Api/Radish.Api-sqlsugar/result.json",
+        "sha256": "dc68abb977188ecfe084565701052ac2461c440115ab821093d27a752487d414"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Auth/Radish.Auth-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Auth/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Auth/Radish.Auth-ef/result.json",
+        "sha256": "76762e98cdfc4ab2744865b4d76e467c2d561c22d9d6876aa22e377048bb6344"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Auth/Radish.Auth-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Auth/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Auth/Radish.Auth-microsoft/result.json",
+        "sha256": "6b1e82743644fe6f1abaecd972ce26535814789b29eb4594812a0035d4996566"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Auth/Radish.Auth-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Auth/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Auth/Radish.Auth-sqlsugar/result.json",
+        "sha256": "8c10a1f97d288633c6d81bdc883cf1c35ff94fb0861c7eaaed353186540211cc"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.DbMigrate/Radish.DbMigrate-ef",
+      "first": "ef",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.DbMigrate/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.DbMigrate/Radish.DbMigrate-ef/result.json",
+        "sha256": "7be492da7d8710b75894ec423bf78c8b2d734a38899023943d51c66e35be6953"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.DbMigrate/Radish.DbMigrate-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.DbMigrate/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.DbMigrate/Radish.DbMigrate-microsoft/result.json",
+        "sha256": "45ae8c157f749c4e264af87d79cde320cd03a2d976f0630bfb59899f8fe7b556"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.DbMigrate/Radish.DbMigrate-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.DbMigrate/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.DbMigrate/Radish.DbMigrate-sqlsugar/result.json",
+        "sha256": "178e497cd493ffa8be29d482ba6986639c5deafe49a8c90eb723c79173628571"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Gateway/Radish.Gateway-microsoft",
+      "first": "microsoft",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Gateway/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Gateway/Radish.Gateway-microsoft/result.json",
+        "sha256": "9d0db081d39f8933e0a53a06fa44cfdd7ecef80f2804b2eb2e4a2362c25e21c3"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Gateway/Radish.Gateway-sqlsugar",
+      "first": "sqlsugar",
+      "native": "/evidence/publish/arm64/Release/rid/Radish.Gateway/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Gateway/Radish.Gateway-sqlsugar/result.json",
+        "sha256": "69f448fdd9006ba570519b4128de6a1a96e53fbed361d2310dfe2429555919d4"
+      }
+    },
+    {
+      "category": "final",
+      "case": "api/ef",
+      "first": "ef",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/api/ef/result.json",
+        "sha256": "ee8ecab4955d45f59e6ce16c1374e92e4826e29f7c6e27352de38b799481c264"
+      }
+    },
+    {
+      "category": "final",
+      "case": "api/hangfire",
+      "first": "hangfire",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/api/hangfire/result.json",
+        "sha256": "7b0f7c09f22459a8786543e525fb1a5463fb0fc25ea1d940fa98457c68bf110e"
+      }
+    },
+    {
+      "category": "final",
+      "case": "api/microsoft",
+      "first": "microsoft",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/api/microsoft/result.json",
+        "sha256": "bba02d16c7a0141afe9827c797c76321b980ee9a8c86531131b269056fc31fe5"
+      }
+    },
+    {
+      "category": "final",
+      "case": "api/sqlsugar",
+      "first": "sqlsugar",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/api/sqlsugar/result.json",
+        "sha256": "88072596bc59ea347699c71dbf9aa2783a0d66b4acba28cda28633e642a66431"
+      }
+    },
+    {
+      "category": "final",
+      "case": "auth/ef",
+      "first": "ef",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/auth/ef/result.json",
+        "sha256": "ee8ecab4955d45f59e6ce16c1374e92e4826e29f7c6e27352de38b799481c264"
+      }
+    },
+    {
+      "category": "final",
+      "case": "auth/microsoft",
+      "first": "microsoft",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/auth/microsoft/result.json",
+        "sha256": "bba02d16c7a0141afe9827c797c76321b980ee9a8c86531131b269056fc31fe5"
+      }
+    },
+    {
+      "category": "final",
+      "case": "auth/sqlsugar",
+      "first": "sqlsugar",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/auth/sqlsugar/result.json",
+        "sha256": "88072596bc59ea347699c71dbf9aa2783a0d66b4acba28cda28633e642a66431"
+      }
+    },
+    {
+      "category": "final",
+      "case": "dbmigrate/ef",
+      "first": "ef",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/dbmigrate/ef/result.json",
+        "sha256": "ee8ecab4955d45f59e6ce16c1374e92e4826e29f7c6e27352de38b799481c264"
+      }
+    },
+    {
+      "category": "final",
+      "case": "dbmigrate/microsoft",
+      "first": "microsoft",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/dbmigrate/microsoft/result.json",
+        "sha256": "bba02d16c7a0141afe9827c797c76321b980ee9a8c86531131b269056fc31fe5"
+      }
+    },
+    {
+      "category": "final",
+      "case": "dbmigrate/sqlsugar",
+      "first": "sqlsugar",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/dbmigrate/sqlsugar/result.json",
+        "sha256": "88072596bc59ea347699c71dbf9aa2783a0d66b4acba28cda28633e642a66431"
+      }
+    },
+    {
+      "category": "final",
+      "case": "gateway/microsoft",
+      "first": "microsoft",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/gateway/microsoft/result.json",
+        "sha256": "bba02d16c7a0141afe9827c797c76321b980ee9a8c86531131b269056fc31fe5"
+      }
+    },
+    {
+      "category": "final",
+      "case": "gateway/sqlsugar",
+      "first": "sqlsugar",
+      "native": "/app/runtimes/linux-arm64/native/libe_sqlite3.so",
+      "nativeSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+      "result": {
+        "path": "evidence/final-probes/arm64/gateway/sqlsugar/result.json",
+        "sha256": "88072596bc59ea347699c71dbf9aa2783a0d66b4acba28cda28633e642a66431"
+      }
+    }
+  ],
+  "hangfireStorageCases": [
+    {
+      "category": "publish",
+      "case": "Debug/generic/Radish.Api/Radish.Api-hangfire",
+      "registered": 16,
+      "retryAttempts": 2,
+      "successState": "Succeeded",
+      "retryState": "Succeeded",
+      "evidence": {
+        "path": "evidence/arm64/probes/Debug/generic/Radish.Api/Radish.Api-hangfire/hangfire-result.json",
+        "sha256": "f338bfd6d900decafd69e97b1fd9ccd3710e1927ba244e1fd629e079ed072261"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Debug/rid/Radish.Api/Radish.Api-hangfire",
+      "registered": 16,
+      "retryAttempts": 2,
+      "successState": "Succeeded",
+      "retryState": "Succeeded",
+      "evidence": {
+        "path": "evidence/arm64/probes/Debug/rid/Radish.Api/Radish.Api-hangfire/hangfire-result.json",
+        "sha256": "f338bfd6d900decafd69e97b1fd9ccd3710e1927ba244e1fd629e079ed072261"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/generic/Radish.Api/Radish.Api-hangfire",
+      "registered": 16,
+      "retryAttempts": 2,
+      "successState": "Succeeded",
+      "retryState": "Succeeded",
+      "evidence": {
+        "path": "evidence/arm64/probes/Release/generic/Radish.Api/Radish.Api-hangfire/hangfire-result.json",
+        "sha256": "f338bfd6d900decafd69e97b1fd9ccd3710e1927ba244e1fd629e079ed072261"
+      }
+    },
+    {
+      "category": "publish",
+      "case": "Release/rid/Radish.Api/Radish.Api-hangfire",
+      "registered": 16,
+      "retryAttempts": 2,
+      "successState": "Succeeded",
+      "retryState": "Succeeded",
+      "evidence": {
+        "path": "evidence/arm64/probes/Release/rid/Radish.Api/Radish.Api-hangfire/hangfire-result.json",
+        "sha256": "f338bfd6d900decafd69e97b1fd9ccd3710e1927ba244e1fd629e079ed072261"
+      }
+    },
+    {
+      "category": "final",
+      "case": "api/hangfire",
+      "registered": 16,
+      "retryAttempts": 2,
+      "successState": "Succeeded",
+      "retryState": "Succeeded",
+      "evidence": {
+        "path": "evidence/final-probes/arm64/api/hangfire/hangfire-result.json",
+        "sha256": "f338bfd6d900decafd69e97b1fd9ccd3710e1927ba244e1fd629e079ed072261"
+      }
+    }
+  ],
+  "finalImages": [
+    {
+      "service": "api",
+      "imageId": "sha256:a8098fa5788c932dc6d7d28640bee9f3e26872b5fbc27ea7edf99bdeaeff5922",
+      "bytes": 648368496,
+      "coldModes": 4,
+      "noticesComponents": 17,
+      "noticesFiles": 57,
+      "policyStatus": "passed",
+      "policyCounts": {
+        "critical": 0,
+        "fixedHigh": 0,
+        "unfixedHigh": 0,
+        "blocking": 0,
+        "acceptedByException": 0,
+        "exceptionIssues": 0
+      },
+      "scan": {
+        "path": "evidence/scans/arm64/api/trivy.json",
+        "sha256": "bedc729c8db16c44c96dd89b962d2069adf9d6c2aa5fdd73a94d294ab3ed690a"
+      },
+      "evaluation": {
+        "path": "evidence/scans/arm64/api/evaluation.json",
+        "sha256": "6cf1b812bc8a9885423d1a255004cb9c81454386cc5454ca8cfd246d81831e57"
+      },
+      "archiveSha256": "01e5c636c53353013c7cb6b6637da7ea8645e69e3ea3877773459496bc217a68",
+      "filesManifest": {
+        "path": "evidence/final-manifests/arm64/api-final.json",
+        "sha256": "2d0460e3263885189a2240e508c91d520e6cdaf9a7b68367f30a2e244223ad04"
+      }
+    },
+    {
+      "service": "auth",
+      "imageId": "sha256:9b464ab5972ecd567a45b3a60edde4bbd62e8e99680b504204575d04db9cc929",
+      "bytes": 599729066,
+      "coldModes": 3,
+      "noticesComponents": 12,
+      "noticesFiles": 31,
+      "policyStatus": "passed",
+      "policyCounts": {
+        "critical": 0,
+        "fixedHigh": 0,
+        "unfixedHigh": 0,
+        "blocking": 0,
+        "acceptedByException": 0,
+        "exceptionIssues": 0
+      },
+      "scan": {
+        "path": "evidence/scans/arm64/auth/trivy.json",
+        "sha256": "bd4c0731236120c7bff097c229c4abec8768fb6ad685d9ba72c6b41d1fc7a2b5"
+      },
+      "evaluation": {
+        "path": "evidence/scans/arm64/auth/evaluation.json",
+        "sha256": "5cd739c450ccee07432e80a6d0f3d8b7dc5471d336ca1ddb36177a94f6f6764a"
+      },
+      "archiveSha256": "66540b0507d7d0d5f42a443079f33eb0c03c66a24fb440395fbeeeb5fa88401b",
+      "filesManifest": {
+        "path": "evidence/final-manifests/arm64/auth-final.json",
+        "sha256": "0784cd81271a0f204f1275c4b5586c37375f33e75ced6fcb99760ba5b6f71e5d"
+      }
+    },
+    {
+      "service": "gateway",
+      "imageId": "sha256:79ea3b4912ed28b7561dd35b943d9fadb1931874e331f045031a0e83323dc035",
+      "bytes": 528055199,
+      "coldModes": 2,
+      "noticesComponents": 11,
+      "noticesFiles": 29,
+      "policyStatus": "passed",
+      "policyCounts": {
+        "critical": 0,
+        "fixedHigh": 0,
+        "unfixedHigh": 0,
+        "blocking": 0,
+        "acceptedByException": 0,
+        "exceptionIssues": 0
+      },
+      "scan": {
+        "path": "evidence/scans/arm64/gateway/trivy.json",
+        "sha256": "a684733ab29bcca301df88d93e522352bcbb36aafe23c44f193537da93535ea6"
+      },
+      "evaluation": {
+        "path": "evidence/scans/arm64/gateway/evaluation.json",
+        "sha256": "b248ab06c7c7951ad47a2b51b35bea6c84cb96a5ff86591258d9a720ba341401"
+      },
+      "archiveSha256": "7d87cfbaf1614bea63e1cf529d42fcd9ef67d67b8112475cee338d46d7d60a82",
+      "filesManifest": {
+        "path": "evidence/final-manifests/arm64/gateway-final.json",
+        "sha256": "56fe334d4a882f88a9a6a7ba6de922cf0678cdaabaa2d4784c061570a370d9a9"
+      }
+    },
+    {
+      "service": "dbmigrate",
+      "imageId": "sha256:edb315e662f75c9681cd47ef37bcce1d476490a7282e51ed63a10ad27fedfbe2",
+      "bytes": 556124526,
+      "coldModes": 3,
+      "noticesComponents": 12,
+      "noticesFiles": 31,
+      "policyStatus": "passed",
+      "policyCounts": {
+        "critical": 0,
+        "fixedHigh": 0,
+        "unfixedHigh": 0,
+        "blocking": 0,
+        "acceptedByException": 0,
+        "exceptionIssues": 0
+      },
+      "scan": {
+        "path": "evidence/scans/arm64/dbmigrate/trivy.json",
+        "sha256": "14668c350a8fff7a88b8a9398f4a954864f83a1af7df666abb12072e1b9675e0"
+      },
+      "evaluation": {
+        "path": "evidence/scans/arm64/dbmigrate/evaluation.json",
+        "sha256": "deec06193c21508ff43b7e8c1c6968834bf99e1d68f5eb612d6a82982115197f"
+      },
+      "archiveSha256": "c22fae0e7f9a16fdf0c660b3ad6f2ca8044df7bd020c47b8a842c519df18a6bd",
+      "filesManifest": {
+        "path": "evidence/final-manifests/arm64/dbmigrate-final.json",
+        "sha256": "fcd9889dab0dc8106407df3a504cda0d2cf892a625a05c4a75fa650d5841b28d"
+      }
+    }
+  ],
+  "localEvidenceRootAtExecution": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-sqlite-linux-20261031-a7c2",
+  "evidenceRetention": "Paths resolve relative to archived evidence root after cleanup; source, binaries, DB and cache are removed; logs/reports/manifests retained",
+  "evidenceArchiveRoot": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-sqlite-linux-20261031-a7c2-evidence"
+}

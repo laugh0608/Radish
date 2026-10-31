@@ -62,7 +62,7 @@ ORM 使用 `SqlSugarCoreNoDrive 5.1.4.207`，由 Common 显式引用 `Npgsql 10.
 
 Hangfire 仍传递引入 `bundle_green 2.0.4 / provider.dynamic_cdecl 2.0.4`；其旧 native 包 ID 要求由同一个 `[3.53.3]` 满足。green 的旧 batteries 重名候选仍存在，但最终复制 / 加载必须匹配 config 3.0.3。不要将“单一 native 来源”理解为所有历史托管包均已移除。
 
-`Scripts/build/sqlite-native.targets` 在 SDK 冲突消解前校验原始 assets，并在四宿主 / Tests build、四宿主 publish 后校验实际文件及 deps；`Scripts/sqlite-native-contract.json` 固定各平台来源文件 SHA256。排查必须对照复制文件与实际加载模块路径、`sqlite3_libversion()`，不能只看 deps。Node 24 用于该检查；四宿主 Dockerfile 仅在 build 阶段提供 Node，不加入最终运行镜像。2026-10-31 本机通用 / osx-arm64 RID 产物与加载均为 3.53.3，见[实施记录](../records/sqlite-native-unification-2026-10-31.md)；其他平台运行及最终镜像仍按[统一方案](../features/sqlite-native-unification-plan.md)独立验证。
+`Scripts/build/sqlite-native.targets` 在 SDK 冲突消解前校验原始 assets，并在四宿主 / Tests build、四宿主 publish 后校验实际文件及 deps；`Scripts/sqlite-native-contract.json` 固定各平台来源文件 SHA256。排查必须对照复制文件与实际加载模块路径、`sqlite3_libversion()`，不能只看 deps。Node 24 用于该检查；四宿主 Dockerfile 仅在 build 阶段提供 Node，不加入最终运行镜像。2026-10-31 本机通用 / osx-arm64 RID 加载均为 3.53.3，见[实施记录](../records/sqlite-native-unification-2026-10-31.md)；后续[Linux ARM64 原生 / AMD64 仿真及八 final 镜像](../records/sqlite-linux-platform-validation-2026-10-31.md)同样通过。原生 AMD64、Windows x64 / Intel macOS 等未执行范围继续独立验收，不以仿真替代。
 
 旧双链曾导致本机 Tests 3.50.3、API publish 3.50.4，历史证据见[来源与产物记录](../records/hangfire-source-inputs-2026-10-26.md#4-新发现sqlite-测试与发布基线不同)。升级后首次构建若报告旧 native 残留，执行标准 `dotnet clean` 后重建；不得手改 NuGet 缓存、选择性覆盖 DLL 或关闭门禁。
 

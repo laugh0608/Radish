@@ -1,18 +1,18 @@
 # SQLite Linux 双架构执行准备与验证方案
 
-> 2026-10-31（Asia/Shanghai）。**镜像 metadata 与输入清单已冻结，等待所有者确认后执行。** 本文承接[SQLite 统一方案](./sqlite-native-unification-plan.md)，不替代其依赖与平台边界。初次盘点见[准备证据](../records/sqlite-linux-platform-readiness-2026-10-31.json)，MCR 补证、全部精确引用与十份 Dockerfile 审阅稿校验值见[冻结清单](../records/sqlite-linux-platform-inputs-2026-10-31.json)。
+> 2026-10-31（Asia/Shanghai）。**本批执行与清理完成：ARM64 原生、AMD64 仿真矩阵通过，临时代理排除已恢复原值。** 本文承接[SQLite 统一方案](./sqlite-native-unification-plan.md)，不替代其依赖与平台边界。初次盘点见[准备证据](../records/sqlite-linux-platform-readiness-2026-10-31.json)，精确输入见[冻结清单](../records/sqlite-linux-platform-inputs-2026-10-31.json)，实际结果见[执行记录](../records/sqlite-linux-platform-validation-2026-10-31.md)。本批授权不延续到未来任务。
 >
 > 本批先验证 Linux ARM64 与 AMD64 的四宿主输出和最终镜像。ARM64 使用本机原生 Linux 引擎；本机 AMD64 属于仿真验证，不能据此关闭原生 AMD64 验收。Windows x64、Intel macOS 与 PostgreSQL 联调另排。
 
 ## 1. 当前结论与停止线
 
-- 初次盘点基线为 `dev / 848fd007`；准备文档已按所有者要求提交为 `6d952fc4`，拟执行源码快照采用该提交，产品 / 构建代码仍与 `848fd007` 相同。本轮只准备文档、metadata 和审阅稿，没有安装、restore、build、test、publish、拉取镜像层或创建 / 启动容器。
-- 本机工具足以组织 Linux 构建：Docker / Buildx 已有且连接本地 OrbStack。Buildx 声明支持两种架构，实际运行能力仍待批准后测试。
+- 初次盘点基线为 `dev / 848fd007`；实际源码快照采用准备提交 `6d952fc4`，产品 / 构建代码仍与 `848fd007` 相同。准备阶段没有安装、构建或启动容器；后续另获明确授权才执行，事实见执行记录，不改写历史冻结清单。
+- 本机 Docker / Buildx 连接本地 OrbStack；实际完成 ARM64 原生与 AMD64 仿真运行。后者不能关闭原生 AMD64 验收。
 - 没有 Linux Rust 原生产物，必须分别在目标架构重建；缓存 Rust 镜像是 **1.96.1**，不能替代批准的 **1.96.0**。已取得后者两架构的官方 manifest / config 元数据。
-- 本机没有漏洞扫描器。建议临时使用与现有 CI 相同版本的 Trivy **0.70.0** 容器，扫描本地导出的镜像 archive，不挂载 Docker socket，不在宿主安装扫描器。
+- 本机没有安装漏洞扫描器。本批使用与现有 CI 相同版本的 Trivy **0.70.0** 容器，扫描本地导出的八份镜像 archive，不挂载 Docker socket，不在宿主安装扫描器；现有 HIGH / CRITICAL 策略均通过。
 - **MCR metadata 缺项已补齐**：继承本机代理时 CONNECT 后 TLS 握手超时，沙盒外同一路径也超时；本次只读请求改为直连官方 MCR 后成功，保留默认 TLS 校验，没有改代理 / daemon 配置。四份平台 manifest 与 config 均按 registry 原始字节验证 SHA256；Docker 客户端使用仅本命令生效的 `NO_PROXY / no_proxy` 后得到相同 manifest。
 - **精确容器版本**：两架构 SDK 均为 **10.0.403**，.NET / ASP.NET 均为 **10.0.14**，默认镜像为 **Ubuntu 24.04 noble**；不能套用宿主 SDK 10.0.300 / runtime 10.0.8。Rust / Node stage 仍为 bookworm，不改正式 Dockerfile 的发行版路线。
-- **放行条件**：按本页及冻结清单确认精确镜像下载、两架构隔离构建 / 测试 / publish、八份 final 探针和扫描后执行。metadata 可达不代表 daemon 拉取层已通过；如实际构建被网络阻断，停止对应步骤，不自动修改代理或镜像源。
+- **执行与停止线**：已按本页及冻结清单完成下载、两架构构建 / 测试 / publish、八份 final 探针和扫描。实际 daemon 网络受阻时曾暂停，并在所有者单独批准第 9 节后恢复；未来遇到新阻断仍不自动改代理、镜像源或放宽检查。
 
 ## 2. 工具链、缓存与平台资源
 
@@ -36,7 +36,7 @@
 | `node:24-bookworm-slim` | ARM64，Node **24.21.0**；digest `0e0ff40c…` | 当前远端同 tag 已是 **24.22.2**；不混用缓存与远端 |
 | Rust 无 tag 镜像 `a339861a…` | ARM64，Rust **1.96.1** | 排除，不能改 tag 冒充 1.96.0 |
 | PostgreSQL 17 / 16 缓存 | ARM64，17.11 / 16.15，完整 digest 在证据中 | 仅盘点，本批不启动、不复用数据卷 |
-| .NET SDK / ASP.NET、Trivy | 未发现对应已核实缓存 | metadata 已冻结；下载镜像层仍待本次执行确认 |
+| .NET SDK / ASP.NET、Trivy | 初读未发现对应已核实缓存 | 本批已完成精确输入下载，作为共享缓存保留 |
 
 ### 2.2 已取得的远端平台 manifest
 
@@ -51,9 +51,9 @@
 
 Scanner 在宿主原生 ARM64 运行，固定 `aquasec/trivy:0.70.0@sha256:06c0a1359e4d745c6d709f5b64421db79fe0b5602c87d6eb5d6ba7d3d79d91ab`，可静态扫描两架构 archive。其版本与现有 CI 固定 action 的 [默认版本](https://github.com/aquasecurity/trivy-action/blob/ed142fd0673e97e23eac54620cfb913e5ce36c25/action.yaml#L96)一致。
 
-四个 MCR manifest / config 的原始字节、header digest、内容 SHA256 与 Docker 客户端复核均已留痕；两个 SDK config 的 history 明确为 Ubuntu 24.04，ASP.NET 的六层全部为对应 SDK 的前缀层。其结果与 [Microsoft 对 .NET 10 默认标签的说明](https://learn.microsoft.com/en-us/dotnet/core/compatibility/containers/10.0/default-images-use-ubuntu)一致。实际 glibc 与可执行版本仍在批准后的容器中读取，不将 metadata 核对写成运行验证。若输入出现阻断漏洞或需要变更版本 / 发行版，先重新确认方案。
+四个 MCR manifest / config 的原始字节、header digest、内容 SHA256 与 Docker 客户端复核均已留痕；两个 SDK config 的 history 明确为 Ubuntu 24.04，ASP.NET 的六层全部为对应 SDK 的前缀层。其结果与 [Microsoft 对 .NET 10 默认标签的说明](https://learn.microsoft.com/en-us/dotnet/core/compatibility/containers/10.0/default-images-use-ubuntu)一致。本批另在容器中核实可执行版本与 glibc 2.39，不将 metadata 核对单独当作运行证明。若未来输入出现阻断漏洞或需要变更版本 / 发行版，先重新确认方案。
 
-批准后先记录各阶段可执行输入，命令分别为 `dotnet --info`、`dotnet --list-runtimes`、`node --version`、`rustc --version`、`cargo --version`、`cat /etc/os-release` 和 `getconf GNU_LIBC_VERSION`；只在含对应工具的 stage 执行，final 不要求 Node / Rust。ELF 检查在含 binutils 的构建环境中对实际 SQLite / Rust `.so` 分别执行 `readelf -h "$nativeFile"`、`readelf -d "$nativeFile"`、`readelf -V "$nativeFile"`；工具缺失时停止该检查并报告，不自动安装。
+本批按下列命令记录可执行输入：`dotnet --info`、`dotnet --list-runtimes`、`node --version`、`rustc --version`、`cargo --version`、`cat /etc/os-release` 和 `getconf GNU_LIBC_VERSION`；只在含对应工具的 stage 执行，final 不要求 Node / Rust。ELF 检查在含 binutils 的构建环境中对实际 SQLite / Rust `.so` 分别执行 `readelf -h "$nativeFile"`、`readelf -d "$nativeFile"`、`readelf -V "$nativeFile"`；没有为检查新增工具安装。
 
 MCR metadata 的命令级直连可使用 `curl --noproxy mcr.microsoft.com`，或仅为 `docker buildx imagetools inspect` 子进程追加 `NO_PROXY / no_proxy=mcr.microsoft.com`。现有 daemon 代理为 `proxy.orb.internal:8305`，并未排除 MCR；本轮没有修改它，也未测试镜像层下载路径。后续构建不以客户端环境变量已生效推定 daemon 同样绕过代理。
 
@@ -83,7 +83,7 @@ source ID、所有托管文件及其他 native 文件哈希继续以 `Scripts/sq
 
 API、Auth、Gateway、DbMigrate 的现有 Dockerfile 均已有 Node 构建阶段接线，最终 runtime 不含 Node。本方案不修改正式 Dockerfile、runtime 入口、数据库配置或 Compose。
 
-已生成八份后端 Dockerfile 审阅稿，逐份反向替换后与正式文件逐字相同，唯一差异为将四类 `FROM` 替换为本次平台 digest；另外两份验证环境审阅稿独立保存。路径及十份 SHA256 见冻结清单，尚未执行。批准后复制到任务目录，并校验这些 hash。Auth / Gateway 既有 `apt-get install openssl ca-certificates` 仍访问发行版仓库：须记录实际 Ubuntu deb 包版本和最终 image ID；只锁 FROM 不能保证镜像逐字节重建。本批不引入 apt snapshot 或改写包安装策略。
+八份后端 Dockerfile 副本反向替换后与正式文件逐字相同，唯一差异为将四类 `FROM` 替换为本次平台 digest；另外两份验证环境副本独立保存。十份 SHA256 见冻结清单，均已按批准范围校验后使用并归档。Auth / Gateway 既有 `apt-get install openssl ca-certificates` 仍访问发行版仓库，实际 Ubuntu deb 包版本和最终 image ID 已留痕；只锁 FROM 不宣称镜像逐字节重建。本批没有引入 apt snapshot 或改写包安装策略。
 
 已有 `.github/workflows/native-images.yml` 只给 API 最终镜像做原生图片探针 / 扫描，不覆盖四宿主 SQLite。本次不触发 workflow、不推送代码或镜像，也不借用固定的 `radish-image-check:*` 标签。
 
@@ -106,9 +106,9 @@ API 的 5100、Auth 的 5200、Gateway 的 5000 本批均不监听 / 发布；Db
 
 单个冷探针超时 60 秒、Hangfire 120 秒、单组测试 20 分钟、单镜像构建 45 分钟作为诊断停止点；超时须保留日志并确认进程退出，不把退出码或缺失报告视为通过。
 
-## 5. 待批准的精确命令与执行顺序
+## 5. 本次批准的命令与执行顺序
 
-以下均为**拟执行命令**。`planRoot`、`sourceRoot` 和资源 ID 按下文固定；镜像引用只读取冻结清单对应架构的完整值。十份 Dockerfile 已生成供审阅，不在本轮运行；执行前清单缺项或 hash 不符立即失败。
+以下保留本次批准使用的命令形态；展开参数、退出码、日志与恢复过程见执行记录及本机归档。`planRoot`、`sourceRoot` 和资源 ID 按下文固定，已在结束后清理，不得直接复用覆盖证据；镜像引用只读取冻结清单完整值，执行前缺项或 hash 不符立即失败。后续任务重新确认候选、资源和授权。
 
 ### 5.1 冻结源码与资源名称
 
@@ -278,7 +278,7 @@ node Scripts/evaluate-image-vulnerabilities.mjs --report "$scanResults/trivy.jso
 
 | 验证 | ARM64 | AMD64 | 结论要求 |
 | --- | --- | --- | --- |
-| 资源 / 镜像输入 | 本机原生 Linux，待执行 | 本机仿真，待执行 | FROM digest、实际版本、OS 与执行方式齐全 |
+| 资源 / 镜像输入 | 本机原生 Linux，已通过 | 本机仿真，已通过 | FROM digest、实际版本、OS 与执行方式齐全 |
 | Rust Debug / Release | 两份重建 | 两份重建 | Rust 1.96.0、ABI 65536、输入 / 字体 / licenses、ELF 架构及 glibc / DT_NEEDED |
 | .NET 严格构建与定向测试 | 两配置 | 两配置 | 原始依赖图、零警告 / 错误、完整 TRX；SQLite / EF / DbMigrate / 图片关联用例不跳过 |
 | 四宿主 publish | 两配置 × generic / RID，共 16 份 | 同左 | 合计 32 份；源包 / 输出 / deps / notices 一致 |
@@ -302,12 +302,33 @@ node Scripts/evaluate-image-vulnerabilities.mjs --report "$scanResults/trivy.jso
 - 末次复核本任务标签的容器数量为零、测试进程已退出、任务数据已清理；其他项目资源保持其自身管理，本轮前后状态变化只报告，不自动恢复。
 - 无生产 / 既有数据库变更，不需要数据恢复。正式源码 / Dockerfile 未改；若后续发现需要产品接线变更，先明确差异再确认，不能把验证方案批准当作产品改造授权。
 
-## 8. 确认范围
+## 8. 本次确认范围
 
-当前可审阅的是上述边界、矩阵、端口、清理策略、完整镜像引用及十份 Dockerfile 审阅稿。MCR metadata 缺项已补齐；**等待所有者确认**：使用 Node 24.22.2 / Rust 1.96.0 / SDK 10.0.403 / .NET 与 ASP.NET 10.0.14 / Trivy 0.70.0 的精确 digest，下载基础镜像，在两架构隔离执行构建 / restore / 定向测试 / publish、八镜像独立探针，以及 Trivy 数据库下载 / 扫描 / 清理。
+所有者已确认上述边界、矩阵、端口、清理策略、完整镜像引用及十份 Dockerfile 审阅稿：使用 Node 24.22.2 / Rust 1.96.0 / SDK 10.0.403 / .NET 与 ASP.NET 10.0.14 / Trivy 0.70.0 的精确 digest，下载基础镜像，在两架构隔离执行构建 / restore / 定向测试 / publish、八镜像独立探针，以及 Trivy 数据库下载 / 扫描 / 清理。
 
-本次容器 SDK / runtime 与此前本机版本不同，但没有改变仓库包声明或正式 Dockerfile；批准后将分别留 Linux ARM64 原生与 AMD64 仿真证据。遵循所有者上一轮“给我确认后再执行”的要求，本次补证与文本稿生成不视为容器执行确认。
+本次容器 SDK / runtime 与此前本机版本不同，但没有改变仓库包声明或正式 Dockerfile；分别留 Linux ARM64 原生与 AMD64 仿真证据。准备阶段只做补证与文本稿，收到本轮明确确认后才启动执行；未来任务不沿用本批授权。
 
 批准也不包含业务宿主启动、PG 启动、VM 修改、包版本更新、正式 Dockerfile 修改、远端 CI 触发、push、tag、Release、部署或上游通信。
 
 Registry 查询方式参考 [Docker imagetools inspect](https://docs.docker.com/reference/cli/docker/buildx/imagetools/inspect/)；archive 扫描参考 [Trivy Container Image / Tar Files](https://trivy.dev/docs/latest/guide/target/container_image/#tar-files)。
+
+## 9. SDK 拉取受阻后的临时代理排除（已单独确认）
+
+第 1–8 节的初次授权没有覆盖修改共享 OrbStack 网络配置。实际 SDK 拉取遇到 daemon TLS 超时后，先暂停受影响步骤；所有者随后单独批准 MCR 临时代理排除，并要求任务结束恢复原值。过程与结果见执行记录。
+
+按 [OrbStack 官方网络文档](https://docs.orbstack.dev/docker/network#proxies)，可设置自定义代理排除列表。本次原值为空；先试根域，再核对 MCR 数据子域，最终在获准的 MCR / 子域范围内显式设置：
+
+```bash
+orb config set network.proxy.exclude mcr.microsoft.com,southeastasia.data.mcr.microsoft.com
+```
+
+这是**共享引擎设置**，同时影响其他任务访问上述目标；不改系统代理、registry 地址、TLS 校验或证书。命令行帮助提示部分设置可能需要重启；本批不主动重启引擎，实际镜像下载已恢复。
+
+应用前已重读并确认原值仍为空；前后值和重试结果保存于任务证据。其余镜像 / 源码 / 数据 / 端口边界沿用本方案。结束时已核对设置仍由本任务持有，并执行以下恢复及读取确认：
+
+```bash
+orb config set network.proxy.exclude ""
+orb config get network.proxy.exclude
+```
+
+若有外部任务并发修改该值，不覆盖他人的新值，保留原值和差异供所有者处理。禁止用无参数 `orb config reset` 回退：该命令会重置全部设置。本节授权仅用于本批已说明的临时设置与恢复。

@@ -4,7 +4,7 @@
 >
 > 建议：采用 Microsoft SQLite `.Core` 包、SQLitePCLRaw `config 3.0.3` 与唯一 native 包 `SQLitePCLRaw.lib.e_sqlite3 [3.53.3]`，移除引入第二套 native 的 `bundle_e_sqlite3 / SourceGear.sqlite3` 链。保留现有 ORM、EF、Hangfire provider 和数据库支持边界。
 
-后续平台验证先按[Linux 双架构执行准备方案](./sqlite-linux-platform-validation-plan.md)推进：只读盘点与精确镜像输入已补齐，等待所有者确认后执行；不沿用本机批次的容器授权。
+后续已另获授权完成[Linux 双架构验证](../records/sqlite-linux-platform-validation-2026-10-31.md)：ARM64 原生 / AMD64 仿真两配置、32 份 publish、120 个独立冷进程与八 final 镜像门禁通过，任务资源和临时代理设置已清理恢复。原生 AMD64、Windows x64 / Intel macOS 及 PG 接库回归仍未关闭；本机或 Linux 批次授权不沿用到未来任务。
 
 ## 1. 核对事实与根因
 
