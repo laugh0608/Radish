@@ -1,0 +1,716 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "runId": 41196110296,
+  "runUrl": "https://github.com/laugh0608/Radish/actions/runs/41196110296",
+  "attempt": 1,
+  "headSha": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+  "workflowBlob": "03f727d16591f9ffe6409bedd87670c87640b8f4",
+  "conclusion": "failure",
+  "inputs": {
+    "validation_scope": "sqlite-platforms",
+    "expected_head_sha": "915f63591bfbfeff0978c8fb2de3b64fd997cce9"
+  },
+  "inputEvidence": "dispatch command, job environment and approved-SHA checks; no independent event payload",
+  "jobs": [
+    {
+      "id": 124522492546,
+      "name": "SQLite native / linux-x64",
+      "status": "completed",
+      "conclusion": "success",
+      "started_at": "2026-10-31T11:15:43Z",
+      "completed_at": "2026-10-31T11:23:15Z",
+      "result": {
+        "status": "passed",
+        "options": {
+          "mode": "native",
+          "rid": "linux-x64"
+        },
+        "revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9"
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41196110296-1-linux-x64",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 66,
+      "allCommandsCompleted": true,
+      "failedCommands": [],
+      "artifactName": "sqlite-native-linux-x64-1",
+      "platformReport": true,
+      "strictBuildConfigurations": [
+        "Release",
+        "Debug"
+      ],
+      "tests": {
+        "Release": {
+          "total": "60",
+          "executed": "60",
+          "passed": "60",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        },
+        "Debug": {
+          "total": "60",
+          "executed": "60",
+          "passed": "60",
+          "failed": "0",
+          "error": "0",
+          "timeout": "0",
+          "aborted": "0",
+          "inconclusive": "0",
+          "passedButRunAborted": "0",
+          "notRunnable": "0",
+          "notExecuted": "0",
+          "disconnected": "0",
+          "warning": "0",
+          "completed": "0",
+          "inProgress": "0",
+          "pending": "0"
+        }
+      },
+      "publishOutputs": 16,
+      "coldProbeResults": 48,
+      "imageSelftests": 4,
+      "noticesReports": 16,
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "translated": false,
+        "platform": "linux",
+        "arch": "x64",
+        "release": "7.0.0-1017-azure",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2",
+        "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: x86_64-unknown-linux-gnu\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+        "compiler": {
+          "compiler": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "compilerSha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+          "cxx": "/usr/bin/x86_64-linux-gnu-g++-13",
+          "cxxSha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+          "outputSha256": "83a235f869b195b3e8d639716498f5a8063f0ed70319214576a8b402fac93cc5",
+          "outputArchitecture": "x64",
+          "executed": false
+        },
+        "vsVersion": null,
+        "vcToolsVersion": null,
+        "xcode": null
+      }
+    },
+    {
+      "id": 124522492558,
+      "name": "SQLite native Docker / api",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-31T11:15:43Z",
+      "completed_at": "2026-10-31T11:19:04Z",
+      "result": {
+        "status": "failed",
+        "options": {
+          "mode": "docker",
+          "rid": "linux-x64",
+          "service": "api"
+        },
+        "error": "Command failed: radish-sqlite-41196110296-1-api-microsoft, see /home/runner/work/_temp/radish-sqlite-41196110296-1-api/evidence/commands/034-radish-sqlite-41196110296-1-api-microsoft.log"
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41196110296-1-api",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 56,
+      "allCommandsCompleted": true,
+      "failedCommands": [
+        {
+          "args": [
+            "run",
+            "--cidfile",
+            "/home/runner/work/_temp/radish-sqlite-41196110296-1-api/radish-sqlite-41196110296-1-api-microsoft.cid",
+            "--rm",
+            "--name",
+            "radish-sqlite-41196110296-1-api-microsoft",
+            "--label",
+            "io.radish.sqlite-hosted=radish-sqlite-41196110296-1-api",
+            "--platform",
+            "linux/amd64",
+            "--network",
+            "none",
+            "--read-only",
+            "--memory",
+            "1g",
+            "--cpus",
+            "2",
+            "--pids-limit",
+            "256",
+            "--cap-drop",
+            "ALL",
+            "--security-opt",
+            "no-new-privileges",
+            "--tmpfs",
+            "/tmp:rw,nosuid,nodev,size=256m",
+            "--mount",
+            "type=bind,src=/home/runner/work/_temp/radish-sqlite-41196110296-1-api/compiler/SqliteNativeRuntimeProbe.dll,dst=/app/SqliteNativeRuntimeProbe.dll,readonly",
+            "--mount",
+            "type=bind,src=/home/runner/work/_temp/radish-sqlite-41196110296-1-api/cases/microsoft,dst=/probe-data",
+            "--entrypoint",
+            "dotnet",
+            "radish-sqlite-41196110296-1-api:final",
+            "exec",
+            "--runtimeconfig",
+            "/app/Radish.Api.runtimeconfig.json",
+            "--depsfile",
+            "/app/Radish.Api.deps.json",
+            "/app/SqliteNativeRuntimeProbe.dll",
+            "microsoft",
+            "/probe-data"
+          ],
+          "code": 1,
+          "log": "commands/034-radish-sqlite-41196110296-1-api-microsoft.log"
+        }
+      ],
+      "artifactName": "sqlite-native-docker-api-1",
+      "platformReport": true,
+      "images": {
+        "image-build": {
+          "id": "sha256:5bdb660ec1b58f0459158ca4325a9f25bba5945f63c90d642f351992eaa004e1",
+          "architecture": "amd64",
+          "os": "linux",
+          "labels": {
+            "io.radish.sqlite-hosted": "radish-sqlite-41196110296-1-api",
+            "org.opencontainers.image.revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+            "org.opencontainers.image.version": "24.04"
+          }
+        },
+        "image-final": {
+          "id": "sha256:832514eb8bdea495f30bcfe8c0e66bd1a9c3120b693111357aff03f212afaad2",
+          "architecture": "amd64",
+          "os": "linux",
+          "labels": {
+            "io.radish.sqlite-hosted": "radish-sqlite-41196110296-1-api",
+            "org.opencontainers.image.revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+            "org.opencontainers.image.version": "24.04"
+          }
+        }
+      },
+      "noticesFiles": 57,
+      "scanExecuted": false,
+      "coldProbeResults": 0,
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "translated": false,
+        "platform": "linux",
+        "arch": "x64",
+        "release": "7.0.0-1017-azure",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2",
+        "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: x86_64-unknown-linux-gnu\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+        "compiler": {
+          "compiler": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "compilerSha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+          "cxx": "/usr/bin/x86_64-linux-gnu-g++-13",
+          "cxxSha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+          "outputSha256": "83a235f869b195b3e8d639716498f5a8063f0ed70319214576a8b402fac93cc5",
+          "outputArchitecture": "x64",
+          "executed": false
+        },
+        "vsVersion": null,
+        "vcToolsVersion": null,
+        "xcode": null
+      },
+      "finalOwnershipQueriesEmpty": true
+    },
+    {
+      "id": 124522492563,
+      "name": "SQLite native Docker / auth",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-31T11:15:43Z",
+      "completed_at": "2026-10-31T11:17:47Z",
+      "result": {
+        "status": "failed",
+        "options": {
+          "mode": "docker",
+          "rid": "linux-x64",
+          "service": "auth"
+        },
+        "error": "Command failed: compile-probe, see /home/runner/work/_temp/radish-sqlite-41196110296-1-auth/evidence/commands/032-compile-probe.log"
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41196110296-1-auth",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 52,
+      "allCommandsCompleted": true,
+      "failedCommands": [
+        {
+          "args": [
+            "/home/runner/work/_temp/radish-sqlite-41196110296-1-auth/source/Scripts/run-sqlite-runtime-probe.mjs",
+            "--compile-from=/home/runner/work/_temp/radish-sqlite-41196110296-1-auth/final",
+            "--scratch=/home/runner/work/_temp/radish-sqlite-41196110296-1-auth/compiler"
+          ],
+          "code": 1,
+          "log": "commands/032-compile-probe.log"
+        }
+      ],
+      "artifactName": "sqlite-native-docker-auth-1",
+      "platformReport": true,
+      "images": {
+        "image-build": {
+          "id": "sha256:30315c388f0d02a0d59db83a264cf87d6300a899704012b4040fbf4cec319d2f",
+          "architecture": "amd64",
+          "os": "linux",
+          "labels": {
+            "io.radish.sqlite-hosted": "radish-sqlite-41196110296-1-auth",
+            "org.opencontainers.image.revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+            "org.opencontainers.image.version": "24.04"
+          }
+        },
+        "image-final": {
+          "id": "sha256:2538bd6247bc395a26c2aae58b5ad20595da4283265334ea5b97d9337f8c82c0",
+          "architecture": "amd64",
+          "os": "linux",
+          "labels": {
+            "io.radish.sqlite-hosted": "radish-sqlite-41196110296-1-auth",
+            "org.opencontainers.image.revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+            "org.opencontainers.image.version": "24.04"
+          }
+        }
+      },
+      "noticesFiles": 31,
+      "scanExecuted": false,
+      "coldProbeResults": 0,
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "translated": false,
+        "platform": "linux",
+        "arch": "x64",
+        "release": "7.0.0-1017-azure",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2",
+        "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: x86_64-unknown-linux-gnu\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+        "compiler": {
+          "compiler": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "compilerSha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+          "cxx": "/usr/bin/x86_64-linux-gnu-g++-13",
+          "cxxSha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+          "outputSha256": "83a235f869b195b3e8d639716498f5a8063f0ed70319214576a8b402fac93cc5",
+          "outputArchitecture": "x64",
+          "executed": false
+        },
+        "vsVersion": null,
+        "vcToolsVersion": null,
+        "xcode": null
+      },
+      "finalOwnershipQueriesEmpty": true
+    },
+    {
+      "id": 124522492577,
+      "name": "SQLite native / osx-x64",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-31T11:15:44Z",
+      "completed_at": "2026-10-31T11:17:15Z",
+      "result": {
+        "status": "failed",
+        "options": {
+          "mode": "native",
+          "rid": "osx-x64"
+        },
+        "error": "Command failed: compiler-identity, see /Users/runner/work/_temp/radish-sqlite-41196110296-1-osx-x64/evidence/commands/016-compiler-identity.log"
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41196110296-1-osx-x64",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 16,
+      "allCommandsCompleted": true,
+      "failedCommands": [
+        {
+          "args": [
+            "/Users/runner/work/_temp/radish-sqlite-41196110296-1-osx-x64/compiler-identity/identity.cpp",
+            "-o",
+            "/Users/runner/work/_temp/radish-sqlite-41196110296-1-osx-x64/compiler-identity/identity"
+          ],
+          "code": 1,
+          "log": "commands/016-compiler-identity.log"
+        }
+      ],
+      "artifactName": "sqlite-native-osx-x64-1",
+      "platformReport": false
+    },
+    {
+      "id": 124522492600,
+      "name": "SQLite native / win-x64",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-31T11:15:43Z",
+      "completed_at": "2026-10-31T11:22:11Z",
+      "result": {
+        "status": "failed",
+        "options": {
+          "mode": "native",
+          "rid": "win-x64"
+        },
+        "error": "Command failed: build-Release, see D:\\a\\_temp\\radish-sqlite-41196110296-1-win-x64\\evidence\\commands\\015-build-Release.log"
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41196110296-1-win-x64",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 15,
+      "allCommandsCompleted": true,
+      "failedCommands": [
+        {
+          "args": [
+            "build",
+            "Radish.slnx",
+            "-c",
+            "Release",
+            "--no-restore",
+            "--warnaserror"
+          ],
+          "code": 1,
+          "log": "commands\\015-build-Release.log"
+        }
+      ],
+      "artifactName": "sqlite-native-win-x64-1",
+      "platformReport": true,
+      "platform": {
+        "rid": "win-x64",
+        "machine": "AMD64",
+        "translated": false,
+        "platform": "win32",
+        "arch": "x64",
+        "release": "10.0.26100",
+        "imageOS": "win25-vs2026",
+        "imageVersion": "20261021.278.1",
+        "node": "v24.22.2",
+        "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: x86_64-pc-windows-msvc\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+        "compiler": {
+          "compiler": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
+          "compilerSha256": "b0a1818ebae6da7f18230a84e76ce839212584ac4c2ab55b97a0d5268085da57",
+          "cxx": "C:\\Program Files\\Microsoft Visual Studio\\18\\Enterprise\\VC\\Tools\\MSVC\\14.51.36231\\bin\\HostX64\\x64\\cl.exe",
+          "cxxSha256": "b0a1818ebae6da7f18230a84e76ce839212584ac4c2ab55b97a0d5268085da57",
+          "outputSha256": "439f8000a58542a4ed7c84d84dab2880bdbcb5c221cc7064ae00080ca37441c9",
+          "outputArchitecture": "x64",
+          "executed": false
+        },
+        "vsVersion": "18.11.12315.225",
+        "vcToolsVersion": "14.51.36231",
+        "xcode": null
+      }
+    },
+    {
+      "id": 124522492615,
+      "name": "SQLite native Docker / dbmigrate",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-31T11:15:43Z",
+      "completed_at": "2026-10-31T11:17:40Z",
+      "result": {
+        "status": "failed",
+        "options": {
+          "mode": "docker",
+          "rid": "linux-x64",
+          "service": "dbmigrate"
+        },
+        "error": "Command failed: compile-probe, see /home/runner/work/_temp/radish-sqlite-41196110296-1-dbmigrate/evidence/commands/032-compile-probe.log"
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41196110296-1-dbmigrate",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 52,
+      "allCommandsCompleted": true,
+      "failedCommands": [
+        {
+          "args": [
+            "/home/runner/work/_temp/radish-sqlite-41196110296-1-dbmigrate/source/Scripts/run-sqlite-runtime-probe.mjs",
+            "--compile-from=/home/runner/work/_temp/radish-sqlite-41196110296-1-dbmigrate/final",
+            "--scratch=/home/runner/work/_temp/radish-sqlite-41196110296-1-dbmigrate/compiler"
+          ],
+          "code": 1,
+          "log": "commands/032-compile-probe.log"
+        }
+      ],
+      "artifactName": "sqlite-native-docker-dbmigrate-1",
+      "platformReport": true,
+      "images": {
+        "image-build": {
+          "id": "sha256:1b6c7fc0790e3a4b23bab51a32adee5131bcc3dca67b861c1706849c29e06d7c",
+          "architecture": "amd64",
+          "os": "linux",
+          "labels": {
+            "io.radish.sqlite-hosted": "radish-sqlite-41196110296-1-dbmigrate",
+            "org.opencontainers.image.revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+            "org.opencontainers.image.version": "24.04"
+          }
+        },
+        "image-final": {
+          "id": "sha256:be7b77836ffd05dd6b5517ed2cdcb5417fbf0735d216b5890f395b5e7a3ef2be",
+          "architecture": "amd64",
+          "os": "linux",
+          "labels": {
+            "io.radish.sqlite-hosted": "radish-sqlite-41196110296-1-dbmigrate",
+            "org.opencontainers.image.revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+            "org.opencontainers.image.version": "24.04"
+          }
+        }
+      },
+      "noticesFiles": 31,
+      "scanExecuted": false,
+      "coldProbeResults": 0,
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "translated": false,
+        "platform": "linux",
+        "arch": "x64",
+        "release": "7.0.0-1017-azure",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2",
+        "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: x86_64-unknown-linux-gnu\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+        "compiler": {
+          "compiler": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "compilerSha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+          "cxx": "/usr/bin/x86_64-linux-gnu-g++-13",
+          "cxxSha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+          "outputSha256": "83a235f869b195b3e8d639716498f5a8063f0ed70319214576a8b402fac93cc5",
+          "outputArchitecture": "x64",
+          "executed": false
+        },
+        "vsVersion": null,
+        "vcToolsVersion": null,
+        "xcode": null
+      },
+      "finalOwnershipQueriesEmpty": true
+    },
+    {
+      "id": 124522492644,
+      "name": "SQLite native Docker / gateway",
+      "status": "completed",
+      "conclusion": "failure",
+      "started_at": "2026-10-31T11:15:43Z",
+      "completed_at": "2026-10-31T11:16:56Z",
+      "result": {
+        "status": "failed",
+        "options": {
+          "mode": "docker",
+          "rid": "linux-x64",
+          "service": "gateway"
+        },
+        "error": "Command failed: compile-probe, see /home/runner/work/_temp/radish-sqlite-41196110296-1-gateway/evidence/commands/032-compile-probe.log"
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41196110296-1-gateway",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 52,
+      "allCommandsCompleted": true,
+      "failedCommands": [
+        {
+          "args": [
+            "/home/runner/work/_temp/radish-sqlite-41196110296-1-gateway/source/Scripts/run-sqlite-runtime-probe.mjs",
+            "--compile-from=/home/runner/work/_temp/radish-sqlite-41196110296-1-gateway/final",
+            "--scratch=/home/runner/work/_temp/radish-sqlite-41196110296-1-gateway/compiler"
+          ],
+          "code": 1,
+          "log": "commands/032-compile-probe.log"
+        }
+      ],
+      "artifactName": "sqlite-native-docker-gateway-1",
+      "platformReport": true,
+      "images": {
+        "image-build": {
+          "id": "sha256:f90d5d4fe3a67d537e834c1ec5b736fdbc441cd300c3bc85796301d21d70a65b",
+          "architecture": "amd64",
+          "os": "linux",
+          "labels": {
+            "io.radish.sqlite-hosted": "radish-sqlite-41196110296-1-gateway",
+            "org.opencontainers.image.revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+            "org.opencontainers.image.version": "24.04"
+          }
+        },
+        "image-final": {
+          "id": "sha256:763a4930f19374ca01ac7fde523d099206c1543615a6ae5f63f4314a0b254574",
+          "architecture": "amd64",
+          "os": "linux",
+          "labels": {
+            "io.radish.sqlite-hosted": "radish-sqlite-41196110296-1-gateway",
+            "org.opencontainers.image.revision": "915f63591bfbfeff0978c8fb2de3b64fd997cce9",
+            "org.opencontainers.image.version": "24.04"
+          }
+        }
+      },
+      "noticesFiles": 29,
+      "scanExecuted": false,
+      "coldProbeResults": 0,
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "translated": false,
+        "platform": "linux",
+        "arch": "x64",
+        "release": "7.0.0-1017-azure",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2",
+        "rust": "rustc 1.96.0 (ac68faa20 2026-05-25)\nbinary: rustc\ncommit-hash: ac68faa20c58cbccd01ee7208bf3b6e93a7d7f96\ncommit-date: 2026-05-25\nhost: x86_64-unknown-linux-gnu\nrelease: 1.96.0\nLLVM version: 22.1.2\n",
+        "compiler": {
+          "compiler": "/usr/bin/x86_64-linux-gnu-gcc-13",
+          "compilerSha256": "1b99826121ae6682a634e5efe09bd3e3df58ce58e0b28f849114ab5b89139c26",
+          "cxx": "/usr/bin/x86_64-linux-gnu-g++-13",
+          "cxxSha256": "1353e9bdd29a7295c7226bf6c63abccce056d8cac31f112e5cdbecc3f28c2769",
+          "outputSha256": "83a235f869b195b3e8d639716498f5a8063f0ed70319214576a8b402fac93cc5",
+          "outputArchitecture": "x64",
+          "executed": false
+        },
+        "vsVersion": null,
+        "vcToolsVersion": null,
+        "xcode": null
+      },
+      "finalOwnershipQueriesEmpty": true
+    },
+    {
+      "id": 124522493193,
+      "name": "Hangfire Razor / Windows x64",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-10-31T11:15:40Z",
+      "completed_at": "2026-10-31T11:15:40Z"
+    },
+    {
+      "id": 124522493365,
+      "name": "Native Docker / ${{ matrix.platform }}",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-10-31T11:15:40Z",
+      "completed_at": "2026-10-31T11:15:40Z"
+    },
+    {
+      "id": 124522493470,
+      "name": "Native / AddressSanitizer",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-10-31T11:15:40Z",
+      "completed_at": "2026-10-31T11:15:40Z"
+    },
+    {
+      "id": 124522527622,
+      "name": "Native / ${{ matrix.runner }}",
+      "status": "completed",
+      "conclusion": "skipped",
+      "started_at": "2026-10-31T11:15:50Z",
+      "completed_at": "2026-10-31T11:15:40Z"
+    }
+  ],
+  "artifacts": [
+    {
+      "id": 13041197434,
+      "name": "sqlite-native-linux-x64-1",
+      "zipSha256": "e7f50dde2f99cecac8dd93bed90be34bec6d53bdac2c847e12b8b6edffd9d71d",
+      "serverDigestVerified": true,
+      "payloadFiles": 252,
+      "manifestSha256": "1b0d8cc43c94cd9293cbe5fe4aa922d6b641f1c446984faff183a32021396760",
+      "expiresAt": "2026-11-14T11:23:09Z"
+    },
+    {
+      "id": 13040647860,
+      "name": "sqlite-native-docker-api-1",
+      "zipSha256": "9b17cb14a1366ed1d12d047a6f6f44a2f751ce93ccd732da8ad0279b177506af",
+      "serverDigestVerified": true,
+      "payloadFiles": 72,
+      "manifestSha256": "f87cac9e46cbfd6afceec8f8507810e43fc2e52a5c2b69354bdaab245a5243af",
+      "expiresAt": "2026-11-14T11:19:00Z"
+    },
+    {
+      "id": 13040647703,
+      "name": "sqlite-native-docker-auth-1",
+      "zipSha256": "f351bfa8fa17cf7eba8f91bca479a95913d419dd4daf2999d0c81eff8f8fc92a",
+      "serverDigestVerified": true,
+      "payloadFiles": 68,
+      "manifestSha256": "2be33646b7d54f384abf047311bc496b7e5bf96b82a5c297fbf5eccb83e99351",
+      "expiresAt": "2026-11-14T11:17:43Z"
+    },
+    {
+      "id": 13040572251,
+      "name": "sqlite-native-win-x64-1",
+      "zipSha256": "084375113d1d1f6446f3d559fd8f3af1cfe2ba47c19804211837882bb2e240b0",
+      "serverDigestVerified": true,
+      "payloadFiles": 25,
+      "manifestSha256": "68f82cf23b0ea70e65e5a3267971291ec3f74ebf9ea30dc94ea98eeb7601f919",
+      "expiresAt": "2026-11-14T11:22:06Z"
+    },
+    {
+      "id": 13040427966,
+      "name": "sqlite-native-docker-gateway-1",
+      "zipSha256": "baa6f19d0dc3cb6b06de7d369641b38bbada242313a455c3b8d95207d57d6dfd",
+      "serverDigestVerified": true,
+      "payloadFiles": 68,
+      "manifestSha256": "8881cee21029da10bf31851533825043d684950db48cafa2a54a0ed97c5aff1e",
+      "expiresAt": "2026-11-14T11:16:53Z"
+    },
+    {
+      "id": 13040343142,
+      "name": "sqlite-native-osx-x64-1",
+      "zipSha256": "914daec4b362f35017b73bb58ad7ace59fd06557156d69f13e202893aece2860",
+      "serverDigestVerified": true,
+      "payloadFiles": 20,
+      "manifestSha256": "12aedb3cf6b84d928d9a22a7083a27692971090f4d3fb09a28a9ce789cffaca3",
+      "expiresAt": "2026-11-14T11:17:09Z"
+    },
+    {
+      "id": 13039969765,
+      "name": "sqlite-native-docker-dbmigrate-1",
+      "zipSha256": "ef1518c3393da76b213e3f8b62eabf1e13dd8ed0400642b1f319fa1b01a7379e",
+      "serverDigestVerified": true,
+      "payloadFiles": 68,
+      "manifestSha256": "7959f9ada1e5a75e77ebadd4f1f18971891abb347a792fafaa135f812551e764",
+      "expiresAt": "2026-11-14T11:17:37Z"
+    }
+  ],
+  "artifactPayloadFiles": 573,
+  "logZipSha256": "564736aabb09bb14c5d2c92928e3ce401b4b2015063fec1dfad7f584bd66d42a",
+  "archiveDirectory": "artifacts/sqlite-hosted-native/915f6359",
+  "automaticRetry": false,
+  "razorVerifyExecuted": false,
+  "publishedOrDeployed": false,
+  "successfulSqliteJobs": 1,
+  "failedSqliteJobs": 6,
+  "skippedJobs": 4,
+  "allTaskCleanupComplete": true,
+  "vmDestructionIndependentlyObserved": false,
+  "cleanupBoundary": "Owned working trees removed, tracked containers absent and task image tags removed; shared base images/build caches rely on hosted-runner lifecycle",
+  "removedTaskImageTags": 8,
+  "archiveFiles": 693,
+  "archiveManifestSha256": "cba7d2f12ab4586b30dbf38563d9e0cbc80967c598c92d9577f22cdfdca62bd8"
+}

@@ -1,8 +1,8 @@
 # SQLite 剩余原生平台的 GitHub 托管执行方案
 
-> 2026-10-31（Asia/Shanghai），**所有者已批准本地 CI 实现与验证；push / 远端触发 / 发布 / 部署明确不执行**。准备阶段只读输入见[准备清单](../records/postgres-native-readiness-2026-10-31.json)。本机 PG 回归另按[其执行方案](./postgres-regression-execution-plan.md)推进；本地 CI 接线不等于三个原生平台已经验收。
+> 2026-10-31（Asia/Shanghai），**所有者已批准并完成指定 SHA 的 push 与一次托管验证；结果为 Linux x64 通过、其余六项失败，证据与清理完成，未自动重试；发布 / 部署未执行**。准备阶段只读输入见[准备清单](../records/postgres-native-readiness-2026-10-31.json)。本机 PG 回归另按[其执行方案](./postgres-regression-execution-plan.md)推进；本地 CI 接线不等于三个原生平台已经验收。
 
-首轮本地实现及验证见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。执行前复核发现 SHA 授权、失败证据和清理结果存在缺口；所有者已另行批准本地成组修正，现已完成并通过 38 项检查，见[执行契约修正记录](../records/sqlite-hosted-execution-contracts-2026-10-31.md)。新候选尚未 push / dispatch，原生平台验收仍未完成。
+首轮本地实现及验证见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。执行前复核发现 SHA 授权、失败证据和清理结果存在缺口；所有者已另行批准本地成组修正，现已完成并通过 38 项检查，见[执行契约修正记录](../records/sqlite-hosted-execution-contracts-2026-10-31.md)。候选 `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 已按授权 push，并完成[首次托管执行](../records/sqlite-hosted-native-run-2026-10-31.md)：Linux x64 双配置各 60 项、16 份发布、48 个冷进程通过；Windows argv、macOS SDK、非 API 探针编译依赖和 API 容器写权限问题使其余六项失败。七项证据与清理均完成；后续先确认成组修正，不自动重跑。
 
 ## 1. 资源核对与目标
 
@@ -152,7 +152,7 @@ scanner 的 DB 准备与断网 archive 扫描沿用[Linux 方案第 5.4 节](./s
 
 ## 6. 远端操作的后续确认清单
 
-当前已批准本地 CI 实现及本轮执行契约修正 / 验证。以下外部动作仍需针对最终提交另行确认；本轮不执行。命令中的 candidate 必须在审阅时替换为修正完成后的完整 40 位 SHA，不使用本轮修正前的 HEAD：
+指定 SHA `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 的 push 和一次 dispatch 已按授权完成，见首次执行记录。以下只保留后续候选的操作模板，不授权重复执行；新的完整 SHA、修正范围和远端执行仍需单独确认：
 
 ```bash
 git push origin "$candidate:refs/heads/dev"
@@ -171,4 +171,4 @@ push 前读取最新远端 dev 并检查快进关系，禁止 force / rebase；�
 - 三个 native job 与四个 Docker job 各有独立目录、owner marker、容器 ID / image ID；`--mode=cleanup` 用于工作流 always 步骤重入核对与精确清理。artifact 上传依赖该步骤明确输出 publish_safe=true；数据库 / 二进制 / 私钥 / 连接密码或符号链接进入证据会拒绝上传。
 - 普通图精确比较批准的 219 项，RID 图只额外允许本 SDK 对应的指定 x64 runtime / apphost pack；所有实际输入继续留痕。generic / RID 分批完成，输出及其原始 assets、实际冷加载结果与 notices hash 分别保存。
 - 宿主执行验证 `RUNNER_ARCH`、OS / Node / dotnet / Rust 架构以及 ELF / PE / Mach-O；macOS 拒绝 Rosetta。Docker 还要求 runner 本机 Unix socket、原生 amd64 daemon 与既有 docker driver，不安装新 builder 或自动连接远端引擎。
-- 本地验证包含 Node 语法、编排器 / 原门禁 / 漏洞策略契约、YAML 解析、旧 job 内容保持以及真实旧 TRX 兼容性；本轮补充的行为检查见修正记录，Windows 环境加载和 taskkill 仍须在真实 Windows runner 验证；尚未运行新模式，也未取得三个托管平台的 restore / build / test / publish 或镜像扫描结果。
+- 本地验证包含 Node 语法、编排器 / 原门禁 / 漏洞策略契约、YAML 解析、旧 job 内容保持以及真实旧 TRX 兼容性；本轮补充的行为检查见修正记录，Windows 环境加载、编译器 x64 样本及 Rust 双配置已在首次托管运行通过，taskkill 超时路径未在本次触发；Linux 全矩阵通过，其余两平台及四个镜像尚未完成全部验收，具体停止位置与证据以首次执行记录为准。
