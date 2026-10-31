@@ -2,6 +2,8 @@
 
 > 2026-10-26：第 3 节及第 3.4 节 SDK 分析器调整均已获批准并执行。Core 基线 / 诊断修改库严格构建与三组 SQLite 替换验证通过，详见[实施记录](../records/hangfire-core-replacement-2026-10-26.md)。Radish 正式依赖与默认构建未变；本批不等于完整官方发行重建或对应源码交付。
 
+2026-10-31 接续的[重建与本地交付材料方案](./hangfire-rebuild-delivery-plan.md)已完成只读准备，包含独立 SDK、旧构建输入审计适配、四 DLL / Cronos 重建与 18 组验证，等待本轮确认；本页第 3 节只保留旧试验授权，不沿用到新批次。
+
 ## 1. 已确定的输入
 
 当前发布选择 `Hangfire.Core netstandard2.0`、`Hangfire.NetCore netstandard2.1`、`Hangfire.AspNetCore netcoreapp3.0` 与 `Hangfire.PostgreSql netstandard2.0`。

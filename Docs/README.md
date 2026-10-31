@@ -48,6 +48,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [SQLite 原生依赖统一方案](./features/sqlite-native-unification-plan.md) · [实施与本机验证](./records/sqlite-native-unification-2026-10-31.md)：单一 native 来源、限定门禁、分发材料与其他平台边界。
 - [SQLite Linux 双架构方案](./features/sqlite-linux-platform-validation-plan.md) · [执行与清理结果](./records/sqlite-linux-platform-validation-2026-10-31.md)：ARM64 原生 / AMD64 仿真及八 final 镜像通过；其余原生平台仍独立验收。
 - [PostgreSQL 接库回归方案](./features/postgres-regression-execution-plan.md) · [剩余原生平台托管方案](./features/sqlite-hosted-native-validation-plan.md) · [本批结果](./records/postgres-regression-2026-10-31.md)：PG17 / PG16 与四组 worker 通过并清理；托管 CI 本地接线验证完成，远端尚未执行。
+- [Hangfire 重建与本地交付材料方案](./features/hangfire-rebuild-delivery-plan.md)：精确 SDK / 42 项私有候选、原始输入 / 审计适配、替换矩阵及归档边界；准备完成，等待确认。
 - [图片替代后的依赖评估与映射迁移方案](./features/post-image-dependency-assessment.md)
 - [ORM 与 Redis 依赖评估](./features/orm-redis-dependency-assessment.md)：精确包、分发边界、缓存数据分类与候选实验停止线。
 - [NoDrive 与 Valkey 隔离验证方案](./features/nodrive-valkey-isolation-validation-plan.md)：本次隔离实验的固定输入、对照矩阵、启动与清理边界。
