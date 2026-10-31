@@ -1,0 +1,10 @@
+{
+  "name": "Hangfire.Core",
+  "version": "1.8.14.0",
+  "publicKey": "",
+  "originalDllSha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+  "apiEntries": 5050,
+  "apiSha256": "21cfac228f4571fefa35da94af12cfaa1bc90bcf5ac6ff2321ca7cfdb8782e2f",
+  "resourceEntries": 17,
+  "resourcesSha256": "d3a92f8c4e79bd2c418ff4e258b0b9c53e17c5f3c63edb56218378cb234490a6"
+}

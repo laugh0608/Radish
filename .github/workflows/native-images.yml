@@ -4,10 +4,36 @@ on:
   workflow_dispatch:
     inputs:
       validation_scope:
-        description: 'Existing native image checks or the approved SQLite native platform matrix'
+        description: 'Select one independently approved validation scope'
         type: choice
-        options: [native-images, sqlite-platforms]
+        options: [native-images, sqlite-platforms, hangfire-razor]
         default: native-images
+        required: false
+      razor_mode:
+        description: 'Razor inventory only, or separately approved Windows verification'
+        type: choice
+        options: [inventory, verify]
+        default: inventory
+        required: false
+      expected_head_sha:
+        description: 'Approved full commit SHA; required for Razor scope'
+        type: string
+        required: false
+      razor_expected_image:
+        description: 'Reviewed ImageVersion; required for Razor verify'
+        type: string
+        required: false
+      razor_expected_vs:
+        description: 'Reviewed VS installationVersion; required for Razor verify'
+        type: string
+        required: false
+      razor_expected_msbuild:
+        description: 'Reviewed Full MSBuild /version; required for Razor verify'
+        type: string
+        required: false
+      razor_expected_msbuild_sha256:
+        description: 'Reviewed Full MSBuild executable SHA256; required for Razor verify'
+        type: string
         required: false
 permissions:
   contents: read
@@ -124,6 +150,59 @@ jobs:
           if docker image inspect radish-image-check:${{ matrix.architecture }} >/dev/null 2>&1; then
             docker image rm radish-image-check:${{ matrix.architecture }}
           fi
+  hangfire-windows-razor:
+    name: Hangfire Razor / Windows x64
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'hangfire-razor' }}
+    runs-on: windows-2025
+    timeout-minutes: 60
+    steps:
+      - name: Require the approved workflow commit
+        shell: pwsh
+        env:
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        run: |
+          if ($env:EXPECTED_HEAD_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXPECTED_HEAD_SHA -cne $env:GITHUB_SHA) {
+            throw 'Explicit approved workflow commit required'
+          }
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Collect inventory or execute reviewed Razor validation
+        shell: pwsh
+        env:
+          RAZOR_MODE: ${{ inputs.razor_mode }}
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+          RAZOR_IMAGE: ${{ inputs.razor_expected_image }}
+          RAZOR_VS: ${{ inputs.razor_expected_vs }}
+          RAZOR_MSBUILD: ${{ inputs.razor_expected_msbuild }}
+          RAZOR_MSBUILD_SHA256: ${{ inputs.razor_expected_msbuild_sha256 }}
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "radish-hangfire-razor-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          ./Scripts/hangfire/windows/Invoke-Validation.ps1 -Phase $env:RAZOR_MODE -TaskRoot $root `
+            -ExpectedCommit $env:EXPECTED_HEAD_SHA -ExpectedImageVersion $env:RAZOR_IMAGE `
+            -ExpectedVsVersion $env:RAZOR_VS -ExpectedMsbuildVersion $env:RAZOR_MSBUILD `
+            -ExpectedMsbuildSha256 $env:RAZOR_MSBUILD_SHA256
+      - name: Finalize owned cleanup and evidence even after failure
+        id: cleanup
+        if: always() && steps.checkout.outcome == 'success'
+        shell: pwsh
+        env:
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "radish-hangfire-razor-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          if (Test-Path -LiteralPath (Join-Path $root 'owner.json')) {
+            ./Scripts/hangfire/windows/Invoke-Validation.ps1 -Phase Cleanup -TaskRoot $root -ExpectedCommit $env:EXPECTED_HEAD_SHA
+          }
+      - name: Retain the checked evidence whitelist
+        if: always() && steps.cleanup.outputs.publish_safe == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: hangfire-razor-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/radish-hangfire-razor-${{ github.run_id }}-${{ github.run_attempt }}/publish/
+          retention-days: 7
+          if-no-files-found: error
   sqlite-native-platforms:
     name: SQLite native / ${{ matrix.rid }}
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'sqlite-platforms' }}

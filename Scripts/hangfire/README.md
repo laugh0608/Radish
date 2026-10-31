@@ -29,3 +29,5 @@ node --test Scripts/hangfire/toolchain.test.mjs
 ```
 
 本机重建成功不等于与原包字节一致；Windows Razor 再生成、原 PostgreSql DLL 的源码绑定、正式源码获取入口及完整发行结论仍需独立处理。归档内的 DLL / PDB 只供本地审阅，不成为正式产品依赖。
+
+Windows Razor 使用独立的 [Windows 工具](./windows/README.md)和[分段方案](../../Docs/features/hangfire-windows-razor-validation-plan.md)，旧 macOS 入口不负责 Windows 执行。

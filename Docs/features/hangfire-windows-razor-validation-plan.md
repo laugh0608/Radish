@@ -1,12 +1,12 @@
 # Hangfire Windows Razor 托管验证方案
 
-> 2026-10-31（Asia/Shanghai），**准备完成，等待实施确认**。接续[本机重建](../records/hangfire-rebuild-2026-10-31.md)；精确源码、11 项包 / hash、SDK、23 对模板与生成文件、包内 24 DLL 及官方 runner 清单快照见[准备 JSON](../records/hangfire-windows-razor-readiness-2026-10-31.json)。本轮只做静态盘点和文档准备，未执行 Razor、安装新 SDK / 包、修改工作流、push 或触发远端运行。
+> 2026-10-31（Asia/Shanghai），**本地实施已批准并完成，Windows 实际库存 / 验证待单独授权**。接续[本机重建](../records/hangfire-rebuild-2026-10-31.md)；精确源码、11 项包 / hash、SDK、23 对模板与生成文件、包内 24 DLL 及官方 runner 清单快照见[准备 JSON](../records/hangfire-windows-razor-readiness-2026-10-31.json)。实际接线与本地验证见[实施记录](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)；未执行 Razor、安装新 SDK / 包、push 或触发远端运行。
 
 ## 1. 目标与授权分段
 
 证明固定 Hangfire 源码中的 23 个 Dashboard 模板确实由固定 RazorGenerator 再生成，并进入 Core 编译及真实片段渲染；明确 Git LF、Windows CRLF、既有生成 C#、PE / PDB 和实际输出之间的关系。
 
-本方案建议下一次确认只覆盖**本地实施与验证**：新增 Windows 专题编排、只读库存 / 比较 / 渲染工具、限定手动 CI job、契约检查及文档；不在本机安装 Windows 工具、不执行 Windows 任务、不 push、不触发 runner。之后单独批准：
+本次确认已覆盖并完成**本地实施与验证**：新增 Windows 专题编排、只读库存 / 比较 / 渲染工具、限定手动 CI job、契约检查及文档；不在本机安装 Windows 工具、不执行 Windows 任务、不 push、不触发 runner。之后单独批准：
 
 1. 将指定提交 push 到 `dev`，不自动执行其他工作流。
 2. 手动运行 `inventory`，采集实际 VM / Full MSBuild 精确版本和 hash；不执行上游 task。
@@ -81,21 +81,21 @@ RazorGenerator 的包版本为 2.5.0，内部 Core / MsBuild 程序集版本仍�
 
 每组都必须产出精确 23 文件，无额外文件、漏项或旧文件。记录模板 hash → task / 引擎 hash → 生成 C# hash → 所编译 Core / PDB hash → 冷进程实际加载路径 / hash → HTML hash / 标记。
 
-对照采用固定 SDK 自带 Roslyn 的 C# token / ValueText 比较，保留字符串、标识符、数值和访问修饰符语义；仅将注释、外层文本换行和已核对的 `#line` 路径归类为生成元数据。不用删除空白的正则掩盖 C# 差异。要求 CRLF 组与既有 C# 的有效 token 一致；LF / CRLF 组只允许明确列出的字符串换行差异，未知 token / 资源 / 接口差异即停。若两种输入均不能解释既有生成结果，暂停相应结论，不放宽成“编译过就通过”。
+对照采用固定 SDK 自带 Roslyn 的 C# token / ValueText 比较，先折叠值不变的字符串常量拼接以处理 CodeDom 拆行，保留字符串、标识符、数值和访问修饰符语义；仅将注释、外层文本换行和已核对的 `#line` 路径归类为生成元数据。不用删除空白的正则掩盖 C# 差异。要求 CRLF 组与既有 C# 的有效 token 一致；LF / CRLF 组只允许明确列出的字符串换行差异，未知 token / 资源 / 接口差异即停。若两种输入均不能解释既有生成结果，暂停相应结论，不放宽成“编译过就通过”。
 
 `marked-crlf` 只允许一个模板增加固定标记；生成 token 差异必须局限于对应 HTML 字符串。两次独立生成的同组结果要求字节一致；路径差异若影响生成内容须先定位，不自动规范化后宣称字节一致。
 
 ## 5. 命令与实施文件
 
-拟新增 `Scripts/hangfire/windows/`：PowerShell 阶段入口、独立输入契约、只读库存 / 包验证、23 对生成检查、SDK Roslyn token / PE / PDB 比较器、无 PackageReference 的片段渲染探针及清理 / 契约测试。既有 macOS 工具保留原平台边界，不把它的 Task 初始化伪装成支持 Windows。
+已新增 `Scripts/hangfire/windows/`：PowerShell 阶段入口、独立输入契约、只读库存 / 包验证、23 对生成检查、SDK Roslyn token / PE / PDB 比较器、无 PackageReference 的片段渲染探针及清理 / 契约测试。既有 macOS 工具保留原平台边界，不把它的 Task 初始化伪装成支持 Windows。
 
-以下是**拟实施后的命令**，本轮未执行。任务根固定在 `$env:RUNNER_TEMP`，所有权包含 run ID / attempt / commit，禁止使用共享根目录：
+以下是已实现入口的**Windows 命令**，本轮未执行。任务根固定在 `$env:RUNNER_TEMP`，所有权包含 run ID / attempt / commit，禁止使用共享根目录：
 
 ```powershell
 $TaskId = "radish-hangfire-razor-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
 $TaskRoot = Join-Path $env:RUNNER_TEMP $TaskId
 pwsh -NoProfile -File Scripts/hangfire/windows/Invoke-Validation.ps1 `
-  -Phase Inventory -TaskRoot $TaskRoot
+  -Phase Inventory -TaskRoot $TaskRoot -ExpectedCommit $ApprovedSha
 ```
 
 库存使用已安装 vswhere，不通过 PATH 猜 MSBuild：
@@ -113,7 +113,7 @@ Get-FileHash -Algorithm SHA256 $FullMsbuild
 
 ```powershell
 pwsh -NoProfile -File Scripts/hangfire/windows/Invoke-Validation.ps1 `
-  -Phase Verify -TaskRoot $TaskRoot -ExpectedImageVersion $ReviewedImage `
+  -Phase Verify -TaskRoot $TaskRoot -ExpectedCommit $ApprovedSha -ExpectedImageVersion $ReviewedImage `
   -ExpectedVsVersion $ReviewedVs -ExpectedMsbuildVersion $ReviewedMsbuild `
   -ExpectedMsbuildSha256 $ReviewedMsbuildSha256
 ```
@@ -171,7 +171,7 @@ PDB 逐文件核对生成 C# 的实际 checksum、嵌入字节、SourceLink 路�
 
 ## 7. CI 接线与远端边界
 
-建议复用默认分支已存在的 `.github/workflows/native-images.yml`，增加 `validation_scope=hangfire-razor` 及 `razor_mode=inventory|verify`（默认 inventory），只新增一个 `windows-2025` job，超时 60 分钟。门禁为 `workflow_dispatch && validation_scope == hangfire-razor`，禁止 workflow_call / push / PR 顺带执行；原 native / SQLite 条件、默认选项与行为保持不变。
+已在本地复用默认分支原有的 `.github/workflows/native-images.yml`，增加 `validation_scope=hangfire-razor` 及 `razor_mode=inventory|verify`（默认 inventory），只新增一个 `windows-2025` job，超时 60 分钟。门禁为 `workflow_dispatch && validation_scope == hangfire-razor`，禁止 workflow_call / push / PR 顺带执行；原 native / SQLite 条件、默认选项与行为保持不变。
 
 增加 Razor 专用 `expected_head_sha` 输入，inventory / verify 都要求它非空且与 `github.sha` 一致，再 checkout 当前 run SHA；不只依赖可移动的 dev 名称。新 job 只用 `contents: read`，checkout 禁 persist-credentials；沿用已核对的 checkout `fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09` 和 upload-artifact `ea165f8d65b6e75b540449e92b4886f43607fa02`。不需要 setup-msbuild、Node、npm、Rust、Docker、数据库或任何 secrets。verify 的四个库存期望值由后续审阅填入，空值绝不默认开始上游执行。
 
