@@ -1,0 +1,280 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "commit": "75a9e33f8a3d1856d1fa0ffaa7f96c091824d456",
+  "workflowSha": "75a9e33f8a3d1856d1fa0ffaa7f96c091824d456",
+  "workflowBlob": "c4e490ccada977243ae4702ab9e4617312b5dea7",
+  "runId": 41193259788,
+  "attempt": 1,
+  "runUrl": "https://github.com/laugh0608/Radish/actions/runs/41193259788",
+  "runConclusion": "failure",
+  "failure": {
+    "phase": "inventory",
+    "message": "Consistent image identity required; inspect image-identity.json",
+    "detail": "Consistent image identity required; inspect image-identity.json"
+  },
+  "inputs": {
+    "validation_scope": "hangfire-razor",
+    "razor_mode": "inventory",
+    "expected_head_sha": "75a9e33f8a3d1856d1fa0ffaa7f96c091824d456"
+  },
+  "inputEvidence": "dispatch command and job log; no independent event payload",
+  "inventoryComplete": true,
+  "imageIdentity": {
+    "assessment": {
+      "status": "unresolved",
+      "issues": [
+        "files.setupInfo.versionMismatch",
+        "files.imageData.versionMismatch"
+      ]
+    },
+    "capturedUtc": "2026-10-31T10:34:06.5414544Z",
+    "startupLogCompared": false,
+    "runId": "41193259788",
+    "files": {
+      "setupInfo": {
+        "capturedUtc": "2026-10-31T10:34:06.7132735Z",
+        "errorCode": null,
+        "status": "captured",
+        "sha256": "e4eb6bfd3794c182cd29565152665e956e90551a2f3070b6e1963d7589cbeb36",
+        "path": "C:\\actions-runner\\cached\\2.338.2\\.setup_info",
+        "lastWriteUtc": "2026-10-31T10:33:51.9126576Z",
+        "size": 776,
+        "metadata": {
+          "image": "windows-2022",
+          "imageRelease": "https://github.com/actions/runner-images/releases/tag/win22%2F20261025.346",
+          "version": "20261025.346.1",
+          "status": "captured",
+          "errorCode": null,
+          "includedSoftware": "https://github.com/actions/runner-images/blob/win22/20261025.346/images/windows/Windows2022-Readme.md",
+          "selectedDetail": "Image: windows-2022\nVersion: 20261025.346.1\nIncluded Software: https://github.com/actions/runner-images/blob/win22/20261025.346/images/windows/Windows2022-Readme.md\nImage Release: https://github.com/actions/runner-images/releases/tag/win22%2F20261025.346"
+        }
+      },
+      "imageData": {
+        "capturedUtc": "2026-10-31T10:34:06.7874447Z",
+        "errorCode": null,
+        "status": "captured",
+        "sha256": "c2ec31491057e5d8b58218369093a3240d73ad1d15269ae74e943d00fad1eda0",
+        "path": "C:\\imagedata.json",
+        "lastWriteUtc": "2026-10-25T21:42:20.3679383Z",
+        "size": 426,
+        "metadata": {
+          "image": "windows-2022",
+          "imageRelease": "https://github.com/actions/runner-images/releases/tag/win22%2F20261025.346",
+          "version": "20261025.346.1",
+          "status": "captured",
+          "errorCode": null,
+          "includedSoftware": "https://github.com/actions/runner-images/blob/win22/20261025.346/images/windows/Windows2022-Readme.md",
+          "selectedDetail": "Image: windows-2022\nVersion: 20261025.346.1\nIncluded Software: https://github.com/actions/runner-images/blob/win22/20261025.346/images/windows/Windows2022-Readme.md\nImage Release: https://github.com/actions/runner-images/releases/tag/win22%2F20261025.346"
+        }
+      }
+    },
+    "setupInfoLocation": {
+      "path": "C:\\actions-runner\\cached\\2.338.2\\.setup_info",
+      "workerExecutable": "C:\\actions-runner\\cached\\2.338.2\\bin\\Runner.Worker.exe",
+      "errorCode": null,
+      "workerCreatedUtc": "2026-10-31T10:33:54.0211670Z",
+      "workerPid": 2556,
+      "status": "found"
+    },
+    "attempt": "1",
+    "commit": "75a9e33f8a3d1856d1fa0ffaa7f96c091824d456",
+    "schemaVersion": 1,
+    "environment": {
+      "Machine": {
+        "imageVersion": "20261026.347.1",
+        "status": "captured",
+        "imageOS": "win22",
+        "errorCode": null
+      },
+      "Process": {
+        "imageVersion": "20261026.347.1",
+        "status": "captured",
+        "imageOS": "win22",
+        "errorCode": null
+      },
+      "User": {
+        "imageVersion": null,
+        "status": "captured",
+        "imageOS": null,
+        "errorCode": null
+      }
+    },
+    "workflowSha": "75a9e33f8a3d1856d1fa0ffaa7f96c091824d456"
+  },
+  "archiveReview": {
+    "startupLogCompared": true,
+    "startupLogEqualsBothSelectedDetails": true,
+    "originalReportUnmodified": true,
+    "previousRunCauseNotProven": true
+  },
+  "tools": {
+    "visualStudio": {
+      "path": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise",
+      "version": "17.14.37824.6"
+    },
+    "msbuild": {
+      "sha256": "7da5f86d7dfa627c4071edc9563fda7ace7ec0aaadd8b2aaccb92d2a823535c0",
+      "path": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\MSBuild\\Current\\Bin\\amd64\\MSBuild.exe",
+      "version": "17.14.60.43110",
+      "fileVersion": "17.14.60.43110"
+    },
+    "vswhere": {
+      "sha256": "c54f3b7c9164ea9a0db8641e81ecdda80c2664ef5a47c4191406f848cc07c662",
+      "instances": [
+        {
+          "instanceId": "e3e8cc72",
+          "installDate": "2026-10-25T21:57:29Z",
+          "installationName": "VisualStudio/17.14.43+37824.6",
+          "installationPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise",
+          "installationVersion": "17.14.37824.6",
+          "productId": "Microsoft.VisualStudio.Product.Enterprise",
+          "productPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise\\Common7\\IDE\\devenv.exe",
+          "state": 4294967295,
+          "isComplete": true,
+          "isLaunchable": true,
+          "isPrerelease": false,
+          "isRebootRequired": false,
+          "displayName": "Visual Studio Enterprise 2022",
+          "description": "Scalable, end-to-end solution for teams of any size",
+          "channelId": "VisualStudio.17.Release",
+          "channelUri": "https://aka.ms/vs/17/release/channel",
+          "enginePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\resources\\app\\ServiceHub\\Services\\Microsoft.VisualStudio.Setup.Service",
+          "installChannelUri": "https://aka.ms/vs/17/release/channel",
+          "installedChannelId": "VisualStudio.17.Release",
+          "installedChannelUri": "https://aka.ms/vs/17/release/channel",
+          "releaseNotes": "https://docs.microsoft.com/en-us/visualstudio/releases/2022/release-notes-v17.14#17.14.43",
+          "resolvedInstallationPath": "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise",
+          "thirdPartyNotices": "https://go.microsoft.com/fwlink/?LinkId=661288",
+          "updateDate": "2026-10-25T21:57:29.419905Z",
+          "catalog": {
+            "buildBranch": "d17.14",
+            "buildVersion": "17.14.37824.6",
+            "id": "VisualStudio/17.14.43+37824.6",
+            "localBuild": "build-lab",
+            "manifestName": "VisualStudio",
+            "manifestType": "installer",
+            "productDisplayVersion": "17.14.43",
+            "productLine": "Dev17",
+            "productLineVersion": "2022",
+            "productMilestone": "RTW",
+            "productMilestoneIsPreRelease": "False",
+            "productName": "Visual Studio",
+            "productPatchVersion": "43",
+            "productPreReleaseMilestoneSuffix": "1.0",
+            "productSemanticVersion": "17.14.43+37824.6",
+            "requiredEngineVersion": "3.14.2094.42856"
+          },
+          "properties": {
+            "campaignId": "",
+            "channelManifestId": "VisualStudio.17.Release/17.14.43+37824.6",
+            "includeRecommended": "1",
+            "nickname": "",
+            "setupEngineFilePath": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\setup.exe"
+          }
+        }
+      ],
+      "rawOutput": "[\r\n  {\r\n    \"instanceId\": \"e3e8cc72\",\r\n    \"installDate\": \"2026-10-25T21:57:29Z\",\r\n    \"installationName\": \"VisualStudio/17.14.43+37824.6\",\r\n    \"installationPath\": \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Enterprise\",\r\n    \"installationVersion\": \"17.14.37824.6\",\r\n    \"productId\": \"Microsoft.VisualStudio.Product.Enterprise\",\r\n    \"productPath\": \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Enterprise\\\\Common7\\\\IDE\\\\devenv.exe\",\r\n    \"state\": 4294967295,\r\n    \"isComplete\": true,\r\n    \"isLaunchable\": true,\r\n    \"isPrerelease\": false,\r\n    \"isRebootRequired\": false,\r\n    \"displayName\": \"Visual Studio Enterprise 2022\",\r\n    \"description\": \"Scalable, end-to-end solution for teams of any size\",\r\n    \"channelId\": \"VisualStudio.17.Release\",\r\n    \"channelUri\": \"https://aka.ms/vs/17/release/channel\",\r\n    \"enginePath\": \"C:\\\\Program Files (x86)\\\\Microsoft Visual Studio\\\\Installer\\\\resources\\\\app\\\\ServiceHub\\\\Services\\\\Microsoft.VisualStudio.Setup.Service\",\r\n    \"installChannelUri\": \"https://aka.ms/vs/17/release/channel\",\r\n    \"installedChannelId\": \"VisualStudio.17.Release\",\r\n    \"installedChannelUri\": \"https://aka.ms/vs/17/release/channel\",\r\n    \"releaseNotes\": \"https://docs.microsoft.com/en-us/visualstudio/releases/2022/release-notes-v17.14#17.14.43\",\r\n    \"resolvedInstallationPath\": \"C:\\\\Program Files\\\\Microsoft Visual Studio\\\\2022\\\\Enterprise\",\r\n    \"thirdPartyNotices\": \"https://go.microsoft.com/fwlink/?LinkId=661288\",\r\n    \"updateDate\": \"2026-10-25T21:57:29.419905Z\",\r\n    \"catalog\": {\r\n      \"buildBranch\": \"d17.14\",\r\n      \"buildVersion\": \"17.14.37824.6\",\r\n      \"id\": \"VisualStudio/17.14.43+37824.6\",\r\n      \"localBuild\": \"build-lab\",\r\n      \"manifestName\": \"VisualStudio\",\r\n      \"manifestType\": \"installer\",\r\n      \"productDisplayVersion\": \"17.14.43\",\r\n      \"productLine\": \"Dev17\",\r\n      \"productLineVersion\": \"2022\",\r\n      \"productMilestone\": \"RTW\",\r\n      \"productMilestoneIsPreRelease\": \"False\",\r\n      \"productName\": \"Visual Studio\",\r\n      \"productPatchVersion\": \"43\",\r\n      \"productPreReleaseMilestoneSuffix\": \"1.0\",\r\n      \"productSemanticVersion\": \"17.14.43+37824.6\",\r\n      \"requiredEngineVersion\": \"3.14.2094.42856\"\r\n    },\r\n    \"properties\": {\r\n      \"campaignId\": \"\",\r\n      \"channelManifestId\": \"VisualStudio.17.Release/17.14.43+37824.6\",\r\n      \"includeRecommended\": \"1\",\r\n      \"nickname\": \"\",\r\n      \"setupEngineFilePath\": \"C:\\\\Program Files (x86)\\\\Microsoft Visual Studio\\\\Installer\\\\setup.exe\"\r\n    }\r\n  }\r\n]\r\n",
+      "path": "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe",
+      "arguments": [
+        "-products",
+        "*",
+        "-version",
+        "[17.0,18.0)",
+        "-requires",
+        "Microsoft.Component.MSBuild",
+        "-format",
+        "json",
+        "-utf8"
+      ]
+    },
+    "frameworkRelease": 533509,
+    "powershell": "7.6.9",
+    "compatibility": [
+      {
+        "sha256": "803239bfd6a91724ea5cfc9ba8ece1db9d1ad933ea8e4473ce149060db629e28",
+        "path": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\Microsoft.Build.Utilities.v4.0.dll",
+        "name": "Microsoft.Build.Utilities.v4.0, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      },
+      {
+        "sha256": "2d5c703d086577b48c92e3226b9cdaf9ff1fe8ba44fd2efa69b9988f5bbf8622",
+        "path": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\Microsoft.Build.Framework.dll",
+        "name": "Microsoft.Build.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      },
+      {
+        "sha256": "0d195af8d1df42e395308f2c91b95c8bb5143693688b20908e42094a24ba2c60",
+        "path": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\System.Web.dll",
+        "name": "System.Web, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a"
+      },
+      {
+        "sha256": "477879e64b543da0d0d6c8dfe52e97159128dd99ab6eff8401190a14edecc117",
+        "path": "C:\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\System.ComponentModel.Composition.dll",
+        "name": "System.ComponentModel.Composition, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089"
+      }
+    ]
+  },
+  "powershellContracts": {
+    "status": "passed",
+    "cases": [
+      "command-success-name-and-environment",
+      "command-failure-name-and-exit-code",
+      "zero-vs",
+      "one-vs",
+      "two-vs",
+      "wrong-vs-major",
+      "invalid-json-evidence",
+      "incomplete-inventory-rejected-for-verify",
+      "image-file-hash-and-whitelist",
+      "image-invalid-json-and-duplicate-group",
+      "image-extra-fields-rejected",
+      "image-link-version-mismatch",
+      "image-missing-oversized-and-invalid-encoding",
+      "image-consistent-with-absent-user-overrides",
+      "image-setup-and-data-disagreement",
+      "image-machine-and-user-disagreement",
+      "image-required-source-and-os-rejection",
+      "image-unreviewable-inventory-rejected",
+      "image-worker-ancestor-location",
+      "image-ancestor-reuse-and-missing-rejection"
+    ],
+    "fixturesRemoved": true,
+    "fixtureOnly": true
+  },
+  "cleanup": {
+    "ports": [],
+    "complete": true,
+    "database": null,
+    "errors": [],
+    "workingTreeRemoved": true,
+    "globalToolsChanged": false
+  },
+  "artifact": {
+    "id": 13039112970,
+    "name": "hangfire-razor-41193259788-1",
+    "size_in_bytes": 10392,
+    "url": "https://api.github.com/repos/laugh0608/Radish/actions/artifacts/13039112970",
+    "archive_download_url": "https://api.github.com/repos/laugh0608/Radish/actions/artifacts/13039112970/zip",
+    "expired": false,
+    "created_at": "2026-10-31T10:34:12Z",
+    "expires_at": "2026-11-07T10:34:11Z",
+    "updated_at": "2026-10-31T10:34:12Z",
+    "digest": "sha256:1fea6d5f479e9b1b7f8d7c283a7870df7b5a9b5cfc10bd59df73bb8b4dd224b6",
+    "workflow_run": {
+      "id": 41193259788,
+      "repository_id": 1065255641,
+      "head_repository_id": 1065255641,
+      "head_branch": "dev",
+      "head_sha": "75a9e33f8a3d1856d1fa0ffaa7f96c091824d456"
+    }
+  },
+  "artifactManifestSha256": "5b8cd810946d98e47f5d835d8885004266458da5065130d71d45d4b04a78f515",
+  "verifiedPayloadFiles": 12,
+  "archiveDirectory": "artifacts/hangfire-windows-inventory/41193259788-1",
+  "metadataSource": "GitHub connector; jobs.json is normalized job/step response",
+  "otherJobsSkipped": 5,
+  "verifyExecuted": false,
+  "windowsValidationComplete": false,
+  "cleanupEvidenceBoundary": "owned work removed and post-job complete; VM destruction not independently observed",
+  "archiveFilesVerified": 21,
+  "archiveManifestSha256": "f096346d7c1a1ff2527c2da0aa85ae516c44a9e51b86577c20c23a7bc1aa4a18"
+}

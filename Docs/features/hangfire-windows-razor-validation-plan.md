@@ -1,6 +1,6 @@
 # Hangfire Windows Razor 托管验证方案
 
-> 2026-10-31（Asia/Shanghai）。[首次 inventory](../records/hangfire-windows-razor-inventory-2026-10-31.md)已执行并因 VS 2022 查询为空停止，失败证据及清理完成。随后批准并完成[本地修复](../records/hangfire-windows-razor-inventory-repair-2026-10-31.md)：Razor 专项改为 `windows-2022` + VS 2022，修复命令身份覆盖，增加早期进度证据和 PowerShell 契约前置检查。修复提交 `464910ddfa5f1df076128e86fdc618742ebeee0e` 已获授权 push；[第二次 inventory](../records/hangfire-windows-razor-inventory-second-2026-10-31.md)及 8 组 PowerShell 契约、上传 / 下载校验和清理通过。**runner 初始化日志与库存 ImageVersion 不一致，身份审阅未关闭；verify 未获授权、未执行。** 随后已批准[身份诊断采集增强](../records/hangfire-windows-razor-image-identity-diagnostics-2026-10-31.md)的本地实施；新候选尚未 push / dispatch。
+> 2026-10-31（Asia/Shanghai）。[首次 inventory](../records/hangfire-windows-razor-inventory-2026-10-31.md)已执行并因 VS 2022 查询为空停止，失败证据及清理完成。随后批准并完成[本地修复](../records/hangfire-windows-razor-inventory-repair-2026-10-31.md)：Razor 专项改为 `windows-2022` + VS 2022，修复命令身份覆盖，增加早期进度证据和 PowerShell 契约前置检查。修复提交 `464910ddfa5f1df076128e86fdc618742ebeee0e` 已获授权 push；[第二次 inventory](../records/hangfire-windows-razor-inventory-second-2026-10-31.md)及 8 组 PowerShell 契约、上传 / 下载校验和清理通过。**runner 初始化日志与库存 ImageVersion 不一致，身份审阅未关闭；verify 未获授权、未执行。** [身份诊断增强](../records/hangfire-windows-razor-image-identity-diagnostics-2026-10-31.md)已实施并按授权 push；[诊断 inventory](../records/hangfire-windows-razor-inventory-diagnostic-2026-10-31.md)的 20 组契约通过，确认两份描述文件为 `20261025.346.1`、Machine / Process 环境为 `20261026.347.1`、User 未设置；一致性门禁按设计失败，证据归档与清理完成，未重试。
 
 精确源码、11 项包 / hash、SDK、23 对模板与生成文件、包内 24 DLL 仍沿用[准备 JSON](../records/hangfire-windows-razor-readiness-2026-10-31.json)。其中旧 Windows 2025 软件清单为历史准备快照；当前 runner 依据见下文第 2 节。[原本地实施](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)和[本机重建](../records/hangfire-rebuild-2026-10-31.md)的证据边界不变。
 
@@ -8,7 +8,7 @@
 
 证明固定 Hangfire 源码中的 23 个 Dashboard 模板确实由固定 RazorGenerator 再生成，并进入 Core 编译及真实片段渲染；明确 Git LF、Windows CRLF、既有生成 C#、PE / PDB 和实际输出之间的关系。
 
-当前批准覆盖**身份诊断采集增强的本地代码、契约、文档与检查**。不安装 PowerShell / VS，不以本地批准执行 Windows 任务。前两次指定 SHA 的 push / inventory 授权均已执行；不沿用为新候选或 verify 授权。诊断增强完成后，仍按以下分段确认：
+指定提交 `75a9e33f8a3d1856d1fa0ffaa7f96c091824d456` 的 push 与一次诊断 inventory（含 20 组契约、上传 / 下载归档及清理）已按本轮授权执行。此前各次授权均已消耗，不自动重试，不执行 verify。后续仍按以下分段确认：
 
 1. 将指定提交 push 到 `dev`，不自动执行其他工作流。
 2. 手动运行 `inventory`，采集实际 VM / Full MSBuild 精确版本和 hash；不执行上游 task。
@@ -46,7 +46,7 @@ RazorGenerator 的包版本为 2.5.0，内部 Core / MsBuild 程序集版本仍�
 
 ## 3. 精确输入及范围
 
-原 Radish 准备基线为 `762f5fbd227c46232539ee21ff93ad14a8225af4`；首次 inventory 使用 `26ba4390752b85e06ce10043b9bfe4496c83033a`。第二次 inventory 使用 `464910ddfa5f1df076128e86fdc618742ebeee0e`；后续 verify 仍须重新确认精确提交与工具身份。
+原 Radish 准备基线为 `762f5fbd227c46232539ee21ff93ad14a8225af4`；首次 inventory 使用 `26ba4390752b85e06ce10043b9bfe4496c83033a`。第二次 inventory 使用 `464910ddfa5f1df076128e86fdc618742ebeee0e`，诊断 inventory 使用 `75a9e33f8a3d1856d1fa0ffaa7f96c091824d456`；后续 verify 仍须重新确认精确提交与工具身份。
 
 | 源码 | Commit | Tree |
 | --- | --- | --- |
@@ -93,7 +93,7 @@ RazorGenerator 的包版本为 2.5.0，内部 Core / MsBuild 程序集版本仍�
 
 已新增 `Scripts/hangfire/windows/`：PowerShell 阶段入口、独立输入契约、只读库存 / 包验证、23 对生成检查、SDK Roslyn token / PE / PDB 比较器、无 PackageReference 的片段渲染探针及清理 / 契约测试。既有 macOS 工具保留原平台边界，不把它的 Task 初始化伪装成支持 Windows。
 
-入口初始化 owned root 后先保存 `inventory-progress.json`（schemaVersion 3 / `complete=false`）：run / attempt / head SHA、`GITHUB_WORKFLOW_SHA / REF`、runner / 进程 / OS 架构、ImageOS / ImageVersion、OS、PowerShell。随后采集下述 image 身份来源，再执行原有 8 组及新增 12 组自有行为契约，成功才采集实际 VS / MSBuild；契约失败同样走 finally 清理与证据上传。原 8 组在第二次 inventory 已通过，新增 12 组尚未实际运行。
+入口初始化 owned root 后先保存 `inventory-progress.json`（schemaVersion 3 / `complete=false`）：run / attempt / head SHA、`GITHUB_WORKFLOW_SHA / REF`、runner / 进程 / OS 架构、ImageOS / ImageVersion、OS、PowerShell。随后采集下述 image 身份来源，再执行原有 8 组及新增 12 组自有行为契约，成功才采集实际 VS / MSBuild；契约失败同样走 finally 清理与证据上传。全部 20 组已在诊断 inventory 实际通过；该运行随后因真实来源版本冲突而失败。
 
 新增 `ImageIdentity.ps1` 只读采集并保存 `image-identity.json`：
 
@@ -197,7 +197,7 @@ PDB 逐文件核对生成 C# 的实际 checksum、嵌入字节、SourceLink 路�
 
 [GitHub 手动运行规则](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)要求 workflow 存在于默认分支，再用 ref 选择其他分支；因此不新建只能通过修改 master 才可发现的孤立工作流。未来实际触发前仍核实远端默认分支 / workflow 存在、dev 已推送提交与输入 schema，不从本地 origin/master 快照推定当时远端状态，不为执行试验自动合并 master。
 
-下列为手动执行命令形态；已授权的第二次 inventory 已完成，**任何再次 dispatch 或 verify 仍需独立授权**：
+下列为手动执行命令形态；已授权的诊断 inventory 已完成，**任何再次 dispatch 或 verify 仍需独立授权**：
 
 ```bash
 gh workflow run native-images.yml --repo laugh0608/Radish --ref dev \
