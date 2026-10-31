@@ -4,7 +4,7 @@
 >
 > 建议：采用 Microsoft SQLite `.Core` 包、SQLitePCLRaw `config 3.0.3` 与唯一 native 包 `SQLitePCLRaw.lib.e_sqlite3 [3.53.3]`，移除引入第二套 native 的 `bundle_e_sqlite3 / SourceGear.sqlite3` 链。保留现有 ORM、EF、Hangfire provider 和数据库支持边界。
 
-后续平台验证先按[Linux 双架构执行准备方案](./sqlite-linux-platform-validation-plan.md)推进：只读盘点已完成，MCR 输入仍缺，待补齐精确镜像与所有者确认后执行；不沿用本机批次的容器授权。
+后续平台验证先按[Linux 双架构执行准备方案](./sqlite-linux-platform-validation-plan.md)推进：只读盘点与精确镜像输入已补齐，等待所有者确认后执行；不沿用本机批次的容器授权。
 
 ## 1. 核对事实与根因
 

@@ -1,0 +1,529 @@
+{
+  "schemaVersion": 1,
+  "kind": "read-only-input-freeze",
+  "capturedAt": "2026-10-31T11:57:21.420842+08:00",
+  "status": "inputs-frozen-awaiting-owner-execution-confirmation",
+  "sourceRevision": "6d952fc46d178a92e9adc9268d847a79bb62a317",
+  "codeBaseline": "848fd007",
+  "sourceDifference": "6d952fc4 adds readiness documentation only; product/build source unchanged",
+  "previousReadiness": "sqlite-linux-platform-readiness-2026-10-31.json",
+  "executionConfirmed": false,
+  "imageLayersDownloaded": false,
+  "containersCreatedOrStarted": false,
+  "proxyDiagnosis": {
+    "inheritedClientProxy": "http://127.0.0.1:10808",
+    "defaultProxyResult": "CONNECT established; TLS handshake timeout",
+    "outsideSandboxProxyResult": "same TLS timeout; not resolved by sandbox escalation",
+    "directMcrHttpsResult": "success; default TLS certificate verification enabled",
+    "clientVerification": "All four platform manifests structurally match raw registry bytes with per-command NO_PROXY/no_proxy append",
+    "globalProxyChanged": false,
+    "daemonProxyChanged": false,
+    "daemonProxy": {
+      "http": "http://proxy.orb.internal:8305",
+      "https": "http://proxy.orb.internal:8305",
+      "mcrExcluded": false
+    },
+    "daemonLayerFetch": "not tested; do not infer success from client metadata; stop/report if blocked, no automatic proxy/registry reconfiguration"
+  },
+  "platforms": {
+    "amd64": {
+      "platform": "linux/amd64",
+      "rid": "linux-x64",
+      "executionMode": "emulated-on-OrbStack-arm64",
+      "images": {
+        "node": {
+          "reference": "node:24-bookworm-slim@sha256:a43f7fc3e52e87d12a905f46eea0275def84ca8f2981a5b53fed44d7fb398ee0",
+          "platformManifestDigest": "sha256:a43f7fc3e52e87d12a905f46eea0275def84ca8f2981a5b53fed44d7fb398ee0",
+          "versions": [
+            "NODE_VERSION=24.22.2"
+          ],
+          "os": "Debian 12 bookworm"
+        },
+        "rust": {
+          "reference": "rust:1.96.0-bookworm@sha256:c993d32d95cc146bd12c84d66f0b924a6a96f3988325f39c144f2f9893dea120",
+          "platformManifestDigest": "sha256:c993d32d95cc146bd12c84d66f0b924a6a96f3988325f39c144f2f9893dea120",
+          "versions": [
+            "RUST_VERSION=1.96.0"
+          ],
+          "os": "Debian 12 bookworm"
+        },
+        "sdk": {
+          "reference": "mcr.microsoft.com/dotnet/sdk:10.0@sha256:9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03",
+          "platformManifestDigest": "sha256:9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03",
+          "configDigest": "sha256:3192b8163619903b1b48ea1f37c042230d3c375a3812165971facb1781112b39",
+          "versions": [
+            "DOTNET_VERSION=10.0.14",
+            "ASPNET_VERSION=10.0.14",
+            "DOTNET_SDK_VERSION=10.0.403"
+          ],
+          "os": "Ubuntu 24.04 noble",
+          "osEvidence": "OCI version label 24.04; SDK config history Ubuntu-24.04; identical ASP.NET prefix layers in SDK; official .NET 10 default-tag documentation",
+          "glibcActualVersion": "not executed; inspect in approved run"
+        },
+        "aspnet": {
+          "reference": "mcr.microsoft.com/dotnet/aspnet:10.0@sha256:43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3",
+          "platformManifestDigest": "sha256:43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3",
+          "configDigest": "sha256:cfeca9a55d0f8353620d75e8ccb882f000d314e8ce43290014d4467827de8747",
+          "versions": [
+            "DOTNET_VERSION=10.0.14",
+            "ASPNET_VERSION=10.0.14"
+          ],
+          "os": "Ubuntu 24.04 noble",
+          "osEvidence": "OCI version label 24.04; SDK config history Ubuntu-24.04; identical ASP.NET prefix layers in SDK; official .NET 10 default-tag documentation",
+          "glibcActualVersion": "not executed; inspect in approved run"
+        }
+      }
+    },
+    "arm64": {
+      "platform": "linux/arm64",
+      "rid": "linux-arm64",
+      "executionMode": "native-on-OrbStack-arm64",
+      "images": {
+        "node": {
+          "reference": "node:24-bookworm-slim@sha256:e80dee4ed3709cf1f8004e34ecfb90df71b7eac8ba0d7d6222ba238a823d1eea",
+          "platformManifestDigest": "sha256:e80dee4ed3709cf1f8004e34ecfb90df71b7eac8ba0d7d6222ba238a823d1eea",
+          "versions": [
+            "NODE_VERSION=24.22.2"
+          ],
+          "os": "Debian 12 bookworm"
+        },
+        "rust": {
+          "reference": "rust:1.96.0-bookworm@sha256:05f85ef6eb0f2600ac62e9d779642b5b362d5be2ed67b80e162fae6e28b66524",
+          "platformManifestDigest": "sha256:05f85ef6eb0f2600ac62e9d779642b5b362d5be2ed67b80e162fae6e28b66524",
+          "versions": [
+            "RUST_VERSION=1.96.0"
+          ],
+          "os": "Debian 12 bookworm"
+        },
+        "sdk": {
+          "reference": "mcr.microsoft.com/dotnet/sdk:10.0@sha256:f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef",
+          "platformManifestDigest": "sha256:f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef",
+          "configDigest": "sha256:2f27d27a5fb6e5bf2381d9c16c0ca4476592a252502f50238ecb9cf86b67f698",
+          "versions": [
+            "DOTNET_VERSION=10.0.14",
+            "ASPNET_VERSION=10.0.14",
+            "DOTNET_SDK_VERSION=10.0.403"
+          ],
+          "os": "Ubuntu 24.04 noble",
+          "osEvidence": "OCI version label 24.04; SDK config history Ubuntu-24.04; identical ASP.NET prefix layers in SDK; official .NET 10 default-tag documentation",
+          "glibcActualVersion": "not executed; inspect in approved run"
+        },
+        "aspnet": {
+          "reference": "mcr.microsoft.com/dotnet/aspnet:10.0@sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c",
+          "platformManifestDigest": "sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c",
+          "configDigest": "sha256:8d57c2d505ac95ae2945b9f8484e1f75727ab40bd07fc9e77c770335caff8ff5",
+          "versions": [
+            "DOTNET_VERSION=10.0.14",
+            "ASPNET_VERSION=10.0.14"
+          ],
+          "os": "Ubuntu 24.04 noble",
+          "osEvidence": "OCI version label 24.04; SDK config history Ubuntu-24.04; identical ASP.NET prefix layers in SDK; official .NET 10 default-tag documentation",
+          "glibcActualVersion": "not executed; inspect in approved run"
+        }
+      }
+    }
+  },
+  "scanner": {
+    "platform": "linux/arm64",
+    "version": "0.70.0",
+    "reference": "aquasec/trivy:0.70.0@sha256:06c0a1359e4d745c6d709f5b64421db79fe0b5602c87d6eb5d6ba7d3d79d91ab",
+    "imageLayersDownloaded": false,
+    "vulnerabilityDatabase": "prepare only after approval; freeze one DB snapshot for all eight archives"
+  },
+  "mcrVerifiedMetadata": {
+    "capturedAt": "2026-10-31T11:55:11.971345+08:00",
+    "transport": {
+      "route": "direct-HTTPS-to-official-MCR",
+      "scope": "this read-only metadata request only",
+      "proxyConfigChanged": false,
+      "tlsVerificationDisabled": false,
+      "imageLayersDownloaded": false
+    },
+    "images": [
+      {
+        "image": "mcr.microsoft.com/dotnet/sdk:10.0",
+        "indexDigest": "sha256:de4fe90a98845d75910b9769662465c84de1a934665c431279d1382b2bddc02b",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "platformManifestDigest": "sha256:9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03",
+        "configDigest": "sha256:3192b8163619903b1b48ea1f37c042230d3c375a3812165971facb1781112b39",
+        "created": "2026-10-26T00:29:58.951834394Z",
+        "configOs": "linux",
+        "configArchitecture": "amd64",
+        "versions": [
+          "DOTNET_VERSION=10.0.14",
+          "ASPNET_VERSION=10.0.14",
+          "DOTNET_SDK_VERSION=10.0.403"
+        ],
+        "labels": {
+          "org.opencontainers.image.version": "24.04"
+        },
+        "historyFrom": [
+          "ENV DOTNET_GENERATE_ASPNET_CERTIFICATE=false DOTNET_NOLOGO=true DOTNET_SDK_VERSION=10.0.403 DOTNET_USE_POLLING_FILE_WATCHER=true NUGET_XMLDOC_MODE=skip POWERSHELL_DISTRIBUTION_CHANNEL=PSDocker-DotnetSDK-Ubuntu-24.04"
+        ],
+        "layers": [
+          {
+            "digest": "sha256:7a48b8f0e5c73d0cc2a85b008978396aa19d253dc1b96fdb0b769ee6dcbeca4a",
+            "size": 29767612
+          },
+          {
+            "digest": "sha256:aa37eb26c52c0ddbcd32254925809fbdc9658dfd60665475f5a8bdbecc5d516e",
+            "size": 17163082
+          },
+          {
+            "digest": "sha256:1f8c14bc5847dd84261170b482818d3a7edbc43ea9063ce4930da58b358fa5d0",
+            "size": 3602
+          },
+          {
+            "digest": "sha256:d12f340d58c7c1903446a5acf78dd98e4662adae061cc5e9f4500c9c9e98d160",
+            "size": 37624241
+          },
+          {
+            "digest": "sha256:f3c239e1a8382a39fd721de7ad1bd27a5821274273b253a7e6cf50c2cac1200b",
+            "size": 156
+          },
+          {
+            "digest": "sha256:017220401ab5b691e12f8739a2b64a7f360cef11b805a2fa57a90af907173c18",
+            "size": 13087967
+          },
+          {
+            "digest": "sha256:7ed664a3150a862fb3aab545ecafd771f6532bd31ab4881e9b570d3f1e7a6edd",
+            "size": 24454371
+          },
+          {
+            "digest": "sha256:cb09e947f848c222feefb5d20fbc9c3fd4dd80d61c4e3d93e961a2b2f3123611",
+            "size": 194314279
+          },
+          {
+            "digest": "sha256:7a3f8cedb109146f80dca176bbb35fb0e2a737392d121ce9b328dd70d6977f7a",
+            "size": 21109643
+          },
+          {
+            "digest": "sha256:463481a04bb2714ed800071b522ff9715918347e550ce0f750f866eb2ba70001",
+            "size": 535
+          },
+          {
+            "digest": "sha256:3465c8a1b95f5898d31857b639729a75334c3c647861a0bd158871420485d488",
+            "size": 21034119
+          }
+        ]
+      },
+      {
+        "image": "mcr.microsoft.com/dotnet/sdk:10.0",
+        "indexDigest": "sha256:de4fe90a98845d75910b9769662465c84de1a934665c431279d1382b2bddc02b",
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux"
+        },
+        "platformManifestDigest": "sha256:f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef",
+        "configDigest": "sha256:2f27d27a5fb6e5bf2381d9c16c0ca4476592a252502f50238ecb9cf86b67f698",
+        "created": "2026-10-26T00:34:32.565856305Z",
+        "configOs": "linux",
+        "configArchitecture": "arm64",
+        "versions": [
+          "DOTNET_VERSION=10.0.14",
+          "ASPNET_VERSION=10.0.14",
+          "DOTNET_SDK_VERSION=10.0.403"
+        ],
+        "labels": {
+          "org.opencontainers.image.version": "24.04"
+        },
+        "historyFrom": [
+          "ENV DOTNET_GENERATE_ASPNET_CERTIFICATE=false DOTNET_NOLOGO=true DOTNET_SDK_VERSION=10.0.403 DOTNET_USE_POLLING_FILE_WATCHER=true NUGET_XMLDOC_MODE=skip POWERSHELL_DISTRIBUTION_CHANNEL=PSDocker-DotnetSDK-Ubuntu-24.04-arm64"
+        ],
+        "layers": [
+          {
+            "digest": "sha256:e2d2bb84d02254f4be480ca3c62f94fc12ac959c11b3ce5bd7da3f411b2b9607",
+            "size": 28940126
+          },
+          {
+            "digest": "sha256:b2c2f6830513bbe13240c0bd8c32ba103a381ea023f8351441a3b1adf417a9f6",
+            "size": 17091717
+          },
+          {
+            "digest": "sha256:98b52b4ea3cd579f67d5d86c5f59f26a0a767a286aeeb25bd34c838b27bd6191",
+            "size": 3614
+          },
+          {
+            "digest": "sha256:006cbda171940ac81436b81e7bb41a5a62f473603c75da1b556621512777ee13",
+            "size": 35199547
+          },
+          {
+            "digest": "sha256:f00e422dca95415049befff487ffacb8422a61d4ce74b0ccb14729ae9390708c",
+            "size": 154
+          },
+          {
+            "digest": "sha256:a02195b026864e175a924a422826085bab72babc2721e9879868d74e12e93e71",
+            "size": 12545756
+          },
+          {
+            "digest": "sha256:1f99b7fb4c96e7dae21ad9613cc9622e13aaccc168177a02e6be8a25f1aa1e6e",
+            "size": 24411304
+          },
+          {
+            "digest": "sha256:a26d1e659503fe8b6cc307d6b96feaf9aa70baf93fc313ad35cb5c23d72ca0bf",
+            "size": 189332729
+          },
+          {
+            "digest": "sha256:33ee3be3f46673a94d825e57aa6c2a666989e00c278a01dda3ca192c8644f8cd",
+            "size": 21095765
+          },
+          {
+            "digest": "sha256:5d06fa848611911847626c5bb6c6a30df530635bc54683284714a634d8bb0896",
+            "size": 554
+          },
+          {
+            "digest": "sha256:4ae36f93b654b4f204872c50a4012ac4ef20aa7f4bb5e04557264b9eb77e9c37",
+            "size": 21024436
+          }
+        ]
+      },
+      {
+        "image": "mcr.microsoft.com/dotnet/aspnet:10.0",
+        "indexDigest": "sha256:de0ee358cdd672f7017a003bed21e9ac9ed48a27c922a59b18175b6e82fa7fee",
+        "platform": {
+          "architecture": "amd64",
+          "os": "linux"
+        },
+        "platformManifestDigest": "sha256:43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3",
+        "configDigest": "sha256:cfeca9a55d0f8353620d75e8ccb882f000d314e8ce43290014d4467827de8747",
+        "created": "2026-10-26T00:29:18.960447072Z",
+        "configOs": "linux",
+        "configArchitecture": "amd64",
+        "versions": [
+          "DOTNET_VERSION=10.0.14",
+          "ASPNET_VERSION=10.0.14"
+        ],
+        "labels": {
+          "org.opencontainers.image.version": "24.04"
+        },
+        "historyFrom": [],
+        "layers": [
+          {
+            "digest": "sha256:7a48b8f0e5c73d0cc2a85b008978396aa19d253dc1b96fdb0b769ee6dcbeca4a",
+            "size": 29767612
+          },
+          {
+            "digest": "sha256:aa37eb26c52c0ddbcd32254925809fbdc9658dfd60665475f5a8bdbecc5d516e",
+            "size": 17163082
+          },
+          {
+            "digest": "sha256:1f8c14bc5847dd84261170b482818d3a7edbc43ea9063ce4930da58b358fa5d0",
+            "size": 3602
+          },
+          {
+            "digest": "sha256:d12f340d58c7c1903446a5acf78dd98e4662adae061cc5e9f4500c9c9e98d160",
+            "size": 37624241
+          },
+          {
+            "digest": "sha256:f3c239e1a8382a39fd721de7ad1bd27a5821274273b253a7e6cf50c2cac1200b",
+            "size": 156
+          },
+          {
+            "digest": "sha256:017220401ab5b691e12f8739a2b64a7f360cef11b805a2fa57a90af907173c18",
+            "size": 13087967
+          }
+        ]
+      },
+      {
+        "image": "mcr.microsoft.com/dotnet/aspnet:10.0",
+        "indexDigest": "sha256:de0ee358cdd672f7017a003bed21e9ac9ed48a27c922a59b18175b6e82fa7fee",
+        "platform": {
+          "architecture": "arm64",
+          "os": "linux"
+        },
+        "platformManifestDigest": "sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c",
+        "configDigest": "sha256:8d57c2d505ac95ae2945b9f8484e1f75727ab40bd07fc9e77c770335caff8ff5",
+        "created": "2026-10-26T00:33:51.0690275Z",
+        "configOs": "linux",
+        "configArchitecture": "arm64",
+        "versions": [
+          "DOTNET_VERSION=10.0.14",
+          "ASPNET_VERSION=10.0.14"
+        ],
+        "labels": {
+          "org.opencontainers.image.version": "24.04"
+        },
+        "historyFrom": [],
+        "layers": [
+          {
+            "digest": "sha256:e2d2bb84d02254f4be480ca3c62f94fc12ac959c11b3ce5bd7da3f411b2b9607",
+            "size": 28940126
+          },
+          {
+            "digest": "sha256:b2c2f6830513bbe13240c0bd8c32ba103a381ea023f8351441a3b1adf417a9f6",
+            "size": 17091717
+          },
+          {
+            "digest": "sha256:98b52b4ea3cd579f67d5d86c5f59f26a0a767a286aeeb25bd34c838b27bd6191",
+            "size": 3614
+          },
+          {
+            "digest": "sha256:006cbda171940ac81436b81e7bb41a5a62f473603c75da1b556621512777ee13",
+            "size": 35199547
+          },
+          {
+            "digest": "sha256:f00e422dca95415049befff487ffacb8422a61d4ce74b0ccb14729ae9390708c",
+            "size": 154
+          },
+          {
+            "digest": "sha256:a02195b026864e175a924a422826085bab72babc2721e9879868d74e12e93e71",
+            "size": 12545756
+          }
+        ]
+      }
+    ]
+  },
+  "dockerClientVerification": {
+    "capturedAt": "2026-10-31T11:55:38.558489+08:00",
+    "scope": "NO_PROXY/no_proxy appended only in this metadata subprocess environment; no global or daemon mutation",
+    "results": [
+      {
+        "reference": "mcr.microsoft.com/dotnet/sdk@sha256:9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03",
+        "argv": [
+          "docker",
+          "--context",
+          "orbstack",
+          "buildx",
+          "imagetools",
+          "inspect",
+          "--raw",
+          "mcr.microsoft.com/dotnet/sdk@sha256:9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03"
+        ],
+        "exit": 0,
+        "manifestStructurallyEqual": true
+      },
+      {
+        "reference": "mcr.microsoft.com/dotnet/sdk@sha256:f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef",
+        "argv": [
+          "docker",
+          "--context",
+          "orbstack",
+          "buildx",
+          "imagetools",
+          "inspect",
+          "--raw",
+          "mcr.microsoft.com/dotnet/sdk@sha256:f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef"
+        ],
+        "exit": 0,
+        "manifestStructurallyEqual": true
+      },
+      {
+        "reference": "mcr.microsoft.com/dotnet/aspnet@sha256:43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3",
+        "argv": [
+          "docker",
+          "--context",
+          "orbstack",
+          "buildx",
+          "imagetools",
+          "inspect",
+          "--raw",
+          "mcr.microsoft.com/dotnet/aspnet@sha256:43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3"
+        ],
+        "exit": 0,
+        "manifestStructurallyEqual": true
+      },
+      {
+        "reference": "mcr.microsoft.com/dotnet/aspnet@sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c",
+        "argv": [
+          "docker",
+          "--context",
+          "orbstack",
+          "buildx",
+          "imagetools",
+          "inspect",
+          "--raw",
+          "mcr.microsoft.com/dotnet/aspnet@sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c"
+        ],
+        "exit": 0,
+        "manifestStructurallyEqual": true
+      }
+    ]
+  },
+  "draftReviewArtifacts": {
+    "directory": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/execution-draft",
+    "status": "generated-text-only-not-executed",
+    "filesSha256": {
+      "dockerfiles/amd64/api.Dockerfile": "b73e53be41e7c8c8cb03ac911bc81d786678f6fb397364c80acb696f89a1efc2",
+      "dockerfiles/amd64/auth.Dockerfile": "c627a800ceab2d54219bf0b49c2adb5892b92ddd6af73b191be6531add13a319",
+      "dockerfiles/amd64/gateway.Dockerfile": "7925d14be752048297b176ea23102778052da59015e6d6af8e57ed41473fab7c",
+      "dockerfiles/amd64/dbmigrate.Dockerfile": "8db9e434107ded61bec49c6e9d60473aee0efa0b604bd2091cdc6ebb0ec7431b",
+      "dockerfiles/amd64/validate.Dockerfile": "705c7de39bb752d39b7f005fc81a51698194e7e2d2d84b6fba17e5d136a2fadd",
+      "dockerfiles/arm64/api.Dockerfile": "88c59b8790d6603cca2948310a6f77d2ac27258fd6d03820c25533bb92a17ba4",
+      "dockerfiles/arm64/auth.Dockerfile": "22c0f699fcd3576f1ba82127da90405432399d9d91847318cf27f414d3cc4463",
+      "dockerfiles/arm64/gateway.Dockerfile": "1f7d8a40dbc0c29248e58c0c189d71ae8645dab066f08bdaebab51c84375a73f",
+      "dockerfiles/arm64/dbmigrate.Dockerfile": "e267bdbc0c3505003bbe61ec6dbc4f7a38bdd6f77d64f8707d5076e1f7dc9c0d",
+      "dockerfiles/arm64/validate.Dockerfile": "2b4b4d60f28f8c519424091f67b2a979f104955b73357fb169e9511109e65ac5"
+    },
+    "formalDockerfilesChanged": false,
+    "formalFileDifference": "Each backend draft only pins existing FROM; validation draft is a separate temporary multi-stage environment"
+  },
+  "rawEvidence": [
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/aspnet-amd64-config.json",
+      "sha256": "cfeca9a55d0f8353620d75e8ccb882f000d314e8ce43290014d4467827de8747"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/aspnet-amd64-manifest.json",
+      "sha256": "43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/aspnet-arm64-config.json",
+      "sha256": "8d57c2d505ac95ae2945b9f8484e1f75727ab40bd07fc9e77c770335caff8ff5"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/aspnet-arm64-manifest.json",
+      "sha256": "bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/aspnet-index.json",
+      "sha256": "de0ee358cdd672f7017a003bed21e9ac9ed48a27c922a59b18175b6e82fa7fee"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/attempt-1.json",
+      "sha256": "53004219c9458e07d0aa35aa567ec976216af8d678281633179d86a7bc49bf9c"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/docker-client-verification.json",
+      "sha256": "e390a6e66f9e7acc05533689d9813e6031c587c4b822214caa02c6b9527498c3"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/sdk-amd64-config.json",
+      "sha256": "3192b8163619903b1b48ea1f37c042230d3c375a3812165971facb1781112b39"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/sdk-amd64-manifest.json",
+      "sha256": "9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/sdk-arm64-config.json",
+      "sha256": "2f27d27a5fb6e5bf2381d9c16c0ca4476592a252502f50238ecb9cf86b67f698"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/sdk-arm64-manifest.json",
+      "sha256": "f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/sdk-index.json",
+      "sha256": "de4fe90a98845d75910b9769662465c84de1a934665c431279d1382b2bddc02b"
+    },
+    {
+      "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh/mcr-followup/verified-metadata.json",
+      "sha256": "f8f94401d922258b9ad799bfa7a4203b7916e9b8257dcdf8f461c2ee0ef92bdc"
+    }
+  ],
+  "remainingExecutionChecks": [
+    "Runtime SDK / ASP.NET / Node / Rust version commands",
+    "Actual glibc and ELF dynamic dependencies",
+    "Engine layer-pull/build network path",
+    "ARM64 actual execution and AMD64 emulation",
+    "Target native AMD64 runner is still separately unconfirmed",
+    "Final image vulnerability scan and precise policy evaluation"
+  ],
+  "officialReferences": [
+    "https://learn.microsoft.com/en-us/dotnet/core/compatibility/containers/10.0/default-images-use-ubuntu",
+    "https://docs.docker.com/reference/cli/docker/buildx/imagetools/inspect/"
+  ]
+}

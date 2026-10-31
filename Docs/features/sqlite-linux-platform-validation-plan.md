@@ -1,17 +1,18 @@
 # SQLite Linux 双架构执行准备与验证方案
 
-> 2026-10-31（Asia/Shanghai）。**只读核对完成，执行尚未授权；MCR 输入冻结尚未就绪。** 本文承接[SQLite 统一方案](./sqlite-native-unification-plan.md)，不替代其依赖与平台边界。机器可读盘点见[准备证据](../records/sqlite-linux-platform-readiness-2026-10-31.json)。
+> 2026-10-31（Asia/Shanghai）。**镜像 metadata 与输入清单已冻结，等待所有者确认后执行。** 本文承接[SQLite 统一方案](./sqlite-native-unification-plan.md)，不替代其依赖与平台边界。初次盘点见[准备证据](../records/sqlite-linux-platform-readiness-2026-10-31.json)，MCR 补证、全部精确引用与十份 Dockerfile 审阅稿校验值见[冻结清单](../records/sqlite-linux-platform-inputs-2026-10-31.json)。
 >
 > 本批先验证 Linux ARM64 与 AMD64 的四宿主输出和最终镜像。ARM64 使用本机原生 Linux 引擎；本机 AMD64 属于仿真验证，不能据此关闭原生 AMD64 验收。Windows x64、Intel macOS 与 PostgreSQL 联调另排。
 
 ## 1. 当前结论与停止线
 
-- 源码基线：`dev / 848fd007`；开始核对时工作区干净。本轮只增加方案、盘点证据和入口链接，没有安装、restore、build、test、publish、拉取镜像或创建 / 启动容器。
+- 初次盘点基线为 `dev / 848fd007`；准备文档已按所有者要求提交为 `6d952fc4`，拟执行源码快照采用该提交，产品 / 构建代码仍与 `848fd007` 相同。本轮只准备文档、metadata 和审阅稿，没有安装、restore、build、test、publish、拉取镜像层或创建 / 启动容器。
 - 本机工具足以组织 Linux 构建：Docker / Buildx 已有且连接本地 OrbStack。Buildx 声明支持两种架构，实际运行能力仍待批准后测试。
 - 没有 Linux Rust 原生产物，必须分别在目标架构重建；缓存 Rust 镜像是 **1.96.1**，不能替代批准的 **1.96.0**。已取得后者两架构的官方 manifest / config 元数据。
 - 本机没有漏洞扫描器。建议临时使用与现有 CI 相同版本的 Trivy **0.70.0** 容器，扫描本地导出的镜像 archive，不挂载 Docker socket，不在宿主安装扫描器。
-- **MCR 阻断**：`mcr.microsoft.com/dotnet/sdk:10.0`、`aspnet:10.0` 的 registry 查询超时，既无可复用的已核实本地缓存，也未取得 manifest digest / 实际版本 / OS。不能把宿主 SDK 10.0.300 / runtime 10.0.8 填成容器版本。
-- **放行条件**：先补齐 MCR 两架构 digest、版本、OS 和完整命令输入表，再提交所有者确认后执行。本文中的 MCR 空项不是授权通配符；本轮不建议直接放行容器执行。
+- **MCR metadata 缺项已补齐**：继承本机代理时 CONNECT 后 TLS 握手超时，沙盒外同一路径也超时；本次只读请求改为直连官方 MCR 后成功，保留默认 TLS 校验，没有改代理 / daemon 配置。四份平台 manifest 与 config 均按 registry 原始字节验证 SHA256；Docker 客户端使用仅本命令生效的 `NO_PROXY / no_proxy` 后得到相同 manifest。
+- **精确容器版本**：两架构 SDK 均为 **10.0.403**，.NET / ASP.NET 均为 **10.0.14**，默认镜像为 **Ubuntu 24.04 noble**；不能套用宿主 SDK 10.0.300 / runtime 10.0.8。Rust / Node stage 仍为 bookworm，不改正式 Dockerfile 的发行版路线。
+- **放行条件**：按本页及冻结清单确认精确镜像下载、两架构隔离构建 / 测试 / publish、八份 final 探针和扫描后执行。metadata 可达不代表 daemon 拉取层已通过；如实际构建被网络阻断，停止对应步骤，不自动修改代理或镜像源。
 
 ## 2. 工具链、缓存与平台资源
 
@@ -35,7 +36,7 @@
 | `node:24-bookworm-slim` | ARM64，Node **24.21.0**；digest `0e0ff40c…` | 当前远端同 tag 已是 **24.22.2**；不混用缓存与远端 |
 | Rust 无 tag 镜像 `a339861a…` | ARM64，Rust **1.96.1** | 排除，不能改 tag 冒充 1.96.0 |
 | PostgreSQL 17 / 16 缓存 | ARM64，17.11 / 16.15，完整 digest 在证据中 | 仅盘点，本批不启动、不复用数据卷 |
-| .NET SDK / ASP.NET、Trivy | 未发现对应已核实缓存 | MCR 停止线；扫描器另按下表冻结 |
+| .NET SDK / ASP.NET、Trivy | 未发现对应已核实缓存 | metadata 已冻结；下载镜像层仍待本次执行确认 |
 
 ### 2.2 已取得的远端平台 manifest
 
@@ -45,12 +46,16 @@
 | --- | --- | --- |
 | `node:24-bookworm-slim`，24.22.2 | `sha256:a43f7fc3e52e87d12a905f46eea0275def84ca8f2981a5b53fed44d7fb398ee0` | `sha256:e80dee4ed3709cf1f8004e34ecfb90df71b7eac8ba0d7d6222ba238a823d1eea` |
 | `rust:1.96.0-bookworm`，1.96.0 | `sha256:c993d32d95cc146bd12c84d66f0b924a6a96f3988325f39c144f2f9893dea120` | `sha256:05f85ef6eb0f2600ac62e9d779642b5b362d5be2ed67b80e162fae6e28b66524` |
-| `mcr.microsoft.com/dotnet/sdk:10.0` | **未取得，禁止执行** | **未取得，禁止执行** |
-| `mcr.microsoft.com/dotnet/aspnet:10.0` | **未取得，禁止执行** | **未取得，禁止执行** |
+| `mcr.microsoft.com/dotnet/sdk:10.0`，SDK 10.0.403 / runtime 10.0.14 | `sha256:9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03` | `sha256:f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef` |
+| `mcr.microsoft.com/dotnet/aspnet:10.0`，10.0.14 | `sha256:43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3` | `sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c` |
 
 Scanner 在宿主原生 ARM64 运行，固定 `aquasec/trivy:0.70.0@sha256:06c0a1359e4d745c6d709f5b64421db79fe0b5602c87d6eb5d6ba7d3d79d91ab`，可静态扫描两架构 archive。其版本与现有 CI 固定 action 的 [默认版本](https://github.com/aquasecurity/trivy-action/blob/ed142fd0673e97e23eac54620cfb913e5ce36c25/action.yaml#L96)一致。
 
-MCR 恢复后需记录四个 manifest 及其 config，核对 .NET 10、平台、发行版和 glibc；不改用未经核对的镜像源。若远端输入出现阻断漏洞或需要变更版本 / 发行版，先重新确认方案。
+四个 MCR manifest / config 的原始字节、header digest、内容 SHA256 与 Docker 客户端复核均已留痕；两个 SDK config 的 history 明确为 Ubuntu 24.04，ASP.NET 的六层全部为对应 SDK 的前缀层。其结果与 [Microsoft 对 .NET 10 默认标签的说明](https://learn.microsoft.com/en-us/dotnet/core/compatibility/containers/10.0/default-images-use-ubuntu)一致。实际 glibc 与可执行版本仍在批准后的容器中读取，不将 metadata 核对写成运行验证。若输入出现阻断漏洞或需要变更版本 / 发行版，先重新确认方案。
+
+批准后先记录各阶段可执行输入，命令分别为 `dotnet --info`、`dotnet --list-runtimes`、`node --version`、`rustc --version`、`cargo --version`、`cat /etc/os-release` 和 `getconf GNU_LIBC_VERSION`；只在含对应工具的 stage 执行，final 不要求 Node / Rust。ELF 检查在含 binutils 的构建环境中对实际 SQLite / Rust `.so` 分别执行 `readelf -h "$nativeFile"`、`readelf -d "$nativeFile"`、`readelf -V "$nativeFile"`；工具缺失时停止该检查并报告，不自动安装。
+
+MCR metadata 的命令级直连可使用 `curl --noproxy mcr.microsoft.com`，或仅为 `docker buildx imagetools inspect` 子进程追加 `NO_PROXY / no_proxy=mcr.microsoft.com`。现有 daemon 代理为 `proxy.orb.internal:8305`，并未排除 MCR；本轮没有修改它，也未测试镜像层下载路径。后续构建不以客户端环境变量已生效推定 daemon 同样绕过代理。
 
 ## 3. 原生产物与现有构建接线
 
@@ -78,7 +83,7 @@ source ID、所有托管文件及其他 native 文件哈希继续以 `Scripts/sq
 
 API、Auth、Gateway、DbMigrate 的现有 Dockerfile 均已有 Node 构建阶段接线，最终 runtime 不含 Node。本方案不修改正式 Dockerfile、runtime 入口、数据库配置或 Compose。
 
-为复现输入，批准后在任务目录生成 Dockerfile 副本，唯一差异为将四类 `FROM` 替换为本次平台 digest，并保存副本及 diff。Auth / Gateway 既有 `apt-get install openssl ca-certificates` 仍访问发行版仓库：须记录实际 Debian 包版本和最终 image ID；只锁 FROM 不能保证镜像逐字节重建。本批不引入 apt snapshot 或改写包安装策略。
+已生成八份后端 Dockerfile 审阅稿，逐份反向替换后与正式文件逐字相同，唯一差异为将四类 `FROM` 替换为本次平台 digest；另外两份验证环境审阅稿独立保存。路径及十份 SHA256 见冻结清单，尚未执行。批准后复制到任务目录，并校验这些 hash。Auth / Gateway 既有 `apt-get install openssl ca-certificates` 仍访问发行版仓库：须记录实际 Ubuntu deb 包版本和最终 image ID；只锁 FROM 不能保证镜像逐字节重建。本批不引入 apt snapshot 或改写包安装策略。
 
 已有 `.github/workflows/native-images.yml` 只给 API 最终镜像做原生图片探针 / 扫描，不覆盖四宿主 SQLite。本次不触发 workflow、不推送代码或镜像，也不借用固定的 `radish-image-check:*` 标签。
 
@@ -103,7 +108,7 @@ API 的 5100、Auth 的 5200、Gateway 的 5000 本批均不监听 / 发布；Db
 
 ## 5. 待批准的精确命令与执行顺序
 
-以下均为**拟执行命令**。`planRoot`、`sourceRoot`、镜像引用和资源 ID 由任务清单一次生成并留痕；MCR 缺项时必须拒绝生成可执行清单。本轮没有运行下列构建 / 容器命令。
+以下均为**拟执行命令**。`planRoot`、`sourceRoot` 和资源 ID 按下文固定；镜像引用只读取冻结清单对应架构的完整值。十份 Dockerfile 已生成供审阅，不在本轮运行；执行前清单缺项或 hash 不符立即失败。
 
 ### 5.1 冻结源码与资源名称
 
@@ -111,16 +116,24 @@ API 的 5100、Auth 的 5200、Gateway 的 5000 本批均不监听 / 发布；Db
 taskId=radish-sqlite-linux-20261031-a7c2
 planRoot="${TMPDIR%/}/$taskId"
 sourceRoot="$planRoot/source"
-candidate=848fd007
+candidate=6d952fc46d178a92e9adc9268d847a79bb62a317
 ```
 
 执行前确认目录 / 标签尚不存在，保存 Git 状态和 Docker 资源 ID 清单。用 `git archive --format=tar --output="$planRoot/source.tar" "$candidate"` 解出干净快照至 `sourceRoot`；不包含本机 `.nuget`、未跟踪配置、bin / obj 或业务数据。提交后若影响代码输入则重定基线，不能把旧 SHA 写成新候选。
 
-输入清单要求每个架构都有 `node / rust / sdk / aspnet` 完整引用、metadata SHA、实际版本和 OS；空值立即失败。后续 `nodeRef / rustRef / sdkRef / aspnetRef` 只从该清单读取，不能在失败时退回 tag。只下载清单中的两架构基础镜像和 ARM64 Trivy；不 `docker login`、不修改正式 Dockerfile。
+冻结清单 `platforms.<arch>.images.<node|rust|sdk|aspnet>.reference` 已给出八项完整引用、实际版本和 OS。`nodeRef / rustRef / sdkRef / aspnetRef` 逐项从该清单读取，不能在失败时退回 tag。只下载清单中的两架构基础镜像和 ARM64 Trivy；不 `docker login`、不修改正式 Dockerfile。拉取阶段命令固定为：
+
+```bash
+docker --context orbstack pull --platform "linux/$arch" "$nodeRef"
+docker --context orbstack pull --platform "linux/$arch" "$rustRef"
+docker --context orbstack pull --platform "linux/$arch" "$sdkRef"
+docker --context orbstack pull --platform "linux/$arch" "$aspnetRef"
+docker --context orbstack pull --platform linux/arm64 "$scannerRef"
+```
 
 ### 5.2 隔离 Linux SDK 验证环境
 
-批准后生成临时验证 Dockerfile：使用同一平台的 Node、Rust 与 SDK digest，复制干净源码；在 Rust stage 生成两配置 artifact，再交给 SDK stage。新增内容只在任务目录，不引入产品构建接线。
+两份临时验证 Dockerfile 审阅稿使用同一平台的 Node、Rust 与 SDK digest，复制干净源码；在 Rust stage 生成两配置 artifact，再交给 SDK stage。新增内容只在任务目录，不引入产品构建接线；执行前按冻结清单校验稿件身份。
 
 ```bash
 # Rust stage 内；分别在目标平台执行，不交叉编译。
@@ -291,7 +304,9 @@ node Scripts/evaluate-image-vulnerabilities.mjs --report "$scanResults/trivy.jso
 
 ## 8. 确认范围
 
-当前可审阅的是上述边界、矩阵、端口和清理策略。**MCR digest / 实际版本仍缺失，完整执行命令清单尚不能放行**；先完成这项只读补证，再请所有者确认：精确基础镜像下载、两架构隔离构建 / restore / 定向测试 / publish、八镜像独立探针和 Trivy 数据库下载 / 扫描 / 清理。
+当前可审阅的是上述边界、矩阵、端口、清理策略、完整镜像引用及十份 Dockerfile 审阅稿。MCR metadata 缺项已补齐；**等待所有者确认**：使用 Node 24.22.2 / Rust 1.96.0 / SDK 10.0.403 / .NET 与 ASP.NET 10.0.14 / Trivy 0.70.0 的精确 digest，下载基础镜像，在两架构隔离执行构建 / restore / 定向测试 / publish、八镜像独立探针，以及 Trivy 数据库下载 / 扫描 / 清理。
+
+本次容器 SDK / runtime 与此前本机版本不同，但没有改变仓库包声明或正式 Dockerfile；批准后将分别留 Linux ARM64 原生与 AMD64 仿真证据。遵循所有者上一轮“给我确认后再执行”的要求，本次补证与文本稿生成不视为容器执行确认。
 
 批准也不包含业务宿主启动、PG 启动、VM 修改、包版本更新、正式 Dockerfile 修改、远端 CI 触发、push、tag、Release、部署或上游通信。
 
