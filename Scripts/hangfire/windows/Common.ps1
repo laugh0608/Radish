@@ -96,9 +96,9 @@ function Stop-OwnedProcess($Record) {
     $process.Kill($true)
     Assert-Condition ($process.WaitForExit(10000)) 'Owned process did not exit'
 }
-function Invoke-OwnedCommand([string]$Executable, [string[]]$Arguments, [string]$Name, [string]$Directory = $script:Work, [int]$TimeoutSeconds = 600, [hashtable]$Environment = @{}) {
+function Invoke-OwnedCommand([string]$Executable, [string[]]$Arguments, [string]$CommandName, [string]$Directory = $script:Work, [int]$TimeoutSeconds = 600, [hashtable]$Environment = @{}) {
     $resolved = (Get-Command $Executable -CommandType Application -ErrorAction Stop).Source
-    $log = Join-Path $script:Evidence ("commands/{0:D4}-{1}.log" -f ($script:Owner.commands.Count + 1), $Name)
+    $log = Join-Path $script:Evidence ("commands/{0:D4}-{1}.log" -f ($script:Owner.commands.Count + 1), $CommandName)
     [IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($log)) | Out-Null
     $info = [Diagnostics.ProcessStartInfo]::new($resolved)
     $info.WorkingDirectory = $Directory
@@ -108,22 +108,22 @@ function Invoke-OwnedCommand([string]$Executable, [string[]]$Arguments, [string]
     foreach ($argument in $Arguments) { $info.ArgumentList.Add($argument) }
     $info.Environment.Clear()
     $childEnv = Get-ChildEnvironment $Environment
-    foreach ($name in $childEnv.Keys) { $info.Environment[$name] = $childEnv[$name] }
+    foreach ($environmentKey in $childEnv.Keys) { $info.Environment[$environmentKey] = $childEnv[$environmentKey] }
     $process = [Diagnostics.Process]::new()
     $process.StartInfo = $info
     Assert-Condition ($process.Start()) 'Process failed to start'
-    $record = @{ name = $Name; executable = $resolved; arguments = $Arguments; cwd = $Directory; pid = $process.Id; creationTime = $process.StartTime.ToUniversalTime().ToString('O'); log = [IO.Path]::GetRelativePath($script:Evidence, $log); completed = $false }
+    $record = @{ name = $CommandName; executable = $resolved; arguments = $Arguments; cwd = $Directory; pid = $process.Id; creationTime = $process.StartTime.ToUniversalTime().ToString('O'); log = [IO.Path]::GetRelativePath($script:Evidence, $log); completed = $false }
     $script:Owner.commands += $record
     Save-Owner
     $stdout = $process.StandardOutput.ReadToEndAsync()
     $stderr = $process.StandardError.ReadToEndAsync()
     try {
-        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) { Stop-OwnedProcess $record;throw "Command timed out: $Name" }
+        if (-not $process.WaitForExit($TimeoutSeconds * 1000)) { Stop-OwnedProcess $record;throw "Command timed out: $CommandName" }
         $text = $stdout.GetAwaiter().GetResult() + $stderr.GetAwaiter().GetResult()
         [IO.File]::WriteAllText($log, $text, [Text.UTF8Encoding]::new($false))
         $record.exitCode = $process.ExitCode
         $record.completed = $true
-        Assert-Condition ($process.ExitCode -eq 0) "Command failed: $Name; see $log"
+        Assert-Condition ($process.ExitCode -eq 0) "Command failed: $CommandName; see $log"
         return $text
     } finally {
         if (-not $record.completed) {

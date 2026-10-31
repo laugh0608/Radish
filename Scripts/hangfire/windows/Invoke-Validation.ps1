@@ -10,6 +10,7 @@ param(
 )
 . "$PSScriptRoot/Common.ps1"
 . "$PSScriptRoot/Inventory.ps1"
+. "$PSScriptRoot/Contracts.ps1"
 . "$PSScriptRoot/Acquire.ps1"
 . "$PSScriptRoot/Sources.ps1"
 . "$PSScriptRoot/Verification.ps1"
@@ -24,7 +25,9 @@ Initialize-Task $TaskRoot $ExpectedCommit
 $script:Owner.mode = $Phase
 Save-Owner
 try {
-    $inventory = Get-WindowsInventory
+    $progress = New-WindowsInventory
+    Invoke-PowerShellContracts
+    $inventory = Get-WindowsInventory $progress
     if ($Phase -eq 'Verify') {
         Assert-ReviewedInventory $inventory $ExpectedImageVersion $ExpectedVsVersion $ExpectedMsbuildVersion $ExpectedMsbuildSha256
         Invoke-WindowsVerification $inventory

@@ -153,7 +153,7 @@ jobs:
   hangfire-windows-razor:
     name: Hangfire Razor / Windows x64
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'hangfire-razor' }}
-    runs-on: windows-2025
+    runs-on: windows-2022
     timeout-minutes: 60
     steps:
       - name: Require the approved workflow commit
@@ -169,7 +169,7 @@ jobs:
         with:
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Collect inventory or execute reviewed Razor validation
+      - name: Check PowerShell contracts and collect inventory or execute reviewed Razor validation
         shell: pwsh
         env:
           RAZOR_MODE: ${{ inputs.razor_mode }}

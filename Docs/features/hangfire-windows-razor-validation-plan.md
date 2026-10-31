@@ -1,12 +1,14 @@
 # Hangfire Windows Razor 托管验证方案
 
-> 2026-10-31（Asia/Shanghai），**本地实施已批准并完成，Windows 实际库存 / 验证待单独授权**。接续[本机重建](../records/hangfire-rebuild-2026-10-31.md)；精确源码、11 项包 / hash、SDK、23 对模板与生成文件、包内 24 DLL 及官方 runner 清单快照见[准备 JSON](../records/hangfire-windows-razor-readiness-2026-10-31.json)。实际接线与本地验证见[实施记录](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)；未执行 Razor、安装新 SDK / 包、push 或触发远端运行。
+> 2026-10-31（Asia/Shanghai）。[首次 inventory](../records/hangfire-windows-razor-inventory-2026-10-31.md)已执行并因 VS 2022 查询为空停止，失败证据及清理完成。随后批准并完成[本地修复](../records/hangfire-windows-razor-inventory-repair-2026-10-31.md)：Razor 专项改为 `windows-2022` + VS 2022，修复命令身份覆盖，增加早期进度证据和 PowerShell 契约前置检查。**修复尚未 push / dispatch，Windows 实际运行与 verify 均待分别授权。**
+
+精确源码、11 项包 / hash、SDK、23 对模板与生成文件、包内 24 DLL 仍沿用[准备 JSON](../records/hangfire-windows-razor-readiness-2026-10-31.json)。其中旧 Windows 2025 软件清单为历史准备快照；当前 runner 依据见下文第 2 节。[原本地实施](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)和[本机重建](../records/hangfire-rebuild-2026-10-31.md)的证据边界不变。
 
 ## 1. 目标与授权分段
 
 证明固定 Hangfire 源码中的 23 个 Dashboard 模板确实由固定 RazorGenerator 再生成，并进入 Core 编译及真实片段渲染；明确 Git LF、Windows CRLF、既有生成 C#、PE / PDB 和实际输出之间的关系。
 
-本次确认已覆盖并完成**本地实施与验证**：新增 Windows 专题编排、只读库存 / 比较 / 渲染工具、限定手动 CI job、契约检查及文档；不在本机安装 Windows 工具、不执行 Windows 任务、不 push、不触发 runner。之后单独批准：
+本次修复确认覆盖**本地代码、测试接线、文档及本地静态检查**；不安装 PowerShell / VS、不执行 Windows 任务、不 push、不触发 runner。此前 `26ba4390752b85e06ce10043b9bfe4496c83033a` 的一次 push / inventory 授权已经执行，不沿用到修复提交。之后按新的完整 SHA 单独批准：
 
 1. 将指定提交 push 到 `dev`，不自动执行其他工作流。
 2. 手动运行 `inventory`，采集实际 VM / Full MSBuild 精确版本和 hash；不执行上游 task。
@@ -18,16 +20,18 @@
 
 | 工具 | 固定输入或官方快照 | 使用与停止线 |
 | --- | --- | --- |
-| Runner | `windows-2025`，x64；清单 Image `20261021.299.1` / OS `10.0.26100 Build 33650` | label 无法锁定 image revision；实际 `ImageVersion` 漂移先采集，不直接执行上游 task |
-| VS 2022 | Enterprise `17.14.37806.7` | 用 `vswhere 3.1.7` 找实际实例；不安装 / repair VS，不切到 Framework 目录里的旧 MSBuild |
+| Runner | `windows-2022`，x64；清单 Image `20261026.347.1` / OS `10.0.20348 Build 5761` | label 无法锁定 image revision；实际 `ImageVersion` 漂移先采集，不直接执行上游 task |
+| VS 2022 | Enterprise `17.14.37824.6` | 用预装 vswhere 查找 `[17.0,18.0)` 唯一实例并记录工具 hash；不安装 / repair VS，不切到 Framework 目录里的旧 MSBuild |
 | Full MSBuild | VS `MSBuild\Current\Bin\amd64\MSBuild.exe` | 官方清单未列精确 executable patch；inventory 必须记录 `/version`、FileVersion、SHA256。verify 要求与已审阅值完全匹配 |
-| .NET Framework | 清单提供 `4.8 / 4.8.1` | 运行 RazorGenerator 的 CLR 边界；记录 Release registry 值、任务进程路径 / 位数；不修改 registry 或全局绑定策略 |
-| PowerShell | 清单 `7.6.7` | 仅 PowerShell 子进程环境变量；记录实际版本，不修改机器 ExecutionPolicy / profile |
+| .NET Framework | 清单提供 `4.7.2 / 4.8 / 4.8.1`，本工具仍要求实际至少 4.8 | 运行 RazorGenerator 的 CLR 边界；记录 Release registry 值、任务进程路径 / 位数；不修改 registry 或全局绑定策略 |
+| PowerShell | 清单 `7.6.9` | 仅 PowerShell 子进程环境变量；记录实际版本，不修改机器 ExecutionPolicy / profile |
 | 私有 .NET SDK | `10.0.403`，runtime `10.0.14`，win-x64 ZIP | 官方 URL / SHA512 已取得；本轮未下载 / 安装。只解压到任务目录，不用全局 installer 或浮动 `10.0.x` |
 | RazorGenerator.MsBuild | NuGet `2.5.0`，archive SHA256 `1f2c549056cff967cdf4d1c92f9fa78e7f5a2d292a15d5a427bf76caa542c064` | 已静态读取 nuspec、targets 和全部 24 DLL 的 PE 元数据；不作为正式产品 PackageReference |
 | ILRepack | `2.0.27` | 保持本机重建的 Core / Cronos 合并边界 |
 
-依据：[Windows 2025 官方软件清单](https://github.com/actions/runner-images/blob/main/images/windows/Windows2025-Readme.md)、[GitHub runner 规格](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)、[.NET 10 官方发行元数据](https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json)、[NuGet RazorGenerator 2.5.0](https://www.nuget.org/packages/RazorGenerator.MsBuild/2.5.0)。软件清单文件 Git blob 为 `84e8dbd2b71809e9315cf0085ce5c3f37c0ffa75`，本地内容 hash 进入 JSON。
+依据：[Windows 2022 固定清单](https://github.com/actions/runner-images/blob/4da2307112a0fad2fd2ecaca8ba7d08683b8c581/images/windows/Windows2022-Readme.md)、[标签映射](https://github.com/actions/runner-images/blob/4da2307112a0fad2fd2ecaca8ba7d08683b8c581/README.md)、[官方 VS 2026 迁移公告](https://github.com/actions/runner-images/issues/14017)、[GitHub runner 规格](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)、[.NET 10 官方发行元数据](https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json)、[NuGet RazorGenerator 2.5.0](https://www.nuget.org/packages/RazorGenerator.MsBuild/2.5.0)。Windows 2022 清单 Git blob 为 `b27a30ca8423b555ca3b1640c82a1d335183cd12`。
+
+`windows-latest / windows-2025 / windows-2025-vs2026` 当前指向 VS 2026；旧 Windows2025-Readme 不能证明 `windows-2025` 仍提供 VS 2022。本专项保留 VS 17.x / Full MSBuild 边界，改用 Windows Server 2022；后续结果不能称为 Server 2025 验证。不预填四项 verify 期望值，也不把清单中的 MSBuild component 版本当成 executable `/version` 或 SHA256。即使清单列出 SDK 10.0.403，未来 verify 仍使用固定 hash 的私有 SDK，不转用全局 SDK。
 
 SDK 精确获取输入：
 
@@ -42,7 +46,7 @@ RazorGenerator 的包版本为 2.5.0，内部 Core / MsBuild 程序集版本仍�
 
 ## 3. 精确输入及范围
 
-固定 Radish 准备基线 `762f5fbd227c46232539ee21ff93ad14a8225af4`；实施完成后再冻结新的完整提交供未来远端执行，不在方案里猜未来 SHA。
+原 Radish 准备基线为 `762f5fbd227c46232539ee21ff93ad14a8225af4`；首次 inventory 使用 `26ba4390752b85e06ce10043b9bfe4496c83033a`。本地修复完成后另行冻结新完整提交供未来远端执行，不猜未来 SHA。
 
 | 源码 | Commit | Tree |
 | --- | --- | --- |
@@ -89,7 +93,13 @@ RazorGenerator 的包版本为 2.5.0，内部 Core / MsBuild 程序集版本仍�
 
 已新增 `Scripts/hangfire/windows/`：PowerShell 阶段入口、独立输入契约、只读库存 / 包验证、23 对生成检查、SDK Roslyn token / PE / PDB 比较器、无 PackageReference 的片段渲染探针及清理 / 契约测试。既有 macOS 工具保留原平台边界，不把它的 Task 初始化伪装成支持 Windows。
 
-以下是已实现入口的**Windows 命令**，本轮未执行。任务根固定在 `$env:RUNNER_TEMP`，所有权包含 run ID / attempt / commit，禁止使用共享根目录：
+入口初始化 owned root 后先保存 `inventory-progress.json`（schemaVersion 2 / `complete=false`）：run / attempt / head SHA、`GITHUB_WORKFLOW_SHA / REF`、runner / 进程 / OS 架构、ImageOS / ImageVersion、OS、PowerShell。然后执行 `Contracts.ps1` 的 8 组自有行为契约，成功才采集实际 VS / MSBuild；契约失败同样走 finally 清理与证据上传。
+
+契约通过现有 owned command helper 启动两个本机 pwsh 子进程，分别验证成功退出与预期 exit 23，单个超时 30 秒；同时检查命令名、日志名、错误消息和环境变量互不覆盖。另用虚构 VS 记录验证零 / 一 / 多实例、VS 18 拒绝、非法 JSON 原始响应留存以及不完整库存禁止用于 verify。fixture 只写 `work/powershell-contracts` 并在 finally 删除；`powershell-contracts.json` 明确 `fixtureOnly=true`，不能当作真实工具身份。预期 exit 23 在命令记录中保留，不掩盖为 exit 0。
+
+采集过程先保存 vswhere 路径 / hash / 查询参数，再保存原始响应和解析结果，之后才做唯一实例与 17.x 校验；MSBuild / Framework 分阶段保存已取得身份。缺失字段保持 null / 未完成阶段，失败消息另存；完整检查通过后才生成 `inventory.json`（`complete=true`），进度报告始终为不完整快照。Verify 还必须通过完整库存检查及原四项已审阅身份匹配，才能获取输入或执行上游任务。`Common.ps1` 使用 `$CommandName` 与 `$environmentKey` 分离命令标识和环境变量键。
+
+以下是已实现入口的**Windows 命令**，本次修复后尚未执行。任务根固定在 `$env:RUNNER_TEMP`，所有权包含 run ID / attempt / commit，禁止使用共享根目录：
 
 ```powershell
 $TaskId = "radish-hangfire-razor-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
@@ -171,7 +181,7 @@ PDB 逐文件核对生成 C# 的实际 checksum、嵌入字节、SourceLink 路�
 
 ## 7. CI 接线与远端边界
 
-已在本地复用默认分支原有的 `.github/workflows/native-images.yml`，增加 `validation_scope=hangfire-razor` 及 `razor_mode=inventory|verify`（默认 inventory），只新增一个 `windows-2025` job，超时 60 分钟。门禁为 `workflow_dispatch && validation_scope == hangfire-razor`，禁止 workflow_call / push / PR 顺带执行；原 native / SQLite 条件、默认选项与行为保持不变。
+已在本地复用默认分支原有的 `.github/workflows/native-images.yml`，增加 `validation_scope=hangfire-razor` 及 `razor_mode=inventory|verify`（默认 inventory），只保留一个 Razor `windows-2022` job，超时 60 分钟。门禁为 `workflow_dispatch && validation_scope == hangfire-razor`，禁止 workflow_call / push / PR 顺带执行；原 native / SQLite 条件、默认选项与行为保持不变。
 
 增加 Razor 专用 `expected_head_sha` 输入，inventory / verify 都要求它非空且与 `github.sha` 一致，再 checkout 当前 run SHA；不只依赖可移动的 dev 名称。新 job 只用 `contents: read`，checkout 禁 persist-credentials；沿用已核对的 checkout `fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09` 和 upload-artifact `ea165f8d65b6e75b540449e92b4886f43607fa02`。不需要 setup-msbuild、Node、npm、Rust、Docker、数据库或任何 secrets。verify 的四个库存期望值由后续审阅填入，空值绝不默认开始上游执行。
 
@@ -187,7 +197,7 @@ gh workflow run native-images.yml --repo laugh0608/Radish --ref dev \
 # verify 须另行授权、传入已审阅的 image / VS / MSBuild 版本及 MSBuild SHA256。
 ```
 
-远端时记录 workflow_sha / head_sha / run_id / attempt，取得证据后再次核对。Artifact 名 `hangfire-razor-<run_id>-<attempt>`，保留 7 天，上传 manifest / hash、命令日志 / binlog、库存、23 对清单、生成 C# / 差异、必要 LGPL / Cronos 许可和比较 / 渲染结果。原 SDK、nupkg、完整包 cache、产品 DLL / PDB、业务源码及任何凭据不上传；这份验证材料不成为正式源码发行入口。证据上传本身也是远端写入，须纳入之后的远端执行确认范围。
+修复后远端通过进度 / 完整报告记录 workflowSha / commit / runId / attempt，并与运行元数据和对应工作流文件核对；首次失败运行未独立采集 workflow SHA 的事实不回写。Artifact 名 `hangfire-razor-<run_id>-<attempt>`，保留 7 天，上传 manifest / hash、命令日志 / binlog、库存、23 对清单、生成 C# / 差异、必要 LGPL / Cronos 许可和比较 / 渲染结果。原 SDK、nupkg、完整包 cache、产品 DLL / PDB、业务源码及任何凭据不上传；这份验证材料不成为正式源码发行入口。证据上传本身也是远端写入，须纳入之后的远端执行确认范围。
 
 ## 8. 运行影响、回退、清理与停止线
 

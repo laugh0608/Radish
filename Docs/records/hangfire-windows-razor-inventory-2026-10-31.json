@@ -1,0 +1,82 @@
+{
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "status": "inventory-failed-vs2022-not-found",
+  "commit": "26ba4390752b85e06ce10043b9bfe4496c83033a",
+  "runId": 41190198055,
+  "attempt": 1,
+  "url": "https://github.com/laugh0608/Radish/actions/runs/41190198055",
+  "dispatch": {
+    "count": 1,
+    "ref": "dev",
+    "inputs": {
+      "validation_scope": "hangfire-razor",
+      "razor_mode": "inventory",
+      "expected_head_sha": "26ba4390752b85e06ce10043b9bfe4496c83033a"
+    },
+    "inputEvidence": "Approved CLI command and runner environment log; no independent event payload captured"
+  },
+  "workflow": {
+    "id": 390778640,
+    "path": ".github/workflows/native-images.yml",
+    "blob": "134ff1e8fed12548537e54ae91de164bc055c6b0",
+    "workflowShaIndependentlyCaptured": false,
+    "sourceCommitVerifiedAgainstRunHead": "26ba4390752b85e06ce10043b9bfe4496c83033a"
+  },
+  "git": {
+    "remoteDev": "26ba4390752b85e06ce10043b9bfe4496c83033a",
+    "remoteMaster": "4a8589b6a1c5264506c51429cf7fe470e783f9fc",
+    "localTrackingRefRepaired": true,
+    "pushRepeated": false
+  },
+  "runner": {
+    "image": "windows-2025-vs2026",
+    "imageVersion": "20261030.294.1",
+    "os": "Microsoft Windows Server 2025 10.0.26100 Datacenter",
+    "source": "Set up job log"
+  },
+  "failure": {
+    "message": "Require exactly one eligible VS 2022 instance",
+    "vswhereRange": "[17.0,18.0)",
+    "vswhereOutput": [],
+    "inventoryJsonProduced": false,
+    "msbuildExecuted": false,
+    "exactVsMsbuildIdentityCollected": false
+  },
+  "cleanup": {
+    "workingTreeRemoved": true,
+    "globalToolsChanged": false,
+    "database": null,
+    "complete": true,
+    "errors": [],
+    "ports": []
+  },
+  "artifact": {
+    "id": 13038741482,
+    "name": "hangfire-razor-41190198055-1",
+    "retentionDays": 7,
+    "expiresAt": "2026-11-07T09:49:06Z",
+    "zipSha256": "c08aadc66d54409849b0e94b95ac22f170ea5324b1caea8ed16366bfdf4fdd5e",
+    "manifestSha256": "205e5024c52364b0bc69d69832f704efb723b3e42cbc8668ca38e4915a3810c9",
+    "verifiedPayloadFiles": 5,
+    "unexpectedFiles": 0
+  },
+  "evidenceRoot": "artifacts/hangfire-windows-inventory/41190198055-1",
+  "additionalFinding": {
+    "field": "commands.json[0].name",
+    "actual": "MSBUILDDISABLENODEREUSE",
+    "expected": "vswhere",
+    "cause": "Common.ps1 Invoke-OwnedCommand uses case-insensitive $name loop variable that overwrites $Name parameter",
+    "fixed": false
+  },
+  "limits": {
+    "verifyExecuted": false,
+    "razorExecuted": false,
+    "otherJobsSkipped": 5,
+    "sdkOrPackageAcquisitionExecuted": false,
+    "release": false,
+    "deployment": false,
+    "rerun": false,
+    "runnerVmDestructionIndependentlyObserved": false
+  }
+}
