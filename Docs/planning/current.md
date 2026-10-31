@@ -7,7 +7,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：SQLite 本机 / Linux 与 [PG 回归](../records/postgres-regression-2026-10-31.md)均已完成并清理，[托管 runner 本地 CI](../features/sqlite-hosted-native-validation-plan.md)已验证、远端未执行。当前推进 [Hangfire 重建与本地交付材料](../features/hangfire-rebuild-delivery-plan.md)：34 个上游输入文件 / 旧图审计已核对，42 项私有构建候选、SDK 与补丁 / 18 组矩阵已列明，等待本轮实施确认。NoDrive 询证、SNI、Valkey 与日志 L2 保持既定边界 / 顺位。
+- **下一项工作**：SQLite 本机 / Linux 与 [PG 回归](../records/postgres-regression-2026-10-31.md)均已完成并清理，[托管 runner 本地 CI](../features/sqlite-hosted-native-validation-plan.md)已验证、远端未执行。[Hangfire 本机重建](../records/hangfire-rebuild-2026-10-31.md)已完成 42 项封存、五目标严格构建 / 字节一致重放、18 组调用及清理。下一批优先准备 Windows Full MSBuild / Razor 再生成的托管 runner 精确方案；正式源码入口与发行结论独立处理。NoDrive 询证、SNI、Valkey 与日志 L2 保持既定边界 / 顺位。
 - **状态复核日期**：`2026-10-31`；本轮 SQLite 依赖、限定门禁、六组件材料及本机验证见[实施记录](../records/sqlite-native-unification-2026-10-31.md)，当前 .NET 图共 219 个不同 package/version 条目。此前 NoDrive 实施、历史 226 条清单与未关闭项见[10 月 26 日记录](../records/nodrive-adoption-2026-10-26.md)和[日终回顾](../records/day-end-doc-review-2026-10-26.md)。
 - **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
@@ -25,7 +25,7 @@
 
 ## 接下来的事项
 
-1. **接续 Hangfire 重建与 SQLite 剩余原生运行**：按[新实施方案](../features/hangfire-rebuild-delivery-plan.md)先确认本机工具链、隔离依赖适配、18 组真实替换验证与归档范围；旧包 / SDK 的审计发现不通过新增豁免处理。原始源码与适配副本分别留存，Windows Razor、正式源码获取入口和完整发行结论独立验收。[PG 旧批](../records/postgres-regression-2026-10-31.md)不重复执行；其正式包验证不代替本次源码替换。剩余三原生平台的[托管 CI](../features/sqlite-hosted-native-validation-plan.md)本地已就绪，push / dispatch 仍待针对最终提交单独确认，不以静态检查或仿真关闭原生平台。
+1. **接续 Hangfire 重建与 SQLite 剩余原生运行**：[本机工具链与 18 组源码替换](../records/hangfire-rebuild-2026-10-31.md)已验证并归档，私有 SDK 和运行资源已清理。接续准备 Windows Full MSBuild / RazorGenerator 2.5.0 的托管 runner 库存、精确命令和产物关系，再按范围确认 CI 与远端运行；正式源码获取入口、原 PostgreSql DLL 源码绑定和完整发行结论独立验收。[PG 旧批](../records/postgres-regression-2026-10-31.md)不重复执行；其正式包验证不代替本次源码替换。剩余三原生平台的[托管 CI](../features/sqlite-hosted-native-validation-plan.md)本地已就绪，push / dispatch 仍待针对最终提交单独确认，不以静态检查或仿真关闭原生平台。
 2. **保留独立来源 / 发行缺口**：NoDrive / SystemCommon 本地 PE debug 核对未取得新的源码 commit，已准备上游询证草案但未发送。SNI 仍随通用 publish 分发 Windows runtime；后续按实际平台核对正常 RID 发布与下游条款。已完成的[重点 notices 接线](../records/nuget-notices-distribution-2026-10-26.md)不覆盖全部 NuGet / 全生态材料，也不自动关闭这些条件。
 3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
 4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与历史定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。
@@ -48,6 +48,8 @@ NoDrive 本轮实现、本地验证与重点 notices 接线已关闭；剩余发
 正式产品线只保留 Web 与 Flutter Native；Web 优先，Flutter mobile-first、desktop stage-gated。WebOS `/desktop` 仅历史兼容，Tauri 正式弃用。
 
 ## 最近结论
+
+- `2026-10-31` [Hangfire 本机源码重建](../records/hangfire-rebuild-2026-10-31.md)完成：42 项封存，五目标严格构建与干净目录 DLL 字节一致重放，18 组 SQLite / PG17 / PG16 最终产物调用、四类日志契约和反向拒绝验证通过；已归档并清理私有 SDK、数据库和工作副本。Windows Razor、正式源码入口及完整发行审查保持未关闭。
 
 - `2026-10-31` [PG 接库回归与托管 CI 本地接线](../records/postgres-regression-2026-10-31.md)完成：PG17 双配置各 4,137 项通过 / 102 项 Redis、Valkey 预期跳过，PG16 双配置各 43 项通过，四组真实 Hangfire worker 通过，资源和临时构建目录已清理。托管 CI 本地 28 项契约及 YAML / 旧 job 对照通过；未 push、远端运行、发布或部署。
 - `2026-10-31` 完成 SQLite 统一、本机全量验证与后续[Linux 平台批次](../records/sqlite-linux-platform-validation-2026-10-31.md)：ARM64 原生 / AMD64 仿真双配置定向测试各 60 项通过，32 份 publish、120 个冷进程及八 final 镜像通过，HIGH / CRITICAL 零发现，临时资源和代理设置已清理恢复。本机全量口径见[原实施记录](../records/sqlite-native-unification-2026-10-31.md)；其余原生平台、PG 与完整发行材料不自动放行，本批未发布。
