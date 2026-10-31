@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [PostgreSQL 回归与托管 CI 本地接线](./postgres-regression-2026-10-31.md) · [结果 JSON](./postgres-regression-2026-10-31.json)：PG17 两配置全量、PG16 两配置专项与四组 worker 通过，任务资源清理完成；本地 CI 验证通过，未 push / 远端触发
+- [PG / 剩余原生平台准备快照](./postgres-native-readiness-2026-10-31.json) · [PG 执行方案](../features/postgres-regression-execution-plan.md) · [托管 runner 方案](../features/sqlite-hosted-native-validation-plan.md)：缓存、43 个 PG 源码方法、工具精确输入与 Hangfire 留存缺口；未启动服务、未修改 CI 或远端触发
 - [SQLite Linux 双架构执行与清理](./sqlite-linux-platform-validation-2026-10-31.md)：两配置 / 架构各 60 项定向测试、32 份 publish、120 个冷进程与八 final 镜像通过；代理恢复及本任务资源清理完成
 - [SQLite Linux 双架构准备快照](./sqlite-linux-platform-readiness-2026-10-31.json) · [精确输入清单](./sqlite-linux-platform-inputs-2026-10-31.json) · [已批准执行方案](../features/sqlite-linux-platform-validation-plan.md)：保留当时尚未执行的盘点事实，后续运行和清理结果见上一条
 - [SQLite 原生依赖统一实施与本机验证](./sqlite-native-unification-2026-10-31.md)：双配置全量、通用 / 本机 RID 产物、实际加载、分发材料及其他平台未关闭范围

@@ -1,0 +1,750 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "status": "preparation-only-awaiting-scope-approval",
+  "sourceRevision": "174dd1bab4bf3e9ea572d063a654462cd0ac7fb3",
+  "branch": "dev",
+  "initialWorktreeClean": true,
+  "localEvidenceRoot": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-platform-readiness-k66_zxxh",
+  "operationsNotPerformed": [
+    "restore",
+    "build",
+    "test-body-execution",
+    "database-start",
+    "business-host-start",
+    "vm-start",
+    "workflow-edit",
+    "git-push",
+    "workflow-dispatch",
+    "release",
+    "deployment",
+    "upstream-message"
+  ],
+  "allowedReadOnlyChecksPerformed": [
+    "local tool versions",
+    "Docker image/config/resource metadata",
+    "PG trait source inventory",
+    "existing Rust manifest/hash verification",
+    "public GitHub GET APIs",
+    "official tool release metadata GET"
+  ],
+  "local": {
+    "context": {
+      "argv": [
+        "docker",
+        "context",
+        "inspect",
+        "orbstack",
+        "--format",
+        "{{json .Endpoints.docker.Host}}"
+      ],
+      "exit": 0,
+      "output": "\"unix:///Users/luobo/.orbstack/run/docker.sock\"\n",
+      "error": ""
+    },
+    "dockerInfo": {
+      "argv": [
+        "docker",
+        "--context",
+        "orbstack",
+        "info",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "output": {
+        "OSType": "linux",
+        "Architecture": "aarch64",
+        "NCPU": 10,
+        "MemTotal": 16818991104,
+        "DockerRootDir": "/var/lib/docker",
+        "ServerVersion": "29.8.2",
+        "Containers": 0
+      },
+      "error": ""
+    },
+    "containers": {
+      "argv": [
+        "docker",
+        "--context",
+        "orbstack",
+        "ps",
+        "-a",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "output": [],
+      "error": ""
+    },
+    "port": {
+      "argv": [
+        "lsof",
+        "-nP",
+        "-iTCP:15432",
+        "-sTCP:LISTEN"
+      ],
+      "exit": 1,
+      "output": "",
+      "error": ""
+    },
+    "dotnet": {
+      "argv": [
+        "dotnet",
+        "--info"
+      ],
+      "exit": 0,
+      "output": ".NET SDK:\n Version:           10.0.300\n Commit:            caa81fa497\n Workload version:  10.0.300-manifests.b47d7e23\n MSBuild version:   18.6.3+caa81fa49\n\n运行时环境:\n OS Name:     Mac OS X\n OS Version:  27.0\n OS Platform: Darwin\n RID:         osx-arm64\n Base Path:   /usr/local/share/dotnet/sdk/10.0.300/\n\n已安装 .NET 工作负载:\n没有要显示的已安装工作负载。\n已配置为在安装新清单时使用 workload sets。\n未安装任何 workload sets。运行 “dotnet workload restore” 以安装工作负载集。\n\nHost:\n  Version:      10.0.8\n  Architecture: arm64\n  Commit:       94ea82652c\n\n.NET SDKs installed:\n  10.0.300 [/usr/local/share/dotnet/sdk]\n\n.NET runtimes installed:\n  Microsoft.AspNetCore.App 10.0.8 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.NETCore.App 10.0.8 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n\nOther architectures found:\n  None\n\nEnvironment variables:\n  Not set\n\nglobal.json file:\n  Not found\n\nLearn more:\n  https://aka.ms/dotnet/info\n\nDownload .NET:\n  https://aka.ms/dotnet/download\n",
+      "error": ""
+    },
+    "node": {
+      "argv": [
+        "node",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "v24.16.0\n",
+      "error": ""
+    },
+    "rust": {
+      "argv": [
+        "rustc",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "rustc 1.96.0 (ac68faa20 2026-05-25)\n",
+      "error": ""
+    },
+    "rustTargets": {
+      "argv": [
+        "rustup",
+        "target",
+        "list",
+        "--installed"
+      ],
+      "exit": 0,
+      "output": "aarch64-apple-darwin\naarch64-apple-ios\naarch64-apple-ios-sim\naarch64-linux-android\n",
+      "error": ""
+    },
+    "orbMachines": {
+      "argv": [
+        "orb",
+        "list"
+      ],
+      "exit": 0,
+      "output": "",
+      "error": ""
+    },
+    "proxyExclude": {
+      "argv": [
+        "orb",
+        "config",
+        "get",
+        "network.proxy.exclude"
+      ],
+      "exit": 0,
+      "output": "\n",
+      "error": ""
+    },
+    "disk": {
+      "argv": [
+        "df",
+        "-k",
+        "."
+      ],
+      "exit": 0,
+      "output": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971298980 600000000 339200000    64% 3555779 3395765160    0%   /System/Volumes/Data\n",
+      "error": ""
+    },
+    "tools": {
+      "gh": "/opt/homebrew/bin/gh",
+      "pwsh": null,
+      "prlctl": null,
+      "prl_prmapp": null,
+      "VBoxManage": null,
+      "vmrun": null,
+      "limactl": null,
+      "ssh": "/usr/bin/ssh",
+      "docker": "/usr/local/bin/docker",
+      "orb": "/opt/homebrew/bin/orb",
+      "dotnet": "/usr/local/share/dotnet/dotnet",
+      "node": "/Users/luobo/.local/share/mise/installs/node/lts/bin/node",
+      "rustc": "/Users/luobo/.cargo/bin/rustc"
+    },
+    "capturedAt": "2026-10-31T13:05:25.540578+08:00"
+  },
+  "pgImages": {
+    "pg17": {
+      "reference": "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+      "imageId": "sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+      "digests": [
+        "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939"
+      ],
+      "platform": "linux/arm64",
+      "size": 658490319,
+      "versions": [
+        "PG_MAJOR=17",
+        "PG_VERSION=17.11-1.pgdg13+2"
+      ],
+      "volumes": {
+        "/var/lib/postgresql/data": {}
+      },
+      "entrypoint": [
+        "docker-entrypoint.sh"
+      ],
+      "cmd": [
+        "postgres"
+      ]
+    },
+    "pg16": {
+      "reference": "postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+      "imageId": "sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+      "digests": [
+        "postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690"
+      ],
+      "platform": "linux/arm64",
+      "size": 654721558,
+      "versions": [
+        "PG_MAJOR=16",
+        "PG_VERSION=16.15-1.pgdg13+2"
+      ],
+      "volumes": {
+        "/var/lib/postgresql/data": {}
+      },
+      "entrypoint": [
+        "docker-entrypoint.sh"
+      ],
+      "cmd": [
+        "postgres"
+      ]
+    }
+  },
+  "postgresSourceMethods": [
+    {
+      "file": "Radish.Api.Tests/Auth/AuthOpenIddictMigrationTest.cs",
+      "method": "DbMigrateApply_ShouldInitializeEmptyPostgreSqlOpenIddictAndBeIdempotent",
+      "line": 105
+    },
+    {
+      "file": "Radish.Api.Tests/Auth/AuthOpenIddictMigrationTest.cs",
+      "method": "ApplyMigrationsAsync_ShouldInitializeEmptyPostgreSqlAndBeIdempotent",
+      "line": 172
+    },
+    {
+      "file": "Radish.Api.Tests/Auth/AuthOpenIddictMigrationTest.cs",
+      "method": "ApplyMigrationsAsync_ShouldAdoptPostgreSqlEnsureCreatedSchema",
+      "line": 225
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChannelMessageSearchRepositoryTest.cs",
+      "method": "SearchAsync_ShouldUsePostgreSqlLiteralContains",
+      "line": 66
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatMessagePinRepositoryTest.cs",
+      "method": "SetAsync_ShouldConvergeConcurrentDesiredStateOnPostgreSql",
+      "line": 108
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatMessageReactionRepositoryTest.cs",
+      "method": "SetAsync_ShouldConvergeConcurrentDesiredStateOnPostgreSql",
+      "line": 119
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatReadReceiptRepositoryTest.cs",
+      "method": "AdvanceAsync_ShouldConvergeConcurrentTargetsOnPostgreSql",
+      "line": 175
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatReadReceiptSchemaMigrationTest.cs",
+      "method": "Migration_ShouldCreateReadCursorIndexAndRemainRepeatableOnPostgreSql",
+      "line": 51
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatSchemaMigrationTest.cs",
+      "method": "ChatDirectConversationMigration_ShouldSupportPostgreSql",
+      "line": 62
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatSchemaMigrationTest.cs",
+      "method": "ChatReliableMessageMigration_ShouldSupportPostgreSql",
+      "line": 195
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatSchemaMigrationTest.cs",
+      "method": "ChatMessageSearchMigration_ShouldSupportPostgreSql",
+      "line": 359
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatSchemaMigrationTest.cs",
+      "method": "ChatMessageReactionMigration_ShouldSupportPostgreSql",
+      "line": 441
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatSchemaMigrationTest.cs",
+      "method": "ChatMessagePinMigration_ShouldSupportPostgreSql",
+      "line": 519
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ChatSchemaMigrationTest.cs",
+      "method": "ChatChannelDiscoverabilityMigration_ShouldSupportPostgreSql",
+      "line": 601
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ContentModerationCaseSchemaMigrationTest.cs",
+      "method": "Migration_ShouldRemainRepeatableOnPostgreSql",
+      "line": 74
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ContentRewardSchemaMigrationTest.cs",
+      "method": "Migrations_ShouldApplyAndVerifyOnPostgreSql",
+      "line": 68
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/DatabaseDriverContractTests.cs",
+      "method": "PostgreSqlDriver_ExecutesParameterizedInt64Query",
+      "line": 42
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/DirectConversationRepositoryTest.cs",
+      "method": "CreateOrGetAsync_ShouldConvergeConcurrentPairCreationOnPostgreSql",
+      "line": 69
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ExperienceAuthoritativeGovernanceSchemaMigrationTest.cs",
+      "method": "Apply_ShouldBeRepeatableOnPostgreSql",
+      "line": 75
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ExperienceNaturalDateSchemaMigrationTest.cs",
+      "method": "Apply_ShouldConvertLegacyPostgreSqlValuesAndPreserveIndexes",
+      "line": 182
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ExperienceNaturalDateSchemaMigrationTest.cs",
+      "method": "ApplyPending_ShouldResolveLowercasePostgreSqlPhysicalIdentifiers",
+      "line": 229
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ExperienceNaturalDateSchemaMigrationTest.cs",
+      "method": "ApplyPending_ShouldSerializeConcurrentPostgreSqlWriters",
+      "line": 267
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/FileAccessTokenPostgresIntegrationTest.cs",
+      "method": "Consume_ShouldEnforceLimitAcrossPostgreSqlWorkers",
+      "line": 21
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ForumAnswerLifecycleSchemaMigrationTest.cs",
+      "method": "Migration_ShouldApplyAndRemainRepeatableOnPostgreSql",
+      "line": 217
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ForumContentRevisionSchemaMigrationTest.cs",
+      "method": "Migration_ShouldBackfillAndVerifyOnPostgreSql",
+      "line": 149
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ForumInteractionRepositoryTest.cs",
+      "method": "InteractorsAndLikes_ShouldWorkWithProductionLowercasePostgresNames",
+      "line": 36
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ForumPostBookmarkSchemaMigrationTest.cs",
+      "method": "Migration_ShouldApplyAndVerifyOnPostgreSql",
+      "line": 167
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/LeaderboardRepositoryTest.cs",
+      "method": "Repository_ShouldTranslateEligibilityAndAggregateQueriesOnPostgreSql",
+      "line": 136
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/NotificationInboxSchemaMigrationTest.cs",
+      "method": "Apply_ShouldUpgradeLegacyPostgreSqlSchema",
+      "line": 180
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ReliableOutboxPostgresIntegrationTest.cs",
+      "method": "Outbox_ShouldPreserveTransactionAndClaimSemantics_OnPostgreSql",
+      "line": 21
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/ShopEntitlementOperationSchemaMigrationTest.cs",
+      "method": "SubjectNullabilityApply_ShouldSupportPostgreSql",
+      "line": 86
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/TagDiscoveryRepositoryTest.cs",
+      "method": "Repository_Should_Translate_Public_Tag_Aggregates_On_PostgreSql",
+      "line": 89
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/TimeSemanticsPostgresIntegrationTest.cs",
+      "method": "Audit_ShouldRecognizePostgreSqlDateContracts",
+      "line": 21
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/TimeSemanticsPostgresIntegrationTest.cs",
+      "method": "Audit_ShouldValidateTimestamptzInDatabaseTimeZones",
+      "line": 92
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/UnitOfWorkManageTest.cs",
+      "method": "ExecuteInSavepointAsync_Should_Recover_PostgresTransaction_After_UniqueConflict",
+      "line": 86
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/UserBlockAuthoritySchemaMigrationTest.cs",
+      "method": "Migration_ShouldBackfillAndVerifyOnPostgreSql",
+      "line": 141
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/UserBlockRepositoryTest.cs",
+      "method": "MutateAsync_ShouldConvergeConcurrentBlockAndReplayOnPostgreSql",
+      "line": 149
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/UserPostBookmarkRepositoryTest.cs",
+      "method": "SetStateAsync_ShouldSerializeConcurrentFirstBookmarkOnPostgreSql",
+      "line": 132
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/WikiAttachmentAuthoritySchemaMigrationTest.cs",
+      "method": "Migration_ShouldBackfillAndVerifyOnPostgreSql",
+      "line": 262
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/WikiAttachmentReferenceRepositoryTest.cs",
+      "method": "Repository_ShouldSupportPostgreSqlTargetSetAndSoftDeleteRecovery",
+      "line": 213
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/WikiAuthorCollaborationSchemaMigrationTest.cs",
+      "method": "Migration_ShouldCreateAuthoringSchemaAndRemainRepeatableOnPostgreSql",
+      "line": 84
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/WikiAuthoringRepositoryTest.cs",
+      "method": "QueryLatestTerminalDraftsAsync_ShouldTranslateOnPostgreSql",
+      "line": 201
+    },
+    {
+      "file": "Radish.Api.Tests/Repositories/WikiDocumentGovernanceSchemaMigrationTest.cs",
+      "method": "Migration_ShouldSupportPostgreSql",
+      "line": 60
+    }
+  ],
+  "postgresSourceFilesSha256": {
+    "Radish.Api.Tests/Auth/AuthOpenIddictMigrationTest.cs": "019f032394c481b3a281b20a9ea5bef30bfdd2e6104cc6eef1d7c5281a02d992",
+    "Radish.Api.Tests/Repositories/ChannelMessageSearchRepositoryTest.cs": "91c9b0aad79500453ca6ae3dd2b0af1e59e3b591f3b981fdc22c7c3672b390dc",
+    "Radish.Api.Tests/Repositories/ChatMessagePinRepositoryTest.cs": "40430034e33c9e6dc9fcead6d645fc5101717f1c3c8674eb8e2f0577e5ee0328",
+    "Radish.Api.Tests/Repositories/ChatMessageReactionRepositoryTest.cs": "9f3699fce81919c480df3b89edf9d1d44183ec8079701f29a6724bacc96b07a9",
+    "Radish.Api.Tests/Repositories/ChatReadReceiptRepositoryTest.cs": "d1104ed665332b674f8e6208fba292609b22b97c857566e071a38b3af9789c7c",
+    "Radish.Api.Tests/Repositories/ChatReadReceiptSchemaMigrationTest.cs": "07730ccbe0a0a13bd7df616fa3deca5e7441a18648b061b63d773fdd7db036b1",
+    "Radish.Api.Tests/Repositories/ChatSchemaMigrationTest.cs": "cb4e7247e43b285cfb1e41bfdd6b5e2b6eaa13c173daa036492080ad8041c3f0",
+    "Radish.Api.Tests/Repositories/ContentModerationCaseSchemaMigrationTest.cs": "10f564acaac22d1187c502fae45163fb75d901023268fe6a71b54dfffd51481a",
+    "Radish.Api.Tests/Repositories/ContentRewardSchemaMigrationTest.cs": "ca5374750acc53d2af3e29c57748614464c3f7629b026ed919bfc8c8a9d89f95",
+    "Radish.Api.Tests/Repositories/DatabaseDriverContractTests.cs": "7cb614495da040128cc8b213f02204c49e6fbd0d41a6f8bbf921bfe105043ca7",
+    "Radish.Api.Tests/Repositories/DirectConversationRepositoryTest.cs": "3c8f599d68064dc1c8732bf484b9e31ce6f71fb512a074803554eb56f6135346",
+    "Radish.Api.Tests/Repositories/ExperienceAuthoritativeGovernanceSchemaMigrationTest.cs": "136ffbdaf2abe75e0445e8ec6c6a3af8587e6054df3dc71b7a84786e9ae92faa",
+    "Radish.Api.Tests/Repositories/ExperienceNaturalDateSchemaMigrationTest.cs": "c2b6a9adc33f49d4af51dff2728705dfe58a00215289dabffac331032e29138e",
+    "Radish.Api.Tests/Repositories/FileAccessTokenPostgresIntegrationTest.cs": "4509a08f4b22de31527f5f100cd18c44700bbecfeee6506aaf1a63bee1fdaf86",
+    "Radish.Api.Tests/Repositories/ForumAnswerLifecycleSchemaMigrationTest.cs": "76f3b6c43acbd07839a7b34ccba45b94765b818abb793053f40ed6c2edd836c9",
+    "Radish.Api.Tests/Repositories/ForumContentRevisionSchemaMigrationTest.cs": "59dacec54d4431ddc5c4f3d7cb8400d43b05f7166e65a24954152175fc9bd4b4",
+    "Radish.Api.Tests/Repositories/ForumInteractionRepositoryTest.cs": "ecdfba2af298ee5bbd9f6612d7ad932151f240bb29350e99d6a962e17dc202d5",
+    "Radish.Api.Tests/Repositories/ForumPostBookmarkSchemaMigrationTest.cs": "bb1fca5c16249682e9536480c59b7e33dd1437a209edc843f3b629f01224a8d3",
+    "Radish.Api.Tests/Repositories/LeaderboardRepositoryTest.cs": "ad3f12b15f7eac39e906c8e834800264d056747ffc435f4561a300a6cac76efb",
+    "Radish.Api.Tests/Repositories/NotificationInboxSchemaMigrationTest.cs": "6abe5fb442434a7c5e58fcc544b745d33a8572fc8fc9501778fba534a35617ef",
+    "Radish.Api.Tests/Repositories/ReliableOutboxPostgresIntegrationTest.cs": "c87255334c6f50ef54b5d70fbf6e8c5fdd46069c1e0545daf8bf8ec9b2252abc",
+    "Radish.Api.Tests/Repositories/ShopEntitlementOperationSchemaMigrationTest.cs": "1183a7485e206a4f930e0530279afe75937197483eb015de8ff3c24138d27821",
+    "Radish.Api.Tests/Repositories/TagDiscoveryRepositoryTest.cs": "ea5c61522fe8dd0c060b789f930459277c0c3780e7af930ac5d70a0b2997c911",
+    "Radish.Api.Tests/Repositories/TimeSemanticsPostgresIntegrationTest.cs": "a91067e170997ad838d940d3a2c9c1e2d7f104abfaa0fca0866af0cd41196acd",
+    "Radish.Api.Tests/Repositories/UnitOfWorkManageTest.cs": "e895ac15880d7c7008788f56a7403fe8caed0200c4e6e470089f6559488e3f22",
+    "Radish.Api.Tests/Repositories/UserBlockAuthoritySchemaMigrationTest.cs": "ca858726ed4fc54aa42bbc3ec88e8034b4457e9087bc6a158912236e5ea78b14",
+    "Radish.Api.Tests/Repositories/UserBlockRepositoryTest.cs": "df5f837dc92cc9e3418140815fd8fcf2d2cdf7cf63a708bb77e6e7ed5b6dae66",
+    "Radish.Api.Tests/Repositories/UserPostBookmarkRepositoryTest.cs": "e1b22c716f75642ac83fb52a24f21cb52afe8ce6e0e742f8d55387b5d87e3cab",
+    "Radish.Api.Tests/Repositories/WikiAttachmentAuthoritySchemaMigrationTest.cs": "a13fbfe6e82031cd01ac1b2f5f11c6ddab9515f19b7d741cf02643efe5c67727",
+    "Radish.Api.Tests/Repositories/WikiAttachmentReferenceRepositoryTest.cs": "3cea241d7b70cec28aca01d1fa5b40ca1dd3b29b66e8ffcf1f063ec29a2c3e4b",
+    "Radish.Api.Tests/Repositories/WikiAuthorCollaborationSchemaMigrationTest.cs": "c530347b0020044eab8041c9d3fcded559d3e2e05c217b2a5bd530e17107453f",
+    "Radish.Api.Tests/Repositories/WikiAuthoringRepositoryTest.cs": "f07300deafa544f758c575e2a0e37f41ac8986504f247f5345b3a6a37dbaa2fb",
+    "Radish.Api.Tests/Repositories/WikiDocumentGovernanceSchemaMigrationTest.cs": "e7809f671e0b7074362878d22fbdd5b2db9753e7dd6bd4286619a24ca7a05f87"
+  },
+  "postgresMethodCount": 43,
+  "postgresSourceFileCount": 33,
+  "discoveryLimit": "43 static trait methods; current assembly discovery and TRX counts will be captured only in authorized execution",
+  "postgresTestsExclusiveCollection": {
+    "file": "Radish.Api.Tests/TestCollections/PostgreSqlIntegrationCollection.cs",
+    "disableParallelization": true
+  },
+  "coverageGap": {
+    "realHangfirePostgresWorker": true,
+    "proposal": "Four separate original-package PG storage probes: PG16/PG17 × Debug/Release; no source-rebuilt Core substitution"
+  },
+  "probeReviewDraft": {
+    "path": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-platform-readiness-k66_zxxh/PostgresRuntimeProbe.cs",
+    "sha256": "3f7957b16e3faabd4a3b35c351588c58df51006d0b7b488cb260aa90c2d40994",
+    "compiled": false,
+    "executed": false,
+    "sourceDerivedFrom": "Scripts/sqlite/RuntimeProbe.cs; real PG provider initialization matches Radish.Api/Program.cs"
+  },
+  "existingLocalOutputs": [
+    {
+      "path": "Radish.Api.Tests/bin/Debug/net10.0/Radish.Api.Tests.dll",
+      "exists": true,
+      "sha256": "054ed1520f062d183d8a2378e338dc1cacea5dd1db9c2cf4a0009c24c6a107e2"
+    },
+    {
+      "path": "Radish.Api/bin/Debug/net10.0/Radish.Api.dll",
+      "exists": true,
+      "sha256": "3aca72e6dfa19017a4bb9e110fe08758425fc6265edebf337b852275ad35e9b9"
+    },
+    {
+      "path": "artifacts/native/osx-arm64/Debug/manifest.json",
+      "exists": true,
+      "sha256": "9a7c009e125c58243a4155a80aeeb94ac109a3a5d84e8bce52776137ba62ed00"
+    },
+    {
+      "path": "Radish.Api.Tests/bin/Release/net10.0/Radish.Api.Tests.dll",
+      "exists": true,
+      "sha256": "f8c1e457043edf5e3a1e79060d22e9628c3882063da4cd6e3505a7c72bab1eb0"
+    },
+    {
+      "path": "Radish.Api/bin/Release/net10.0/Radish.Api.dll",
+      "exists": true,
+      "sha256": "c4c3a35fea3feb15688b3174b988cadcf4c629505efbdefea07477639aa3b782"
+    },
+    {
+      "path": "artifacts/native/osx-arm64/Release/manifest.json",
+      "exists": true,
+      "sha256": "c0061279611179796fb6b7feb7e5f968db0118e6dca4807582d57c9807339876"
+    }
+  ],
+  "existingOsxArm64RustVerify": {
+    "Debug": "passed-read-only",
+    "Release": "passed-read-only"
+  },
+  "github": [
+    {
+      "endpoint": "repos/laugh0608/Radish/actions/runners",
+      "exit": 0,
+      "total_count": 0,
+      "runners": []
+    },
+    {
+      "endpoint": "repos/laugh0608/Radish/branches/dev",
+      "exit": 0,
+      "branch": "dev",
+      "commit": "29e7030122bc2462262ebd714964106a00242c65"
+    }
+  ],
+  "githubRepository": {
+    "defaultBranch": "master",
+    "visibility": "public",
+    "connectorRunnerInventoryCapability": false,
+    "fallback": "gh api GET; no mutations"
+  },
+  "platformDirectionOwnerReply": "Prefer GitHub hosted runners; prepare separate exact plan; no push/workflow edits/dispatch authorization",
+  "hostedActionRefs": {
+    "checkout": {
+      "endpoint": "repos/actions/checkout/git/ref/tags/v5",
+      "exit": 0,
+      "ref": "refs/tags/v5",
+      "object": {
+        "sha": "fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+        "type": "commit",
+        "url": "https://api.github.com/repos/actions/checkout/git/commits/fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09"
+      }
+    },
+    "setup-node": {
+      "endpoint": "repos/actions/setup-node/git/ref/tags/v5",
+      "exit": 0,
+      "ref": "refs/tags/v5",
+      "object": {
+        "sha": "a0853c24544627f65ddf259abe73b1d18a591444",
+        "type": "commit",
+        "url": "https://api.github.com/repos/actions/setup-node/git/commits/a0853c24544627f65ddf259abe73b1d18a591444"
+      }
+    },
+    "setup-dotnet": {
+      "endpoint": "repos/actions/setup-dotnet/git/ref/tags/v4",
+      "exit": 0,
+      "ref": "refs/tags/v4",
+      "object": {
+        "sha": "67a3573c9a986a3f9c594539f4ab511d57bb3ce9",
+        "type": "commit",
+        "url": "https://api.github.com/repos/actions/setup-dotnet/git/commits/67a3573c9a986a3f9c594539f4ab511d57bb3ce9"
+      }
+    },
+    "upload-artifact": {
+      "endpoint": "repos/actions/upload-artifact/git/ref/tags/v4",
+      "exit": 0,
+      "ref": "refs/tags/v4",
+      "object": {
+        "sha": "ea165f8d65b6e75b540449e92b4886f43607fa02",
+        "type": "commit",
+        "url": "https://api.github.com/repos/actions/upload-artifact/git/commits/ea165f8d65b6e75b540449e92b4886f43607fa02"
+      }
+    }
+  },
+  "hostedToolDownloads": {
+    "dotnet": {
+      "url": "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json",
+      "responseSha256": "8fa7ae2d46b1f94416d5458c7ed68b0c3cafc5efb8e34d89dea3a98bf0a38b33",
+      "sdkVersion": "10.0.403",
+      "runtimeVersion": "10.0.14",
+      "files": [
+        {
+          "name": "dotnet-sdk-linux-x64.tar.gz",
+          "rid": "linux-x64",
+          "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.403/dotnet-sdk-10.0.403-linux-x64.tar.gz",
+          "hash": "b7b3d8461cf98b07d2552ce9199702fa3ad010ac2671a5f8cd5136f7534e50f6855ba7bbb02b11494563f1d04156276a31cda1103b900e5eecd0d9473dc7b9c5"
+        },
+        {
+          "name": "dotnet-sdk-osx-x64.tar.gz",
+          "rid": "osx-x64",
+          "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.403/dotnet-sdk-10.0.403-osx-x64.tar.gz",
+          "hash": "ce95d225b86d2401f111c2aa6df0f5e6855c375b7b34ab4a73df90c56f2b0fc2a44398cfe455cb689670bc8590012e943b64c7a590122af98cdc067721b12223"
+        },
+        {
+          "name": "dotnet-sdk-win-x64.zip",
+          "rid": "win-x64",
+          "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.403/dotnet-sdk-10.0.403-win-x64.zip",
+          "hash": "7a114c318fa7f1d9822991b534b2814d0e78386ceda816b371f5141acefe741d87ccb606ede06cadac8f9ac5070e32b708a67bbd1619ff5e5a7858a27874ef48"
+        }
+      ]
+    },
+    "node": {
+      "url": "https://nodejs.org/dist/v24.22.2/SHASUMS256.txt",
+      "responseSha256": "aec92ae945293821c22aed4c37b97741688254bac353b861fc9fb25b81ce4567",
+      "files": [
+        "6965578fd823e72c1b5387f5ab84cb25368f886e02eb8779e6f0fce6b91c27b7  node-v24.22.2-darwin-x64.tar.xz",
+        "48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75  node-v24.22.2-linux-x64.tar.xz",
+        "ca1bff5d8ead13c9f2ea404a176db46bd430704d5b5113734049fa365e7799e2  node-v24.22.2-win-x64.zip"
+      ]
+    }
+  },
+  "utm": {
+    "applicationFound": true,
+    "cliHelp": {
+      "path": "/Applications/UTM.app/Contents/MacOS/utmctl",
+      "helpExit": -6,
+      "stdout": "",
+      "stderr": "",
+      "vmListNotInvoked": true
+    },
+    "metadata": {
+      "preferenceMetadata": [
+        {
+          "path": "/Users/luobo/Library/Containers/com.utmapp.UTM/Data/Library/Preferences/com.utmapp.UTM.plist",
+          "error": "[Errno 1] Operation not permitted: '/Users/luobo/Library/Containers/com.utmapp.UTM/Data/Library/Preferences/com.utmapp.UTM.plist'"
+        }
+      ],
+      "defaultLocationConfigs": [],
+      "scope": "Known UTM preference/default bundle metadata only; no disk image read, no VM start, no bookmark resolution, no home/network scan"
+    },
+    "availability": "VM architecture/state not confirmed; owner selected hosted-runner planning instead",
+    "noVmStarted": true
+  },
+  "hangfireInstalledInputs": [
+    {
+      "package": "hangfire.core",
+      "version": "1.8.14",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/HangfireIO/Hangfire.git",
+        "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f"
+      },
+      "dlls": [
+        {
+          "path": ".nuget/packages/hangfire.core/1.8.14/lib/netstandard2.0/Hangfire.Core.dll",
+          "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522"
+        }
+      ]
+    },
+    {
+      "package": "hangfire.netcore",
+      "version": "1.8.14",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/HangfireIO/Hangfire.git",
+        "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f"
+      },
+      "dlls": [
+        {
+          "path": ".nuget/packages/hangfire.netcore/1.8.14/lib/netstandard2.1/Hangfire.NetCore.dll",
+          "sha256": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9"
+        }
+      ]
+    },
+    {
+      "package": "hangfire.aspnetcore",
+      "version": "1.8.14",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/HangfireIO/Hangfire.git",
+        "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f"
+      },
+      "dlls": [
+        {
+          "path": ".nuget/packages/hangfire.aspnetcore/1.8.14/lib/netcoreapp3.0/Hangfire.AspNetCore.dll",
+          "sha256": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e"
+        }
+      ]
+    },
+    {
+      "package": "hangfire.postgresql",
+      "version": "1.20.12",
+      "repository": {
+        "type": "git",
+        "url": "https://github.com/frankhommers/Hangfire.PostgreSql",
+        "branch": "master",
+        "commit": "a5a728233ac8feb447695acb01f607bd848b00f7"
+      },
+      "dlls": [
+        {
+          "path": ".nuget/packages/hangfire.postgresql/1.20.12/lib/netstandard2.0/Hangfire.PostgreSql.dll",
+          "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+        }
+      ]
+    }
+  ],
+  "hangfireSourceRetention": {
+    "historicalReviewZipExpectedSha256": "55e4bba119a3c1a975935425ff5a9c7438c55388e0fc50dab95d88c963b87fe6",
+    "historicalZipFoundAtRecordedRoot": false,
+    "sourceInputsRoot": "/private/tmp/radish-hangfire-source-inputs-bz46loib",
+    "remainingFilesAtSourceInputsRoot": 40,
+    "replacementRoot": "/private/tmp/radish-hangfire-replacement-5bb6rlfu",
+    "replacementFeedFiles": 0,
+    "replacementDownloadFiles": 0,
+    "sourceDirectoryEntryCount": 99,
+    "claim": "Directory presence does not establish retained complete corresponding source; no original archive or feed restored/downloaded in this task"
+  },
+  "proposedPgTask": {
+    "id": "radish-pg-regression-20261031-b6d8",
+    "context": "orbstack",
+    "platform": "linux/arm64",
+    "label": "io.radish.pg-regression",
+    "hostEndpoint": "127.0.0.1:15432",
+    "containerPort": 5432,
+    "cpu": 2,
+    "memory": "1g",
+    "pids": 256,
+    "shm": "256m",
+    "volumeMount": "/var/lib/postgresql/data",
+    "instances": "PG17 then PG16, strictly serial",
+    "hostSdk": "10.0.300",
+    "hostRuntime": "10.0.8",
+    "applicationPackages": 219,
+    "restoreGraphDriftAllowed": false,
+    "startConfirmed": false
+  },
+  "primaryReferences": [
+    "https://docs.github.com/en/actions/reference/runners/github-hosted-runners",
+    "https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch",
+    "https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event",
+    "https://docs.getutm.app/scripting/scripting/"
+  ]
+}

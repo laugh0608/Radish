@@ -87,3 +87,11 @@ ILRepack 使用本批已核对的 `2.0.27` archive，其 runtimeconfig 声明 `.
 - 22 个 Razor 行映射在实际 PDB 中没有 checksum；源码与已生成 C# 都已归档，但尚未复现 Windows Razor 再生成。
 - 审阅包包含来源档案及证据，不等于已经完成可以对外提供的完整 Corresponding Source。正式交付还要核对构建输入完整性、原生 / Web 内嵌材料、许可、源码获取入口与持续可用性。
 - Core 替换试验不关闭 NoDrive / SystemCommon 询证、SNI 条款、全生态材料或其他平台验证，不触发发布或部署。
+
+## 5. 2026-10-31 留存复核与接续范围
+
+本次仅只读核对已记录路径，结果见[准备快照](../records/postgres-native-readiness-2026-10-31.json)。旧审阅包路径仍有少量文件，但在其记录目录未找到 `hangfire-source-input-review-2026-10-26.zip`（原记录 SHA256 `55e4bba119a3c1a975935425ff5a9c7438c55388e0fc50dab95d88c963b87fe6`）；旧 replacement 目录存在，feed / downloads 为空。没有扩大到全盘搜索，也不据此宣称文件已从所有位置丢失。目录存在不能证明完整材料仍可取得，历史试验结果也不改写为失败。
+
+下一源码材料批次应先重取并校验已冻结的 Hangfire / Cronos / PostgreSql commit、包与工具，生成完整文件索引，归档到明确的长期保存位置；临时目录只用于执行。随后分别冻结 Cronos 重建、NetCore / AspNetCore / PostgreSql 的完整构建闭包，以及 Windows Razor 再生成所需工具和命令；不得把 Core 的 12 包试验闭包扩写成全组件闭包。源码持续获取入口与对外提供方式独立确认。
+
+本机 [PG 回归方案](./postgres-regression-execution-plan.md)使用当前正式包，不依赖本轮源码重建；其获批的四组 PostgreSQL worker 已通过并清理，见[执行记录](../records/postgres-regression-2026-10-31.md)。[剩余原生平台方案](./sqlite-hosted-native-validation-plan.md)也不将 CI artifact 当作正式源码发行入口。本节留存复核未重新获取上游源码 / 工具、未重建或替换 DLL，不把正式包接库通过计为源码重建完成。

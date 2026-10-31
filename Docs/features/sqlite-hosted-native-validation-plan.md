@@ -1,0 +1,170 @@
+# SQLite 剩余原生平台的 GitHub 托管执行方案
+
+> 2026-10-31（Asia/Shanghai），**所有者已批准本地 CI 实现与验证；push / 远端触发 / 发布 / 部署明确不执行**。准备阶段只读输入见[准备清单](../records/postgres-native-readiness-2026-10-31.json)。本机 PG 回归另按[其执行方案](./postgres-regression-execution-plan.md)推进；本地 CI 接线不等于三个原生平台已经验收。
+
+本地实现及验证已通过，结果与运行边界见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。
+
+## 1. 资源核对与目标
+
+- 本机仍是 ARM64；上轮 Linux x64 属于仿真，不覆盖原生 AMD64。仓库 self-hosted runner API 返回 0 个，不将标签定义写成已获得执行资源。
+- 本机存在 UTM.app；已知 CLI 不在 PATH，直接 `--help` 以 -6 退出；读取注册偏好遇到权限限制，未确认 VM 的架构 / 状态。没有启动 VM、解析 bookmark、扫描 SSH / 网络或修改权限；不能据此宣称本机没有 VM。
+- 所有者已明确优先 GitHub 托管 runner。GitHub 官方列明以下三个标签对应 x64 / Intel，仍需每次 job 验证实际架构与 runner image metadata：[托管 runner 参考](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)。
+- 准备阶段远端 `dev` 只读核对为 `29e7030122bc2462262ebd714964106a00242c65`，本地为 `174dd1ba`；该远端快照不含 SQLite 统一代码。默认分支是 `master`。随后只实施获批的本地工作流 / 编排器改动，没有 push、分支创建或 dispatch。
+
+| 目标 | 固定 runner 标签 | 必须验证的真实架构 | RID |
+| --- | --- | --- | --- |
+| Linux AMD64 | `ubuntu-24.04` | runner / OS / dotnet / Node 为 x64，ELF 为 x86-64 | linux-x64 |
+| Windows x64 | `windows-2025` | runner / OS / dotnet / Node 为 x64，MSVC target 为 x64 | win-x64 |
+| Intel macOS | `macos-15-intel` | runner / uname / dotnet / Node 为 x86_64 / x64，Mach-O 为 x86_64 | osx-x64 |
+
+不是 `*-latest`，也不以 Windows ARM 的 x64 翻译或 Apple Silicon 的 Rosetta 执行替代上述原生目标。Hosted runner 的镜像由 GitHub 更新，不能按这些标签锁定某个历史 ImageVersion；每次记录 ImageOS / ImageVersion、编译器和 SDK，实际架构或所需工具不符则停止，不自动换平台。
+
+## 2. 工具与依赖输入
+
+| 输入 | 本次拟定值 | 边界 |
+| --- | --- | --- |
+| .NET SDK | `10.0.403` | 官方 release metadata 已核对三个 RID 的 archive URL / SHA512，见准备清单 |
+| .NET / ASP.NET runtime | `10.0.14` | 不自动选择预装的其他 SDK / preview |
+| Node | `24.22.2` | 官方三个 x64 archive 的 SHA256 已取得；不 `npm ci / install` |
+| Rust | `1.96.0`，minimal + rustfmt / clippy | 仅 CI runner，目标分别 gnu / msvc / apple-darwin；不更新 Cargo.lock |
+| .NET 应用包图 | 219 项批准 package/version | SQLite / NoDrive / Npgsql / Hangfire 版本沿用当前源码，漂移即停 |
+| Linux native build / runtime | 上轮冻结的 amd64 Node / Rust / SDK / ASP.NET manifest digest | 只重新执行原生 AMD64 四 final，不重复 ARM64 镜像 |
+| 扫描器 | Trivy 0.70.0 | 使用同版本 amd64 scanner manifest `sha256:85e87be1a96459c38a4eea47dc64eb2d342bb14cd4b4cef96adcf6ff03378b7c`；该 digest 来自上轮 registry metadata，执行前再核对 config / 版本 |
+
+Action 版本在本次只读 API 查询时解析为以下 commit；实施不回退浮动 tag：
+
+| Action | 精确 commit |
+| --- | --- |
+| `actions/checkout` v5 | `fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09` |
+| `actions/setup-node` v5 | `a0853c24544627f65ddf259abe73b1d18a591444` |
+| `actions/setup-dotnet` v4 | `67a3573c9a986a3f9c594539f4ab511d57bb3ce9` |
+| `actions/upload-artifact` v4 | `ea165f8d65b6e75b540449e92b4886f43607fa02` |
+
+为避免 runner 预装的更高 SDK 抢占，拟在 job 的一次性工作副本中生成限定 `10.0.403 / rollForward=disable / allowPrerelease=false` 的 global.json，保存其内容 / hash；不提交为仓库永久 SDK 策略。Node / Rust / MSVC / Xcode / gcc 实际版本均在还原前记录，缺少必需组件不临时扩大安装范围。
+
+## 3. 已批准的本地 CI 改动
+
+实施仅覆盖两类执行入口及配套契约测试：
+
+1. `Scripts/ci/validate-sqlite-platform.mjs`：便携的任务编排器，调用既有 native producer、SQLite gate、runtime probe 和漏洞策略；负责独立目录 / case、结果文件存在性、完整 TRX、超时、资源所有权与 artifact 过滤。原有 checker / contract / 业务启动代码不改，不为平台增加 provider 兜底。
+2. `.github/workflows/native-images.yml`：复用已存在的 workflow_dispatch 入口，新增可选 `validation_scope`，默认 `native-images` 保持既有 workflow_call / 普通手动行为；选 `sqlite-platforms` 时仅运行本方案的三个 native job 与四个 amd64 Docker job，避免连带执行旧 ASan / 五平台重复矩阵。现有 Repo Quality / required checks / 发布 workflow 不改。
+
+新模式仅手动执行，`permissions: contents: read`，checkout 不持久化 credentials，不使用生产 secrets、package write、GHCR 登录、tag、Release 或 deploy。不要使用 `pull_request_target`。
+
+不选择“先创建 PR 再决定是否执行”：现有 Repo Quality 对 `dev / master` 的 PR 自动运行，会额外安装 npm 依赖、启动 PG 并执行其他门禁。普通 `push → dev` 不自动 CI，因此先完成并审阅本地实现，再单独确认 `push dev + 指定手动运行` 的外部范围。
+
+GitHub 要求 dispatch 的 workflow 存在于默认分支；这里复用默认 master 已有的 `native-images.yml` 名称 / ID，不通过本批将新 workflow 强行合入 master。参考 [workflow_dispatch 条件](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflow_dispatch)、[dispatch API](https://docs.github.com/en/rest/actions/workflows#create-a-workflow-dispatch-event)。实施后须先核对远端目标 ref 的文件和输入；如目标 ref 的新增输入不能被服务接受，停止并报告，不改默认分支或偷偷触发其他发布入口。
+
+## 4. 精确矩阵
+
+### 4.1 三个平台 job
+
+每个 job 独立执行，`fail-fast: false`，上限 45 分钟：
+
+```text
+native-linux-x64   → ubuntu-24.04
+native-win-x64     → windows-2025
+native-osx-x64     → macos-15-intel
+```
+
+每个 job 的 CLI 内容保持一致，由 Node 编排处理平台路径 / 环境：
+
+```bash
+rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+node Scripts/build-native-images.mjs --rid=<当前RID> --debug
+node Scripts/build-native-images.mjs --rid=<当前RID>
+dotnet restore Radish.slnx --force-evaluate --warnaserror
+dotnet package list --project Radish.slnx --vulnerable --include-transitive --format json --no-restore
+dotnet build Radish.slnx -c <Debug|Release> --no-restore --warnaserror
+dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj -c <Debug|Release> --no-build --no-restore --filter <下列过滤器> --logger <独立TRX> --results-directory <本job证据目录>
+```
+
+过滤器沿用 Linux 批次：
+
+```text
+(FullyQualifiedName~SqliteNativeContractTests|FullyQualifiedName~AuthOpenIddictMigrationTest|FullyQualifiedName~DbMigrateBootstrapTests|FullyQualifiedName~ImageProcessorTest|FullyQualifiedName~AttachmentServiceUploadContractTest)&Database!=PostgreSQL
+```
+
+四宿主各以两个配置、普通 / 显式 RID 输出分别执行 publish，RID 带 `--self-contained false`；使用现有 Node gate 与原 deps / runtimeconfig 执行冷探针。先普通图并存档，再 RID restore，下一配置前恢复普通图，防止图覆盖。每配置发现数量以实际为准，预期每配置 60 个目标用例；零发现、目标用例跳过或不完整 TRX 不通过。
+
+| 项目 | 每个平台 | 三平台合计 |
+| --- | ---: | ---: |
+| 严格 solution build | 两配置 | 6 组 |
+| 定向测试 | 两配置，预期各 60 次 | 预期 360 次，实际留痕 |
+| 四宿主 publish | 2 配置 × 2 布局 × 4 宿主 = 16 | 48 份 |
+| 独立冷进程 | 每布局 / 配置 12 个，共 48 | 144 个 |
+| API 图片 self-test | 两配置 × 两布局 = 4 | 12 次 |
+
+使用原 contract 对应的 Windows / Intel macOS / Linux native SHA256；特别核对 Windows provider 的实际托管 TFM，不套用 Linux provider DLL hash。每个输出检查后可清理二进制，保留日志 / 清单，控制 runner 磁盘峰值。
+
+publish / 探针的展开命令如下，参数由第 1 节 RID 和固定矩阵生成，不直接复制带占位符的命令执行。`host` 只取 `Radish.Api / Radish.Auth / Radish.Gateway / Radish.DbMigrate`，`configuration` 只取 Debug / Release；所有目录在本 job 的 runner.temp 下，新建且拒绝覆盖：
+
+```bash
+dotnet publish "$host/$host.csproj" -c "$configuration" --no-restore --warnaserror -o "$genericOutput"
+dotnet restore "$host/$host.csproj" -r "$rid" --force-evaluate --warnaserror
+dotnet publish "$host/$host.csproj" -c "$configuration" -r "$rid" --self-contained false --no-restore --warnaserror -o "$ridOutput"
+node Scripts/check-nuget-notices.mjs --assets
+node Scripts/check-sqlite-native.mjs --assets="$assets" --framework=net10.0 --rid="$reportRid" --output="$output" --deps="$host.deps.json" --report="$report"
+node Scripts/run-sqlite-runtime-probe.mjs --compile-from="$releaseGenericApi" --scratch="$compilerScratch"
+node Scripts/run-sqlite-runtime-probe.mjs --output="$output" --host="$host" --scratch="$caseScratch"
+dotnet "$apiOutput/Radish.Api.dll" --check-native-images
+```
+
+`reportRid` 普通图为空，RID 图为对应 RID；assets 必须与当时的 publish 图对应。先产生 Release generic API 编译探针，将同一 `SqliteNativeRuntimeProbe.dll` 复制到每个全新 caseScratch 后运行；既有探针文件 / 缺失 JSON / 残留数据均报错。Node 编排直接用 argv 启动子进程，Windows 不依赖 Bash 或把上述 `$变量` 原样传给 PowerShell。
+
+### 4.2 原生 AMD64 Docker job
+
+拆成四个 `ubuntu-24.04` job，service 为 api / auth / gateway / dbmigrate；每个上限 45 分钟，避免一个 14 GB 标准 runner 同时保留四套 SDK build image / 包缓存。开始记录实际剩余磁盘；不足 8 GiB 则停止，不删除 runner 无关预装工具腾空间。
+
+每个 job 从源码中的既有 Dockerfile 生成只固定 FROM 的副本，引用[已冻结 amd64 输入](../records/sqlite-linux-platform-inputs-2026-10-31.json)，使用原配置 `Release / --load / 不push`。分别核对 build stage 原始图 / 包 / 文件与 final payload，运行只读、断网、限额探针；API 四 mode，Auth 三、Gateway 二、DbMigrate 三，共 12 mode；API 另做 native image self-test。
+
+原生 amd64 scanner 对本 job 导出的 archive 静态扫描；记录 scanner、DB metadata / 内容 hash，使用当前 HIGH / CRITICAL 策略和空例外清单。不同 job 的 DB 快照分别留痕，不声称四份共享同一物理缓存。本地八镜像结果与本批四个原生 AMD64 结果分开记录。
+
+Docker CLI 采用 runner 本地引擎，不使用本机 `orbstack` context。`taskId` 由 run ID / attempt / service 组成；基础引用从冻结 JSON 的 `platforms.amd64.images` 读取，scanner 为第 2 节完整引用。构建与探针命令如下，build stage 使用同一命令增加 `--target build` 和独立 tag：
+
+```bash
+docker buildx build --platform linux/amd64 --load --progress plain \
+  --build-arg BUILD_CONFIGURATION=Release \
+  --label "io.radish.sqlite-hosted=$taskId" --label "org.opencontainers.image.revision=$candidate" \
+  -t "$taskId:final" -f "$frozenDockerfile" "$sourceRoot"
+docker run --rm --name "$taskId-probe-$mode" --label "io.radish.sqlite-hosted=$taskId" \
+  --platform linux/amd64 --network none --read-only --memory 1g --cpus 2 --pids-limit 256 \
+  --cap-drop ALL --security-opt no-new-privileges --tmpfs /tmp:rw,nosuid,nodev,size=256m \
+  --mount "type=bind,src=$probeDll,dst=/app/SqliteNativeRuntimeProbe.dll,readonly" \
+  --mount "type=bind,src=$caseRoot,dst=/probe-data" --entrypoint dotnet "$taskId:final" exec \
+  --runtimeconfig "/app/$host.runtimeconfig.json" --depsfile "/app/$host.deps.json" \
+  /app/SqliteNativeRuntimeProbe.dll "$mode" /probe-data
+docker save --output "$archive" "$taskId:final"
+```
+
+scanner 的 DB 准备与断网 archive 扫描沿用[Linux 方案第 5.4 节](./sqlite-linux-platform-validation-plan.md#54-最终镜像扫描)，将 context 改为 runner 本地引擎、平台改为 linux/amd64；仍不挂载 Docker socket、不加漏洞例外。扫描完成即删除本 job 的大 archive，再上传经过过滤的证据；不上传镜像归档。
+
+## 5. 端口、数据、证据与清理
+
+- 不启动业务宿主、PG / Redis / Valkey，不发布 Docker 端口；本机 15432 不参与。使用 SQLite 内存库、runner 临时目录和临时 Hangfire SQLite storage / 专用队列。
+- 所有自有进程 / 容器 / 镜像记录 ID 与 job Task ID；超时或失败也 finally 清理，不按全局进程名或模糊前缀删除。
+- 每个 job 仅上传日志、完整 TRX、JSON、native / deps / notices 哈希清单，artifact 明确保留 14 天。上传前验证没有数据库、密码 / 业务连接、证书私钥、publish 可执行产物、NuGet cache 或完整编译输出。
+- 不把 CI artifact 当作 Release asset / 正式源码发行入口。原始 artifact 到期前将审阅结果和所需证据纳入明确本地归档；长期摘要进入 Docs/records。
+- Runner 任务结束自动销毁 VM；任务自己的目录 / 容器 / 镜像先自行清理，不 prune 他人缓存，不主动修改网络代理或系统信任。
+
+## 6. 远端操作的后续确认清单
+
+当前已批准第 3 节本地 CI 实现及本地验证。以下外部动作仍需针对最终提交另行确认；本轮不执行：
+
+```bash
+git push origin dev
+gh workflow run native-images.yml --repo laugh0608/Radish --ref dev -f validation_scope=sqlite-platforms
+gh run list --repo laugh0608/Radish --workflow native-images.yml --branch dev --event workflow_dispatch
+gh run watch <本批run-id> --repo laugh0608/Radish --exit-status
+gh run download <本批run-id> --repo laugh0608/Radish --dir <本批本地证据目录>
+```
+
+push 前读取最新 origin/dev 并检查快进关系，禁止 force / rebase；执行前冻结完整 head SHA，run 的 headSha 必须相同。只跟踪 / 取消本批明确 run ID，不取消其他任务；无 tag、master 合并、镜像推送、Release、部署或上游通信授权。原生平台通过也不替代 PG 回归、Hangfire 完整对应源码材料与合并前候选门禁。
+
+## 7. 本地接线与后续运行约束
+
+- 编排器入口固定为 `node Scripts/ci/validate-sqlite-platform.mjs --mode=native --rid=<linux-x64|win-x64|osx-x64>`，或 `--mode=docker --rid=linux-x64 --service=<api|auth|gateway|dbmigrate>`；仅接受真实 `workflow_dispatch` 环境及与 run SHA 相同的 checkout，不在本机伪造 Actions 环境执行平台矩阵。
+- 三个 native job 与四个 Docker job 各有独立目录、owner marker、容器 ID / image ID；`--mode=cleanup` 用于工作流 always 步骤重入核对与精确清理。artifact 上传依赖该步骤的证据过滤成功；数据库 / 二进制 / 私钥 / 连接密码或符号链接进入证据会拒绝上传。
+- 普通图精确比较批准的 219 项，RID 图只额外允许本 SDK 对应的指定 x64 runtime / apphost pack；所有实际输入继续留痕。generic / RID 分批完成，输出及其原始 assets、实际冷加载结果与 notices hash 分别保存。
+- 宿主执行验证 `RUNNER_ARCH`、OS / Node / dotnet / Rust 架构以及 ELF / PE / Mach-O；macOS 拒绝 Rosetta。Docker 还要求 runner 本机 Unix socket、原生 amd64 daemon 与既有 docker driver，不安装新 builder 或自动连接远端引擎。
+- 本地验证包含 Node 语法、编排器 / 原门禁 / 漏洞策略契约、YAML 解析、旧 job 内容保持以及真实旧 TRX 兼容性；尚未运行新模式，也未取得三个托管平台的 restore / build / test / publish 或镜像扫描结果。
