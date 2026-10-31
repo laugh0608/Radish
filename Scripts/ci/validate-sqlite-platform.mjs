@@ -120,38 +120,84 @@ function taskLocation(options, environment) {
   return { taskId, root, source: path.join(root, 'source'), evidence: path.join(root, 'evidence') };
 }
 
-class Execution {
+export function assertApprovedRevision(environment, revision) {
+  requireCondition(/^[a-f0-9]{40}$/u.test(environment.EXPECTED_HEAD_SHA ?? '')
+    && environment.EXPECTED_HEAD_SHA === environment.GITHUB_SHA
+    && revision === environment.GITHUB_SHA, 'Explicit approved workflow commit and checkout must match');
+}
+
+export function retainProbeEvidence(source, destination) {
+  if (!fs.existsSync(source)) return;
+  for (const file of files(source)) {
+    const name = path.basename(file);
+    if (!['result.json', 'hangfire-result.json', 'process.log', 'sdk-version.log', 'probe-restore.log', 'compile-sdk.log'].includes(name)
+      && !/^Radish\.[A-Za-z.]+-summary\.json$/u.test(name)) continue;
+    const target = path.join(destination, path.relative(source, file));
+    fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(file, target);
+  }
+}
+
+export async function withProbeEvidence(action, source, destination) {
+  let failure;
+  try { return await action(); } catch (error) { failure = error; throw error; }
+  finally {
+    try { retainProbeEvidence(source, destination); }
+    catch (error) { throw failure ? new AggregateError([failure, error], 'Probe and evidence retention failed') : error; }
+  }
+}
+
+export function outputNotices(output) {
+  const directory = path.join(output, 'third-party-notices');
+  const notices = files(directory);
+  requireCondition(notices.length > 0, 'Missing published notices');
+  return notices.map(file => ({ file: path.relative(output, file).replaceAll('\\', '/'), size: fs.statSync(file).size, sha256: sha(file) }));
+}
+
+export class Execution {
   constructor(location) {
     Object.assign(this, location);
     const previous = path.join(this.evidence, 'commands.json');
     this.commands = fs.existsSync(previous) ? json(previous) : [];
-    this.containers = []; this.images = [];
+    this.containers = []; this.images = []; this.activeStops = new Set(); this.cancelled = false;
   }
+  cancel() { this.cancelled = true; for (const stop of this.activeStops) stop(); }
   async run(command, args, name, { cwd = this.source, timeout = 120_000, allowed = [0] } = {}) {
+    requireCondition(!this.cancelled, 'Execution cancelled');
     const log = path.join(this.evidence, 'commands', `${String(this.commands.length + 1).padStart(3, '0')}-${name}.log`);
     fs.mkdirSync(path.dirname(log), { recursive: true });
     const record = { command, args, cwd, log: path.relative(this.evidence, log), start: new Date().toISOString() };
     this.commands.push(record);
+    write(path.join(this.evidence, 'commands.json'), this.commands);
     const output = fs.openSync(log, 'w');
     const child = spawn(command, args, { cwd, env: this.environment, stdio: ['ignore', output, output], detached: process.platform !== 'win32' });
-    let timedOut = false;
+    let timedOut = false; let stopping;
     const stop = () => {
-      timedOut = true;
-      if (!child.pid) return;
+      if (stopping || !child.pid) return stopping;
+      record.terminationRequested = true;
       if (process.platform === 'win32') {
-        const killer = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore' });
-        killer.on('error', error => { record.killError = error.message; });
-      } else { try { process.kill(-child.pid, 'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') record.killError = error.message; } }
+        stopping = new Promise(resolve => {
+          const killer = spawn('taskkill', ['/PID', String(child.pid), '/T', '/F'], { stdio: 'ignore', timeout: 10_000 });
+          killer.once('error', error => { record.killError = error.message; resolve(); });
+          killer.once('close', code => { record.taskkillExitCode = code; if (code !== 0) record.killError = `taskkill exit ${code}`; resolve(); });
+        });
+      } else {
+        stopping = Promise.resolve();
+        try { process.kill(-child.pid, 'SIGKILL'); } catch (error) { if (error.code !== 'ESRCH') record.killError = error.message; }
+      }
+      return stopping;
     };
-    const timer = setTimeout(stop, timeout);
+    this.activeStops.add(stop);
+    child.once('spawn', () => { record.pid = child.pid; write(path.join(this.evidence, 'commands.json'), this.commands); });
+    const timer = setTimeout(() => { timedOut = true; stop(); }, timeout);
     const outcome = await new Promise(resolve => {
-      child.once('error', error => resolve({ error: error.message }));
-      child.once('close', (code, signal) => resolve({ code, signal }));
+      let spawnError;
+      child.once('error', error => { spawnError = error.message; });
+      child.once('close', (code, signal) => resolve({ code, signal, ...(spawnError ? { error: spawnError } : {}) }));
     });
-    clearTimeout(timer); fs.closeSync(output);
-    Object.assign(record, outcome, { timedOut, end: new Date().toISOString() });
+    clearTimeout(timer); await stopping; this.activeStops.delete(stop); fs.closeSync(output);
+    Object.assign(record, outcome, { timedOut, cancelled: this.cancelled, completed: true, end: new Date().toISOString() });
     write(path.join(this.evidence, 'commands.json'), this.commands);
-    requireCondition(!timedOut && !outcome.error && allowed.includes(outcome.code), `Command failed: ${name}, see ${log}`);
+    requireCondition(!timedOut && !this.cancelled && !record.killError && !outcome.error && allowed.includes(outcome.code), `Command failed: ${name}, see ${log}`);
     return fs.readFileSync(log, 'utf8');
   }
   node(script, args, name, options = {}) { return this.run(process.execPath, [fs.realpathSync(path.join(this.source, script)), ...args], name, options); }
@@ -169,6 +215,7 @@ class Execution {
     return output;
   }
   async cleanup() {
+    write(path.join(this.evidence, 'cleanup.json'), { taskId: this.taskId, completed: false, workingTreeRemoved: false, errors: [] });
     const owner = json(path.join(this.root, 'owner.json'));
     requireCondition(owner.taskId === this.taskId, 'Task owner mismatch');
     for (const entry of owner.containers) {
@@ -187,11 +234,116 @@ class Execution {
       assertOwned(info, this.taskId, entry.id ?? info.Id, 'image');
       await this.docker(['image', 'rm', entry.tag], 'cleanup-image');
     }
-    write(path.join(this.evidence, 'cleanup.json'), { taskId: this.taskId, completed: true });
-    for (const name of fs.readdirSync(this.root)) {
-      if (!['evidence', 'owner.json'].includes(name)) fs.rmSync(path.join(this.root, name), { recursive: true, force: true });
-    }
+    await this.removeWorkingTree();
   }
+  async removeWorkingTree() {
+    const report = { taskId: this.taskId, completed: false, workingTreeRemoved: false, errors: [] };
+    write(path.join(this.evidence, 'cleanup.json'), report);
+    try {
+      requireCondition(this.activeStops.size === 0 && this.commands.every(command => command.completed && !command.killError), 'Unconfirmed command termination; refusing working tree removal');
+      for (const name of fs.readdirSync(this.root)) {
+        if (!['evidence', 'owner.json'].includes(name)) fs.rmSync(path.join(this.root, name), { recursive: true, force: true });
+      }
+      report.workingTreeRemoved = fs.readdirSync(this.root).every(name => ['evidence', 'owner.json'].includes(name));
+      requireCondition(report.workingTreeRemoved, 'Working tree remains'); report.completed = true;
+    } catch (error) { report.errors.push(error.message); throw error; }
+    finally { write(path.join(this.evidence, 'cleanup.json'), report); }
+  }
+}
+
+export async function finalizeExecution(execution) {
+  const errors = [];
+  // Copy only diagnostic files before any removal, including partial failed cases.
+  try {
+    for (const directory of ['compiler', 'probes', 'cases']) retainProbeEvidence(path.join(execution.root, directory), path.join(execution.evidence, directory === 'cases' ? 'probes' : directory));
+  } catch (error) { errors.push(error); }
+  if (errors.length === 0) {
+    try { await execution.cleanup(); } catch (error) { errors.push(error); }
+  }
+  if (errors.length) {
+    const previous = path.join(execution.evidence, 'cleanup.json');
+    const report = fs.existsSync(previous) ? json(previous) : { taskId: execution.taskId, workingTreeRemoved: false };
+    write(previous, { ...report, completed: false, errors: errors.map(error => error.message) });
+  }
+  const resultFile = path.join(execution.evidence, 'result.json');
+  if (errors.length && fs.existsSync(resultFile)) {
+    const result = json(resultFile);
+    write(resultFile, { ...result, validationStatus: result.validationStatus ?? result.status, status: 'failed', finalizationErrors: errors.map(error => error.message) });
+  }
+  try { write(path.join(execution.evidence, 'artifact-manifest.json'), assertEvidence(execution.evidence)); }
+  catch (error) { errors.push(error); }
+  if (errors.length) throw new AggregateError(errors, 'Finalization failed');
+}
+
+const compilerEnvironmentKeys = ['PATH', 'INCLUDE', 'LIB', 'LIBPATH', 'VCToolsInstallDir', 'VCToolsVersion', 'WindowsSdkDir', 'WindowsSDKVersion', 'VSCMD_ARG_HOST_ARCH', 'VSCMD_ARG_TGT_ARCH'];
+
+export function msvcSetupScript(developerCommand, node, capture, destination) {
+  const quote = value => {
+    requireCondition(value && !/["%&\r\n]/u.test(value), 'Unsafe compiler setup path');
+    return `"${value}"`;
+  };
+  return `@echo off\r\ncall ${quote(developerCommand)} -no_logo -arch=x64 -host_arch=x64 >nul\r\nif errorlevel 1 exit /b %errorlevel%\r\n${quote(node)} ${quote(capture)} ${quote(destination)}\r\n`;
+}
+
+export function reviewedMsvcEnvironment(environment) {
+  requireCondition(Object.keys(environment).every(key => compilerEnvironmentKeys.includes(key)), 'Unexpected compiler environment field');
+  requireCondition(compilerEnvironmentKeys.every(key => typeof environment[key] === 'string' && environment[key].trim()), 'Missing compiler environment field');
+  requireCondition(environment.VSCMD_ARG_HOST_ARCH === 'x64' && environment.VSCMD_ARG_TGT_ARCH === 'x64', 'MSVC must target native x64');
+  return environment;
+}
+
+async function inspectCompiler(execution, rid) {
+  const directory = path.join(execution.root, 'compiler-identity'); fs.mkdirSync(directory);
+  const findExecutable = name => {
+    const search = execution.environment.PATH ?? execution.environment.Path;
+    const found = search.split(path.delimiter).map(item => path.join(item, name)).find(file => fs.existsSync(file));
+    requireCondition(found, `Missing compiler executable: ${name}`); return fs.realpathSync(found);
+  };
+  let compiler; let cxx; let installation; let sdk;
+  if (process.platform === 'win32') {
+    const instances = JSON.parse(await execution.run(path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio/Installer/vswhere.exe'),
+      ['-latest', '-products', '*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-format', 'json'], 'msvc-discovery'));
+    requireCondition(instances.length === 1 && instances[0].isComplete === true, 'One complete MSVC installation required');
+    installation = instances[0];
+    const capture = path.join(directory, 'capture.cjs'); const environmentFile = path.join(directory, 'environment.json');
+    // The child writes only reviewed compiler fields, never the complete inherited environment.
+    fs.writeFileSync(capture, `require('node:fs').writeFileSync(process.argv[2], JSON.stringify(Object.fromEntries(${JSON.stringify(compilerEnvironmentKeys)}.map(key => [key, process.env[key]]))));\n`);
+    const setup = path.join(directory, 'setup.cmd');
+    fs.writeFileSync(setup, msvcSetupScript(path.join(installation.installationPath, 'Common7/Tools/VsDevCmd.bat'), process.execPath, capture, environmentFile));
+    await execution.run(process.env.ComSpec ?? 'cmd.exe', ['/d', '/c', setup], 'msvc-environment');
+    const selected = reviewedMsvcEnvironment(json(environmentFile));
+    // Windows environment keys are case insensitive; avoid passing both Path and PATH.
+    for (const key of Object.keys(execution.environment)) if (compilerEnvironmentKeys.some(item => item.toLowerCase() === key.toLowerCase())) delete execution.environment[key];
+    Object.assign(execution.environment, selected);
+    compiler = findExecutable('cl.exe'); cxx = compiler;
+    const expected = fs.realpathSync(path.join(selected.VCToolsInstallDir, 'bin/Hostx64/x64/cl.exe'));
+    requireCondition(compiler.toLowerCase() === expected.toLowerCase(), 'PATH selected a different MSVC compiler');
+    const linker = findExecutable('link.exe');
+    requireCondition(path.dirname(linker).toLowerCase() === path.dirname(compiler).toLowerCase(), 'MSVC linker/compiler installation mismatch');
+    execution.environment.CARGO_TARGET_X86_64_PC_WINDOWS_MSVC_LINKER = linker;
+    sdk = { ...selected, linker, linkerSha256: sha(linker) };
+  } else if (process.platform === 'darwin') {
+    compiler = fs.realpathSync((await execution.run('xcrun', ['--find', 'clang'], 'clang-path')).trim());
+    cxx = fs.realpathSync((await execution.run('xcrun', ['--find', 'clang++'], 'clangxx-path')).trim());
+    sdk = { xcode: (await execution.run('xcodebuild', ['-version'], 'xcode-version')).trim(),
+      sdkPath: (await execution.run('xcrun', ['--show-sdk-path'], 'macos-sdk')).trim() };
+  } else { compiler = findExecutable('cc'); cxx = findExecutable('c++'); }
+  const target = { 'linux-x64': 'x86_64_unknown_linux_gnu', 'win-x64': 'x86_64_pc_windows_msvc', 'osx-x64': 'x86_64_apple_darwin' }[rid];
+  execution.environment[`CC_${target}`] = compiler; execution.environment[`CXX_${target}`] = cxx;
+  if (process.platform !== 'win32') execution.environment[`CARGO_TARGET_${target.toUpperCase()}_LINKER`] = compiler;
+  const source = path.join(directory, 'identity.cpp'); fs.writeFileSync(source, 'int main() { return 0; }\n');
+  const binary = path.join(directory, process.platform === 'win32' ? 'identity.exe' : 'identity');
+  let version;
+  if (process.platform === 'win32') {
+    version = await execution.run(compiler, ['/nologo', '/Bv', source, `/Fe${binary}`, `/Fo${path.join(directory, 'identity.obj')}`], 'compiler-identity');
+  } else {
+    version = await execution.run(compiler, ['--version'], 'compiler-version');
+    await execution.run(cxx, ['--version'], 'cxx-version');
+    await execution.run(cxx, [source, '-o', binary], 'compiler-identity');
+  }
+  assertBinaryArchitecture(fs.readFileSync(binary), rid);
+  return { installation, sdk, compiler, compilerSha256: sha(compiler), cxx, cxxSha256: sha(cxx), version,
+    outputSha256: sha(binary), outputArchitecture: 'x64', executed: false };
 }
 
 async function inspectPlatform(execution, rid) {
@@ -210,11 +362,7 @@ async function inspectPlatform(execution, rid) {
   const rust = await execution.run('rustc', ['+1.96.0', '-vV'], 'rust');
   const target = { 'linux-x64': 'x86_64-unknown-linux-gnu', 'win-x64': 'x86_64-pc-windows-msvc', 'osx-x64': 'x86_64-apple-darwin' }[rid];
   requireCondition(rust.startsWith('rustc 1.96.0 ') && rust.includes(`host: ${target}`), 'Wrong Rust version/host');
-  const compiler = process.platform === 'win32'
-    ? await execution.run(path.join(process.env['ProgramFiles(x86)'], 'Microsoft Visual Studio/Installer/vswhere.exe'), ['-latest', '-products', '*', '-requires', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '-format', 'json'], 'msvc')
-    : await execution.run('cc', ['--version'], 'compiler');
-  requireCondition(compiler.trim().length > 0, 'Compiler missing');
-  if (process.platform === 'win32') requireCondition(JSON.parse(compiler).length > 0, 'MSVC workload missing');
+  const compiler = await inspectCompiler(execution, rid);
   write(path.join(execution.evidence, 'platform.json'), { rid, machine, translated, platform: process.platform, arch: process.arch,
     release: os.release(), imageOS: process.env.ImageOS, imageVersion: process.env.ImageVersion, compiler, rust, node: process.version });
 }
@@ -250,6 +398,7 @@ function checkOutput(execution, host, output, assetsFile, rid, caseName) {
   validateSqliteSources(assets, selection);
   const selected = validateSqliteOutput(selection, output, json(path.join(output, `${host}.deps.json`)));
   write(path.join(execution.evidence, 'outputs', `${caseName}.json`), { host, rid, files: selected, depsSha256: sha(path.join(output, `${host}.deps.json`)), assetsSha256: sha(assetsFile) });
+  write(path.join(execution.evidence, 'notices', `${caseName}.json`), { host, rid, files: outputNotices(output) });
   write(path.join(execution.evidence, 'graphs', `${caseName}.assets.json`), assets);
 }
 
@@ -279,13 +428,12 @@ async function native(execution, rid, expected) {
         const output = path.join(execution.root, 'publish', caseName);
         await execution.run('dotnet', ['publish', project, '-c', configuration, ...(reportRid ? ['-r', rid, '--self-contained', 'false'] : []), '--no-restore', '--warnaserror', '-o', output], `publish-${caseName}`, { timeout: 600_000 });
         checkOutput(execution, host, output, path.join(execution.source, host, 'obj/project.assets.json'), reportRid, caseName);
-        if (!fs.existsSync(path.join(compiler, 'SqliteNativeRuntimeProbe.dll'))) await execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--compile-from=${output}`, `--scratch=${compiler}`], 'compile-probe');
+        if (!fs.existsSync(path.join(compiler, 'SqliteNativeRuntimeProbe.dll'))) await withProbeEvidence(
+          () => execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--compile-from=${output}`, `--scratch=${compiler}`], 'compile-probe'), compiler, path.join(execution.evidence, 'compiler'));
         const scratch = path.join(execution.root, 'probes', caseName); fs.mkdirSync(scratch, { recursive: true });
         fs.copyFileSync(path.join(compiler, 'SqliteNativeRuntimeProbe.dll'), path.join(scratch, 'SqliteNativeRuntimeProbe.dll'));
-        await execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--output=${output}`, `--host=${host}`, `--scratch=${scratch}`], `probe-${caseName}`);
-        for (const file of files(scratch).filter(file => /\.(?:json|log)$/u.test(file))) {
-          const dest = path.join(execution.evidence, 'probes', caseName, path.relative(scratch, file)); fs.mkdirSync(path.dirname(dest), { recursive: true }); fs.copyFileSync(file, dest);
-        }
+        await withProbeEvidence(() => execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--output=${output}`, `--host=${host}`, `--scratch=${scratch}`], `probe-${caseName}`),
+          scratch, path.join(execution.evidence, 'probes', caseName));
         if (host === 'Radish.Api') await execution.run('dotnet', [path.join(output, `${host}.dll`), '--check-native-images'], `selftest-${caseName}`);
         fs.rmSync(output, { recursive: true }); fs.rmSync(scratch, { recursive: true });
       }
@@ -353,13 +501,14 @@ async function dockerValidation(execution, service) {
   const nodeCheck = `${execution.taskId}-node-check`;
   await execution.container(['run', '--rm', '--name', nodeCheck, '--label', `${label}=${execution.taskId}`, '--network', 'none', '--entrypoint', '/bin/sh', final, '-c', 'test ! -e /usr/local/bin/node && test ! -e /usr/bin/node'], nodeCheck);
   const compiler = path.join(execution.root, 'compiler');
-  await execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--compile-from=${output}`, `--scratch=${compiler}`], 'compile-probe');
+  await withProbeEvidence(() => execution.node('Scripts/run-sqlite-runtime-probe.mjs', [`--compile-from=${output}`, `--scratch=${compiler}`], 'compile-probe'),
+    compiler, path.join(execution.evidence, 'compiler'));
   const dll = path.join(compiler, 'SqliteNativeRuntimeProbe.dll');
   const modes = ['microsoft', 'sqlsugar', ...(service !== 'gateway' ? ['ef'] : []), ...(service === 'api' ? ['hangfire'] : [])];
   for (const mode of modes) {
     const name = `${execution.taskId}-${mode}`; const caseRoot = path.join(execution.root, 'cases', mode);fs.mkdirSync(caseRoot, { recursive: true });
     const args = ['run', '--rm', '--name', name, '--label', `${label}=${execution.taskId}`, '--platform', 'linux/amd64', '--network', 'none', '--read-only', '--memory', '1g', '--cpus', '2', '--pids-limit', '256', '--cap-drop', 'ALL', '--security-opt', 'no-new-privileges', '--tmpfs', '/tmp:rw,nosuid,nodev,size=256m', '--mount', `type=bind,src=${dll},dst=/app/SqliteNativeRuntimeProbe.dll,readonly`, '--mount', `type=bind,src=${caseRoot},dst=/probe-data`, '--entrypoint', 'dotnet', final, 'exec', '--runtimeconfig', `/app/${host}.runtimeconfig.json`, '--depsfile', `/app/${host}.deps.json`, '/app/SqliteNativeRuntimeProbe.dll', mode, '/probe-data'];
-    await execution.container(args, name);
+    await withProbeEvidence(() => execution.container(args, name), caseRoot, path.join(execution.evidence, 'probes', mode));
     const report = json(path.join(caseRoot, 'result.json'));
     requireCondition(report.native.startsWith('/app/') && report.nativeSha256 === sqliteContract.native.files['runtimes/linux-x64/native/libe_sqlite3.so']
       && report.rawVersion === sqliteContract.native.sqliteVersion && report.rawSourceId === sqliteContract.native.sourceId, 'Final native module mismatch');
@@ -393,20 +542,30 @@ export async function main(args, environment = process.env) {
   if (options.mode === 'cleanup') {
     if (!fs.existsSync(location.root)) return;
     execution.environment = { ...environment }; execution.source = repository;
-    await execution.cleanup(); write(path.join(location.evidence, 'artifact-manifest.json'), assertEvidence(location.evidence)); return;
+    try { await finalizeExecution(execution); }
+    finally {
+      // Safe failure evidence may be published even when cleanup itself failed.
+      write(path.join(location.evidence, 'artifact-manifest.json'), assertEvidence(location.evidence));
+      if (environment.GITHUB_OUTPUT) fs.appendFileSync(environment.GITHUB_OUTPUT, 'publish_safe=true\n');
+    }
+    return;
   }
+  requireCondition(environment.GITHUB_EVENT_NAME === 'workflow_dispatch', 'SQLite mode is manual only');
+  assertApprovedRevision(environment, environment.GITHUB_SHA);
   requireCondition(!fs.existsSync(location.root), 'Task directory exists'); fs.mkdirSync(location.evidence, { recursive: true }); execution.persist();
   const cleanEnv = Object.fromEntries(Object.entries(environment).filter(([key]) => !/^(?:RADISH_TEST_|Databases__|OpenIddict__|Hangfire__|Redis__|ConnectionStrings__)/iu.test(key)));
-  execution.environment = { ...cleanEnv, NUGET_PACKAGES: path.join(location.source, '.nuget/packages'), NUGET_HTTP_CACHE_PATH: path.join(location.root, 'http-cache'), DOTNET_CLI_HOME: path.join(location.root, 'cli-home'), DOTNET_CLI_UI_LANGUAGE: 'en', DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false', DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: 'false', DOTNET_CLI_TELEMETRY_OPTOUT: '1', DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1', TMPDIR: path.join(location.root, 'tmp'), TEMP: path.join(location.root, 'tmp'), TMP: path.join(location.root, 'tmp') };
+  execution.environment = { ...cleanEnv, NUGET_PACKAGES: path.join(location.source, '.nuget/packages'), NUGET_HTTP_CACHE_PATH: path.join(location.root, 'http-cache'), DOTNET_CLI_HOME: path.join(location.root, 'cli-home'), DOTNET_CLI_UI_LANGUAGE: 'en', DOTNET_GENERATE_ASPNET_CERTIFICATE: 'false', DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE: 'false', DOTNET_CLI_TELEMETRY_OPTOUT: '1', DOTNET_SKIP_FIRST_TIME_EXPERIENCE: '1', DOTNET_CLI_USE_MSBUILD_SERVER: '0', MSBUILDDISABLENODEREUSE: '1', UseSharedCompilation: 'false', TMPDIR: path.join(location.root, 'tmp'), TEMP: path.join(location.root, 'tmp'), TMP: path.join(location.root, 'tmp') };
   for (const name of ['http-cache', 'cli-home', 'tmp', 'source']) fs.mkdirSync(path.join(location.root, name));
   let error;
+  const stop = () => execution.cancel();
+  process.on('SIGTERM', stop); process.on('SIGINT', stop);
   try {
-    requireCondition(environment.GITHUB_EVENT_NAME === 'workflow_dispatch', 'SQLite mode is manual only');
-    const revision = (await execution.run('git', ['rev-parse', 'HEAD'], 'revision', { cwd: repository })).trim(); requireCondition(revision === environment.GITHUB_SHA, 'Checkout/run head mismatch');
+    const revision = (await execution.run('git', ['rev-parse', 'HEAD'], 'revision', { cwd: repository })).trim(); assertApprovedRevision(environment, revision);
     await execution.run('git', ['archive', '--format=tar', `--output=${path.join(location.root, 'source.tar')}`, revision], 'archive', { cwd: repository });
     await execution.run('tar', ['-xf', path.join(location.root, 'source.tar'), '-C', location.source], 'extract', { cwd: repository });
     write(path.join(location.source, 'global.json'), { sdk: { version: '10.0.403', rollForward: 'disable', allowPrerelease: false } });
-    write(path.join(location.evidence, 'candidate.json'), { revision, globalJsonSha256: sha(path.join(location.source, 'global.json')) });
+    write(path.join(location.evidence, 'candidate.json'), { revision, expectedHeadSha: environment.EXPECTED_HEAD_SHA, workflowSha: environment.GITHUB_WORKFLOW_SHA,
+      runId: environment.GITHUB_RUN_ID, runAttempt: environment.GITHUB_RUN_ATTEMPT, globalJsonSha256: sha(path.join(location.source, 'global.json')) });
     await inspectPlatform(execution, options.rid);
     const expected = json(path.join(location.source, 'Docs/records/sqlite-native-unification-evidence-2026-10-31.json')).packageIdentities;
     if (options.mode === 'native') await native(execution, options.rid, expected);
@@ -415,12 +574,10 @@ export async function main(args, environment = process.env) {
   } catch (caught) {
     error = caught; write(path.join(location.evidence, 'result.json'), { status: 'failed', options, error: caught.message });
   } finally {
-    // Native jobs have no Docker resources. Avoid contacting a Docker daemon on Windows/macOS.
-    if (options.mode === 'native') {
-      for (const name of fs.readdirSync(location.root)) if (!['owner.json', 'evidence'].includes(name)) fs.rmSync(path.join(location.root, name), { recursive: true, force: true });
-      write(path.join(location.evidence, 'cleanup.json'), { taskId: location.taskId, completed: true });
-    } else await execution.cleanup();
-    write(path.join(location.evidence, 'artifact-manifest.json'), assertEvidence(location.evidence));
+    process.off('SIGTERM', stop); process.off('SIGINT', stop);
+    execution.cancelled = false;
+    try { await finalizeExecution(execution); }
+    catch (caught) { error = error ? new AggregateError([error, caught], 'Validation and finalization failed') : caught; }
   }
   if (error) throw error;
 }

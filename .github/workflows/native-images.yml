@@ -16,7 +16,7 @@ on:
         default: inventory
         required: false
       expected_head_sha:
-        description: 'Approved full commit SHA; required for Razor scope'
+        description: 'Approved full commit SHA; required for Razor and SQLite scopes'
         type: string
         required: false
       razor_expected_image:
@@ -218,9 +218,16 @@ jobs:
           - runner: macos-15-intel
             rid: osx-x64
     runs-on: ${{ matrix.runner }}
+    env:
+      EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
     steps:
+      - name: Require the approved workflow commit before installing tools
+        shell: bash
+        run: |
+          [[ "$EXPECTED_HEAD_SHA" =~ ^[a-f0-9]{40}$ ]] && [[ "$EXPECTED_HEAD_SHA" == "$GITHUB_SHA" ]] || exit 1
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -231,13 +238,14 @@ jobs:
       - name: Install approved Rust toolchain in runner
         run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
       - name: Build, test, publish and probe the native platform
+        timeout-minutes: 38
         run: node Scripts/ci/validate-sqlite-platform.mjs --mode=native --rid=${{ matrix.rid }}
       - name: Clean task resources and validate evidence
         id: finalize
         if: always()
         run: node Scripts/ci/validate-sqlite-platform.mjs --mode=cleanup --rid=${{ matrix.rid }}
       - name: Retain reviewed evidence only
-        if: always() && steps.finalize.outcome == 'success'
+        if: always() && steps.finalize.outputs.publish_safe == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sqlite-native-${{ matrix.rid }}-${{ github.run_attempt }}
@@ -253,9 +261,16 @@ jobs:
       fail-fast: false
       matrix:
         service: [api, auth, gateway, dbmigrate]
+    env:
+      EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
     steps:
+      - name: Require the approved workflow commit before installing tools
+        shell: bash
+        run: |
+          [[ "$EXPECTED_HEAD_SHA" =~ ^[a-f0-9]{40}$ ]] && [[ "$EXPECTED_HEAD_SHA" == "$GITHUB_SHA" ]] || exit 1
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
@@ -266,13 +281,14 @@ jobs:
       - name: Install approved Rust toolchain in runner
         run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
       - name: Build, probe and scan one final image without pushing
+        timeout-minutes: 38
         run: node Scripts/ci/validate-sqlite-platform.mjs --mode=docker --rid=linux-x64 --service=${{ matrix.service }}
       - name: Clean task resources and validate evidence
         id: finalize
         if: always()
         run: node Scripts/ci/validate-sqlite-platform.mjs --mode=cleanup --rid=linux-x64 --service=${{ matrix.service }}
       - name: Retain reviewed evidence only
-        if: always() && steps.finalize.outcome == 'success'
+        if: always() && steps.finalize.outputs.publish_safe == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: sqlite-native-docker-${{ matrix.service }}-${{ github.run_attempt }}

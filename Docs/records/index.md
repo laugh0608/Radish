@@ -6,6 +6,7 @@
 ## 一、通用模板与总索引
 
 - [Windows runner image 询证审阅与下一步](./hangfire-windows-runner-image-inquiry-review-2026-10-31.md) · [英文 Issue 草稿](./hangfire-windows-runner-image-inquiry-draft-2026-10-31.md)：诊断记录已提交；询证及证据 ZIP 已获批提交至 [actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，远端内容与附件下载校验通过，未触发新运行
+- [SQLite 托管执行契约复核与本地修正](./sqlite-hosted-execution-contracts-2026-10-31.md)：批准 SHA、失败证据、清理结果、实际编译器与 notices 留痕；38 项本地检查通过，未 push / dispatch
 - [Windows Razor 诊断 inventory 与身份门禁](./hangfire-windows-razor-inventory-diagnostic-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-diagnostic-2026-10-31.json)：20 组契约通过，文件 / Machine 环境冲突触发门禁失败；证据与清理完成，未重试 / verify
 - [Windows Razor image 身份诊断增强](./hangfire-windows-razor-image-identity-diagnostics-2026-10-31.md)：只读来源核对后补齐本地采集、来源一致性门禁及 12 组 PowerShell 契约；31 项 Node 通过，新候选未 push / dispatch
 - [Windows Razor 第二次 inventory 与身份差异](./hangfire-windows-razor-inventory-second-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-second-2026-10-31.json)：修复 SHA 已 push；8 组 PowerShell 契约、库存、归档与清理通过，image 两处版本不一致，verify 未执行
