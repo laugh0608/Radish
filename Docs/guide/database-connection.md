@@ -62,6 +62,8 @@ ORM 使用 `SqlSugarCoreNoDrive 5.1.4.207`，由 Common 显式引用 `Npgsql 10.
 
 因此，不能仅凭包引用、`.deps.json` 索引或测试目录结果认定发布 native 身份。排查时对照实际文件 SHA256、来源包以及运行时 `sqlite3_libversion()`；[Core 替换试验](../records/hangfire-core-replacement-2026-10-26.md)已验证当前本机 publish 的 3.50.4，但未统一两条依赖链，也不替代其他平台验证。依赖统一先按[接续事项](../planning/current.md#接下来的事项)形成方案，不能通过手工删除 DLL 或任意排除资产掩盖冲突。
 
+2026-10-31 的[统一方案](../features/sqlite-native-unification-plan.md)已完成只读调查并提交确认，包含 Microsoft `.Core` 替换、唯一 native 来源、初始化边界及验证矩阵；尚未实施，本节上述现用依赖事实保持有效。
+
 ## ConfigId 大小写规则
 
 ### 重要说明

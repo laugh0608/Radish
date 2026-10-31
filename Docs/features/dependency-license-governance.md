@@ -12,6 +12,8 @@
 
 进一步的[源码 / PDB 补证](../records/hangfire-source-inputs-2026-10-26.md)已匹配 233 个源码 checksum，核验 Cronos 精确 commit 并补齐其随 API 交付的 MIT 正文；[Core 替换方案](./hangfire-source-replacement-plan.md)及 SDK 分析器调整已获批准，[三组本机 SQLite 验证](../records/hangfire-core-replacement-2026-10-26.md)通过，证明该目标下源码重建及诊断修改库进入真实注册 / 入队 / 执行路径。同时发现测试 SQLite 3.50.3 与发布 SQLite 3.50.4 的既有原生资产链差异，后续验证须按实际产物冻结基线，不能只依据依赖声明。
 
+2026-10-31 已完成[SQLite 原生依赖统一方案](./sqlite-native-unification-plan.md)的只读核对：建议通过 Microsoft `.Core` 包、config 3.0.3 与唯一 `lib.e_sqlite3 [3.53.3]` 消除 native 竞争，保留 Hangfire 旧传递包边界。精确输入、五平台验证和回退已列明，等待确认；尚未修改依赖 / 构建或形成新候选运行结论。
+
 ## 1. 当前结论与阅读入口
 
 - 首轮统计覆盖正式 .NET、Web、Flutter、Rust 的 **947 个依赖条目**；精确口径、例外、未解析项与证据见[盘点记录](../records/dependency-license-audit-2026-10-20.md)和[逐包清单 CSV](../records/dependency-license-inventory-2026-10-20.csv)。条目不等于独立软件产品或许可证数量。
