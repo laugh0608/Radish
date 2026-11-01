@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-01 规划结构统一](./planning-structure-alignment-2026-11-01.md)：能力地图、状态来源与保留历史摘要。
+
 - [2026-10-31 日终代码与文档回顾](./day-end-doc-review-2026-10-31.md)：18 个提交、代码 / 文档校准，以及 Windows SQLite 夹具和 Razor 身份门禁接续事项
 
 - [SQLite 修正后的第二次托管验收](./sqlite-hosted-native-second-run-2026-10-31.md) · [结果 JSON](./sqlite-hosted-native-second-run-2026-10-31.json)：6 项通过，Windows Release 三项临时 SQLite 删除失败；七份 artifact 校验与清理完成，未重试

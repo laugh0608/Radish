@@ -9,6 +9,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [Agent 协作与执行规则](./guide/agent-collaboration.md)
 - [页面真实联调与浏览器 Smoke 规则](./guide/browser-smoke.md)
 - [开发路线图总览](./development-plan.md)
+- [能力专题地图](./planning/topics.md)：七条能力主线、现有子专题与任务 / 验收来源。
 - [第三开发阶段：真实使用增长与长期契约治理](./planning/phase-three-real-usage-contract-governance.md)
 - [P3-11 发布候选整备与轻量复访补齐](./planning/p3-11-release-candidate-light-revisit.md)
 - [P3-12 Web 完全化与 WebOS 收束](./planning/p3-12-web-completion-webos-retirement.md)
