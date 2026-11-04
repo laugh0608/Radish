@@ -11,9 +11,9 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
-- **下一项工作**：恢复统一日志 L2，依据现有生产接线和事件契约形成有限的剩余覆盖与验收范围，再进入成组实现；重点沿既有 Hangfire 输出合并边界、自有业务和浏览器共享日志等真实缺口推进，不重跑依赖源码重建或扩展外部来源调查。Native 按原顺位接续 P8-C Windows readiness，具体功能队列见下文。
+- **下一项工作**：统一日志 L2 的[Hangfire 最终输出收口方案](../features/unified-logging-l2-hangfire-output-plan.md)已准备，待确认两个精确来源、旧 WriteTo / AuditTo 与候选出口的白名单重建及本地验收范围，再进入实现。已用受控数据复现 scope / enrichment 与跨事件字段混入；浏览器共享日志保留后续独立批次，不恢复依赖来源调查。Native 继续按既定顺位接续 P8-C。
 - **状态复核日期**：`2026-11-04`；SQLite 本次七 job 验收已收口，见[运行记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)。Hangfire 来源 / 交付准备见[复核记录](../records/hangfire-source-delivery-review-2026-11-04.md)，结果由 `7a19fe71` 保存；未关闭的来源与发行条件保留，当前不占开发主线，不表示依赖专题或正式发行已全部验收。
-- **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
+- **日志专题复核日期**：`2026-11-04`；保留[事件契约第 7–72 节](../features/unified-logging-contract.md)的已完成范围。恢复准备已完成 Release 严格构建、60 项既有后端定向回归、9 项既有 sanitizer 测试，以及 18 个后端 / 9 个 sanitizer 受控观察场景；它们定位缺口，不作为修复通过。具体范围见[下一批方案](../features/unified-logging-l2-hangfire-output-plan.md)，L2 尚未整体关闭，运行时实现与真实服务未在本轮执行。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -68,12 +68,12 @@
 
 2026-11-04 恢复[统一日志专题](../features/unified-logging-governance-design.md)，保留 2026-10-15 已完成结论。范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，该日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。下面按已有生产接线和明确缺口收口，不向未使用框架、外部任意订阅器或全进程证明扩张。
 
-1. **继续剩余框架与非日志通道只读核对**：ASP.NET Core DataProtection 的已列明来源已治理；OpenIddict Client / Validation / DataProtection 依赖存在但未注册。IdentityModel 默认空 logger、仓库无诊断订阅器不等于外部 EventPipe / DiagnosticListener / Activity / metrics 已受控；详细边界见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 继续后置。
-2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。API 周期任务注册 / 固定文档同步与 Gateway 停止日志已治理；继续只读核对其他自有来源与相邻透传边界，尤其是既有 Hangfire provider 在 enrichment / scope 合并后经过旧链 WriteTo / AuditTo 的实际输出，不把生成端受控等同最终输出已重建；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。
-3. **形成 L2 剩余覆盖清单**：对照生产接线与事件契约，区分已治理精确来源、待治理自有业务日志、相邻透传来源、桥接前读取风险及非日志输出，确定下一批完整范围；现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
+1. **确认并实施 Hangfire 最终输出收口**：[下一批方案](../features/unified-logging-l2-hangfire-output-plan.md)已完成现状复现、精确字段 / 来源与验收矩阵。仅处理现有 provider / 状态观察器及三条最终出口，保留重试、状态、存储与异常传播语义；完成该切片后再继续 L2，不以之宣称整个宿主已治理。
+2. **接续剩余自有 / 浏览器输出**：Common 两处 catch、API 周期注册 / 固定文档同步与 Gateway 停止的已治理结论保留。其他业务摘要仍按既有调用链核对最终输出；浏览器共享 HTTP、三份 sanitizer、Client / Console logger 及示例输出另行冻结有限批次，不混入本次后端实现。现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
+3. **保留未使用 / 外部通道边界**：DataProtection 列明来源已治理，OpenIddict Client / Validation / DataProtection 集成未注册；外部 EventPipe / DiagnosticListener / Activity / metrics 不自动受控，详见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 后置，不将这些已知限制重新放到功能收口之前进行无限调查。
 4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认。Rust `.tmp` 水印回退已由图片替代移除，改用内容识别与显式输出格式，交付验收及 PR 集成已完成。
 
-以上为当前恢复工作的顺位；本轮优先级调整只同步规划，不修改日志实现或生产配置。安装依赖、启动项目服务 / 容器、访问生产或系统证书库及后续运行时实现，仍按具体范围确认。
+以上为当前恢复工作的顺位；本轮完成规划提交、只读复现与下一批方案，尚未修改日志运行时实现或生产配置。下一步按已形成的方案确认实现与本地验收；依赖安装、项目服务 / 容器启动、访问生产和系统证书库仍不包含在内。
 
 生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L2 整体治理、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。Native P8-C readiness 保留后续顺位。
 
