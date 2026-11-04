@@ -1,10 +1,10 @@
 # SQLite 剩余原生平台的 GitHub 托管执行方案
 
-> 2026-11-04（Asia/Shanghai），候选 `44c13c5091f51621d475107fbb5834ceedef12f4` 已按独立授权 push 并完成单次完整七 job：Linux / Intel macOS / 四个 AMD64 final 通过，证据与清理完整。**Windows Release 60 项及三个迁移用例通过，首个 API 冷探针报告模块数量为 2，Windows 与整批验收仍未关闭**。结果与分析见[本次记录](../records/sqlite-hosted-native-fixture-run-2026-11-04.md)；未重试、发布或部署。此前 Windows 三项测试清理失败保留在[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)，不改写历史。
+> 2026-11-04（Asia/Shanghai），**候选 `ab37d19eaf83189ec5c556d14608c1c132dce022` 已按独立批准完成单次完整七 job，全部通过，证据与清理完整**。三原生平台双配置共 492 项测试、48 份 publish、144 个原生冷进程及四 AMD64 final 的 12 个 mode 通过，Windows 实际模块身份已核对，本批平台缺口关闭，见[最新记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)。未重试、发布或部署；历史失败保留原记录，本次不关闭其他依赖发行边界。
 
 首轮本地实现及验证见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。执行前复核发现 SHA 授权、失败证据和清理结果存在缺口；所有者已另行批准本地成组修正，现已完成并通过 38 项检查，见[执行契约修正记录](../records/sqlite-hosted-execution-contracts-2026-10-31.md)。候选 `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 已按授权 push，并完成[首次托管执行](../records/sqlite-hosted-native-run-2026-10-31.md)：Linux x64 双配置各 60 项、16 份发布、48 个冷进程通过；Windows argv、macOS SDK、非 API 探针编译依赖和 API 容器写权限问题使其余六项失败。七项证据与清理均完成；随后四类问题已完成本地修正，并按授权完成上述第二次独立运行；历史首次结果不改写。
 
-四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；候选已完成第二次独立运行，原四类边界取得真实行为证据。2026-11-04 又完成 Windows 临时 SQLite 夹具修正与本机验证，范围见[成组方案第 8 节](./sqlite-hosted-validation-repair-plan.md#windows-fixture-repair)，结果见[本地记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)；随后该候选单次远端运行按独立授权执行，Windows 首个冷探针的新失败仅分析留痕。接续的[第 9 节](./sqlite-hosted-validation-repair-plan.md#windows-module-probe-followup)已独立获批完成本地模块识别与诊断修正，见[实施记录](../records/sqlite-probe-module-local-repair-2026-11-04.md)；新完整 SHA 和远端范围仍需单独确认。本页继续维护原 job / mode 矩阵及授权边界。
+四类失败的修正范围集中在[成组方案](./sqlite-hosted-validation-repair-plan.md)，原本地实施见[10 月 31 日记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)。Windows 夹具与模块识别分别由第 8 / 9 节独立批准推进，本地结果见[夹具记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)与[模块记录](../records/sqlite-probe-module-local-repair-2026-11-04.md)；最终 `ab37d19e` 单次运行完成本方案既有矩阵。旧候选 `44c13c50` 的模块计数失败仍以[原记录](../records/sqlite-hosted-native-fixture-run-2026-11-04.md)为准，不回填旧身份；本页不授权重复执行。
 
 ## 1. 资源核对与目标
 
@@ -157,7 +157,7 @@ scanner 的 DB 准备与断网 archive 扫描沿用[Linux 方案第 5.4 节](./s
 
 ## 6. 远端操作的后续确认清单
 
-三个指定 SHA 的 push 和各一次 dispatch 已按各自授权完成：`915f6359` 见首次记录，`daf5a4d4` 见[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)，`44c13c50` 见[夹具候选运行](../records/sqlite-hosted-native-fixture-run-2026-11-04.md)。以下只保留后续候选的操作模板，不授权重复执行；新的完整 SHA、修正范围和远端执行仍需单独确认：
+四个指定 SHA 的 push 和各一次 dispatch 已按各自授权完成：`915f6359` 见首次记录，`daf5a4d4` 见[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)，`44c13c50` 见[夹具候选运行](../records/sqlite-hosted-native-fixture-run-2026-11-04.md)，`ab37d19e` 见[模块修正候选运行](../records/sqlite-hosted-native-module-run-2026-11-04.md)。以下只保留后续候选模板，不授权重复执行；新的完整 SHA、范围和远端执行仍需单独确认：
 
 ```bash
 git push origin "$candidate:refs/heads/dev"
@@ -177,4 +177,4 @@ push 前读取最新远端 dev 并检查快进关系，禁止 force / rebase；�
 - 普通图精确比较批准的 219 项，RID 图只额外允许本 SDK 对应的指定 x64 runtime / apphost pack；所有实际输入继续留痕。generic / RID 分批完成，输出及其原始 assets、实际冷加载结果与 notices hash 分别保存。
 - 宿主执行验证 `RUNNER_ARCH`、OS / Node / dotnet / Rust 架构以及 ELF / PE / Mach-O；macOS 拒绝 Rosetta。Docker 还要求 runner 本机 Unix socket、原生 amd64 daemon 与既有 docker driver，不安装新 builder 或自动连接远端引擎。
 - 三个 native job 在正式构建前执行实际 MSBuild argv 夹具；Windows 24 组、Unix 12 组，包含驱动器根 / UNC 的 Windows 组不访问网络共享。七 job 执行新增宿主 / SDK 契约，Docker job 另执行容器身份契约；这些前置检查单独计数，不混入目标测试 / 冷进程数。
-- 本地验证包含 Node 语法、编排器 / 原门禁 / 漏洞策略契约、YAML 解析、旧 job 内容保持以及真实旧 TRX 兼容性；本轮补充的行为检查见修正记录，Windows 环境加载、编译器 x64 样本及 Rust 双配置已在首次托管运行通过，taskkill 超时路径未在本次触发；第二次运行已完成 Linux / Intel macOS / 四 final 全矩阵；Windows 已通过参数夹具、Rust 双配置和 Release 严格构建，但 Release 测试清理有三项失败，Debug 应用构建 / publish / 冷进程未执行，具体证据以第二次记录为准。
+- 初次 / 第二次托管运行及其本地接线结果保持各日期记录的原口径；后续夹具和模块修正经独立批准推进，最终本次三原生平台及四 final 全矩阵通过。Windows 双配置 / publish / 冷进程已取得真实证据，模块分类与实际加载身份以[最新记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)为准；不把旧失败改写为通过，也不把本批成功扩大为其他专题或发布验收。

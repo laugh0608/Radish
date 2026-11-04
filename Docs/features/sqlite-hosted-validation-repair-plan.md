@@ -1,8 +1,8 @@
 # SQLite 托管验证四类失败的成组修正方案
 
-> 2026-10-31（Asia/Shanghai），**本地修正及新候选单次远端验收已完成；6 项通过，Windows 新测试清理问题使整批仍未关闭**。本页定义首次托管验证后的一批修正与验收边界；执行矩阵、固定工具输入和远端流程仍见[托管执行方案](./sqlite-hosted-native-validation-plan.md)。失败事实与原始证据见[单次运行记录](../records/sqlite-hosted-native-run-2026-10-31.md)，该记录由提交 `a074b68c` 保存，后随批准候选一并 push。
+> 2026-11-04（Asia/Shanghai），**候选 `ab37d19eaf83189ec5c556d14608c1c132dce022` 的单次完整七 job 已全部通过，证据与清理完整**。本页原四类修正、后续 Windows 夹具与模块识别的本次托管缺口已关闭，见[最新记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)。矩阵与冻结输入见[托管执行方案](./sqlite-hosted-native-validation-plan.md)；初次失败与后续各批事实保留原记录，不改写历史。
 
-2026-11-04 已另行批准 Windows 临时 SQLite 夹具修正、本地验证与文档同步，随后又独立批准候选 `44c13c50` 的 push 与一次完整七 job 验收，范围见[第 8 节](#windows-fixture-repair)。Windows Release 迁移用例通过后暴露首个冷探针模块计数失败；[第 9 节](#windows-module-probe-followup)已获批完成本地修正与验证，新的完整 SHA 与远端范围仍待单独确认。
+2026-11-04 先完成[第 8 节](#windows-fixture-repair)夹具修正及候选 `44c13c50` 的获批单次运行；其新暴露的冷探针问题由[第 9 节](#windows-module-probe-followup)独立获批修正，再以 `ab37d19e` 完成另一次独立批准的七 job 运行。各次均未重试、发布或部署，不能据此重复派发或扩大范围。
 
 ## 1. 本批目标与批准边界
 
@@ -135,7 +135,7 @@
 
 四类修正均须有对应真实行为证据：Windows 参数实际到达 Node、macOS 系统库和 C++ 标准库正确链接、各宿主探针在本身引用集合下编译 / 执行、final 中以明确身份完成受限目录读写。Linux 新候选也须回归通过。
 
-代码、验证指南与执行矩阵一致；包图、宿主 deps、正式镜像和业务行为没有为测试让步；失败诊断可保留，资源清理可核对。原四类边界已取得真实行为证据，但第二次 Windows 运行止于新暴露的临时 SQLite 清理失败，尚未完成本页完整验收标准。后续夹具修正按第 8 节独立授权推进；新 SHA 运行仍需另行确认，当前文档不是重复执行授权。
+代码、验证指南与执行矩阵一致；包图、宿主 deps、正式镜像和业务行为没有为测试让步；失败诊断可保留，资源清理可核对。第二次运行的 Windows 临时 SQLite 清理失败由第 8 节修正，后续模块计数问题由第 9 节修正；最终 `ab37d19e` 七 job 通过并完成证据 / 清理核验，满足本批标准。未来代码或候选变更仍需重新界定验证与运行授权，当前文档不是重复执行授权。
 
 <a id="windows-fixture-repair"></a>
 
@@ -154,7 +154,7 @@
 - 使用已有依赖，执行 Tests 项目及其宿主引用的 Debug / Release `--no-restore --warnaserror` 构建。
 - 双配置运行托管方案已有五组定向测试，显式排除 `Database=PostgreSQL`，保留完整 TRX；检查三个迁移用例实际执行且通过，不能只统计聚合成功。
 - 执行 `npm run check:repo-quality:changed` 与 `git diff --check`；验证事实、环境和证据见[本批记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)。
-- 本地完成只关闭本批夹具实现与本机验证；Windows 双配置、publish、冷进程加载及整批托管验收仍未关闭。
+- 本地结果只证明夹具实现与本机验证；Windows 双配置、publish、冷进程加载由后续 `ab37d19e` 的独立托管记录关闭，不以本地结果替代。
 
 ### 下一次远端执行前必须明确
 
@@ -166,7 +166,7 @@
 
 <a id="windows-module-probe-followup"></a>
 
-## 9. Windows 模块识别与失败诊断（本地完成，远端待确认）
+## 9. Windows 模块识别与失败诊断（本地与本次托管完成）
 
 首个 Windows 冷探针报告命中两个 SQLite 模块，但没有保存两个模块的名称 / 路径。旧名称子串过滤也可能匹配托管 provider；这不足以确认旧 run 的实际原因，也不足以宣称有两份原生库，事实与推断见[运行记录第 3 节](../records/sqlite-hosted-native-fixture-run-2026-11-04.md#3-windows迁移测试通过首个冷探针出现新失败)。所有者随后批准先提交该轮结果文档，再完成本节本地实现与验证；结果文档由 `1e1d0ff1` 保存，实施见[本批记录](../records/sqlite-probe-module-local-repair-2026-11-04.md)。
 
@@ -185,4 +185,6 @@
 
 本机 Debug / Release 严格构建与各 82 项定向测试、32 项 Node 契约、四宿主双配置的 8 次探针编译 / 24 个 macOS arm64 冷 mode 已通过，诊断保留与清理完成。本机 Windows / Linux 识别夹具只验证受控条目与文件判断，不替代真实平台枚举；旧 Windows 两个实际命中项仍未知。
 
-本地授权不包含新 push / 远端验收。后续先冻结新完整 SHA、Windows 双配置 / publish / 冷进程与必要关联回归、实际 job、工具及清理，再单独确认；旧 run 不重试，不换库、不降低门禁、不发布部署。
+最初本地授权不包含 push / 远端验收；随后所有者确认候选 `ab37d19eaf83189ec5c556d14608c1c132dce022` 的一次完整七 job。三原生平台双配置各 82 项、48 份 publish、144 个原生冷进程及四 final 的 12 个 mode 全部通过，156 份清单与证据 / 清理已核验，见[托管记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)。Windows 每份清单明确区分一个托管 provider 与一个原生模块；本次平台缺口关闭，旧 run 未留存的身份仍不回填。
+
+该一次性授权已执行完毕；未来新 SHA 或运行范围仍单独确认。旧 run 不重试，不换库、不降低门禁、不发布部署。
