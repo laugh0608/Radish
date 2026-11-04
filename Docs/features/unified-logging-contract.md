@@ -123,7 +123,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 - API 的 `HangfireRuntimeStateFilter` 在既有 AutomaticRetry 状态选举之后观察候选结果：失败转为 Scheduled / Enqueued 时记录 `job.retrying` Warning，保留 Failed 或转为 Deleted 时记录 `job.failed` Error；普通调度、成功和无 FailedState 的停机重入队不生成失败事件。不修改次数、延迟、候选状态、异常传播或 Hangfire 存储审计。
 - 这是**存储提交前的处理决定**，不是状态已提交或跨重放恰好一次的证据。存储提交失败、进程中断或状态选举重入可产生新的事件。`operationId` 由固定前缀与 Hangfire Job ID 的 SHA-256 前 16 字节转换为 Guid，同一部署 / 存储内可关联；不输出 Job ID、参数、任务类型原文或异常正文。
-- 默认全局 AutomaticRetry 与当前清理 / Outbox 的方法属性关闭 `LogEvents`；`HangfireRuntimeLogProvider` 同时抑制该来源的重复输出。其他 Hangfire Warning / Error / Fatal 分别生成 `hangfire.runtime_warning / hangfire.runtime_failed`，异常仅映射 `failureKind`；不求值框架消息工厂。框架 Info 及以下降为 Debug 诊断，候选生产模式不输出。该 provider 在 AddHangfire 配置回调中接入；这里成立的是生成端摘要约束。2026-11-04 受控复现确认，旧 sink 在上下文合并后仍可收到环境载荷，候选输出也可混入其他事件的合法字段，见[最终输出收口方案](./unified-logging-l2-hangfire-output-plan.md)。该修正尚未实施，不能把生成端结果扩大为最终输出白名单已经完成。
+- 默认全局 AutomaticRetry 与当前清理 / Outbox 的方法属性关闭 `LogEvents`；`HangfireRuntimeLogProvider` 同时抑制该来源的重复输出。其他 Hangfire Warning / Error / Fatal 分别生成 `hangfire.runtime_warning / hangfire.runtime_failed`，异常仅映射 `failureKind`；不求值框架消息工厂。框架 Info 及以下降为 Debug 诊断，候选生产模式不输出。该 provider 在 AddHangfire 配置回调中接入。2026-11-04 复现的上下文合并后旧链载荷 / 候选跨事件字段混入，已由第 73 节按独立批准的范围修正；原生成端验证不代替后续最终输出证据。
 - 通知收件箱、Wiki 草稿正文、Chat 回应幂等事实只在有清理数量时生成 `job.cleanup.completed`；收件箱只删除关系也属于有效变更。容量告警按本批用户数量聚合为 `job.cleanup.capacity_warning`，不输出 tenant / user 标识。仓储异常继续抛给 Hangfire，不在 Job 重复记录 Error。
 - 文件软删除、临时文件、回收站和孤立附件清理使用局部批次计数。成功一次 Info，缺失文件 / 空目录清理异常一次 Warning，已消费的主流程 / 单项异常一次 Error；混合结果为 partial。空批次或仅引用保护跳过保持安静。原有“单项失败继续、外层失败返回 0”、保留期、分片目录排除和引用保护保持不变，不新增重试。
 - 文件 `processedCount` 沿用原返回计数口径：软删除 / 孤立附件可包含源文件缺失的已处理记录；`movedCount` 才表示实际移动的主文件与缩略图数量。两者不可互换。`missingCount / failedCount / directoryFailureCount / skippedCount / removedDirectoryCount` 分别记录缺失、已消费异常、目录异常、引用保护与删除空目录数量；不包含路径、文件名或附件身份。
@@ -692,3 +692,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Gateway 改用 RuntimeLoggingSession.AttachGatewayLifetime：候选保留 started、由一个受控 stopped 回调记录；旧链补充同一 ApplicationStopped 通知的受控输出。复用 `runtime.stopped`（非诊断 Information、lifecycle，无业务属性），删除 RunAsync 返回后的额外日志；旧 logger 仍归宿主释放，候选 logger 仍归 Session 释放。停止通知不保证后续宿主 / logger Dispose 成功，不新增 Auth / API 旧链生命周期接管。注册本身、Stopping 和未发出 Stopped 的路径均不输出 stopped；Session 释放注销回调。
 - 同来源未知编码改为 `runtime.program_unknown`，保持原等级，低于 Warning 标为 diagnostic；已知事件不依赖 Diagnostics 开关，仍受 MinimumLevel 约束。字段按事件分别校验，跨事件或类型错误的属性丢弃。
 - 四模式、真实静态 Hangfire 注册 + 存储替身、SQLite 内存表查询、同步服务替身 / 既有真实服务回归、受控停止通知及 HostBuilder Build / Dispose、scope / WriteTo / AuditTo / 应急通道验证见[本批记录](../records/unified-logging-l2-program-operations-2026-10-15.md)。未启动项目服务 / Hangfire worker、访问真实数据库或绑定端口；不能代替调度执行、真实存储事务、系统停机和部署验收。浏览器输出未扩展，生产候选开关仍关闭，L2 未整体完成。
+
+## 73. L2 Hangfire provider / 状态观察器最终输出
+
+- API 的两个自有生产者分别绑定 `Radish.Api.Services.HangfireRuntimeLogProvider` 与 `Radish.Api.Services.HangfireRuntimeStateFilter` 完整 SourceContext。新 `HangfireLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 与候选输出；其他来源及来源格式不匹配的事件沿原链传递，不按 Hangfire 前缀截获第三方日志。
+- provider 的 `hangfire.runtime_warning / hangfire.runtime_failed / hangfire.diagnostic` 只保留登记的 failureKind；没有异常时生产者显式设置 null，避免普通 LogContext / AddPropertyIfAbsent enricher 填入同名故障类型。provider 不接受环境 operationId、jobKind、outcome 或 count；消息工厂和原异常正文仍不求值，AutomaticRetry 重复来源仍安静，null messageFunc 的级别查询 / 返回语义保持。
+- 状态观察器的 `job.retrying / job.failed` 仅保留 failureKind、与事件一致的 outcome 及规范小写 D 格式的 operationId；关联 ID 仍由固定前缀与原 Job ID 的 SHA-256 派生。实际重试次数 / 延迟、候选状态、原异常、存储 / 事务 / 提交和方法属性不变，事件继续只描述提交前的处理决定。
+- 各来源未知、缺失、非字符串或不属于该来源的编码，分别转为 `hangfire.runtime_unknown / job.state_unknown`，不保留业务扩展字段。固定模板 / 来源 / job 分类、原 Timestamp / 等级及 diagnostic 重建；Exception、原模板、任意 scope / 嵌套值与跨事件属性丢弃。trace / span 仅采用强类型 LogEvent 值或原 Activity 回退，不从自由字符串恢复。
+- `hangfire.diagnostic` 与未知低于 Warning 的事件标记 diagnostic；候选继续按模式、Diagnostics、MinimumLevel 和三级 / Fatal 策略过滤。旧链保留原 MinimumLevel，不新增环境过滤或将 Fatal 降级；代码 / 配置 WriteTo 继续消费 sink 输出故障，AuditTo 继续传播，候选沿原应急通道处理输出失败，logger 释放所有权与故障行为保持。
+- 这些标识用于已登记生产路径的重建，不认证进程内任意恶意代码；外部 enricher 的提前求值和独立 logger 不自动受保护。Debug / Release 严格构建、各 222 项定向回归（各含 83 项新增 Hangfire 专项）、4 个新增共享 fixture 与 52 项 Node 契约通过，见[实施记录](../records/unified-logging-l2-hangfire-output-2026-11-04.md)。真实服务 / worker、真实存储、文件 / 数据库落盘和部署未验收；只关闭这两个来源的本次缺口，浏览器输出未扩展，生产候选开关关闭，L2 尚未整体完成。

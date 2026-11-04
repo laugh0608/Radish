@@ -1,0 +1,233 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-04",
+  "timezone": "Asia/Shanghai",
+  "planCommit": "d95799039a09c9ecc1bbc0d505b1f13cd2f4faab",
+  "implementationState": "validated-uncommitted-worktree",
+  "scope": "Two owned Hangfire sources; legacy WriteTo/AuditTo and candidate final event reconstruction",
+  "sdk": "10.0.300",
+  "runtime": "10.0.8",
+  "node": "v24.16.0",
+  "validation": [
+    {
+      "configuration": "Debug",
+      "build": {
+        "command": [
+          "dotnet",
+          "build",
+          "Radish.Api.Tests/Radish.Api.Tests.csproj",
+          "-c",
+          "Debug",
+          "--no-restore",
+          "--warnaserror",
+          "-p:UseSharedCompilation=false"
+        ],
+        "warnings": 0,
+        "errors": 0
+      },
+      "tests": {
+        "command": [
+          "dotnet",
+          "test",
+          "Radish.Api.Tests/Radish.Api.Tests.csproj",
+          "-c",
+          "Debug",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "FullyQualifiedName~HangfireOutputLoggingTests|FullyQualifiedName~CleanupLoggingTests|FullyQualifiedName~HostProgramLoggingTests|FullyQualifiedName~HostStartupLoggingTests|FullyQualifiedName~ProgramRecurringRegistrationTests|FullyQualifiedName~RuntimeLoggingAdapterTests|FullyQualifiedName~RuntimeLogPolicyTests",
+          "--logger",
+          "trx;LogFileName=Debug.trx",
+          "--results-directory",
+          "artifacts/logging-l2-hangfire-output/2026-11-04/Debug"
+        ],
+        "passed": 222,
+        "failed": 0,
+        "skipped": 0,
+        "groups": {
+          "Radish.Api.Tests.ErrorHandling.HangfireOutputLoggingTests": 83,
+          "Radish.Api.Tests.ErrorHandling.HostProgramLoggingTests": 22,
+          "Radish.Api.Tests.CleanupLoggingTests": 18,
+          "Radish.Api.Tests.RuntimeLogPolicyTests": 45,
+          "Radish.Api.Tests.RuntimeLoggingAdapterTests": 9,
+          "Radish.Api.Tests.ErrorHandling.HostStartupLoggingTests": 25,
+          "Radish.Api.Tests.ServiceCleanupLoggingTests": 19,
+          "Radish.Api.Tests.ErrorHandling.ProgramRecurringRegistrationTests": 1
+        },
+        "trxSha256": "e586fea002b619e6dab7c2a88ffac8369f2bdfcdf242673766505f55921f407f"
+      }
+    },
+    {
+      "configuration": "Release",
+      "build": {
+        "command": [
+          "dotnet",
+          "build",
+          "Radish.Api.Tests/Radish.Api.Tests.csproj",
+          "-c",
+          "Release",
+          "--no-restore",
+          "--warnaserror",
+          "-p:UseSharedCompilation=false"
+        ],
+        "warnings": 0,
+        "errors": 0
+      },
+      "tests": {
+        "command": [
+          "dotnet",
+          "test",
+          "Radish.Api.Tests/Radish.Api.Tests.csproj",
+          "-c",
+          "Release",
+          "--no-build",
+          "--no-restore",
+          "--filter",
+          "FullyQualifiedName~HangfireOutputLoggingTests|FullyQualifiedName~CleanupLoggingTests|FullyQualifiedName~HostProgramLoggingTests|FullyQualifiedName~HostStartupLoggingTests|FullyQualifiedName~ProgramRecurringRegistrationTests|FullyQualifiedName~RuntimeLoggingAdapterTests|FullyQualifiedName~RuntimeLogPolicyTests",
+          "--logger",
+          "trx;LogFileName=Release.trx",
+          "--results-directory",
+          "artifacts/logging-l2-hangfire-output/2026-11-04/Release"
+        ],
+        "passed": 222,
+        "failed": 0,
+        "skipped": 0,
+        "groups": {
+          "Radish.Api.Tests.RuntimeLoggingAdapterTests": 9,
+          "Radish.Api.Tests.RuntimeLogPolicyTests": 45,
+          "Radish.Api.Tests.ErrorHandling.HangfireOutputLoggingTests": 83,
+          "Radish.Api.Tests.CleanupLoggingTests": 18,
+          "Radish.Api.Tests.ErrorHandling.HostStartupLoggingTests": 25,
+          "Radish.Api.Tests.ServiceCleanupLoggingTests": 19,
+          "Radish.Api.Tests.ErrorHandling.HostProgramLoggingTests": 22,
+          "Radish.Api.Tests.ErrorHandling.ProgramRecurringRegistrationTests": 1
+        },
+        "trxSha256": "07fea808246f8b62f824fc1dc6376acfbde82764bf6d73b945ae2993f7fd6c60"
+      }
+    }
+  ],
+  "nodeContract": {
+    "command": "npm run check:logging-contract",
+    "passed": 52,
+    "failed": 0,
+    "newSharedFixtures": 4
+  },
+  "sourceFiles": [
+    {
+      "path": "Radish.Api/Services/HangfireRuntimeLogging.cs",
+      "size": 4262,
+      "sha256": "fdb34fb606085be0905674f539eb3b30c1d3b08c529876c5697848b18b4715f8"
+    },
+    {
+      "path": "Radish.Extension.Log/HangfireLogSink.cs",
+      "size": 3931,
+      "sha256": "1d28f3b200c8edf61b8f9961932ea707432b33db22512ba7ca350b002fd3ac56"
+    },
+    {
+      "path": "Radish.Extension.Log/SerilogSetup.cs",
+      "size": 3456,
+      "sha256": "9b41e14ef9605e3ad32ea3780a6dca1131502932471f35e13048be7e7d309024"
+    },
+    {
+      "path": "Radish.Extension.Log/RuntimeLoggingConfiguration.cs",
+      "size": 1920,
+      "sha256": "fcc923e0af2ce65a989bf7c352ca003a22bdcf564669eea4c5a469a1afad189f"
+    },
+    {
+      "path": "Radish.Common/LogTool/Contracts/runtime-log-policy.v1.json",
+      "size": 91311,
+      "sha256": "5f765ca8e46b7e6b1309f682fb8c858cf6156a6e533b803694ee0564651fc8f4"
+    },
+    {
+      "path": "Radish.Api.Tests/ErrorHandling/HangfireOutputLoggingTests.cs",
+      "size": 28433,
+      "sha256": "091e43c63c4a8fb2a6471ce08d1ebfd1b15578dd7ee9db4af1a3138cca33749f"
+    },
+    {
+      "path": "Scripts/logging/fixtures/runtime-events.json",
+      "size": 17307,
+      "sha256": "b33c095895702c6d18c846fef41775d4c68f447143e3e7f8f4c35696c0c9a3fe"
+    }
+  ],
+  "assemblyOutputs": [
+    {
+      "configuration": "Debug",
+      "files": [
+        {
+          "path": "Radish.Api.Tests/bin/Debug/net10.0/Radish.Api.dll",
+          "sha256": "bdf8f6c79308d876b33e481823c2a79703c2fbe0ef802d2cfb226ba0d6376e5f"
+        },
+        {
+          "path": "Radish.Api.Tests/bin/Debug/net10.0/Radish.Extension.Log.dll",
+          "sha256": "365801b36b83acc7fbc41438eaeef4639e86a6d071f4cc1929ee0f1d73d23bb0"
+        },
+        {
+          "path": "Radish.Api.Tests/bin/Debug/net10.0/Radish.Common.dll",
+          "sha256": "b9fb9e35faa1c4b8b18e08a564caec9acbe92c28cbdca13e0d97998459a11552"
+        },
+        {
+          "path": "Radish.Api.Tests/bin/Debug/net10.0/Radish.Api.Tests.dll",
+          "sha256": "2e442848a80c7262db648d057dd0d3f58985fd45a54b63f52983a0042d1bb096"
+        }
+      ]
+    },
+    {
+      "configuration": "Release",
+      "files": [
+        {
+          "path": "Radish.Api.Tests/bin/Release/net10.0/Radish.Api.dll",
+          "sha256": "92030ef9195970c69a09f740c98da9caa2e2520753e39fce8aac79df6e5d7946"
+        },
+        {
+          "path": "Radish.Api.Tests/bin/Release/net10.0/Radish.Extension.Log.dll",
+          "sha256": "fd71a2aa87e56f8fb1c43205d5c08a3beb57d93450f3794eb39c18fb550b186a"
+        },
+        {
+          "path": "Radish.Api.Tests/bin/Release/net10.0/Radish.Common.dll",
+          "sha256": "3965a5ea9cf0d194c9975ebff7833f26aad8e8af6a14218e79466304359d4f4e"
+        },
+        {
+          "path": "Radish.Api.Tests/bin/Release/net10.0/Radish.Api.Tests.dll",
+          "sha256": "4146b10e6ddae7864d8e52c1245f666ad2b7048c999fd41ab5ab7e1eabf28846"
+        }
+      ]
+    }
+  ],
+  "developmentCorrections": [
+    {
+      "type": "test-compilation",
+      "result": "Added the missing local no-op JobTarget helper; no production change needed."
+    },
+    {
+      "type": "test-disposal-assumption",
+      "initialDebug": {
+        "passed": 218,
+        "failed": 2,
+        "total": 220
+      },
+      "result": "Replaced an invalid repeated-Dispose assumption with one disposal compared against plain Serilog, plus a normal ownership case. No production swallowing or idempotence behavior added."
+    }
+  ],
+  "unchangedBoundaries": [
+    "dependency declarations and lockfiles",
+    "Hangfire retry policy, scheduling, storage and state persistence",
+    "production candidate switch",
+    "frontend runtime logging",
+    "external source investigations"
+  ],
+  "execution": {
+    "packageInstallation": false,
+    "projectHostsStarted": false,
+    "hangfireWorkerStarted": false,
+    "externalDatabaseStarted": false,
+    "portsBound": false,
+    "remotePushOrWorkflow": false,
+    "releaseOrDeployment": false
+  },
+  "evidencePath": "artifacts/logging-l2-hangfire-output/2026-11-04",
+  "cleanup": {
+    "testGeneratedTemporaryResources": "disposed by the passing fixtures",
+    "persistentOutput": "normal local bin/obj and this owned evidence archive",
+    "tasksStartedOutsideBuildAndTests": false
+  }
+}

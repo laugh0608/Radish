@@ -11,9 +11,9 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
-- **下一项工作**：统一日志 L2 的[Hangfire 最终输出收口方案](../features/unified-logging-l2-hangfire-output-plan.md)已准备，待确认两个精确来源、旧 WriteTo / AuditTo 与候选出口的白名单重建及本地验收范围，再进入实现。已用受控数据复现 scope / enrichment 与跨事件字段混入；浏览器共享日志保留后续独立批次，不恢复依赖来源调查。Native 继续按既定顺位接续 P8-C。
+- **下一项工作**：统一日志 L2 的 Hangfire 两来源 / 三出口缺口已按[方案](../features/unified-logging-l2-hangfire-output-plan.md)完成修正与本地验收，见[实施记录](../records/unified-logging-l2-hangfire-output-2026-11-04.md)。接续明确浏览器共享 HTTP / sanitizer / Client / Console logger 的有限改动与验收范围，再确认实现；其他已登记自有来源保留准确边界，不恢复依赖来源调查。Native 继续按既定顺位接续 P8-C。
 - **状态复核日期**：`2026-11-04`；SQLite 本次七 job 验收已收口，见[运行记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)。Hangfire 来源 / 交付准备见[复核记录](../records/hangfire-source-delivery-review-2026-11-04.md)，结果由 `7a19fe71` 保存；未关闭的来源与发行条件保留，当前不占开发主线，不表示依赖专题或正式发行已全部验收。
-- **日志专题复核日期**：`2026-11-04`；保留[事件契约第 7–72 节](../features/unified-logging-contract.md)的已完成范围。恢复准备已完成 Release 严格构建、60 项既有后端定向回归、9 项既有 sanitizer 测试，以及 18 个后端 / 9 个 sanitizer 受控观察场景；它们定位缺口，不作为修复通过。具体范围见[下一批方案](../features/unified-logging-l2-hangfire-output-plan.md)，L2 尚未整体关闭，运行时实现与真实服务未在本轮执行。
+- **日志专题复核日期**：`2026-11-04`；最新准确范围见[事件契约第 7–73 节](../features/unified-logging-contract.md)。方案先提交为 `d9579903`，随后完成两个 Hangfire 来源的最终输出重建、Debug / Release 严格构建与各 222 项定向回归（各含新增 83 项专项），52 项 Node 契约通过。L2 尚未整体关闭，浏览器输出、真实服务 / 存储和部署未在本轮执行。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -68,12 +68,12 @@
 
 2026-11-04 恢复[统一日志专题](../features/unified-logging-governance-design.md)，保留 2026-10-15 已完成结论。范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，该日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。下面按已有生产接线和明确缺口收口，不向未使用框架、外部任意订阅器或全进程证明扩张。
 
-1. **确认并实施 Hangfire 最终输出收口**：[下一批方案](../features/unified-logging-l2-hangfire-output-plan.md)已完成现状复现、精确字段 / 来源与验收矩阵。仅处理现有 provider / 状态观察器及三条最终出口，保留重试、状态、存储与异常传播语义；完成该切片后再继续 L2，不以之宣称整个宿主已治理。
-2. **接续剩余自有 / 浏览器输出**：Common 两处 catch、API 周期注册 / 固定文档同步与 Gateway 停止的已治理结论保留。其他业务摘要仍按既有调用链核对最终输出；浏览器共享 HTTP、三份 sanitizer、Client / Console logger 及示例输出另行冻结有限批次，不混入本次后端实现。现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
+1. **明确浏览器日志的下一批范围**：Hangfire 最终输出本次缺口已关闭，不再列为待修复。接续共享 HTTP、三份 sanitizer、Client / Console logger 与触达的示例输出，基于已有裸字符串 / Error 文本保留和模式 / 等级缺口冻结可验收方案；不自动增加遥测回传或混入后端来源调查。
+2. **保留剩余自有来源的准确边界**：Common 两处 catch、API 周期注册 / 固定文档同步、Gateway 停止及本批两个 Hangfire 来源保持已完成结论。其他业务摘要仍按已登记调用链确认最终输出，不以生成端或本次精确来源结果替整个宿主担保；现有内存证据不替代真实登录、网络探测、存储或部署验收。
 3. **保留未使用 / 外部通道边界**：DataProtection 列明来源已治理，OpenIddict Client / Validation / DataProtection 集成未注册；外部 EventPipe / DiagnosticListener / Activity / metrics 不自动受控，详见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 后置，不将这些已知限制重新放到功能收口之前进行无限调查。
 4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认。Rust `.tmp` 水印回退已由图片替代移除，改用内容识别与显式输出格式，交付验收及 PR 集成已完成。
 
-以上为当前恢复工作的顺位；本轮完成规划提交、只读复现与下一批方案，尚未修改日志运行时实现或生产配置。下一步按已形成的方案确认实现与本地验收；依赖安装、项目服务 / 容器启动、访问生产和系统证书库仍不包含在内。
+以上为当前恢复工作的顺位；本轮 Hangfire 修正与本地验收已获批完成，生产配置保持。后续新实现范围仍先确认方案；依赖安装、项目服务 / 容器启动、访问生产和系统证书库不因本批完成而取得授权。
 
 生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L2 整体治理、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。Native P8-C readiness 保留后续顺位。
 

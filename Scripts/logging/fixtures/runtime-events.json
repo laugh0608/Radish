@@ -659,5 +659,67 @@
         "failureKind": "io"
       }
     }
+  },
+  {
+    "name": "hangfire-provider-unknown-warning-safe",
+    "input": {
+      "eventCode": "hangfire.runtime_unknown",
+      "sourceCategory": "job",
+      "level": "Warning",
+      "message": "SENTINEL_SECRET"
+    },
+    "expected": {
+      "eventCode": "hangfire.runtime_unknown",
+      "level": "Warning",
+      "diagnostic": false,
+      "properties": {}
+    }
+  },
+  {
+    "name": "hangfire-state-unknown-error-safe",
+    "input": {
+      "eventCode": "job.state_unknown",
+      "sourceCategory": "job",
+      "level": "Error",
+      "properties": {
+        "body": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "job.state_unknown",
+      "level": "Error",
+      "diagnostic": false,
+      "properties": {}
+    }
+  },
+  {
+    "name": "hangfire-unknown-diagnostic-production-quiet",
+    "input": {
+      "eventCode": "hangfire.runtime_unknown",
+      "sourceCategory": "job",
+      "level": "Debug",
+      "diagnostic": true
+    },
+    "expected": null
+  },
+  {
+    "name": "hangfire-state-unknown-development-diagnostic",
+    "options": {
+      "mode": "Development",
+      "diagnostics": true
+    },
+    "input": {
+      "eventCode": "job.state_unknown",
+      "sourceCategory": "job",
+      "level": "Debug",
+      "diagnostic": true,
+      "message": "SENTINEL_SECRET"
+    },
+    "expected": {
+      "eventCode": "job.state_unknown",
+      "level": "Info",
+      "diagnostic": true,
+      "properties": {}
+    }
   }
 ]

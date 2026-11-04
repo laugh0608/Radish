@@ -435,6 +435,8 @@
     "hangfire.runtime_failed": "Hangfire infrastructure operation failed.",
     "hangfire.runtime_warning": "Hangfire runtime requires attention.",
     "hangfire.diagnostic": "Hangfire development diagnostic.",
+    "hangfire.runtime_unknown": "Unrecognized Hangfire provider event.",
+    "job.state_unknown": "Unrecognized Hangfire state observation event.",
     "job.cleanup.completed": "Cleanup batch completed.",
     "job.cleanup.warning": "Cleanup batch completed with warnings.",
     "job.cleanup.failed": "Cleanup batch consumed failures; counts describe partial work.",

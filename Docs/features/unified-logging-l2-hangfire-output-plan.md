@@ -1,18 +1,18 @@
 # L2 Hangfire 最终输出边界收口方案
 
-> 2026-11-04（Asia/Shanghai），**准备与现状复现完成，运行时改动待确认**。所有者要求提交功能优先规划，再明确 L2 下一批具体改动及验收范围；规划提交为 `3d104c8b5ee0b0355fda21aa11aeeb5640c6cdc9`。本页是[统一日志专题](./unified-logging-governance-design.md)的实施切片，不另设主线，也不涉及后置的 Hangfire 包来源 / Windows Razor 专项。
+> 2026-11-04（Asia/Shanghai），**已批准实施，双配置本地验证完成**。功能优先规划为 `3d104c8b5ee0b0355fda21aa11aeeb5640c6cdc9`；所有者随后批准先提交本页方案，再完成修正与本地验收，方案已由 `d95799039a09c9ecc1bbc0d505b1f13cd2f4faab` 保存，结果见[实施记录](../records/unified-logging-l2-hangfire-output-2026-11-04.md)。本页是[统一日志专题](./unified-logging-governance-design.md)的实施切片，不另设主线，也不涉及后置的 Hangfire 包来源 / Windows Razor 专项。
 
-## 1. 已知缺口与本批选择
+## 1. 准备期已知缺口与本批选择
 
 | 对象 | 本轮核对结果 | 推进边界 |
 | --- | --- | --- |
-| API Hangfire provider / 状态观察器 | 生成端不读取消息工厂 / 原异常正文；未设置两个精确 SourceContext，现有旧 / 候选链没有对应的逐事件重建 sink | **本批收口**：两个来源及三条最终出口 |
+| API Hangfire provider / 状态观察器 | 准备时生成端已受控，但未设置两个精确 SourceContext，旧 / 候选链没有对应的逐事件重建 sink | **本批已收口**：两个来源及三条最终出口 |
 | 既有自有业务摘要 | 事件契约第 7–72 节保留各自准确范围；生成端受控不能据此推定全部最终输出都已重建 | 本批只回归相邻已治理来源；后续沿已登记调用链确认，不重做全仓调查 |
 | 浏览器共享 HTTP / Client / Console | 三份 sanitizer 均保留裸字符串、Error.message / stack；共享 HTTP 直接输出错误 message，两个 logger 的 message / tag 等未统一经过安全边界 | 后续独立前端批次，涉及三级 / diagnostic 和调用契约，先确认方案 |
 | 未注册或外部非日志通道 | 原文已明确 OpenIddict 部分组件未注册、外部 EventPipe / DiagnosticListener 等不在现有控制范围 | 保留限制，不为任意外部订阅器增加本批前置任务 |
 | 集中入库、Console 查询 / 告警、迁移 | 属于 L3–L6 的明确未完成能力 | 本批不改表、API、页面、Compose 或生产开关 |
 
-当前范围选定的是实际 API 接线中的一个最终输出缺口。完成后只关闭这一切片，不宣称 L2 整体或所有进程输出已经完成；也不重跑依赖源码重建来验证日志安全。
+本批关闭实际 API 接线中的这一最终输出缺口，不宣称 L2 整体或所有进程输出已经完成；没有重跑依赖源码重建来验证日志安全。
 
 ## 2. 现状证据
 
@@ -33,7 +33,7 @@
 
 本地总索引覆盖 15 文件（不含自身），SHA256 为 `cb795b9f678c0be54d4a8340dee4ec28850e30bd4007117216788ed1adb9a24c`；17 份相关源码 / 配置均与基线 commit 逐字节核对，编译引用 DLL 的 hash 单独保存。归档已回读核验，文档 / 链接及 `git diff --check` 通过。
 
-## 3. 下一批具体改动
+## 3. 本批已实施改动
 
 ### 3.1 精确来源与生成端
 
@@ -43,6 +43,8 @@
 - 状态观察器：`Radish.Api.Services.HangfireRuntimeStateFilter`；继续仅观察既有候选状态。
 
 两个来源标识由新 `Radish.Extension.Log/HangfireLogSink.cs` 的具名常量维护，API 复用既有 Extension.Log 引用；Extension.Log 不反向依赖 API，不增加 Common 业务依赖或专门的转发层。
+
+provider 即使没有异常，也显式设置 failureKind=null，重建时不保留该值；这阻止普通 LogContext / AddPropertyIfAbsent enricher 在字段缺省时补入其他故障类型，不改变消息工厂查询或返回语义。
 
 ### 3.2 逐事件字段与输出重建
 
@@ -83,7 +85,7 @@
 | 原状态与故障 | 沿用实际 AutomaticRetry 决定的六组边界，普通成功 / 停机重入队安静；WriteTo 消费与 AuditTo 传播、候选应急输出、logger dispose 行为保持 |
 | 相邻回归 | HostProgram / HostStartup 精确重建及任务注册回归不受新接线影响，已有受控输出不重复或丢失 |
 
-实现后执行以下命令；仅使用已有 SDK / 已恢复依赖，不安装包或启动宿主 / worker / 数据库：
+本批已执行以下命令；仅使用已有 SDK / 已恢复依赖，没有安装包或启动宿主 / worker / 数据库：
 
 ```bash
 dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj -c Debug --no-restore --warnaserror -p:UseSharedCompilation=false
@@ -100,8 +102,10 @@ FullyQualifiedName~HangfireOutputLoggingTests|FullyQualifiedName~CleanupLoggingT
 
 本批退出条件为：两个来源 / 三条出口的明确字段白名单和语义保持均有测试，已复现的 scope 文本及跨事件字段不再进入受控最终事件，双配置 / 共享契约与相邻回归通过，文档和清理一致。不把本轮只读复现写作修复通过，不将内存 sink 证明扩大为真实文件 / 数据库写入或部署验收。
 
+上述标准已按[本批记录](../records/unified-logging-l2-hangfire-output-2026-11-04.md)完成：Debug / Release 各 222 项（各含 83 个新增 Hangfire 专项）、52 项 Node 契约均通过，双配置严格构建零 warning / error，实际范围和早期测试修正分开留痕。
+
 ## 5. 授权与后续
 
-本次已完成规划提交、源码核对、本机既有回归与只读复现、下一批方案；尚未实施上述运行时改动。按仓库约定，下一步只需确认本页精确实现与本地验收范围；不包含依赖安装、服务 / 容器启动、远端工作流、外部询证、发布或部署。
+所有者已确认本页实现与本地验收范围，并要求先提交方案。修正、双配置本地验证与文档同步已完成；不包含依赖安装、服务 / 容器启动、远端工作流、外部询证、发布或部署，也不作为未来新范围的运行授权。
 
-该切片通过后，回到现有 L2 清单确认剩余自有来源与前端输出的有限批次，并向 L3–L6 可用能力推进；未注册 / 外部任意通道继续按既有边界记录，不扩大为无限调查。
+该切片已通过，后续回到现有 L2 清单确认剩余自有来源与前端输出的有限批次，并向 L3–L6 可用能力推进；未注册 / 外部任意通道继续按既有边界记录，不扩大为无限调查。
