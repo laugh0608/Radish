@@ -1,0 +1,560 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-04",
+  "timezone": "Asia/Shanghai",
+  "runId": 41817734292,
+  "runUrl": "https://github.com/laugh0608/Radish/actions/runs/41817734292",
+  "headSha": "44c13c5091f51621d475107fbb5834ceedef12f4",
+  "workflowBlob": "ecf481eb2b171985f0721efaff220beff0ac3a3b",
+  "attempt": 1,
+  "dispatchCountForCandidate": 1,
+  "status": "completed",
+  "conclusion": "failure",
+  "completedAt": "2026-11-04T11:18:53Z",
+  "completedAtShanghai": "2026-11-04T19:18:53+08:00",
+  "jobCounts": {
+    "success": 6,
+    "skipped": 4,
+    "failure": 1
+  },
+  "totals": {
+    "tests": 300,
+    "passedTests": 300,
+    "failedTests": 0,
+    "skippedTests": 0,
+    "nativePublishOutputs": 33,
+    "probeCompilations": 37,
+    "nativeColdProcessesPassed": 96,
+    "nativeColdProcessesFailed": 1,
+    "dockerColdModesPassed": 12,
+    "imageSelfTests": 9,
+    "msbuildArgvCases": 48,
+    "permissionPositiveCases": 12,
+    "permissionNegativeCases": 4,
+    "ownedCommands": 699,
+    "removedTaskImageTags": 8
+  },
+  "jobs": [
+    {
+      "jobId": 126532700829,
+      "name": "SQLite native / linux-x64",
+      "conclusion": "success",
+      "startedAt": "2026-11-04T10:58:15Z",
+      "completedAt": "2026-11-04T11:10:26Z",
+      "artifact": "sqlite-native-linux-x64-1",
+      "artifactId": 13316335570,
+      "zipSha256": "473cb39dc82bd38e81fb1e14ef5902ce32a60d15c744c06f2471b7bb2339ea4e",
+      "payloadFiles": 363,
+      "result": {
+        "status": "passed",
+        "options": {
+          "mode": "native",
+          "rid": "linux-x64"
+        },
+        "revision": "44c13c5091f51621d475107fbb5834ceedef12f4"
+      },
+      "tests": [
+        {
+          "file": "tests/Debug/Debug.trx",
+          "counts": {
+            "total": 60,
+            "executed": 60,
+            "passed": 60,
+            "failed": 0,
+            "notExecuted": 0
+          },
+          "sqliteMigrationCasesPassed": 3
+        },
+        {
+          "file": "tests/Release/Release.trx",
+          "counts": {
+            "total": 60,
+            "executed": 60,
+            "passed": 60,
+            "failed": 0,
+            "notExecuted": 0
+          },
+          "sqliteMigrationCasesPassed": 3
+        }
+      ],
+      "publishOutputs": 16,
+      "probeCompilations": 16,
+      "coldModesAttempted": 48,
+      "coldModesPassed": 48,
+      "coldFailures": [],
+      "imageSelfTests": 4,
+      "msbuildArgvCases": 12,
+      "permissionPositiveCases": 0,
+      "permissionNegativeCases": 0,
+      "scan": null,
+      "cleanup": {
+        "taskId": "radish-sqlite-41817734292-1-linux-x64",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 83,
+      "nonzeroCommands": [],
+      "removedTaskImageTags": [],
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "platform": "linux",
+        "arch": "x64",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2"
+      }
+    },
+    {
+      "jobId": 126532704967,
+      "name": "SQLite native / osx-x64",
+      "conclusion": "success",
+      "startedAt": "2026-11-04T10:58:17Z",
+      "completedAt": "2026-11-04T11:18:53Z",
+      "artifact": "sqlite-native-osx-x64-1",
+      "artifactId": 13316172401,
+      "zipSha256": "6b2a43ffac8d8420f0617834e898d1c34ce25c842f8b681a348002d8c5d5a73d",
+      "payloadFiles": 371,
+      "result": {
+        "status": "passed",
+        "options": {
+          "mode": "native",
+          "rid": "osx-x64"
+        },
+        "revision": "44c13c5091f51621d475107fbb5834ceedef12f4"
+      },
+      "tests": [
+        {
+          "file": "tests/Debug/Debug.trx",
+          "counts": {
+            "total": 60,
+            "executed": 60,
+            "passed": 60,
+            "failed": 0,
+            "notExecuted": 0
+          },
+          "sqliteMigrationCasesPassed": 3
+        },
+        {
+          "file": "tests/Release/Release.trx",
+          "counts": {
+            "total": 60,
+            "executed": 60,
+            "passed": 60,
+            "failed": 0,
+            "notExecuted": 0
+          },
+          "sqliteMigrationCasesPassed": 3
+        }
+      ],
+      "publishOutputs": 16,
+      "probeCompilations": 16,
+      "coldModesAttempted": 48,
+      "coldModesPassed": 48,
+      "coldFailures": [],
+      "imageSelfTests": 4,
+      "msbuildArgvCases": 12,
+      "permissionPositiveCases": 0,
+      "permissionNegativeCases": 0,
+      "scan": null,
+      "cleanup": {
+        "taskId": "radish-sqlite-41817734292-1-osx-x64",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 91,
+      "nonzeroCommands": [],
+      "removedTaskImageTags": [],
+      "platform": {
+        "rid": "osx-x64",
+        "machine": "x86_64",
+        "platform": "darwin",
+        "arch": "x64",
+        "imageOS": "macos15",
+        "imageVersion": "20260824.0482.1",
+        "node": "v24.22.2"
+      }
+    },
+    {
+      "jobId": 126532704616,
+      "name": "SQLite native / win-x64",
+      "conclusion": "failure",
+      "startedAt": "2026-11-04T10:58:16Z",
+      "completedAt": "2026-11-04T11:05:14Z",
+      "artifact": "sqlite-native-win-x64-1",
+      "artifactId": 13316086529,
+      "zipSha256": "08738e6e2796c1e93c269d802193995399ea48b315d562fb683a58b8edeb8467",
+      "payloadFiles": 69,
+      "result": {
+        "status": "failed",
+        "options": {
+          "mode": "native",
+          "rid": "win-x64"
+        },
+        "error": "Command failed: probe-Release-generic-Radish.Api, see D:\\a\\_temp\\radish-sqlite-41817734292-1-win-x64\\evidence\\commands\\021-probe-Release-generic-Radish.Api.log"
+      },
+      "tests": [
+        {
+          "file": "tests/Release/Release.trx",
+          "counts": {
+            "total": 60,
+            "executed": 60,
+            "passed": 60,
+            "failed": 0,
+            "notExecuted": 0
+          },
+          "sqliteMigrationCasesPassed": 3
+        }
+      ],
+      "publishOutputs": 1,
+      "probeCompilations": 1,
+      "coldModesAttempted": 1,
+      "coldModesPassed": 0,
+      "coldFailures": [
+        {
+          "file": "probes/Release-generic-Radish.Api/Radish.Api-microsoft/result.json",
+          "report": {
+            "status": "failed",
+            "mode": "microsoft",
+            "error": "System.InvalidOperationException: Expected one actually loaded SQLite native module; found 2\r\n   at Radish.SqliteDiagnostics.SqliteNativeRuntimeProbe.Main(String[] args)"
+          }
+        }
+      ],
+      "imageSelfTests": 0,
+      "msbuildArgvCases": 24,
+      "permissionPositiveCases": 0,
+      "permissionNegativeCases": 0,
+      "scan": null,
+      "cleanup": {
+        "taskId": "radish-sqlite-41817734292-1-win-x64",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 21,
+      "nonzeroCommands": [
+        {
+          "command": "C:\\hostedtoolcache\\windows\\node\\24.22.2\\x64\\node.exe",
+          "args": [
+            "D:\\a\\_temp\\radish-sqlite-41817734292-1-win-x64\\source\\Scripts\\run-sqlite-runtime-probe.mjs",
+            "--output=D:\\a\\_temp\\radish-sqlite-41817734292-1-win-x64\\publish\\Release-generic-Radish.Api",
+            "--host=Radish.Api",
+            "--scratch=D:\\a\\_temp\\radish-sqlite-41817734292-1-win-x64\\probes\\Release-generic-Radish.Api"
+          ],
+          "cwd": "D:\\a\\_temp\\radish-sqlite-41817734292-1-win-x64\\source",
+          "log": "commands\\021-probe-Release-generic-Radish.Api.log",
+          "start": "2026-11-04T11:05:04.431Z",
+          "pid": 9188,
+          "code": 1,
+          "signal": null,
+          "timedOut": false,
+          "cancelled": false,
+          "completed": true,
+          "end": "2026-11-04T11:05:04.787Z"
+        }
+      ],
+      "removedTaskImageTags": [],
+      "platform": {
+        "rid": "win-x64",
+        "machine": "AMD64",
+        "platform": "win32",
+        "arch": "x64",
+        "imageOS": "win25-vs2026",
+        "imageVersion": "20261030.294.1",
+        "node": "v24.22.2"
+      }
+    },
+    {
+      "jobId": 126532700850,
+      "name": "SQLite native Docker / gateway",
+      "conclusion": "success",
+      "startedAt": "2026-11-04T10:58:15Z",
+      "completedAt": "2026-11-04T11:00:32Z",
+      "artifact": "sqlite-native-docker-gateway-1",
+      "artifactId": 13316030894,
+      "zipSha256": "26a6785d512cf3f2e8e05b3285fc1f20fe83563b3cd356914905b59714cc1c5b",
+      "payloadFiles": 141,
+      "result": {
+        "status": "passed",
+        "options": {
+          "mode": "docker",
+          "rid": "linux-x64",
+          "service": "gateway"
+        },
+        "revision": "44c13c5091f51621d475107fbb5834ceedef12f4"
+      },
+      "tests": [],
+      "publishOutputs": 0,
+      "probeCompilations": 1,
+      "coldModesAttempted": 2,
+      "coldModesPassed": 2,
+      "coldFailures": [],
+      "imageSelfTests": 0,
+      "msbuildArgvCases": 0,
+      "permissionPositiveCases": 2,
+      "permissionNegativeCases": 1,
+      "scan": {
+        "schemaVersion": 1,
+        "image": "radish-gateway",
+        "evaluatedAtUtc": "2026-11-04T11:00:24.503Z",
+        "evaluatedOn": "2026-11-04",
+        "status": "passed",
+        "counts": {
+          "critical": 0,
+          "fixedHigh": 0,
+          "unfixedHigh": 0,
+          "blocking": 0,
+          "acceptedByException": 0,
+          "exceptionIssues": 0
+        },
+        "blockingFindings": [],
+        "reportedFindings": [],
+        "acceptedFindings": [],
+        "exceptionIssues": []
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41817734292-1-gateway",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 109,
+      "nonzeroCommands": [],
+      "removedTaskImageTags": [
+        "radish-sqlite-41817734292-1-gateway:build",
+        "radish-sqlite-41817734292-1-gateway:final"
+      ],
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "platform": "linux",
+        "arch": "x64",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2"
+      }
+    },
+    {
+      "jobId": 126532703175,
+      "name": "SQLite native Docker / auth",
+      "conclusion": "success",
+      "startedAt": "2026-11-04T10:58:16Z",
+      "completedAt": "2026-11-04T11:00:44Z",
+      "artifact": "sqlite-native-docker-auth-1",
+      "artifactId": 13315976202,
+      "zipSha256": "ba867c35f0bc3b23439c446a8c6606826f55a85247f0ba924e9b6356e4b14349",
+      "payloadFiles": 160,
+      "result": {
+        "status": "passed",
+        "options": {
+          "mode": "docker",
+          "rid": "linux-x64",
+          "service": "auth"
+        },
+        "revision": "44c13c5091f51621d475107fbb5834ceedef12f4"
+      },
+      "tests": [],
+      "publishOutputs": 0,
+      "probeCompilations": 1,
+      "coldModesAttempted": 3,
+      "coldModesPassed": 3,
+      "coldFailures": [],
+      "imageSelfTests": 0,
+      "msbuildArgvCases": 0,
+      "permissionPositiveCases": 3,
+      "permissionNegativeCases": 1,
+      "scan": {
+        "schemaVersion": 1,
+        "image": "radish-auth",
+        "evaluatedAtUtc": "2026-11-04T11:00:36.735Z",
+        "evaluatedOn": "2026-11-04",
+        "status": "passed",
+        "counts": {
+          "critical": 0,
+          "fixedHigh": 0,
+          "unfixedHigh": 0,
+          "blocking": 0,
+          "acceptedByException": 0,
+          "exceptionIssues": 0
+        },
+        "blockingFindings": [],
+        "reportedFindings": [],
+        "acceptedFindings": [],
+        "exceptionIssues": []
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41817734292-1-auth",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 125,
+      "nonzeroCommands": [],
+      "removedTaskImageTags": [
+        "radish-sqlite-41817734292-1-auth:build",
+        "radish-sqlite-41817734292-1-auth:final"
+      ],
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "platform": "linux",
+        "arch": "x64",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2"
+      }
+    },
+    {
+      "jobId": 126532701181,
+      "name": "SQLite native Docker / dbmigrate",
+      "conclusion": "success",
+      "startedAt": "2026-11-04T10:58:15Z",
+      "completedAt": "2026-11-04T11:00:33Z",
+      "artifact": "sqlite-native-docker-dbmigrate-1",
+      "artifactId": 13315347911,
+      "zipSha256": "beed6d3ad280549636f6035856ad8ed8393d702d0de66b58f36a853a0af5b417",
+      "payloadFiles": 160,
+      "result": {
+        "status": "passed",
+        "options": {
+          "mode": "docker",
+          "rid": "linux-x64",
+          "service": "dbmigrate"
+        },
+        "revision": "44c13c5091f51621d475107fbb5834ceedef12f4"
+      },
+      "tests": [],
+      "publishOutputs": 0,
+      "probeCompilations": 1,
+      "coldModesAttempted": 3,
+      "coldModesPassed": 3,
+      "coldFailures": [],
+      "imageSelfTests": 0,
+      "msbuildArgvCases": 0,
+      "permissionPositiveCases": 3,
+      "permissionNegativeCases": 1,
+      "scan": {
+        "schemaVersion": 1,
+        "image": "radish-dbmigrate",
+        "evaluatedAtUtc": "2026-11-04T11:00:25.735Z",
+        "evaluatedOn": "2026-11-04",
+        "status": "passed",
+        "counts": {
+          "critical": 0,
+          "fixedHigh": 0,
+          "unfixedHigh": 0,
+          "blocking": 0,
+          "acceptedByException": 0,
+          "exceptionIssues": 0
+        },
+        "blockingFindings": [],
+        "reportedFindings": [],
+        "acceptedFindings": [],
+        "exceptionIssues": []
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41817734292-1-dbmigrate",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 125,
+      "nonzeroCommands": [],
+      "removedTaskImageTags": [
+        "radish-sqlite-41817734292-1-dbmigrate:build",
+        "radish-sqlite-41817734292-1-dbmigrate:final"
+      ],
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "platform": "linux",
+        "arch": "x64",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2"
+      }
+    },
+    {
+      "jobId": 126532701299,
+      "name": "SQLite native Docker / api",
+      "conclusion": "success",
+      "startedAt": "2026-11-04T10:58:15Z",
+      "completedAt": "2026-11-04T11:02:08Z",
+      "artifact": "sqlite-native-docker-api-1",
+      "artifactId": 13314743947,
+      "zipSha256": "8fdf09ef0c67dce216cf474ee8f9d4af171458e318d3f66e61d8afe8e4e70c92",
+      "payloadFiles": 185,
+      "result": {
+        "status": "passed",
+        "options": {
+          "mode": "docker",
+          "rid": "linux-x64",
+          "service": "api"
+        },
+        "revision": "44c13c5091f51621d475107fbb5834ceedef12f4"
+      },
+      "tests": [],
+      "publishOutputs": 0,
+      "probeCompilations": 1,
+      "coldModesAttempted": 4,
+      "coldModesPassed": 4,
+      "coldFailures": [],
+      "imageSelfTests": 1,
+      "msbuildArgvCases": 0,
+      "permissionPositiveCases": 4,
+      "permissionNegativeCases": 1,
+      "scan": {
+        "schemaVersion": 1,
+        "image": "radish-api",
+        "evaluatedAtUtc": "2026-11-04T11:01:58.657Z",
+        "evaluatedOn": "2026-11-04",
+        "status": "passed",
+        "counts": {
+          "critical": 0,
+          "fixedHigh": 0,
+          "unfixedHigh": 0,
+          "blocking": 0,
+          "acceptedByException": 0,
+          "exceptionIssues": 0
+        },
+        "blockingFindings": [],
+        "reportedFindings": [],
+        "acceptedFindings": [],
+        "exceptionIssues": []
+      },
+      "cleanup": {
+        "taskId": "radish-sqlite-41817734292-1-api",
+        "completed": true,
+        "workingTreeRemoved": true,
+        "errors": []
+      },
+      "commandCount": 145,
+      "nonzeroCommands": [],
+      "removedTaskImageTags": [
+        "radish-sqlite-41817734292-1-api:build",
+        "radish-sqlite-41817734292-1-api:final"
+      ],
+      "platform": {
+        "rid": "linux-x64",
+        "machine": "x86_64",
+        "platform": "linux",
+        "arch": "x64",
+        "imageOS": "ubuntu24",
+        "imageVersion": "20261026.354.1",
+        "node": "v24.22.2"
+      }
+    }
+  ],
+  "archiveVerification": {
+    "verifiedArtifacts": 7,
+    "payloadFiles": 1449,
+    "allCleanupComplete": true,
+    "allCommandsCompleted": true
+  },
+  "failureAnalysis": "Windows Release migration tests passed. The first Microsoft cold probe reported two matching modules. A substring predicate may include the managed provider, but actual module paths were not captured; cause remains unconfirmed.",
+  "noRetry": true,
+  "noRuntimeOrProbeChange": true,
+  "noReleaseOrDeploy": true
+}

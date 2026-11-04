@@ -1,10 +1,10 @@
 # SQLite 剩余原生平台的 GitHub 托管执行方案
 
-> 2026-10-31（Asia/Shanghai），**修正候选 `daf5a4d48d86deee2b259b1d8a76e16ec62a778a` 已按授权 push 并完成第二次独立单次验收：Linux / Intel macOS / 四个 AMD64 final 通过，Windows 在 Release 定向测试清理临时 SQLite 时有 3 项失败；七份证据与清理完整，未重试、发布或部署**。结果见[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)；当前 Windows 完整验收仍未关闭。
+> 2026-11-04（Asia/Shanghai），候选 `44c13c5091f51621d475107fbb5834ceedef12f4` 已按独立授权 push 并完成单次完整七 job：Linux / Intel macOS / 四个 AMD64 final 通过，证据与清理完整。**Windows Release 60 项及三个迁移用例通过，首个 API 冷探针报告模块数量为 2，Windows 与整批验收仍未关闭**。结果与分析见[本次记录](../records/sqlite-hosted-native-fixture-run-2026-11-04.md)；未重试、发布或部署。此前 Windows 三项测试清理失败保留在[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)，不改写历史。
 
 首轮本地实现及验证见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。执行前复核发现 SHA 授权、失败证据和清理结果存在缺口；所有者已另行批准本地成组修正，现已完成并通过 38 项检查，见[执行契约修正记录](../records/sqlite-hosted-execution-contracts-2026-10-31.md)。候选 `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 已按授权 push，并完成[首次托管执行](../records/sqlite-hosted-native-run-2026-10-31.md)：Linux x64 双配置各 60 项、16 份发布、48 个冷进程通过；Windows argv、macOS SDK、非 API 探针编译依赖和 API 容器写权限问题使其余六项失败。七项证据与清理均完成；随后四类问题已完成本地修正，并按授权完成上述第二次独立运行；历史首次结果不改写。
 
-四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；候选已完成第二次独立运行，原四类边界取得真实行为证据。2026-11-04 又按独立授权完成 Windows 临时 SQLite 夹具修正与本机验证，范围见[成组方案第 8 节](./sqlite-hosted-validation-repair-plan.md#windows-fixture-repair)，结果见[本批记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)；Windows 新候选仍未远端验收，需待新完整 SHA 和执行范围明确后单独确认。本页继续维护执行矩阵与授权边界，不因本地修正自动取得新的七 job 执行授权。
+四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；候选已完成第二次独立运行，原四类边界取得真实行为证据。2026-11-04 又完成 Windows 临时 SQLite 夹具修正与本机验证，范围见[成组方案第 8 节](./sqlite-hosted-validation-repair-plan.md#windows-fixture-repair)，结果见[本地记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)；随后该候选单次远端运行按独立授权执行，Windows 首个冷探针的新失败仅分析留痕。下一批模块识别与诊断建议见[第 9 节](./sqlite-hosted-validation-repair-plan.md#windows-module-probe-followup)，新实现及新完整 SHA 的执行范围仍需单独确认；本页继续维护原矩阵与授权边界。
 
 ## 1. 资源核对与目标
 
@@ -157,7 +157,7 @@ scanner 的 DB 准备与断网 archive 扫描沿用[Linux 方案第 5.4 节](./s
 
 ## 6. 远端操作的后续确认清单
 
-两个指定 SHA 的 push 和各一次 dispatch 已按各自授权完成：`915f6359` 见首次记录，`daf5a4d4` 见[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)。以下只保留后续候选的操作模板，不授权重复执行；新的完整 SHA、修正范围和远端执行仍需单独确认：
+三个指定 SHA 的 push 和各一次 dispatch 已按各自授权完成：`915f6359` 见首次记录，`daf5a4d4` 见[第二次记录](../records/sqlite-hosted-native-second-run-2026-10-31.md)，`44c13c50` 见[夹具候选运行](../records/sqlite-hosted-native-fixture-run-2026-11-04.md)。以下只保留后续候选的操作模板，不授权重复执行；新的完整 SHA、修正范围和远端执行仍需单独确认：
 
 ```bash
 git push origin "$candidate:refs/heads/dev"

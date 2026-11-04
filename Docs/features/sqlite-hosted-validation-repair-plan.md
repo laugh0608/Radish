@@ -2,7 +2,7 @@
 
 > 2026-10-31（Asia/Shanghai），**本地修正及新候选单次远端验收已完成；6 项通过，Windows 新测试清理问题使整批仍未关闭**。本页定义首次托管验证后的一批修正与验收边界；执行矩阵、固定工具输入和远端流程仍见[托管执行方案](./sqlite-hosted-native-validation-plan.md)。失败事实与原始证据见[单次运行记录](../records/sqlite-hosted-native-run-2026-10-31.md)，该记录由提交 `a074b68c` 保存，后随批准候选一并 push。
 
-2026-11-04 已另行批准 Windows 临时 SQLite 夹具修正、本地验证与文档同步，范围见[第 8 节](#windows-fixture-repair)。本次不包含 push 或远端验收；新的完整 SHA 和执行范围明确后再单独确认。
+2026-11-04 已另行批准 Windows 临时 SQLite 夹具修正、本地验证与文档同步，随后又独立批准候选 `44c13c50` 的 push 与一次完整七 job 验收，范围见[第 8 节](#windows-fixture-repair)。Windows Release 迁移用例通过后暴露首个冷探针模块计数失败；接续建议见[第 9 节](#windows-module-probe-followup)，未授权新的探针修正或重跑。
 
 ## 1. 本批目标与批准边界
 
@@ -159,3 +159,22 @@
 ### 下一次远端执行前必须明确
 
 确认新完整提交 SHA、固定工具输入、Windows 双配置 / 16 份 publish / 48 个冷进程及必要关联回归、证据留存与精确清理，再单独取得 push / 单次执行授权。现有 `sqlite-platforms` 入口仍运行三原生平台和四个 final job，没有仅选择 Windows 的入口；本批不修改 workflow 或编排器，也不把上述 Windows 验收目标当作已有独立入口或整套七 job 的执行授权。Hangfire inventory / verify、工具安装、服务 / 容器启动、发布和部署均不在本批范围。
+
+### 已另行批准的候选运行
+
+所有者随后明确批准候选 `44c13c5091f51621d475107fbb5834ceedef12f4` 的 push 与单次完整七 job `sqlite-platforms`，冻结工具输入、证据归档、清理和文档同步均在该次范围内；没有重试、发布或部署授权。[运行记录](../records/sqlite-hosted-native-fixture-run-2026-11-04.md)绑定该次执行，后续运行不沿用其授权。Windows Release 60 项定向测试及三个迁移用例通过，首个 API 冷探针出现新的模块计数失败；不能将夹具修正的通过推定为平台已通过。
+
+<a id="windows-module-probe-followup"></a>
+
+## 9. Windows 模块识别与失败诊断接续（待确认）
+
+首个 Windows 冷探针报告命中两个 SQLite 模块，但没有保存两个模块的名称 / 路径。只读发现当前名称子串过滤也可能匹配托管 provider；这不足以确认实际原因，也不足以宣称有两份原生库，事实与推断见[运行记录第 3 节](../records/sqlite-hosted-native-fixture-run-2026-11-04.md#3-windows迁移测试通过首个冷探针出现新失败)。
+
+下一批建议先确认以下范围，再进入实现：
+
+- 明确各平台原生模块的识别边界，核对 `Process.Modules` 与 dyld 的现有接线；保留实际枚举候选及命中项的名称、路径与可核验身份，不在失败时只留下数量。
+- 区分托管 provider 命中、同一模块重复枚举与两个真实原生模块；确定判定依据后再修正筛选，不先采用静默去重或数量放行。
+- 复用现有临时探针，成组覆盖正确原生模块、托管 provider / 相似名称、无命中及真实多模块拒绝；保留唯一来源和实际路径 / hash / SQLite 版本 / source ID 门禁。
+- 先完成本地定向验证与失败证据保留检查，再明确新完整 SHA 的 Windows 双配置、publish、冷进程及必要关联回归；任何新的 push / 远端执行仍须单独确认。
+
+本节仅记录接续建议，不授权修改探针、生产依赖或运行时，不授权重新派发旧 run、换库、降低门禁或发布部署。
