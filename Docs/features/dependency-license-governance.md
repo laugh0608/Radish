@@ -16,6 +16,8 @@
 
 后续另获授权完成[Linux ARM64 原生 / AMD64 仿真批次](../records/sqlite-linux-platform-validation-2026-10-31.md)：两配置定向测试各 60 项、32 份 publish、120 个独立冷进程和八 final 镜像 / 分发文件 / HIGH 与 CRITICAL 策略通过，资源及代理设置已清理恢复。随后 [PG17 / PG16 回归及四组正式包 worker](../records/postgres-regression-2026-10-31.md)通过并清理；[修正后第二次托管验收](../records/sqlite-hosted-native-second-run-2026-10-31.md)已完成，Linux x64 / Intel macOS / 四个 AMD64 final 通过，Windows Release 三项临时 SQLite 删除失败，后续阶段未执行，证据与清理完成。[Hangfire 重建与材料方案](./hangfire-rebuild-delivery-plan.md)随后获批实施，完成 42 项封存、五目标严格构建 / 字节一致重放、18 组源码替换及清理，见[记录](../records/hangfire-rebuild-2026-10-31.md)；[Windows Razor 本地工具 / 限定 CI](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)已实施并通过本地契约与原 Core 片段检查，三次 Windows inventory 已按批执行，最新[诊断结果](../records/hangfire-windows-razor-inventory-diagnostic-2026-10-31.md)确认 image 文件与 Machine / Process 元数据冲突，身份门禁失败，20 组 PowerShell 契约通过且证据 / 清理完成；[上游询证](../records/hangfire-windows-runner-image-inquiry-review-2026-10-31.md)已提交，Razor 再生成与 verify 尚未执行；原插件 DLL 源码绑定、正式源码入口及完整对应源码 / 发行边界仍未关闭。
 
+2026-11-04 按独立授权完成 Windows 临时 SQLite 夹具修正、本地 Debug / Release 严格构建及各 60 项定向测试，见[本批记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)；Windows 托管验收仍未关闭，新的完整 SHA 与远端范围另行确认。Hangfire image 上游已回复可能原因，当前等待修复部署与版本确认，后续边界见 [Windows Razor 方案](./hangfire-windows-razor-validation-plan.md)；本批未触发任何远端运行。
+
 <a id="delivery-slices"></a>
 
 ## 规划归属与实施切片
@@ -27,12 +29,12 @@
 | Rust 图片替代 | [完整实施方案](rust-image-processing-implementation-plan.md)及其 R0 输入 | [实施记录](../records/rust-image-replacement-2026-10-20.md) |
 | 映射替代 | [图片之后的映射方案](post-image-dependency-assessment.md) | [Mapperly 记录](../records/mapperly-migration-2026-10-21.md) |
 | ORM 收缩与服务候选 | [ORM / Redis 评估](orm-redis-dependency-assessment.md)、[NoDrive 正式采用](nodrive-adoption-plan.md)；[隔离试验](nodrive-valkey-isolation-validation-plan.md)只覆盖原候选 | [NoDrive 记录](../records/nodrive-adoption-2026-10-26.md)、[隔离结果](../records/nodrive-valkey-validation-2026-10-21.md) |
-| SQLite 统一与平台验证 | [统一方案](sqlite-native-unification-plan.md)、[Linux 平台](sqlite-linux-platform-validation-plan.md)、[托管矩阵](sqlite-hosted-native-validation-plan.md)、[成组修正](sqlite-hosted-validation-repair-plan.md)分别拥有所列范围 | [本机实施](../records/sqlite-native-unification-2026-10-31.md)、[Linux 结果](../records/sqlite-linux-platform-validation-2026-10-31.md)、[第二次托管结果](../records/sqlite-hosted-native-second-run-2026-10-31.md) |
+| SQLite 统一与平台验证 | [统一方案](sqlite-native-unification-plan.md)、[Linux 平台](sqlite-linux-platform-validation-plan.md)、[托管矩阵](sqlite-hosted-native-validation-plan.md)、[成组修正](sqlite-hosted-validation-repair-plan.md)分别拥有所列范围；[第 8 节](sqlite-hosted-validation-repair-plan.md#windows-fixture-repair)承接 Windows 夹具修正 | [本机实施](../records/sqlite-native-unification-2026-10-31.md)、[Linux 结果](../records/sqlite-linux-platform-validation-2026-10-31.md)、[第二次托管结果](../records/sqlite-hosted-native-second-run-2026-10-31.md)、[夹具本地修正](../records/sqlite-windows-fixture-local-repair-2026-11-04.md) |
 | PostgreSQL 关联回归 | [回归执行方案](postgres-regression-execution-plan.md) | [回归记录](../records/postgres-regression-2026-10-31.md) |
 | Hangfire 来源与重建 | [源码替换](hangfire-source-replacement-plan.md)、[本机重建](hangfire-rebuild-delivery-plan.md)、[Windows Razor](hangfire-windows-razor-validation-plan.md)分别承接对应切片 | [本机重建](../records/hangfire-rebuild-2026-10-31.md)、[库存身份诊断](../records/hangfire-windows-razor-inventory-diagnostic-2026-10-31.md) |
 | notices 与发行材料 | [分发裁决](dependency-distribution-decisions.md)、[重点 notices 接线](nuget-notices-distribution-plan.md) | [发行边界](../records/dependency-distribution-boundaries-2026-10-26.md)、[接线结果](../records/nuget-notices-distribution-2026-10-26.md) |
 
-跨方案事项按具体对象指定上述来源，不能在总纲、current 和 records 各维护一份待办。current 只摘录下一步；Windows SQLite 临时夹具的新修正范围仍按 current 另行确认，不能把原成组修正或其他平台通过当作该缺口关闭。日志与 Native 的后续恢复仍服从原顺位。
+跨方案事项按具体对象指定上述来源，不能在总纲、current 和 records 各维护一份待办。current 只摘录下一步；Windows SQLite 临时夹具修正按成组方案第 8 节维护，新候选远端范围仍待单独确认，不能把本地修正或其他平台通过当作 Windows 缺口关闭。日志与 Native 的后续恢复仍服从原顺位。
 
 ## 1. 当前结论与阅读入口
 

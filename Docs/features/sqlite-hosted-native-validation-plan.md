@@ -4,7 +4,7 @@
 
 首轮本地实现及验证见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。执行前复核发现 SHA 授权、失败证据和清理结果存在缺口；所有者已另行批准本地成组修正，现已完成并通过 38 项检查，见[执行契约修正记录](../records/sqlite-hosted-execution-contracts-2026-10-31.md)。候选 `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 已按授权 push，并完成[首次托管执行](../records/sqlite-hosted-native-run-2026-10-31.md)：Linux x64 双配置各 60 项、16 份发布、48 个冷进程通过；Windows argv、macOS SDK、非 API 探针编译依赖和 API 容器写权限问题使其余六项失败。七项证据与清理均完成；随后四类问题已完成本地修正，并按授权完成上述第二次独立运行；历史首次结果不改写。
 
-四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；候选已完成第二次独立运行，原四类边界取得真实行为证据；Windows 新测试清理问题和其未执行部分另行确认，本页继续维护执行矩阵与授权边界。
+四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；候选已完成第二次独立运行，原四类边界取得真实行为证据。2026-11-04 又按独立授权完成 Windows 临时 SQLite 夹具修正与本机验证，范围见[成组方案第 8 节](./sqlite-hosted-validation-repair-plan.md#windows-fixture-repair)，结果见[本批记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)；Windows 新候选仍未远端验收，需待新完整 SHA 和执行范围明确后单独确认。本页继续维护执行矩阵与授权边界，不因本地修正自动取得新的七 job 执行授权。
 
 ## 1. 资源核对与目标
 

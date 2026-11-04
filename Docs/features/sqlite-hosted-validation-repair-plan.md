@@ -2,6 +2,8 @@
 
 > 2026-10-31（Asia/Shanghai），**本地修正及新候选单次远端验收已完成；6 项通过，Windows 新测试清理问题使整批仍未关闭**。本页定义首次托管验证后的一批修正与验收边界；执行矩阵、固定工具输入和远端流程仍见[托管执行方案](./sqlite-hosted-native-validation-plan.md)。失败事实与原始证据见[单次运行记录](../records/sqlite-hosted-native-run-2026-10-31.md)，该记录由提交 `a074b68c` 保存，后随批准候选一并 push。
 
+2026-11-04 已另行批准 Windows 临时 SQLite 夹具修正、本地验证与文档同步，范围见[第 8 节](#windows-fixture-repair)。本次不包含 push 或远端验收；新的完整 SHA 和执行范围明确后再单独确认。
+
 ## 1. 本批目标与批准边界
 
 目标是使同一候选的 Windows、macOS 和四宿主探针使用一致、可验证的参数、编译环境、依赖与执行身份，完成原有三平台 / 四镜像验收。保留 SQLite 来源 / hash / 实际加载门禁、严格编译、完整 TRX、镜像漏洞策略和失败清理，不以降低检查强度取得通过。
@@ -133,4 +135,27 @@
 
 四类修正均须有对应真实行为证据：Windows 参数实际到达 Node、macOS 系统库和 C++ 标准库正确链接、各宿主探针在本身引用集合下编译 / 执行、final 中以明确身份完成受限目录读写。Linux 新候选也须回归通过。
 
-代码、验证指南与执行矩阵一致；包图、宿主 deps、正式镜像和业务行为没有为测试让步；失败诊断可保留，资源清理可核对。原四类边界已取得真实行为证据，但第二次 Windows 运行止于新暴露的临时 SQLite 清理失败，尚未完成本页完整验收标准。后续夹具修正和新 SHA 运行需另行确认，当前文档不是重复执行授权。
+代码、验证指南与执行矩阵一致；包图、宿主 deps、正式镜像和业务行为没有为测试让步；失败诊断可保留，资源清理可核对。原四类边界已取得真实行为证据，但第二次 Windows 运行止于新暴露的临时 SQLite 清理失败，尚未完成本页完整验收标准。后续夹具修正按第 8 节独立授权推进；新 SHA 运行仍需另行确认，当前文档不是重复执行授权。
+
+<a id="windows-fixture-repair"></a>
+
+## 8. Windows 临时 SQLite 夹具修正（2026-11-04）
+
+### 批准范围与实现
+
+本批处理 `AuthOpenIddictMigrationTest` 三个文件型 SQLite 用例：空库初始化与幂等、完整旧 schema 接纳、不完整旧 schema 拒绝。三个用例共用 `SqliteConnectionStringBuilder` 构造临时连接，显式设置 `Pooling = false`，且 `RuntimeDatabaseConfig` 与 EF 使用同一个连接字符串。原有 `await using` 保证 DbContext 在外层 finally 删除数据库前完成释放；接纳旧 schema 用例的两个上下文按先后顺序分别释放。
+
+相邻 `SqliteNativeContractTests` 的文件型 WAL 夹具已关闭连接池，其所有连接与命令也在目录删除前释放；内存 SQLite 夹具没有临时文件删除边界。本批只修改上述三个用例的共享配置，不建立通用夹具框架，不修改 PostgreSQL 测试、生产连接池或依赖图。
+
+保留全部迁移 / schema 断言和直接删除失败可见性；不增加删除重试、异常吞并、全局 pool 清空或 GC 等补偿路径。默认池继续持有句柄与历史 Windows 失败相符，但本机 macOS 验证不能证明原 Windows 句柄所有者或关闭该平台缺口。
+
+### 本地验证与完成条件
+
+- 使用已有依赖，执行 Tests 项目及其宿主引用的 Debug / Release `--no-restore --warnaserror` 构建。
+- 双配置运行托管方案已有五组定向测试，显式排除 `Database=PostgreSQL`，保留完整 TRX；检查三个迁移用例实际执行且通过，不能只统计聚合成功。
+- 执行 `npm run check:repo-quality:changed` 与 `git diff --check`；验证事实、环境和证据见[本批记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)。
+- 本地完成只关闭本批夹具实现与本机验证；Windows 双配置、publish、冷进程加载及整批托管验收仍未关闭。
+
+### 下一次远端执行前必须明确
+
+确认新完整提交 SHA、固定工具输入、Windows 双配置 / 16 份 publish / 48 个冷进程及必要关联回归、证据留存与精确清理，再单独取得 push / 单次执行授权。现有 `sqlite-platforms` 入口仍运行三原生平台和四个 final job，没有仅选择 Windows 的入口；本批不修改 workflow 或编排器，也不把上述 Windows 验收目标当作已有独立入口或整套七 job 的执行授权。Hangfire inventory / verify、工具安装、服务 / 容器启动、发布和部署均不在本批范围。

@@ -14,7 +14,9 @@
 2. 手动运行 `inventory`，采集实际 VM / Full MSBuild 精确版本和 hash；不执行上游 task。
 3. 审阅库存，冻结期望 image / VS / MSBuild 后，另行确认指定提交的 `verify` 及证据上传。
 
-[上游询证草稿、证据子集和后续判定方案](../records/hangfire-windows-runner-image-inquiry-review-2026-10-31.md)已获批准并提交为 [actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，指定证据 ZIP 已上传并下载校验；身份冲突仍 unresolved，等待上游回复，不据此触发新的远端运行。
+[上游询证草稿、证据子集和后续判定方案](../records/hangfire-windows-runner-image-inquiry-review-2026-10-31.md)已获批准并提交为 [actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，指定证据 ZIP 已上传并下载校验。2026-11-04 只读复核确认，[维护者已回复](https://github.com/actions/runner-images/issues/15201#issuecomment-6575351447)：差异可能来自 image 重新特化后，环境变量保留基础镜像版本，预计例行部署修复；[最新承诺](https://github.com/actions/runner-images/issues/15201#issuecomment-6580306089)仍是部署后跟进，尚未确认完成或给出修复版本。
+
+当前状态调整为等待修复部署与版本确认，再确认下一次 inventory 的完整 SHA、输入、身份一致性检查与独立执行授权。上游解释不裁决旧 VM 的精确身份，也不取代实际新 runner 证据；原身份一致性门禁保持，不忽略任一冲突来源、不重试或执行 verify。本次没有向上游发送新消息或触发远端运行。
 
 官方 runner 清单不是实际 VM 执行证据。本机成功也不替代本批 Windows 验证；不把本批解释为原包字节重现、正式对应源码入口或完整发行审查已经完成。
 

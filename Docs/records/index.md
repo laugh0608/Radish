@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-04 Windows SQLite 夹具本地修正](./sqlite-windows-fixture-local-repair-2026-11-04.md)：三个迁移用例统一关闭临时连接池，Debug / Release 严格构建及各 60 项定向测试通过；同步 Hangfire 上游进展，未 push / 远端验收
+
 - [2026-11-01 规划结构统一](./planning-structure-alignment-2026-11-01.md)：能力地图、状态来源与保留历史摘要。
 
 - [2026-10-31 日终代码与文档回顾](./day-end-doc-review-2026-10-31.md)：18 个提交、代码 / 文档校准，以及 Windows SQLite 夹具和 Razor 身份门禁接续事项
