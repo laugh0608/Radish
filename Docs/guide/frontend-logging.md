@@ -1,8 +1,8 @@
 # 前端日志与敏感字段脱敏
 
-> 状态：实施后维护
+> 状态：现有入口已实施；L2 浏览器安全与三级规则待收口
 >
-> 最后更新：2026-09-19（Asia/Shanghai）
+> 最后更新：2026-11-04（Asia/Shanghai）
 
 本文说明 `radish.client`、`radish.console` 与 `@radish/http` 的前端日志入口、脱敏规则和后续维护要求。
 
@@ -25,6 +25,10 @@
 - 当前覆盖 `paymentPassword`、`paymentPasscode`、`password`、`pwd`、`passcode`、`currentPassword`、`newPassword`、`confirmPassword`、`oldPassword`、`accessToken`、`refreshToken`、`idToken`、`token`、`secret`、`apiKey`、`api_key`。
 - 日志中不得输出支付口令、登录密码、token、secret、api key 或完整认证响应。
 - 幂等键只允许按“是否存在 / 操作类型”排障，不把它当作安全凭证或审计主键。
+
+**当前限制**：三份 sanitizer 的规则主要针对键名；裸字符串和 Error.name / message / stack 仍可原样保留。Client / Console 的 message / tag、分组 / 计时标签没有统一经过该规则，共享 HTTP 的 API / HTTP 错误 message 也会直接进入 console。已有敏感键测试通过不代表最终浏览器输出已安全，关闭 debug 也不覆盖始终输出的 warn / error。
+
+上述是当前实现事实，尚未在本轮后端 Hangfire 修正中改变。下一批先按[当前规划的接下来的事项](../planning/current.md#接下来的事项)明确公共实现复用、字符串 / 异常输出、三级 / diagnostic 和调用兼容，再确认实现；保持原 HTTP 返回、错误回调及认证失效行为，不自动增加浏览器遥测回传。
 
 ## 维护要求
 

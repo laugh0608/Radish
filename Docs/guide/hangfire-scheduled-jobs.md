@@ -108,7 +108,7 @@ Hangfire 基础配置位于 `Radish.Api/appsettings.json` 的 `Hangfire` 节点�
 - Cron 只负责触发。超时、过期、锁定和清理 cutoff 使用注入的 `TimeProvider` UTC 时刻；业务自然日使用 `BusinessCalendar`。
 - 大数据量任务按稳定排序和有限批次处理，不一次性加载整表。
 - 失败必须抛回 Hangfire 形成 Failed / Retry 状态，不能吞异常后伪装成功。
-- 日志使用已登记事件、受控 `jobKind / failureKind` 与处理数量，不输出原始参数、正文、凭据或身份；执行消费与启动注册的边界见[事件契约第 10、72 节](../features/unified-logging-contract.md)。
+- 日志使用已登记事件、受控 `jobKind / failureKind` 与处理数量，不输出原始参数、正文、凭据或身份；任务摘要、启动注册及两个自有来源的最终输出分别见[事件契约第 10、72、73 节](../features/unified-logging-contract.md)。provider 只保留故障分类，状态观察器可额外保留对应 outcome / 派生 operationId；不是所有任务事件都接受这些字段。
 - 新增 recurring job 时同步注册、默认配置、权限 / 运行影响、定向测试和本文任务表。
 
 ## 6. 排障顺序
@@ -123,6 +123,8 @@ Hangfire 基础配置位于 `Radish.Api/appsettings.json` 的 `Hangfire` 节点�
 6. 业务库结构是否已经由 `Radish.DbMigrate apply` 前滚；Job 不负责补业务 schema。
 
 涉及 Wiki 清理时，额外确认终态时间、`PayloadPurgedAt`、保留天数与批次大小。正文为空但审核事件和 Revision 仍存在是预期结果。
+
+`job.retrying / job.failed` 记录的是存储提交前的状态选举决定，不能单凭一条日志判定重试 / 失败已入库。固定摘要不含原异常正文，provider 自身也不接受 scope 提供的任务关联；需结合 Dashboard 权威状态及业务结果排障。输出保护不改变重试次数、延迟、候选状态或原有异常传播。
 
 ## 相关文档
 

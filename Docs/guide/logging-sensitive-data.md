@@ -62,10 +62,11 @@ API / Auth / Gateway 在 `RadishLogging.Enabled=false` 的旧 `AddSerilogSetup` 
 ## 自有日志与独立诊断通道
 
 - 自有 Auth 账户与 IdleSession、三宿主启动摘要、API 周期任务注册 / 固定文档启动同步和 Gateway 停止通知，按[事件契约第 67、70、72 节](../features/unified-logging-contract.md)生成固定事件，并在最终输出重建，清除合并后的任意 scope。只覆盖列明来源，不推定完整宿主已治理；结果准备、注册返回和生命周期通知也不代表响应、业务或释放全部完成。
+- API 自有 Hangfire provider / 状态观察器按[第 73 节](../features/unified-logging-contract.md#73-l2-hangfire-provider--状态观察器最终输出)在旧 WriteTo / AuditTo 与候选出口逐事件重建。provider 无异常时显式保留缺省标记，避免 scope 补入合法 failureKind；状态来源只接受其事件对应的 outcome 与规范 operationId。原消息、异常、自由关联字符串、嵌套载荷和跨事件字段不透传；源标识不认证任意进程内代码，也不改变原重试 / 状态提交与输出故障语义。
 - SelfLog 按第 68 节统一写入独立安全 stderr，只输出固定 Warning 事件和受控计数，限频并覆盖 logger 初始化 / 释放边界；不转回 Serilog，不读取原诊断文本，原文文件停止新增，历史文件保留。
 - Common 两处程序集加载 / 类型枚举 catch 按第 71 节写入独立安全 stderr，只输出固定 Error 事件与受控 failureKind，并隔离诊断二次失败；不扩展其他裸输出、扫描容错或反射行为。
 
-这些独立通道有各自的输出与生命周期约束，不能据此宣称所有非 Serilog 输出已安全。完整批次与验证限制见[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)。
+这些独立通道有各自的输出与生命周期约束，不能据此宣称所有非 Serilog 输出已安全。历史来源与验证限制见[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)，新增 Hangfire 最终输出结果见[11 月 4 日记录](../records/unified-logging-l2-hangfire-output-2026-11-04.md)；均不覆盖浏览器或全进程任意输出。
 
 ## 代码与验证入口
 
