@@ -4,37 +4,39 @@
 
 ## 规划阅读链
 
-[整体路线图](../development-plan.md) → [平台与交付](topics.md#platform-delivery) → [依赖治理切片](../features/dependency-license-governance.md#delivery-slices)。后续日志 L2 与 Native P8-C 分别由原专题承接；本次仅整理导航，不改变下面的顺位、停止线或运行授权。
+[整体路线图](../development-plan.md) → [能力专题地图](topics.md) → [统一日志](../features/unified-logging-governance-design.md)、[Flutter Native](../features/flutter-native-product-ui-design.md)与[客户端连接](../frontend/client-server-connection-plan.md)。依赖来源与发行材料由[原专题切片](../features/dependency-license-governance.md#delivery-slices)保留，按维护 / 发行节点复核。
 
 ## 当前状态
 
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
-- **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：SQLite 本次平台验收已收口，结果已提交 `864f9f99`；Hangfire [来源 / 交付准备复核](../records/hangfire-source-delivery-review-2026-11-04.md)已完成，下一步确认[交付方案第 8 节](../features/hangfire-rebuild-delivery-plan.md#8-接续原包来源与正式源码交付准备)的本地材料候选与 PostgreSql 询证发送范围。原 DLL 的 commit 声明已补证，匹配 PDB / 逐文件绑定仍未取得；Windows Razor 仍等待上游修复部署和版本确认，verify 后置。NoDrive / SystemCommon、SNI 与 Valkey 保留独立边界。
-- **状态复核日期**：`2026-11-04`；候选 `ab37d19e` 已获批 push 并完成单次完整七 job，7 项通过，492 项测试及 156 个冷进程 / 模块清单通过，证据与清理完整；未重试、发布或部署，未改依赖图。SQLite 依赖与六组件材料见[实施记录](../records/sqlite-native-unification-2026-10-31.md)，该批 .NET 图共 219 个不同 package/version 条目。此前 NoDrive 实施与未关闭项见[采用记录](../records/nodrive-adoption-2026-10-26.md)。
+- **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
+- **下一项工作**：恢复统一日志 L2，依据现有生产接线和事件契约形成有限的剩余覆盖与验收范围，再进入成组实现；重点沿既有 Hangfire 输出合并边界、自有业务和浏览器共享日志等真实缺口推进，不重跑依赖源码重建或扩展外部来源调查。Native 按原顺位接续 P8-C Windows readiness，具体功能队列见下文。
+- **状态复核日期**：`2026-11-04`；SQLite 本次七 job 验收已收口，见[运行记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)。Hangfire 来源 / 交付准备见[复核记录](../records/hangfire-source-delivery-review-2026-11-04.md)，结果由 `7a19fe71` 保存；未关闭的来源与发行条件保留，当前不占开发主线，不表示依赖专题或正式发行已全部验收。
 - **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
 ## 已确认待实施的客户端方向
 
-2026-10-12 已确认[客户端连接规划](../frontend/client-server-connection-plan.md)：同一个官方安装包运行时选择官方端点或用户自部署后端，无需重新编译。本轮仅更新产品与客户端文档；服务器选择、认证 / 缓存隔离及官方端点交付尚未验收，日志治理与后续 P8 顺位继续按本页推进。
+2026-10-12 已确认[客户端连接规划](../frontend/client-server-connection-plan.md)：同一个官方安装包运行时选择官方端点或用户自部署后端，无需重新编译。服务器选择、认证 / 缓存隔离及官方端点交付尚未验收；该能力明确保留在功能完成队列，不以已有单实例平台验收代替。
 
-## 当前依赖治理与集成停止线
+## 功能优先与依赖维护边界
 
-2026-10-20 [首轮许可盘点](../records/dependency-license-audit-2026-10-20.md)覆盖正式 .NET / Web / Rust / Flutter 的 947 个依赖条目。项目所有者已确认先按[Rust 实施方案](../features/rust-image-processing-implementation-plan.md)替代 Six Labors 四包链，完成正常 PR 后再详细评估 AutoMapper、ORM、Redis 等其他方案。
+2026-11-04 项目所有者调整此前依赖专题优先的顺位：先完成已经确认的产品 / 平台功能，再以长期运营和维护为主逐项完善来源、构建复现及发行材料。当前仍属于功能完成阶段，不提前宣称进入稳定运营，也不因该调整重启主动生产使用数据采集。
 
-图片替代与合并前候选门禁已通过，[PR #75](https://github.com/laugh0608/Radish/pull/75) 已合并并完成回灌；[合并前检查](../records/master-pr-regression-2026-10-20.md)的安全升级及图片 API 适配已随 `250cd8f6` 保存，工作区已删除 Six Labors 四包链，本机 Debug / Release 严格构建通过。五宿主原生平台、Linux 双架构最终镜像 / 漏洞策略、联合 ASan 和 PC / mobile 成组验收已通过；HTTP/3 测试夹具修正后全量 Repo Quality 通过，见[实施记录](../records/rust-image-replacement-2026-10-20.md)；服务启动和新增工具链仍按各批清单授权。2026-10-21 接续评估形成独立映射方案，并经批准完成 Mapperly 4.3.1 替代；本地验证见[映射迁移记录](../records/mapperly-migration-2026-10-21.md)。ORM / Redis 隔离评估与两类上传配额修复已完成。2026-10-26 又独立批准并完成 NoDrive 正式采用，见[实施记录](../records/nodrive-adoption-2026-10-26.md)；重点分发接线随后已独立批准并完成，剩余发行证据、Valkey 迁移和其他运行时变更继续按具体范围确认，不启动后端语言迁移或发布。
+依赖治理已完成的图片 / 映射替代、NoDrive 采用、重点 notices、SQLite 统一及本次平台验收保持原结论，详见[依赖切片](../features/dependency-license-governance.md#delivery-slices)。Hangfire 原包 PDB / 来源补证、Windows Razor 重现、源码材料生成及正式入口、NoDrive / SystemCommon 询证、SNI 发行核对和 Valkey 是否迁移，均保留到所属专题的后续维护 / 发行队列；不继续主动询证、轮询上游或推进专用验证，不自动恢复。
+
+实际可达的安全问题、运行故障、数据一致性问题及 `P0/P1` 仍按风险及时处理。正式发行前核对与该产物实际分发相关的条件；后置补证不构成发行放行，也不降低现有运行、测试和安全门禁。
 
 ## 接下来的事项
 
-1. **接续 Hangfire 来源与发行材料**：[SQLite 最终候选](../records/sqlite-hosted-native-module-run-2026-11-04.md)七 job 全部通过，本批缺口已关闭。Hangfire [本机重建](../records/hangfire-rebuild-2026-10-31.md)完成；[本轮来源复核](../records/hangfire-source-delivery-review-2026-11-04.md)重新核验 869 文件、753 blobs 与 42 项 feed，并从原 PostgreSql DLL 读得相同 commit 声明，未取得匹配 PDB，不视为逐文件源码绑定。按[交付方案第 8 节](../features/hangfire-rebuild-delivery-plan.md#8-接续原包来源与正式源码交付准备)审阅本地材料候选范围及未发送的上游询证草稿；不重复调用测试代替来源证明。Windows image 身份仍未关闭：上游尚无修复部署完成或版本确认，后续按 [Razor 方案](../features/hangfire-windows-razor-validation-plan.md)确认新 inventory 的 SHA / 输入 / 运行授权，不冻结旧冲突值或执行 verify。23 对生成 / 8 次 Core 构建 / 16 组探针尚未运行；SQLite 的 windows-2025 通过不替代 windows-2022 专项。
-2. **保留独立来源 / 发行缺口**：NoDrive / SystemCommon 本地 PE debug 核对未取得新的源码 commit，已准备上游询证草案但未发送。SNI 仍随通用 publish 分发 Windows runtime；后续按实际平台核对正常 RID 发布与下游条款。已完成的[重点 notices 接线](../records/nuget-notices-distribution-2026-10-26.md)不覆盖全部 NuGet / 全生态材料，也不自动关闭这些条件。
-3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
-4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与历史定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。
+1. **恢复统一日志功能交付**：先收口下文 L2 的剩余覆盖清单与下一批有限实现范围。L1 剩余门禁、L3 集中持久化、L4 Console 查询、L5 站内告警与 L6 迁移交付仍是[既有日志专题](../features/unified-logging-governance-design.md#10-分批重构与退出条件)的明确未完成能力，按原切片形成可用功能及成组验收，不用持续扩展框架 / 非日志通道调查代替交付。具体下一批运行时改动仍先确认方案。
+2. **接续 Flutter Native 平台缺口**：按原顺位进入 P8-C Windows readiness，再沿 Native 专题推进 Windows / Linux 平台基础与 P8-E 成组门禁。账户、真机、签名等外部条件按平台保留，不能将共享 UI 或其他平台 Go 视为已完成。
+3. **完成已确认的客户端连接能力**：按[连接规划](../frontend/client-server-connection-plan.md)细化同一安装包内的服务器选择、兼容发现、认证 / 缓存 / 实时连接隔离与切换恢复；进入实现前冻结接口和迁移边界，不重开已关闭的 Web 功能专题。
+4. **功能批次集成与维护衔接**：对当前专题的真实可靠性 / 失败恢复缺口成组处理；批次完成后按最新候选执行合并前门禁，再安排 `dev → master` PR，不等待全部依赖证据或所有外部平台条件。计划内功能按已确认范围验收后，再确认转入维护为主的节奏；不以全部 backlog 清零为条件，不自动创建 tag、发布或部署。
 
-NoDrive 本轮实现、本地验证与重点 notices 接线已关闭；剩余发行审核、服务迁移、集成和发布分别按范围推进，不因写入待办而取得新的依赖安装、服务启动或部署授权。
+个人开发继续只保持一个主要功能专题；上述是已有缺口与推进队列，不授权同时实施多个专题。依赖安装、服务 / 容器启动、外部通信、平台操作和发布部署仍按当前任务具体范围确认。
 
 ## 产品线成熟度
 
@@ -62,16 +64,16 @@ NoDrive 本轮实现、本地验证与重点 notices 接线已关闭；剩余发
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 日志专题恢复顺位（保留 2026-10-15 结论）
+## 当前主线：日志专题恢复顺位
 
-继续[统一日志专题](../features/unified-logging-governance-design.md)。已完成范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，该日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。
+2026-11-04 恢复[统一日志专题](../features/unified-logging-governance-design.md)，保留 2026-10-15 已完成结论。范围见[事件契约第 7–72 节](../features/unified-logging-contract.md)，该日提交、最新批次与证据限制见[日终回顾](../records/day-end-doc-review-2026-10-15.md)，不再逐批列作待办。下面按已有生产接线和明确缺口收口，不向未使用框架、外部任意订阅器或全进程证明扩张。
 
 1. **继续剩余框架与非日志通道只读核对**：ASP.NET Core DataProtection 的已列明来源已治理；OpenIddict Client / Validation / DataProtection 依赖存在但未注册。IdentityModel 默认空 logger、仓库无诊断订阅器不等于外部 EventPipe / DiagnosticListener / Activity / metrics 已受控；详细边界见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 继续后置。
 2. **确认剩余自有输出的下一批范围**：Common 两处既有 catch 已治理，不扩展扫描、反射容错或服务定位器架构。API 周期任务注册 / 固定文档同步与 Gateway 停止日志已治理；继续只读核对其他自有来源与相邻透传边界，尤其是既有 Hangfire provider 在 enrichment / scope 合并后经过旧链 WriteTo / AuditTo 的实际输出，不把生成端受控等同最终输出已重建；浏览器共享 HTTP / logger / 示例输出仍独立排期，未经确认不扩展实现。既有精确来源收口不推定整个宿主已完成。
 3. **形成 L2 剩余覆盖清单**：对照生产接线与事件契约，区分已治理精确来源、待治理自有业务日志、相邻透传来源、桥接前读取风险及非日志输出，确定下一批完整范围；现有生成器 / 内存证据不替代真实登录、网络探测、存储或部署验收。
 4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认。Rust `.tmp` 水印回退已由图片替代移除，改用内容识别与显式输出格式，交付验收及 PR 集成已完成。
 
-以上为后续恢复工作的顺位；本批不授权安装依赖、启动项目服务 / 容器、访问生产或系统证书库。真实运行与后续实现仍按具体范围确认。
+以上为当前恢复工作的顺位；本轮优先级调整只同步规划，不修改日志实现或生产配置。安装依赖、启动项目服务 / 容器、访问生产或系统证书库及后续运行时实现，仍按具体范围确认。
 
 生产候选开关继续关闭；L1 传输上界 / 磁盘故障、L2 整体治理、L3 入库、L4 查询、L5 Console 告警及 L6 切换尚未完成。Native P8-C readiness 保留后续顺位。
 
@@ -101,6 +103,7 @@ NoDrive 本轮实现、本地验证与重点 notices 接线已关闭；剩余发
 
 ## 当前不做
 
+- 不继续把依赖原包 PDB、上游构建完全复现、公开询证或源码材料生成列作功能开发前置；不自动复核或重试后置的 Hangfire 专项。来源 / 发行未关闭项仍保留，正式发行按实际范围单独核对。
 - 不因 F4-N 关闭而扩入 `PostAnswer`、自定义理由、自定义金额、重复赞赏或独立赞赏中心。
 - 不把 F4-O 扩成回答投票、复杂排序、悬赏、萝卜币、独立问答 App 或全量 PublicId 迁移。
 - F4-Q 已关闭，不回拉标签关注、个性化推荐、标签首页、SSR / SSG 或公开个人页 sitemap；商品评价不扩入媒体、回复、评价有用或独立评价中心，公开等级不扩为公开经验详情。

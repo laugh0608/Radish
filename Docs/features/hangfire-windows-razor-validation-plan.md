@@ -1,5 +1,7 @@
 # Hangfire Windows Razor 托管验证方案
 
+2026-11-04 项目所有者调整顺位：本专项转为后续维护 / 发行事项，当前恢复功能开发，不主动轮询上游、派发 inventory / verify 或扩大诊断。以下保留原结果、未关闭的身份门禁与未来执行边界；上游回复到来不自动恢复本专项，重新进入时另行确认范围。
+
 > 2026-10-31（Asia/Shanghai）。[首次 inventory](../records/hangfire-windows-razor-inventory-2026-10-31.md)已执行并因 VS 2022 查询为空停止，失败证据及清理完成。随后批准并完成[本地修复](../records/hangfire-windows-razor-inventory-repair-2026-10-31.md)：Razor 专项改为 `windows-2022` + VS 2022，修复命令身份覆盖，增加早期进度证据和 PowerShell 契约前置检查。修复提交 `464910ddfa5f1df076128e86fdc618742ebeee0e` 已获授权 push；[第二次 inventory](../records/hangfire-windows-razor-inventory-second-2026-10-31.md)及 8 组 PowerShell 契约、上传 / 下载校验和清理通过。**runner 初始化日志与库存 ImageVersion 不一致，身份审阅未关闭；verify 未获授权、未执行。** [身份诊断增强](../records/hangfire-windows-razor-image-identity-diagnostics-2026-10-31.md)已实施并按授权 push；[诊断 inventory](../records/hangfire-windows-razor-inventory-diagnostic-2026-10-31.md)的 20 组契约通过，确认两份描述文件为 `20261025.346.1`、Machine / Process 环境为 `20261026.347.1`、User 未设置；一致性门禁按设计失败，证据归档与清理完成，未重试。
 
 精确源码、11 项包 / hash、SDK、23 对模板与生成文件、包内 24 DLL 仍沿用[准备 JSON](../records/hangfire-windows-razor-readiness-2026-10-31.json)。其中旧 Windows 2025 软件清单为历史准备快照；当前 runner 依据见下文第 2 节。[原本地实施](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)和[本机重建](../records/hangfire-rebuild-2026-10-31.md)的证据边界不变。

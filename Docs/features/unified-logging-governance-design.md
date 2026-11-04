@@ -6,7 +6,9 @@
 
 本文是本次重构的设计入口；代码现状与迁移清单见[日志现状审计](./unified-logging-inventory.md)。首批生成契约与采集修订见[事件契约与实现进度](./unified-logging-contract.md)。现有宿主实现仍以[日志系统](../guide/logging.md)及其代码为准，不能把本文目标当作已上线功能。专题不改变既有发布、生产部署和服务启动授权边界。
 
-规划归属：[能力专题地图](../planning/topics.md#platform-delivery)。本文件维护 L1–L6 的范围与退出条件，L2 细项状态由[事件契约](unified-logging-contract.md)维护；current 仅保留恢复顺位与未关闭边界。
+规划归属：[能力专题地图](../planning/topics.md#platform-delivery)。本文件维护 L1–L6 的范围与退出条件，L2 细项状态由[事件契约](unified-logging-contract.md)维护；current 仅保留即时顺位与未关闭边界。
+
+2026-11-04 按所有者要求恢复功能完成主线。本专题沿现有 L1–L6 交付和退出条件推进，先将 L2 已知生产接线 / 最终输出缺口限定成可验收批次，再进入实现；不因任意外部诊断通道或新增调查而无限扩大范围。该顺位恢复不改变已确认架构、事件契约、生产候选开关或运行授权，下一批运行时改动仍先确认具体方案。
 
 ## 1. 结论与目标
 

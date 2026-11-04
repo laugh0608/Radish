@@ -4,6 +4,8 @@
 >
 > 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代已交付；后续精确依赖安装及服务启动按各批授权执行，其他依赖仍处于审计与方案阶段。
 
+2026-11-04 项目所有者明确调整推进重点：恢复已规划的功能完成主线，剩余来源询证、原包构建复现、源码交付材料及服务替换评估转入后续维护 / 发行队列，当前不主动推进或等待外部回复。已完成成果与未关闭项均保留；该调整不等于全部发行条件通过，实际产物发行前仍需按范围核对。即时顺位以[当前规划](../planning/current.md)为准。
+
 2026-10-26 的[正式采用方案](./nodrive-adoption-plan.md)已获批实施，新候选结果见[采用记录](../records/nodrive-adoption-2026-10-26.md)。[226 条 NuGet 清单](../records/nodrive-nuget-inventory-2026-10-26.csv)与原始[审查材料清单](../records/nodrive-distribution-materials-2026-10-26.json)保留；随后获批完成 13 个重点组件归档及其中 11 个 runtime 组件的四宿主接线，当前材料见 [manifest](../../ThirdParty/nuget/manifest.json)，验证见[分发实施记录](../records/nuget-notices-distribution-2026-10-26.md)。NoDrive / SystemCommon 的精确来源与许可差异仍须补证，不能宣称整个许可专题已关闭。
 
 同日[来源补证](../records/nodrive-source-review-2026-10-26.md)已确认仓库迁移、NoDrive 版本候选提交与两个包的官方 archive 哈希；发现包 Apache 声明与候选源码 MIT 声明差异，以及 SystemCommon 仓库打包版本仍为 8.3。保持两侧证据，不改标许可或推定二进制精确对应。[接线方案](./nuget-notices-distribution-plan.md)已实施：runtime 材料按实际宿主交付，Mapperly / Container Tools 仅保留仓库构建材料，缺失 / 哈希 / 版本 / 宿主映射异常直接失败。该门禁不自动放行源码提供、商业路线或全生态发行义务。

@@ -97,7 +97,7 @@ Web 优先覆盖 PC / mobile，Flutter Native 按平台阶段交付；拥有壳�
 
 | 子专题入口 | 阶段与任务 / 验收来源 | 协同 |
 | --- | --- | --- |
-| [依赖许可治理](../features/dependency-license-governance.md#delivery-slices) | 当前依赖主线；各实施切片在该导航所列方案维护状态和验收，records 保存结果 | 文件 / 图片、数据库、运行宿主 |
+| [依赖许可治理](../features/dependency-license-governance.md#delivery-slices) | 许可范围、各切片状态和验收由原方案承接，records 保存结果；即时顺位沿 current | 文件 / 图片、数据库、运行宿主 |
 | [统一日志](../features/unified-logging-governance-design.md) | L1–L6 阶段及退出条件在总纲；L2 细项在[事件契约](../features/unified-logging-contract.md)，不重复任务 | 所有宿主、Console |
 | [上传与文件](../features/file-upload-design.md)、[配额修正切片](../features/upload-quota-boundary-fix-plan.md) | 已有文件契约及指定修复范围 | 内容、知识、依赖治理 |
 | [运行配置](../guide/runtime-configuration-boundaries.md)、[系统设置](../guide/system-settings-governance.md) | 原配置 / 设置契约及实施范围 | 身份与治理 |
