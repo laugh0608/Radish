@@ -25,7 +25,8 @@ test('fixed host profiles select exactly the supported source and mode sets', ()
   assert.deepEqual(Object.values(hostCapabilities).map(modes => modes.length), [4, 3, 2, 3]);
   for (const host of Object.keys(hostCapabilities)) fixture(host, ({ output }) => {
     const inputs = probeInputs(output, host); const project = probeProject(inputs);
-    assert.equal(inputs.sources.length, host === 'Radish.Api' ? 3 : host === 'Radish.Gateway' ? 1 : 2);
+    assert.equal(inputs.sources.length, host === 'Radish.Api' ? 4 : host === 'Radish.Gateway' ? 2 : 3);
+    assert.ok(project.includes('SqliteProbeModuleInspector.cs'));
     assert.equal(project.includes('RuntimeProbe.Hangfire.cs'), host === 'Radish.Api');
     assert.equal(project.includes('SQLITE_PROBE_EF'), host !== 'Radish.Gateway');
     assert.ok(!project.includes('PackageReference') && !project.includes('NoWarn'));

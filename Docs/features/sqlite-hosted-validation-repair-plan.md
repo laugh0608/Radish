@@ -2,7 +2,7 @@
 
 > 2026-10-31（Asia/Shanghai），**本地修正及新候选单次远端验收已完成；6 项通过，Windows 新测试清理问题使整批仍未关闭**。本页定义首次托管验证后的一批修正与验收边界；执行矩阵、固定工具输入和远端流程仍见[托管执行方案](./sqlite-hosted-native-validation-plan.md)。失败事实与原始证据见[单次运行记录](../records/sqlite-hosted-native-run-2026-10-31.md)，该记录由提交 `a074b68c` 保存，后随批准候选一并 push。
 
-2026-11-04 已另行批准 Windows 临时 SQLite 夹具修正、本地验证与文档同步，随后又独立批准候选 `44c13c50` 的 push 与一次完整七 job 验收，范围见[第 8 节](#windows-fixture-repair)。Windows Release 迁移用例通过后暴露首个冷探针模块计数失败；接续建议见[第 9 节](#windows-module-probe-followup)，未授权新的探针修正或重跑。
+2026-11-04 已另行批准 Windows 临时 SQLite 夹具修正、本地验证与文档同步，随后又独立批准候选 `44c13c50` 的 push 与一次完整七 job 验收，范围见[第 8 节](#windows-fixture-repair)。Windows Release 迁移用例通过后暴露首个冷探针模块计数失败；[第 9 节](#windows-module-probe-followup)已获批完成本地修正与验证，新的完整 SHA 与远端范围仍待单独确认。
 
 ## 1. 本批目标与批准边界
 
@@ -166,15 +166,23 @@
 
 <a id="windows-module-probe-followup"></a>
 
-## 9. Windows 模块识别与失败诊断接续（待确认）
+## 9. Windows 模块识别与失败诊断（本地完成，远端待确认）
 
-首个 Windows 冷探针报告命中两个 SQLite 模块，但没有保存两个模块的名称 / 路径。只读发现当前名称子串过滤也可能匹配托管 provider；这不足以确认实际原因，也不足以宣称有两份原生库，事实与推断见[运行记录第 3 节](../records/sqlite-hosted-native-fixture-run-2026-11-04.md#3-windows迁移测试通过首个冷探针出现新失败)。
+首个 Windows 冷探针报告命中两个 SQLite 模块，但没有保存两个模块的名称 / 路径。旧名称子串过滤也可能匹配托管 provider；这不足以确认旧 run 的实际原因，也不足以宣称有两份原生库，事实与推断见[运行记录第 3 节](../records/sqlite-hosted-native-fixture-run-2026-11-04.md#3-windows迁移测试通过首个冷探针出现新失败)。所有者随后批准先提交该轮结果文档，再完成本节本地实现与验证；结果文档由 `1e1d0ff1` 保存，实施见[本批记录](../records/sqlite-probe-module-local-repair-2026-11-04.md)。
 
-下一批建议先确认以下范围，再进入实现：
+### 模块身份与失败证据
 
-- 明确各平台原生模块的识别边界，核对 `Process.Modules` 与 dyld 的现有接线；保留实际枚举候选及命中项的名称、路径与可核验身份，不在失败时只留下数量。
-- 区分托管 provider 命中、同一模块重复枚举与两个真实原生模块；确定判定依据后再修正筛选，不先采用静默去重或数量放行。
-- 复用现有临时探针，成组覆盖正确原生模块、托管 provider / 相似名称、无命中及真实多模块拒绝；保留唯一来源和实际路径 / hash / SQLite 版本 / source ID 门禁。
-- 先完成本地定向验证与失败证据保留检查，再明确新完整 SHA 的 Windows 双配置、publish、冷进程及必要关联回归；任何新的 push / 远端执行仍须单独确认。
+- `SqliteProbeModuleInspector.cs` 属于验证工具：Windows / Linux 继续读取当前进程的 `Process.Modules`，macOS 继续读取 dyld 已加载映像，增加加载地址；不主动加载候选库来建立身份。
+- 名称子串仅用于收集诊断候选。原生库必须同时满足目标平台精确文件名、模块名与格式：Windows `e_sqlite3.dll` 的原生 PE DLL，Linux `libe_sqlite3.so` 的 ELF，macOS `libe_sqlite3.dylib` 的 Mach-O。Windows 名称按 OrdinalIgnoreCase，Unix 按 Ordinal。
+- 仅在 PE / CLR 确认 ILOnly、程序集名为 `SQLitePCLRaw.provider.e_sqlite3` 且模块名 / 文件名匹配时，将候选归为托管 provider。未知 SQLite 相关名称、格式或托管身份仍直接失败，不用名称白名单静默忽略潜在原生库。
+- 原生候选必须恰好一个；同路径且同加载地址重复出现时单独报告重复枚举，两个路径或加载地址仍按多模块拒绝。两种情况都保留原始条目，不做去重或数量放行。
+- `module-inventory.json` 在判断数量前写出完整枚举列表、候选名称 / 路径 / 加载地址及可读取的 SHA256；逐项记录分类、托管程序集身份、最终状态和错误。文件无法读取 / 解析时保留已取得的证据并失败；诊断写入二次失败与原错误一起上抛。
+- 主探针失败结果增加阶段与清单位置；编排器的既有白名单同步保留该 JSON。原成功字段、唯一依赖来源、原 deps / runtimeconfig、实际加载路径 / hash、SQLite 版本 / source ID 及编译输入绑定门禁保留，另复核检查期间 native hash 没有变化。
 
-本节仅记录接续建议，不授权修改探针、生产依赖或运行时，不授权重新派发旧 run、换库、降低门禁或发布部署。
+### 本地验证与后续停止线
+
+识别组件作为固定公共源码进入四宿主临时探针编译清单，并由 Tests 项目直接链接同一源码。`SqliteNativeContractTests` 增加 22 项行为用例，覆盖三平台名称 / 格式、实际托管 provider 元数据、空 / 多模块、重复条目、伪装 / 错误身份、损坏 PE 与 IO 失败留痕；沿用五组 filter 的定向集合由 60 增至 82 项，不改 CI job 或 mode 矩阵。
+
+本机 Debug / Release 严格构建与各 82 项定向测试、32 项 Node 契约、四宿主双配置的 8 次探针编译 / 24 个 macOS arm64 冷 mode 已通过，诊断保留与清理完成。本机 Windows / Linux 识别夹具只验证受控条目与文件判断，不替代真实平台枚举；旧 Windows 两个实际命中项仍未知。
+
+本地授权不包含新 push / 远端验收。后续先冻结新完整 SHA、Windows 双配置 / publish / 冷进程与必要关联回归、实际 job、工具及清理，再单独确认；旧 run 不重试，不换库、不降低门禁、不发布部署。

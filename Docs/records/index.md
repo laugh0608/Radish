@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-04 SQLite 探针模块识别本地修正](./sqlite-probe-module-local-repair-2026-11-04.md)：上轮结果已提交；模块 / PE / CLR 识别与失败清单留存完成，两配置各 82 项、32 项 Node、8 份探针编译 / 24 个本机冷 mode 通过，未 push / 远端验收
+
 - [2026-11-04 SQLite 夹具候选单次托管验收](./sqlite-hosted-native-fixture-run-2026-11-04.md) · [结果 JSON](./sqlite-hosted-native-fixture-run-2026-11-04.json)：6 项通过，Windows Release 60 项通过后首个冷探针报告模块数量为 2；七份证据归档与清理完整，未重试
 
 - [2026-11-04 Windows SQLite 夹具本地修正](./sqlite-windows-fixture-local-repair-2026-11-04.md)：三个迁移用例统一关闭临时连接池，Debug / Release 严格构建及各 60 项定向测试通过；同步 Hangfire 上游进展，未 push / 远端验收

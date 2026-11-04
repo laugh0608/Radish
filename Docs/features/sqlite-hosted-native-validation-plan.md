@@ -4,7 +4,7 @@
 
 首轮本地实现及验证见[本批记录](../records/postgres-regression-2026-10-31.md#4-托管-runner-本地接线)。执行前复核发现 SHA 授权、失败证据和清理结果存在缺口；所有者已另行批准本地成组修正，现已完成并通过 38 项检查，见[执行契约修正记录](../records/sqlite-hosted-execution-contracts-2026-10-31.md)。候选 `915f63591bfbfeff0978c8fb2de3b64fd997cce9` 已按授权 push，并完成[首次托管执行](../records/sqlite-hosted-native-run-2026-10-31.md)：Linux x64 双配置各 60 项、16 份发布、48 个冷进程通过；Windows argv、macOS SDK、非 API 探针编译依赖和 API 容器写权限问题使其余六项失败。七项证据与清理均完成；随后四类问题已完成本地修正，并按授权完成上述第二次独立运行；历史首次结果不改写。
 
-四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；候选已完成第二次独立运行，原四类边界取得真实行为证据。2026-11-04 又完成 Windows 临时 SQLite 夹具修正与本机验证，范围见[成组方案第 8 节](./sqlite-hosted-validation-repair-plan.md#windows-fixture-repair)，结果见[本地记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)；随后该候选单次远端运行按独立授权执行，Windows 首个冷探针的新失败仅分析留痕。下一批模块识别与诊断建议见[第 9 节](./sqlite-hosted-validation-repair-plan.md#windows-module-probe-followup)，新实现及新完整 SHA 的执行范围仍需单独确认；本页继续维护原矩阵与授权边界。
+四类失败的后续实现和验证范围集中在[成组修正方案](./sqlite-hosted-validation-repair-plan.md)，本地实现与验证已完成，见[本批记录](../records/sqlite-hosted-validation-repair-2026-10-31.md)；候选已完成第二次独立运行，原四类边界取得真实行为证据。2026-11-04 又完成 Windows 临时 SQLite 夹具修正与本机验证，范围见[成组方案第 8 节](./sqlite-hosted-validation-repair-plan.md#windows-fixture-repair)，结果见[本地记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)；随后该候选单次远端运行按独立授权执行，Windows 首个冷探针的新失败仅分析留痕。接续的[第 9 节](./sqlite-hosted-validation-repair-plan.md#windows-module-probe-followup)已独立获批完成本地模块识别与诊断修正，见[实施记录](../records/sqlite-probe-module-local-repair-2026-11-04.md)；新完整 SHA 和远端范围仍需单独确认。本页继续维护原 job / mode 矩阵及授权边界。
 
 ## 1. 资源核对与目标
 
@@ -87,12 +87,12 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj -c <Debug|Release> --no-bui
 (FullyQualifiedName~SqliteNativeContractTests|FullyQualifiedName~AuthOpenIddictMigrationTest|FullyQualifiedName~DbMigrateBootstrapTests|FullyQualifiedName~ImageProcessorTest|FullyQualifiedName~AttachmentServiceUploadContractTest)&Database!=PostgreSQL
 ```
 
-四宿主各以两个配置、普通 / 显式 RID 输出分别执行 publish，RID 带 `--self-contained false`；使用现有 Node gate 与原 deps / runtimeconfig 执行冷探针。先普通图并存档，再 RID restore，下一配置前恢复普通图，防止图覆盖。每配置发现数量以实际为准，预期每配置 60 个目标用例；零发现、目标用例跳过或不完整 TRX 不通过。
+四宿主各以两个配置、普通 / 显式 RID 输出分别执行 publish，RID 带 `--self-contained false`；使用现有 Node gate 与原 deps / runtimeconfig 执行冷探针。先普通图并存档，再 RID restore，下一配置前恢复普通图，防止图覆盖。模块识别修正新增 22 项行为用例后，预期每配置 82 个目标用例；发现数量以实际为准，零发现、目标用例跳过或不完整 TRX 不通过。旧候选每配置 60 项的历史结果保持原口径。
 
 | 项目 | 每个平台 | 三平台合计 |
 | --- | ---: | ---: |
 | 严格 solution build | 两配置 | 6 组 |
-| 定向测试 | 两配置，预期各 60 次 | 预期 360 次，实际留痕 |
+| 定向测试 | 两配置，预期各 82 次 | 预期 492 次，实际留痕 |
 | 四宿主 publish | 2 配置 × 2 布局 × 4 宿主 = 16 | 48 份 |
 | 按产物编译探针 | 每份 publish 单独编译，共 16 | 48 次 |
 | 独立冷进程 | 每布局 / 配置 12 个，共 48 | 144 个 |

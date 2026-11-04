@@ -125,6 +125,7 @@ test('retains partial probe and compiler diagnostics after failure while excludi
     await assert.rejects(withProbeEvidence(async () => {
       fs.writeFileSync(path.join(scratch, 'process.log'), 'real failure detail');
       fs.writeFileSync(path.join(scratch, 'result.json'), '{"partial":true}');
+      fs.writeFileSync(path.join(scratch, 'module-inventory.json'), '{"status":"failed","candidates":[{"kind":"native"},{"kind":"managedProvider"}]}');
       fs.writeFileSync(path.join(scratch, 'job-states.json'), '{"state":"failed"}');
       fs.writeFileSync(path.join(scratch, 'probe-inputs.json'), '{"host":"Radish.Api"}');
       fs.writeFileSync(path.join(scratch, 'storage.db'), 'runtime data');
@@ -138,6 +139,7 @@ test('retains partial probe and compiler diagnostics after failure while excludi
     assert.equal(fs.readFileSync(path.join(execution.evidence, 'probes/failed/process.log'), 'utf8'), 'real failure detail');
     assert.equal(JSON.parse(fs.readFileSync(path.join(execution.evidence, 'probes/failed/job-states.json'))).state, 'failed');
     assert.equal(JSON.parse(fs.readFileSync(path.join(execution.evidence, 'probes/failed/probe-inputs.json'))).host, 'Radish.Api');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(execution.evidence, 'probes/failed/module-inventory.json'))).candidates.length, 2);
     assert.equal(fs.readFileSync(path.join(execution.evidence, 'compiler/compile-sdk.log'), 'utf8'), 'compiler detail');
     assert.equal(fs.existsSync(scratch), false);
     assert.ok(assertEvidence(execution.evidence).every(item => !/storage.db|probe.dll|Probe.csproj/u.test(item.file)));

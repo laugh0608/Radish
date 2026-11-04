@@ -1,9 +1,6 @@
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Data.Sqlite;
@@ -22,6 +19,7 @@ public static partial class SqliteNativeRuntimeProbe
         if (args.Length != 2) throw new ArgumentException("Expected mode and evidence directory");
         var directory = Path.GetFullPath(args[1]);
         Directory.CreateDirectory(directory);
+        var stage = "first-use";
         try
         {
             var first = args[0];
@@ -37,12 +35,15 @@ public static partial class SqliteNativeRuntimeProbe
 #endif
                 default: throw new ArgumentException("Unknown first-use probe");
             }
+            stage = "shared-providers";
             CheckMicrosoft();
             CheckSqlSugar();
-            var modules = LoadedSqliteModules();
-            Require(modules.Length == 1, "Expected one actually loaded SQLite native module; found " + modules.Length);
-            var native = modules[0];
+            stage = "module-inspection";
+            var selected = SqliteProbeModuleInspector.CaptureAndRequireSingle(directory);
+            var native = selected.Module.FileName;
             var moduleHash = Hash(native);
+            Require(moduleHash == selected.Sha256, "Loaded SQLite module changed during inspection");
+            stage = "managed-assemblies";
             var assemblies = new[] { "SQLitePCLRaw.core", "SQLitePCLRaw.provider.e_sqlite3", "SQLitePCLRaw.batteries_v2", "Microsoft.Data.Sqlite" }
                 .Select(name => AppDomain.CurrentDomain.GetAssemblies().Single(assembly => assembly.GetName().Name == name))
                 .Select(assembly => new { name = assembly.GetName().Name, path = assembly.Location, sha256 = Hash(assembly.Location) }).ToArray();
@@ -56,7 +57,11 @@ public static partial class SqliteNativeRuntimeProbe
         }
         catch (Exception error)
         {
-            File.WriteAllText(Path.Combine(directory, "result.json"), JsonSerializer.Serialize(new { status = "failed", mode = args[0], error = error.ToString() }));
+            File.WriteAllText(Path.Combine(directory, "result.json"), JsonSerializer.Serialize(new
+            {
+                status = "failed", mode = args[0], stage, error = error.ToString(),
+                moduleInventory = File.Exists(Path.Combine(directory, "module-inventory.json")) ? "module-inventory.json" : null
+            }));
             Console.Error.WriteLine(error);
             return 1;
         }
@@ -70,32 +75,6 @@ public static partial class SqliteNativeRuntimeProbe
 
     private static string Hash(string file) => Convert.ToHexStringLower(SHA256.HashData(File.ReadAllBytes(file)));
 
-    // Process.Modules does not enumerate dylibs on macOS. Query dyld's loaded-image
-    // table after the real provider calls; do not load a separate candidate library.
-    [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "_dyld_image_count")]
-    private static extern uint DyldImageCount();
-
-    [DllImport("/usr/lib/libSystem.B.dylib", EntryPoint = "_dyld_get_image_name")]
-    private static extern IntPtr DyldImageName(uint index);
-
-    private static string[] LoadedSqliteModules()
-    {
-        if (!OperatingSystem.IsMacOS())
-        {
-            using var process = Process.GetCurrentProcess();
-            return process.Modules.Cast<ProcessModule>().Where(module => module.ModuleName.Contains("e_sqlite3", StringComparison.Ordinal))
-                .Select(module => module.FileName).ToArray();
-        }
-
-        var paths = new List<string>();
-        var count = DyldImageCount();
-        for (uint index = 0; index < count; index++)
-        {
-            var file = Marshal.PtrToStringUTF8(DyldImageName(index));
-            if (file is not null && Path.GetFileName(file) == "libe_sqlite3.dylib") paths.Add(file);
-        }
-        return paths.ToArray();
-    }
     private static void Require(bool condition, string message)
     {
         if (!condition) throw new InvalidOperationException(message);

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Radish.Api.Tests.Repositories;
 
-public sealed class SqliteNativeContractTests
+public sealed partial class SqliteNativeContractTests
 {
     [Fact]
     public void NativeIdentityAndParameterizedValues_ShouldMatchApprovedSqlite()

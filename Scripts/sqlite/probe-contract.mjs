@@ -17,7 +17,7 @@ const requireCondition = (condition, message) => { if (!condition) throw new Err
 export function probeProfile(host) {
   requireCondition(Object.hasOwn(hostCapabilities, host), `Unsupported probe host: ${host}`);
   const modes = hostCapabilities[host];
-  return { host, modes, sources: ['RuntimeProbe.cs', ...(modes.includes('ef') ? ['RuntimeProbe.Ef.cs'] : []),
+  return { host, modes, sources: ['RuntimeProbe.cs', 'SqliteProbeModuleInspector.cs', ...(modes.includes('ef') ? ['RuntimeProbe.Ef.cs'] : []),
     ...(modes.includes('hangfire') ? ['RuntimeProbe.Hangfire.cs'] : [])],
   defines: [...(modes.includes('ef') ? ['SQLITE_PROBE_EF'] : []), ...(modes.includes('hangfire') ? ['SQLITE_PROBE_HANGFIRE'] : [])] };
 }

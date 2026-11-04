@@ -133,7 +133,7 @@ export function retainProbeEvidence(source, destination) {
   if (!fs.existsSync(source)) return;
   for (const file of files(source)) {
     const name = path.basename(file);
-    if (!['result.json', 'hangfire-result.json', 'process.log', 'sdk-version.log', 'probe-restore.log', 'compile-sdk.log', 'job-states.json', 'probe-inputs.json', 'probe-manifest.json'].includes(name)
+    if (!['result.json', 'module-inventory.json', 'hangfire-result.json', 'process.log', 'sdk-version.log', 'probe-restore.log', 'compile-sdk.log', 'job-states.json', 'probe-inputs.json', 'probe-manifest.json'].includes(name)
       && !/^Radish\.[A-Za-z.]+-summary\.json$/u.test(name)) continue;
     const target = path.join(destination, path.relative(source, file));
     fs.mkdirSync(path.dirname(target), { recursive: true }); fs.copyFileSync(file, target);

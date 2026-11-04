@@ -27,6 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="../Scripts/sqlite/SqliteProbeModuleInspector.cs" Link="SqliteDiagnostics/SqliteProbeModuleInspector.cs" />
     <None Include="../Scripts/logging/fixtures/runtime-events.json" Link="LoggingFixtures/runtime-events.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
