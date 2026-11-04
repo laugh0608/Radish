@@ -11,7 +11,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`第三方依赖许可治理与替代方案`（2026-10-20 项目所有者明确指定的专题）
-- **下一项工作**：SQLite 夹具、模块识别及本次三原生 x64 / 四 AMD64 final 验收已收口，见[最新记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)。按既定顺位接续 Hangfire 来源绑定、正式源码入口与剩余发行材料；Windows Razor 仍等待上游修复部署和版本确认，再确认新 inventory，verify 后置。NoDrive / SystemCommon 来源补证、SNI 下游分发与 Valkey 仍保留独立边界。
+- **下一项工作**：SQLite 本次平台验收已收口，结果已提交 `864f9f99`；Hangfire [来源 / 交付准备复核](../records/hangfire-source-delivery-review-2026-11-04.md)已完成，下一步确认[交付方案第 8 节](../features/hangfire-rebuild-delivery-plan.md#8-接续原包来源与正式源码交付准备)的本地材料候选与 PostgreSql 询证发送范围。原 DLL 的 commit 声明已补证，匹配 PDB / 逐文件绑定仍未取得；Windows Razor 仍等待上游修复部署和版本确认，verify 后置。NoDrive / SystemCommon、SNI 与 Valkey 保留独立边界。
 - **状态复核日期**：`2026-11-04`；候选 `ab37d19e` 已获批 push 并完成单次完整七 job，7 项通过，492 项测试及 156 个冷进程 / 模块清单通过，证据与清理完整；未重试、发布或部署，未改依赖图。SQLite 依赖与六组件材料见[实施记录](../records/sqlite-native-unification-2026-10-31.md)，该批 .NET 图共 219 个不同 package/version 条目。此前 NoDrive 实施与未关闭项见[采用记录](../records/nodrive-adoption-2026-10-26.md)。
 - **日志专题复核日期**：`2026-10-15`；已完成表情管理、API 已处理 404、SignalR Core、外层 HTTP、Kestrel 协议 / HTTPS、证书监视 / 配置加载、早期消费点二次失败、服务端 transport / Http.Connections / 协议解析及 YARP / 出站 HTTP / 配置管理 / 条件性亲和与健康检查、认证／授权、路由、宿主健康服务、OpenIddict Server / Core、自有 Auth 登录／注册／会话、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断与 API 启动业务 / Gateway 停止日志治理，见[事件契约第 49–72 节](../features/unified-logging-contract.md)。L2 尚未关闭，未新增平台运行、镜像发布或部署验收。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
@@ -29,7 +29,7 @@
 
 ## 接下来的事项
 
-1. **接续 Hangfire 来源与发行材料**：[SQLite 最终候选](../records/sqlite-hosted-native-module-run-2026-11-04.md)七 job 全部通过，原四类修正、Windows 临时夹具与模块识别本批缺口已关闭；不再把这些列作待修复项。继续确认 Hangfire 剩余来源绑定、正式源码入口与发行材料范围；[本机重建](../records/hangfire-rebuild-2026-10-31.md)已完成，原 PostgreSql DLL 绑定仍独立验收。Windows Razor 的 image 身份仍未关闭：本轮只读复核[上游询证](https://github.com/actions/runner-images/issues/15201)仍无修复部署完成或版本确认，后续按 [Razor 方案](../features/hangfire-windows-razor-validation-plan.md)确认新 inventory 的 SHA / 输入 / 运行授权，不冻结旧冲突值，不自行重试或执行 verify。23 对生成 / 8 次 Core 构建 / 16 组探针尚未运行；SQLite 的 windows-2025 通过不替代该 windows-2022 专项。
+1. **接续 Hangfire 来源与发行材料**：[SQLite 最终候选](../records/sqlite-hosted-native-module-run-2026-11-04.md)七 job 全部通过，本批缺口已关闭。Hangfire [本机重建](../records/hangfire-rebuild-2026-10-31.md)完成；[本轮来源复核](../records/hangfire-source-delivery-review-2026-11-04.md)重新核验 869 文件、753 blobs 与 42 项 feed，并从原 PostgreSql DLL 读得相同 commit 声明，未取得匹配 PDB，不视为逐文件源码绑定。按[交付方案第 8 节](../features/hangfire-rebuild-delivery-plan.md#8-接续原包来源与正式源码交付准备)审阅本地材料候选范围及未发送的上游询证草稿；不重复调用测试代替来源证明。Windows image 身份仍未关闭：上游尚无修复部署完成或版本确认，后续按 [Razor 方案](../features/hangfire-windows-razor-validation-plan.md)确认新 inventory 的 SHA / 输入 / 运行授权，不冻结旧冲突值或执行 verify。23 对生成 / 8 次 Core 构建 / 16 组探针尚未运行；SQLite 的 windows-2025 通过不替代 windows-2022 专项。
 2. **保留独立来源 / 发行缺口**：NoDrive / SystemCommon 本地 PE debug 核对未取得新的源码 commit，已准备上游询证草案但未发送。SNI 仍随通用 publish 分发 Windows runtime；后续按实际平台核对正常 RID 发布与下游条款。已完成的[重点 notices 接线](../records/nuget-notices-distribution-2026-10-26.md)不覆盖全部 NuGet / 全生态材料，也不自动关闭这些条件。
 3. **单独裁决 Valkey 是否正式采用**：配额修复已通过两端定向回归，但服务迁移仍需确定源版本、数据保留 / 重建分类、备份恢复、运维接线与回滚方案。当前不探测生产、不修改 Compose；运行与数据操作按具体范围另行授权。
 4. **成组集成与后续恢复**：依赖批次范围确认后，按最新候选执行合并前门禁再安排 `dev → master` PR；既有图片 CI 与历史定向结果不能替代新候选验收。不自动创建 tag 或发布；依赖专题收口后恢复下方日志 L2，再按既定顺位推进 P8-C。

@@ -1,0 +1,212 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-11-04",
+  "timezone": "Asia/Shanghai",
+  "baseRevision": "864f9f99a0a277a5bbe72b6e64c1c4392180309d",
+  "scope": "read-only provenance and retained material review; delivery proposal and unsent inquiry draft",
+  "retainedArchive": {
+    "path": "artifacts/source-bundles/radish-hangfire-source-20261031-c9e4",
+    "indexSha256": "f788ba5a979b3fc94fc3eab813003231482db19161d4f190746342f7812c2df8",
+    "indexedFileCount": 869,
+    "indexedBytes": 160350382,
+    "allIndexedFilesVerified": true,
+    "feedPackagesVerified": 42,
+    "contentHashRecomputed": false,
+    "sourceBlobsVerified": 753,
+    "sources": [
+      {
+        "repository": "hangfire",
+        "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+        "tree": "b5ee5d721d64442d4bff4d9592bd05e9f5fda421",
+        "blobCount": 607,
+        "bundleSha256": "d670fd20c38b44f8a7137d91f0c5f3af5f00b85b1d3fb78405accff2dcbf557f",
+        "fsck": "passed",
+        "bundleVerify": "passed",
+        "prerequisiteFreeBundle": true
+      },
+      {
+        "repository": "cronos",
+        "commit": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+        "tree": "d6fe40daf2b07b26f837fa36fb47002ca38ca9c7",
+        "blobCount": 38,
+        "bundleSha256": "1f84f116cef9c9aa7c808b0ce7d54eb22c5a8829290da35e00fa011eeecaa821",
+        "fsck": "passed",
+        "bundleVerify": "passed",
+        "prerequisiteFreeBundle": true
+      },
+      {
+        "repository": "postgresql",
+        "commit": "a5a728233ac8feb447695acb01f607bd848b00f7",
+        "tree": "f6f0556f83951060c076a08500e8a42435c8262a",
+        "blobCount": 108,
+        "bundleSha256": "bf75950f79da502ba3a52ec1ddb35b53d70ac7338e93202b1c34789261893491",
+        "fsck": "passed",
+        "bundleVerify": "passed",
+        "prerequisiteFreeBundle": true
+      }
+    ]
+  },
+  "originalPostgresql": {
+    "package": "hangfire.postgresql",
+    "normalizedVersion": "1.20.12",
+    "archiveSha256": "8112b10e784e5bbf6dac3955835bd56511c868aced725fad784199bb655e7e04",
+    "dllSha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+    "apiReleaseDllMatches": true,
+    "files": [
+      "_rels/.rels",
+      "Hangfire.PostgreSql.nuspec",
+      "lib/netstandard2.0/Hangfire.PostgreSql.dll",
+      "lib/netstandard2.0/Hangfire.PostgreSql.xml",
+      "LICENSE.md",
+      "[Content_Types].xml",
+      "package/services/metadata/core-properties/7f39f4f41c7b413391b036d0a12f309a.psmdcp",
+      ".signature.p7s"
+    ],
+    "pdbInPackage": false,
+    "metadata": {
+      "name": "Hangfire.PostgreSql",
+      "version": "1.20.12.0",
+      "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+      "mvid": "bfc53de0-5896-4f22-b0da-3e61a6c82530",
+      "attributes": [
+        {
+          "name": "AssemblyFileVersionAttribute",
+          "values": [
+            "1.20.12.0"
+          ]
+        },
+        {
+          "name": "AssemblyInformationalVersionAttribute",
+          "values": [
+            "1.20.12+2.Branch.master.Sha.a5a728233ac8feb447695acb01f607bd848b00f7"
+          ]
+        },
+        {
+          "name": "AssemblyMetadataAttribute",
+          "values": [
+            "RepositoryUrl",
+            "https://github.com/frankhommers/Hangfire.PostgreSql"
+          ]
+        }
+      ],
+      "debug": [
+        {
+          "type": "CodeView",
+          "Stamp": 3322611087,
+          "MajorVersion": 256,
+          "MinorVersion": 20557,
+          "value": {
+            "Guid": "b4c7b3c6-a4e2-4935-9bf0-21ce1826eb98",
+            "Age": 1,
+            "Path": "/home/runner/work/Hangfire.PostgreSql/Hangfire.PostgreSql/src/Hangfire.PostgreSql/obj/Release/netstandard2.0/Hangfire.PostgreSql.pdb"
+          }
+        },
+        {
+          "type": "PdbChecksum",
+          "Stamp": 0,
+          "MajorVersion": 1,
+          "MinorVersion": 0,
+          "value": {
+            "AlgorithmName": "SHA256",
+            "checksum": "c6b3c7b4e2a435a99bf021ce1826eb988f050bc602d768edaedd734e25808e5a"
+          }
+        },
+        {
+          "type": "Reproducible",
+          "Stamp": 0,
+          "MajorVersion": 0,
+          "MinorVersion": 0,
+          "value": null
+        }
+      ]
+    },
+    "currentTagCommit": "a5a728233ac8feb447695acb01f607bd848b00f7",
+    "binaryDeclaredCommitMatchesPackageTagAndBundle": true,
+    "evidenceLevel": "binary-declared-commit-corroboration",
+    "matchingOriginalPdbObtained": false,
+    "sourceDocumentChecksumBinding": "not-established",
+    "upstreamOriginalByteReproduction": "not-claimed",
+    "newSymbolRequests": [
+      {
+        "name": "nuget-symbol-package",
+        "url": "https://www.nuget.org/api/v2/symbolpackage/Hangfire.PostgreSql/1.20.12",
+        "headers": {},
+        "checkedAtUtc": "2026-11-04T12:50:17.419760+00:00",
+        "errorType": "URLError",
+        "error": "<urlopen error _ssl.c:1063: The handshake operation timed out>"
+      },
+      {
+        "name": "nuget-portable-pdb",
+        "url": "https://symbols.nuget.org/download/symbols/Hangfire.PostgreSql.pdb/b4c7b3c6a4e249359bf021ce1826eb98FFFFFFFF/Hangfire.PostgreSql.pdb",
+        "headers": {
+          "SymbolChecksum": "SHA256:c6b3c7b4e2a435a99bf021ce1826eb988f050bc602d768edaedd734e25808e5a"
+        },
+        "checkedAtUtc": "2026-11-04T12:50:17.420493+00:00",
+        "status": 404,
+        "finalUrl": "https://symbols.nuget.org/download/symbols/Hangfire.PostgreSql.pdb/b4c7b3c6a4e249359bf021ce1826eb98FFFFFFFF/Hangfire.PostgreSql.pdb"
+      },
+      {
+        "name": "nuget-portable-pdb-canonical",
+        "url": "https://symbols.nuget.org/download/symbols/hangfire.postgresql.pdb/b4c7b3c6a4e249359bf021ce1826eb98FFFFFFFF/hangfire.postgresql.pdb",
+        "headers": {
+          "SymbolChecksum": "SHA256:c6b3c7b4e2a435a99bf021ce1826eb988f050bc602d768edaedd734e25808e5a"
+        },
+        "checkedAtUtc": "2026-11-04T12:53:05.332900+00:00",
+        "reason": "Canonical lower-case file segments as required by Microsoft.SymbolStore KeyGenerator.BuildKey",
+        "status": 404
+      }
+    ]
+  },
+  "metadataInspection": {
+    "sdk": "10.0.300",
+    "runtime": "10.0.8",
+    "newPackages": 0,
+    "compiler": "existing SDK Roslyn, strict compilation",
+    "foreignAssemblyExecuted": false
+  },
+  "delivery": {
+    "proposal": "Docs/features/hangfire-rebuild-delivery-plan.md section 8",
+    "dashboardAssets": 31,
+    "upstreamNoticeHeadings": 15,
+    "materialGeneratorImplemented": false,
+    "localSourceDeliveryCandidateBuilt": false,
+    "publicSourceEndpoint": "not-published",
+    "fullCorrespondingSourceClearance": "not-claimed"
+  },
+  "windowsRazor": {
+    "issue": "https://github.com/actions/runner-images/issues/15201",
+    "comments": 5,
+    "latestComment": "https://github.com/actions/runner-images/issues/15201#issuecomment-6580306089",
+    "fixedDeploymentConfirmed": false,
+    "inventoryOrVerifyExecuted": false
+  },
+  "inquiry": {
+    "destination": "hangfire-postgres/Hangfire.PostgreSql public issue",
+    "draft": "Docs/records/hangfire-source-delivery-review-2026-11-04.md section 5",
+    "sent": false,
+    "sendAuthorized": false
+  },
+  "cleanup": {
+    "complete": true,
+    "scope": "scratch metadata executable/runtimeconfig, original DLL copy, three local Git replicas",
+    "originalArchiveUnchanged": true,
+    "installedTools": false,
+    "startedServices": false
+  },
+  "externalActions": {
+    "push": false,
+    "workflowDispatch": false,
+    "messagesSent": false,
+    "release": false,
+    "deployment": false
+  },
+  "applicationDependencyGraphChanged": false,
+  "formalBinariesChanged": false,
+  "evidence": {
+    "path": "artifacts/source-readiness/hangfire-delivery-20261104",
+    "indexSha256": "5a2eb8bac2c249eeda890a7d1ac13d6ac8df9ea1c404af89b9f9d118598b8b2b",
+    "indexedFiles": 12,
+    "allFilesReadBackVerified": true,
+    "manifestExcludesItself": true
+  }
+}

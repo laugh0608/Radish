@@ -207,3 +207,38 @@ docker --context orbstack run -d --pull=never --platform linux/arm64 \
 Windows Razor 需要单独准备的 Full MSBuild 与 RazorGenerator.MsBuild `2.5.0`，并核对 `Razor.build` 固定的 packages 路径；本机没有这些工具。本批保留 .cshtml 与已生成 .cshtml.cs 的 hash，**不声称重现了 Razor 生成**。后续 [Windows Razor 托管方案](./hangfire-windows-razor-validation-plan.md)的[本地工具与 CI](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)已获批实施，25 项 Node / 11 组 C# 契约及原 Core 片段验证通过；实际 Full MSBuild 版本与 Windows 再生成仍待远端。之后分别授权 push、inventory 与 verify；不复用 SQLite 矩阵触发它。
 
 NoDrive 询证、SNI、Valkey、公开源码托管、对外通信、master PR、tag / Release、发布和部署均不在本批授权请求内。
+
+## 8. 接续：原包来源与正式源码交付准备
+
+2026-11-04 在 SQLite 本次托管验收收口后，所有者要求提交结果并继续下一步。本节承接不安装工具、不运行服务、不改变正式依赖的本地留存 / 来源核查与材料准备；结果见[复核记录](../records/hangfire-source-delivery-review-2026-11-04.md)。旧重建批次授权不沿用，本节不扩大到新的上游 / 应用重建、远端运行或对外发送。
+
+### 8.1 已完成的来源补证与剩余门禁
+
+- 原本地归档的索引及 869 文件重新核对一致；三个 bundle 的 `fsck --full --strict`、完整历史验证、冻结 commit / tree 与全部 753 blobs 核对通过，42 项 feed 的归档身份及精确版本保持。
+- 原 `Hangfire.PostgreSql.dll` 的 `AssemblyInformationalVersion` 为 `1.20.12+2.Branch.master.Sha.a5a728233ac8feb447695acb01f607bd848b00f7`，与包内 repository commit、冻结 bundle 和当前官方 tag 一致。这个字段补齐了 **DLL 自身的来源声明**，不能冒充 PDB 文档 checksum 或原包字节重建。
+- 按原 DLL 的 CodeView GUID / portable key 与 SHA256 checksum 查询官方符号服务，规范化请求返回 404；symbol package 读取则 TLS 超时，均未取得匹配 PDB。未推断符号永久不存在；拟向上游请求匹配 PDB / SourceLink 或可复核的原包构建材料，询证草稿已在记录中准备，尚未发送。
+- Windows Razor 仍等待上游部署完成及修复版本确认；不因本地来源补证而派发 inventory / verify，不修改身份门禁。
+
+### 8.2 正式源码交付的待确认方案
+
+沿用当前包与应用图，先准备**本地、未发布的源码交付候选**，再由实际候选验收决定是否具备对外提供条件。该方案不把重建 DLL 替换进产品，也不把整个 160 MB 本地审阅归档直接作为发行包。
+
+| 材料 | 候选应保留的内容 | 验收要求 |
+| --- | --- | --- |
+| 原始来源 | 三个冻结 commit / tree、完整原始文件及必要历史；原 PostgreSql 来源证明单独标注 | Git 对象、路径、模式、文件 hash 与冻结身份一致；声明与 checksum 证明分开 |
+| 已编译源码与资源 | LibLog / StackTrace / MoreLINQ 实际编译源、Cronos、23 对 Razor 输入 / 既有生成文件、Dashboard 31 个资源 | 与 PDB / 资源报告对应；Windows 再生成保留独立门禁 |
+| 实际适配 | 三份输入补丁、实际 tracked diff、新增 Directory.Build.targets、修改 C#；诊断标记组单列 | 可以重建已验证的本地源码版本；明确其与正式原包的差异，不把 SourceLink 原 URL 当作修改文件来源 |
+| 构建材料 | 工具源码、42 项精确 package URL / archive hash / contentHash、SDK URL / hash、锁与所选 TFM | 先核对所需输入及获取方式，再在新目录验证；不自动安装 SDK、获取新版本或扩大闭包 |
+| 许可与内嵌材料 | 原始许可 / NOTICES、按实际库与 Dashboard 文件建立的组件映射 | 包含 Bootstrap 内嵌 normalize.css 与字体等文件的核对；上游总 NOTICES 不能替代逐项映射 |
+| 接收者说明 | 原包身份、来源证据级别、适配 / 重放说明、未关闭项 | 能区分原包来源、适配重建和实际调用三种证据；不要求接收者从本机临时路径取材料 |
+
+SDK 安装 / archive、完整私有 NuGet feed、应用源码 / publish、重建 DLL / PDB、数据库数据与运行日志默认继续留在本地审阅层；若候选确需带入构建辅助二进制或其他材料，先核对精确文件与再分发范围。原始仓库自带的构建辅助文件仍保留其原始来源和状态，不把它们描述为已通过再分发审查。
+
+正式获取方式拟为**相应二进制下载入口旁的独立、版本固定的源码材料入口**，同时标明包版本、commit、产物 hash、材料 hash 和替代来源。托管位置、可获得性安排、具体纳入文件及最终发行结论仍需确认；本地归档与临时 CI artifact 不作为已完成的正式入口。
+
+### 8.3 下一执行段与确认内容
+
+1. 先审阅记录中的 PostgreSql 询证草稿；公开 issue / 邮件发送需单独授权，不附应用代码、配置、凭据或完整本地归档。
+2. 确认上述源码候选的纳入文件、获取方式和本地验收范围后，再实现材料生成 / 检查入口及接线。先准备可审阅的本地候选，不自动上传、创建 Release、改 ThirdParty 或替换正式 DLL。
+3. 新工具安装、严格重放或数据库调用若确有必要，按精确命令、版本、影响和清理另行确认；不重复已完成的 18 组调用来代替来源证据。
+4. Windows Razor 保持其独立分段流程；有上游部署确认后再明确完整 SHA 和单次 inventory 范围，verify 仍后置。

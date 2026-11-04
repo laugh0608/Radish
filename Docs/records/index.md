@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-04 Hangfire 来源与源码交付复核](./hangfire-source-delivery-review-2026-11-04.md) · [摘要 JSON](./hangfire-source-delivery-review-2026-11-04.json)：869 文件 / 753 blobs / 42 项 feed 留存通过，原 PostgreSql DLL commit 声明补证；匹配 PDB、Windows 与正式入口仍未关闭，询证草稿未发送
+
 - [2026-11-04 SQLite 模块修正候选单次托管验收](./sqlite-hosted-native-module-run-2026-11-04.md) · [结果 JSON](./sqlite-hosted-native-module-run-2026-11-04.json)：七 job 全部通过，492 项测试、48 份 publish、156 份冷进程 / 模块清单及清理完整；Windows 本批缺口关闭，未重试 / 发布 / 部署
 
 - [2026-11-04 SQLite 探针模块识别本地修正](./sqlite-probe-module-local-repair-2026-11-04.md)：上轮结果已提交；模块 / PE / CLR 识别与失败清单留存完成，两配置各 82 项、32 项 Node、8 份探针编译 / 24 个本机冷 mode 通过，未 push / 远端验收

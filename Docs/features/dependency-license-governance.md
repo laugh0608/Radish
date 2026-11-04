@@ -20,6 +20,8 @@
 
 同日，上轮结果文档由 `1e1d0ff1` 保存后，第 9 节独立获批完成模块识别本地修正，见[实施记录](../records/sqlite-probe-module-local-repair-2026-11-04.md)。随后候选 `ab37d19eaf83189ec5c556d14608c1c132dce022` 又独立获批完成[单次完整七 job](../records/sqlite-hosted-native-module-run-2026-11-04.md)，7 项通过，492 项测试、48 份 publish、156 个冷 mode / 模块清单与证据 / 清理全部通过；Windows 夹具和模块识别的本次平台缺口已关闭。旧 `44c13c50` 失败保留，不回填旧模块身份；Hangfire / NoDrive 等来源和发行义务、Valkey 与发布边界仍分别推进。
 
+SQLite 结果文档由 `864f9f99` 保存后，接续完成 [Hangfire 来源与交付材料复核](../records/hangfire-source-delivery-review-2026-11-04.md)：原归档、三个完整 bundle 和 42 项 feed 留存核对通过，原 PostgreSql DLL 的信息版本与冻结 commit 一致；没有取得匹配 PDB，不扩大为逐文件绑定。正式材料候选及源码入口方案由[重建交付方案第 8 节](./hangfire-rebuild-delivery-plan.md#8-接续原包来源与正式源码交付准备)承接；上游询证草稿未发送，Windows Razor、运行和发行继续独立确认。
+
 <a id="delivery-slices"></a>
 
 ## 规划归属与实施切片
