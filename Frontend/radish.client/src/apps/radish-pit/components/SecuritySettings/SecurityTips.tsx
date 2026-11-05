@@ -28,7 +28,7 @@ export const SecurityTips = ({ status, onNavigate }: SecurityTipsProps) => {
   const { t, i18n } = useTranslation();
   const language = i18n.resolvedLanguage ?? i18n.language;
   const navigateTo = (tab: SecurityActionTab, source: string) => {
-    log.debug('SecurityTips', `从 ${source} 跳转到 ${tab}`);
+    log.debug('SecurityTips', '打开安全设置标签页', { source, tab });
     onNavigate(tab);
   };
 

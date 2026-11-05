@@ -441,7 +441,7 @@ export const CommentNode = ({
         );
       })
       .catch(error => {
-        log.error(t('forum.comment.preloadChildrenFailed'), error);
+        log.error('预加载子评论失败', error);
       })
       .finally(() => {
         setIsLoadingMore(false);
@@ -459,7 +459,7 @@ export const CommentNode = ({
       setIsLiked(result.isLiked);
       setLikeCount(result.likeCount);
     } catch (error) {
-      log.error(t('forum.comment.likeFailed'), error);
+      log.error('评论点赞失败', error);
       // 发生错误时保持原状态
     } finally {
       setIsLiking(false);
@@ -513,7 +513,7 @@ export const CommentNode = ({
       setEditError(null);
       setIsEditing(false);
     } catch (error) {
-      log.error(t('forum.comment.editFailed'), error);
+      log.error('编辑评论失败', error);
       const message = error instanceof Error ? error.message : t('forum.comment.editFailedRetry');
       setEditError(message);
     } finally {
@@ -541,7 +541,7 @@ export const CommentNode = ({
           setLoadedChildren(normalized);
           setCurrentPage(1);
         } catch (error) {
-          log.error(t('forum.comment.loadMoreChildrenFailed'), error);
+          log.error('加载更多子评论失败', error);
         } finally {
           setIsLoadingMore(false);
         }
@@ -582,7 +582,7 @@ export const CommentNode = ({
       setCurrentPage(nextPage);
       setHasPreloadedChildren(normalized.length > 0 || nextPage > 1);
     } catch (error) {
-      log.error(t('forum.comment.loadMoreChildrenFailed'), error);
+      log.error('加载更多子评论失败', error);
     } finally {
       setIsLoadingMore(false);
     }

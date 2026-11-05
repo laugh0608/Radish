@@ -88,7 +88,7 @@ export const EditPostModal = ({
         avatar: user.voAvatar
       }));
     } catch (searchError) {
-      log.error('EditPostModal', t('forum.mention.searchFailed'), searchError);
+      log.error('EditPostModal', '搜索帖子提及用户失败', searchError);
       throw searchError;
     }
   }, [t]);
@@ -269,7 +269,7 @@ export const EditPostModal = ({
   };
 
   const handleEditorUploadError = useCallback((kind: 'image' | 'document', uploadError: unknown) => {
-    log.error('EditPostModal', `Markdown ${kind} upload failed:`, uploadError);
+    log.error('EditPostModal', 'Markdown 附件上传失败:', uploadError, { kind });
   }, []);
 
   const handleEditorUploadingChange = useCallback((uploading: boolean) => {

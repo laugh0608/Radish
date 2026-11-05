@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-10-15。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-11-05。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -9,7 +9,7 @@
 - .NET：作为 `Radish.Common` 嵌入资源，由 `RuntimeLogPolicy` 读取；不依赖业务层。
 - Node：`Frontend/scripts/logging/runtime-event.mjs` 读取同一文件；静态服务器已接入候选输出，Dockerfile 随运行脚本复制此策略。
 - 两端运行同一组 [`runtime-events.json`](../../Scripts/logging/fixtures/runtime-events.json) 样本，不各写一份脱敏规则。
-- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器 / Flutter logger 和数据库接收仍待迁移。旧默认行为见[日志系统](../guide/logging.md)。
+- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器本地 logger 已完成本批迁移，边界见第 74 节；Flutter logger 和数据库接收仍待迁移。旧默认行为见[日志系统](../guide/logging.md)。
 
 ## 2. 生成契约 v1 首批字段
 
@@ -701,3 +701,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 各来源未知、缺失、非字符串或不属于该来源的编码，分别转为 `hangfire.runtime_unknown / job.state_unknown`，不保留业务扩展字段。固定模板 / 来源 / job 分类、原 Timestamp / 等级及 diagnostic 重建；Exception、原模板、任意 scope / 嵌套值与跨事件属性丢弃。trace / span 仅采用强类型 LogEvent 值或原 Activity 回退，不从自由字符串恢复。
 - `hangfire.diagnostic` 与未知低于 Warning 的事件标记 diagnostic；候选继续按模式、Diagnostics、MinimumLevel 和三级 / Fatal 策略过滤。旧链保留原 MinimumLevel，不新增环境过滤或将 Fatal 降级；代码 / 配置 WriteTo 继续消费 sink 输出故障，AuditTo 继续传播，候选沿原应急通道处理输出失败，logger 释放所有权与故障行为保持。
 - 这些标识用于已登记生产路径的重建，不认证进程内任意恶意代码；外部 enricher 的提前求值和独立 logger 不自动受保护。Debug / Release 严格构建、各 222 项定向回归（各含 83 项新增 Hangfire 专项）、4 个新增共享 fixture 与 52 项 Node 契约通过，见[实施记录](../records/unified-logging-l2-hangfire-output-2026-11-04.md)。真实服务 / worker、真实存储、文件 / 数据库落盘和部署未验收；只关闭这两个来源的本次缺口，浏览器输出未扩展，生产候选开关关闭，L2 尚未整体完成。
+
+## 74. L2 浏览器公共安全出口与三级（2026-11-05）
+
+- 按[已批准方案](./unified-logging-l2-browser-output-plan.md)完成 `@radish/http/logging` 公共子路径、Client / Console 真实 logger 和共享 HTTP 五处错误出口。两应用旧 sanitizer 仅重导出，Node 静态宿主与后端候选开关不变。
+- 固定应用来源、精确 tag / message 目录和逐事件字段规则决定输出；Client 328 项、Console 153 项说明覆盖当前 484 处直接调用。动态模板 / 翻译说明改为固定消息与受控枚举；目录覆盖测试同时检查遗漏和闲置条目，未知文本转为固定未登记摘要。
+- 三级为 Info / Warning / Error；debug 保留调用兼容，转为 Info + diagnostic。仅 env.isDev 且 env.debug 时生成诊断；Production 即使 runtime debug=true 也禁止诊断。已复核的 11 处 Info 中六处过程日志转为诊断，五处明确状态 / 结果保留 Info。
+- 字段只接受本事件登记的整数范围、布尔和封闭枚举；没有通用字符串或数字放行，也不复制完整对象。异常不读取文本访问器；安全位置仅保留已识别应用资源类别及行列。Proxy 反射失败、循环、超深对象、敏感键和自定义转换不造成原文透传。
+- 最终 console 仅接收固定格式串及序列化快照；最多 32 个参数、32 个业务属性、4 个异常摘要 / 各 32 帧，UTF-8 JSON 上限 8 KiB。超限优先省略位置，保留固定说明并标记裁剪；输出器故障被日志边界隔离，重入不递归。
+- 共享 HTTP 保留原回调参数与次数、Response、一次刷新重放、网络 / 服务器失败和认证失效通知。已有非 Error 包装、调用前实参求值与业务错误解读仍属于原业务路径，不把日志内不读取访问器扩大为所有调用方均无输入访问。
+- 这是浏览器本地安全快照，不是服务器 RuntimeLogEvent 入库或跨容器汇聚证据；不自动回传日志，不接管第三方 SignalR / 浏览器自身输出。现行规则见[前端日志说明](../guide/frontend-logging.md)，候选、测试和构建事实见[实施记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。真实服务、PC / mobile Smoke、部署未执行，L1 剩余门禁、L2 整体和 L3–L6 仍未关闭。

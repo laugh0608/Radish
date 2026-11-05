@@ -91,7 +91,7 @@ export function setupApiInterceptors() {
     },
   });
 
-  log.info('ApiInterceptor', 'API 拦截器已配置');
+  log.debug('ApiInterceptor', 'API 拦截器已配置');
 }
 
 /**

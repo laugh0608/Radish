@@ -216,7 +216,7 @@ export function DocsAuthorEditorPage({
           : t('wiki.author.editor.saved');
   const canSubmit = state.document?.voCanSubmit === true && !isDirty && !isEditorUploading;
   const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
-    log.error('DocsAuthorEditorPage', `Markdown ${kind} upload failed:`, error);
+    log.error('DocsAuthorEditorPage', 'Markdown 附件上传失败:', error, { kind });
   }, []);
 
   useEffect(() => {

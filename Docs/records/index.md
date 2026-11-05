@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-05 L2 浏览器日志最终输出收口](./unified-logging-l2-browser-output-2026-11-05.md)：公共安全出口、两应用固定目录、三级 / diagnostic、HTTP 语义与本地自动化验收；未执行真实 Smoke 或遥测上传
+
 - [2026-11-04 日终代码与文档回顾](./day-end-doc-review-2026-11-04.md)：八个提交、SQLite 本次平台收口、Hangfire 最终输出修正、指南同步及浏览器日志下一步
 
 - [2026-11-04 L2 Hangfire 最终输出修正](./unified-logging-l2-hangfire-output-2026-11-04.md) · [结果 JSON](./unified-logging-l2-hangfire-output-2026-11-04.json)：两个精确来源 / 三条出口收口，Debug / Release 各 222 项及 52 项 Node 契约通过，L2 整体未关闭

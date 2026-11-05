@@ -113,13 +113,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         setPurchasePasscodeUpgradePrompt(null);
         setIsPurchaseModalOpen(false);
 
-        log.debug(
-          t('shop.purchase.success'),
-          t('shop.purchase.successDetail', {
-            deducted: result.data.deductedCoins ?? 0,
-            remaining: result.data.remainingBalance ?? 0
-          })
-        );
+        log.debug('商品购买成功');
 
         // 刷新相关数据
         await Promise.all([
@@ -147,7 +141,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.purchaseFailed'));
       }
     } catch (error) {
-      log.error(t('shop.error.purchaseFailed'), error);
+      log.error('购买商品失败', error);
       setError(error instanceof Error ? error.message : t('shop.error.purchaseFailed'));
     } finally {
       setPurchasing(false);
@@ -166,7 +160,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         throw new Error(result.message || t('shop.error.cancelOrderFailed'));
       }
     } catch (error) {
-      log.error(t('shop.error.cancelOrderFailed'), error);
+      log.error('取消订单失败', error);
       setError(error instanceof Error ? error.message : t('shop.error.cancelOrderFailed'));
     }
   }, [t, loadOrderDetail, setError]);
@@ -186,7 +180,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         throw new Error(result.message || t('shop.error.activateBenefitFailed'));
       }
     } catch (error) {
-      log.error(t('shop.error.activateBenefitFailed'), error);
+      log.error('激活权益失败', error);
       setError(error instanceof Error ? error.message : t('shop.error.activateBenefitFailed'));
     }
   }, [t, loadInventory, setError]);
@@ -206,7 +200,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         throw new Error(result.message || t('shop.error.deactivateBenefitFailed'));
       }
     } catch (error) {
-      log.error(t('shop.error.deactivateBenefitFailed'), error);
+      log.error('停用权益失败', error);
       setError(error instanceof Error ? error.message : t('shop.error.deactivateBenefitFailed'));
     }
   }, [t, loadInventory, setError]);
@@ -230,7 +224,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         setError(null);
 
         if (result.data.effectDescription) {
-          log.debug(t('shop.inventory.useEffect'), result.data.effectDescription);
+          log.debug('道具使用效果已应用');
         }
         toast.success(t('shop.inventory.useSuccess', {
           effect: result.data.effectDescription || result.data.effectValue || t('shop.inventory.useEffect'),
@@ -244,7 +238,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.useItemFailed'));
       }
     } catch (error) {
-      log.error(t('shop.error.useItemFailed'), error);
+      log.error('使用道具失败', error);
       setError(error instanceof Error ? error.message : t('shop.error.useItemFailed'));
       return false;
     }
@@ -280,7 +274,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         });
 
         if (result.data.effectDescription) {
-          log.debug(t('shop.inventory.renameSuccess'), result.data.effectDescription);
+          log.debug('改名卡效果已应用');
         }
         toast.success(t('shop.inventory.useSuccess', {
           effect: result.data.effectDescription || displayName,
@@ -294,7 +288,7 @@ export const useShopActions = (props: UseShopActionsProps) => {
         throw new Error(result.data?.errorMessage || result.message || t('shop.error.useRenameCardFailed'));
       }
     } catch (error) {
-      log.error(t('shop.error.useRenameCardFailed'), error);
+      log.error('使用改名卡失败', error);
       setError(error instanceof Error ? error.message : t('shop.error.useRenameCardFailed'));
       return false;
     }

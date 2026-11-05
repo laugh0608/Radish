@@ -241,7 +241,7 @@ export const PublicForumTypeFeed = ({
             return;
           }
 
-          log.warn(`公开论坛 ${routeState.kind} 列表神评预览补查失败，已降级使用帖子主数据:`, highlightError);
+          log.warn('公开论坛神评预览补查失败，已降级使用帖子主数据:', highlightError);
           setPostGodComments(new Map());
         }
       } catch (err) {

@@ -361,7 +361,7 @@ export const CreateCommentForm = ({
         avatar: user.voAvatar
       }));
     } catch (error) {
-      log.error(t('forum.comment.searchUsersFailed'), error);
+      log.error('搜索评论提及用户失败', error);
       throw error;
     }
   }, [t]);
@@ -476,7 +476,7 @@ export const CreateCommentForm = ({
         t('forum.comment.uploadRecoverableHint')
       );
       setUploadError(errorMessage);
-      log.error(t('forum.comment.imageUploadFailed'), error);
+      log.error('评论图片上传失败', error);
     } finally {
       uploadInFlightRef.current = false;
       setUploading(false);
@@ -540,7 +540,7 @@ export const CreateCommentForm = ({
         t('forum.comment.uploadRecoverableHint')
       );
       setUploadError(errorMessage);
-      log.error(t('forum.comment.documentUploadFailed'), error);
+      log.error('评论文档上传失败', error);
     } finally {
       uploadInFlightRef.current = false;
       setUploading(false);

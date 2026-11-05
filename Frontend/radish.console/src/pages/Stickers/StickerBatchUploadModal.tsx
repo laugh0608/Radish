@@ -179,7 +179,7 @@ export const StickerBatchUploadModal = ({ visible, groupId, canSubmit, onCancel,
             code = normalizedCode.voNormalizedCode;
           }
         } catch (error) {
-          log.warn('StickerBatchUpload', `清洗编码失败，使用本地规则：${file.name}`, error);
+          log.warn('StickerBatchUpload', '清洗编码失败，使用本地规则', error);
         }
 
         return {

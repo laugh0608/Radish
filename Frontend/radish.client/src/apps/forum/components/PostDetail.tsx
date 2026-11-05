@@ -165,7 +165,7 @@ export const PostDetail = ({
     [i18n.language, i18n.resolvedLanguage, t],
   );
   const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
-    log.error('PostDetail', `Answer Markdown ${kind} upload failed:`, error);
+    log.error('PostDetail', '回答 Markdown 附件上传失败:', error, { kind });
   }, []);
   const isReadOnly = mode === 'readOnly';
   const containerClassName = `${styles.container} ${density === 'compact' ? styles.containerCompact : ''}`;

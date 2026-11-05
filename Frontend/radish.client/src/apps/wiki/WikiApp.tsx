@@ -866,7 +866,7 @@ export const WikiApp = () => {
   };
 
   const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
-    log.error('WikiApp', `Markdown ${kind} upload failed:`, error);
+    log.error('WikiApp', 'Markdown 附件上传失败:', error, { kind });
   }, []);
 
   const openRollbackConfirm = () => {

@@ -316,7 +316,7 @@ export const ModerationAppealsWorkspace = ({
         await handleConflict();
         message.warning(t('moderation.appeal.conflictDraftPreserved'));
       } else {
-        log.error('ModerationAppealsWorkspace', failureKey, error);
+        log.error('ModerationAppealsWorkspace', '申诉版本写入失败', error, { failureKey });
         message.error(t(failureKey));
       }
       return false;

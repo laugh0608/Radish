@@ -120,7 +120,7 @@ npm run validate:candidate
   - 只报告文件、行号和规则，不回显命中值；环境变量、模板变量、占位值和 `invalid_token` 测试值不会被误判
   - 规则自测与全仓扫描均已接入 `validate:baseline:quick`，因此同时进入本地 `validate:ci` 和远程 `Baseline Quick`
 - `lint:changed`
-  - 只对当前变更中的前端脚本文件执行 `eslint`
+  - 只对当前变更中的前端脚本文件执行 `eslint`；当前脚本覆盖 UI / Client / Console，未收录 `@radish/http`。触达 HTTP workspace 时另行执行 `npm run lint --workspace=@radish/http`，不能把 changed-only 通过视为 HTTP 已检查
   - 适合日常本地最小验证；远程 `Frontend Lint` 对四个 Web workspace 执行全量零 warning lint
 - `lint:staged`
   - 只对 staged 变更中的前端脚本文件执行 `eslint`
