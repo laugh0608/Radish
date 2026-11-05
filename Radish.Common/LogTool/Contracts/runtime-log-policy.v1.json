@@ -983,7 +983,8 @@
     "document.builtin_sync_skipped": "Built-in document startup sync skipped.",
     "document.builtin_sync_completed": "Built-in document startup sync completed.",
     "document.builtin_sync_failed": "Built-in document startup sync failed.",
-    "runtime.program_unknown": "Unrecognized host program event."
+    "runtime.program_unknown": "Unrecognized host program event.",
+    "pipeline.ingest_failed": "Runtime log ingestion or database setup failed."
   },
   "properties": {
     "durationMs": {
@@ -1181,7 +1182,8 @@
         "20260809_019_console_role_governance",
         "20260809_020_product_review",
         "20260813_021_wiki_document_governance",
-        "20260813_022_experience_authoritative_governance"
+        "20260813_022_experience_authoritative_governance",
+        "20261105_023_runtime_log_ingest"
       ]
     },
     "createdCount": {
@@ -1503,6 +1505,16 @@
       "min": 0,
       "max": 9007199254740991,
       "integer": true
+    },
+    "ingestOperation": {
+      "type": "enum",
+      "values": [
+        "ingest",
+        "busy-timeout",
+        "wal",
+        "synchronous",
+        "invalid-input"
+      ]
     }
   }
 }

@@ -48,6 +48,7 @@ public static class SerilogSetup
         logger.ReadFrom.Configuration(new SerilogConfigurationView(configuration, "root"))
             .MinimumLevel.Is(minimumLevel)
             .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
+            .Filter.ByExcluding(Radish.Common.LogTool.RuntimeLogIngestScope.Suppress)
             .Enrich.FromLogContext()
             .Enrich.With<SensitiveQueryStringLogEnricher>()
             .WriteTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(new DataProtectionLogSink(new HostStartupLogSink(new HostProgramLogSink(new HangfireLogSink(sink)))))))))))), sinks =>

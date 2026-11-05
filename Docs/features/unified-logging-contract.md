@@ -9,7 +9,7 @@
 - .NET：作为 `Radish.Common` 嵌入资源，由 `RuntimeLogPolicy` 读取；不依赖业务层。
 - Node：`Frontend/scripts/logging/runtime-event.mjs` 读取同一文件；静态服务器已接入候选输出，Dockerfile 随运行脚本复制此策略。
 - 两端运行同一组 [`runtime-events.json`](../../Scripts/logging/fixtures/runtime-events.json) 样本，不各写一份脱敏规则。
-- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器本地 logger 已完成本批迁移，边界见第 74 节；Flutter logger 和数据库接收仍待迁移。旧默认行为见[日志系统](../guide/logging.md)。
+- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器本地 logger 已完成本批迁移，边界见第 74 节；Flutter logger 仍待确认；数据库接收已完成 L3-A 本地切片，运行接入与迁移验收见第 75 节。旧默认行为见[日志系统](../guide/logging.md)。
 
 ## 2. 生成契约 v1 首批字段
 
@@ -53,6 +53,8 @@
 这些是 L1 的实测修订，不改变“stdout → 独立 collector → 文件 + 内网 API → 日志库”的架构。
 
 ## 5. 验证入口与剩余门禁
+
+2026-11-05 的剩余门禁与下一批候选已整理为[L1 / L2 → L3-A 衔接方案](./unified-logging-l3-ingest-plan.md)。其中列出当前仍有旧调用的自有来源；L3-A 已获批完成本地实现；实际边界见第 75 节，不改变下列已关闭来源的结论。
 
 无需启动业务服务：
 
@@ -711,3 +713,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 最终 console 仅接收固定格式串及序列化快照；最多 32 个参数、32 个业务属性、4 个异常摘要 / 各 32 帧，UTF-8 JSON 上限 8 KiB。超限优先省略位置，保留固定说明并标记裁剪；输出器故障被日志边界隔离，重入不递归。
 - 共享 HTTP 保留原回调参数与次数、Response、一次刷新重放、网络 / 服务器失败和认证失效通知。已有非 Error 包装、调用前实参求值与业务错误解读仍属于原业务路径，不把日志内不读取访问器扩大为所有调用方均无输入访问。
 - 这是浏览器本地安全快照，不是服务器 RuntimeLogEvent 入库或跨容器汇聚证据；不自动回传日志，不接管第三方 SignalR / 浏览器自身输出。现行规则见[前端日志说明](../guide/frontend-logging.md)，候选、测试和构建事实见[实施记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。真实服务、PC / mobile Smoke、部署未执行，L1 剩余门禁、L2 整体和 L3–L6 仍未关闭。
+
+## 75. L3-A 内网接收与幂等持久化（2026-11-05）
+
+- `RadishLogging:Ingest:Enabled=false` 默认保持；专用端口与 collector 凭据在读取 body 前校验，公共 API 端口和 Gateway 拒绝 `/internal`，专用端口拒绝业务 / 文档 / Hub。Controller 仅注入 `IRuntimeLogIngestService`，不使用用户 JWT 或公开 Console 权限。
+- JSONL 按行及 16 MiB / 32768 条候选预算读取，严格 UTF-8、重复字段与深度检查；共享策略校验固定说明、来源、模式与属性。每 200 条内部事务提交一次，全包成功前不返回 200；语义拒收只记安全日桶。格式 / 超限失败可能已有提交前缀，不返回假成功。
+- Log 库增加 `runtime_log_event` 与 `runtime_log_rejection_bucket`，migration 为 `20261105_023_runtime_log_ingest`。唯一键 `(deployment_id,event_id)` 处理重放；同键异内容拒收、不覆盖；保留原 eventId / UTC 毫秒时间，存储主键和入库时间独立。新表不继承旧分表或软删除模型。
+- Repository 选择既有 Log 配置，用独立参数化事务避开 ORM 日志 / 业务事务；API 不建表。拒收桶保留当前 UTC 日及此前 6 日，每次事务最多清理 200 个过期桶，旧运行 / 审计表不变。
+- 接收分支不进入通用 body audit，主日志链抑制接收作用域及 Hosting 的正常 `/internal` 请求事件；失败走独立限频 stderr。SQLite PRAGMA catch 改为固定操作 / failureKind 摘要，仍返回 false，不改变初始化重试或事务行为。
+- 内存 HTTP 与临时 SQLite 的认证 / 端口分流、预算、取消、并发、幂等、回滚、迁移和最终输出回归见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。PostgreSQL 16、真实监听 / collector、ENOSPC、部署恢复和旧版回滚尚未验收；L1 / L2 / L3 整体未关闭。
+- 完整配置、响应与下一顺位见[衔接方案](./unified-logging-l3-ingest-plan.md)。生产链路、浏览器 / Native 回传、Console 查询和告警未开启。

@@ -35,6 +35,10 @@ Radish.Api/
 - ✅ **宿主私有非敏感配置放在各自 appsettings.json**：CORS、端口、服务路由、`Snowflake.WorkId`、`Redis.InstanceName` 等
 - ✅ **利用深度合并**：Local.json 只写需要修改的配置项，其他自动继承
 
+## 日志内网接收候选
+
+`RadishLogging:Ingest` 默认为关闭。启用前需指定独立端口、明确公共 Kestrel endpoints、部署 / 服务允许列表及独立 collector 凭据；`Credential` 只放本地未提交配置或环境变量。接收模式继承 `RadishLogging:Mode`，不从载荷决定。完整键、预算、失败行为与运行授权边界见[接收入库方案](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)。配置存在不代表当前任务获得服务启动授权。
+
 ## 配置加载优先级
 
 ASP.NET Core 按以下顺序加载配置（后面的会覆盖前面的）：

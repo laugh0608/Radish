@@ -1,6 +1,8 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端与列明来源的最终输出准确范围见契约第 7–73 节；L2 尚未整体完成。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端与列明来源的最终输出准确范围见契约第 7–74 节；L2 尚未整体完成。
+
+L3-A 已增加默认关闭的内网接收与 Log 库统一事件表，本地回归已完成；配置、幂等 / 拒收、迁移和未关闭运行门禁见[接收入库方案](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)。这不改变本文描述的默认旧链路，也不代表 production Compose 已接入。
 
 已治理框架及自有来源在上下文合并后重建安全事件，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出。精确来源和事件身份以契约为准，不按类别前缀扩大：
 

@@ -144,6 +144,15 @@ return await RuntimeProcess.RunAsync("gateway", async () =>
     app.ConfigureApplication();
 
     // ===== 中间件配置 =====
+    app.Use(async (context, next) =>
+    {
+        if (Radish.Common.LogTool.RuntimeLogIngestScope.IsInternalPath(context.Request.Path.Value ?? ""))
+        {
+            context.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+        await next(context);
+    });
     app.UseForwardedHeaders();
 
     if (app.Environment.IsDevelopment())
