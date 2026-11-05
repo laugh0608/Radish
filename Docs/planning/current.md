@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **推进日志剩余退出条件与持久化衔接**：浏览器共享 HTTP、Client / Console logger、安全策略复用和调用迁移已完成本批自动化验收，现行规则见[前端日志说明](../guide/frontend-logging.md)。[衔接方案](../features/unified-logging-l3-ingest-plan.md)已列清 L1 传输上界 / 磁盘故障、L2 剩余自有来源与 L3-A 接收 / 幂等入库范围；L3-A 本地实现与临时 SQLite / 内存管道验证已完成，见[记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。接续串行确认剩余来源；真实 PostgreSQL / 监听 / collector、L1 磁盘与平台门禁仍待另行授权。Hangfire 与浏览器本批不重复修复，不以外部任意通道调查替代功能交付。
+1. **推进日志剩余退出条件与持久化衔接**：浏览器共享 HTTP、Client / Console logger、安全策略复用和调用迁移已完成本批自动化验收，现行规则见[前端日志说明](../guide/frontend-logging.md)。[衔接方案](../features/unified-logging-l3-ingest-plan.md)已列清 L1 传输上界 / 磁盘故障、L2 剩余自有来源与 L3-A 接收 / 幂等入库范围；L3-A 本地实现与临时 SQLite / 内存管道验证已完成并提交为 `7002cd75`，见[记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。下一批七个来源已完成源码核对，具体方案见衔接方案第 8 节，实施批准待确认；真实 PostgreSQL / 监听 / collector、L1 磁盘与平台门禁仍待另行授权。Hangfire 与浏览器本批不重复修复，不以外部任意通道调查替代功能交付。
 2. **接续 Flutter Native 平台缺口**：按原顺位进入 P8-C Windows readiness，再沿 Native 专题推进 Windows / Linux 平台基础与 P8-E 成组门禁。账户、真机、签名等外部条件按平台保留，不能将共享 UI 或其他平台 Go 视为已完成。
 3. **完成已确认的客户端连接能力**：按[连接规划](../frontend/client-server-connection-plan.md)细化同一安装包内的服务器选择、兼容发现、认证 / 缓存 / 实时连接隔离与切换恢复；进入实现前冻结接口和迁移边界，不重开已关闭的 Web 功能专题。
 4. **功能批次集成与维护衔接**：对当前专题的真实可靠性 / 失败恢复缺口成组处理；批次完成后按最新候选执行合并前门禁，再安排 `dev → master` PR，不等待全部依赖证据或所有外部平台条件。计划内功能按已确认范围验收后，再确认转入维护为主的节奏；不以全部 backlog 清零为条件，不自动创建 tag、发布或部署。
