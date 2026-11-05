@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-05 Controller 最终输出准备](./unified-logging-l2-controller-output-readiness-2026-11-05.md)：14 个来源有限目录、Reaction 旧链 scope 缺口复现及命令输出例外核对；实施待批准
+
 - [2026-11-05 L2 剩余自有操作与直接异常消费者](./unified-logging-l2-owned-operations-2026-11-05.md)：七个来源收口、API 异常消费出口补漏及本地验证；保留真实运行与其他已登记来源门禁
 
 - [2026-11-05 L3-A 接收与幂等持久化本地实施](./unified-logging-l3-ingest-local-2026-11-05.md)：默认关闭的内网接收、事务与迁移；临时 SQLite / 内存 HTTP 验证，真实 PostgreSQL / 监听 / collector 未执行

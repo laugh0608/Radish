@@ -1,6 +1,6 @@
 # 日志 L1 / L2 剩余门禁与 L3-A 接收入库方案
 
-> 2026-11-05（Asia/Shanghai）。状态：**已批准实施，本地实现与定向验证已完成**。准备基线为 `dev` 的 `fee65b97`；结果见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。只使用内存 HTTP 和临时 SQLite；未启动项目服务、容器或连接 PostgreSQL。
+> 2026-11-05（Asia/Shanghai）。状态：**L3-A 与第 8 节已完成本地实现；第 9 节 Controller 最终输出方案待批准**。准备基线为 `dev` 的 `fee65b97`；结果见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。只使用内存 HTTP 和临时 SQLite；未启动项目服务、容器或连接 PostgreSQL。
 >
 > 本页属于[统一日志专题](./unified-logging-governance-design.md)，承接[事件契约](./unified-logging-contract.md)。已完成来源仍以事件契约为准；本页维护剩余门禁及下一批实施边界，不另建主线。
 
@@ -49,7 +49,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 1. **已登记业务来源最终出口核验**：生成端安全不代表旧 sink 上继承的任意 scope 已受控。按现有注册来源建立“生成点 → 消费边界 → 旧 / 候选输出 → 证据”的清单；已有完整证据直接引用，只补缺口，不重新调查任意外部订阅器。
 2. **诊断信息完整性**：现行契约只有固定 `failureKind`，安全异常类型 / 栈帧及 `requestId / jobId / tenantId` 权威上下文尚未全齐。继续保持字段缺失，不在 L3 猜测、重造或放开自由文本；后续作为明确契约切片确认，不默认为已实现。
-3. **裸输出例外**：DbMigrate doctor / verify / help 的 stdout 是命令协议，应急 stderr 有独立预算；`ConsoleHelper.WriteLine` 本次未检出外部调用，保留为待明确处置项，不当作已证明可达漏洞。检查真实调用与例外表后才决定删除或限制。
+3. **裸输出例外**：DbMigrate doctor / verify / help 的 stdout 是命令协议，应急 stderr 有独立预算；`ConsoleHelper.WriteColorLine` 及其四个扩展方法本次未检出外部调用，保留为待明确处置项，不当作已证明可达漏洞。检查真实调用与例外表后才决定删除或限制。
 4. **客户端与原生边界**：浏览器本地公共出口已完成；Flutter 日志规则 / 实际本地入口仍待确认。显式 print 文本扫描不能证明插件或整个设备无输出；不因此新增遥测、扩平台或恢复 Rust 已删除的裸打印。
 5. **成组运行验收**：真实登录、业务读取 / 写入、后台空轮询、网络 / 存储故障须在后续授权环境按已登记链验证安静性、安全及异常所有权；模块替身与内存管道不替代它们。
 
@@ -182,3 +182,57 @@ npm run check:logging-contract
 ### 8.4 直接消费者的实际补漏
 
 Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归发现：该边界原本仅在生成端安全，旧链仍继承任意 scope。为完成本批已批准的最终出口与异常所有权核验，补充其固定 `EventId(1, ApiRequestFailed)`，并在 `ApplicationOperationLogSink` 按精确来源重建既有 `http.failed`。只保留 500–599 的 int 状态和封闭 failureKind，未知身份使用 `http.handler.unknown`；响应写入顺序、处理返回值和日志故障传播均保持。此修正覆盖该共享消费边界，不据此宣称其他旧业务来源已完成最终输出治理。
+
+## 9. 下一批：API Controller 最终输出收口
+
+2026-11-05，准备基线为 `12f739f9`。状态：**范围与验证方案已准备，实施待批准**。承接第 8 节，按一个批次完成下面 14 个 Controller 的已登记输出，不逐文件申请，不重做已完成的 User / Client / ApiExceptionHandler。
+
+### 9.1 已确认缺口与有限目录
+
+源码核对发现，以下来源虽已移除异常原文，但大多数 Serilog 调用只有 EventCode，没有固定 SourceContext；当前精确 sink 不接管它们。Attachment 使用 ILogger，但尚无本来源的最终适配。不能按 `http.failed` 等通用 EventCode 全局拦截，否则会把其他服务或 scope 伪造事件当成已治理 Controller。
+
+真实 Reaction 错误结果构造方法的临时内存探针已确认：原 503 响应保持，旧链最终事件仍含外部 scope 的 Authorization，候选链则经公共策略剔除该字段。这是待修缺口复现，不是验收通过；方法与限制见[准备记录](../records/unified-logging-l2-controller-output-readiness-2026-11-05.md)。
+
+| 精确 Controller 来源 | 本批已有事件目录 | 除固定身份外允许的字段 |
+| --- | --- | --- |
+| `CoinController` | `http.failed`、`coin.balance_query_rejected / transaction_query_rejected / adjustment_rejected` | failureKind；http.failed 另允许 statusCode |
+| `PaymentPasswordController` | `http.failed` | failureKind、statusCode |
+| `AttachmentController` | `http.failed`、`upload.cleanup.failed` | failureKind；分别另允许 statusCode 或 cleanupOperation |
+| `ShopController` | `http.failed`、`order.cancellation_rejected / fulfillment_retry_rejected / remark_rejected`、`benefit.activation_rejected / deactivation_rejected / revocation_rejected`、`product.management_rejected`、`inventory.use_failed / rename_failed` | failureKind；http.failed 另允许 statusCode |
+| `ReactionController` | `http.failed` | failureKind、statusCode |
+| `PostQuickReplyController` | `http.failed`、`quick_reply.query_rejected / notification_enqueue_failed` | failureKind；http.failed 另允许 statusCode |
+| `PollController` | `http.failed`、`poll.request_failed` | 同上 |
+| `LotteryController` | `http.failed`、`lottery.request_failed` | 同上 |
+| `QuestionController` | `http.failed`、`question.request_failed` | 同上 |
+| `PostController` | `post.edit_failed / top_failed` | failureKind |
+| `CommentController` | `comment.create_failed / like_failed / edit_failed` | failureKind |
+| `TagController` | `tag.request_failed` | failureKind |
+| `CategoryController` | `category.request_failed` | failureKind |
+| `StickerController` | `sticker.request_failed` | failureKind |
+
+目录中的斜杠表示相同前缀下的独立事件；实现按完整字符串登记。Shop 的私有 helper 虽接收 eventCode 参数，调用点仍是表内有限常量，不开放任意事件码。
+
+### 9.2 实施方式与行为边界
+
+1. Serilog 生成点补本 Controller 的固定 SourceContext；Attachment 的两个 ILogger 入口使用固定命名 EventId。所有入口继续只传固定 failureKind、受控状态或操作枚举，不新增业务标识、消息、异常对象或详情字段。
+2. 扩展既有 `ApplicationOperationLogSink` 的精确来源目录及按事件字段规则，复用三条输出接线，不新增一层通用日志框架。原 User / Client / Bootstrap / Dedup / RateLimit / ApiExceptionHandler 的规则保持；Controller 目录与字段若需拆文件，仅按真实职责拆分。
+3. `statusCode` 仅保留 int 500–599，`cleanupOperation` 仅为 quota-complete / quota-release，failureKind 复用既有封闭枚举；其他字段不继承。http.failed 固定 http 分类，其余按现有语义固定为 http 或 application；旧 `business` 非法分类归为 application，不扩展共享类别集合。
+4. 每个精确来源仅接受本目录事件，未知 / 缺失 / 跨来源身份生成该来源固定 unknown；Warning 以上保留安全摘要，低等级只在既有显式开发诊断门禁下输出。保留原 Timestamp / 等级和强类型 trace/span，剔除异常、任意 scope、自由字符串关联键；邻接类型与其他来源不匹配。
+5. 保留原 catch 类型、响应字段、Message / 本地化求值顺序和异常传播；不挪动已由契约第 57 节治理的结果构造顺序，不增加全请求去重、吞错、重试、回滚或持久化。Service 原事件与 Controller 消费事件的不同语义继续保留，不把同一事件码视为同一所有者。
+6. 保留 WriteTo 消费输出失败、AuditTo 可传播与候选应急通道语义；日志失败前已发生的业务副作用不撤销。生产候选开关、接口、权限、依赖和数据结构不变。
+
+### 9.3 验证与完成标准
+
+- 新增真实 Controller / 已有消费方法到正式 ConfigureLegacy / RuntimeLoggingConfiguration 的最终输出回归。覆盖旧 / 候选 Development / Production、配置 WriteTo / AuditTo 和代表性代码 console；注入 Authorization、任意嵌套对象、伪造 SourceContext / EventCode / Diagnostic、跨事件安全字段及非法数值，断言最终事件 / JSON 无污染。
+- 覆盖每个登记事件、未知 / 错误身份、邻接来源、诊断门禁、强类型关联和输出失败。明确哪些消费方法用反射定向调用，哪些完整 action 已通过现有服务 / repository 替身覆盖；不把前者冒充 HTTP 端到端。
+- 复用 CoinMovement、PaymentPassword、AttachmentUpload、ShopFulfillment / Management / Entitlement、Reaction / QuickReply / Poll / Lottery / Question、Post / Comment / Tag / Category / Sticker 等日志与业务回归。继续覆盖结果构造二次失败、专用拒绝安静性、消息只读取一次、原状态与 mutation 计数；Service 层已知最终输出缺口不借本批顺手扩张。
+- 对共享 sink 的既有六来源、HTTP 异常消费者及 L3 本地接收追加定向防回归；构建、共享 Node / .NET 日志契约、身份 / 权限、文档 / 链接 / 卫生及 diff 检查按影响面执行。
+- 完成后同步事件契约和本批记录，将这 14 个 Controller 从最终出口待核验队列移除；不以候选统一裁剪或历史测试通过代替旧链精确来源结果。
+
+本批只使用已安装依赖、内存管道、已有测试替身及相关测试自管临时文件 / SQLite；不启动项目服务 / 容器、不连接真实存储、不执行实际业务迁移、不访问生产。真实 File / DB sink 故障和 collector 联验仍单独授权。新业务行为问题或需要扩大 Service / 框架来源时先报告，不将其隐藏在日志收口中。
+
+### 9.4 命令输出例外与后续顺位
+
+- DbMigrate doctor / verify / help 的 stdout 仍是命令结果协议；Program 的运行诊断写 stderr，目标描述已使用固定 configured 占位，不输出连接串。此次只核对代码，不启动命令访问真实库，不把协议输出机械替换成运行事件。
+- 实际 ConsoleHelper 方法为 WriteColorLine 及 WriteErrorLine / WriteWarningLine / WriteInfoLine / WriteSuccessLine 扩展；仓库 C# 搜索只命中定义和内部转发，未发现外部调用。保留未使用工具，不宣称反射或外部调用绝不存在，也不为未证实的运行缺口增加重构。
+- 本批后回到已登记 Service / 后台任务 / Hub 来源的最终出口清单，按共享生成 helper 和真实消费链组织有限批次；随后接续 L1 上界 / 磁盘及 L3 真实监听 / PostgreSQL / collector 联验。诊断上下文完整性、Flutter 来源仍保留各自边界，不重启已经关闭的 Controller 切片。

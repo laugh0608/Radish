@@ -11,7 +11,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
-- **下一项工作**：Hangfire 两来源 / 三出口和浏览器共享 HTTP / Client / Console 输出已分别完成本地切片验收，浏览器结果见[实施记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。L1 / L2 剩余清单已整理，[L3-A 接收 / 幂等入库](../features/unified-logging-l3-ingest-plan.md)已获批完成本地实现。剩余七个自有来源及直接 API 异常消费者也已完成[本地切片](../records/unified-logging-l2-owned-operations-2026-11-05.md)。下一步核对其他已登记业务来源的最终出口与命令输出例外，PostgreSQL / 真实监听 / collector 联验按具体运行清单另行授权；只处理已有明确缺口，不重做已关闭切片或恢复依赖来源调查。Native 继续按既定顺位接续 P8-C。
+- **下一项工作**：Hangfire 两来源 / 三出口和浏览器共享 HTTP / Client / Console 输出已分别完成本地切片验收，浏览器结果见[实施记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。L1 / L2 剩余清单已整理，[L3-A 接收 / 幂等入库](../features/unified-logging-l3-ingest-plan.md)已获批完成本地实现。剩余七个自有来源及直接 API 异常消费者也已完成[本地切片](../records/unified-logging-l2-owned-operations-2026-11-05.md)。下一步按[衔接方案第 9 节](../features/unified-logging-l3-ingest-plan.md#9-下一批api-controller-最终输出收口)处理已核对的 14 个 Controller 最终输出缺口，方案待批准；命令输出例外已完成本次只读核对。PostgreSQL / 真实监听 / collector 联验按具体运行清单另行授权；只处理已有明确缺口，不重做已关闭切片或恢复依赖来源调查。Native 继续按既定顺位接续 P8-C。
 - **状态复核日期**：`2026-11-05`；SQLite 2026-11-04 七 job 验收已收口，见[运行记录](../records/sqlite-hosted-native-module-run-2026-11-04.md)。Hangfire 来源 / 交付准备见[复核记录](../records/hangfire-source-delivery-review-2026-11-04.md)，结果由 `7a19fe71` 保存；未关闭的来源与发行条件保留，当前不占开发主线，不表示依赖专题或正式发行已全部验收。
 - **日志专题复核日期**：`2026-11-05`；最新准确范围见[事件契约第 7–76 节](../features/unified-logging-contract.md)。Hangfire 本批结果由 `70bdeac3` 保存；浏览器公共出口、固定事件目录、三级 / diagnostic 与 HTTP 语义回归已按[方案](../features/unified-logging-l2-browser-output-plan.md)完成。L2 尚未整体关闭，真实服务 / 存储、PC / mobile Smoke 和部署未在本次执行。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **推进日志剩余退出条件与持久化衔接**：浏览器共享 HTTP、Client / Console logger、安全策略复用和调用迁移已完成本批自动化验收，现行规则见[前端日志说明](../guide/frontend-logging.md)。[衔接方案](../features/unified-logging-l3-ingest-plan.md)已列清 L1 传输上界 / 磁盘故障、L2 剩余自有来源与 L3-A 接收 / 幂等入库范围；L3-A 本地实现与临时 SQLite / 内存管道验证已完成并提交为 `7002cd75`，见[记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。七个来源已按衔接方案第 8 节批准完成本地治理，并补齐直接 API 异常消费者的旧链 scope 缺口，见[记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。接续核对其他已登记业务来源最终出口与命令输出例外；真实 PostgreSQL / 监听 / collector、L1 磁盘与平台门禁仍待另行授权。Hangfire 与浏览器本批不重复修复，不以外部任意通道调查替代功能交付。
+1. **推进日志剩余退出条件与持久化衔接**：浏览器共享 HTTP、Client / Console logger、安全策略复用和调用迁移已完成本批自动化验收，现行规则见[前端日志说明](../guide/frontend-logging.md)。[衔接方案](../features/unified-logging-l3-ingest-plan.md)已列清 L1 传输上界 / 磁盘故障、L2 剩余自有来源与 L3-A 接收 / 幂等入库范围；L3-A 本地实现与临时 SQLite / 内存管道验证已完成并提交为 `7002cd75`，见[记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。七个来源已按衔接方案第 8 节批准完成本地治理，并补齐直接 API 异常消费者的旧链 scope 缺口，见[记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。下一批已限定为衔接方案第 9 节的 14 个 Controller，已完成源码核对与代表性缺口复现，待批准实施；其他 Service / Job / Hub 来源后续按共享生成边界成组处理。真实 PostgreSQL / 监听 / collector、L1 磁盘与平台门禁仍待另行授权。Hangfire 与浏览器本批不重复修复，不以外部任意通道调查替代功能交付。
 2. **接续 Flutter Native 平台缺口**：按原顺位进入 P8-C Windows readiness，再沿 Native 专题推进 Windows / Linux 平台基础与 P8-E 成组门禁。账户、真机、签名等外部条件按平台保留，不能将共享 UI 或其他平台 Go 视为已完成。
 3. **完成已确认的客户端连接能力**：按[连接规划](../frontend/client-server-connection-plan.md)细化同一安装包内的服务器选择、兼容发现、认证 / 缓存 / 实时连接隔离与切换恢复；进入实现前冻结接口和迁移边界，不重开已关闭的 Web 功能专题。
 4. **功能批次集成与维护衔接**：对当前专题的真实可靠性 / 失败恢复缺口成组处理；批次完成后按最新候选执行合并前门禁，再安排 `dev → master` PR，不等待全部依赖证据或所有外部平台条件。计划内功能按已确认范围验收后，再确认转入维护为主的节奏；不以全部 backlog 清零为条件，不自动创建 tag、发布或部署。
