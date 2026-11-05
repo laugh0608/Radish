@@ -5,13 +5,14 @@ using Serilog.Parsing;
 
 namespace Radish.Extension.Log;
 
-/// <summary>重建当前用户、客户端管理、引导奖励、通知去重、限流及直接 API 异常消费边界的精确自有来源。</summary>
+/// <summary>重建 API Controller、引导奖励、通知去重、限流及直接 API 异常消费边界的精确自有来源。</summary>
 public sealed class ApplicationOperationLogSink(ILogEventSink next, bool diagnostics = false) : ILogEventSink
 {
     private static readonly MessageTemplate EventTemplate = new MessageTemplateParser().Parse("Application operation {EventCode}.");
     private static readonly MessageTemplate FailureTemplate = new MessageTemplateParser().Parse("Application operation {EventCode}; failure={failureKind}.");
     private static readonly MessageTemplate HttpFailureTemplate = new MessageTemplateParser().Parse("API request failure {EventCode}; status={statusCode}; failure={failureKind}.");
     private static readonly MessageTemplate ConfigurationTemplate = new MessageTemplateParser().Parse("Application operation {EventCode}; state={rateLimitState}.");
+    private static readonly MessageTemplate CleanupTemplate = new MessageTemplateParser().Parse("Upload accounting {EventCode}; operation={cleanupOperation}; failure={failureKind}.");
 
     public void Emit(LogEvent value)
     {
@@ -25,6 +26,20 @@ public sealed class ApplicationOperationLogSink(ILogEventSink next, bool diagnos
             "Radish.Service.BootstrapService" => "bootstrap",
             "Radish.Service.NotificationDedupService" => "notification.dedup",
             "Radish.Extension.RateLimitExtension.RateLimitSetup" => "rate_limit",
+            "Radish.Api.Controllers.CoinController" => "controller.coin",
+            "Radish.Api.Controllers.PaymentPasswordController" => "controller.payment_password",
+            "Radish.Api.Controllers.AttachmentController" => "controller.attachment",
+            "Radish.Api.Controllers.ShopController" => "controller.shop",
+            "Radish.Api.Controllers.ReactionController" => "controller.reaction",
+            "Radish.Api.Controllers.PostQuickReplyController" => "controller.quick_reply",
+            "Radish.Api.Controllers.PollController" => "controller.poll",
+            "Radish.Api.Controllers.LotteryController" => "controller.lottery",
+            "Radish.Api.Controllers.QuestionController" => "controller.question",
+            "Radish.Api.Controllers.PostController" => "controller.post",
+            "Radish.Api.Controllers.CommentController" => "controller.comment",
+            "Radish.Api.Controllers.TagController" => "controller.tag",
+            "Radish.Api.Controllers.CategoryController" => "controller.category",
+            "Radish.Api.Controllers.StickerController" => "controller.sticker",
             _ => null
         };
         if (owner == null) { next.Emit(value); return; }
@@ -54,6 +69,26 @@ public sealed class ApplicationOperationLogSink(ILogEventSink next, bool diagnos
                 (3, "DedupClearFailed") => "notification.dedup.clear_failed",
                 _ => "notification.dedup.unknown"
             },
+            "controller.coin" when rawCode is "http.failed" or "coin.balance_query_rejected" or "coin.transaction_query_rejected" or "coin.adjustment_rejected" => rawCode,
+            "controller.payment_password" or "controller.reaction" when rawCode == "http.failed" => rawCode,
+            "controller.attachment" => Identity(value) switch
+            {
+                (1, "AttachmentUploadFailed") => "http.failed",
+                (2, "UploadAccountingFailed") => "upload.cleanup.failed",
+                _ => "controller.attachment.unknown"
+            },
+            "controller.shop" when rawCode is "http.failed" or "order.cancellation_rejected" or "order.fulfillment_retry_rejected" or
+                "order.remark_rejected" or "benefit.activation_rejected" or "benefit.deactivation_rejected" or "benefit.revocation_rejected" or
+                "product.management_rejected" or "inventory.use_failed" or "inventory.rename_failed" => rawCode,
+            "controller.quick_reply" when rawCode is "http.failed" or "quick_reply.query_rejected" or "quick_reply.notification_enqueue_failed" => rawCode,
+            "controller.poll" when rawCode is "http.failed" or "poll.request_failed" => rawCode,
+            "controller.lottery" when rawCode is "http.failed" or "lottery.request_failed" => rawCode,
+            "controller.question" when rawCode is "http.failed" or "question.request_failed" => rawCode,
+            "controller.post" when rawCode is "post.edit_failed" or "post.top_failed" => rawCode,
+            "controller.comment" when rawCode is "comment.create_failed" or "comment.like_failed" or "comment.edit_failed" => rawCode,
+            "controller.tag" when rawCode == "tag.request_failed" => rawCode,
+            "controller.category" when rawCode == "category.request_failed" => rawCode,
+            "controller.sticker" when rawCode == "sticker.request_failed" => rawCode,
             _ => owner + ".unknown"
         };
         var diagnostic = code is "rate_limit.whitelist_observed" or "rate_limit.blacklist_observed" or "rate_limit.rejected" ||
@@ -63,11 +98,13 @@ public sealed class ApplicationOperationLogSink(ILogEventSink next, bool diagnos
         var properties = new List<LogEventProperty>
         {
             new("SourceContext", new ScalarValue(category)), new("EventCode", new ScalarValue(code)),
-            new("SourceCategory", new ScalarValue(owner is "rate_limit" or "http.handler" ? "http" : "application")),
+            new("SourceCategory", new ScalarValue(owner is "rate_limit" or "http.handler" || code is "http.failed" or "coin.balance_query_rejected" or
+                "coin.transaction_query_rejected" or "coin.adjustment_rejected" or "order.cancellation_rejected" or "order.fulfillment_retry_rejected" ? "http" : "application")),
             new("Diagnostic", new ScalarValue(diagnostic))
         };
         var template = EventTemplate;
-        if (code is "http.failed" or "user.current_permissions_degraded" or "user.current_avatar_degraded" or "bootstrap.reward_degraded" or
+        if ((owner.StartsWith("controller.", StringComparison.Ordinal) && !code.EndsWith(".unknown", StringComparison.Ordinal)) ||
+            code is "http.failed" or "user.current_permissions_degraded" or "user.current_avatar_degraded" or "bootstrap.reward_degraded" or
             "client.management.list_failed" or "client.management.detail_failed" or "notification.dedup.check_failed" or
             "notification.dedup.record_failed" or "notification.dedup.clear_failed")
         {
@@ -81,6 +118,12 @@ public sealed class ApplicationOperationLogSink(ILogEventSink next, bool diagnos
             template = HttpFailureTemplate;
             if (value.Properties.TryGetValue("statusCode", out var status) && status is ScalarValue { Value: int number } && number is >= 500 and <= 599)
                 properties.Add(new("statusCode", status));
+        }
+        if (code == "upload.cleanup.failed")
+        {
+            template = CleanupTemplate;
+            if (value.Properties.TryGetValue("cleanupOperation", out var operation) && operation is ScalarValue { Value: "quota-complete" or "quota-release" })
+                properties.Add(new("cleanupOperation", operation));
         }
         if (code == "rate_limit.configured")
         {

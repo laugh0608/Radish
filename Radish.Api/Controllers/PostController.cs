@@ -506,7 +506,7 @@ public class PostController : ControllerBase
             };
             if (ex is not PostOperationRejectedException)
             {
-                Log.ForContext("EventCode", "post.top_failed")
+                Log.ForContext<PostController>().ForContext("EventCode", "post.top_failed")
                     .Error("Post top operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
             }
             return response;
@@ -710,7 +710,7 @@ public class PostController : ControllerBase
             };
             if (ex is not PostOperationRejectedException)
             {
-                Log.ForContext("EventCode", "post.edit_failed")
+                Log.ForContext<PostController>().ForContext("EventCode", "post.edit_failed")
                     .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
             }
             return response;
@@ -725,7 +725,7 @@ public class PostController : ControllerBase
             };
             if (ex is not PostContentValidationException)
             {
-                Log.ForContext("EventCode", "post.edit_failed")
+                Log.ForContext<PostController>().ForContext("EventCode", "post.edit_failed")
                     .Error("Post edit operation consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(ex));
             }
             return response;

@@ -515,7 +515,7 @@ public class TagController : ControllerBase
         };
         if (exception is not TagNameConflictException)
         {
-            Log.ForContext("EventCode", "tag.request_failed")
+            Log.ForContext<TagController>().ForContext("EventCode", "tag.request_failed")
                 .Error("Tag request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
         }
         return response;

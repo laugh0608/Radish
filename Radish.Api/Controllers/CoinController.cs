@@ -123,7 +123,7 @@ public class CoinController : ControllerBase
         catch (InvalidOperationException ex)
         {
             // 既有契约将此类异常转为业务响应；也可能包含存储失败，保留安全摘要。
-            Log.ForContext("EventCode", "coin.balance_query_rejected")
+            Log.ForContext<CoinController>().ForContext("EventCode", "coin.balance_query_rejected")
                 .ForContext("SourceCategory", "http")
                 .Warning("Balance query rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return BuildError(
@@ -294,7 +294,7 @@ public class CoinController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            Log.ForContext("EventCode", "coin.transaction_query_rejected")
+            Log.ForContext<CoinController>().ForContext("EventCode", "coin.transaction_query_rejected")
                 .ForContext("SourceCategory", "http")
                 .Warning("Transaction query rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return BuildError(
@@ -534,7 +534,7 @@ public class CoinController : ControllerBase
         {
             if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
             {
-                Log.ForContext("EventCode", "http.failed")
+                Log.ForContext<CoinController>().ForContext("EventCode", "http.failed")
                     .ForContext("SourceCategory", "http")
                     .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
             }
@@ -546,7 +546,7 @@ public class CoinController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            Log.ForContext("EventCode", "coin.adjustment_rejected")
+            Log.ForContext<CoinController>().ForContext("EventCode", "coin.adjustment_rejected")
                 .ForContext("SourceCategory", "http")
                 .Warning("Balance adjustment rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return BuildError(

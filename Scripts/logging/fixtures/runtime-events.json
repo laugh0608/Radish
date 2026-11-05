@@ -790,5 +790,257 @@
       "diagnostic": true
     },
     "expected": null
+  },
+  {
+    "name": "coin-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.coin.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.coin.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "payment_password-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.payment_password.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.payment_password.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "attachment-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.attachment.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.attachment.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "shop-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.shop.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.shop.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "reaction-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.reaction.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.reaction.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "quick_reply-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.quick_reply.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.quick_reply.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "poll-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.poll.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.poll.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "lottery-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.lottery.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.lottery.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "question-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.question.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.question.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "post-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.post.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.post.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "comment-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.comment.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.comment.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "tag-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.tag.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.tag.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "category-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.category.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.category.unknown",
+      "properties": {},
+      "redacted": true
+    }
+  },
+  {
+    "name": "sticker-controller-unknown-fixed-identity",
+    "options": {
+      "mode": "Production"
+    },
+    "input": {
+      "eventCode": "controller.sticker.unknown",
+      "level": "Warning",
+      "properties": {
+        "Authorization": "SENTINEL_SECRET"
+      }
+    },
+    "expected": {
+      "eventCode": "controller.sticker.unknown",
+      "properties": {},
+      "redacted": true
+    }
   }
 ]

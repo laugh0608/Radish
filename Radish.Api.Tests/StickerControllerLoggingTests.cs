@@ -709,7 +709,17 @@ public sealed class StickerControllerLoggingTests
                     Assert.Equal(e.Code, Assert.IsType<ScalarValue>(logged.Properties["EventCode"]).Value);
                     Assert.Equal(e.Kind, Assert.IsType<ScalarValue>(logged.Properties["failureKind"]).Value);
                     if (e.Status.HasValue) Assert.Equal(e.Status.Value, Assert.IsType<ScalarValue>(logged.Properties["statusCode"]).Value);
-                    Assert.All(logged.Properties.Keys, k => Assert.Contains(k, new[] { "EventCode", "SourceCategory", "SourceContext", "failureKind", "statusCode" }));
+                    var isApiHandler = logged.Properties.TryGetValue("SourceContext", out var source) &&
+                        source is ScalarValue { Value: "Radish.Api.ErrorHandling.ApiExceptionHandler" };
+                    var allowed = new[] { "EventCode", "SourceCategory", "SourceContext", "failureKind", "statusCode" };
+                    Assert.All(logged.Properties.Keys, k => Assert.Contains(k, isApiHandler ? allowed.Append("EventId") : allowed));
+                    if (isApiHandler)
+                    {
+                        var identity = Assert.IsType<StructureValue>(logged.Properties["EventId"]);
+                        Assert.Equal(2, identity.Properties.Count);
+                        Assert.Equal(1, Assert.IsType<ScalarValue>(identity.Properties.Single(p => p.Name == "Id").Value).Value);
+                        Assert.Equal("ApiRequestFailed", Assert.IsType<ScalarValue>(identity.Properties.Single(p => p.Name == "Name").Value).Value);
+                    }
                 }
             }
         }

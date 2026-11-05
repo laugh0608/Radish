@@ -737,3 +737,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 六个精确来源在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出；保留原时间 / 等级、固定分类与强类型 trace/span，不传原模板、异常对象、字符串关联键、身份、任意 scope 或跨事件字段。未知身份分别进入 `user.current.unknown / client.management.unknown / bootstrap.unknown / notification.dedup.unknown / rate_limit.unknown / http.handler.unknown`；Warning 以上保留安全摘要，较低等级仅显式开发诊断。相邻来源不匹配。
 - WriteTo 输出故障继续被消费；AuditTo 仍可传播异常。Client 写入完成后的 AuditTo 故障仍会被原 catch 包装，先前业务副作用不撤销；候选 writer 失败走既有限频安全应急通道。独立 logger、外部 enricher 提前求值及其他来源不自动受保护。
 - 本地实现、四模式 / 配置 AuditTo / 代码 console、内存限流、直接异常消费、scope 污染及故障回归见[实施记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。没有安装依赖、启动服务 / 容器、绑定端口或连接真实存储。L1 剩余门禁、L2 其他已登记来源最终出口、L3 真实链路与后续查询 / 告警仍未关闭。
+
+## 77. API Controller 最终输出边界（2026-11-05）
+
+- 按[衔接方案第 9 节](./unified-logging-l3-ingest-plan.md#9-下一批api-controller-最终输出收口)完成 Coin、PaymentPassword、Attachment、Shop、Reaction、PostQuickReply、Poll、Lottery、Question、Post、Comment、Tag、Category、Sticker 共 14 个 Controller 的精确来源适配；有限事件目录沿用该节表格，不按 `http.failed` 等共享 EventCode 全局拦截。
+- Serilog 生成点使用本 Controller 的固定 SourceContext；Attachment 使用命名 EventId `1/AttachmentUploadFailed → http.failed`、`2/UploadAccountingFailed → upload.cleanup.failed`，不能仅由 scope EventCode 选择事件。
+- 上述已登记事件只保留封闭 failureKind；`http.failed` 另允许 int 500–599 的 statusCode，`upload.cleanup.failed` 另允许 quota-complete / quota-release 的 cleanupOperation。其他事件不继承这两个字段。http.failed、Coin 三种拒绝、Shop 取消 / 重试拒绝固定 http 分类，其余固定 application，旧 business 分类不进入候选类别集合。
+- `ApplicationOperationLogSink` 在 scope 合并后重建代码 console、配置 WriteTo / AuditTo 和候选输出，剔除任意属性、原模板、异常对象及自由字符串关联键；保留 Timestamp / Level 与强类型 trace/span。邻接类型和 Service 同名事件不匹配，原有六来源规则保持。
+- 每个 Controller 的未知 / 缺失 / 跨来源身份进入 `controller.{owner}.unknown`；owner 为 coin、payment_password、attachment、shop、reaction、quick_reply、poll、lottery、question、post、comment、tag、category、sticker。共享事件目录同步固定说明。Warning 以上保留安全摘要；更低等级仅 Development 宿主、Development 模式且显式 Diagnostics 时输出，不信任载荷 Diagnostic。
+- 原 catch 类型、结果构造 / 本地化 / Message 求值顺序、状态与业务副作用不变。第 57 节的早期消费边界继续保持；本批不增加重试、回滚或全请求去重。WriteTo 故障仍消费，AuditTo 仍可传播；候选输出故障走既有限频应急通道。
+- 本地最终出口、真实 action 与定向反射消费方法、原业务回归及证据限制见[实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)。不据此关闭 Service / Job / Hub、真实 File / DB 故障、运行 Smoke 或 L2 整体；生产开关保持关闭。

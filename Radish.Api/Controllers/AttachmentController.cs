@@ -413,7 +413,7 @@ public class AttachmentController : ControllerBase
         {
             ["EventCode"] = "http.failed", ["SourceCategory"] = "http"
         });
-        _logger.LogError("Attachment upload failed with {statusCode}; kind={failureKind}",
+        _logger.LogError(new EventId(1, "AttachmentUploadFailed"), "Attachment upload failed with {statusCode}; kind={failureKind}",
             statusCode, exception == null ? "other" : RuntimeFailureSummary.Classify(exception));
     }
 
@@ -450,7 +450,7 @@ public class AttachmentController : ControllerBase
         {
             ["EventCode"] = "upload.cleanup.failed", ["SourceCategory"] = "application"
         });
-        _logger.LogError("Upload accounting failed: {cleanupOperation}; kind={failureKind}",
+        _logger.LogError(new EventId(2, "UploadAccountingFailed"), "Upload accounting failed: {cleanupOperation}; kind={failureKind}",
             operation, RuntimeFailureSummary.Classify(exception));
     }
 

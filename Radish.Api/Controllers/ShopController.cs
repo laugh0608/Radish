@@ -355,7 +355,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            Log.ForContext("EventCode", "order.cancellation_rejected")
+            Log.ForContext<ShopController>().ForContext("EventCode", "order.cancellation_rejected")
                 .ForContext("SourceCategory", "http")
                 .Warning("Order cancellation rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return MessageModel<bool>.Message(false, ex.Message, false);
@@ -954,7 +954,7 @@ public class ShopController : ControllerBase
         {
             if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
             {
-                Log.ForContext("EventCode", "http.failed")
+                Log.ForContext<ShopController>().ForContext("EventCode", "http.failed")
                     .ForContext("SourceCategory", "http")
                     .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
             }
@@ -967,7 +967,7 @@ public class ShopController : ControllerBase
         }
         catch (InvalidOperationException ex)
         {
-            Log.ForContext("EventCode", "order.fulfillment_retry_rejected")
+            Log.ForContext<ShopController>().ForContext("EventCode", "order.fulfillment_retry_rejected")
                 .ForContext("SourceCategory", "http")
                 .Warning("Order fulfillment retry rejected; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return BuildError(
@@ -1030,7 +1030,7 @@ public class ShopController : ControllerBase
     #region 私有方法
 
     private static void LogConsumedInventoryFailure(Exception exception, string eventCode) =>
-        Log.ForContext("EventCode", eventCode)
+        Log.ForContext<ShopController>().ForContext("EventCode", eventCode)
             .ForContext("SourceCategory", "application")
             .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
             .Error("Inventory request consumed a failure");
@@ -1041,7 +1041,7 @@ public class ShopController : ControllerBase
         {
             if (businessException.StatusCode >= StatusCodes.Status500InternalServerError)
             {
-                Log.ForContext("EventCode", "http.failed")
+                Log.ForContext<ShopController>().ForContext("EventCode", "http.failed")
                     .ForContext("SourceCategory", "http")
                     .Error("Request failed with {statusCode}; kind={failureKind}",
                         businessException.StatusCode, RuntimeFailureSummary.Classify(exception));
@@ -1049,7 +1049,7 @@ public class ShopController : ControllerBase
             return;
         }
 
-        Log.ForContext("EventCode", rejectionEventCode)
+        Log.ForContext<ShopController>().ForContext("EventCode", rejectionEventCode)
             .ForContext("SourceCategory", "application")
             .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
             .Warning("Shop request rejected");

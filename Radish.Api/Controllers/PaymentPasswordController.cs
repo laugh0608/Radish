@@ -242,7 +242,7 @@ public class PaymentPasswordController : ControllerBase
         {
             if (ex.StatusCode >= StatusCodes.Status500InternalServerError)
             {
-                Log.ForContext("EventCode", "http.failed")
+                Log.ForContext<PaymentPasswordController>().ForContext("EventCode", "http.failed")
                     .ForContext("SourceCategory", "http")
                     .Error("Request failed with {statusCode}; kind={failureKind}", ex.StatusCode, RuntimeFailureSummary.Classify(ex));
             }

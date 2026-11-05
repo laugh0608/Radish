@@ -1,6 +1,6 @@
 # 日志 L1 / L2 剩余门禁与 L3-A 接收入库方案
 
-> 2026-11-05（Asia/Shanghai）。状态：**L3-A 与第 8 节已完成本地实现；第 9 节 Controller 最终输出方案待批准**。准备基线为 `dev` 的 `fee65b97`；结果见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。只使用内存 HTTP 和临时 SQLite；未启动项目服务、容器或连接 PostgreSQL。
+> 2026-11-05（Asia/Shanghai）。状态：**L3-A、第 8 节及第 9 节 Controller 已完成本地实现；其他来源及真实运行门禁接续**。准备基线为 `dev` 的 `fee65b97`；结果见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。只使用内存 HTTP 和临时 SQLite；未启动项目服务、容器或连接 PostgreSQL。
 >
 > 本页属于[统一日志专题](./unified-logging-governance-design.md)，承接[事件契约](./unified-logging-contract.md)。已完成来源仍以事件契约为准；本页维护剩余门禁及下一批实施边界，不另建主线。
 
@@ -47,7 +47,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 其他必须保留的退出工作：
 
-1. **已登记业务来源最终出口核验**：生成端安全不代表旧 sink 上继承的任意 scope 已受控。按现有注册来源建立“生成点 → 消费边界 → 旧 / 候选输出 → 证据”的清单；已有完整证据直接引用，只补缺口，不重新调查任意外部订阅器。
+1. **已登记业务来源最终出口核验**：生成端安全不代表旧 sink 上继承的任意 scope 已受控。第 9 节的 14 个 Controller 已完成精确来源与最终输出收口，见[实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)。其余 Service / Job / Hub 按现有注册来源建立“生成点 → 消费边界 → 旧 / 候选输出 → 证据”的清单；已有完整证据直接引用，只补缺口，不重新调查任意外部订阅器。
 2. **诊断信息完整性**：现行契约只有固定 `failureKind`，安全异常类型 / 栈帧及 `requestId / jobId / tenantId` 权威上下文尚未全齐。继续保持字段缺失，不在 L3 猜测、重造或放开自由文本；后续作为明确契约切片确认，不默认为已实现。
 3. **裸输出例外**：DbMigrate doctor / verify / help 的 stdout 是命令协议，应急 stderr 有独立预算；`ConsoleHelper.WriteColorLine` 及其四个扩展方法本次未检出外部调用，保留为待明确处置项，不当作已证明可达漏洞。检查真实调用与例外表后才决定删除或限制。
 4. **客户端与原生边界**：浏览器本地公共出口已完成；Flutter 日志规则 / 实际本地入口仍待确认。显式 print 文本扫描不能证明插件或整个设备无输出；不因此新增遥测、扩平台或恢复 Rust 已删除的裸打印。
@@ -185,7 +185,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 
 ## 9. 下一批：API Controller 最终输出收口
 
-2026-11-05，准备基线为 `12f739f9`。状态：**范围与验证方案已准备，实施待批准**。承接第 8 节，按一个批次完成下面 14 个 Controller 的已登记输出，不逐文件申请，不重做已完成的 User / Client / ApiExceptionHandler。
+2026-11-05，准备基线为 `12f739f9`。状态：**已获批准并完成本地实现与定向验证**。承接第 8 节，按一个批次完成下面 14 个 Controller 的已登记输出，不逐文件申请，不重做已完成的 User / Client / ApiExceptionHandler。结果见[实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)，现行规则见[契约第 77 节](./unified-logging-contract.md#77-api-controller-最终输出边界2026-11-05)。
 
 ### 9.1 已确认缺口与有限目录
 

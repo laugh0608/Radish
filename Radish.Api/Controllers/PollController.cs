@@ -171,7 +171,7 @@ public class PollController : ControllerBase
         };
         if (exception is not PollInputValidationException)
         {
-            Log.ForContext("EventCode", "poll.request_failed")
+            Log.ForContext<PollController>().ForContext("EventCode", "poll.request_failed")
                 .Error("Poll request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
         }
         return response;
@@ -189,7 +189,7 @@ public class PollController : ControllerBase
         };
         if (exception.StatusCode >= StatusCodes.Status500InternalServerError)
         {
-            Log.ForContext("EventCode", "http.failed")
+            Log.ForContext<PollController>().ForContext("EventCode", "http.failed")
                 .ForContext("SourceCategory", "http")
                 .Error("Request failed with {statusCode}; kind={failureKind}", exception.StatusCode, RuntimeFailureSummary.Classify(exception));
         }

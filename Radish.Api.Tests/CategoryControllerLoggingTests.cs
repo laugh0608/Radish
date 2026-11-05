@@ -559,7 +559,11 @@ public sealed class CategoryControllerLoggingTests
                 Assert.Null(logged.Exception);
                 Assert.Equal(code, Assert.IsType<ScalarValue>(logged.Properties["EventCode"]).Value);
                 Assert.Equal(kind, Assert.IsType<ScalarValue>(logged.Properties["failureKind"]).Value);
-                if (!status.HasValue) Assert.Equal(new[] { "EventCode", "failureKind" }, logged.Properties.Keys.OrderBy(k => k));
+                if (!status.HasValue)
+                {
+                    Assert.Equal(new[] { "EventCode", "failureKind", "SourceContext" }, logged.Properties.Keys.OrderBy(k => k));
+                    Assert.Equal(typeof(CategoryController).FullName, Assert.IsType<ScalarValue>(logged.Properties["SourceContext"]).Value);
+                }
             }
         }
         public void Clear()

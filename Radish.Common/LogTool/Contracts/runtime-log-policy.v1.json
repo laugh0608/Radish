@@ -1006,7 +1006,21 @@
     "rate_limit.blacklist_observed": "Rate limiting blacklist matched.",
     "rate_limit.rejected": "Rate limiting rejection handler entered.",
     "rate_limit.unknown": "Unrecognized rate limiting operation.",
-    "http.handler.unknown": "Unrecognized API exception handler event."
+    "http.handler.unknown": "Unrecognized API exception handler event.",
+    "controller.coin.unknown": "Unrecognized coin controller event.",
+    "controller.payment_password.unknown": "Unrecognized payment password controller event.",
+    "controller.attachment.unknown": "Unrecognized attachment controller event.",
+    "controller.shop.unknown": "Unrecognized shop controller event.",
+    "controller.reaction.unknown": "Unrecognized reaction controller event.",
+    "controller.quick_reply.unknown": "Unrecognized quick reply controller event.",
+    "controller.poll.unknown": "Unrecognized poll controller event.",
+    "controller.lottery.unknown": "Unrecognized lottery controller event.",
+    "controller.question.unknown": "Unrecognized question controller event.",
+    "controller.post.unknown": "Unrecognized post controller event.",
+    "controller.comment.unknown": "Unrecognized comment controller event.",
+    "controller.tag.unknown": "Unrecognized tag controller event.",
+    "controller.category.unknown": "Unrecognized category controller event.",
+    "controller.sticker.unknown": "Unrecognized sticker controller event."
   },
   "properties": {
     "durationMs": {
