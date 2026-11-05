@@ -12,7 +12,7 @@
 
 浏览器 L2 接续范围见[浏览器最终输出收口方案](./unified-logging-l2-browser-output-plan.md)：2026-11-05 已获批完成公共实现、调用迁移和本地自动化验收，见[实施记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。本批不包含真实浏览器 Smoke 或遥测回传。
 
-L1 / L2 剩余门禁、自有来源切片与 L3-A 接收 / 幂等入库方案见[衔接实施方案](./unified-logging-l3-ingest-plan.md)。L3-A 已获批完成默认关闭的接收、表与本地回归，见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)；真实监听、PostgreSQL 与 collector 接入仍待授权验收。剩余七个自有来源与直接 API 异常消费者已按第 8 节批准完成本地切片，见[实施记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)，其他已登记来源最终出口仍待核验。
+L1 / L2 剩余门禁、自有来源切片与 L3-A 接收 / 幂等入库方案见[衔接实施方案](./unified-logging-l3-ingest-plan.md)。L3-A 已获批完成默认关闭的接收、表与本地回归，见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)；真实监听、PostgreSQL 与 collector 接入仍待授权验收。剩余七个自有来源与直接 API 异常消费者已按第 8 节批准完成本地切片，见[实施记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。第 9 节的 14 个 Controller 也已完成[最终输出本地收口](../records/unified-logging-l2-controller-output-2026-11-05.md)；其余 Service / 后台任务 / Hub 最终出口仍待核验。
 
 ## 1. 结论与目标
 
@@ -204,26 +204,26 @@ Fluent Bit 的镜像版本、digest、目标架构、插件列表和许可证在
 
 ### 7.1 内网批量入口
 
-拟在 API 新增专用内网监听与 `POST /internal/logs/ingest`，只服务 collector；它不是公开 Console API。
+L3-A 已实现默认关闭的 API 专用内网监听与 `POST /internal/logs/ingest`，只服务 collector；它不是公开 Console API。本地 SQLite / 内存管道已验证，真实监听、PostgreSQL 与 collector 联验仍未执行。当前配置和接入条件见[衔接方案第 7 节](./unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)，下面的 Compose / 跨主机部署要求仍为后续目标。
 
 - Compose 内部专用端口，不映射宿主；Gateway 不转发 `/internal`。服务端同时校验实际监听端口与采集凭据，不能只靠 Host / 路径 / 来源 IP。
-- 内网监听只允许日志接收 / 必要探活；普通业务端口拒绝该入口。跨主机接入需要 TLS / mTLS，不能把本机 Forward 接口直接公开。
+- 当前内网监听只允许日志接收路径，未新增探活接口；普通业务端口拒绝 `/internal` 路径。跨主机接入需要 TLS / mTLS，不能把本机 Forward 接口直接公开。
 - 采集凭据独立于用户 JWT，来自不提交的配置，可轮换，不写日志；collector 没有业务库访问凭据。
-- 使用有界 JSONL 流式读取。L1 已否决原建议的 200 条 / 2 MiB HTTP 硬上限：插件以 chunk 发送且 413 会丢弃该支路的 chunk。修订方向为 HTTP 有界流式信封与内部最多 200 条的处理批次分离；16 MiB / 32768 条仅为已通过代表样本的校准值，仍须最坏情况上界、真实事务、重放与拒收隔离验证。
+- 使用有界 JSONL 流式读取。L1 已否决原建议的 200 条 / 2 MiB HTTP 硬上限：插件以 chunk 发送且 413 会丢弃该支路的 chunk。当前实现将 HTTP 有界流式信封与内部最多 200 条的事务分离；16 MiB / 32768 条为候选信封预算。SQLite 事务、重放与语义拒收已有本地回归；正式传输上界、PostgreSQL 与 collector 坏批隔离仍待联验。
 - 正常批次只在事务提交后返回成功；提交成功但响应丢失时，重放由事件唯一键吸收。
-- 语义无效的单条事件写入有限的拒收记录（来源、原因、eventId，不存原文），其余有效记录提交后整体确认。认证失败拒绝整批；数据库故障返回可重试状态。
+- 语义无效的单条事件计入有限拒收日桶（受信部署 / 服务、固定原因、UTC 日期和计数），不保存 eventId 或载荷原文；其余有效记录提交后整体确认。未验证来源归到固定接收器桶，拒收计数表示尝试次数，不是唯一坏事件数。认证失败拒绝整批；数据库故障返回可重试状态。
 - 语法损坏 / 超限批次由 collector 前置校验与隔离处理；需验证具体 HTTP 插件重试语义。不能返回假成功，也不能让坏批次无限占队列。
 - 此入口不执行通用请求体审计、不记录正常访问日志，不产生逐批成功日志；入库 SQL 不进入 SQL AOP。故障走有限的管道自诊断通道，避免日志写日志递归。
 
 ### 7.2 存储模型
 
-- 新增统一 `RuntimeLogEvent` 模型，Level 为字段，替代新事件继续写 `InformationLog / WarningLog / ErrorLog / AuditSqlLog` 多套表。
+- 传输契约为 Common 的 `RuntimeLogEvent`；L3-A 持久实体为 `RuntimeLogEventRecord`，对应 Log 库 `runtime_log_event`，Level 为字段。拒收聚合使用 `RuntimeLogRejectionBucket` / `runtime_log_rejection_bucket`；两表由 `20261105_023_runtime_log_ingest` 管理，不继承旧分表或业务软删除。
 - 逻辑上按时间保留，初期采用可索引、可有界删除的普通表；达到经验证的数据量再引入物理分区，不能提前承诺全局唯一键跨分区自动成立。
 - 核心唯一键为 `(DeploymentId, EventId)`；索引围绕时间 + 事件 ID、服务 + 时间、等级 + 时间、traceId / operationId。筛选字段独立列，其他白名单上下文存受限 JSON。
 - Repository 负责查询 / 批量幂等写入，Service 负责规范化 DTO / Vo 和访问边界；Controller 只注入 Service。
 - PostgreSQL 与本地 SQLite 使用同一逻辑事件 / 查询契约，分别验证唯一键冲突、UTC 和分页；生产使用现有 Log 库，无需增加数据库服务器。
 - 不继承业务通用软删除流程来无限积累过期运行日志；明确按保留策略物理清理。审计模型继续按其独立规则维护。
-- 旧表作为只读历史来源，展示历史来源标记及“字段未知”，不推测缺失的 service、traceId 或时区。退出旧写入后仍可查，不在首轮销毁历史表。
+- 退出旧写入后，旧表作为只读历史来源，展示历史来源标记及“字段未知”，不推测缺失的 service、traceId 或时区。退出旧写入后仍可查，不在首轮销毁历史表。当前默认旧链仍在写入，不将该目标视为已经切换。
 
 ### 7.3 Console 与权限
 

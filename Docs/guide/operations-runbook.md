@@ -76,6 +76,8 @@ npm run type-check --workspace=@radish/http
 - 上传目录默认配置：`DataBases/Uploads`
 - 分片临时目录默认配置：`DataBases/Temp/Chunks`
 
+以上文件路径属于默认旧日志链。L3-A 内网接收候选独立受 `RadishLogging:Ingest:Enabled` 控制，默认关闭；Gateway 和普通 API 端口访问 `/internal` 返回 404 是隔离行为。启用条件、专用端口 / 凭据、失败状态与迁移入口见[接收入库方案第 7 节](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)，本地测试不等于真实监听或 collector 已接入。
+
 如果你怀疑是配置或运行态问题，优先先看：
 
 1. 当前宿主是否读取到了正确的 `appsettings.Local.json`

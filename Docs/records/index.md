@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-05 日终代码与文档回顾](./day-end-doc-review-2026-11-05.md)：六个提交、浏览器与后端日志 / L3-A 本地成果、指南修正及下一有限批次建议
+
 - [2026-11-05 Controller 最终输出本地收口](./unified-logging-l2-controller-output-2026-11-05.md)：14 个精确来源、逐事件白名单、scope 污染与原业务回归；其他来源及真实运行门禁保留
 
 - [2026-11-05 Controller 最终输出准备](./unified-logging-l2-controller-output-readiness-2026-11-05.md)：14 个来源有限目录、Reaction 旧链 scope 缺口复现及命令输出例外核对；实施结果见上方收口记录

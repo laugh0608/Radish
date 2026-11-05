@@ -1,6 +1,6 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端与列明来源的最终输出准确范围见契约第 7–76 节；L2 尚未整体完成。
+Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端与列明来源的最终输出准确范围见契约第 7–77 节；L2 尚未整体完成。
 
 L3-A 已增加默认关闭的内网接收与 Log 库统一事件表，本地回归已完成；配置、幂等 / 拒收、迁移和未关闭运行门禁见[接收入库方案](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)。这不改变本文描述的默认旧链路，也不代表 production Compose 已接入。
 
@@ -17,6 +17,7 @@ L3-A 已增加默认关闭的内网接收与 Log 库统一事件表，本地回�
 | ASP.NET Core DataProtection | 第 69 节 |
 | API 自有 Hangfire provider / 状态观察器 | 第 73 节 |
 | 当前用户 / 客户端管理、Bootstrap / 通知去重、限流及 API 异常消费者 | 第 76 节 |
+| Coin / PaymentPassword / Attachment / Shop 及十个论坛相关 Controller | 第 77 节 |
 
 宿主健康服务、OpenIddict 与 DataProtection 的已列明来源另在 ILogger → Serilog 桥接前阻止读取原 state、formatter 和 exception；最终 sink 继续清理合并后的 scope。其他来源不能继承此桥接保护结论。日志治理不改变协议响应、认证结果、存储 / 缓存与事务语义，也不代表客户端已收到响应；其他自有日志、集成及非 Serilog 通道仍需独立核对。详细限制见[敏感数据保护](./logging-sensitive-data.md)与[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)。
 
