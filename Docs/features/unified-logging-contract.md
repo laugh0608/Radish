@@ -723,3 +723,17 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 接收分支不进入通用 body audit，主日志链抑制接收作用域及 Hosting 的正常 `/internal` 请求事件；失败走独立限频 stderr。SQLite PRAGMA catch 改为固定操作 / failureKind 摘要，仍返回 false，不改变初始化重试或事务行为。
 - 内存 HTTP 与临时 SQLite 的认证 / 端口分流、预算、取消、并发、幂等、回滚、迁移和最终输出回归见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。PostgreSQL 16、真实监听 / collector、ENOSPC、部署恢复和旧版回滚尚未验收；L1 / L2 / L3 整体未关闭。
 - 完整配置、响应与下一顺位见[衔接方案](./unified-logging-l3-ingest-plan.md)。生产链路、浏览器 / Native 回传、Console 查询和告警未开启。
+
+
+## 76. L2 剩余自有操作及直接异常消费者（2026-11-05）
+
+- 按[衔接方案第 8 节](./unified-logging-l3-ingest-plan.md#8-已批准切片剩余七个自有来源)完成 UserController、ClientController、Bootstrap、通知去重、聊天搜索、限流与经验扩展。聊天搜索 / 经验扩展无保留输出；其他五个精确来源由 `ApplicationOperationLogSink` 重建，另覆盖 Client 写入异常的直接消费者 `Radish.Api.ErrorHandling.ApiExceptionHandler`。
+- User 两种降级为 `user.current_permissions_degraded / user.current_avatar_degraded`；Bootstrap 为 `bootstrap.reward_degraded`，均为非致命 Error、application 分类，仅保留 failureKind。原正常用户过程与搜索 Info、通知正常 Debug、经验注册 Info 移除；空权限集 / 忽略头像、创建管理员后的奖励失败消费、缓存检查失败放行与写入 / 删除失败消费保持。
+- Client 固定 EventId 为 `1/ClientListFailed`、`2/ClientDetailFailed`、`3/ClientCreated`、`4/ClientUpdated`、`5/ClientSoftDeleted`、`6/ClientSecretReset`；分别映射 `client.management.list_failed / detail_failed / created / updated / soft_deleted / secret_reset`。前两项只保留 failureKind，后四项无扩展字段；写入失败仍外抛既有 BusinessException，不另增本地失败事件。原 manager 调用及返回数据保持，密钥仍仅存在授权业务响应中。
+- NotificationDedup 固定 EventId 为 `1/DedupCheckFailed`、`2/DedupRecordFailed`、`3/DedupClearFailed`；映射 `notification.dedup.check_failed / record_failed / clear_failed`，只保留 failureKind。源码仅检出两个构造注入，未检出业务方法调用；直接服务回归不等于生产链触达，不借本批补接业务。
+- 限流只保留一个 `rate_limit.configured` 注册返回摘要，字段 `rateLimitState=enabled|disabled`；不表示中间件已处理请求。`rate_limit.whitelist_observed / blacklist_observed / rejected` 为 Info + diagnostic，生成端要求 `RateLimit.EnableLogging=true`、Development 宿主、`RadishLogging.Mode=Development` 且 `Diagnostics=true`；旧 / 候选最终输出再次执行宿主诊断门禁，不信任事件自带 Diagnostic。注册时确定模式与诊断配置，不承诺热切换。
+- 限流观察不输出 IP、路径、请求头、方法原文或 Lease。黑名单分区仍返回 GetNoLimiter；实际拒绝回调仍可由命名策略触发 403，普通限流维持 429 / Retry-After。`blacklist_observed` 只表示匹配，不能解释为已拒绝；本批不修复既有黑名单决策或代理地址信任规则。
+- 直接异常消费者以 `EventId(1, ApiRequestFailed)` 映射既有 `http.failed`，仅保留 int 500–599 状态与 failureKind、http 分类；仍在响应写入成功之后记录。此前旧链泄漏任意 scope 的直接消费路径已补齐，不增加第二个异常所有者。
+- 六个精确来源在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出；保留原时间 / 等级、固定分类与强类型 trace/span，不传原模板、异常对象、字符串关联键、身份、任意 scope 或跨事件字段。未知身份分别进入 `user.current.unknown / client.management.unknown / bootstrap.unknown / notification.dedup.unknown / rate_limit.unknown / http.handler.unknown`；Warning 以上保留安全摘要，较低等级仅显式开发诊断。相邻来源不匹配。
+- WriteTo 输出故障继续被消费；AuditTo 仍可传播异常。Client 写入完成后的 AuditTo 故障仍会被原 catch 包装，先前业务副作用不撤销；候选 writer 失败走既有限频安全应急通道。独立 logger、外部 enricher 提前求值及其他来源不自动受保护。
+- 本地实现、四模式 / 配置 AuditTo / 代码 console、内存限流、直接异常消费、scope 污染及故障回归见[实施记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。没有安装依赖、启动服务 / 容器、绑定端口或连接真实存储。L1 剩余门禁、L2 其他已登记来源最终出口、L3 真实链路与后续查询 / 告警仍未关闭。

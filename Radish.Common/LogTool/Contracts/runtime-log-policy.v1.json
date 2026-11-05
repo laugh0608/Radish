@@ -984,7 +984,29 @@
     "document.builtin_sync_completed": "Built-in document startup sync completed.",
     "document.builtin_sync_failed": "Built-in document startup sync failed.",
     "runtime.program_unknown": "Unrecognized host program event.",
-    "pipeline.ingest_failed": "Runtime log ingestion or database setup failed."
+    "pipeline.ingest_failed": "Runtime log ingestion or database setup failed.",
+    "user.current_permissions_degraded": "Current user permissions unavailable; returning empty permissions.",
+    "user.current_avatar_degraded": "Current user avatar unavailable; returning without avatar.",
+    "user.current.unknown": "Unrecognized current user operation.",
+    "bootstrap.reward_degraded": "Administrator created; registration reward call failed.",
+    "bootstrap.unknown": "Unrecognized bootstrap operation.",
+    "client.management.list_failed": "Client list unavailable.",
+    "client.management.detail_failed": "Client detail unavailable.",
+    "client.management.created": "Client creation returned.",
+    "client.management.updated": "Client update returned.",
+    "client.management.soft_deleted": "Client soft deletion returned.",
+    "client.management.secret_reset": "Client secret reset returned.",
+    "client.management.unknown": "Unrecognized client management operation.",
+    "notification.dedup.check_failed": "Notification deduplication check failed; allowing notification.",
+    "notification.dedup.record_failed": "Notification deduplication key recording failed.",
+    "notification.dedup.clear_failed": "Notification deduplication key clearing failed.",
+    "notification.dedup.unknown": "Unrecognized notification deduplication operation.",
+    "rate_limit.configured": "Rate limiting registration returned.",
+    "rate_limit.whitelist_observed": "Rate limiting whitelist matched.",
+    "rate_limit.blacklist_observed": "Rate limiting blacklist matched.",
+    "rate_limit.rejected": "Rate limiting rejection handler entered.",
+    "rate_limit.unknown": "Unrecognized rate limiting operation.",
+    "http.handler.unknown": "Unrecognized API exception handler event."
   },
   "properties": {
     "durationMs": {
@@ -1514,6 +1536,13 @@
         "wal",
         "synchronous",
         "invalid-input"
+      ]
+    },
+    "rateLimitState": {
+      "type": "enum",
+      "values": [
+        "enabled",
+        "disabled"
       ]
     }
   }

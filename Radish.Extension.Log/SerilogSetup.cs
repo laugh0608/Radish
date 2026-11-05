@@ -26,7 +26,7 @@ public static class SerilogSetup
             {
                 // 使用 root provider 的 IOptions，保留旧链的配置与释放所有权。
                 var options = services.GetRequiredService<IOptions<SerilogOptions>>().Value;
-                ConfigureLegacy(loggerConfiguration, AppSettingsTool.Configuration, services, options);
+                ConfigureLegacy(loggerConfiguration, AppSettingsTool.Configuration, services, options, context.HostingEnvironment.EnvironmentName);
             });
         }
 
@@ -41,8 +41,10 @@ public static class SerilogSetup
 
     /// <summary>旧链共用接线；配置与代码 sink 均在上下文合并后接受安全事件。</summary>
     public static void ConfigureLegacy(LoggerConfiguration logger, IConfiguration configuration,
-        IServiceProvider services, SerilogOptions options)
+        IServiceProvider services, SerilogOptions options, string environmentName = "Production")
     {
+        var diagnostics = environmentName == Environments.Development && configuration["RadishLogging:Mode"] == "Development" &&
+            configuration.GetValue<bool>("RadishLogging:Diagnostics");
         var minimumLevel = Enum.TryParse<LogEventLevel>(options.MinimumLevel, true, out var level)
             ? level : LogEventLevel.Information;
         logger.ReadFrom.Configuration(new SerilogConfigurationView(configuration, "root"))
@@ -51,14 +53,14 @@ public static class SerilogSetup
             .Filter.ByExcluding(Radish.Common.LogTool.RuntimeLogIngestScope.Suppress)
             .Enrich.FromLogContext()
             .Enrich.With<SensitiveQueryStringLogEnricher>()
-            .WriteTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(new DataProtectionLogSink(new HostStartupLogSink(new HostProgramLogSink(new HangfireLogSink(sink)))))))))))), sinks =>
+            .WriteTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(new DataProtectionLogSink(new HostStartupLogSink(new HostProgramLogSink(new HangfireLogSink(new ApplicationOperationLogSink(sink, diagnostics))))))))))))), sinks =>
                 sinks.Logger(outputs => outputs
                     .ReadFrom.Configuration(new SerilogConfigurationView(configuration, "WriteTo"))
                     .WriteToConsole(options).WriteToFile(options).WriteToDatabase(services, options))));
         if (configuration.GetSection("Serilog:AuditTo").GetChildren().Any())
         {
             // 审计 sink 保持异常向调用方传播的语义。
-            logger.AuditTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(new DataProtectionLogSink(new HostStartupLogSink(new HostProgramLogSink(new HangfireLogSink(sink)))))))))))), sinks =>
+            logger.AuditTo.Sink(LoggerSinkConfiguration.Wrap(sink => new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(new DataProtectionLogSink(new HostStartupLogSink(new HostProgramLogSink(new HangfireLogSink(new ApplicationOperationLogSink(sink, diagnostics))))))))))))), sinks =>
                 sinks.Logger(outputs => outputs
                     .ReadFrom.Configuration(new SerilogConfigurationView(configuration, "AuditTo")))));
         }

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Radish.Common.CacheTool;
+using Radish.Common.LogTool;
 using Radish.IService;
 
 namespace Radish.Service;
@@ -42,20 +43,12 @@ public class NotificationDedupService : INotificationDedupService
             // 检查缓存中是否存在去重键
             var exists = await _caching.ExistsAsync(dedupKey);
 
-            if (exists)
-            {
-                _logger.LogDebug(
-                    "[NotificationDedup] 通知被去重，UserId: {UserId}, Type: {Type}, BusinessId: {BusinessId}",
-                    userId, notificationType, businessId);
-            }
-
             return exists;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "[NotificationDedup] 检查去重失败，UserId: {UserId}, Type: {Type}, BusinessId: {BusinessId}",
-                userId, notificationType, businessId);
+            _logger.LogError(new EventId(1, "DedupCheckFailed"), "Notification deduplication cache operation failed; failure={failureKind}.",
+                RuntimeFailureSummary.Classify(ex));
 
             // 失败时不去重，确保通知可以发送
             return false;
@@ -74,16 +67,11 @@ public class NotificationDedupService : INotificationDedupService
 
             // 写入去重键，设置过期时间
             await _caching.SetStringAsync(dedupKey, "1", expiration);
-
-            _logger.LogDebug(
-                "[NotificationDedup] 记录去重键，UserId: {UserId}, Type: {Type}, BusinessId: {BusinessId}, Window: {WindowSeconds}s",
-                userId, notificationType, businessId, windowSeconds);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "[NotificationDedup] 记录去重键失败，UserId: {UserId}, Type: {Type}, BusinessId: {BusinessId}",
-                userId, notificationType, businessId);
+            _logger.LogError(new EventId(2, "DedupRecordFailed"), "Notification deduplication cache operation failed; failure={failureKind}.",
+                RuntimeFailureSummary.Classify(ex));
         }
     }
 
@@ -96,16 +84,11 @@ public class NotificationDedupService : INotificationDedupService
         {
             var dedupKey = GetDedupKey(userId, notificationType, businessId);
             await _caching.RemoveAsync(dedupKey);
-
-            _logger.LogDebug(
-                "[NotificationDedup] 清除去重键，UserId: {UserId}, Type: {Type}, BusinessId: {BusinessId}",
-                userId, notificationType, businessId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex,
-                "[NotificationDedup] 清除去重键失败，UserId: {UserId}, Type: {Type}, BusinessId: {BusinessId}",
-                userId, notificationType, businessId);
+            _logger.LogError(new EventId(3, "DedupClearFailed"), "Notification deduplication cache operation failed; failure={failureKind}.",
+                RuntimeFailureSummary.Classify(ex));
         }
     }
 

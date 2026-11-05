@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Radish.IService;
-using Serilog;
 
 namespace Radish.Extension.ExperienceExtension;
 
@@ -22,7 +21,5 @@ public static class ExperienceExtensionSetup
 
         // 注册计算器服务（单例）
         services.AddSingleton<IExperienceCalculator, ExperienceCalculator>();
-
-        Log.Information("经验值计算器扩展已注册");
     }
 }

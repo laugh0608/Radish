@@ -1,10 +1,10 @@
 using Asp.Versioning;
-using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Radish.Api.Filters;
 using Radish.Common.HttpContextTool;
+using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.Common.PermissionTool;
 using Radish.Common.TimeTool;
@@ -322,7 +322,6 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(MessageModel), StatusCodes.Status500InternalServerError)]
     public async Task<MessageModel> GetUserByHttpContext()
     {
-        var totalStopwatch = Stopwatch.StartNew();
         var userId = Current.UserId;
         var fallbackDisplayName = Current.UserName;
         var tenantId = Current.TenantId;
@@ -341,50 +340,27 @@ public class UserController : ControllerBase
             : user.VoDisplayHandle.Trim();
         var nickname = string.IsNullOrWhiteSpace(user?.VoUserName) ? displayName : user.VoUserName;
 
-        Log.Information(
-            "[GetUserByHttpContext] 开始处理当前用户信息，用户: {UserId}, 角色数: {RoleCount}",
-            userId,
-            roles.Count);
-
         List<string> permissions;
-        var permissionsStopwatch = Stopwatch.StartNew();
         try
         {
             permissions = await _userService.GetPermissionKeysByRolesAsync(roles);
-            Log.Information(
-                "[GetUserByHttpContext] 权限查询完成，用户: {UserId}, 权限数: {PermissionCount}, 耗时: {ElapsedMs}ms",
-                userId,
-                permissions.Count,
-                permissionsStopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
             permissions = new List<string>();
-            Log.Error(
-                ex,
-                "[GetUserByHttpContext] 权限查询失败，用户: {UserId}, 耗时: {ElapsedMs}ms，将返回空权限集",
-                userId,
-                permissionsStopwatch.ElapsedMilliseconds);
+            Log.ForContext<UserController>().ForContext("EventCode", "user.current_permissions_degraded")
+                .Error("Current user permissions unavailable; failure={failureKind}.", RuntimeFailureSummary.Classify(ex));
         }
 
         AttachmentAssetDto? avatar = null;
-        var avatarStopwatch = Stopwatch.StartNew();
         try
         {
             avatar = await _attachmentService.GetLatestAvatarAssetAsync(userId);
-            Log.Information(
-                "[GetUserByHttpContext] 头像查询完成，用户: {UserId}, 头像Id: {AvatarId}, 耗时: {ElapsedMs}ms",
-                userId,
-                avatar?.AttachmentId,
-                avatarStopwatch.ElapsedMilliseconds);
         }
         catch (Exception ex)
         {
-            Log.Error(
-                ex,
-                "[GetUserByHttpContext] 头像查询失败，用户: {UserId}, 耗时: {ElapsedMs}ms，将忽略头像信息",
-                userId,
-                avatarStopwatch.ElapsedMilliseconds);
+            Log.ForContext<UserController>().ForContext("EventCode", "user.current_avatar_degraded")
+                .Error("Current user avatar unavailable; failure={failureKind}.", RuntimeFailureSummary.Classify(ex));
         }
 
         var userInfo = new CurrentUserVo
@@ -402,11 +378,6 @@ public class UserController : ControllerBase
             VoRoles = roles,
             VoPermissions = permissions
         };
-
-        Log.Information(
-            "[GetUserByHttpContext] 当前用户信息组装完成，用户: {UserId}, 总耗时: {ElapsedMs}ms",
-            userId,
-            totalStopwatch.ElapsedMilliseconds);
 
         return new MessageModel
         {

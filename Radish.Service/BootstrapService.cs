@@ -7,6 +7,7 @@ using Radish.Model.DtoModels;
 using Radish.Model.ViewModels;
 using Radish.Shared.Constants;
 using Serilog;
+using Radish.Common.LogTool;
 
 namespace Radish.Service;
 
@@ -101,10 +102,9 @@ public class BootstrapService : IBootstrapService
             }
             catch (Exception exception)
             {
-                Log.Error(
-                    exception,
-                    "首个管理员已创建，但注册奖励暂未发放：UserId={UserId}",
-                    result.UserId);
+                Log.ForContext<BootstrapService>().ForContext("EventCode", "bootstrap.reward_degraded")
+                    .Error("Administrator created; registration reward call failed; failure={failureKind}.",
+                        RuntimeFailureSummary.Classify(exception));
             }
         }
 

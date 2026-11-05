@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
@@ -30,7 +29,6 @@ public sealed class ChatMessageSearchService : IChatMessageSearchService
     private readonly IDirectConversationService _directConversationService;
     private readonly IBaseRepository<Channel> _channelRepository;
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
-    private readonly ILogger<ChatMessageSearchService> _logger;
 
     public ChatMessageSearchService(
         IChannelMessageSearchRepository searchRepository,
@@ -38,14 +36,13 @@ public sealed class ChatMessageSearchService : IChatMessageSearchService
         IDirectConversationService directConversationService,
         IBaseRepository<Channel> channelRepository,
         IAttachmentUrlResolver attachmentUrlResolver,
-        ILogger<ChatMessageSearchService> logger)
+        ILogger<ChatMessageSearchService> logger) // 保留现有注入签名；正常搜索不再生成运行事件。
     {
         _searchRepository = searchRepository;
         _channelAccessService = channelAccessService;
         _directConversationService = directConversationService;
         _channelRepository = channelRepository;
         _attachmentUrlResolver = attachmentUrlResolver;
-        _logger = logger;
     }
 
     public async Task<ChannelMessageSearchPageVo> SearchAsync(
@@ -120,7 +117,6 @@ public sealed class ChatMessageSearchService : IChatMessageSearchService
 
         var snapshotMaxMessageId = cursor?.SnapshotMaxMessageId ??
                                    await _searchRepository.GetSnapshotMaxMessageIdAsync(tenantId, channelIds);
-        var stopwatch = Stopwatch.StartNew();
         var messages = await _searchRepository.SearchAsync(new ChannelMessageSearchQuery(
             tenantId,
             channelIds,
@@ -152,13 +148,6 @@ public sealed class ChatMessageSearchService : IChatMessageSearchService
                 last.CreateTime,
                 last.Id));
         }
-
-        _logger.LogInformation(
-            "Chat search completed for scope {Scope}; page size {PageSize}, result count {ResultCount}, duration {DurationMs} ms",
-            request.Scope,
-            pageSize,
-            items.Count,
-            stopwatch.ElapsedMilliseconds);
 
         return new ChannelMessageSearchPageVo
         {
