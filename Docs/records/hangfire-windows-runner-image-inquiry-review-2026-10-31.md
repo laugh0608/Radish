@@ -1,9 +1,17 @@
-# Windows runner image 上游询证审阅与下一步
+# Windows runner image 上游询证与关闭记录
 
-> 2026-10-31（Asia/Shanghai）。本轮诊断记录已提交为 `39066415bcdc3aa61675f15889f917cc2bbb4f2e`，尚未 push。本页和[英文询证稿](./hangfire-windows-runner-image-inquiry-draft-2026-10-31.md)已获项目所有者审阅批准；**询证及证据 ZIP 已提交为 [actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，未启动新 inventory 或 verify。** 执行边界继续以[专题方案](../features/hangfire-windows-razor-validation-plan.md)为准。
+> 2026-11-07（Asia/Shanghai）。[actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201) 已以 `completed` 关闭。Radish 的 Windows Razor 验证继续保留在后续维护 / 发行队列，执行边界见[专题方案](../features/hangfire-windows-razor-validation-plan.md)。
 
-## 提交结果
+## 上游关闭结果
 
+- 上游确认 Radish 报告的运行实际使用 `20261026.347.1`。该镜像由 `20261025.346.1` 重新特化，已安装软件相同，适用 [347 发行说明](https://github.com/actions/runner-images/releases/tag/win22%2F20261026.347)。重新特化正确更新了 Machine / Process `ImageVersion`，但未重写 `C:\imagedata.json`，从该文件取值的启动日志和 `.setup_info` 因此继续显示 `20261025.346.1`。这更正了此前「环境变量保留基础镜像版本」的初步解释。[上游更正](https://github.com/actions/runner-images/issues/15201#issuecomment-6689880438)
+- 上游确认常规完整构建 [`20261101.353.1`](https://github.com/actions/runner-images/releases/tag/win22%2F20261101.353) 已部署到 `windows-2022`。独立复测截图显示启动日志、`.setup_info`、`C:\imagedata.json` 和 Machine / Process `ImageVersion` 均为 `20261101.353.1`，一致性检查通过。User 层未设置是上游说明的预期行为。重新特化时同步重写 `C:\imagedata.json` 的防复发改动仍由上游跟进。[部署说明](https://github.com/actions/runner-images/issues/15201#issuecomment-6689880438) · [独立复测截图](https://github.com/actions/runner-images/issues/15201#issuecomment-6700569091)
+- `laugh0608` 回复确认当前镜像的差异已消除，并于 `2026-11-07 11:30:20 +08:00` 关闭 issue。GitHub API 核验 `state=closed`、`state_reason=completed`。[关闭回复](https://github.com/actions/runner-images/issues/15201#issuecomment-6701669445) · [Issue](https://github.com/actions/runner-images/issues/15201)
+- 独立复测覆盖新镜像的版本一致性。Radish 的诊断报告继续保留原始冲突值与门禁失败结果。新 `inventory`、工具身份审阅、Razor 再生成与 `verify` 留待维护批次，恢复时另行确认范围及运行授权。本次文档更新未触发 CI。
+
+## 2026-10-31 提交结果
+
+- 诊断记录已提交为 `39066415bcdc3aa61675f15889f917cc2bbb4f2e`。项目所有者审阅并批准了询证稿与证据子集。
 - Issue：[actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，由 `laugh0608` 于 `2026-10-31T10:52:16Z`（北京时间 18:52:16）创建；提交后核验为 open。
 - 附件：[windows-2022-image-identity-evidence-41193259788.zip](https://github.com/user-attachments/files/34215319/windows-2022-image-identity-evidence-41193259788.zip)。重新下载得到 6020 bytes，SHA256 与审阅包完全一致。
 - 远端标题和正文逐字核对通过：保留审阅稿，仅在正文末尾追加附件链接。附件 ZIP 内部的 “NOT SENT” 是准备时快照，按授权原样上传，未为状态更新改包。
@@ -52,7 +60,7 @@
 
 原 artifact 到期时间为 `2026-11-07 18:34:11 +08:00`；已下载的本地副本继续保留，不需要为了保留证据再次运行或延长远端保留期。本轮已按明确授权公开上传上述证据子集，完整原始归档仍留在本地。
 
-## 下一步方案与判定
+## 提交时的后续判定方案
 
 | 阶段 | 具体行动 | 完成条件 / 停止线 |
 | --- | --- | --- |
@@ -63,4 +71,4 @@
 | 无结论或无法复现 | 继续保留 unresolved 与旧证据；若请求新采样，先明确它要排除的假设和新增采集项 | 不反复调度碰运气，不选一个版本作为默认，不扩大到其他平台或自托管环境 |
 | 身份审阅关闭后 | 依据当时完整库存，另行提出 verify 的精确 SHA、工具期望值、输入 / 清理方案 | inventory 成功或上游回复都不自动授权 verify |
 
-询证已提交，下一步等待上游对实际 image revision、元数据冲突和修复 / 映射作出说明；暂不继续修改采集器或增加运行。当前诊断已取得需要上游解释的文件 / 机器层冲突；单纯重复运行无法证明旧 VM 的根因。
+上游询证结果见本文首节。维护批次恢复后，先按专题方案确认新 `inventory` 的完整提交 SHA、输入和执行范围，再依据该批实际库存审阅 `verify` 的期望值。

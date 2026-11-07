@@ -39,7 +39,7 @@
 
 - [SQLite 四类托管失败的本地成组修正](./sqlite-hosted-validation-repair-2026-10-31.md) · [结果 JSON](./sqlite-hosted-validation-repair-2026-10-31.json)：50 项 Node、12 组真实 MSBuild 参数、四宿主探针严格编译与 ARM64 C / C++ 链接通过；未 push / 远端运行
 
-- [Windows runner image 询证审阅与下一步](./hangfire-windows-runner-image-inquiry-review-2026-10-31.md) · [英文 Issue 草稿](./hangfire-windows-runner-image-inquiry-draft-2026-10-31.md)：诊断记录已提交；询证及证据 ZIP 已获批提交至 [actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，远端内容与附件下载校验通过，未触发新运行
+- [Windows runner image 询证与关闭记录](./hangfire-windows-runner-image-inquiry-review-2026-10-31.md) · [英文 Issue 草稿](./hangfire-windows-runner-image-inquiry-draft-2026-10-31.md)。上游更正根因，`20261101.353.1` 独立复测通过，[#15201](https://github.com/actions/runner-images/issues/15201) 以 `completed` 关闭。Radish Windows Razor 验证留在维护队列。
 - [SQLite 托管三平台与 AMD64 镜像单次验证](./sqlite-hosted-native-run-2026-10-31.md) · [结果 JSON](./sqlite-hosted-native-run-2026-10-31.json)：Linux x64 通过，其余六项失败；七份 artifact 已校验，清理完成，未重试
 - [SQLite 托管执行契约复核与本地修正](./sqlite-hosted-execution-contracts-2026-10-31.md)：批准 SHA、失败证据、清理结果、实际编译器与 notices 留痕；38 项本地检查通过，未 push / dispatch
 - [Windows Razor 诊断 inventory 与身份门禁](./hangfire-windows-razor-inventory-diagnostic-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-diagnostic-2026-10-31.json)：20 组契约通过，文件 / Machine 环境冲突触发门禁失败；证据与清理完成，未重试 / verify

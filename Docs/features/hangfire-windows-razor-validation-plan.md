@@ -16,9 +16,9 @@
 2. 手动运行 `inventory`，采集实际 VM / Full MSBuild 精确版本和 hash；不执行上游 task。
 3. 审阅库存，冻结期望 image / VS / MSBuild 后，另行确认指定提交的 `verify` 及证据上传。
 
-[上游询证草稿、证据子集和后续判定方案](../records/hangfire-windows-runner-image-inquiry-review-2026-10-31.md)已获批准并提交为 [actions/runner-images#15201](https://github.com/actions/runner-images/issues/15201)，指定证据 ZIP 已上传并下载校验。2026-11-04 只读复核确认，[维护者已回复](https://github.com/actions/runner-images/issues/15201#issuecomment-6575351447)：差异可能来自 image 重新特化后，环境变量保留基础镜像版本，预计例行部署修复；[最新承诺](https://github.com/actions/runner-images/issues/15201#issuecomment-6580306089)仍是部署后跟进，尚未确认完成或给出修复版本。
+2026-11-07，[上游询证 #15201](https://github.com/actions/runner-images/issues/15201) 已以 `completed` 关闭。上游更正确认旧运行实际使用 `20261026.347.1`，重新特化后遗留的是 `C:\imagedata.json` 的旧版本，而 Machine / Process `ImageVersion` 已正确更新。完整构建 `20261101.353.1` 已部署，独立复测的启动日志、两份元数据文件及 Machine / Process 版本一致。防复发改动仍由上游跟进。[关闭记录与复测证据](../records/hangfire-windows-runner-image-inquiry-review-2026-10-31.md#上游关闭结果)
 
-当前状态调整为等待修复部署与版本确认，再确认下一次 inventory 的完整 SHA、输入、身份一致性检查与独立执行授权。上游解释不裁决旧 VM 的精确身份，也不取代实际新 runner 证据；原身份一致性门禁保持，不忽略任一冲突来源、不重试或执行 verify。本次没有向上游发送新消息或触发远端运行。
+Radish 的 Windows Razor 验证继续留在后续维护 / 发行队列，本次未触发 CI。恢复时重新确认 `inventory` 的完整提交 SHA、输入与执行授权，由 Radish 实际运行完成来源一致性及工具身份审阅，再另行确认 `verify`。上游说明与独立复测作为镜像元数据证据保留，旧诊断结果和现有一致性门禁继续适用。
 
 官方 runner 清单不是实际 VM 执行证据。本机成功也不替代本批 Windows 验证；不把本批解释为原包字节重现、正式对应源码入口或完整发行审查已经完成。
 
@@ -26,7 +26,7 @@
 
 | 工具 | 固定输入或官方快照 | 使用与停止线 |
 | --- | --- | --- |
-| Runner | `windows-2022`，x64；清单 Image `20261026.347.1` / OS `10.0.20348 Build 5761` | label 无法锁定 image revision；实际 `ImageVersion` 漂移先采集，不直接执行上游 task |
+| Runner | `windows-2022`，x64。历史工具清单为 Image `20261026.347.1` / OS `10.0.20348 Build 5761`，上游部署与独立复测为 `20261101.353.1` | label 无法锁定 image revision，恢复验证时以实际 inventory 审阅结果为准 |
 | VS 2022 | Enterprise `17.14.37824.6` | 用预装 vswhere 查找 `[17.0,18.0)` 唯一实例并记录工具 hash；不安装 / repair VS，不切到 Framework 目录里的旧 MSBuild |
 | Full MSBuild | VS `MSBuild\Current\Bin\amd64\MSBuild.exe` | 官方清单未列精确 executable patch；inventory 必须记录 `/version`、FileVersion、SHA256。verify 要求与已审阅值完全匹配 |
 | .NET Framework | 清单提供 `4.7.2 / 4.8 / 4.8.1`，本工具仍要求实际至少 4.8 | 运行 RazorGenerator 的 CLR 边界；记录 Release registry 值、任务进程路径 / 位数；不修改 registry 或全局绑定策略 |

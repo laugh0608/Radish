@@ -219,7 +219,7 @@ NoDrive 询证、SNI、Valkey、公开源码托管、对外通信、master PR、
 - 原本地归档的索引及 869 文件重新核对一致；三个 bundle 的 `fsck --full --strict`、完整历史验证、冻结 commit / tree 与全部 753 blobs 核对通过，42 项 feed 的归档身份及精确版本保持。
 - 原 `Hangfire.PostgreSql.dll` 的 `AssemblyInformationalVersion` 为 `1.20.12+2.Branch.master.Sha.a5a728233ac8feb447695acb01f607bd848b00f7`，与包内 repository commit、冻结 bundle 和当前官方 tag 一致。这个字段补齐了 **DLL 自身的来源声明**，不能冒充 PDB 文档 checksum 或原包字节重建。
 - 按原 DLL 的 CodeView GUID / portable key 与 SHA256 checksum 查询官方符号服务，规范化请求返回 404；symbol package 读取则 TLS 超时，均未取得匹配 PDB。未推断符号永久不存在；拟向上游请求匹配 PDB / SourceLink 或可复核的原包构建材料，询证草稿已在记录中准备，尚未发送。
-- Windows Razor 仍等待上游部署完成及修复版本确认；不因本地来源补证而派发 inventory / verify，不修改身份门禁。
+- Windows runner 镜像差异已随 `20261101.353.1` 部署消除并完成独立复测，上游 issue 已关闭。Radish Windows Razor 的 `inventory` 和 `verify` 继续保留在后续维护 / 发行队列，恢复时沿用现有身份门禁并另行确认执行范围。[上游关闭记录](../records/hangfire-windows-runner-image-inquiry-review-2026-10-31.md#上游关闭结果)
 
 ### 8.2 正式源码交付的待确认方案
 
