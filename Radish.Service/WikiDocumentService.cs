@@ -588,6 +588,31 @@ public partial class WikiDocumentService : BaseService<WikiDocument, WikiDocumen
         return (fileName, document.MarkdownContent);
     }
 
+    private async Task AddRevisionAsync(WikiDocument document, string? changeSummary, string sourceType, long operatorId, string operatorName)
+    {
+        var revision = new WikiDocumentRevision
+        {
+            DocumentId = document.Id,
+            Version = document.Version,
+            Title = document.Title,
+            MarkdownContent = document.MarkdownContent,
+            ChangeSummary = changeSummary,
+            SourceType = string.IsNullOrWhiteSpace(sourceType) ? document.SourceType : sourceType,
+            TenantId = document.TenantId,
+            CreateId = operatorId,
+            CreateBy = ResolveOperatorName(operatorName),
+            CreateTime = DateTime.Now
+        };
+
+        revision.Id = await _wikiDocumentRevisionRepository.AddAsync(revision);
+        await SyncRevisionAttachmentReferencesAsync(
+            document,
+            revision,
+            operatorId,
+            operatorName,
+            revision.CreateTime);
+    }
+
     private async Task<string> EnsureUniqueSlugForCreateAsync(string? requestedSlug, string titleSeed)
     {
         var baseSlug = BuildSlug(!string.IsNullOrWhiteSpace(requestedSlug) ? requestedSlug : titleSeed);

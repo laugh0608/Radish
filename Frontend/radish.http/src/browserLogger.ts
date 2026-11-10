@@ -177,7 +177,7 @@ let writingHttpLog = false;
 /** HTTP 事件没有诊断开关，必须在应用尚未初始化时也能安全输出。 */
 export function writeHttpLog(eventCode: 'http.operation_failed' | 'http.api_failed' | 'http.network_failed' | 'http.response_failed' | 'http.token_refresh_failed', value: unknown): void {
   if (writingHttpLog) return;
-  if (!Object.hasOwn(HTTP_EVENTS, eventCode)) return;
+  if (!Object.prototype.hasOwnProperty.call(HTTP_EVENTS, eventCode)) return;
   const definition = HTTP_EVENTS[eventCode];
   writingHttpLog = true;
   try {
