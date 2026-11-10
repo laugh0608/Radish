@@ -58,3 +58,19 @@ Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误。定�
 所有者确认后，在既有 `BusinessJobLogSink` 接线中为 `PostLotteryJob` 增加独立事件与字段白名单。Production 候选在合成外层 `Diagnostic=true` 下仍输出普通完成和失败摘要。旧链与候选都移除无关计数、scope `operationId` 和成功事件继承的 `failureKind`，保留本批计数及类型化 trace / span。业务生成端、事务及调度代码沿用原实现。见[事件契约第 79 节](../features/unified-logging-contract.md#l2-lottery-job-final-output)。
 
 Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误。定向 .NET 回归 327 项通过，覆盖两环境的配置 WriteTo / AuditTo、候选 JSONL、代码 console、抽奖 SQLite 业务回归和相邻日志适配。`npm run check:logging-contract` 70 项通过。配置输出用测试 sink / writer，真实 Hangfire 调度、生产介质和 collector 仍待目标环境验收。
+
+<a id="l2-cleanup-job-output-audit"></a>
+
+## 文件及记录清理 Job 最终输出核验
+
+以 `dev` 的 `4a5555a2` 为基线，通过实际七个 Job 入口、替身仓储、临时文件和 `HttpBoundaryCapture`，覆盖 Development / Production 的旧链配置 WriteTo / AuditTo 与候选 JSONL。另以旧链代码 console 检查文件来源错配。scope 值均为合成数据。
+
+| 核验 | 观察 |
+| --- | --- |
+| 文件业务与计数 | 软删除混合批次返回 2，实际移动 1、缺失 1、IO 失败 1，输出一条 Error。仅缺失时返回 1 并输出 Warning。临时文件移动时保留分片，回收站删除过期文件，孤立附件路径缺失时仍更新已删除标记。四入口空批次返回 0，均无摘要 |
+| 文件来源 | 无 scope 的旧链文件警告缺少 `SourceContext`。加普通外层来源后，配置旧链带出该值。外层来源设为 `BusinessJobSummary` 时，配置 WriteTo 和 Production 候选把该警告改为 `runtime.unclassified`，配置 WriteTo 的原缺失计数消失。两种环境的旧链代码 console 同样改成未识别事件文本 |
+| 记录来源与字段 | 收件箱仅删 3 条关系时输出完成，并另发一条 `count=2` 的容量告警。Wiki 和聊天分别返回并输出 4、5。三类精确来源在旧链优先于外层同名字段，但三个出口仍带出无关计数。容量告警还带出外层 `durationMs` |
+| 共有字段和诊断 | 旧链两个配置出口带出自定义字符串、`statusCode`、`operationId` 和跨来源计数。候选剔除自定义字符串，仍带出后三类字段。文件仅缺失警告、正常完成和记录摘要都可继承外层 `failureKind`。外层 `Diagnostic=true` 时，候选 Production 丢掉文件失败、记录完成和容量告警。候选 Development 与旧链将这些事件标为诊断 |
+| 失败归属 | 文件查询失败由 Job 消费，生成一条失败摘要并返回 0。三个记录 Job 的仓储异常按原实例传播，均无本地失败摘要。文件和收件箱输出故障探针中，WriteTo 和候选保留业务返回，候选走有限 `pipeline.output_failed`。AuditTo 的聚合异常仍包含原 sink 故障 |
+
+用 `CustomAfterMicrosoftCommonTargets` 仅向 `Radish.Api.Tests` 导入临时探针。`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore` 过滤 `CleanupFinalOutputProbe`、`CleanupLoggingTests` 和 `FileCleanupJobTest`，28 项探针和 40 项既有回归共 68 项通过。去掉临时导入后，40 项既有回归再次通过，含过滤器一并命中的 `ServiceCleanupLoggingTests`。真实目录权限故障、Hangfire 调度、生产日志介质及 collector 仍待对应环境验收。修复范围见[衔接方案第 10.5 节](../features/unified-logging-l3-ingest-plan.md#l2-cleanup-job-output)。

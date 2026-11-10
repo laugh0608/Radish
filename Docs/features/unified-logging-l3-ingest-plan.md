@@ -263,7 +263,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | --- | --- | --- |
 | 首组业务 Job | `ShopJob.CancelTimeoutOrdersAsync / MarkExpiredBenefitsAsync / GenerateDailyStatsAsync`、`CommentHighlightJob.ExecuteAsync`、`RetentionRewardJob.ExecuteAsync` 均由 `ApiRecurringJobRegistration` 登记，共用 `BusinessJobSummary.Write` | 契约 §11、78 和 `BusinessJobLoggingTests`。商城取消通过真实配置验证最终出口，另外四个入口沿原方法回归 |
 | 抽奖 Job | `PostLotteryJob.ExecuteAutoDrawAsync` 用自己的 `ILogger<PostLotteryJob>` scope 写摘要，扫描异常交给 Hangfire | 契约 §11、79、`BusinessJobLoggingTests` 和 `LotteryControllerLoggingTests`。[第 10.4 节](#l2-lottery-job-output)已完成本地切片 |
-| 文件及记录清理 | `FileCleanupJob` 的软删除、临时文件、回收站、孤立附件入口用内部批次摘要。通知收件箱、Wiki 草稿、聊天回应三个 Job 各在 `ExecuteAsync` 用类型化 logger | 契约 §10 和 `CleanupLoggingTests`。分别核对计数、部分失败及 Hangfire 外抛 |
+| 文件及记录清理 | `FileCleanupJob` 的软删除、临时文件、回收站、孤立附件入口用内部批次摘要。通知收件箱、Wiki 草稿、聊天回应三个 Job 各在 `ExecuteAsync` 用类型化 logger | 契约 §10、`CleanupLoggingTests` 和 `FileCleanupJobTest`。四个来源均已复现最终输出缺口，[第 10.5 节](#l2-cleanup-job-output)列出修复范围 |
 | 上传及令牌清理 | `ChunkedUploadService.CleanupExpiredSessionsAsync`、`FileAccessTokenService.CleanupExpiredTokensAsync` 用 `ServiceCleanupSummary`。前台目录 / 配额失败走同 helper 的 `RecordStandaloneFailure` | 契约 §13、21–24 和 `ServiceCleanupLoggingTests`、`ChunkedUploadLoggingTests` 及附件回归。区分后台摘要、前台失败与 Controller 已收口事件 |
 | Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9 和 `OutboxNativeLoggingTests`。沿状态写入核对既有 `operationId`。Hangfire provider / 状态观察器沿用 §73 证据 |
 | 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 和 `RewardLoggingTests`、`CoinMovementLoggingTests`、`AccountGovernanceLoggingTests`。区分重试决定、已消费失败与发放结果 |
@@ -301,3 +301,20 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 1. 复用 `BusinessJobLogSink` 和既有日志接线，为精确来源 `Radish.Service.Jobs.PostLotteryJob` 定义独立的事件和字段白名单。只登记 `job.batch.completed`（Information、`succeeded`）与 `job.batch.failed`（Error、`partial` / `failed`）。输出采用固定模板、`sourceCategory=job`、`jobKind=post-lottery`、本批次的 `processedCount` / `failedCount` / `durationMs`，失败事件另保留封闭 `failureKind`。两条均为普通事件，保留原时间及类型化 trace / span，排除 scope 的 `operationId`、普通上下文和原异常。该来源的未登记事件按安全通用事件处理，同名异来源保持各自归属。
 2. 保留现有扫描条件、顺序、批量边界、帖子去重、返回值和单项失败后继续处理。开奖服务的事务、审计、Outbox 和 Hangfire 的扫描异常归属保持原行为。配置 WriteTo 消费 sink 故障，AuditTo 保留异常传播，候选输出故障沿用有限应急。
 3. 定向回归覆盖两种环境的配置 WriteTo / AuditTo 与候选 JSONL、旧链代码 console、scope 污染和同名异来源。验证完成、部分失败、全部失败、空批次、扫描异常、批量边界与去重，并复跑抽奖业务回归。见[实施记录](../records/planning-closeout-2026-11-10.md#l2-lottery-job-output-implementation)。真实调度、生产日志介质和 collector 留到对应环境验收。
+
+<a id="l2-cleanup-job-output"></a>
+
+### 10.5 文件及记录清理 Job 最终输出提案
+
+四个来源共七个入口已完成本地核验。文件摘要未绑定 `SourceContext`，外层已有业务 Job 来源时会被其他适配器重建为 `runtime.unclassified`，丢失原事件和计数。三个记录清理 Job 的类型化来源稳定，但同样会带出外层字段。生产候选链会因外层 `Diagnostic=true` 丢掉文件失败、记录完成和收件箱容量告警。见[核验记录](../records/planning-closeout-2026-11-10.md#l2-cleanup-job-output-audit)。
+
+1. 为文件摘要固定 `Radish.Service.Jobs.FileCleanupJob` 来源，在现有旧链 WriteTo / AuditTo 和候选输出接线中，增加只处理这四个精确来源的清理 Job 适配。登记事件按下表重建，固定 `SourceCategory=job` 和 `Diagnostic=false`，保留等级、原事件时间及类型化 trace / span。移除外层字段、字符串关联值和异常对象。精确来源的未登记事件用安全通用摘要处理，同名事件继续按各自来源处理。
+
+| 来源 | 登记事件与字段 |
+| --- | --- |
+| `FileCleanupJob` | 保留完成、警告、失败。`jobKind` 限于 `file-deleted / file-temp / file-recycle / file-orphan`，保留对应 `outcome`、`durationMs` 和原七项计数 `processedCount / movedCount / missingCount / skippedCount / removedDirectoryCount / failedCount / directoryFailureCount`。失败或含真实目录清理异常的警告保留封闭 `failureKind`，仅缺失文件的警告排除该字段 |
+| `NotificationInboxCleanupJob` | 固定 `jobKind=notification-inbox`。完成只保留 `relationCount / groupCount / notificationCount / durationMs`。`job.cleanup.capacity_warning` 只保留聚合 `count`，对应本批容量告警条数 |
+| `WikiDraftPayloadCleanupJob` / `ChatMessageReactionOperationCleanupJob` | 各自固定 `jobKind=wiki-drafts / chat-reactions`，完成只保留 `count / durationMs` |
+
+2. 保留文件移动 / 删除和原计数口径、分片排除、引用保护、空批次安静及已消费失败的返回行为。保留记录仓储调用、结果对象和异常外抛，由 Hangfire 按原策略重试。WriteTo、AuditTo 和候选链各自沿用现有输出故障行为。上传会话、文件访问令牌和 Hangfire 自有日志继续按原分组处理。
+3. 定向回归覆盖七个入口、两种环境的配置 WriteTo / AuditTo、代码 console 和候选 JSONL。验证来源错配、无关字段、生产过滤、收件箱两事件的字段隔离、仅缺失与目录失败警告的区别、空批次和异常归属。真实目录故障、生产日志介质、Hangfire 调度及 collector 在对应环境验收。
