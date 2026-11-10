@@ -772,3 +772,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `Radish.Service.Jobs.FileCleanupJob` 的四个入口使用该固定来源。完成、警告和失败保留原 `jobKind`、`outcome`、七项非负计数及有界 `durationMs`。只有失败或目录清理异常警告携带封闭 `failureKind`。缺失文件仍计入原已处理数，实际移动数量仍由 `movedCount` 表示。
 - `Radish.Api.Services` 下的 `NotificationInboxCleanupJob`、`WikiDraftPayloadCleanupJob` 和 `ChatMessageReactionOperationCleanupJob` 各自固定 `jobKind`。收件箱完成保留三种删除计数和时长，容量告警只保留本批告警条数。Wiki 与聊天完成各保留数量和时长。
 - 文件批次和记录清理保持第 10 节的清理行为及异常归属。WriteTo 输出故障由该链消费，AuditTo 保留异常传播，候选输出故障走有限应急。真实目录权限故障、Hangfire 调度、生产介质与 collector 仍有各自验收条件。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-cleanup-job-output-implementation)。
+
+<a id="l2-service-cleanup-final-output"></a>
+
+## 81. L2 服务内清理最终输出（2026-11-10）
+
+- 精确来源为 `Radish.Service.Internal.ServiceCleanupSummary`。`ServiceCleanupLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件固定 `Diagnostic=false`，保留类型化 trace / span 及 Serilog 事件的原等级和时间戳。候选 JSONL 的时间字段由公共策略在规范化时生成。未登记的组合使用 `runtime.unclassified` 安全摘要，等级低于 Warning 时标为诊断。
+- `upload-sessions` 登记完成、中断和失败，`file-tokens` 登记完成和中断。后台事件固定 `SourceCategory=job`，保留原六项非负计数、合法 `jobKind`、对应 `outcome` 及有界 `durationMs`，已消费失败另保留封闭 `failureKind`。中断事件为 Info，只描述此前完成的进度。
+- 前台 `upload.cleanup.failed` 固定 `SourceCategory=application`，只保留 `directory / quota-release / quota-complete` 之一及封闭 `failureKind`。附件 Controller 的同名事件沿自身来源适配。
+- 业务及异常归属依第 13 节。WriteTo 消费输出故障，候选输出故障走有限应急。AuditTo 保留输出异常传播，写入中断摘要失败时可覆盖正在传播的仓储异常。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-service-cleanup-output-implementation)。

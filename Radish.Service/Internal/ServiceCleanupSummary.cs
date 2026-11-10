@@ -32,7 +32,7 @@ internal sealed class ServiceCleanupSummary(string jobKind) : IDisposable
         var code = FailedCount > 0 ? "job.cleanup.failed"
             : Completed ? "job.cleanup.completed" : "job.cleanup.interrupted";
         var outcome = FailedCount > 0 ? (changed ? "partial" : "failed") : Completed ? "succeeded" : "partial";
-        var logger = Log.ForContext("EventCode", code).ForContext("SourceCategory", "job")
+        var logger = Log.ForContext<ServiceCleanupSummary>().ForContext("EventCode", code).ForContext("SourceCategory", "job")
             .ForContext("jobKind", jobKind).ForContext("outcome", outcome)
             .ForContext("processedCount", ProcessedCount).ForContext("updatedCount", UpdatedCount)
             .ForContext("removedDirectoryCount", RemovedDirectoryCount).ForContext("settlementCount", SettlementCount)
@@ -45,7 +45,7 @@ internal sealed class ServiceCleanupSummary(string jobKind) : IDisposable
     }
 
     public static void RecordStandaloneFailure(string operation, Exception exception) =>
-        Log.ForContext("EventCode", "upload.cleanup.failed").ForContext("SourceCategory", "application")
+        Log.ForContext<ServiceCleanupSummary>().ForContext("EventCode", "upload.cleanup.failed").ForContext("SourceCategory", "application")
             .ForContext("cleanupOperation", operation)
             .ForContext("failureKind", RuntimeFailureSummary.Classify(exception))
             .Error("Upload cleanup operation consumed a failure");

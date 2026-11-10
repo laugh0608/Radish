@@ -98,3 +98,11 @@ Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误，定�
 | 输出失败 | WriteTo 和候选保留中断路径的原仓储异常及前台取消完成。候选进入有限 `pipeline.output_failed`。AuditTo 在中断和前台场景均传播含原 sink 故障的聚合异常。中断场景中，该聚合异常覆盖 `Dispose` 前正在传播的仓储异常 |
 
 通过 `CustomAfterMicrosoftCommonTargets` 为 `Radish.Api.Tests` 临时导入探针。`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore` 定向执行 121 项，含 26 项探针。去掉临时导入后，服务清理、分片上传、附件上传及文件令牌配额的 95 项既有回归再次通过。目录失败覆盖无效会话数据触发的路径校验，真实文件权限、Hangfire 调度、生产日志介质与 collector 留到对应环境验收。修复范围见[衔接方案第 10.6 节](../features/unified-logging-l3-ingest-plan.md#l2-service-cleanup-output)。
+
+<a id="l2-service-cleanup-output-implementation"></a>
+
+## 上传会话及文件访问令牌清理最终输出实施
+
+所有者确认第 10.6 节后，批次与前台失败绑定 `ServiceCleanupSummary` 来源，`ServiceCleanupLogSink` 按登记事件重建最终输出。外层来源为 `FileCleanupJob` 且 `Diagnostic=true` 时，生产候选仍保留真实完成、中断和失败摘要。后台保留本批原计数，前台只保留操作和失败分类。同名附件 Controller 事件继续使用其独立来源。见[事件契约第 81 节](../features/unified-logging-contract.md#l2-service-cleanup-final-output)。
+
+Debug 解决方案 `--no-restore --warnaserror` 构建零警告及错误。定向 .NET 回归 410 项通过，含 21 项新增用例。`npm run check:logging-contract` 70 项通过。回归覆盖旧链代码 console、两环境的配置 WriteTo / AuditTo、候选 JSONL 及邻近日志。配置 AuditTo 输出失败仍可覆盖中断时正在传播的仓储异常。前台目录失败以路径校验触发，真实目录权限故障、Hangfire 调度、生产日志介质和 collector 留到对应环境验收。

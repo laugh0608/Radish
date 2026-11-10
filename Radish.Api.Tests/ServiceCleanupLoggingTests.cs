@@ -27,7 +27,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class ServiceCleanupLoggingTests
+public sealed partial class ServiceCleanupLoggingTests
 {
     private const string Secret = "SERVICE_CLEANUP_PRIVATE_SENTINEL";
     private static readonly DateTime Now = new(2026, 9, 23, 0, 0, 0, DateTimeKind.Utc);
