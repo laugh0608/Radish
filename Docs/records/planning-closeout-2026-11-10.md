@@ -82,3 +82,19 @@ Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误。定�
 所有者确认后，文件摘要固定为 `FileCleanupJob` 来源，四个来源由 `CleanupJobLogSink` 按事件限定字段。旧链的文件警告保留原事件和计数。候选 Production 在外层 `Diagnostic=true` 时仍输出清理失败、记录完成和收件箱容量告警。目录异常警告保留分类，只有文件缺失的警告和收件箱容量告警剔除无关字段。见[事件契约第 80 节](../features/unified-logging-contract.md#l2-cleanup-job-final-output)。
 
 Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误，定向 .NET 回归 327 项通过，含 21 项新增用例。覆盖实际七个入口、旧链代码 console、两环境的配置 WriteTo / AuditTo 与候选 JSONL、临时文件操作、仓储及输出故障归属。`npm run check:logging-contract` 70 项通过。目录异常警告的分类用适配器输入验证。真实目录权限故障、Hangfire 调度、生产日志介质及 collector 留到对应环境验收。
+
+<a id="l2-service-cleanup-output-audit"></a>
+
+## 上传会话及文件访问令牌清理最终输出核验
+
+以 `dev` 的 `f9a5f751` 为基线，调用实际的令牌及上传会话清理、取消会话与已完成上传重放。使用替身仓储、配额服务、临时文件和合成 scope，经两环境的旧链配置 WriteTo / AuditTo、代码 console 与候选 JSONL 验证。
+
+| 核验 | 观察 |
+| --- | --- |
+| 后台计数与异常 | 令牌正常批次处理 2、更新 1、跳过 1。第二次撤销抛错时保留此前一次更新，发一条 Info 中断并传播原异常。上传成功批次分别更新、删除目录、结算 1 次。释放配额超时由后台消费，发一条 Error 部分失败。终态查询抛错时仍传播原异常，Info 中断保留此前更新、目录删除和结算 |
+| 前台失败与同名事件 | 取消重放的配额释放、完成重放的配额结算和替身返回无效已存会话 ID 触发的目录校验失败均进入同一前台事件。成功重放返回原附件。配置旧链与候选会带出外层批次计数和 jobKind。作为对照，附件 Controller 通过既有命名 `EventId` 输出的同名事件只保留 `cleanupOperation / failureKind` |
+| 上下文污染 | 配置旧链带出合成自定义字段，候选丢弃该字段。两种链均带出外层 `statusCode`、`operationId` 和不属于该事件的计数。后台完成和中断会继承外层 `failureKind`，实际消费的超时仍优先输出自身分类 |
+| 来源错配与生产过滤 | 无外层来源的旧链事件缺少 `SourceContext`。外层来源为 `FileCleanupJob` 时，令牌完成被该适配器重建并丢失 `updatedCount` 和 `jobKind`，中断与前台失败变为 `runtime.unclassified`。生产候选链还丢掉了被误标诊断的中断。单独设置 `Diagnostic=true` 时，生产候选链丢掉实际观测的完成、中断、后台失败和前台失败。两环境代码 console 同样出现文件清理模板错配 |
+| 输出失败 | WriteTo 和候选保留中断路径的原仓储异常及前台取消完成。候选进入有限 `pipeline.output_failed`。AuditTo 在中断和前台场景均传播含原 sink 故障的聚合异常。中断场景中，该聚合异常覆盖 `Dispose` 前正在传播的仓储异常 |
+
+通过 `CustomAfterMicrosoftCommonTargets` 为 `Radish.Api.Tests` 临时导入探针。`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore` 定向执行 121 项，含 26 项探针。去掉临时导入后，服务清理、分片上传、附件上传及文件令牌配额的 95 项既有回归再次通过。目录失败覆盖无效会话数据触发的路径校验，真实文件权限、Hangfire 调度、生产日志介质与 collector 留到对应环境验收。修复范围见[衔接方案第 10.6 节](../features/unified-logging-l3-ingest-plan.md#l2-service-cleanup-output)。
