@@ -195,7 +195,7 @@ export const ForumPostComposer = ({
         avatar: user.voAvatar
       }));
     } catch (error) {
-      log.error(t('forum.mention.searchFailed'), error);
+      log.error('ForumPostComposer', 'Mention user search failed', error);
       throw error;
     }
   }, [t]);
@@ -832,7 +832,7 @@ export const ForumPostComposer = ({
   };
 
   const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
-    log.error('ForumPostComposer', `Markdown ${kind} upload failed:`, error);
+    log.error('ForumPostComposer', 'Markdown attachment upload failed:', error, { kind });
   }, []);
 
   const handleEditorUploadingChange = useCallback((uploading: boolean) => {

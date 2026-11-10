@@ -148,10 +148,9 @@ export function useActiveChatReadSurface({
       if (accountStillActive) {
         log.warn(
           'ChatReadSurface',
-          discardPendingRead
-            ? '推进精确已读游标被服务端拒绝，已丢弃当前目标:'
-            : '推进精确已读游标失败，保留当前会话内存重试目标:',
-          error
+          '推进精确已读游标失败:',
+          error,
+          { discardPendingRead }
         );
       }
     } finally {

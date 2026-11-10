@@ -1,11 +1,50 @@
 name: Native Images
 on:
   workflow_call:
+    inputs:
+      scan_api_arm64:
+        description: 'Require the API arm64 image vulnerability check before backend publication'
+        type: boolean
+        default: false
   workflow_dispatch:
+    inputs:
+      validation_scope:
+        description: 'Select one independently approved validation scope'
+        type: choice
+        options: [native-images, sqlite-platforms, hangfire-razor]
+        default: native-images
+        required: false
+      razor_mode:
+        description: 'Razor inventory only, or separately approved Windows verification'
+        type: choice
+        options: [inventory, verify]
+        default: inventory
+        required: false
+      expected_head_sha:
+        description: 'Approved full commit SHA; required for Razor and SQLite scopes'
+        type: string
+        required: false
+      razor_expected_image:
+        description: 'Reviewed ImageVersion; required for Razor verify'
+        type: string
+        required: false
+      razor_expected_vs:
+        description: 'Reviewed VS installationVersion; required for Razor verify'
+        type: string
+        required: false
+      razor_expected_msbuild:
+        description: 'Reviewed Full MSBuild /version; required for Razor verify'
+        type: string
+        required: false
+      razor_expected_msbuild_sha256:
+        description: 'Reviewed Full MSBuild executable SHA256; required for Razor verify'
+        type: string
+        required: false
 permissions:
   contents: read
 jobs:
   native-sanitizer:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_scope == '' || inputs.validation_scope == 'native-images' }}
     name: Native / AddressSanitizer
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -30,6 +69,7 @@ jobs:
           path: artifacts/native-fuzz/
           if-no-files-found: ignore
   native-platforms:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_scope == '' || inputs.validation_scope == 'native-images' }}
     name: Native / ${{ matrix.runner }}
     strategy:
       fail-fast: false
@@ -59,6 +99,7 @@ jobs:
           dotnet publish Radish.Api -c Release --no-restore -o artifacts/image-publish
           dotnet artifacts/image-publish/Radish.Api.dll --check-native-images
   native-docker:
+    if: ${{ github.event_name != 'workflow_dispatch' || inputs.validation_scope == '' || inputs.validation_scope == 'native-images' }}
     name: Native Docker / ${{ matrix.platform }}
     strategy:
       fail-fast: false
@@ -80,6 +121,7 @@ jobs:
       - name: Build and execute without pushing
         run: node Scripts/check-native-image-docker.mjs --platform=${{ matrix.platform }} --keep-image
       - name: Scan final API image
+        if: inputs.scan_api_arm64 && matrix.platform == 'linux/arm64'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0, shared release scanner
         with:
           scan-type: image
@@ -92,6 +134,7 @@ jobs:
           severity: HIGH,CRITICAL
           scanners: vuln
       - name: Evaluate existing image vulnerability policy
+        if: inputs.scan_api_arm64 && matrix.platform == 'linux/arm64'
         run: |
           node Scripts/evaluate-image-vulnerabilities.mjs \
             --report native-image-vulnerabilities.json \
@@ -100,7 +143,7 @@ jobs:
             --output native-image-evaluation.json \
             --summary "${GITHUB_STEP_SUMMARY}"
       - name: Save platform vulnerability evidence
-        if: always()
+        if: always() && inputs.scan_api_arm64 && matrix.platform == 'linux/arm64'
         uses: actions/upload-artifact@v4
         with:
           name: native-image-security-${{ matrix.architecture }}
@@ -108,9 +151,155 @@ jobs:
             native-image-vulnerabilities.json
             native-image-evaluation.json
           if-no-files-found: ignore
+          retention-days: 30
       - name: Remove disposable image
         if: always()
         run: |
           if docker image inspect radish-image-check:${{ matrix.architecture }} >/dev/null 2>&1; then
             docker image rm radish-image-check:${{ matrix.architecture }}
           fi
+  hangfire-windows-razor:
+    name: Hangfire Razor / Windows x64
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'hangfire-razor' }}
+    runs-on: windows-2022
+    timeout-minutes: 60
+    steps:
+      - name: Require the approved workflow commit
+        shell: pwsh
+        env:
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        run: |
+          if ($env:EXPECTED_HEAD_SHA -cnotmatch '^[a-f0-9]{40}$' -or $env:EXPECTED_HEAD_SHA -cne $env:GITHUB_SHA) {
+            throw 'Explicit approved workflow commit required'
+          }
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        id: checkout
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - name: Check PowerShell contracts and collect inventory or execute reviewed Razor validation
+        shell: pwsh
+        env:
+          RAZOR_MODE: ${{ inputs.razor_mode }}
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+          RAZOR_IMAGE: ${{ inputs.razor_expected_image }}
+          RAZOR_VS: ${{ inputs.razor_expected_vs }}
+          RAZOR_MSBUILD: ${{ inputs.razor_expected_msbuild }}
+          RAZOR_MSBUILD_SHA256: ${{ inputs.razor_expected_msbuild_sha256 }}
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "radish-hangfire-razor-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          ./Scripts/hangfire/windows/Invoke-Validation.ps1 -Phase $env:RAZOR_MODE -TaskRoot $root `
+            -ExpectedCommit $env:EXPECTED_HEAD_SHA -ExpectedImageVersion $env:RAZOR_IMAGE `
+            -ExpectedVsVersion $env:RAZOR_VS -ExpectedMsbuildVersion $env:RAZOR_MSBUILD `
+            -ExpectedMsbuildSha256 $env:RAZOR_MSBUILD_SHA256
+      - name: Finalize owned cleanup and evidence even after failure
+        id: cleanup
+        if: always() && steps.checkout.outcome == 'success'
+        shell: pwsh
+        env:
+          EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP "radish-hangfire-razor-$env:GITHUB_RUN_ID-$env:GITHUB_RUN_ATTEMPT"
+          if (Test-Path -LiteralPath (Join-Path $root 'owner.json')) {
+            ./Scripts/hangfire/windows/Invoke-Validation.ps1 -Phase Cleanup -TaskRoot $root -ExpectedCommit $env:EXPECTED_HEAD_SHA
+          }
+      - name: Retain the checked evidence whitelist
+        if: always() && steps.cleanup.outputs.publish_safe == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: hangfire-razor-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/radish-hangfire-razor-${{ github.run_id }}-${{ github.run_attempt }}/publish/
+          retention-days: 7
+          if-no-files-found: error
+  sqlite-native-platforms:
+    name: SQLite native / ${{ matrix.rid }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'sqlite-platforms' }}
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            rid: linux-x64
+          - runner: windows-2025
+            rid: win-x64
+          - runner: macos-15-intel
+            rid: osx-x64
+    runs-on: ${{ matrix.runner }}
+    env:
+      EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+    steps:
+      - name: Require the approved workflow commit before installing tools
+        shell: bash
+        run: |
+          [[ "$EXPECTED_HEAD_SHA" =~ ^[a-f0-9]{40}$ ]] && [[ "$EXPECTED_HEAD_SHA" == "$GITHUB_SHA" ]] || exit 1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24.22.2'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '10.0.403'
+      - name: Install approved Rust toolchain in runner
+        run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+      - name: Check contracts and MSBuild argv, build, test, publish and probe the native platform
+        timeout-minutes: 38
+        run: node Scripts/ci/validate-sqlite-platform.mjs --mode=native --rid=${{ matrix.rid }}
+      - name: Clean task resources and validate evidence
+        id: finalize
+        if: always()
+        run: node Scripts/ci/validate-sqlite-platform.mjs --mode=cleanup --rid=${{ matrix.rid }}
+      - name: Retain reviewed evidence only
+        if: always() && steps.finalize.outputs.publish_safe == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sqlite-native-${{ matrix.rid }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/radish-sqlite-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.rid }}/evidence/
+          retention-days: 14
+          if-no-files-found: ignore
+  sqlite-native-docker:
+    name: SQLite native Docker / ${{ matrix.service }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.validation_scope == 'sqlite-platforms' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [api, auth, gateway, dbmigrate]
+    env:
+      EXPECTED_HEAD_SHA: ${{ inputs.expected_head_sha }}
+    steps:
+      - name: Require the approved workflow commit before installing tools
+        shell: bash
+        run: |
+          [[ "$EXPECTED_HEAD_SHA" =~ ^[a-f0-9]{40}$ ]] && [[ "$EXPECTED_HEAD_SHA" == "$GITHUB_SHA" ]] || exit 1
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '24.22.2'
+      - uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          dotnet-version: '10.0.403'
+      - name: Install approved Rust toolchain in runner
+        run: rustup toolchain install 1.96.0 --profile minimal --component rustfmt --component clippy
+      - name: Check contracts and container identity, build, probe and scan one final image without pushing
+        timeout-minutes: 38
+        run: node Scripts/ci/validate-sqlite-platform.mjs --mode=docker --rid=linux-x64 --service=${{ matrix.service }}
+      - name: Clean task resources and validate evidence
+        id: finalize
+        if: always()
+        run: node Scripts/ci/validate-sqlite-platform.mjs --mode=cleanup --rid=linux-x64 --service=${{ matrix.service }}
+      - name: Retain reviewed evidence only
+        if: always() && steps.finalize.outputs.publish_safe == 'true'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sqlite-native-docker-${{ matrix.service }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/radish-sqlite-${{ github.run_id }}-${{ github.run_attempt }}-${{ matrix.service }}/evidence/
+          retention-days: 14
+          if-no-files-found: ignore

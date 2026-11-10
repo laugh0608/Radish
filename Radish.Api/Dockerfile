@@ -20,6 +20,12 @@ RUN dotnet publish "./Radish.Api/Radish.Api.csproj" -c $BUILD_CONFIGURATION -o /
     && cp /src/Radish.Api/appsettings.json /app/publish/appsettings.json
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+# CVE-2026-109518: disable download retries until APT itself is patched.
+RUN apt-get update -o Acquire::Retries=0 \
+    && apt-get install -o Acquire::Retries=0 -y --no-install-recommends --only-upgrade apt libapt-pkg6.0t64 \
+    && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' apt)" ge 2.8.4ubuntu0.1 \
+    && dpkg --compare-versions "$(dpkg-query -W -f='${Version}' libapt-pkg6.0t64)" ge 2.8.4ubuntu0.1 \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 EXPOSE 5100
 COPY --from=build /app/publish .

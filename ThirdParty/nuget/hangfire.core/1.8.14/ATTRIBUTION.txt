@@ -1,0 +1,43 @@
+Hangfire.Core 1.8.14
+Authors: Sergey Odinokov
+Copyright: Copyright © 2013-2024 Hangfire OÜ
+Package license metadata: file:LICENSE.md
+Project: https://www.hangfire.io/
+Package source commit: 51647c20e36ab010f7dfc4fa8b1ed666070d7f4f
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+Commercial license alternatives are bundled evidence, not a grant or assertion of purchased rights.
+
+Materials:
+- COPYING (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/hangfire.core/1.8.14/hangfire.core.1.8.14.nupkg [COPYING]
+  Original SHA256: 8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903
+  Distributed SHA256: 8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903
+- COPYING.LESSER (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/hangfire.core/1.8.14/hangfire.core.1.8.14.nupkg [COPYING.LESSER]
+  Original SHA256: da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768
+  Distributed SHA256: da7eabb7bafdf7d3ae5e9f223aa5bdc1eece45ac569dc21b3b037520b4464768
+- LICENSE.md (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/hangfire.core/1.8.14/hangfire.core.1.8.14.nupkg [LICENSE.md]
+  Original SHA256: 3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953
+  Distributed SHA256: 3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953
+- LICENSE_ROYALTYFREE (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/hangfire.core/1.8.14/hangfire.core.1.8.14.nupkg [LICENSE_ROYALTYFREE]
+  Original SHA256: 4ca53ffd44e5c64d00cc1d61ad6095a7f9aa24d3e8e0422fbc4fce43c5f9b12a
+  Distributed SHA256: 4ca53ffd44e5c64d00cc1d61ad6095a7f9aa24d3e8e0422fbc4fce43c5f9b12a
+- LICENSE_STANDARD (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/hangfire.core/1.8.14/hangfire.core.1.8.14.nupkg [LICENSE_STANDARD]
+  Original SHA256: f7fea42684435a253ab56432842b124d57a407f619ae4499bf9d8211f78341d5
+  Distributed SHA256: f7fea42684435a253ab56432842b124d57a407f619ae4499bf9d8211f78341d5
+- NOTICES (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/hangfire.core/1.8.14/hangfire.core.1.8.14.nupkg [NOTICES]
+  Original SHA256: 9c330aa46c8c30de312f5fff05b658e95b6b7ef8947b200d86aad245027afbf4
+  Distributed SHA256: da7c9e7f7e79f6073b4c70d8a6fdc187a867e19628e1ddfb480fb2197392b206
+- LICENSE-Cronos-0.8.3.txt (merged-dependency-license)
+  Source: https://api.nuget.org/v3-flatcontainer/cronos/0.8.3/cronos.0.8.3.nupkg [LICENSE]
+  Original SHA256: 48e6c7a1b9a9e687391e6613269b4aa81b6c910f8e2bb53bee7a7e86e53b584a
+  Distributed SHA256: 48e6c7a1b9a9e687391e6613269b4aa81b6c910f8e2bb53bee7a7e86e53b584a
+
+Remaining evidence:
+- License texts alone do not close source availability, relinking/replacement or other distribution conditions. Commercial alternatives do not grant commercial rights.

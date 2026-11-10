@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
@@ -25,10 +24,8 @@ public class ProductServiceTest
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -48,10 +45,8 @@ public class ProductServiceTest
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -67,7 +62,6 @@ public class ProductServiceTest
     public async Task GetProductCapabilitiesAsync_ShouldOnlyOpenCompletedProductTypes()
     {
         var service = new ProductService(
-            Mock.Of<IMapper>(),
             Mock.Of<IBaseRepository<Product>>(),
             Mock.Of<IBaseRepository<ProductCategory>>(),
             Mock.Of<IBaseRepository<Order>>(),
@@ -99,7 +93,6 @@ public class ProductServiceTest
     {
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Strict);
         var service = new ProductService(
-            Mock.Of<IMapper>(),
             productRepository.Object,
             Mock.Of<IBaseRepository<ProductCategory>>(),
             Mock.Of<IBaseRepository<Order>>(),
@@ -133,10 +126,8 @@ public class ProductServiceTest
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -155,10 +146,8 @@ public class ProductServiceTest
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -193,10 +182,8 @@ public class ProductServiceTest
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -219,19 +206,8 @@ public class ProductServiceTest
             .ReturnsAsync(new ProductCategory { Id = product.CategoryId, Name = "徽章" });
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper.Setup(item => item.Map<ProductVo>(product)).Returns(new ProductVo
-        {
-            VoId = product.Id,
-            VoName = product.Name,
-            VoCategoryId = product.CategoryId,
-            VoProductType = product.ProductType,
-            VoBenefitType = product.BenefitType,
-            VoBenefitValue = product.BenefitValue
-        });
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -263,7 +239,6 @@ public class ProductServiceTest
         };
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var service = new ProductService(
-            Mock.Of<IMapper>(),
             CreateProductRepository(product).Object,
             categoryRepository.Object,
             Mock.Of<IBaseRepository<Order>>(),
@@ -290,31 +265,7 @@ public class ProductServiceTest
             IsEnabled = true,
             CreateTime = DateTime.Now
         };
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(m => m.Map<ProductVo>(It.IsAny<Product>()))
-            .Returns<Product>(source => new ProductVo
-            {
-                VoId = source.Id,
-                VoName = source.Name,
-                VoCategoryId = source.CategoryId,
-                VoIconAttachmentId = source.IconAttachmentId,
-                VoCoverAttachmentId = source.CoverAttachmentId,
-                VoProductType = source.ProductType,
-                VoConsumableType = source.ConsumableType,
-                VoPrice = source.Price,
-                VoStockType = source.StockType,
-                VoStock = source.Stock,
-                VoSoldCount = source.SoldCount,
-                VoLimitPerUser = source.LimitPerUser,
-                VoDurationType = source.DurationType,
-                VoDurationDays = source.DurationDays,
-                VoExpiresAt = source.ExpiresAt,
-                VoSortOrder = source.SortOrder,
-                VoIsOnSale = source.IsOnSale,
-                VoIsEnabled = source.IsEnabled,
-                VoCreateTime = source.CreateTime
-            });
+
         var productRepository = CreateProductRepository(product);
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         categoryRepository
@@ -339,7 +290,6 @@ public class ProductServiceTest
             .Returns("https://cdn.example.com/product-cover.png");
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -358,7 +308,7 @@ public class ProductServiceTest
     {
         var product = CreateMisconfiguredCoinCardProduct();
         product.Id = 100777;
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
         var productRepository = CreateProductRepository(product);
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
@@ -385,7 +335,6 @@ public class ProductServiceTest
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -404,14 +353,13 @@ public class ProductServiceTest
     {
         var product = CreateEditableCoinCardProduct();
         product.Version = 3;
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
         var productRepository = CreateProductRepository(product);
         var categoryRepository = new Mock<IBaseRepository<ProductCategory>>(MockBehavior.Strict);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -450,22 +398,7 @@ public class ProductServiceTest
     {
         var product = CreateEditableCoinCardProduct();
         product.Version = 3;
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(m => m.Map(It.IsAny<UpdateProductDto>(), It.IsAny<Product>()))
-            .Callback<UpdateProductDto, Product>((source, target) =>
-            {
-                target.Name = source.Name;
-                target.CategoryId = source.CategoryId;
-                target.ProductType = source.ProductType;
-                target.ConsumableType = source.ConsumableType;
-                target.BenefitValue = source.BenefitValue;
-                target.Price = source.Price;
-                target.StockType = source.StockType;
-                target.Stock = source.Stock;
-                target.DurationType = source.DurationType;
-            })
-            .Returns((UpdateProductDto _, Product target) => target);
+
         var productRepository = CreateProductRepository(product);
         var persistedProduct = CloneProduct(product);
         Product? patch = null;
@@ -488,7 +421,6 @@ public class ProductServiceTest
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,
@@ -524,7 +456,7 @@ public class ProductServiceTest
         var product = CreateEditableCoinCardProduct();
         product.IsOnSale = false;
         product.Version = 5;
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
         var productRepository = CreateProductRepository(product);
         Product? patch = null;
         productRepository
@@ -546,7 +478,6 @@ public class ProductServiceTest
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
         var service = new ProductService(
-            mapper.Object,
             productRepository.Object,
             categoryRepository.Object,
             orderRepository.Object,

@@ -1,0 +1,658 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "status": "passed-local-pg-and-ci-validation",
+  "sourceRevision": "174dd1bab4bf3e9ea572d063a654462cd0ac7fb3",
+  "branch": "dev",
+  "pgTask": "radish-pg-regression-20261031-b6d8",
+  "host": {
+    "rid": "osx-arm64",
+    "sdk": "10.0.300",
+    "runtime": "10.0.8",
+    "node": "24.16.0",
+    "dockerContext": "orbstack",
+    "databasePlatform": "linux/arm64"
+  },
+  "dependencyGraph": {
+    "uniquePackageVersions": 219,
+    "projects": 19,
+    "unchanged": true,
+    "nugetVulnerabilityEntries": 0,
+    "graphSha256": "e6c7491cca7532c33c73a1f38bbdba1bdda677e3cc72a8a954c45b1882e4e4da",
+    "afterBuildGraphSha256": "e6c7491cca7532c33c73a1f38bbdba1bdda677e3cc72a8a954c45b1882e4e4da",
+    "packageArchiveManifestSha256": "07975ffe9315e99608d7e28786cb9c4eaa6b153626f511c2eea1552e30308eb0"
+  },
+  "builds": [
+    {
+      "configuration": "Debug",
+      "exit": 0,
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "configuration": "Release",
+      "exit": 0,
+      "warnings": 0,
+      "errors": 0
+    }
+  ],
+  "tests": [
+    {
+      "major": 17,
+      "configuration": "Debug",
+      "sha256": "9cb616259cacf17a84c49055966151d542eccd7d5329ee37713e4248e91fd5a0",
+      "counters": {
+        "total": "4239",
+        "executed": "4137",
+        "passed": "4137",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "postgresPassed": 43,
+      "trx": "evidence-final/pg17/Debug/pg17-Debug.trx",
+      "expectedRedisValkeySkips": 102,
+      "skipReason": "未显式启用上传配额 Redis / Valkey 隔离集成测试。"
+    },
+    {
+      "major": 17,
+      "configuration": "Release",
+      "sha256": "118e3679a097e68d42bfd4ff192ca58defbdff9e7cf5bf91770dc7d13b97996a",
+      "counters": {
+        "total": "4239",
+        "executed": "4137",
+        "passed": "4137",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "postgresPassed": 43,
+      "trx": "evidence-final/pg17/Release/pg17-Release.trx",
+      "expectedRedisValkeySkips": 102,
+      "skipReason": "未显式启用上传配额 Redis / Valkey 隔离集成测试。"
+    },
+    {
+      "major": 16,
+      "configuration": "Debug",
+      "sha256": "4721bd605f394a6b9903c3c96ec1a75ceeeb45607d8bbeca935ed88773108dd0",
+      "counters": {
+        "total": "43",
+        "executed": "43",
+        "passed": "43",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "postgresPassed": 43,
+      "trx": "evidence-final/pg16/Debug/pg16-Debug.trx",
+      "expectedRedisValkeySkips": 0,
+      "skipReason": null
+    },
+    {
+      "major": 16,
+      "configuration": "Release",
+      "sha256": "74a14b38223998003d524617756fd646a960396f5d5963a1fe2d102276a555d7",
+      "counters": {
+        "total": "43",
+        "executed": "43",
+        "passed": "43",
+        "failed": "0",
+        "error": "0",
+        "timeout": "0",
+        "aborted": "0",
+        "inconclusive": "0",
+        "passedButRunAborted": "0",
+        "notRunnable": "0",
+        "notExecuted": "0",
+        "disconnected": "0",
+        "warning": "0",
+        "completed": "0",
+        "inProgress": "0",
+        "pending": "0"
+      },
+      "postgresPassed": 43,
+      "trx": "evidence-final/pg16/Release/pg16-Release.trx",
+      "expectedRedisValkeySkips": 0,
+      "skipReason": null
+    }
+  ],
+  "postgresMethodExecutionsPassed": 172,
+  "totalSuccessfulTestExecutions": 8360,
+  "totalExpectedRedisValkeySkips": 204,
+  "hangfire": {
+    "groups": [
+      {
+        "major": 17,
+        "configuration": "Debug",
+        "result": {
+          "registered": 16,
+          "successId": "1",
+          "retryId": "2",
+          "retryAttempts": 2
+        },
+        "assemblies": [
+          {
+            "name": "Hangfire.Core",
+            "version": "1.8.14.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Debug/net10.0/Hangfire.Core.dll",
+            "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522"
+          },
+          {
+            "name": "Hangfire.PostgreSql",
+            "version": "1.20.12.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Debug/net10.0/Hangfire.PostgreSql.dll",
+            "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+          },
+          {
+            "name": "Npgsql",
+            "version": "10.0.0.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Debug/net10.0/Npgsql.dll",
+            "sha256": "9d8db086e9eda5ff20c4a7f83fa3eae7689198f57277ff9ceea1ee3526f5fcf8"
+          }
+        ],
+        "schemaRemoved": true
+      },
+      {
+        "major": 17,
+        "configuration": "Release",
+        "result": {
+          "registered": 16,
+          "successId": "1",
+          "retryId": "2",
+          "retryAttempts": 2
+        },
+        "assemblies": [
+          {
+            "name": "Hangfire.Core",
+            "version": "1.8.14.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Release/net10.0/Hangfire.Core.dll",
+            "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522"
+          },
+          {
+            "name": "Hangfire.PostgreSql",
+            "version": "1.20.12.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Release/net10.0/Hangfire.PostgreSql.dll",
+            "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+          },
+          {
+            "name": "Npgsql",
+            "version": "10.0.0.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Release/net10.0/Npgsql.dll",
+            "sha256": "9d8db086e9eda5ff20c4a7f83fa3eae7689198f57277ff9ceea1ee3526f5fcf8"
+          }
+        ],
+        "schemaRemoved": true
+      },
+      {
+        "major": 16,
+        "configuration": "Debug",
+        "result": {
+          "registered": 16,
+          "successId": "1",
+          "retryId": "2",
+          "retryAttempts": 2
+        },
+        "assemblies": [
+          {
+            "name": "Hangfire.Core",
+            "version": "1.8.14.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Debug/net10.0/Hangfire.Core.dll",
+            "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522"
+          },
+          {
+            "name": "Hangfire.PostgreSql",
+            "version": "1.20.12.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Debug/net10.0/Hangfire.PostgreSql.dll",
+            "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+          },
+          {
+            "name": "Npgsql",
+            "version": "10.0.0.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Debug/net10.0/Npgsql.dll",
+            "sha256": "9d8db086e9eda5ff20c4a7f83fa3eae7689198f57277ff9ceea1ee3526f5fcf8"
+          }
+        ],
+        "schemaRemoved": true
+      },
+      {
+        "major": 16,
+        "configuration": "Release",
+        "result": {
+          "registered": 16,
+          "successId": "1",
+          "retryId": "2",
+          "retryAttempts": 2
+        },
+        "assemblies": [
+          {
+            "name": "Hangfire.Core",
+            "version": "1.8.14.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Release/net10.0/Hangfire.Core.dll",
+            "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522"
+          },
+          {
+            "name": "Hangfire.PostgreSql",
+            "version": "1.20.12.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Release/net10.0/Hangfire.PostgreSql.dll",
+            "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+          },
+          {
+            "name": "Npgsql",
+            "version": "10.0.0.0",
+            "path": "/private/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-pg-regression-20261031-b6d8/source/Radish.Api/bin/Release/net10.0/Npgsql.dll",
+            "sha256": "9d8db086e9eda5ff20c4a7f83fa3eae7689198f57277ff9ceea1ee3526f5fcf8"
+          }
+        ],
+        "schemaRemoved": true
+      }
+    ],
+    "registrationContractsChecked": 64,
+    "probeJobsSucceeded": 8,
+    "retryAttemptsPerRetryJob": 2,
+    "allOwnedSchemasRemoved": true,
+    "source": "evidence/PostgresRuntimeProbe.cs",
+    "sourceSha256": "516ee3ee66e8b01c3803de5dfa2cc78485b36927fffdfd10601ca7fd03297548",
+    "formalPackagesUnmodified": true
+  },
+  "managedAssemblies": {
+    "assemblies": [
+      {
+        "configuration": "Debug",
+        "package": "SqlSugarCoreNoDrive/5.1.4.207",
+        "files": [
+          {
+            "source": ".nuget/packages/sqlsugarcorenodrive/5.1.4.207/lib/netstandard2.1/SqlSugar.dll",
+            "output": "Radish.Api/bin/Debug/net10.0/SqlSugar.dll",
+            "sourceSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+            "actualSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "configuration": "Debug",
+        "package": "SystemCommon/8.5.0",
+        "files": [
+          {
+            "source": ".nuget/packages/systemcommon/8.5.0/lib/netstandard2.1/SqlSugar.dll",
+            "output": "Radish.Api/bin/Debug/net10.0/SqlSugar.dll",
+            "sourceSha256": "062c457dc941dcd1f063ebc40d8c4286132fa8682f09762ba16c54f758be21f0",
+            "actualSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "configuration": "Debug",
+        "package": "Npgsql/10.0.0",
+        "files": [
+          {
+            "source": ".nuget/packages/npgsql/10.0.0/lib/net10.0/Npgsql.dll",
+            "output": "Radish.Api/bin/Debug/net10.0/Npgsql.dll",
+            "sourceSha256": "9d8db086e9eda5ff20c4a7f83fa3eae7689198f57277ff9ceea1ee3526f5fcf8",
+            "actualSha256": "9d8db086e9eda5ff20c4a7f83fa3eae7689198f57277ff9ceea1ee3526f5fcf8",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "configuration": "Debug",
+        "package": "Hangfire.Core/1.8.14",
+        "files": [
+          {
+            "source": ".nuget/packages/hangfire.core/1.8.14/lib/netstandard2.0/Hangfire.Core.dll",
+            "output": "Radish.Api/bin/Debug/net10.0/Hangfire.Core.dll",
+            "sourceSha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+            "actualSha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "configuration": "Debug",
+        "package": "Hangfire.PostgreSql/1.20.12",
+        "files": [
+          {
+            "source": ".nuget/packages/hangfire.postgresql/1.20.12/lib/netstandard2.0/Hangfire.PostgreSql.dll",
+            "output": "Radish.Api/bin/Debug/net10.0/Hangfire.PostgreSql.dll",
+            "sourceSha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+            "actualSha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "configuration": "Release",
+        "package": "SqlSugarCoreNoDrive/5.1.4.207",
+        "files": [
+          {
+            "source": ".nuget/packages/sqlsugarcorenodrive/5.1.4.207/lib/netstandard2.1/SqlSugar.dll",
+            "output": "Radish.Api/bin/Release/net10.0/SqlSugar.dll",
+            "sourceSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+            "actualSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "configuration": "Release",
+        "package": "SystemCommon/8.5.0",
+        "files": [
+          {
+            "source": ".nuget/packages/systemcommon/8.5.0/lib/netstandard2.1/SqlSugar.dll",
+            "output": "Radish.Api/bin/Release/net10.0/SqlSugar.dll",
+            "sourceSha256": "062c457dc941dcd1f063ebc40d8c4286132fa8682f09762ba16c54f758be21f0",
+            "actualSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+            "selected": false
+          }
+        ]
+      },
+      {
+        "configuration": "Release",
+        "package": "Npgsql/10.0.0",
+        "files": [
+          {
+            "source": ".nuget/packages/npgsql/10.0.0/lib/net10.0/Npgsql.dll",
+            "output": "Radish.Api/bin/Release/net10.0/Npgsql.dll",
+            "sourceSha256": "9d8db086e9eda5ff20c4a7f83fa3eae7689198f57277ff9ceea1ee3526f5fcf8",
+            "actualSha256": "9d8db086e9eda5ff20c4a7f83fa3eae7689198f57277ff9ceea1ee3526f5fcf8",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "configuration": "Release",
+        "package": "Hangfire.Core/1.8.14",
+        "files": [
+          {
+            "source": ".nuget/packages/hangfire.core/1.8.14/lib/netstandard2.0/Hangfire.Core.dll",
+            "output": "Radish.Api/bin/Release/net10.0/Hangfire.Core.dll",
+            "sourceSha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+            "actualSha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+            "selected": true
+          }
+        ]
+      },
+      {
+        "configuration": "Release",
+        "package": "Hangfire.PostgreSql/1.20.12",
+        "files": [
+          {
+            "source": ".nuget/packages/hangfire.postgresql/1.20.12/lib/netstandard2.0/Hangfire.PostgreSql.dll",
+            "output": "Radish.Api/bin/Release/net10.0/Hangfire.PostgreSql.dll",
+            "sourceSha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+            "actualSha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+            "selected": true
+          }
+        ]
+      }
+    ],
+    "systemCommon": "Known competing SqlSugar.dll is not selected; original NoDrive DLL remains selected, as required by adoption record."
+  },
+  "databaseStarts": [
+    {
+      "attempt": "evidence",
+      "name": "radish-pg-regression-20261031-b6d8-pg17",
+      "image": "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+      "containerId": "e3866dc21abacc130bf5f8f27f090e91bb88a8ad56dfe16e33eaafb8edeaa911",
+      "exit": 0
+    },
+    {
+      "attempt": "evidence-retry",
+      "name": "radish-pg-regression-20261031-b6d8-pg17",
+      "image": "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+      "containerId": "9825ef36924855271ec02afc199c614f9c1f6612f209e28c69de0a7053e1bd56",
+      "exit": 0
+    },
+    {
+      "attempt": "evidence-final",
+      "name": "radish-pg-regression-20261031-b6d8-pg17",
+      "image": "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+      "containerId": "4ef075be0d7b5e5c84aed52c2f179569f8f25174d78ae79fdff130d19ea1daf3",
+      "exit": 0
+    },
+    {
+      "attempt": "evidence-final",
+      "name": "radish-pg-regression-20261031-b6d8-pg16",
+      "image": "postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+      "containerId": "f8b0962407fc6cd5d26dbc5459fe220cb77b512f9cf80a24a58488aaec8d25ae",
+      "exit": 0
+    }
+  ],
+  "remainingDatabasesBeforeVolumeRemoval": {
+    "17": [
+      "postgres",
+      "radish_pg",
+      "template0",
+      "template1"
+    ],
+    "16": [
+      "postgres",
+      "radish_pg",
+      "template0",
+      "template1"
+    ]
+  },
+  "attempts": {
+    "sandbox": {
+      "passed": false,
+      "reason": "Temporary certificate fixtures failed at macOS sandbox Keychain boundary; stopped exact test process group, no completed TRX was accepted."
+    },
+    "firstEscalated": {
+      "pg17DebugCompleteTrxPassed": true,
+      "testResultReused": true,
+      "stopReason": "Harness incorrectly required a RADISH_TEST_ token in the known Redis/Valkey skip reason; corrected only the temporary parser, then kept the complete passed TRX."
+    },
+    "final": {
+      "passed": true,
+      "pg17DebugReusedTrxSha256Matches": true
+    }
+  },
+  "ci": {
+    "status": "local-validation-passed-remote-not-run",
+    "checks": [
+      {
+        "name": "node-syntax",
+        "argv": [
+          "node",
+          "--check",
+          "Scripts/ci/validate-sqlite-platform.mjs"
+        ],
+        "exit": 0,
+        "seconds": 0.084
+      },
+      {
+        "name": "node-contracts",
+        "argv": [
+          "node",
+          "--test",
+          "Scripts/ci/validate-sqlite-platform.test.mjs",
+          "Scripts/check-sqlite-native.test.mjs",
+          "Scripts/evaluate-image-vulnerabilities.test.mjs"
+        ],
+        "exit": 0,
+        "seconds": 0.131
+      },
+      {
+        "name": "repo-quality-contract",
+        "argv": [
+          "npm",
+          "run",
+          "check:repo-quality-contract"
+        ],
+        "exit": 0,
+        "seconds": 0.128
+      },
+      {
+        "name": "yaml-and-legacy",
+        "argv": [
+          "ruby",
+          "-ryaml",
+          "-e",
+          "old=YAML.load(IO.popen(['git','show','HEAD:.github/workflows/native-images.yml'], &:read)); w=YAML.load_file('.github/workflows/native-images.yml'); old.fetch('jobs').each {|name,job| newer=w.fetch('jobs').fetch(name).dup; newer.delete('if'); abort name unless newer==job }; abort unless old.fetch(true).fetch('workflow_call')==w.fetch(true).fetch('workflow_call'); abort unless w['permissions']=={'contents'=>'read'}; abort unless w['jobs']['sqlite-native-platforms']['strategy']['matrix']['include'].size==3 && w['jobs']['sqlite-native-docker']['strategy']['matrix']['service'].size==4; puts 'YAML parsed; default legacy job bodies preserved; matrix is 3 native + 4 Docker; permissions contents:read'"
+        ],
+        "exit": 0,
+        "seconds": 0.05
+      },
+      {
+        "name": "real-trx-and-dockerfile-inputs",
+        "argv": [
+          "node",
+          "--input-type=module",
+          "-e",
+          "import fs from 'node:fs';import {readCompleteTrx,freezeDockerfile} from './Scripts/ci/validate-sqlite-platform.mjs';for(const arch of ['arm64','amd64'])for(const cfg of ['Debug','Release']){const p=`/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-sqlite-linux-20261031-a7c2-evidence/evidence/${arch}/tests/${arch}-${cfg}.trx`;const r=readCompleteTrx(fs.readFileSync(p,'utf8'));if(Number(r.counters.total)!==60)throw Error('unexpected fixture count');console.log(arch,cfg,r.counters.total);}const images=JSON.parse(fs.readFileSync('Docs/records/sqlite-linux-platform-inputs-2026-10-31.json')).platforms.amd64.images;for(const host of ['Radish.Api','Radish.Auth','Radish.Gateway','Radish.DbMigrate']){const s=freezeDockerfile(fs.readFileSync(`${host}/Dockerfile`,'utf8'),images);console.log(host,s.match(/^FROM /gm).length,'frozen FROM stages');}"
+        ],
+        "exit": 0,
+        "seconds": 0.033
+      }
+    ],
+    "nodeContractTests": 28,
+    "newOrchestratorTests": 9,
+    "realTrxFixtures": 4,
+    "realTrxFixtureCases": 240,
+    "yamlLegacyJobBodiesUnchanged": true,
+    "actionsDispatched": false,
+    "pushPerformed": false,
+    "hostedPlatformJobsExecuted": false,
+    "actionlintAvailable": false,
+    "files": [
+      {
+        "file": ".github/workflows/native-images.yml",
+        "sha256": "7f391a8bff51d53a9c5efcd958c29355c35c81a3e81cd5efbea2c18014eae7f5"
+      },
+      {
+        "file": "Scripts/ci/validate-sqlite-platform.mjs",
+        "sha256": "ca0e3e3cd6990f49dbdfdb307c1e2b17143a5ec54def7eba30529354ec0e4486"
+      },
+      {
+        "file": "Scripts/ci/validate-sqlite-platform.test.mjs",
+        "sha256": "f49f708fc9df43bc0c786126abf68834c97498452305fd4046ff89993c68c328"
+      }
+    ]
+  },
+  "cleanup": {
+    "task": "radish-pg-regression-20261031-b6d8",
+    "checks": [
+      {
+        "name": "containers",
+        "argv": [
+          "docker",
+          "--context",
+          "orbstack",
+          "ps",
+          "-aq",
+          "--filter",
+          "label=io.radish.pg-regression=radish-pg-regression-20261031-b6d8"
+        ],
+        "exit": 0,
+        "output": ""
+      },
+      {
+        "name": "volumes",
+        "argv": [
+          "docker",
+          "--context",
+          "orbstack",
+          "volume",
+          "ls",
+          "-q",
+          "--filter",
+          "label=io.radish.pg-regression=radish-pg-regression-20261031-b6d8"
+        ],
+        "exit": 0,
+        "output": ""
+      },
+      {
+        "name": "port",
+        "argv": [
+          "lsof",
+          "-nP",
+          "-iTCP:15432",
+          "-sTCP:LISTEN"
+        ],
+        "exit": 1,
+        "output": ""
+      },
+      {
+        "name": "proxy",
+        "argv": [
+          "orb",
+          "config",
+          "get",
+          "network.proxy.exclude"
+        ],
+        "exit": 0,
+        "output": "\n"
+      }
+    ],
+    "processAudit": "evidence-final/process-audit.json",
+    "containersAndVolumesRemoved": true,
+    "port15432Unused": true,
+    "sharedPgImagesRetained": true,
+    "proxyExcludeUnchangedEmpty": true,
+    "sourceRemoved": true,
+    "archive": "/Users/luobo/Code/Radish/artifacts/validation/radish-pg-regression-20261031-b6d8-evidence"
+  },
+  "evidence": {
+    "archive": "/Users/luobo/Code/Radish/artifacts/validation/radish-pg-regression-20261031-b6d8-evidence",
+    "gitIgnored": true,
+    "index": "evidence-index.json",
+    "indexSha256": "3f199e9f5761dfb4bea84d0746a585f33ec2a0ab17523fa8ff189bf0f48a3f41",
+    "indexedFiles": 161,
+    "indexedBytes": 21765787,
+    "commandCounts": {
+      "evidence": 32,
+      "evidence-retry": 21,
+      "evidence-final": 51
+    }
+  },
+  "notPerformed": [
+    "hosted-runner-execution",
+    "push",
+    "remote-workflow-dispatch",
+    "VM-start",
+    "business-host-start",
+    "Redis-or-Valkey-start",
+    "Hangfire-source-rebuild-or-DLL-replacement",
+    "publication",
+    "deployment"
+  ],
+  "documentationChecks": {
+    "docs": true,
+    "changedRepoHygiene": true,
+    "gitDiffCheck": true,
+    "jsonParse": true,
+    "knownSoftWarning": "Docs/records/index.md is 331 lines; no text hygiene or broken-link error."
+  }
+}

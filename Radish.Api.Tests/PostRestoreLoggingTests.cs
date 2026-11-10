@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -377,7 +376,7 @@ public sealed class PostRestoreLoggingTests
                     SystemConfigDefaults.PostBodyMinLengthKey => 1, _ => 1000
                 };
             });
-            var service = new PostService(Mock.Of<IMapper>(), posts.Object, Mock.Of<IBaseRepository<UserPostLike>>(), postTags.Object,
+            var service = new PostService(posts.Object, Mock.Of<IBaseRepository<UserPostLike>>(), postTags.Object,
                 categories.Object, tagsRepository.Object, Mock.Of<IBaseRepository<PostPoll>>(), Mock.Of<IBaseRepository<PostPollOption>>(),
                 Mock.Of<IBaseRepository<PostPollVote>>(), Mock.Of<IBaseRepository<PostQuestion>>(), Mock.Of<IBaseRepository<PostAnswer>>(),
                 Mock.Of<ITagService>(), Mock.Of<ICoinRewardService>(), Mock.Of<INotificationService>(), Mock.Of<INotificationDedupService>(),

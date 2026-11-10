@@ -7,12 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="SqlSugarCore" Version="5.1.4.207" />
+    <ProjectReference Include="..\Radish.Common\Radish.Common.csproj" />
+    <ProjectReference Include="..\Radish.Model\Radish.Model.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Radish.Common\Radish.Common.csproj" />
-    <ProjectReference Include="..\Radish.Model\Radish.Model.csproj" />
+    <PackageReference Include="SqlSugarCoreNoDrive" Version="[5.1.4.207]" />
   </ItemGroup>
 
 </Project>

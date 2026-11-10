@@ -1,0 +1,18 @@
+Riok.Mapperly 4.3.1
+Authors: Mapperly Contributors, Lars Tönz, Manuel Allenspach
+Copyright: (not supplied in package metadata)
+Package license metadata: expression:Apache-2.0
+Project: https://mapperly.riok.app/
+Package source commit: 036698914bd48be888b25322938b565db72ff7ff
+Usage: build-only
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- LICENSE (upstream-license)
+  Source: https://github.com/riok/mapperly/blob/036698914bd48be888b25322938b565db72ff7ff/LICENSE [LICENSE]
+  Original SHA256: 886c1a1452f7e0d047947276305bf3eb2a54f0db7fa842332d5749303fce7315
+  Distributed SHA256: 886c1a1452f7e0d047947276305bf3eb2a54f0db7fa842332d5749303fce7315
+
+Remaining evidence:
+- No additional component-specific gap recorded in this focused material review. This is not full release clearance.

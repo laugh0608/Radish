@@ -118,7 +118,7 @@ public class LotteryController : ControllerBase
         };
         if (exception is not LotteryInputValidationException)
         {
-            Log.ForContext("EventCode", "lottery.request_failed")
+            Log.ForContext<LotteryController>().ForContext("EventCode", "lottery.request_failed")
                 .Error("Lottery request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
         }
         return response;
@@ -136,7 +136,7 @@ public class LotteryController : ControllerBase
         };
         if (exception.StatusCode >= StatusCodes.Status500InternalServerError)
         {
-            Log.ForContext("EventCode", "http.failed")
+            Log.ForContext<LotteryController>().ForContext("EventCode", "http.failed")
                 .ForContext("SourceCategory", "http")
                 .Error("Request failed with {statusCode}; kind={failureKind}", exception.StatusCode, RuntimeFailureSummary.Classify(exception));
         }

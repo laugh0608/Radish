@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.Extensions.Logging;
 using Radish.Common.HelpTool;
 using Radish.Common.Utils;
@@ -25,7 +25,6 @@ public class PaymentPasswordService : IPaymentPasswordService
 {
     private readonly IPaymentPasswordRepository _paymentPasswordRepository;
     private readonly IAuditLogService _auditLogService;
-    private readonly IMapper _mapper;
     private readonly ILogger<PaymentPasswordService> _logger;
     private readonly TimeProvider _timeProvider;
 
@@ -36,13 +35,11 @@ public class PaymentPasswordService : IPaymentPasswordService
     public PaymentPasswordService(
         IPaymentPasswordRepository paymentPasswordRepository,
         IAuditLogService auditLogService,
-        IMapper mapper,
         ILogger<PaymentPasswordService> logger,
         TimeProvider timeProvider)
     {
         _paymentPasswordRepository = paymentPasswordRepository;
         _auditLogService = auditLogService;
-        _mapper = mapper;
         _logger = logger;
         _timeProvider = timeProvider;
     }
@@ -74,7 +71,7 @@ public class PaymentPasswordService : IPaymentPasswordService
             };
         }
 
-        var vo = _mapper.Map<UserPaymentPasswordVo>(paymentPassword);
+        var vo = PaymentPasswordMapper.ToUserPaymentPasswordVo(paymentPassword);
 
         // 设置显示字段
         vo.VoLastUsedTimeDisplay = paymentPassword.LastUsedTime?.ToString("yyyy-MM-dd HH:mm:ss") ?? "从未使用";

@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "baseCommit": "a074b68c08b16943da15ae252c0adbec255bfcb1",
+  "conclusion": "local-implementation-validated",
+  "platform": "darwin",
+  "architecture": "arm64",
+  "node": "v24.16.0",
+  "compiled": [
+    {
+      "host": "Radish.Api",
+      "sdkVersion": "10.0.300",
+      "modes": [
+        "microsoft",
+        "sqlsugar",
+        "ef",
+        "hangfire"
+      ],
+      "references": 91,
+      "packageReferences": 0,
+      "probeSha256": "2ab6e5f58c04952d548d0b087505dbc50457bf63b46ad89f3efc6324500e5885",
+      "status": "compiled",
+      "executed": false
+    },
+    {
+      "host": "Radish.Auth",
+      "sdkVersion": "10.0.300",
+      "modes": [
+        "microsoft",
+        "sqlsugar",
+        "ef"
+      ],
+      "references": 115,
+      "packageReferences": 0,
+      "probeSha256": "60543a4188abe2033661899cfd392ca07520c01590ade8d19e7ff982256073c2",
+      "status": "compiled",
+      "executed": false
+    },
+    {
+      "host": "Radish.Gateway",
+      "sdkVersion": "10.0.300",
+      "modes": [
+        "microsoft",
+        "sqlsugar"
+      ],
+      "references": 54,
+      "packageReferences": 0,
+      "probeSha256": "38b3571750880236a517020354e2928b5534ce4b4fc51dd59d98e291c8166be7",
+      "status": "compiled",
+      "executed": false
+    },
+    {
+      "host": "Radish.DbMigrate",
+      "sdkVersion": "10.0.300",
+      "modes": [
+        "microsoft",
+        "sqlsugar",
+        "ef"
+      ],
+      "references": 81,
+      "packageReferences": 0,
+      "probeSha256": "52853175d0238e2449309f0171a66d0922a0e1804724e61ac1b5d677caf3213f",
+      "status": "compiled",
+      "executed": false
+    }
+  ],
+  "tests": 50,
+  "msbuildCases": 12,
+  "macSamples": 2,
+  "servicesStarted": false,
+  "containersStarted": false,
+  "probeModesExecuted": 0,
+  "archiveDirectory": "artifacts/sqlite-hosted-validation-repair/2026-10-31-local",
+  "archiveManifestSha256": "d0ec644c6dd970947466e65ca0b01e83a7191e1b76f735ae9b6318c51848266e",
+  "evidenceFiles": 54,
+  "cleanup": {
+    "temporaryRoot": "/tmp/radish-sqlite-repair-20261031.HCDoWa",
+    "removedDirectories": [
+      "compile-Api",
+      "compile-Auth",
+      "compile-DbMigrate",
+      "compile-Gateway",
+      "evidence",
+      "final-compile-Api",
+      "final-compile-Auth",
+      "final-compile-DbMigrate",
+      "final-compile-Gateway",
+      "mac-compiler",
+      "msbuild",
+      "msbuild-v2"
+    ],
+    "temporaryRootRemoved": true,
+    "compiledOutputsRemoved": true,
+    "hostOutputsUnmodified": true,
+    "servicesStarted": 0,
+    "containersStarted": 0,
+    "compilerProcessCheck": "No dotnet / MSBuild / VBCSCompiler / clang process found by read-only ps check"
+  },
+  "remoteExecution": false,
+  "pushed": false,
+  "remaining": [
+    "Windows actual Exec argv including drive root and UNC",
+    "Intel macOS compiler samples and full native matrix",
+    "Linux new-candidate full regression",
+    "Four actual AMD64 finals: identity, permission fixtures, cold probes and scans"
+  ]
+}

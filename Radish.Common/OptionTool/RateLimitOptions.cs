@@ -8,7 +8,7 @@ public sealed class RateLimitOptions : IConfigurableOptions
     /// <summary>是否启用速率限制</summary>
     public bool Enable { get; set; } = true;
 
-    /// <summary>是否启用限流日志</summary>
+    /// <summary>是否允许逐请求限流诊断；还需 Development 宿主及显式日志诊断开关，注册摘要不受此项控制。</summary>
     public bool EnableLogging { get; set; } = true;
 
     /// <summary>全局限流配置</summary>

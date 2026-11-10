@@ -1,0 +1,367 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "status": "complete-for-owner-approved-native-arm64-and-emulated-amd64-scope",
+  "taskId": "radish-sqlite-linux-20261031-a7c2",
+  "sourceRevision": "6d952fc46d178a92e9adc9268d847a79bb62a317",
+  "productCodeBaseline": "848fd007",
+  "sourceArchiveSha256": "3e41bf8aa915a4d4b15c8a744972eced933b7ee904bfbd943a52795bc60fd1f4",
+  "startedAt": "2026-10-31T12:01:49.738330+08:00",
+  "lastRecordedCommandAt": "2026-10-31T12:51:07.667131+08:00",
+  "completedAt": "2026-10-31T12:51:11.832296+08:00",
+  "platformReports": {
+    "arm64": {
+      "path": "sqlite-linux-platform-validation-arm64-2026-10-31.json",
+      "sha256": "c17150ace7024b1d7c286d8d28703163f9ea41af1a6c5fa81618849484e5fa4f",
+      "testsPassed": 120,
+      "publishOutputs": 16,
+      "coldProcesses": 60,
+      "finalImages": 4,
+      "hangfireStorageCases": 5
+    },
+    "amd64": {
+      "path": "sqlite-linux-platform-validation-amd64-2026-10-31.json",
+      "sha256": "719c3c18b94009007386c84e655e2bded95d39367fbd0a7da567a48787568c76",
+      "testsPassed": 120,
+      "publishOutputs": 16,
+      "coldProcesses": 60,
+      "finalImages": 4,
+      "hangfireStorageCases": 5
+    }
+  },
+  "totals": {
+    "testExecutions": 240,
+    "uniqueTargetCasesPerConfiguration": 60,
+    "strictSolutionBuilds": 4,
+    "publishOutputs": 32,
+    "publishColdProcesses": 96,
+    "finalColdProcesses": 24,
+    "totalColdProcesses": 120,
+    "finalImages": 8,
+    "hangfireStorageCases": 10,
+    "registeredJobAssertions": 160,
+    "apiNativeImageSelfTests": 10,
+    "applicationPackageIdentities": 219,
+    "finalImageHighFindings": 0,
+    "finalImageCriticalFindings": 0,
+    "acceptedVulnerabilityExceptions": 0
+  },
+  "sqlite": {
+    "package": "SQLitePCLRaw.lib.e_sqlite3",
+    "version": "3.53.3",
+    "sourceId": "2026-06-26 20:14:12 d4c0e51e4aeb96955b99185ab9cde75c339e2c29c3f3f12428d364a10d782c62",
+    "archiveSha256": "72cb724779218e024833a21e2903c795a9e90c0bfa01520f27990c36413f32d4",
+    "linuxArm64LoadedSha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+    "linuxX64LoadedSha256": "b0f5c48026fedcf9f05cf31c6fadf9e1e001ca59cd85aa68b8b6814e52c18a07"
+  },
+  "toolchain": {
+    "sdk": "10.0.403",
+    "dotnetRuntime": "10.0.14",
+    "aspnetRuntime": "10.0.14",
+    "nodeBuildStage": "24.22.2",
+    "nodeHostPolicyEvaluator": "24.16.0",
+    "rust": "1.96.0",
+    "trivy": "0.70.0",
+    "runtimeOs": "Ubuntu 24.04",
+    "runtimeGlibc": "2.39",
+    "rustBuilderOs": "Debian 12 bookworm",
+    "rustBuilderGlibc": "2.36"
+  },
+  "scannerDatabase": [
+    {
+      "path": "db/metadata.json",
+      "bytes": 152,
+      "sha256": "c14d14896dc3746ce4a27d25ca5f9605bce9afd057e37109614cdb11358b8779"
+    },
+    {
+      "path": "db/trivy.db",
+      "bytes": 1679921152,
+      "sha256": "34f77b8621636dbf533ff9a1540e09dd9ccbbd136198872b9c3276c3d062f919"
+    }
+  ],
+  "cleanup": {
+    "schemaVersion": 1,
+    "taskId": "radish-sqlite-linux-20261031-a7c2",
+    "completedAt": "2026-10-31T12:51:11.832296+08:00",
+    "executionRoot": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-sqlite-linux-20261031-a7c2",
+    "archiveRoot": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-sqlite-linux-20261031-a7c2-evidence",
+    "sourceRevision": "6d952fc46d178a92e9adc9268d847a79bb62a317",
+    "sourceArchiveSha256": "3e41bf8aa915a4d4b15c8a744972eced933b7ee904bfbd943a52795bc60fd1f4",
+    "containersRemoved": [
+      {
+        "name": "radish-sqlite-linux-20261031-a7c2-sdk-amd64",
+        "id": "969f47f5fc505ced42de88869c61473c192acf4167de1d38b18c95e2df7dbb7f"
+      },
+      {
+        "name": "radish-sqlite-linux-20261031-a7c2-sdk-arm64",
+        "id": "a379a7b158522be95bc176bc858d104e9b83f7a5348ac0587a498ad81a634ec7"
+      }
+    ],
+    "candidateImagesRemoved": [
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:native-arm64",
+        "id": "sha256:4ea36fad0a4232ecb0c3b12b17f5399d09a266bfae8fe4eea9dd44b4c4f06737"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:validate-arm64",
+        "id": "sha256:3d951f9538b46cd145ac156c26fdf8ed971e582b0fb417f3893517f5938eaabc"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:api-arm64",
+        "id": "sha256:a8098fa5788c932dc6d7d28640bee9f3e26872b5fbc27ea7edf99bdeaeff5922"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:auth-arm64",
+        "id": "sha256:9b464ab5972ecd567a45b3a60edde4bbd62e8e99680b504204575d04db9cc929"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:gateway-arm64",
+        "id": "sha256:79ea3b4912ed28b7561dd35b943d9fadb1931874e331f045031a0e83323dc035"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:dbmigrate-arm64",
+        "id": "sha256:edb315e662f75c9681cd47ef37bcce1d476490a7282e51ed63a10ad27fedfbe2"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:stage-api-arm64",
+        "id": "sha256:7eef9e1fcdafd8607af79bb9803488ce24f7b178d8f134fbefc5a81baf0841f8"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:stage-auth-arm64",
+        "id": "sha256:48785c143547f123820b36a7768582daa328609b8714054e5c5fd7fea7b22680"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:stage-gateway-arm64",
+        "id": "sha256:d4a723196e2cca0ae0a5dd3429ce87fa63d28da47aab4d97dfbc7374d57cb8db"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:stage-dbmigrate-arm64",
+        "id": "sha256:0e0d3e47c90dfa9a2acffdf66dfbac426dae6125dc2ba3c55cc5c7223c282e12"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:native-amd64",
+        "id": "sha256:2c00052ee923f24c139e60d3699369664af8b767df19a306c82dbef45c9f83fc"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:validate-amd64",
+        "id": "sha256:3dd957bda9e76e2f9d9ae8e38cb012177213d45c9fed38d625d3bf9178ba19a4"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:api-amd64",
+        "id": "sha256:898fd6e3faa3509ad7018b26f308e12ec7b0fac0ce8f8de0742aaced0dd3296f"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:auth-amd64",
+        "id": "sha256:b7a0b6fc27be5b0191afc2fbff16617350bac06969191f42b4129fc304839959"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:gateway-amd64",
+        "id": "sha256:8da30f6e245e07d179b7108b32b404ff29f9742f1ace3524a3d17e979b8518e3"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:dbmigrate-amd64",
+        "id": "sha256:be631a3ec432ab24b91c40cd597fbcd70ad80eafbf35c058f815952d1312fce0"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:stage-api-amd64",
+        "id": "sha256:6c25a1a2eddb42a6d711a316404bb0f8d2356975aaf60c783240eb3b15ec892e"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:stage-auth-amd64",
+        "id": "sha256:80c20db2817648aeb48511ec3d0f7f5560479ccdf1f3d93abaf850551a47aaa3"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:stage-gateway-amd64",
+        "id": "sha256:dbaabd983fe3bf08b5a76233311acd63c6fa551080711f5aa79dd93045835a4f"
+      },
+      {
+        "tag": "radish-sqlite-linux-20261031-a7c2:stage-dbmigrate-amd64",
+        "id": "sha256:a0c8d8f8c8a4422d3fc579246c9329bd199e1467e23c7ba939916acd56c1c7de"
+      }
+    ],
+    "remainingTaskContainers": 0,
+    "remainingTaskImageTags": 0,
+    "proxyExclusionRestored": true,
+    "proxyExclusionRestoredValue": "",
+    "retainedSharedInputImages": [
+      {
+        "role": "node",
+        "architecture": "arm64",
+        "reference": "node:24-bookworm-slim@sha256:e80dee4ed3709cf1f8004e34ecfb90df71b7eac8ba0d7d6222ba238a823d1eea",
+        "imageId": "sha256:e80dee4ed3709cf1f8004e34ecfb90df71b7eac8ba0d7d6222ba238a823d1eea",
+        "bytes": 347164045,
+        "reason": "Approved shared base image; retained per plan"
+      },
+      {
+        "role": "rust",
+        "architecture": "arm64",
+        "reference": "rust:1.96.0-bookworm@sha256:05f85ef6eb0f2600ac62e9d779642b5b362d5be2ed67b80e162fae6e28b66524",
+        "imageId": "sha256:05f85ef6eb0f2600ac62e9d779642b5b362d5be2ed67b80e162fae6e28b66524",
+        "bytes": 2065878110,
+        "reason": "Approved shared base image; retained per plan"
+      },
+      {
+        "role": "sdk",
+        "architecture": "arm64",
+        "reference": "mcr.microsoft.com/dotnet/sdk:10.0@sha256:f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef",
+        "imageId": "sha256:f34803987e201bd321984712d40a4bed1f797d4756b9b21eb5b6ddd2b178d2ef",
+        "bytes": 1354435557,
+        "reason": "Approved shared base image; retained per plan"
+      },
+      {
+        "role": "aspnet",
+        "architecture": "arm64",
+        "reference": "mcr.microsoft.com/dotnet/aspnet:10.0@sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c",
+        "imageId": "sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c",
+        "bytes": 369462799,
+        "reason": "Approved shared base image; retained per plan"
+      },
+      {
+        "role": "node",
+        "architecture": "amd64",
+        "reference": "node:24-bookworm-slim@sha256:a43f7fc3e52e87d12a905f46eea0275def84ca8f2981a5b53fed44d7fb398ee0",
+        "imageId": "sha256:a43f7fc3e52e87d12a905f46eea0275def84ca8f2981a5b53fed44d7fb398ee0",
+        "bytes": 328326928,
+        "reason": "Approved shared base image; retained per plan"
+      },
+      {
+        "role": "rust",
+        "architecture": "amd64",
+        "reference": "rust:1.96.0-bookworm@sha256:c993d32d95cc146bd12c84d66f0b924a6a96f3988325f39c144f2f9893dea120",
+        "imageId": "sha256:c993d32d95cc146bd12c84d66f0b924a6a96f3988325f39c144f2f9893dea120",
+        "bytes": 2191765826,
+        "reason": "Approved shared base image; retained per plan"
+      },
+      {
+        "role": "sdk",
+        "architecture": "amd64",
+        "reference": "mcr.microsoft.com/dotnet/sdk:10.0@sha256:9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03",
+        "imageId": "sha256:9c7b6b263d9d4c2e4718e16dae6d75cd8f4b5ccf206f1e7d48a98eb429981b03",
+        "bytes": 1306333130,
+        "reason": "Approved shared base image; retained per plan"
+      },
+      {
+        "role": "aspnet",
+        "architecture": "amd64",
+        "reference": "mcr.microsoft.com/dotnet/aspnet:10.0@sha256:43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3",
+        "imageId": "sha256:43cbcf11fd6f88c0375c9c0f7fe59af619abeb323befe5f57dc1502b5a05d8c3",
+        "bytes": 341228201,
+        "reason": "Approved shared base image; retained per plan"
+      },
+      {
+        "role": "scanner",
+        "architecture": "arm64",
+        "reference": "aquasec/trivy:0.70.0@sha256:06c0a1359e4d745c6d709f5b64421db79fe0b5602c87d6eb5d6ba7d3d79d91ab",
+        "imageId": "sha256:06c0a1359e4d745c6d709f5b64421db79fe0b5602c87d6eb5d6ba7d3d79d91ab",
+        "bytes": 230925238,
+        "reason": "Approved shared scanner base image; retained per plan"
+      }
+    ],
+    "sharedBuildKitCachePruned": false,
+    "namedVolumesCreated": 0,
+    "customNetworksCreated": 0,
+    "hostPortsPublished": [],
+    "sourceAndDataRemoved": true,
+    "availableGiBBeforeExecution": 351.3,
+    "availableGiBAfterCleanup": 310.2,
+    "controllersRetainedAsEvidence": [
+      "radish-sqlite-linux-cleanup.py",
+      "radish-sqlite-linux-close-report.py",
+      "radish-sqlite-linux-control.py",
+      "radish-sqlite-linux-final-phase.py",
+      "radish-sqlite-linux-mcr-retry.py",
+      "radish-sqlite-linux-native-phase.py",
+      "radish-sqlite-linux-native-retry.py",
+      "radish-sqlite-linux-native-verify.py",
+      "radish-sqlite-linux-resume-arm64-final.py",
+      "radish-sqlite-linux-scanner-prepare.py",
+      "radish-sqlite-linux-sdk-phase.py",
+      "radish-sqlite-linux-summarize.py"
+    ],
+    "note": "Initial cache size was not recorded; do not attribute the full shared-cache or host-disk delta to this task."
+  },
+  "evidence": {
+    "root": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-sqlite-linux-20261031-a7c2-evidence",
+    "archiveManifestSha256": "2a90fed546e426f7bbae0683edacefc9165295124254f87c0c9d8aef63c9f25e",
+    "indexedFiles": 2087,
+    "indexedBytes": 40033095,
+    "actualSourceRootDeleted": true,
+    "publishedAndNativeBinaryCopiesDeleted": true,
+    "syntheticDatabaseFilesDeleted": true,
+    "scannerCacheDeleted": true,
+    "logsTrxReportsManifestsRetained": true,
+    "historicalPreparationEvidenceRetained": true
+  },
+  "commandEvidence": {
+    "recordCount": 396,
+    "nonPassingProcessOrSemanticAttempts": [
+      {
+        "name": "build-native-amd64",
+        "exitCode": 1,
+        "status": "failed",
+        "durationSeconds": 0.074,
+        "log": "logs/build-native-amd64.log"
+      },
+      {
+        "name": "build-native-arm64",
+        "exitCode": 1,
+        "status": "failed",
+        "durationSeconds": 0.125,
+        "log": "logs/build-native-arm64.log"
+      },
+      {
+        "name": "pull-arm64-sdk-direct-exclusion",
+        "exitCode": 1,
+        "status": "failed",
+        "durationSeconds": 51.662,
+        "log": "logs/pull-arm64-sdk-direct-exclusion.log"
+      },
+      {
+        "name": "pull-arm64-sdk-mcr-subdomains",
+        "exitCode": 1,
+        "status": "failed",
+        "durationSeconds": 51.434,
+        "log": "logs/pull-arm64-sdk-mcr-subdomains.log"
+      },
+      {
+        "name": "pull-arm64-sdk",
+        "exitCode": 1,
+        "status": "failed",
+        "durationSeconds": 100.555,
+        "log": "logs/pull-arm64-sdk.log"
+      },
+      {
+        "name": "vulnerability-policy-arm64-api",
+        "exitCode": 0,
+        "status": "inconclusive",
+        "durationSeconds": 0.14,
+        "log": "logs/vulnerability-policy-arm64-api.log"
+      }
+    ],
+    "recoveryNotes": [
+      "MCR daemon registry TLS timeout; owner separately authorized temporary MCR/direct-data-host exclusions; original empty exclusion restored",
+      "Two initial Buildx operations stopped before build by sandbox activity-file permission; same commands retried with minimal escalation",
+      "Temporary Python 3.9 helper changed from unavailable file_digest to streaming SHA256 before scanning",
+      "Node ESM main guard skipped noncanonical /var alias despite process exit 0; missing JSON invalidated that attempt; canonical frozen script path produced valid policy JSON"
+    ]
+  },
+  "boundaries": {
+    "nativeLinuxArm64": "validated",
+    "emulatedLinuxAmd64": "validated",
+    "nativeLinuxAmd64": "not validated",
+    "windowsX64": "not validated",
+    "intelMacOs": "not validated",
+    "postgresIntegration": "not executed",
+    "redisValkey": "not executed",
+    "businessHostsStarted": false,
+    "hostPortsPublished": [],
+    "formalDockerfilesChanged": false,
+    "dependencyDeclarationsChanged": false,
+    "certificateTrustChanged": false,
+    "remoteWorkflowTriggered": false,
+    "pushed": false,
+    "published": false,
+    "deployed": false
+  }
+}

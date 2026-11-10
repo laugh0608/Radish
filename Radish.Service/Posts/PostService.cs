@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.Extensions.Options;
 using Radish.Common.OptionTool;
 using Radish.IRepository;
@@ -51,7 +51,6 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         int MaxSummaryLength);
 
     public PostService(
-        IMapper mapper,
         IBaseRepository<Post> baseRepository,
         IBaseRepository<UserPostLike> userPostLikeRepository,
         IBaseRepository<PostTag> postTagRepository,
@@ -82,7 +81,7 @@ public partial class PostService : BaseService<Post, PostVo>, IPostService
         IReliableOutboxService? reliableOutboxService = null,
         IUserAdornmentService? userAdornmentService = null,
         IUserPostBookmarkRepository? userPostBookmarkRepository = null)
-        : base(mapper, baseRepository)
+        : base(ForumMapper.ToPostVo, baseRepository)
     {
         _postRepository = baseRepository;
         _postCustomRepository = postCustomRepository;

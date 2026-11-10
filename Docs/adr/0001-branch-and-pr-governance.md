@@ -103,7 +103,7 @@ Accepted
 - GitHub Actions PR 检查工作流
   - `.github/workflows/repo-quality.yml`
   - 当前以 `Candidate Quality` 为单一 required check，聚合上述七个组件；版本与门禁契约由仓库卫生检查覆盖
-  - `Native Images` 覆盖五宿主平台、Linux 双架构镜像自检与漏洞策略，以及独立 Rust / vendored C AddressSanitizer 检查
+  - `Native Images` 覆盖五宿主平台、Linux 双架构镜像构建与自检，以及独立 Rust / vendored C AddressSanitizer 检查。最终镜像漏洞策略在实际推送 GHCR 前执行，发布入口保留 API arm64 扫描
   - `Dependency Security` 固定联网审计 npm / NuGet High 与 Critical；`Backend Guard`、`Identity Guard` 按变更影响面决定是否执行专题验证，但 job 本身保持 required check
   - `Identity Guard` 会先按 impact 判定决定是否执行 `validate:identity`，但 job 本身保持独立可见并作为 required check
   - 当前在 `pull_request -> master/dev` 上触发，其中 `master` ruleset 使用的 required check 名称按 job 名配置

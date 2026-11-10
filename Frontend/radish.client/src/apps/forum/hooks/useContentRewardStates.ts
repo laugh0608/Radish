@@ -54,7 +54,7 @@ export const useContentRewardStates = ({
       }));
     } catch (error) {
       if (session === sessionRef.current) {
-        log.error(logSource, '加载内容赞赏批量状态失败', error);
+        log.error('ContentRewardStates', '加载内容赞赏批量状态失败', error, { surface: logSource });
       }
     }
   }, [logSource, t]);

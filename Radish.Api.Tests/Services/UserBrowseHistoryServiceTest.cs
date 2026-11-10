@@ -1,7 +1,6 @@
 using System;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Moq;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -17,7 +16,6 @@ public class UserBrowseHistoryServiceTest
     [Fact]
     public async Task RecordAsync_Should_InsertNewHistory_WithNormalizedSnapshot()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var repository = new Mock<IBaseRepository<UserBrowseHistory>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
@@ -41,7 +39,7 @@ public class UserBrowseHistoryServiceTest
                 history.CreateBy == "Tester")))
             .ReturnsAsync(1);
 
-        var service = new UserBrowseHistoryService(mapper.Object, repository.Object, attachmentUrlResolver.Object);
+        var service = new UserBrowseHistoryService(repository.Object, attachmentUrlResolver.Object);
 
         await service.RecordAsync(new RecordBrowseHistoryDto
         {
@@ -64,7 +62,6 @@ public class UserBrowseHistoryServiceTest
     [Fact]
     public async Task RecordAsync_Should_UpdateExistingHistory_AndIncrementViewCount()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var repository = new Mock<IBaseRepository<UserBrowseHistory>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
@@ -98,7 +95,7 @@ public class UserBrowseHistoryServiceTest
                 history.ModifyId == 1001)))
             .ReturnsAsync(true);
 
-        var service = new UserBrowseHistoryService(mapper.Object, repository.Object, attachmentUrlResolver.Object);
+        var service = new UserBrowseHistoryService(repository.Object, attachmentUrlResolver.Object);
 
         await service.RecordAsync(new RecordBrowseHistoryDto
         {
@@ -121,7 +118,6 @@ public class UserBrowseHistoryServiceTest
     [Fact]
     public async Task RecordAsync_Should_UpdateExistingPostHistory_ToPublicIdRoutePath()
     {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
         var repository = new Mock<IBaseRepository<UserBrowseHistory>>(MockBehavior.Strict);
         var attachmentUrlResolver = new Mock<IAttachmentUrlResolver>(MockBehavior.Strict);
 
@@ -151,7 +147,7 @@ public class UserBrowseHistoryServiceTest
                 history.ModifyId == 1001)))
             .ReturnsAsync(true);
 
-        var service = new UserBrowseHistoryService(mapper.Object, repository.Object, attachmentUrlResolver.Object);
+        var service = new UserBrowseHistoryService(repository.Object, attachmentUrlResolver.Object);
 
         await service.RecordAsync(new RecordBrowseHistoryDto
         {

@@ -465,7 +465,7 @@ PostQuickReply
 - `Radish.IService/IPostQuickReplyService.cs`
 - `Radish.Service/PostQuickReplyService.cs`
 - `Radish.Api/Controllers/PostQuickReplyController.cs`
-- `Radish.Extension/AutoMapperExtension/CustomProfiles/ForumProfile.cs`
+- `Radish.Service/Mapping/ForumMapper.cs`
 - `Radish.Service/ContentModerationService.cs`
 - `Radish.Api/Controllers/ContentModerationController.cs`
 - `Radish.Model/DtoModels/ContentModerationDto.cs`

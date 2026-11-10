@@ -1,0 +1,42 @@
+<Project>
+  <PropertyGroup>
+    <RadishSqliteCheckScript>$(MSBuildThisFileDirectory)../check-sqlite-native.mjs</RadishSqliteCheckScript>
+    <RadishSqliteOutputOwner Condition="'$(MSBuildProjectName)' == 'Radish.Api' or '$(MSBuildProjectName)' == 'Radish.Auth' or '$(MSBuildProjectName)' == 'Radish.Gateway' or '$(MSBuildProjectName)' == 'Radish.DbMigrate' or '$(MSBuildProjectName)' == 'Radish.Api.Tests'">true</RadishSqliteOutputOwner>
+  </PropertyGroup>
+  <!-- Read the unfiltered assets graph, before both SDK conflict-resolution passes. -->
+  <Target Name="RadishValidateSqliteSources" BeforeTargets="_HandlePackageFileConflicts;_HandlePackageFileConflictsForPublish"
+          DependsOnTargets="ResolvePackageAssets"
+          Condition="'$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <PropertyGroup>
+      <RadishSqliteCommandScript>$(RadishSqliteCheckScript)</RadishSqliteCommandScript>
+      <RadishSqliteCommandScript Condition="'$(OS)' == 'Windows_NT'">$([System.String]::Copy('$(RadishSqliteCheckScript)').Replace('\', '/'))</RadishSqliteCommandScript>
+      <RadishSqliteCommandAssets>$(ProjectAssetsFile)</RadishSqliteCommandAssets>
+      <RadishSqliteCommandAssets Condition="'$(OS)' == 'Windows_NT'">$([System.String]::Copy('$(ProjectAssetsFile)').Replace('\', '/'))</RadishSqliteCommandAssets>
+    </PropertyGroup>
+    <Exec Command="node &quot;$(RadishSqliteCommandScript)&quot; --assets=&quot;$(RadishSqliteCommandAssets)&quot; --framework=&quot;$(TargetFramework)&quot; --rid=&quot;$(RuntimeIdentifier)&quot;" />
+  </Target>
+  <Target Name="RadishValidateSqliteBuildOutput" AfterTargets="CopyFilesToOutputDirectory"
+          Condition="'$(RadishSqliteOutputOwner)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <PropertyGroup>
+      <RadishSqliteCommandScript>$(RadishSqliteCheckScript)</RadishSqliteCommandScript>
+      <RadishSqliteCommandScript Condition="'$(OS)' == 'Windows_NT'">$([System.String]::Copy('$(RadishSqliteCheckScript)').Replace('\', '/'))</RadishSqliteCommandScript>
+      <RadishSqliteCommandAssets>$(ProjectAssetsFile)</RadishSqliteCommandAssets>
+      <RadishSqliteCommandAssets Condition="'$(OS)' == 'Windows_NT'">$([System.String]::Copy('$(ProjectAssetsFile)').Replace('\', '/'))</RadishSqliteCommandAssets>
+      <RadishSqliteCommandOutput>$(TargetDir)</RadishSqliteCommandOutput>
+      <RadishSqliteCommandOutput Condition="'$(OS)' == 'Windows_NT'">$([System.String]::Copy('$(TargetDir)').Replace('\', '/'))</RadishSqliteCommandOutput>
+    </PropertyGroup>
+    <Exec Command="node &quot;$(RadishSqliteCommandScript)&quot; --assets=&quot;$(RadishSqliteCommandAssets)&quot; --framework=&quot;$(TargetFramework)&quot; --rid=&quot;$(RuntimeIdentifier)&quot; --output=&quot;$(RadishSqliteCommandOutput)&quot; --deps=&quot;$(AssemblyName).deps.json&quot;" />
+  </Target>
+  <Target Name="RadishValidateSqlitePublishOutput" AfterTargets="Publish" DependsOnTargets="RadishValidateSqliteSources"
+          Condition="'$(RadishSqliteOutputOwner)' == 'true' and '$(DesignTimeBuild)' != 'true' and '$(IsCrossTargetingBuild)' != 'true'">
+    <PropertyGroup>
+      <RadishSqliteCommandScript>$(RadishSqliteCheckScript)</RadishSqliteCommandScript>
+      <RadishSqliteCommandScript Condition="'$(OS)' == 'Windows_NT'">$([System.String]::Copy('$(RadishSqliteCheckScript)').Replace('\', '/'))</RadishSqliteCommandScript>
+      <RadishSqliteCommandAssets>$(ProjectAssetsFile)</RadishSqliteCommandAssets>
+      <RadishSqliteCommandAssets Condition="'$(OS)' == 'Windows_NT'">$([System.String]::Copy('$(ProjectAssetsFile)').Replace('\', '/'))</RadishSqliteCommandAssets>
+      <RadishSqliteCommandOutput>$(PublishDir)</RadishSqliteCommandOutput>
+      <RadishSqliteCommandOutput Condition="'$(OS)' == 'Windows_NT'">$([System.String]::Copy('$(PublishDir)').Replace('\', '/'))</RadishSqliteCommandOutput>
+    </PropertyGroup>
+    <Exec Command="node &quot;$(RadishSqliteCommandScript)&quot; --assets=&quot;$(RadishSqliteCommandAssets)&quot; --framework=&quot;$(TargetFramework)&quot; --rid=&quot;$(RuntimeIdentifier)&quot; --output=&quot;$(RadishSqliteCommandOutput)&quot; --deps=&quot;$(AssemblyName).deps.json&quot;" />
+  </Target>
+</Project>

@@ -5,6 +5,7 @@ using OpenIddict.Abstractions;
 using Radish.Api.Filters;
 using Radish.Api.Services;
 using Radish.Common.Exceptions;
+using Radish.Common.LogTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.PermissionTool;
 using Radish.Model;
@@ -104,7 +105,7 @@ public class ClientController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "获取客户端列表失败");
+            _logger.LogError(new EventId(1, "ClientListFailed"), "Client list unavailable; failure={failureKind}.", RuntimeFailureSummary.Classify(ex));
             return MessageModel<PageModel<ClientVo>>.Failed("获取失败");
         }
     }
@@ -129,7 +130,7 @@ public class ClientController : ControllerBase
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "获取客户端详情失败: {Id}", id);
+            _logger.LogError(new EventId(2, "ClientDetailFailed"), "Client detail unavailable; failure={failureKind}.", RuntimeFailureSummary.Classify(ex));
             return MessageModel<ClientVo>.Failed("获取失败");
         }
     }
@@ -213,7 +214,7 @@ public class ClientController : ControllerBase
             // 创建客户端
             await _applicationManager.CreateAsync(descriptor);
 
-            _logger.LogInformation("创建客户端成功: {ClientId}", dto.ClientId);
+            _logger.LogInformation(new EventId(3, "ClientCreated"), "Client management operation returned.");
 
             return MessageModel<ClientSecretVo>.Success("创建成功", new ClientSecretVo
             {
@@ -344,7 +345,7 @@ public class ClientController : ControllerBase
             // 更新客户端
             await _applicationManager.UpdateAsync(app, descriptor);
 
-            _logger.LogInformation("更新客户端成功: {Id}", id);
+            _logger.LogInformation(new EventId(4, "ClientUpdated"), "Client management operation returned.");
 
             return MessageModel<string>.Success("更新成功");
         }
@@ -373,7 +374,7 @@ public class ClientController : ControllerBase
             await MarkAsDeletedAsync(app);
 
             var clientId = await _applicationManager.GetClientIdAsync(app);
-            _logger.LogInformation("软删除客户端成功: {ClientId} (ID: {Id})", clientId, id);
+            _logger.LogInformation(new EventId(5, "ClientSoftDeleted"), "Client management operation returned.");
 
             return MessageModel<string>.Success("删除成功");
         }
@@ -420,7 +421,7 @@ public class ClientController : ControllerBase
 
             var clientId = await _applicationManager.GetClientIdAsync(app);
 
-            _logger.LogInformation("重置客户端密钥成功: {ClientId}", clientId);
+            _logger.LogInformation(new EventId(6, "ClientSecretReset"), "Client management operation returned.");
 
             return MessageModel<ClientSecretVo>.Success("重置成功", new ClientSecretVo
             {

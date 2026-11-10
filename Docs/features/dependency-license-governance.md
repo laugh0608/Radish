@@ -1,20 +1,58 @@
 # 第三方依赖许可治理与替代方案
 
-> 状态：2026-10-20 完成首轮盘点与源码评估，项目所有者已确认先推进 Rust 图片替代、恢复正常 PR；其他依赖方案后置。
+> 状态：Rust 图片替代已通过 PR #75 合并与回灌；Mapperly 4.3.1 替代已完成。2026-10-26 已获批完成 NoDrive 正式部分收缩、双数据库回归及重点 NuGet notices 四宿主分发接线；剩余来源与全生态发行审核未关闭，Valkey 与部署配置保持不变。
 >
-> 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代按专门实施方案推进，精确依赖安装及服务启动按各批授权执行；其他依赖仍处于审计与方案阶段。
+> 目标：减少 Radish 构建、分发和持续维护对厂商 key、资格申请及复杂授权条件的依赖。图片替代已交付；后续精确依赖安装及服务启动按各批授权执行，其他依赖仍处于审计与方案阶段。
+
+2026-11-04 项目所有者明确调整推进重点：恢复已规划的功能完成主线，剩余来源询证、原包构建复现、源码交付材料及服务替换评估转入后续维护 / 发行队列，当前不主动推进或等待外部回复。已完成成果与未关闭项均保留；该调整不等于全部发行条件通过，实际产物发行前仍需按范围核对。即时顺位以[当前规划](../planning/current.md)为准。
+
+2026-10-26 的[正式采用方案](./nodrive-adoption-plan.md)已获批实施，新候选结果见[采用记录](../records/nodrive-adoption-2026-10-26.md)。[226 条 NuGet 清单](../records/nodrive-nuget-inventory-2026-10-26.csv)与原始[审查材料清单](../records/nodrive-distribution-materials-2026-10-26.json)保留；随后获批完成 13 个重点组件归档及其中 11 个 runtime 组件的四宿主接线，当前材料见 [manifest](../../ThirdParty/nuget/manifest.json)，验证见[分发实施记录](../records/nuget-notices-distribution-2026-10-26.md)。NoDrive / SystemCommon 的精确来源与许可差异仍须补证，不能宣称整个许可专题已关闭。
+
+同日[来源补证](../records/nodrive-source-review-2026-10-26.md)已确认仓库迁移、NoDrive 版本候选提交与两个包的官方 archive 哈希；发现包 Apache 声明与候选源码 MIT 声明差异，以及 SystemCommon 仓库打包版本仍为 8.3。保持两侧证据，不改标许可或推定二进制精确对应。[接线方案](./nuget-notices-distribution-plan.md)已实施：runtime 材料按实际宿主交付，Mapperly / Container Tools 仅保留仓库构建材料，缺失 / 哈希 / 版本 / 宿主映射异常直接失败。该门禁不自动放行源码提供、商业路线或全生态发行义务。
+
+接续的[发行边界核对](../records/dependency-distribution-boundaries-2026-10-26.md)已校验 Hangfire 两份精确仓库快照及四个未修改 DLL，识别 Core 合并 / 源码包输入、应用侧 LGPL 例外与 SNI 下游条款等具体事项。[裁决方案](./dependency-distribution-decisions.md)的狭义 LGPL 例外及首批验证已获批准并实施，根 LICENSE 第 5 节已补充对应文本；本机 native 离线重建、双配置严格构建与四宿主发布核对见[实施记录](../records/lgpl-exception-validation-2026-10-26.md)。完整对应源码交付仍未成立；后续 Core 替换证据见下段。
+
+进一步的[源码 / PDB 补证](../records/hangfire-source-inputs-2026-10-26.md)已匹配 233 个源码 checksum，核验 Cronos 精确 commit 并补齐其随 API 交付的 MIT 正文；[Core 替换方案](./hangfire-source-replacement-plan.md)及 SDK 分析器调整已获批准，[三组本机 SQLite 验证](../records/hangfire-core-replacement-2026-10-26.md)通过，证明该目标下源码重建及诊断修改库进入真实注册 / 入队 / 执行路径。同时发现测试 SQLite 3.50.3 与发布 SQLite 3.50.4 的既有原生资产链差异，后续验证须按实际产物冻结基线，不能只依据依赖声明。
+
+2026-10-31 已获批完成[SQLite 原生依赖统一](./sqlite-native-unification-plan.md)：Microsoft `.Core` 包、config 3.0.3 与唯一 `lib.e_sqlite3 [3.53.3]` 消除 native 竞争，保留 Hangfire 旧传递包边界。普通 / osx-arm64 RID 两配置严格构建、后端全量各 4,094 项通过（145 项环境跳过）、32 组 publish 和 160 组冷进程加载通过，追加六组件材料；结果及其他平台未关闭范围见[实施记录](../records/sqlite-native-unification-2026-10-31.md)。当前 .NET 图共 219 个不同 package/version 条目；旧清单保留其历史口径，不代表完整发行审核已关闭。
+
+后续另获授权完成[Linux ARM64 原生 / AMD64 仿真批次](../records/sqlite-linux-platform-validation-2026-10-31.md)：两配置定向测试各 60 项、32 份 publish、120 个独立冷进程和八 final 镜像 / 分发文件 / HIGH 与 CRITICAL 策略通过，资源及代理设置已清理恢复。随后 [PG17 / PG16 回归及四组正式包 worker](../records/postgres-regression-2026-10-31.md)通过并清理；[修正后第二次托管验收](../records/sqlite-hosted-native-second-run-2026-10-31.md)已完成，Linux x64 / Intel macOS / 四个 AMD64 final 通过，Windows Release 三项临时 SQLite 删除失败，后续阶段未执行，证据与清理完成。[Hangfire 重建与材料方案](./hangfire-rebuild-delivery-plan.md)随后获批实施，完成 42 项封存、五目标严格构建 / 字节一致重放、18 组源码替换及清理，见[记录](../records/hangfire-rebuild-2026-10-31.md)；[Windows Razor 本地工具 / 限定 CI](../records/hangfire-windows-razor-local-implementation-2026-10-31.md)已实施并通过本地契约与原 Core 片段检查，三次 Windows inventory 已按批执行，最新[诊断结果](../records/hangfire-windows-razor-inventory-diagnostic-2026-10-31.md)确认 image 文件与 Machine / Process 元数据冲突，身份门禁失败，20 组 PowerShell 契约通过且证据 / 清理完成；上游镜像差异已随 `20261101.353.1` 部署消除，独立复测通过，#15201 已关闭。Radish 的 Windows Razor 验证保留在后续维护 / 发行队列。原插件 DLL 源码绑定、正式源码入口及完整对应源码 / 发行边界仍未关闭。[上游更正与关闭记录](../records/hangfire-windows-runner-image-inquiry-review-2026-10-31.md#上游关闭结果)
+
+2026-11-04 按独立授权完成 Windows 临时 SQLite 夹具修正、本地 Debug / Release 严格构建及各 60 项定向测试，见[本地记录](../records/sqlite-windows-fixture-local-repair-2026-11-04.md)。随后候选 `44c13c5091f51621d475107fbb5834ceedef12f4` 又单独获批 push 并执行一次完整七 job，见[托管运行记录](../records/sqlite-hosted-native-fixture-run-2026-11-04.md)：Windows Release 60 项及三个迁移用例通过，首个 API 冷探针报告模块数量为 2，当时 Windows 验收仍未关闭；该轮只分析留痕，模块识别接续见[成组方案第 9 节](./sqlite-hosted-validation-repair-plan.md#windows-module-probe-followup)。当时 Hangfire image 上游已回复可能原因，尚待修复部署与版本确认；其后维护顺位及边界见 [Windows Razor 方案](./hangfire-windows-razor-validation-plan.md)。
+
+同日，上轮结果文档由 `1e1d0ff1` 保存后，第 9 节独立获批完成模块识别本地修正，见[实施记录](../records/sqlite-probe-module-local-repair-2026-11-04.md)。随后候选 `ab37d19eaf83189ec5c556d14608c1c132dce022` 又独立获批完成[单次完整七 job](../records/sqlite-hosted-native-module-run-2026-11-04.md)，7 项通过，492 项测试、48 份 publish、156 个冷 mode / 模块清单与证据 / 清理全部通过；Windows 夹具和模块识别的本次平台缺口已关闭。旧 `44c13c50` 失败保留，不回填旧模块身份；Hangfire / NoDrive 等来源和发行义务、Valkey 与发布边界仍分别推进。
+
+SQLite 结果文档由 `864f9f99` 保存后，接续完成 [Hangfire 来源与交付材料复核](../records/hangfire-source-delivery-review-2026-11-04.md)：原归档、三个完整 bundle 和 42 项 feed 留存核对通过，原 PostgreSql DLL 的信息版本与冻结 commit 一致；没有取得匹配 PDB，不扩大为逐文件绑定。正式材料候选及源码入口方案由[重建交付方案第 8 节](./hangfire-rebuild-delivery-plan.md#8-接续原包来源与正式源码交付准备)承接；上游询证草稿未发送，Windows Razor、运行和发行继续独立确认。
+
+<a id="delivery-slices"></a>
+
+## 规划归属与实施切片
+
+主要归属为[平台与交付](../planning/topics.md#platform-delivery)，协同图片 / 文件、数据库与各宿主。本专题拥有许可治理范围和整体完成条件；下列原方案是实施切片，原名称和授权边界保留，不升级成新的产品主线。
+
+| 切片 | 设计、任务状态与验收来源 | 结果证据 |
+| --- | --- | --- |
+| Rust 图片替代 | [完整实施方案](rust-image-processing-implementation-plan.md)及其 R0 输入 | [实施记录](../records/rust-image-replacement-2026-10-20.md) |
+| 映射替代 | [图片之后的映射方案](post-image-dependency-assessment.md) | [Mapperly 记录](../records/mapperly-migration-2026-10-21.md) |
+| ORM 收缩与服务候选 | [ORM / Redis 评估](orm-redis-dependency-assessment.md)、[NoDrive 正式采用](nodrive-adoption-plan.md)；[隔离试验](nodrive-valkey-isolation-validation-plan.md)只覆盖原候选 | [NoDrive 记录](../records/nodrive-adoption-2026-10-26.md)、[隔离结果](../records/nodrive-valkey-validation-2026-10-21.md) |
+| SQLite 统一与平台验证 | [统一方案](sqlite-native-unification-plan.md)、[Linux 平台](sqlite-linux-platform-validation-plan.md)、[托管矩阵](sqlite-hosted-native-validation-plan.md)、[成组修正](sqlite-hosted-validation-repair-plan.md)分别拥有所列范围；第 8 / 9 节夹具与模块识别已完成本地及本次托管验收 | [本机实施](../records/sqlite-native-unification-2026-10-31.md)、[Linux 结果](../records/sqlite-linux-platform-validation-2026-10-31.md)、[模块本地修正](../records/sqlite-probe-module-local-repair-2026-11-04.md)、[最新托管结果](../records/sqlite-hosted-native-module-run-2026-11-04.md) |
+| PostgreSQL 关联回归 | [回归执行方案](postgres-regression-execution-plan.md) | [回归记录](../records/postgres-regression-2026-10-31.md) |
+| Hangfire 来源与重建 | [源码替换](hangfire-source-replacement-plan.md)、[本机重建](hangfire-rebuild-delivery-plan.md)、[Windows Razor](hangfire-windows-razor-validation-plan.md)分别承接对应切片 | [本机重建](../records/hangfire-rebuild-2026-10-31.md)、[库存身份诊断](../records/hangfire-windows-razor-inventory-diagnostic-2026-10-31.md) |
+| notices 与发行材料 | [分发裁决](dependency-distribution-decisions.md)、[重点 notices 接线](nuget-notices-distribution-plan.md) | [发行边界](../records/dependency-distribution-boundaries-2026-10-26.md)、[接线结果](../records/nuget-notices-distribution-2026-10-26.md) |
+
+跨方案事项按具体对象指定上述来源，不能在总纲、current 和 records 各维护一份待办。current 只摘录下一步；Windows 夹具与模块识别由成组方案第 8 / 9 节维护本次收口和未来变更验证边界。SQLite 七 job 通过不关闭 Hangfire 来源、完整对应源码或全生态发行审核，也不授权新的运行 / 发布；日志与 Native 后续恢复仍服从原顺位。
 
 ## 1. 当前结论与阅读入口
 
 - 首轮统计覆盖正式 .NET、Web、Flutter、Rust 的 **947 个依赖条目**；精确口径、例外、未解析项与证据见[盘点记录](../records/dependency-license-audit-2026-10-20.md)和[逐包清单 CSV](../records/dependency-license-inventory-2026-10-20.csv)。条目不等于独立软件产品或许可证数量。
-- 当前优先替代对象是 **Six Labors 四包链**与 **AutoMapper**。前者在本轮升级候选中出现构建 key 门禁；后者存在 RPL / 商业许可路线选择。不能把“免费申请”或“缺 key 只打日志”作为长期依赖决策的全部依据。
+- 首轮优先替代对象是 **Six Labors 四包链**与 **AutoMapper**；两者均已按批准方案移除。前者曾在升级候选中出现构建 key 门禁；后者存在 RPL / 商业许可路线选择。不能把“免费申请”或“缺 key 只打日志”作为长期依赖决策的全部依据。
 - Hangfire、数据库传递驱动、Microsoft 专用工具 / 原生库、CC-BY / MPL 依赖分别处理，不统一推定为收费或需 key。
 - Redis 服务镜像另有版本相关许可风险；它不属于 `StackExchange.Redis` 客户端包，也不包含在上述 947 条中。
-- **图片处理已按项目所有者要求，沿补齐已有 Rust 的方向进入[完整替代实施方案](./rust-image-processing-implementation-plan.md)的交付与验收阶段**。精确输入见[R0 依赖清单](./rust-image-processing-dependency-proposal.md)，迁移前事实与备选比较见[Rust 图片处理替代评估](./rust-image-processing-replacement-assessment.md)。
+- **图片处理已按[完整替代实施方案](./rust-image-processing-implementation-plan.md)完成交付、验收与 PR 集成**。精确输入见[R0 依赖清单](./rust-image-processing-dependency-proposal.md)，迁移前事实与备选比较见[Rust 图片处理替代评估](./rust-image-processing-replacement-assessment.md)。
 
 本专题承载治理目标、候选方案与实施边界；精确版本和本批统计保留在 records；即时顺位只在[当前进行中](../planning/current.md)维护。
 
-**盘点不等于全部替换**：目前仅按 Rust 方向推进图片替代，AutoMapper 待独立评估；没有决定整体替换 ORM 或 Redis，也没有安排文件存储重构、历史附件批量重写或 Flutter 内嵌 Rust。其他依赖评估后置到 PR 稳定通过之后；继续 .NET，不启动后端语言迁移。
+**盘点不等于全部替换**：Rust 图片替代已完成，AutoMapper 已按[独立迁移方案](./post-image-dependency-assessment.md)替换为 Mapperly 4.3.1；没有决定整体替换 ORM 或 Redis，也没有安排文件存储重构、历史附件批量重写或 Flutter 内嵌 Rust。PR 已通过并合并，现按已确认顺序继续其他依赖评估；继续 .NET，不启动后端语言迁移。
 
 ## 2. 许可判定口径
 
@@ -28,7 +66,7 @@
 4. **在哪个边界出现**：直接 / 传递，生产 / 测试 / 构建，应用 / 原生二进制 / 字体 / 服务镜像。
 5. **替换的真实成本**：行为等价性、数据兼容、平台构建、供应链、安全更新及长期维护成本。
 
-Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三方库的互惠开源条款。保留该项目许可定位；本专题不改变 Radish 的发行授权，也不对所有可能的部署主体做统一许可结论。
+Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三方库的互惠开源条款。保留该项目许可定位；已批准的 LGPL 狭义例外以根 LICENSE 第 5 节为准，不授予 Radish 原创代码的一般修改或再分发权，也不对所有可能的部署主体做统一许可结论。
 
 ## 3. 首轮重点清单
 
@@ -36,12 +74,12 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 | --- | --- | --- | --- |
 | `SixLabors.ImageSharp`、`SixLabors.ImageSharp.Drawing` | 迁移前候选 `4.1.3 / 3.1.3`；本次工作区已移除 | 包内 Split License；Drawing 候选实际阻断无 key 的严格构建 / Release | 第一批：完整替代图片链；许可申请只作为明确选择后的备选 |
 | `SixLabors.Fonts`、`SixLabors.PolygonClipper` | 传递 `3.2.0 / 1.0.2` | 同一 Six Labors 许可链 | 与图片链一起退出，不只删两个直接引用 |
-| `AutoMapper` | `16.1.1`，Extension / Service 直接引用 | 包内 RPL-1.5 / 商业双许可；当前接线允许空 key | 第二批：评估 Mapperly / 显式映射；先完成映射语义清单 |
+| `AutoMapper` | 迁移前 `16.1.1`，现已移除 | 旧包为 RPL-1.5 / 商业双许可 | 第二批已切换 Mapperly 4.3.1（Apache-2.0），见[实施记录](../records/mapperly-migration-2026-10-21.md) |
 | Hangfire 三个核心集成包 | `AspNetCore / Core / NetCore 1.8.14` | LGPL-3.0-or-later 或对应商业许可 | 核对分发义务及商用扩展缺席事实，再决定保留或替换 |
 | `Hangfire.PostgreSql` | `1.20.12` | 包内 LGPLv3；第三方插件不能套用 Hangfire 核心商业许可 | 与核心调度方案一起评估 |
-| `Oracle.ManagedDataAccess.Core` | 传递 `23.8.0` | Oracle Free Distribution, Hosting, and Use 条款 | 优先评估未使用 provider 的依赖收缩；不是发现 Oracle 名称即要求付费 |
-| `Oscar.Data.SqlClient` | 传递 `4.0.4` | 包元数据缺 license / URL，包内未见对应许可正文 | 补证据或通过受支持方案退出；不能借用 ORM 的许可替它放行 |
-| `SqlSugarCore.Dm / Kdbndp` | 传递 `8.8.1 / 9.3.7.905` | 元数据只有 Apache URL，未据此证明所含厂商二进制全部同许可 | 核对精确包内容与分发权；先收缩 provider 方案，不默认更换整个 ORM |
+| `Oracle.ManagedDataAccess.Core` | 迁移前传递 `23.8.0` | Oracle Free Distribution, Hosting, and Use 条款 | 已随 NoDrive 退出新图与四宿主产物；保留历史证据，不推定其必收费 |
+| `Oscar.Data.SqlClient` | 迁移前传递 `4.0.4` | 包元数据缺 license / URL，包内未见对应许可正文 | 已随 NoDrive 退出；不是用 ORM 的许可替它放行 |
+| `SqlSugarCore.Dm / Kdbndp` | 迁移前传递 `8.8.1 / 9.3.7.905` | 元数据只有 Apache URL，未据此证明所含厂商二进制全部同许可 | 已随 NoDrive 退出；本轮不更换整个 ORM |
 | `Microsoft.Data.SqlClient.SNI.runtime` | 传递 `5.2.0` | 包内 Microsoft 软件许可；Windows 原生库分发条件 | 与未使用 SQL Server provider 一并核对，区别于 MIT 客户端源码 |
 | Visual Studio Container Tools Targets | `1.23.0` | Microsoft 工具 EULA，开发 / 构建用途 | 评估是否仍需 VS 容器调试接线；删除前验证 IDE / 构建影响 |
 | `Isopoh.Cryptography.Argon2 / Blake2b / SecureArray` | `2.0.0` 三包 | 包内 CC-BY-4.0，署名和许可保留 | 优先补分发清单；不为去掉署名义务直接改变密码算法 |
@@ -73,7 +111,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 
 ## 5. AutoMapper 替代方案
 
-先盘点 `CustomProfiles`、`IMapper`、`Map`、`ReverseMap`、Vo 前缀、转换器、DI 依赖、集合 / nullable、映射既有对象和 IQueryable 投影等真实语义。当前源码关键词命中约百个文件，只用于判断跨层影响，不能当成精确迁移工作量。
+迁移前源码已核对 18 个已注册 Profile、104 个有向映射与 Service 中 98 处 Map 调用；附件有两个依赖 DI 的 URL resolver，商品更新需保留现有对象受保护字段。完整语义、候选版本、BaseService 接线及验证边界见[后续依赖评估与映射方案](./post-image-dependency-assessment.md)。迁移结果为 101 个旧方向保持、3 个无调用的空反向映射删除，并新增 AuditLog 读取映射；测试和产物证据见[实施记录](../records/mapperly-migration-2026-10-21.md)。
 
 | 方案 | 适合边界 | 决策点 |
 | --- | --- | --- |
@@ -81,7 +119,7 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 | 显式映射方法 | 关键业务映射、存在语义转换的少量类型 | 可读性高、无新增第三方 mapper；大量平铺模型时需控制重复 |
 | 保留 AutoMapper 并选择适用许可 | 当前版本行为基本延续 | 必须明确适用路径；“空 key 不影响运行”不构成许可结论 |
 
-优先评估“生成映射 + 少量显式语义映射”，不引入仅转发的通用 mapper 抽象。实体 → Vo / DTO 仍由 Service 层负责，不将映射搬到 Controller 或 Repository。替换成功后清理 `LicenseKey` 配置、注册、旧 Profile、测试及对外依赖展示；完成前不修改现行分层规范。
+已采用“生成映射 + 少量显式语义映射”，不引入仅转发的通用 mapper 抽象。实体 → Vo / DTO 仍由 Service 层负责，不将映射搬到 Controller 或 Repository。已清理 `LicenseKey` 配置、注册、旧 Profile、测试依赖及对外展示，并同步开发规范。
 
 ## 6. 其他依赖的替代边界
 
@@ -93,10 +131,10 @@ Radish 根 `LICENSE` 为 Source-Available，并非因此自动满足所有第三
 
 ### 6.2 ORM 的传递数据库驱动
 
-Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugarCore` 传递引入 Oracle、神通、达梦、金仓和 SQL Server 相关资产。处理顺位：
+Radish 正式数据库边界为 PostgreSQL / 本地 SQLite。原通用 `SqlSugarCore` 曾引入 Oracle、神通、达梦、金仓和 SQL Server 资产；10 月 26 日采用 NoDrive 后，前四类及 MySqlConnector 已退出新图与四宿主产物，SQL Server / SNI 仍保留。处理依据与后续边界：
 
 1. 检查实际配置支持范围、resolved graph、publish 内容和运行时动态加载。
-2. 调查上游受支持的 provider 分包 / 精简方案；当前尚未确认存在满足项目要求的官方拆分组合。
+2. `SqlSugarCoreNoDrive 5.1.4.207` 主 DLL 与原版本相同，`SystemCommon 8.5.0` 仍引入 SQL Server / SNI；它已通过隔离及正式候选验证，只形成部分收缩，见[详细评估](./orm-redis-dependency-assessment.md)与[正式采用记录](../records/nodrive-adoption-2026-10-26.md)。
 3. 若无法安全收缩，再比较维护受控分发与 ORM 迁移的长期成本；后者属于跨 Repository 的独立架构裁决。
 
 不能只删除输出 DLL、修改本地 NuGet 缓存、隐藏扫描命中或添加 `ExcludeAssets` 来假装分发与运行边界已经解决。也不能因为客户端驱动免费分发，就推导数据库服务器本身免费。
@@ -104,12 +142,12 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 ### 6.3 密码、字体与原生工具
 
 - Argon2 三包目前的事项是 CC-BY 声明。若更换实现，必须保留历史编码哈希验证、参数、失败语义和渐进迁移；不能顺带改成另一种哈希或要求用户重置密码。
-- Noto 随 Flutter 打包并有 OFL 正文；Rust 嵌入 DejaVu，需把字体原始许可 / notices 纳入原生产物分发。仅在 README 写“Free”不够。
+- Noto 的 Sans / Serif OFL 已纳入 Flutter assets 声明；Rust 图片构建已复制 DejaVu / Noto Sans 原文，并通过 MSBuild 随 native 树进入 API publish。2026-10-26 本机 Debug / Release 四份许可副本哈希与源文件一致，见[分发预检](../records/dependency-distribution-preflight-2026-10-26.md)；后续复核当前平台候选实际交付，不把接线或本机证据替代所有安装包 / 镜像验收。
 - Microsoft 构建工具 EULA 与原生 SNI 条款分别处理，既不统一归为 MIT，也不自动归为付费 key。
 
 ### 6.4 Redis 服务
 
-先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。
+先锁定计划候选的精确版本和 digest，再根据实际功能比较保留 Redis 与 Valkey。验证客户端协议之外，还包括 Lua / 原子操作、锁、缓存、SignalR backplane、持久化、ACL / TLS、备份恢复及运维接线。本轮不访问生产以探测其版本，不修改 Compose 或迁移数据。已核对 key / TTL 消费路径、上传 Lua 测试缺口、Valkey 9.1.2 / 8.1.10 镜像 manifest 与 Redis 7.4+ 数据文件兼容限制，见[后续评估](./orm-redis-dependency-assessment.md)。9.1.2 隔离对照未发现候选独有差异，恢复与重连通过，但当时两端共同的上传过期结算 / 超大整数问题导致完整业务验收未通过。随后获批的[配额修复](../records/upload-quota-boundary-fix-2026-10-21.md)已完成定向回归；正式迁移与发布仍未批准。
 
 ## 7. 分批顺序、验证与完成标准
 
@@ -121,7 +159,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 | 分发收口 | Hangfire、数据库驱动、Microsoft EULA、署名与字体 | 保留 / 收缩 / 替代的逐项裁决与发行材料 |
 | 服务候选 | Redis 固定候选或 Valkey 方案 | 数据、运维、协议和回滚方案，独立服务授权 |
 
-当前 `dev → master` PR 继续暂停；原 Community 申请路线改为备选，不以“先取得 key”作为唯一恢复方式。此前已授权的 NuGet 安全修复 / 图片 API 适配保留为开发候选，不因提交保存或本次审计而宣称严格构建通过、替代完成。
+图片替代已通过严格构建、平台与成组验收，并随 [PR #75](https://github.com/laugh0608/Radish/pull/75) 合并及回灌；原许可 key 阻断已解除。映射替代已按批准方案实施并单独验证，见[映射迁移记录](../records/mapperly-migration-2026-10-21.md)；既有图片验收不替代新依赖的验证；本轮不发布。
 
 候选完成至少满足：
 
@@ -135,7 +173,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 
 ## 8. 外部依据
 
-所有链接核对日期为 2026-10-20；精确包内文件及 SHA256 另见 CSV。
+除 Mapperly 精确版本补核外，以下链接的首轮核对日期为 2026-10-20；精确包内文件及 SHA256 另见 CSV。
 
 - [Six Labors 许可与申请说明](https://sixlabors.com/pricing/)；当前四包内 `LICENSE` 为 Six Labors Split License 1.0，不能只以官网概述代替包内条款。
 - [AutoMapper 16.1.1 许可正文](https://raw.githubusercontent.com/AutoMapper/AutoMapper/v16.1.1/LICENSE.md)、[许可配置与日志执行方式](https://docs.automapper.io/en/latest/License-configuration.html)。
@@ -143,4 +181,4 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite，但通用 `SqlSugar
 - [Quartz.NET 候选许可](https://github.com/quartznet/quartznet/blob/main/license.txt)、[DejaVu 字体许可与 notices](https://dejavu-fonts.github.io/License.html)。
 - [Oracle 23.8.0 发布页](https://www.nuget.org/packages/Oracle.ManagedDataAccess.Core/23.8.0)、[Oscar 4.0.4 元数据页](https://www.nuget.org/packages/Oscar.Data.SqlClient/4.0.4)。
 - [Redis 版本与许可表](https://redis.io/legal/licenses/)、[Valkey COPYING](https://raw.githubusercontent.com/valkey-io/valkey/unstable/COPYING)。
-- [Mapperly 许可](https://raw.githubusercontent.com/riok/mapperly/main/LICENSE)、[SkiaSharp 许可](https://github.com/mono/SkiaSharp/blob/main/LICENSE.txt)、[Magick.NET 许可](https://github.com/dlemstra/Magick.NET/blob/main/License.txt)。候选未选定精确版本，安装前须再核对版本、全部传递依赖与实际包内条款。
+- [Mapperly 4.3.1 许可](https://raw.githubusercontent.com/riok/mapperly/v4.3.1/LICENSE)：2026-10-21 已选定并核对精确包，见[迁移记录](../records/mapperly-migration-2026-10-21.md)。[SkiaSharp 许可](https://github.com/mono/SkiaSharp/blob/main/LICENSE.txt)、[Magick.NET 许可](https://github.com/dlemstra/Magick.NET/blob/main/License.txt)仅为未采用的历史候选；若以后选用，须再核对精确版本、全部传递依赖与实际包内条款。

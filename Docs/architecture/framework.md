@@ -55,7 +55,7 @@
 | --- | --- | --- |
 | 语言/运行时 | C# 13, .NET 10 | 使用 .NET 10 SDK，开启 `Nullable` 与 `ImplicitUsings` |
 | Web Host | ASP.NET Core WebApplication | Program.cs 中最小宿主，按需要拆 Controller/Minimal API |
-| ORM | [SQLSugar](https://github.com/donet5/SqlSugar) | Code First + Migration，仓储层集中管理上下文，支持读写分离配置 |
+| ORM | [SQLSugar](https://github.com/donet5/SqlSugar) | NoDrive + 显式 PG / SQLite 驱动，仓储层集中管理上下文，schema 变更由 DbMigrate 承接 |
 | 数据库 | PostgreSQL 16 | 默认端口 5432，连接通过 `ConnectionStrings__Default` 注入 |
 | 前端 | React 19 + Vite + TypeScript | radish.client（纯 Web 默认入口 + `/workbench` 功能地图 + `/desktop` WebOS 历史入口）、radish.console（管理控制台）、radish.ui（@radish/ui 组件库）；使用 npm workspaces；当前以 Zustand 与共享 API 客户端为主要前端基线 |
 | 前端构建 | Vite Rolldown，ESLint 9，TypeScript | 各项目独立构建：radish.client、radish.console；固定文档统一存放于 `Docs/`，由 API 启动时同步为内置文档，WebOS `/desktop` 文档应用可继续展示 |
@@ -138,7 +138,7 @@ PostgreSQL / SQLite
 - `Radish.Service`
   - 应用服务（`*AppService`）封装用例流程、权限校验、事务控制、DTO 转换。
   - 依赖 `Radish.Core` 接口与 `Radish.Repository` 实现，通过 `IUnitOfWork` 控制 SQLSugar 上下文。
-  - 对外仅返回 DTO/Vo，禁止把 `Radish.Model` 中的实体直接暴露给 Controller；实体需在此层通过 AutoMapper（一律在 `Radish.Extension/AutoMapperSetup` 注册）转换为视图模型。
+  - 对外仅返回 DTO/Vo，禁止把 `Radish.Model` 中的实体直接暴露给 Controller；实体需在此层通过 `Radish.Service/Mapping` 中的 Mapperly 与显式业务转换转换为视图模型。
   - 当单个服务承担同一聚合下的多段复杂逻辑时，可在服务目录下继续按聚合建子目录，并使用 `partial class` 按职责拆分实现文件；例如论坛帖子服务可落在 `Radish.Service/Posts/PostService*.cs`，分别承载查询、发布、编辑、互动逻辑。
   - 业务运营参数统一通过 `ISystemSettingProvider` 读取代码默认值叠加 Console 覆盖值后的强类型设置；部署配置、密钥和启动前配置仍走 `appsettings` / 环境变量，不进入系统设置中心。
 - `Radish.Core`
@@ -153,11 +153,11 @@ PostgreSQL / SQLite
   - 提供 `PagedRequest`, `PagedResponse<T>`, `ApiError` 等复用结构。
   - 视图模型需以 `Vo` 开头，并结合业务含义做缩写/扩写（如 `VoUsrAudit`, `VoAssetReport`），避免简单加前缀即可猜测真实用途。
 - `Radish.Extension`
-  - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器；按照职责拆分 `AutofacExtension/*`, `AutoMapperExtension/*`, `RedisExtension/*` 等子目录。
+  - 横切关注：验证、缓存策略、OpenAPI 自定义、JWT 扩展、全局过滤器；按照职责拆分 `AutofacExtension/*`, `RedisExtension/*` 等子目录。
   - `RedisExtension.CacheSetup` 提供统一入口 `AddCacheSetup()`，根据 `Redis.Enable` 自动在 Redis（StackExchange.Redis）与内存缓存间切换，并在启用 Redis 时预先创建 `IConnectionMultiplexer`；当前约定 `Redis.Enable/ConnectionString` 放在 `appsettings.Shared.json`，`Redis.InstanceName` 保留在各宿主配置中做命名空间隔离。
   - `ICaching` 的过期时间参数中，`0` 或负数会回落到组件默认 TTL，避免异常配置导致缓存写入失败；确需不缓存时，应在调用侧显式跳过写入。
   - Redis 目前只作为统一缓存后端与少量 Redis List / Queue 能力预留；多实例 SignalR Backplane、聊天室在线状态、上传限流、商城 / 萝卜币幂等和排行榜等 Redis 专项增强已后置到 [Redis 与缓存治理专题](/planning/redis-cache-governance)，不作为普通业务开发的默认前置条件。通知未读正确性以数据库 `GetInboxSummary` 与单调 `revision` 为权威，不依赖客户端计数或 Redis 原子增减；未来 Redis 工作只承担多实例广播和性能增强，不能成为通知一致性的第二真值。
-  - `SqlSugarExtension.SqlSugarSetup` 负责注入 `ISqlSugarClient` 单例：内部读取 `Radish.Common.DbTool.BaseDbConfig` 生成的连接集合（含 `MainDb`、`Log` 以及所有从库），并在缺失日志库配置时直接抛出异常，确保多库配置在启动阶段即被验证。
+  - `SqlSugarExtension.SqlSugarSetup` 负责注入 `ISqlSugarClient` 单例：内部读取 `Radish.Common.DbTool.BaseDbConfig` 生成的启用连接集合，先校验正式 provider 范围，在缺失日志库配置时直接抛出异常。历史 `Slaves` 模型未接入主从路由，不视为已交付读写分离能力。
 - `Radish.Shared`
   - 常量、错误码、事件名、Options 绑定类型，以及跨模块共享的业务枚举（集中位于 `Radish.Shared.CustomEnum` 命名空间，例如 `UserStatusCodeEnum`、`UserSexEnum`、`DepartmentStatusCodeEnum`、`AuthorityScopeKindEnum`、`HttpStatusCodeEnum` 等）。
 - `radish.client`
@@ -212,7 +212,7 @@ graph LR
 
 ## 数据与持久化策略
 
-- SQLSugar 统一由 `SqlSugarScope` 单例提供，`Radish.Common.DbTool.BaseDbConfig.MutiConnectionString` 负责解析配置中的 `MainDb` 与 `Databases` 列表并生成所有连接配置。当前约定这两项放在 `appsettings.Shared.json` 统一维护，宿主按需在本地文件/环境变量覆盖。默认示例包含 `Main`（业务库）与 `Log`（共享日志库）两个 SQLite 文件，可扩展到 PostgreSQL/MySQL 等；若缺少 `Log` 库会在启动阶段直接抛出异常。当前数据库日志设计不是按宿主分库，而是共享 `ConnId=Log` 并按日志类型 / 日期分表。
+- SQLSugar 统一由 `SqlSugarScope` 单例提供，`Radish.Common.DbTool.BaseDbConfig.MutiConnectionString` 负责解析配置中的 `MainDb` 与 `Databases` 列表并生成启用连接。两项配置放在 `appsettings.Shared.json`，宿主按需在本地文件 / 环境变量覆盖；默认包含 Main / Log / Message / Chat 四个 SQLite 逻辑库，正式支持切换到 PostgreSQL。业务连接、分库租户及 OpenIddict / Hangfire 配置均在消费时校验 provider，只允许 SQLite / PostgreSQL；历史枚举数值保留但不代表支持。ORM 已采用 NoDrive 与显式驱动，仍保留 SqlClient / SNI 传递链，见[采用方案](/features/nodrive-adoption-plan)。缺少 Log 库仍在启动阶段明确失败；日志共享 `ConnId=Log` 并按类型 / 日期分表。
 - `SqlSugarExtension.SqlSugarSetup` 会为日志库之外的所有连接注册到 `BaseDbConfig.ValidConfig`，并将 `SqlSugarConst.Log` 标记的配置注入日志上下文；SqlSugar 内部缓存通过 `SqlSugarCache` 委托给现有 `ICaching`，AOP 事件统一写入 Serilog，便于分析 SQL。
 - PostgreSQL `timestamp with time zone` 写入前，独立的 `PostgreSqlDateTimeParameterNormalizer` 会通过 SqlSugar 参数 AOP 规范化 `DateTime` / `DateTimeOffset`：`Local` 转 UTC，`Unspecified` 按 UTC 解释，数组和可枚举时间参数也按同一规则处理。该契约对包括 Log 在内的所有 PostgreSQL 连接生效，不依赖 SQL 日志开关或 Npgsql legacy timestamp 初始化顺序；业务展示仍按用户偏好时区 / 浏览器时区 / 系统默认时区回退。
 - 绝对时刻、系统业务日、API `DateOnly` 与物理 `date` 列的完整契约见 [时间语义与业务自然日](/guide/time-semantics)。

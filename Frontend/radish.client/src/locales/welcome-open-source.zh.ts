@@ -12,7 +12,7 @@ export const welcomeOpenSourceZh = {
   'welcome.openSource.boundary.note2':
     '许可证、商用授权与附加条款请始终以对应项目官方仓库、官网和版本发布说明为准。',
   'welcome.openSource.boundary.note3':
-    '像 AutoMapper、Hangfire 这类存在版本差异或额外授权口径的项目，会在条目中继续补充说明。',
+    '像 Hangfire 这类存在版本差异或额外授权口径的项目，会在条目中继续补充说明。',
   'welcome.openSource.meta.scope': '当前范围',
   'welcome.openSource.meta.source': '清单来源',
   'welcome.openSource.meta.maintenance': '维护方式',
@@ -62,12 +62,12 @@ export const welcomeOpenSourceZh = {
   'welcome.openSource.projects.serilog.scope': '用于宿主日志、SQL AOP 日志与审计链路的基础输出。',
   'welcome.openSource.projects.autofac.purpose': '提供依赖注入容器与模块化注册能力。',
   'welcome.openSource.projects.autofac.scope': '用于扩展宿主装配、分层服务注册与部分拦截能力。',
-  'welcome.openSource.projects.automapper.purpose': '承担实体、DTO 与 Vo 之间的映射转换。',
-  'welcome.openSource.projects.automapper.scope': '用于 Service / Controller 输出模型映射与 Profile 配置。',
-  'welcome.openSource.projects.automapper.note':
-    '当前仓库使用 AutoMapper 15.x，并已在配置中预留 LicenseKey 读取入口。',
-  'welcome.openSource.projects.automapper.licenseNote':
-    '许可证模式已不同于早期 MIT 版本，具体授权条款请以官方站点与所用版本说明为准。',
+  'welcome.openSource.projects.mapperly.purpose': '承担实体、DTO 与 Vo 之间的映射转换。',
+  'welcome.openSource.projects.mapperly.scope': '在编译阶段生成 Service 层的实体、DTO 与 Vo 转换代码。',
+  'welcome.openSource.projects.mapperly.note':
+    '当前仓库使用 Mapperly 4.3.1，生成映射与显式业务转换共同维护输出契约。',
+  'welcome.openSource.projects.mapperly.licenseNote':
+    'Mapperly 4.3.1 采用 Apache-2.0 许可证。',
   'welcome.openSource.projects.sqlsugar.purpose':
     '作为主要业务 ORM，承担大部分实体查询、分页和多租户能力。',
   'welcome.openSource.projects.sqlsugar.scope': '用于 Repository、基础 CRUD、审计和多租户场景。',

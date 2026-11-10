@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Radish.Common.Exceptions;
@@ -50,7 +49,6 @@ public class OrderServiceTest
             CreateBy = "System"
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -106,7 +104,6 @@ public class OrderServiceTest
             .ReturnsAsync(true);
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -184,7 +181,6 @@ public class OrderServiceTest
             CreateBy = "System"
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -230,7 +226,6 @@ public class OrderServiceTest
             .Returns(replayResult);
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -290,7 +285,6 @@ public class OrderServiceTest
             CreateBy = "System"
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -332,7 +326,6 @@ public class OrderServiceTest
             });
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -391,7 +384,6 @@ public class OrderServiceTest
             CreateBy = "System"
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -446,7 +438,6 @@ public class OrderServiceTest
             .Returns(Task.CompletedTask);
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -508,7 +499,6 @@ public class OrderServiceTest
             CreateBy = "System"
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -562,7 +552,6 @@ public class OrderServiceTest
             .ReturnsAsync(true);
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -615,7 +604,6 @@ public class OrderServiceTest
             CreateBy = "System"
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -652,7 +640,6 @@ public class OrderServiceTest
             });
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -831,7 +818,6 @@ public class OrderServiceTest
             CreateBy = "System"
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -870,7 +856,6 @@ public class OrderServiceTest
             });
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -919,7 +904,6 @@ public class OrderServiceTest
             CreateId = userId
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -953,7 +937,6 @@ public class OrderServiceTest
             .ReturnsAsync(true);
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -996,7 +979,6 @@ public class OrderServiceTest
             CreateId = userId
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Loose);
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Loose);
         var productRepository = new Mock<IBaseRepository<Product>>(MockBehavior.Loose);
         var userRepository = new Mock<IBaseRepository<User>>(MockBehavior.Loose);
@@ -1026,7 +1008,6 @@ public class OrderServiceTest
                 return predicate(order) ? 1 : 0;
             });
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -1075,24 +1056,6 @@ public class OrderServiceTest
             UserName = "OrderAdmin"
         };
 
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(m => m.Map<OrderVo>(It.IsAny<Order>()))
-            .Returns<Order>(source => new OrderVo
-            {
-                VoId = source.Id,
-                VoOrderNo = source.OrderNo,
-                VoUserId = source.UserId,
-                VoProductId = source.ProductId,
-                VoProductName = source.ProductName,
-                VoProductIconAttachmentId = source.ProductIconAttachmentId,
-                VoProductType = source.ProductType,
-                VoQuantity = source.Quantity,
-                VoUnitPrice = source.UnitPrice,
-                VoTotalPrice = source.TotalPrice,
-                VoStatus = source.Status,
-                VoCreateTime = source.CreateTime
-            });
         var orderRepository = new Mock<IBaseRepository<Order>>(MockBehavior.Strict);
         orderRepository
             .Setup(repository => repository.QueryFirstAsync(It.IsAny<Expression<Func<Order, bool>>?>()))
@@ -1130,7 +1093,6 @@ public class OrderServiceTest
             .Returns("https://cdn.example.com/order-icon.png");
 
         var service = new OrderService(
-            mapper.Object,
             orderRepository.Object,
             productRepository.Object,
             userRepository.Object,
@@ -1158,7 +1120,6 @@ public class OrderServiceTest
         Mock<IBaseRepository<Product>>? productRepository = null)
     {
         return new OrderService(
-            Mock.Of<IMapper>(),
             orderRepository.Object,
             productRepository?.Object ?? Mock.Of<IBaseRepository<Product>>(),
             Mock.Of<IBaseRepository<User>>(),

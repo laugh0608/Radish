@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
@@ -249,7 +249,7 @@ public sealed class ChatMessageSearchServiceTest
             directConversationService.Object,
             channelRepository.Object,
             attachmentUrlResolver.Object,
-            NullLogger<ChatMessageSearchService>.Instance);
+            new Mock<ILogger<ChatMessageSearchService>>(MockBehavior.Strict).Object);
     }
 
     private static Mock<IBaseRepository<Channel>> CreateChannelRepository(params Channel[] channels)

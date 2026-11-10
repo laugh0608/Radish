@@ -1,0 +1,18 @@
+Hangfire.Storage.SQLite 0.4.2
+Authors: RaisedApp
+Copyright: Copyright © 2019 - Present
+Package license metadata: file:LICENSE
+Project: https://github.com/raisedapp/Hangfire.Storage.SQLite
+Package source commit: 1850239fd093fdd7722b91812b8788ade8555399
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- LICENSE (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/hangfire.storage.sqlite/0.4.2/hangfire.storage.sqlite.0.4.2.nupkg [LICENSE]
+  Original SHA256: c9e912ac05f1bb4ff104905e130e4831386d31a72f2dd67d007d4a40c6ce84a4
+  Distributed SHA256: c8fd2b324ec05ea89fa8a63e7a54d4e7fb7f702223b4ec7f943b8cfa1b07b29d
+
+Remaining evidence:
+- No additional component-specific gap recorded in this focused material review. This is not full release clearance.

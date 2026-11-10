@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Radish.Auth.OpenIddict;
@@ -24,7 +25,7 @@ public sealed class AuthOpenIddictMigrationTest
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var path = CreateTemporaryDatabasePath();
-        var database = new RuntimeDatabaseConfig(DataBaseType.Sqlite, $"Data Source={path}");
+        var database = CreateTemporarySqliteDatabaseConfig(path);
 
         try
         {
@@ -50,7 +51,7 @@ public sealed class AuthOpenIddictMigrationTest
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var path = CreateTemporaryDatabasePath();
-        var database = new RuntimeDatabaseConfig(DataBaseType.Sqlite, $"Data Source={path}");
+        var database = CreateTemporarySqliteDatabaseConfig(path);
 
         try
         {
@@ -79,7 +80,7 @@ public sealed class AuthOpenIddictMigrationTest
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var path = CreateTemporaryDatabasePath();
-        var database = new RuntimeDatabaseConfig(DataBaseType.Sqlite, $"Data Source={path}");
+        var database = CreateTemporarySqliteDatabaseConfig(path);
 
         try
         {
@@ -411,6 +412,17 @@ public sealed class AuthOpenIddictMigrationTest
     private static string CreateTemporaryDatabasePath()
     {
         return Path.Combine(Path.GetTempPath(), $"radish-openiddict-migration-{Guid.NewGuid():N}.db");
+    }
+
+    private static RuntimeDatabaseConfig CreateTemporarySqliteDatabaseConfig(string path)
+    {
+        var connectionString = new SqliteConnectionStringBuilder
+        {
+            DataSource = path,
+            // 临时数据库随用例删除，不能让连接池在上下文释放后继续持有文件句柄。
+            Pooling = false
+        }.ConnectionString;
+        return new RuntimeDatabaseConfig(DataBaseType.Sqlite, connectionString);
     }
 
     private static void DeleteTemporaryDatabase(string path)

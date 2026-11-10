@@ -104,12 +104,23 @@ npm run validate:candidate
   - 联网执行 `npm audit --omit=dev --json` 与 NuGet 直接 / 传递依赖漏洞审计
   - npm 或 NuGet 存在 High / Critical 时失败；命令失败、审计源不可用或 JSON 无法解析时同样失败
   - 属于 `master` PR 的 CI-only 必需组件，暂不并入日常本地 `validate:ci`；准备合并或处理依赖时单独执行
+- `check:nuget-notices` / `check:nuget-notices:self-test`
+  - 前者校验重点 NuGet 材料、派生 MSBuild 映射、宿主索引与四宿主现有 assets；后者使用临时副本验证缺失、篡改、版本 / 宿主漂移、目标路径和清理边界，不 restore 或启动服务
+  - 材料变更经审查后使用 `node Scripts/check-nuget-notices.mjs --write --assets` 重建派生文件；可追加 `--source-root=<原始材料目录>` 核对原始 SHA256 与规范化关系，目录布局为小写 package ID / version / 文件名
+  - notices 的 MSBuild 校验本身无需 Node；四宿主正常 build / publish 还执行下述 SQLite Node 门禁。材料覆盖原[接线方案](../features/nuget-notices-distribution-plan.md)及后续 SQLite 六组件，不等于全生态发行审核，也未增加独立 CI job
+- `check:sqlite-native:self-test` / `Scripts/check-sqlite-native.mjs`
+  - 自测覆盖第二来源、退出包返回、版本漂移、缺失 / 损坏 native、旧输出和 deps 不一致；`Scripts/build/sqlite-native.targets` 在 SDK 冲突消解前检查原始 assets，四宿主 / Tests build 与四宿主 publish 检查真实输出
+  - 检查使用 Node 24；四宿主 Dockerfile 的构建阶段提供 Node，最终运行镜像不增加 Node。完整版本与 SHA256 输入见 `Scripts/sqlite-native-contract.json`，不添加 ExcludeAssets、复制优先级或警告抑制来选取胜者
+  - 每份产物单独使用 `node Scripts/run-sqlite-runtime-probe.mjs --compile-from=<宿主输出> --host=<宿主名> --scratch=<全新case目录>` 编译，再以 `--output=<同一宿主输出> --host=<同一宿主名> --scratch=<同一case目录>` 执行。探针按固定宿主能力选择公共 / EF / Hangfire 源码，从原 deps 的托管 runtime 资产选择引用；不把 Windows 原生 DLL 当作托管引用。临时 SDK 工程无 PackageReference，保留严格编译。清单绑定 host、SDK、源码 / 引用 / 其他根目录 DLL、原 deps / runtimeconfig 和探针 hash，执行前核对，拒绝跨产物复用；运行时仍使用原宿主依赖图，探针仅暂存于原输出旁，结束即删除
+  - 探针固定覆盖 API 四 mode、Auth / DbMigrate 三 mode、Gateway 两 mode（Microsoft / SqlSugar 共用，EF / Hangfire 按宿主能力）；依赖缺失直接失败。检查包括首用路径、实际模块路径与 hash；Hangfire 只在临时 storage 和专用队列执行探针成功 / 重试，不启动宿主或监听端口。它仍属于需当前任务明确授权的运行验证，不并入日常默认门禁；不同平台和最终镜像各自验收，见[SQLite 方案](../features/sqlite-native-unification-plan.md)
+  - 模块识别组件区分原生映像与具有明确 PE / CLR 身份的托管 provider；精确核对平台名称 / 格式，空、多模块、重复枚举或未知候选均失败，不去重放行。`module-inventory.json` 在判断前保存实际名称、路径、加载地址、可读取的 hash 与分类 / 错误，并随失败证据保留；原来源 / 实际路径 / hash / 版本门禁保持。Tests 直接链接同一识别源码，新增 22 项用例随 `SqliteNativeContractTests` 进入现有 filter；本机夹具与 macOS 运行不替代 Windows 验收，见[成组方案第 9 节](../features/sqlite-hosted-validation-repair-plan.md#windows-module-probe-followup)
+  - MSBuild 参数行为夹具：`node Scripts/ci/check-sqlite-msbuild-argv.mjs --scratch=<全新目录> --evidence=<证据目录>`；真实 Exec → Node，覆盖 sources / build / publish、普通 / RID、特殊路径及末尾分隔符。Windows 额外检查盘符根 / UNC 字符串；本机通过不能替代 Windows runner。托管修正范围见[成组方案](../features/sqlite-hosted-validation-repair-plan.md)
 - `check:sensitive-literals`
   - 扫描 Git 已跟踪文件和未忽略的工作区新文件，阻断完整 JWT、硬编码 Bearer Token 与私钥 PEM 头
   - 只报告文件、行号和规则，不回显命中值；环境变量、模板变量、占位值和 `invalid_token` 测试值不会被误判
   - 规则自测与全仓扫描均已接入 `validate:baseline:quick`，因此同时进入本地 `validate:ci` 和远程 `Baseline Quick`
 - `lint:changed`
-  - 只对当前变更中的前端脚本文件执行 `eslint`
+  - 只对当前变更中的前端脚本文件执行 `eslint`；当前脚本覆盖 UI / Client / Console，未收录 `@radish/http`。触达 HTTP workspace 时另行执行 `npm run lint --workspace=@radish/http`，不能把 changed-only 通过视为 HTTP 已检查
   - 适合日常本地最小验证；远程 `Frontend Lint` 对四个 Web workspace 执行全量零 warning lint
 - `lint:staged`
   - 只对 staged 变更中的前端脚本文件执行 `eslint`
@@ -206,7 +217,7 @@ npm run validate:candidate
   - 候选前依次执行全量仓库卫生预算、全量前端零 warning lint、warning-as-error baseline 与联网依赖安全审计；LongId 已进入 baseline，不再重复执行
   - `.github/workflows/candidate-quality.yml` 只供手动与 Docker tag 复用；`PR -> master` 由 `repo-quality.yml` 的七个并行组件和单一 required check `Candidate Quality` 聚合，避免重复执行与通知
   - 远程门禁在 PostgreSQL 17 服务下运行环境集成测试，确保数据库迁移与 Repository 专题不会因普通本地入口缺少连接而被跳过
-  - Docker 镜像先进行本地单平台构建与分层漏洞扫描：`CRITICAL` 和存在修复版本的 `HIGH` 默认阻断，无修复 `HIGH` 留痕但不阻断；通过后才推送带 SBOM、provenance 和版本 / revision / source 标签的正式镜像，例外和报告规则见[镜像漏洞门禁分层](/guide/image-vulnerability-gate)
+  - PR 保留 Linux 双架构 API 镜像构建与自检。Docker Images workflow 在实际推送 GHCR 前扫描五个镜像的 amd64 和 API 的 arm64，`CRITICAL` 和已有修复版本的 `HIGH` 默认阻断。无修复 `HIGH` 留痕，成功推送的镜像包含 SBOM、provenance 和版本 / revision / source 标签。例外和报告规则见[镜像漏洞门禁分层](/guide/image-vulnerability-gate)
 
 ## 分层使用建议
 
@@ -583,6 +594,7 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 
 - `Radish.Api.Tests/HttpTest/*.http`
 - 各专题文档中的最小人工验收顺序
+- 上传配额 `Cache=Redis / Valkey` 集成测试：必须显式启用 `RADISH_TEST_UPLOAD_QUOTA_INTEGRATION=1`，并提供限定本机端口、database 15 和本轮前缀；缺连接或连接失败必须失败。普通无启用入口显式跳过，不能计为运行验收；[命令与范围](../features/upload-quota-boundary-fix-plan.md#6-已实现测试入口)单独维护。
 - `npm run check:public-head-smoke`：部署后公开详情 head 注入、robots 与动态 sitemap smoke
 - 需要先启动本地服务的联调链路
 

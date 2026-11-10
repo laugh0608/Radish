@@ -27,7 +27,12 @@ public sealed class HttpBoundaryTestSink : ILogEventSink, IDisposable
 {
     public readonly ConcurrentQueue<LogEvent> Events = new();
     public int Disposals;
-    public void Emit(LogEvent logEvent) => Events.Enqueue(logEvent);
+    public Exception? EmitFailure;
+    public void Emit(LogEvent logEvent)
+    {
+        if (EmitFailure != null) throw EmitFailure;
+        Events.Enqueue(logEvent);
+    }
     public void Dispose() => Interlocked.Increment(ref Disposals);
 }
 
@@ -51,7 +56,7 @@ internal sealed class HttpBoundaryCapture : IDisposable
     public readonly string Environment;
     private readonly string _key = Guid.NewGuid().ToString("N");
 
-    public HttpBoundaryCapture(bool candidate, string environment, string service = "api", bool diagnostics = true, bool audit = false)
+    public HttpBoundaryCapture(bool candidate, string environment, string service = "api", bool diagnostics = true, bool audit = false, TextWriter? output = null)
     {
         Candidate = candidate;
         Environment = environment;
@@ -67,14 +72,14 @@ internal sealed class HttpBoundaryCapture : IDisposable
         var config = new ConfigurationBuilder().AddInMemoryCollection(values).Build();
         var logger = new LoggerConfiguration();
         if (candidate)
-            RuntimeLoggingConfiguration.Configure(logger, config, environment, service, Output, Emergency);
+            RuntimeLoggingConfiguration.Configure(logger, config, environment, service, output ?? Output, Emergency);
         else
         {
             using var services = new ServiceCollection().BuildServiceProvider();
             SerilogSetup.ConfigureLegacy(logger, config, services, new SerilogOptions
             {
                 MinimumLevel = "Verbose", Console = new() { Enable = false }, File = new() { Enable = false }, Database = new() { Enable = false }
-            });
+            }, environment);
         }
         Logger = logger.CreateLogger();
         Factory = new Serilog.Extensions.Logging.SerilogLoggerFactory(Logger, dispose: false);

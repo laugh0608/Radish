@@ -13,7 +13,7 @@ interface QuickActionsProps {
 export const QuickActions = ({ onNavigate }: QuickActionsProps) => {
   const { t } = useTranslation();
   const handleAction = (action: TabType) => {
-    log.debug('QuickActions', `执行快捷操作: ${action}`);
+    log.debug('QuickActions', '执行快捷操作');
     onNavigate(action);
   };
 

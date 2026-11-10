@@ -412,7 +412,7 @@ public class CategoryController : ControllerBase
     private static MessageModel BuildErrorResponse(InvalidOperationException exception)
     {
         var response = BuildError(HttpStatusCodeEnum.BadRequest, exception.Message);
-        Log.ForContext("EventCode", "category.request_failed")
+        Log.ForContext<CategoryController>().ForContext("EventCode", "category.request_failed")
             .Error("Category request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
         return response;
     }

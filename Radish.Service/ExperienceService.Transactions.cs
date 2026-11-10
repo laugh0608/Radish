@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Model;
 using Radish.Model.ViewModels;
@@ -56,7 +57,7 @@ public partial class ExperienceService
         );
 
         // 映射为 VO
-        var transactions = Mapper.Map<List<ExpTransactionVo>>(pagedData);
+        var transactions = ExperienceMapper.ToExpTransactionVoList(pagedData);
         await FillTransactionUserNamesAsync(pagedData, transactions);
 
         var pageCount = (int)Math.Ceiling(totalCount / (double)safePageSize);

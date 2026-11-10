@@ -1,3 +1,4 @@
+using Radish.Api.Logging;
 using Microsoft.AspNetCore.DataProtection;
 using System.Text;
 using System.IO;
@@ -24,7 +25,7 @@ using Microsoft.Extensions.FileProviders;
 using Radish.Common.TimeTool;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
-using Radish.Extension.AutoMapperExtension;
+using Radish.Service.Mapping;
 using Radish.Extension.PermissionExtension;
 using Radish.Extension.RedisExtension;
 using Radish.Extension.Log;
@@ -176,6 +177,7 @@ return await RuntimeProcess.RunAsync("api", async () =>
     // 2. 绑定 InternalApp 扩展中的环境变量
     builder.ConfigureApplication();
     using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "api");
+    builder.AddRuntimeLogIngest();
     // 激活 Autofac 影响的 IControllerActivator 控制器激活器，这一行的意义就是把 Controller 类也就是控制器注册为 Service 服务
     builder.Services.Replace(ServiceDescriptor.Transient<IControllerActivator, ServiceBasedControllerActivator>());
     // 注册跨域规则
@@ -285,10 +287,8 @@ return await RuntimeProcess.RunAsync("api", async () =>
     });
     // 配置 OpenAPI 和 Scalar 文档
     builder.Services.AddScalarSetup();
-    // 注册 AddAutoMapper 服务
-    builder.Services.AddAutoMapperSetup(builder.Configuration);
-    // builder.Services.AddAutoMapper(typeof(AutoMapperConfig));
-    // AutoMapperConfig.RegisterMappings();
+    // 注册 Service 映射委托
+    builder.Services.AddServiceMappings();
     // 注册 AppSetting 自定义扩展服务
     builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
     // 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务
@@ -495,6 +495,8 @@ return await RuntimeProcess.RunAsync("api", async () =>
     var app = builder.Build();
     runtimeLogging.AttachLifetime(app.Lifetime);
     // -------------- App 初始化阶段 ---------------
+
+    app.UseRuntimeLogIngest(app.Services.GetRequiredService<RuntimeLogIngestOptions>());
 
     // 3. 绑定 InternalApp 扩展中的服务
     app.ConfigureApplication();

@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
@@ -281,41 +280,9 @@ public sealed class ShopManagementLoggingTests
             Orders.Setup(r => r.UpdateAsync(It.IsAny<Order>())).ReturnsAsync(true);
             var users = new Mock<IBaseRepository<User>>();
             users.Setup(r => r.QueryAsync(It.IsAny<Expression<Func<User, bool>>>())).ReturnsAsync([new User { Id = 1, UserName = Secret }]);
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(m => m.Map<Product>(It.IsAny<object>())).Returns((object o) =>
-            {
-                var dto = (CreateProductDto)o;
-                return new Product { Name = dto.Name, ProductType = dto.ProductType, BenefitType = dto.BenefitType, BenefitValue = dto.BenefitValue };
-            });
-            mapper.Setup(m => m.Map(It.IsAny<UpdateProductDto>(), It.IsAny<Product>()))
-                .Returns((UpdateProductDto dto, Product p) => { p.Name = dto.Name; return p; });
-            mapper.Setup(m => m.Map<ProductVo>(It.IsAny<object>())).Returns((object o) =>
-            {
-                var p = (Product)o;
-                return new ProductVo { VoId = p.Id, VoName = p.Name, VoCategoryId = p.CategoryId };
-            });
-            mapper.Setup(m => m.Map<List<ProductVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<Product>)o).Select(p => mapper.Object.Map<ProductVo>(p)).ToList());
-            mapper.Setup(m => m.Map<List<ProductListItemVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<Product>)o).Select(p => new ProductListItemVo { VoId = p.Id, VoName = p.Name }).ToList());
-            mapper.Setup(m => m.Map<ProductCategoryVo>(It.IsAny<object>())).Returns((object o) =>
-            {
-                var c = (ProductCategory)o;
-                return new ProductCategoryVo { VoId = c.Id, VoName = c.Name };
-            });
-            mapper.Setup(m => m.Map<List<ProductCategoryVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<ProductCategory>)o).Select(c => mapper.Object.Map<ProductCategoryVo>(c)).ToList());
-            mapper.Setup(m => m.Map<OrderVo>(It.IsAny<object>())).Returns((object o) =>
-            {
-                var order = (Order)o;
-                return new OrderVo { VoId = order.Id, VoOrderNo = order.OrderNo, VoUserId = order.UserId };
-            });
-            mapper.Setup(m => m.Map<List<OrderVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<Order>)o).Select(order => mapper.Object.Map<OrderVo>(order)).ToList());
-            mapper.Setup(m => m.Map<List<OrderListItemVo>>(It.IsAny<object>()))
-                .Returns((object o) => ((IEnumerable<Order>)o).Select(order => new OrderListItemVo { VoId = order.Id, VoOrderNo = order.OrderNo }).ToList());
-            Product = new ProductService(mapper.Object, Products.Object, Categories.Object, Orders.Object, Mock.Of<IAttachmentUrlResolver>());
-            Order = new OrderService(mapper.Object, Orders.Object, Products.Object, users.Object, Mock.Of<IBaseRepository<CoinTransaction>>(),
+
+            Product = new ProductService(Products.Object, Categories.Object, Orders.Object, Mock.Of<IAttachmentUrlResolver>());
+            Order = new OrderService(Orders.Object, Products.Object, users.Object, Mock.Of<IBaseRepository<CoinTransaction>>(),
                 Product, Mock.Of<IUserBenefitService>(), Mock.Of<ICoinService>(), Mock.Of<IPaymentPasswordService>(), Mock.Of<IAttachmentUrlResolver>());
             var current = new Mock<ICurrentUserAccessor>();
             current.SetupGet(c => c.Current).Returns(new CurrentUser { UserId = 1, UserName = Secret });

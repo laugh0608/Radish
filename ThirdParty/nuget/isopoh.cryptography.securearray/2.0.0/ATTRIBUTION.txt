@@ -1,0 +1,18 @@
+Isopoh.Cryptography.SecureArray 2.0.0
+Authors: Michael Heyman
+Copyright: Michael Heyman 2022
+Package license metadata: file:LICENSE
+Project: https://github.com/mheyman/Isopoh.Cryptography.Argon2
+Package source commit: (not supplied; candidate evidence does not establish this)
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- LICENSE (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/isopoh.cryptography.securearray/2.0.0/isopoh.cryptography.securearray.2.0.0.nupkg [LICENSE]
+  Original SHA256: 58cd8d3c8827471b4d28872f4f1362cc1b6c41d740c522ad9fe5018dcaa25430
+  Distributed SHA256: cb166fb7b076985f2c62fb0b9f875ec0ab5808fbb33eebecae559866cf89ac9d
+
+Remaining evidence:
+- No additional component-specific gap recorded in this focused material review. This is not full release clearance.

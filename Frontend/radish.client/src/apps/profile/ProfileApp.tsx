@@ -270,7 +270,7 @@ export const ProfileApp = () => {
 
   const handlePostClick = (postId: LongId, postPublicId?: string | null) => {
     openApp('forum', buildForumAppParams({ postId, postPublicId: postPublicId ?? undefined }));
-    log.debug('ProfileApp', `打开帖子: ${postPublicId || postId}`);
+    log.debug('ProfileApp', '打开帖子');
   };
 
   const handleCommentClick = (
@@ -283,7 +283,7 @@ export const ProfileApp = () => {
       postPublicId: postPublicId ?? undefined,
       commentId,
     }));
-    log.debug('ProfileApp', `打开帖子 ${postPublicId || postId} 的评论 ${commentId}`);
+    log.debug('ProfileApp', '打开帖子评论');
   };
 
   const handleBrowseHistoryClick = (item: UserBrowseHistoryItem) => {
@@ -428,7 +428,7 @@ export const ProfileApp = () => {
       setDisplayTimeFormat(nextTimeState.displayTimeFormat);
       setTimeState('ready');
       setTimeError(undefined);
-      log.info('ProfileApp', `用户时区已切换为 ${nextTimeState.displayTimeZone}`);
+      log.info('ProfileApp', '用户时区已切换');
     } catch (error) {
       log.error('ProfileApp', '保存用户时区偏好失败：', error);
       throw error;

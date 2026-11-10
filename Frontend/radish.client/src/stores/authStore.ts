@@ -57,7 +57,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   },
 
   logout: async () => {
-    log.info('AuthStore', '执行登出');
+    log.debug('AuthStore', '执行登出');
 
     // 1. 清除 Token
     tokenService.clearTokens();

@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.RegularExpressions;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
@@ -32,7 +32,6 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
     private readonly IBaseRepository<User>? _userRepository;
 
     public PostQuickReplyService(
-        IMapper mapper,
         IBaseRepository<PostQuickReply> baseRepository,
         IBaseRepository<Post> postRepository,
         ICaching caching,
@@ -43,7 +42,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
         ILogger<PostQuickReplyService>? logger = null,
         IBaseRepository<User>? userRepository = null,
         IReliableOutboxService? reliableOutboxService = null)
-        : base(mapper, baseRepository)
+        : base(ForumMapper.ToPostQuickReplyVo, baseRepository)
     {
         _postQuickReplyRepository = baseRepository;
         _postRepository = postRepository;
@@ -77,7 +76,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             reply => reply.CreateTime,
             SqlSugar.OrderByType.Desc);
 
-        var replyVos = Mapper.Map<List<PostQuickReplyVo>>(items);
+        var replyVos = ForumMapper.ToPostQuickReplyVoList(items);
         await FillAuthorProfilesAsync(replyVos);
 
         return new PostQuickReplyWallVo
@@ -213,7 +212,7 @@ public class PostQuickReplyService : BaseService<PostQuickReply, PostQuickReplyV
             "1",
             TimeSpan.FromSeconds(rateLimitSettings.DuplicateWindowSeconds));
 
-        var replyVo = Mapper.Map<PostQuickReplyVo>(entity);
+        var replyVo = ForumMapper.ToPostQuickReplyVo(entity);
         replyVo.VoId = quickReplyId;
         await FillAuthorProfilesAsync([replyVo]);
         await TrySendPostQuickReplyNotificationAsync(post, entity, replyVo.VoAuthorAvatarUrl);

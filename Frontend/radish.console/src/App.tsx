@@ -33,7 +33,7 @@ function App() {
       return;
     }
 
-    log.info('App', '已启用 Token 自动刷新调试定时器');
+    log.debug('App', '已启用 Token 自动刷新调试定时器');
     tokenService.startAutoRefresh();
 
     const handleTokenUpdated = () => {

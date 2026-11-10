@@ -35,7 +35,7 @@ Radish 表情包系统涵盖三层能力：
 
 ### 已完成（后端）
 
-- `StickerGroup` / `Sticker` 实体、DTO、Vo 与 AutoMapper 映射已落地
+- `StickerGroup` / `Sticker` 实体、DTO、Vo 与 Mapperly 映射已落地
 - `StickerController` 已完成前台与管理端基础接口：
   - `GetGroups` / `GetGroupDetail` / `RecordUse`
   - 分组 CRUD、单个表情 CRUD
@@ -273,7 +273,7 @@ public class ReactionSummaryVo
 }
 ```
 
-**AutoMapper 策略**：
+**Mapperly 策略**：
 
 | 映射 | 策略 | 原因 |
 |------|------|------|
@@ -765,7 +765,7 @@ Phase 3 引入 `VoIsOwned` 后，避免将“用户态”塞入当前公共缓�
 | Service 实现（Phase 2） | `Radish.Service/ReactionService.cs` | 事务 + 并发幂等 |
 | Controller | `Radish.Api/Controllers/StickerController.cs` | Public + Admin 接口 |
 | Controller（Phase 2） | `Radish.Api/Controllers/ReactionController.cs` | 汇总与 Toggle |
-| AutoMapper | `Radish.Extension/AutoMapperExtension/CustomProfiles/ForumProfile.cs` | 增加 Sticker 相关映射 |
+| Mapperly | `Radish.Service/Mapping/ForumMapper.cs` | 增加 Sticker 相关映射 |
 | 示例请求 | `Radish.Api.Tests/HttpTest/Radish.Api.Sticker.http` | 已新增表情包接口联调样例 |
 
 ### 前端（`@radish/ui` + `radish.client` + `radish.console`）
@@ -837,7 +837,7 @@ Phase 3 引入 `VoIsOwned` 后，避免将“用户态”塞入当前公共缓�
 | 文件 | 参考用途 |
 |------|----------|
 | `Radish.Model/Models/Attachment.cs` | 实体字段规范、IDeleteFilter 实现模式 |
-| `Radish.Extension/AutoMapperExtension/CustomProfiles/ForumProfile.cs` | AutoMapper Profile 编写方式 |
+| `Radish.Service/Mapping/ForumMapper.cs` | Mapperly 映射编写方式 |
 | `Frontend/radish.ui/src/components/MarkdownEditor/MarkdownEditor.tsx` | 替换内嵌 emoji 选择器 |
 | `Frontend/radish.ui/src/components/MarkdownRenderer/MarkdownRenderer.tsx` | 扩展 `sticker://` 协议渲染逻辑 |
 | `Frontend/radish.client/src/apps/forum/components/CreateCommentForm.tsx` | 集成 StickerPicker，复用 `insertTextAtCursor` |

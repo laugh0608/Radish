@@ -6,7 +6,7 @@
 
 ### 配置文件结构
 
-在 `appsettings.json` 中配置数据库连接：
+在共享 `appsettings.Shared.json` 中配置数据库连接，使用本地不提交的 `appsettings.Local.json` 或环境变量覆盖：
 
 ```json
 {
@@ -38,7 +38,7 @@
 | `Enabled` | 是否启用 | true/false |
 | `ConnectionString` | 连接字符串 | "Radish.db" |
 
-**数据库类型对照表**：
+**数据库历史类型对照表**（正式支持仅 SQLite / PostgreSQL；其余数值保留用于识别旧配置）：
 
 ```csharp
 MySql = 0
@@ -49,6 +49,22 @@ PostgreSql = 4
 DaMeng = 5      // 达梦
 Kdbndp = 6      // 金仓
 ```
+
+`BaseDbConfig` 会先检查所有启用连接的 provider，再处理 SQLite 路径；非正式类型在驱动加载前明确失败。禁用的历史条目不加载，不自动删除或改写。分库租户从数据库字段生成连接配置时也执行相同支持校验；OpenIddict / Hangfire 的独立配置解析同样只接受两种 provider。失败信息不含连接串或密码。
+
+ORM 使用 `SqlSugarCoreNoDrive 5.1.4.207`，由 Common 显式引用 `Npgsql 10.0.0`、`Microsoft.Data.Sqlite.Core 10.0.0` 并固定 `SystemCommon 8.5.0`。SQLite 的 `.Core` 包保留 `Microsoft.Data.Sqlite.dll` 实现，native 选择见下一节。SqlClient / SNI 仍随传递链存在，不构成 SQL Server 产品支持。详见[正式收缩方案](../features/nodrive-adoption-plan.md)和后续[SQLite 统一方案](../features/sqlite-native-unification-plan.md)。
+
+`Slaves` 是历史配置模型，目前没有接入 `SqlSugarSetup` 的主从路由；本次 provider 收缩不新增读写分离或自动切换行为。
+
+### SQLite 原生资产核对
+
+托管驱动版本与实际加载的 SQLite 原生版本需要分别确认。Common 统一引用 `SQLitePCLRaw.config.e_sqlite3 [3.0.3]` 与唯一 native `SQLitePCLRaw.lib.e_sqlite3 [3.53.3]`；托管 core / provider 解析为 3.0.3。Auth、Auth.Persistence 与 Auth.Migrations.Sqlite 使用 EF `.Sqlite.Core [10.0.0]`。不在全局 props 逐项目注入 native，不再引入 `bundle_e_sqlite3 / SourceGear.sqlite3`。
+
+Hangfire 仍传递引入 `bundle_green 2.0.4 / provider.dynamic_cdecl 2.0.4`；其旧 native 包 ID 要求由同一个 `[3.53.3]` 满足。green 的旧 batteries 重名候选仍存在，但最终复制 / 加载必须匹配 config 3.0.3。不要将“单一 native 来源”理解为所有历史托管包均已移除。
+
+`Scripts/build/sqlite-native.targets` 在 SDK 冲突消解前校验原始 assets，并在四宿主 / Tests build、四宿主 publish 后校验实际文件及 deps；`Scripts/sqlite-native-contract.json` 固定各平台来源文件 SHA256。排查必须对照复制文件与实际加载模块路径、`sqlite3_libversion()`，不能只看 deps。Node 24 用于该检查；四宿主 Dockerfile 仅在 build 阶段提供 Node，不加入最终运行镜像。2026-10-31 本机通用 / osx-arm64 RID 加载均为 3.53.3，见[实施记录](../records/sqlite-native-unification-2026-10-31.md)；后续[Linux ARM64 原生 / AMD64 仿真及八 final 镜像](../records/sqlite-linux-platform-validation-2026-10-31.md)同样通过。原生 AMD64、Windows x64 / Intel macOS 等未执行范围继续独立验收，不以仿真替代。
+
+旧双链曾导致本机 Tests 3.50.3、API publish 3.50.4，历史证据见[来源与产物记录](../records/hangfire-source-inputs-2026-10-26.md#4-新发现sqlite-测试与发布基线不同)。升级后首次构建若报告旧 native 残留，执行标准 `dotnet clean` 后重建；不得手改 NuGet 缓存、选择性覆盖 DLL 或关闭门禁。
 
 ## ConfigId 大小写规则
 
@@ -224,7 +240,7 @@ await _db.Insertable(new InformationLog { /*...*/ }).ExecuteCommandAsync();
 
 默认本地开发可以使用 SQLite，但 SQLite 单文件在同一进程内遇到前台请求、后台任务和测试并发读写时，容易出现连接等待、锁冲突或 reader 生命周期异常。当前 `BaseRepository<TEntity>` 对 SQLite 连接提供本地串行化保护：
 
-- 只在当前连接 `DbType = Sqlite` 时启用；PostgreSQL、MySQL、SQL Server 等外部数据库继续使用原有异步执行路径。
+- 只在当前连接 `DbType = Sqlite` 时启用；正式支持的另一 provider PostgreSQL 继续使用原有异步执行路径。
 - 串行化粒度为 `ConfigId + ConnectionString`，不同 SQLite 文件之间互不阻塞，同一个 SQLite 文件的仓储操作按顺序执行。
 - 覆盖 `BaseRepository` 通用入口，包括插入、批量插入、更新、删除 / 软删除、恢复、单条查询、列表查询、分页、数量、存在性、联查、分表查询、去重、聚合和排序查询。
 - 子类仓储如果绕过通用方法直接组合 SQLSugar 查询，应复用 `ExecuteDbOperationAsync` 包裹自定义数据库操作，避免重新暴露 SQLite 并发问题。

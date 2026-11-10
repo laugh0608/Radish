@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.AspNetCore.Http;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
@@ -30,12 +30,10 @@ public sealed class RoleGovernanceService : IRoleGovernanceService
         (int)AuthorityScopeKindEnum.All
     ];
 
-    private readonly IMapper _mapper;
     private readonly IBaseRepository<Role> _roleRepository;
 
-    public RoleGovernanceService(IMapper mapper, IBaseRepository<Role> roleRepository)
+    public RoleGovernanceService(IBaseRepository<Role> roleRepository)
     {
-        _mapper = mapper;
         _roleRepository = roleRepository;
     }
 
@@ -311,7 +309,7 @@ public sealed class RoleGovernanceService : IRoleGovernanceService
 
     private RoleVo MapRole(Role role)
     {
-        var result = _mapper.Map<RoleVo>(role);
+        var result = RoleMapper.ToRoleVo(role);
         result.VoIsBuiltIn = IsBuiltInRole(role.Id, role.RoleName);
         return result;
     }

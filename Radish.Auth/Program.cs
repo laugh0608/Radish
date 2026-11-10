@@ -14,7 +14,7 @@ using Radish.Auth.OpenIddict;
 using Radish.Auth.HealthChecks;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
-using Radish.Extension.AutoMapperExtension;
+using Radish.Service.Mapping;
 using Radish.Extension.RedisExtension;
 using Radish.Extension.Log;
 using Radish.Extension.SqlSugarExtension;
@@ -116,8 +116,8 @@ return await RuntimeProcess.RunAsync("auth", async () =>
     builder.Services.AddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<BusinessCalendar>();
 
-    // AutoMapper
-    builder.Services.AddAutoMapperSetup(builder.Configuration);
+    // Service 映射
+    builder.Services.AddServiceMappings();
 
     // SqlSugar（业务数据仍使用 SqlSugar）
     builder.Services.AddSqlSugarSetup();

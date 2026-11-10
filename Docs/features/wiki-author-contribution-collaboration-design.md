@@ -318,7 +318,7 @@ F4-G-B 使用显式 ledger migration `20260720_007_wiki_author_collaboration`，
 
 当前实现落点：
 
-- 后端：`Radish.Model` Wiki 实体 / DTO / Vo、`Radish.IRepository`、`Radish.Repository`、`Radish.IService`、`Radish.Service`、`WikiController`、AutoMapper、通知类型与 DbMigrate。
+- 后端：`Radish.Model` Wiki 实体 / DTO / Vo、`Radish.IRepository`、`Radish.Repository`、`Radish.IService`、`Radish.Service`、`WikiController`、Mapperly、通知类型与 DbMigrate。
 - Author：`Frontend/radish.client/src/docs`、`apps/wiki`、`@radish/http/wiki-authoring-contract`、中英文资源和相关测试。
 - Console：`wikiGovernanceApi`、`DocumentGovernancePage`、权限键和中英文资源。
 - 测试：Wiki Controller / Service / Repository / migration、通知幂等、前端路由 / 展示 / API 契约。

@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common.Exceptions;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -39,7 +39,6 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
     private readonly IContentModerationCaseRepository? _moderationCaseRepository;
 
     public ContentModerationService(
-        IMapper mapper,
         IBaseRepository<ContentReport> baseRepository,
         IBaseRepository<UserModerationAction> moderationActionRepository,
         IBaseRepository<Post> postRepository,
@@ -53,7 +52,7 @@ public partial class ContentModerationService : BaseService<ContentReport, Conte
         IContentModerationCaseRepository? moderationCaseRepository = null,
         IBaseRepository<PostAnswer>? postAnswerRepository = null,
         IBaseRepository<ProductReview>? productReviewRepository = null)
-        : base(mapper, baseRepository)
+        : base(ContentModerationMapper.ToContentReportVo, baseRepository)
     {
         _contentReportRepository = baseRepository;
         _moderationActionRepository = moderationActionRepository;

@@ -175,7 +175,7 @@ export function useChatMessageSearch({ activeChannelId, accountKey }: UseChatMes
       setNextCursor(page.voNextCursor ?? null);
       setHasMore(page.voHasMore);
       setStatus((append ? items.length + page.voItems.length : page.voItems.length) > 0 ? 'success' : 'empty');
-      log.info('ChatMessageSearch', '消息搜索请求完成', {
+      log.debug('ChatMessageSearch', '消息搜索请求完成', {
         scope: snapshot.scope,
         pageSize: SEARCH_PAGE_SIZE,
         resultCount: page.voItems.length,

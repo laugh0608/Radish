@@ -1,4 +1,3 @@
-using Serilog;
 using SqlSugar;
 
 namespace Radish.Common.DbTool;
@@ -44,6 +43,16 @@ public class BaseDbConfig
             throw new InvalidOperationException("Databases 配置存在，但没有任何 Enabled=true 的数据库连接。");
         }
 
+        // 在任何连接串 / 文件路径处理前校验整组启用连接，避免部分初始化。
+        for (var index = 0; index < configuredDatabases.Count; index++)
+        {
+            var database = configuredDatabases[index];
+            if (database.Enabled)
+            {
+                DatabaseProviderPolicy.EnsureSupported(database.DbType, $"Databases:{index}");
+            }
+        }
+
         var mainDbId = AppSettingsTool.RadishApp("MainDb");
         if (string.IsNullOrWhiteSpace(mainDbId))
         {
@@ -80,28 +89,8 @@ public class BaseDbConfig
         return currentDir?.FullName ?? Environment.CurrentDirectory;
     }
 
-    private static string DifDbConnOfSecurity(params string[] conn)
-    {
-        foreach (var item in conn)
-        {
-            try
-            {
-                if (File.Exists(item))
-                {
-                    return File.ReadAllText(item).Trim();
-                }
-            }
-            catch (Exception exception)
-            {
-                Log.Error(exception.Message);
-            }
-        }
-
-        return conn[conn.Length - 1];
-    }
-
     /// <summary>定制 Db 连接字符串</summary>
-    /// <remarks>目的是保证安全：优先从本地 txt 文件获取，若没有文件则从 appsettings.json 中获取</remarks>
+    /// <remarks>SQLite 文件归入 DataBases；PostgreSQL 保留配置中的连接串。</remarks>
     /// <param name="mutiDbOperate"></param>
     /// <returns></returns>
     private static MutiDbOperate SpecialDbString(MutiDbOperate mutiDbOperate)
@@ -115,27 +104,12 @@ public class BaseDbConfig
             mutiDbOperate.ConnectionString =
                 $"DataSource=" + Path.Combine(dbDirectory, mutiDbOperate.ConnectionString);
         }
-        else if (mutiDbOperate.DbType == DataBaseType.SqlServer)
-        {
-            mutiDbOperate.ConnectionString = DifDbConnOfSecurity(@"./dbCountPsw1_SqlserverConn.txt",
-                mutiDbOperate.ConnectionString);
-        }
-        else if (mutiDbOperate.DbType == DataBaseType.MySql)
-        {
-            mutiDbOperate.ConnectionString =
-                DifDbConnOfSecurity(@"./dbCountPsw1_MySqlConn.txt", mutiDbOperate.ConnectionString);
-        }
-        else if (mutiDbOperate.DbType == DataBaseType.Oracle)
-        {
-            mutiDbOperate.ConnectionString =
-                DifDbConnOfSecurity(@"./dbCountPsw1_OracleConn.txt", mutiDbOperate.ConnectionString);
-        }
 
         return mutiDbOperate;
     }
 }
 
-/// <summary>数据库类型枚举</summary>
+/// <summary>数据库类型历史标识；正式支持范围由 DatabaseProviderPolicy 校验，不重排既有数值。</summary>
 public enum DataBaseType
 {
     MySql = 0,

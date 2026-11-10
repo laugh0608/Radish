@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -268,7 +267,6 @@ public class UserFollowServiceTest
 
     private static UserFollowServiceHarness CreateHarness(Mock<IReliableOutboxService>? outboxService = null)
     {
-        var mapper = new Mock<IMapper>();
         var userFollowRepository = new Mock<IUserFollowRepository>();
         var userRepository = new Mock<IBaseRepository<User>>();
         var attachmentRepository = new Mock<IBaseRepository<Attachment>>();
@@ -286,7 +284,6 @@ public class UserFollowServiceTest
                 new UserInteractionPolicySnapshot(otherUserId, false, false));
 
         var service = new UserFollowService(
-            mapper.Object,
             userFollowRepository.Object,
             userRepository.Object,
             postService.Object,

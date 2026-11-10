@@ -9,6 +9,7 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [Agent 协作与执行规则](./guide/agent-collaboration.md)
 - [页面真实联调与浏览器 Smoke 规则](./guide/browser-smoke.md)
 - [开发路线图总览](./development-plan.md)
+- [能力专题地图](./planning/topics.md)：七条能力主线、现有子专题与任务 / 验收来源。
 - [第三开发阶段：真实使用增长与长期契约治理](./planning/phase-three-real-usage-contract-governance.md)
 - [P3-11 发布候选整备与轻量复访补齐](./planning/p3-11-release-candidate-light-revisit.md)
 - [P3-12 Web 完全化与 WebOS 收束](./planning/p3-12-web-completion-webos-retirement.md)
@@ -17,6 +18,8 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [首版 dev 边界](./planning/dev-first-scope.md)
 - [首版 dev 功能矩阵状态表](./planning/dev-first-status-matrix.md)
 - [当前进行中](./planning/current.md)
+- [2026-11-04 日终代码与文档回顾](./records/day-end-doc-review-2026-11-04.md)：今日八个提交、SQLite 本次平台验收、Hangfire 日志输出修正及功能优先顺位。
+- [2026-10-31 日终代码与文档回顾](./records/day-end-doc-review-2026-10-31.md)：当日 SQLite 与 Hangfire 结果及未关闭项，后续进展见最新日终记录。
 - [工程改进候选清单](./planning/engineering-improvement-candidates.md)
 - [Console 权限治理 V1](./guide/console-permission-governance.md)
 - [Console 权限覆盖矩阵](./guide/console-permission-coverage-matrix.md)
@@ -42,8 +45,20 @@ Radish 项目的固定文档统一维护在 `Docs/` 目录。
 - [服务网关](./guide/gateway.md)
 - [部署指南](./deployment/guide.md)
 - [本地运行与排障手册](./guide/operations-runbook.md)
-- [全项目统一日志与跨容器汇聚专题（L1 实施中）](./features/unified-logging-governance-design.md)
+- [全项目统一日志与跨容器汇聚专题](./features/unified-logging-governance-design.md) · [Hangfire 最终输出修正](./records/unified-logging-l2-hangfire-output-2026-11-04.md)
 - [第三方依赖许可治理与替代方案](./features/dependency-license-governance.md)
+- [SQLite 原生依赖统一方案](./features/sqlite-native-unification-plan.md) · [实施与本机验证](./records/sqlite-native-unification-2026-10-31.md)：单一 native 来源、限定门禁、分发材料与其他平台边界。
+- [SQLite Linux 双架构方案](./features/sqlite-linux-platform-validation-plan.md) · [执行与清理结果](./records/sqlite-linux-platform-validation-2026-10-31.md)：ARM64 原生 / AMD64 仿真及八 final 镜像通过；原生 x64 托管结果单独见下条。
+- [PostgreSQL 接库回归方案](./features/postgres-regression-execution-plan.md) · [PG 结果](./records/postgres-regression-2026-10-31.md) · [SQLite 托管方案](./features/sqlite-hosted-native-validation-plan.md) · [最新七 job 结果](./records/sqlite-hosted-native-module-run-2026-11-04.md)：PG17 / PG16 与原包 worker 已通过；SQLite 夹具及模块识别修正后本次七 job 全部通过，旧失败保持原记录。
+- [Hangfire 重建与本地交付材料方案](./features/hangfire-rebuild-delivery-plan.md)：[本机重建](./records/hangfire-rebuild-2026-10-31.md)与[来源 / 交付准备复核](./records/hangfire-source-delivery-review-2026-11-04.md)已留存；原包精确来源与正式入口余项转入后续维护 / 发行队列。
+- [Hangfire Windows Razor 托管验证方案](./features/hangfire-windows-razor-validation-plan.md)：本地工具及三次 inventory 已留存，身份冲突未关闭；当前后置，不主动轮询、重试或执行 verify。
+- [图片替代后的依赖评估与映射迁移方案](./features/post-image-dependency-assessment.md)
+- [ORM 与 Redis 依赖评估](./features/orm-redis-dependency-assessment.md)：精确包、分发边界、缓存数据分类与候选实验停止线。
+- [NoDrive 与 Valkey 隔离验证方案](./features/nodrive-valkey-isolation-validation-plan.md)：本次隔离实验的固定输入、对照矩阵、启动与清理边界。
+- [NoDrive 与 Valkey 隔离验证记录](./records/nodrive-valkey-validation-2026-10-21.md)：双数据库与产物结果、缓存业务边界失败、恢复验证和清理证据。
+- [上传配额边界修复方案](./features/upload-quota-boundary-fix-plan.md)：过期结算、Int64 精确容量与内存 / Redis / Valkey 回归范围，已实施验证。
+- [上传配额边界修复记录](./records/upload-quota-boundary-fix-2026-10-21.md)：原失败项转绿、两种构建各 262 项回归与隔离资源清理。
+- [Mapperly 映射迁移记录](./records/mapperly-migration-2026-10-21.md)：映射对照、依赖清理和本地验证边界。
 - [Rust 图片处理替代评估](./features/rust-image-processing-replacement-assessment.md)
 - [Rust 图片处理完整替代实施方案](./features/rust-image-processing-implementation-plan.md)
 - [文档篇幅治理](./guide/document-governance.md)

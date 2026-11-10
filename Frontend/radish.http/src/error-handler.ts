@@ -1,4 +1,4 @@
-import { sanitizeLogValue } from './logSanitizer';
+import { writeHttpLog } from './browserLogger';
 
 /**
  * 错误处理器类型
@@ -35,7 +35,7 @@ export function configureErrorHandling(config: ErrorHandlingConfig) {
  * 通用错误处理
  */
 export function handleError(error: Error): void {
-  console.error('API Error:', sanitizeLogValue(error));
+  writeHttpLog('http.operation_failed', error);
   errorConfig.onError?.(error);
 }
 
@@ -43,7 +43,7 @@ export function handleError(error: Error): void {
  * 处理 API 错误
  */
 export function handleApiError(code: string, message: string): void {
-  console.error('API Error:', { code, message });
+  writeHttpLog('http.api_failed', { code });
   errorConfig.onApiError?.(code, message);
 }
 
@@ -51,7 +51,7 @@ export function handleApiError(code: string, message: string): void {
  * 处理网络错误
  */
 export function handleNetworkError(error: Error): void {
-  console.error('Network Error:', sanitizeLogValue(error));
+  writeHttpLog('http.network_failed', error);
   errorConfig.onNetworkError?.(error);
 }
 
@@ -59,7 +59,7 @@ export function handleNetworkError(error: Error): void {
  * 处理 HTTP 错误
  */
 export function handleHttpError(status: number, message: string): void {
-  console.error('HTTP Error:', { status, message });
+  writeHttpLog('http.response_failed', { status });
   errorConfig.onHttpError?.(status, message);
 }
 

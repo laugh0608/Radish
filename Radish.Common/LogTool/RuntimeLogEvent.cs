@@ -14,6 +14,7 @@ public sealed record RuntimeLogEvent
     public required string DeploymentId { get; init; }
     public required string Service { get; init; }
     public required string InstanceId { get; init; }
+    public string? ContainerId { get; init; }
     public required string Release { get; init; }
     public required string Mode { get; init; }
     public required string SourceCategory { get; init; }

@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.DependencyInjection;
@@ -251,7 +250,6 @@ public sealed class LikeRelationConsistencyTest
         IExperienceService experienceService)
     {
         return new PostService(
-            new Mock<IMapper>().Object,
             new Mock<IBaseRepository<Post>>().Object,
             new Mock<IBaseRepository<UserPostLike>>().Object,
             new Mock<IBaseRepository<PostTag>>().Object,
@@ -283,7 +281,6 @@ public sealed class LikeRelationConsistencyTest
         IExperienceService experienceService)
     {
         return new CommentService(
-            new Mock<IMapper>().Object,
             new Mock<IBaseRepository<Comment>>().Object,
             new Mock<IBaseRepository<UserCommentLike>>().Object,
             new Mock<IBaseRepository<CommentHighlight>>().Object,

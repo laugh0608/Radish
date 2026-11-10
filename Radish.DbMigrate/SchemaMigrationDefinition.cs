@@ -57,6 +57,7 @@ internal static class SchemaMigrationRegistry
         ConsoleRoleGovernanceSchemaMigration.Instance,
         ProductReviewSchemaMigration.Instance,
         WikiDocumentGovernanceSchemaMigration.Instance,
-        ExperienceAuthoritativeGovernanceSchemaMigration.Instance
+        ExperienceAuthoritativeGovernanceSchemaMigration.Instance,
+        RuntimeLogIngestSchemaMigration.Instance
     ];
 }

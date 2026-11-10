@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.OptionTool;
@@ -157,24 +156,6 @@ public class WikiDocumentAccessServiceTests
         IReadOnlyCollection<WikiDocument> documents,
         IReadOnlyCollection<string>? permissionKeys = null)
     {
-        var mapper = new Mock<IMapper>();
-        mapper
-            .Setup(instance => instance.Map<WikiDocumentDetailVo>(It.IsAny<WikiDocument>()))
-            .Returns<WikiDocument>(source => new WikiDocumentDetailVo
-            {
-                VoId = source.Id,
-                VoTitle = source.Title,
-                VoSlug = source.Slug,
-                VoMarkdownContent = source.MarkdownContent,
-                VoStatus = source.Status,
-                VoVisibility = source.Visibility,
-                VoSourceType = source.SourceType,
-                VoCreateTime = source.CreateTime,
-            });
-        mapper
-            .Setup(instance => instance.Map<List<WikiDocumentVo>>(It.IsAny<object>()))
-            .Returns<object>(source => ((IEnumerable<WikiDocument>)source).Select(MapDocument).ToList());
-
         var wikiDocumentRepository = new Mock<IWikiDocumentRepository>();
         wikiDocumentRepository
             .Setup(repository => repository.QueryByIdAsync(It.IsAny<long>()))
@@ -225,7 +206,6 @@ public class WikiDocumentAccessServiceTests
             .ReturnsAsync(permissionKeys?.ToList() ?? []);
 
         return new WikiDocumentService(
-            mapper.Object,
             wikiDocumentRepository.Object,
             revisionRepository.Object,
             Mock.Of<IBaseRepository<Attachment>>(),

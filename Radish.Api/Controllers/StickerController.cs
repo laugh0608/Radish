@@ -735,7 +735,7 @@ public class StickerController : ControllerBase
             return;
         }
 
-        Log.ForContext("EventCode", "sticker.request_failed")
+        Log.ForContext<StickerController>().ForContext("EventCode", "sticker.request_failed")
             .Error("Sticker request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
     }
 

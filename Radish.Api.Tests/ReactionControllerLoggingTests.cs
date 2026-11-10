@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -26,7 +25,6 @@ using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.LogTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.Extension.Log;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -402,7 +400,6 @@ public sealed class ReactionControllerLoggingTests
 
     private sealed class Fixture : IDisposable
     {
-        private static readonly IMapper Mapper = new MapperConfiguration(c => c.AddProfile<ForumProfile>(), NullLoggerFactory.Instance).CreateMapper();
         private readonly string _operation;
         private readonly ILoggerFactory _logs;
         private int _firstQueries;
@@ -442,7 +439,7 @@ public sealed class ReactionControllerLoggingTests
                 Step("thumbnail");
                 return "https://private.invalid/" + Secret;
             });
-            var service = new ReactionService(Mapper, Repository<Reaction>("reactions"), Repository<Post>("posts"),
+            var service = new ReactionService(Repository<Reaction>("reactions"), Repository<Post>("posts"),
                 Repository<Comment>("comments"), Repository<StickerGroup>("groups"), Repository<Sticker>("stickers"),
                 _logs.CreateLogger<ReactionService>(), urls.Object);
             var proxy = new ProxyGenerator().CreateInterfaceProxyWithTarget<IReactionService>(service, new TranAop(Unit));
@@ -614,7 +611,17 @@ public sealed class ReactionControllerLoggingTests
                     Assert.Equal(e.Code, Assert.IsType<ScalarValue>(logged.Properties["EventCode"]).Value);
                     Assert.Equal(e.Kind, Assert.IsType<ScalarValue>(logged.Properties["failureKind"]).Value);
                     if (e.Status.HasValue) Assert.Equal(e.Status.Value, Assert.IsType<ScalarValue>(logged.Properties["statusCode"]).Value);
-                    Assert.All(logged.Properties.Keys, k => Assert.Contains(k, new[] { "EventCode", "SourceCategory", "SourceContext", "failureKind", "statusCode" }));
+                    var isApiHandler = logged.Properties.TryGetValue("SourceContext", out var source) &&
+                        source is ScalarValue { Value: "Radish.Api.ErrorHandling.ApiExceptionHandler" };
+                    var allowed = new[] { "EventCode", "SourceCategory", "SourceContext", "failureKind", "statusCode" };
+                    Assert.All(logged.Properties.Keys, k => Assert.Contains(k, isApiHandler ? allowed.Append("EventId") : allowed));
+                    if (isApiHandler)
+                    {
+                        var identity = Assert.IsType<StructureValue>(logged.Properties["EventId"]);
+                        Assert.Equal(2, identity.Properties.Count);
+                        Assert.Equal(1, Assert.IsType<ScalarValue>(identity.Properties.Single(p => p.Name == "Id").Value).Value);
+                        Assert.Equal("ApiRequestFailed", Assert.IsType<ScalarValue>(identity.Properties.Single(p => p.Name == "Name").Value).Value);
+                    }
                 }
             }
         }

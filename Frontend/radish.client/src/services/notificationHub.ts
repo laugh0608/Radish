@@ -137,7 +137,7 @@ class NotificationHubService {
       if (this.retryCount < this.maxRetries) {
         this.retryCount++;
         const delay = Math.min(1000 * Math.pow(2, this.retryCount), 30000);
-        log.debug(`[NotificationHub] ${delay}ms 后重试 (${this.retryCount}/${this.maxRetries})`);
+        log.debug('NotificationHub 连接重试', { delayMs: delay, retryCount: this.retryCount, maxRetries: this.maxRetries });
         setTimeout(() => this.start(), delay);
       }
     } finally {

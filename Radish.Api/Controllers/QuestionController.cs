@@ -335,13 +335,13 @@ public class QuestionController : ControllerBase
         };
         if (exception is BusinessException { StatusCode: >= StatusCodes.Status500InternalServerError } failure)
         {
-            Log.ForContext("EventCode", "http.failed")
+            Log.ForContext<QuestionController>().ForContext("EventCode", "http.failed")
                 .ForContext("SourceCategory", "http")
                 .Error("Request failed with {statusCode}; kind={failureKind}", failure.StatusCode, RuntimeFailureSummary.Classify(failure));
         }
         else if (exception is ArgumentException and not ForumAnswerContentValidationException)
         {
-            Log.ForContext("EventCode", "question.request_failed")
+            Log.ForContext<QuestionController>().ForContext("EventCode", "question.request_failed")
                 .Error("Question request consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
         }
         return response;

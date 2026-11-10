@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Moq;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -32,7 +31,7 @@ public sealed class TagServiceTest
             VoSlug = tag.Slug,
             VoIsDeleted = true
         };
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
         var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
         var discoveryRepository = new Mock<ITagDiscoveryRepository>(MockBehavior.Strict);
 
@@ -47,12 +46,8 @@ public sealed class TagServiceTest
                 OrderByType.Asc,
                 true))
             .ReturnsAsync(([tag], 1));
-        mapper
-            .Setup(instance => instance.Map<List<TagVo>>(It.IsAny<object>()))
-            .Returns([tagVo]);
 
         var service = new TagService(
-            mapper.Object,
             tagRepository.Object,
             discoveryRepository.Object);
 
@@ -61,7 +56,6 @@ public sealed class TagServiceTest
         Assert.Single(page.Data);
         Assert.True(page.Data[0].VoIsDeleted);
         tagRepository.VerifyAll();
-        mapper.VerifyAll();
     }
 
     [Fact]
@@ -73,7 +67,7 @@ public sealed class TagServiceTest
             Slug = "restorable-tag",
             IsDeleted = true
         };
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
+
         var tagRepository = new Mock<IBaseRepository<Tag>>(MockBehavior.Strict);
         var discoveryRepository = new Mock<ITagDiscoveryRepository>(MockBehavior.Strict);
 
@@ -90,7 +84,6 @@ public sealed class TagServiceTest
             .ReturnsAsync(1);
 
         var service = new TagService(
-            mapper.Object,
             tagRepository.Object,
             discoveryRepository.Object);
 

@@ -4,6 +4,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using Radish.Common.CoreTool;
 using Radish.Common.OptionTool;
 using Radish.Model;
@@ -32,16 +34,19 @@ public static class RateLimitSetup
 
         if (!options.Enable)
         {
-            Log.Information("[RateLimit] 速率限制已禁用");
+            Log.ForContext(typeof(RateLimitSetup)).ForContext("EventCode", "rate_limit.configured")
+                .Information("Rate limiting registration returned; state={rateLimitState}.", "disabled");
             return;
         }
 
+        var diagnostics = options.EnableLogging && App.HostEnvironment?.IsDevelopment() == true &&
+            App.Configuration["RadishLogging:Mode"] == "Development" && App.Configuration.GetValue<bool>("RadishLogging:Diagnostics");
         services.AddRateLimiter(limiterOptions =>
         {
             // 配置拒绝响应
             limiterOptions.OnRejected = async (context, cancellationToken) =>
             {
-                await HandleRateLimitRejection(context, options, cancellationToken);
+                await HandleRateLimitRejection(context, options, diagnostics, cancellationToken);
             };
 
             // 全局限流策略（Fixed Window）
@@ -54,9 +59,6 @@ public static class RateLimitSetup
                     fixedOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     fixedOptions.QueueLimit = 0; // 不排队，直接拒绝
                 });
-
-                Log.Information("[RateLimit] 全局限流策略已启用: {PermitLimit} 请求/{WindowSeconds}秒",
-                    options.Global.PermitLimit, options.Global.WindowSeconds);
             }
 
             // 登录限流策略（Sliding Window）
@@ -70,9 +72,6 @@ public static class RateLimitSetup
                     slidingOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     slidingOptions.QueueLimit = 0;
                 });
-
-                Log.Information("[RateLimit] 登录限流策略已启用: {PermitLimit} 请求/{WindowSeconds}秒",
-                    options.Login.PermitLimit, options.Login.WindowSeconds);
             }
 
             // 注册限流策略（Fixed Window，比登录更严格）
@@ -85,9 +84,6 @@ public static class RateLimitSetup
                     fixedOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     fixedOptions.QueueLimit = 0;
                 });
-
-                Log.Information("[RateLimit] 注册限流策略已启用: {PermitLimit} 请求/{WindowSeconds}秒",
-                    Math.Max(1, options.Login.PermitLimit / 2), options.Login.WindowSeconds);
             }
 
             // 敏感操作限流策略（Token Bucket）
@@ -101,9 +97,6 @@ public static class RateLimitSetup
                     tokenOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     tokenOptions.QueueLimit = options.Sensitive.QueueLimit;
                 });
-
-                Log.Information("[RateLimit] 敏感操作限流策略已启用: {TokenLimit} 令牌，每 {ReplenishmentPeriod}秒补充 {TokensPerPeriod} 个",
-                    options.Sensitive.TokenLimit, options.Sensitive.ReplenishmentPeriodSeconds, options.Sensitive.TokensPerPeriod);
             }
 
             // 并发限流策略（Concurrency Limiter）
@@ -115,9 +108,6 @@ public static class RateLimitSetup
                     concurrencyOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
                     concurrencyOptions.QueueLimit = options.Concurrency.QueueLimit;
                 });
-
-                Log.Information("[RateLimit] 并发限流策略已启用: {PermitLimit} 并发请求，队列 {QueueLimit}",
-                    options.Concurrency.PermitLimit, options.Concurrency.QueueLimit);
             }
 
             // 配置分区键解析器（按 IP 地址分区）
@@ -128,9 +118,9 @@ public static class RateLimitSetup
                 // 检查白名单
                 if (options.Whitelist.Enable && IsInWhitelist(ipAddress, options.Whitelist))
                 {
-                    if (options.EnableLogging)
+                    if (diagnostics)
                     {
-                        Log.Debug("[RateLimit] IP {IpAddress} 在白名单中，跳过限流", ipAddress);
+                        LogDiagnostic("rate_limit.whitelist_observed");
                     }
                     return RateLimitPartition.GetNoLimiter(ipAddress);
                 }
@@ -138,9 +128,9 @@ public static class RateLimitSetup
                 // 检查黑名单
                 if (options.Blacklist.Enable && IsInBlacklist(ipAddress, options.Blacklist))
                 {
-                    if (options.EnableLogging)
+                    if (diagnostics)
                     {
-                        Log.Warning("[RateLimit] IP {IpAddress} 在黑名单中，拒绝请求", ipAddress);
+                        LogDiagnostic("rate_limit.blacklist_observed");
                     }
                     return RateLimitPartition.GetNoLimiter(ipAddress); // 黑名单在 OnRejected 中处理
                 }
@@ -161,7 +151,8 @@ public static class RateLimitSetup
             });
         });
 
-        Log.Information("[RateLimit] 速率限制服务已注册");
+        Log.ForContext(typeof(RateLimitSetup)).ForContext("EventCode", "rate_limit.configured")
+            .Information("Rate limiting registration returned; state={rateLimitState}.", "enabled");
     }
 
     /// <summary>使用速率限制中间件</summary>
@@ -175,24 +166,21 @@ public static class RateLimitSetup
         }
 
         app.UseRateLimiter();
-        Log.Information("[RateLimit] 速率限制中间件已启用");
     }
 
     /// <summary>处理限流拒绝</summary>
     private static async Task HandleRateLimitRejection(
         OnRejectedContext context,
         RateLimitOptions options,
+        bool diagnostics,
         CancellationToken cancellationToken)
     {
         var ipAddress = GetClientIpAddress(context.HttpContext);
-        var endpoint = context.HttpContext.Request.Path;
-        var method = context.HttpContext.Request.Method;
 
         // 记录限流日志
-        if (options.EnableLogging)
+        if (diagnostics)
         {
-            Log.Warning("[RateLimit] 请求被限流 - IP: {IpAddress}, 端点: {Method} {Endpoint}, Lease: {Lease}",
-                ipAddress, method, endpoint, context.Lease);
+            LogDiagnostic("rate_limit.rejected");
         }
 
         // 检查黑名单
@@ -233,6 +221,10 @@ public static class RateLimitSetup
             ResponseData = new { retryAfter = retryAfter.TotalSeconds }
         }, cancellationToken: cancellationToken);
     }
+
+    private static void LogDiagnostic(string code) =>
+        Log.ForContext(typeof(RateLimitSetup)).ForContext("EventCode", code).ForContext("Diagnostic", true)
+            .Information("Rate limiting diagnostic observation.");
 
     private static string ApplyTraceId(HttpContext httpContext)
     {

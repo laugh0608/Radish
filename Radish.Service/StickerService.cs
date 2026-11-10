@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.Extensions.Logging;
 using Radish.Common.AttributeTool;
 using Radish.Common.CacheTool;
@@ -34,7 +34,6 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
     private readonly IAttachmentUrlResolver _attachmentUrlResolver;
 
     public StickerService(
-        IMapper mapper,
         IBaseRepository<StickerGroup> baseRepository,
         IBaseRepository<Sticker> stickerRepository,
         IBaseRepository<Attachment> attachmentRepository,
@@ -43,7 +42,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         IImageProcessor imageProcessor,
         ILogger<StickerService> logger,
         IAttachmentUrlResolver attachmentUrlResolver)
-        : base(mapper, baseRepository)
+        : base(ForumMapper.ToStickerGroupVo, baseRepository)
     {
         _stickerGroupRepository = baseRepository;
         _stickerRepository = stickerRepository;
@@ -96,11 +95,11 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             .OrderBy(s => s.Sort)
             .ThenBy(s => s.Id)
             .GroupBy(s => s.GroupId)
-            .ToDictionary(g => g.Key, g => Mapper.Map<List<StickerVo>>(g.ToList()));
+            .ToDictionary(g => g.Key, g => ForumMapper.ToStickerVoList(g.ToList()));
 
         await FillStickerUrlsAsync(stickerLookup.Values.SelectMany(x => x).ToList());
 
-        var groupVos = Mapper.Map<List<StickerGroupVo>>(groups);
+        var groupVos = ForumMapper.ToStickerGroupVoList(groups);
         FillStickerGroupUrls(groupVos);
         foreach (var groupVo in groupVos)
         {
@@ -141,11 +140,11 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
             .OrderBy(s => s.Sort)
             .ThenBy(s => s.Id)
             .GroupBy(s => s.GroupId)
-            .ToDictionary(g => g.Key, g => Mapper.Map<List<StickerVo>>(g.ToList()));
+            .ToDictionary(g => g.Key, g => ForumMapper.ToStickerVoList(g.ToList()));
 
         await FillStickerUrlsAsync(stickerLookup.Values.SelectMany(x => x).ToList());
 
-        var groupVos = Mapper.Map<List<StickerGroupVo>>(groups);
+        var groupVos = ForumMapper.ToStickerGroupVoList(groups);
         FillStickerGroupUrls(groupVos);
         foreach (var groupVo in groupVos)
         {
@@ -181,10 +180,10 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         var stickers = await _stickerRepository.QueryAsync(
             s => s.GroupId == group.Id && s.IsEnabled && !s.IsDeleted);
-        var stickerVos = Mapper.Map<List<StickerVo>>(stickers.OrderBy(s => s.Sort).ThenBy(s => s.Id).ToList());
+        var stickerVos = ForumMapper.ToStickerVoList(stickers.OrderBy(s => s.Sort).ThenBy(s => s.Id).ToList());
         await FillStickerUrlsAsync(stickerVos);
 
-        var groupVo = Mapper.Map<StickerGroupVo>(group);
+        var groupVo = ForumMapper.ToStickerGroupVo(group);
         FillStickerGroupUrl(groupVo);
         groupVo.VoStickers = stickerVos;
         groupVo.VoStickerCount = stickerVos.Count;
@@ -593,7 +592,7 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
                  && !s.IsDeleted
                  && (includeDisabled || s.IsEnabled));
 
-        var stickerVos = Mapper.Map<List<StickerVo>>(stickers.OrderBy(s => s.Sort).ThenBy(s => s.Id).ToList());
+        var stickerVos = ForumMapper.ToStickerVoList(stickers.OrderBy(s => s.Sort).ThenBy(s => s.Id).ToList());
         await FillStickerUrlsAsync(stickerVos);
         return stickerVos;
     }

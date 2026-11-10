@@ -4,7 +4,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.Exceptions;
@@ -417,23 +416,11 @@ public class WikiDocumentManagementServiceTests
         Mock<IWikiAttachmentReferenceRepository> attachmentReferences,
         Mock<IBaseRepository<Attachment>>? attachmentRepository = null)
     {
-        var mapper = new Mock<IMapper>();
-        mapper
-            .Setup(candidate => candidate.Map<WikiDocumentDetailVo>(It.IsAny<WikiDocument>()))
-            .Returns((WikiDocument document) => new WikiDocumentDetailVo
-            {
-                VoId = document.Id,
-                VoTitle = document.Title,
-                VoMarkdownContent = document.MarkdownContent,
-                VoVersion = document.Version,
-                VoGovernanceVersion = document.GovernanceVersion
-            });
         var consoleAuthorizationService = new Mock<IConsoleAuthorizationService>();
         consoleAuthorizationService
             .Setup(service => service.GetPermissionKeysByRolesAsync(It.IsAny<IReadOnlyCollection<string>>()))
             .ReturnsAsync([]);
         return new WikiDocumentService(
-            mapper.Object,
             wikiDocumentRepository.Object,
             revisionRepository.Object,
             attachmentRepository?.Object ?? Mock.Of<IBaseRepository<Attachment>>(),

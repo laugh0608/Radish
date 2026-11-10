@@ -8,7 +8,7 @@ namespace Radish.Common.LogTool;
 /// .NET / Node 共用版本化策略。第一阶段只开放有类型约束的元数据；
 /// 任意消息、异常文本、对象、数组及未登记属性在序列化前丢弃。
 /// </summary>
-public sealed class RuntimeLogPolicy
+public sealed partial class RuntimeLogPolicy
 {
     private static readonly JsonElement Contract = LoadContract();
     public static int MaxEventBytes => Contract.GetProperty("maxEventBytes").GetInt32();

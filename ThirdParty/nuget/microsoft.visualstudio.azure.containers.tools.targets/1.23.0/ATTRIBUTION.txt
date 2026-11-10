@@ -1,0 +1,22 @@
+Microsoft.VisualStudio.Azure.Containers.Tools.Targets 1.23.0
+Authors: Microsoft
+Copyright: © Microsoft Corporation. All rights reserved.
+Package license metadata: file:EULA.md
+Project: https://aka.ms/vscontainertools
+Package source commit: 9b098373e85a4daf3f0cf716ab3a27b02470f7dc
+Usage: build-only
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- EULA.md (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/microsoft.visualstudio.azure.containers.tools.targets/1.23.0/microsoft.visualstudio.azure.containers.tools.targets.1.23.0.nupkg [EULA.md]
+  Original SHA256: afcc73c553cdbe610d1bb137eb234805c432dcc73c9035f275eb6b1bd48e2f03
+  Distributed SHA256: cbce68d33d4d77a4e0a0db8152c4fa9944205509f4e252e8a5e39364030b1469
+- ThirdPartyNotices.txt (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/microsoft.visualstudio.azure.containers.tools.targets/1.23.0/microsoft.visualstudio.azure.containers.tools.targets.1.23.0.nupkg [ThirdPartyNotices.txt]
+  Original SHA256: 3e901aea45ceaa6512ce848332859c3147995ce6c4acfe9c452ffb4b6518b19e
+  Distributed SHA256: 6b70a79dcd7a5a93c7f9ca5ce016d8a3309e4666e61699aa88eabbe8d4b095d5
+
+Remaining evidence:
+- No additional component-specific gap recorded in this focused material review. This is not full release clearance.

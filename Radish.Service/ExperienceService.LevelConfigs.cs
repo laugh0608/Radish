@@ -1,3 +1,4 @@
+using Radish.Service.Mapping;
 using Radish.Model;
 using Radish.Model.ViewModels;
 
@@ -13,7 +14,7 @@ public partial class ExperienceService
     public async Task<List<LevelConfigVo>> GetLevelConfigsAsync()
     {
         var levelConfigs = await GetLevelConfigsCacheAsync();
-        var configVos = Mapper.Map<List<LevelConfigVo>>(levelConfigs);
+        var configVos = ExperienceMapper.ToLevelConfigVoList(levelConfigs);
         FillLevelConfigUrls(configVos);
         return configVos;
     }
@@ -29,7 +30,7 @@ public partial class ExperienceService
             return null;
         }
 
-        var configVo = Mapper.Map<LevelConfigVo>(levelConfig);
+        var configVo = ExperienceMapper.ToLevelConfigVo(levelConfig);
         FillLevelConfigUrl(configVo);
         return configVo;
     }

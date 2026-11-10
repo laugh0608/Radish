@@ -1,0 +1,71 @@
+{
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "status": "local-implementation-verified-windows-pending",
+  "preparationCommit": "35d22fe2",
+  "nodeContracts": {
+    "razor": 8,
+    "previousSqlite": 9,
+    "previousHangfire": 8,
+    "total": 25
+  },
+  "localContracts": {
+    "sdk": "10.0.300",
+    "node": "v24.16.0",
+    "csharpContractGroups": 11,
+    "packages": 11,
+    "sourceAdapters": 2,
+    "templatePairs": 23,
+    "coldOriginalFragmentRenders": 2,
+    "actualRejections": 4,
+    "razorExecuted": false,
+    "windowsExecuted": false,
+    "powershellExecuted": false
+  },
+  "cleanup": {
+    "workRootRemoved": true,
+    "passed": true,
+    "sdkInstalled": false,
+    "packagesInstalled": false,
+    "remoteRun": false
+  },
+  "ownedProcesses": 0,
+  "evidence": {
+    "relativePath": "artifacts/hangfire-windows-local/radish-windows-razor-local-y173mC",
+    "files": 36,
+    "manifestSha256": "9334ddee16c31ec9082045097337f655120906b8910085d7c329c6754bfb8b45"
+  },
+  "workflow": {
+    "file": ".github/workflows/native-images.yml",
+    "newJob": "hangfire-windows-razor",
+    "scope": "hangfire-razor",
+    "defaultMode": "inventory",
+    "existingJobsStructurallyUnchanged": 5,
+    "headShaRequired": true,
+    "verifyRequires": [
+      "ImageVersion",
+      "VS installationVersion",
+      "MSBuild version",
+      "MSBuild SHA256"
+    ],
+    "retentionDays": 7,
+    "permissions": "contents: read"
+  },
+  "limits": {
+    "powershellParserOrRuntimeExecuted": false,
+    "clr4TaskFactoryExecuted": false,
+    "actualWindowsInventoryCollected": false,
+    "razorRegenerated": false,
+    "plannedWindowsCoreBuilds": 8,
+    "plannedWindowsColdRenders": 16,
+    "plannedWindowsMatrixExecuted": false
+  },
+  "externalActions": {
+    "push": false,
+    "dispatch": false,
+    "uploadArtifact": false,
+    "release": false,
+    "deployment": false
+  },
+  "initialDiagnostics": "Early C# compile errors were corrected; their logs remain under artifacts/hangfire-windows-local; no suppression added."
+}

@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.AttributeTool;
@@ -36,7 +36,6 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
     private readonly TimeProvider _timeProvider;
 
     public OrderService(
-        IMapper mapper,
         IBaseRepository<Order> orderRepository,
         IBaseRepository<Product> productRepository,
         IBaseRepository<User> userRepository,
@@ -50,7 +49,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         INotificationService? notificationService = null,
         IReliableOutboxService? reliableOutboxService = null,
         TimeProvider? timeProvider = null)
-        : base(mapper, orderRepository)
+        : base(ShopMapper.ToOrderVo, orderRepository)
     {
         _orderRepository = orderRepository;
         _productRepository = productRepository;
@@ -394,7 +393,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             orderByExpression: o => o.CreateTime,
             orderByType: OrderByType.Desc);
 
-        var orderVos = Mapper.Map<List<OrderListItemVo>>(orders);
+        var orderVos = ShopMapper.ToOrderListItemVoList(orders);
         FillOrderListItemUrls(orderVos);
 
         return new PageModel<OrderListItemVo>
@@ -413,7 +412,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         var order = await _orderRepository.QueryFirstAsync(o => o.Id == orderId && o.UserId == userId && !o.IsDeleted);
         if (order == null) return null;
 
-        var orderVo = Mapper.Map<OrderVo>(order);
+        var orderVo = ShopMapper.ToOrderVo(order);
         FillOrderUrl(orderVo);
         return orderVo;
     }
@@ -424,7 +423,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         var order = await _orderRepository.QueryFirstAsync(o => o.OrderNo == orderNo && !o.IsDeleted);
         if (order == null) return null;
 
-        var orderVo = Mapper.Map<OrderVo>(order);
+        var orderVo = ShopMapper.ToOrderVo(order);
         FillOrderUrl(orderVo);
         return orderVo;
     }
@@ -482,7 +481,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             orderByExpression: o => o.CreateTime,
             orderByType: OrderByType.Desc);
 
-        var orderVos = Mapper.Map<List<OrderVo>>(orders);
+        var orderVos = ShopMapper.ToOrderVoList(orders);
         await FillOrderUsersAsync(orderVos);
         FillOrderUrls(orderVos);
 
@@ -505,7 +504,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             return null;
         }
 
-        var orderVo = Mapper.Map<OrderVo>(order);
+        var orderVo = ShopMapper.ToOrderVo(order);
         await FillOrderUsersAsync([orderVo]);
         FillOrderUrl(orderVo);
         return orderVo;

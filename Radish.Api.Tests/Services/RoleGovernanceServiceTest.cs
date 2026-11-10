@@ -2,7 +2,6 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.IRepository.Base;
@@ -22,7 +21,7 @@ public class RoleGovernanceServiceTest
     public async Task CreateRoleAsync_ShouldRejectReservedRoleName(string roleName)
     {
         var repository = new Mock<IBaseRepository<Role>>(MockBehavior.Strict);
-        var service = new RoleGovernanceService(Mock.Of<IMapper>(), repository.Object);
+        var service = new RoleGovernanceService(repository.Object);
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() => service.CreateRoleAsync(
             CreateRequest(roleName),
@@ -48,7 +47,7 @@ public class RoleGovernanceServiceTest
                 RoleName = roleName,
                 IsEnabled = true
             });
-        var service = new RoleGovernanceService(Mock.Of<IMapper>(), repository.Object);
+        var service = new RoleGovernanceService(repository.Object);
 
         var exception = await Assert.ThrowsAsync<BusinessException>(() => service.UpdateRoleAsync(
             roleId,
@@ -90,22 +89,8 @@ public class RoleGovernanceServiceTest
                 It.IsAny<Expression<Func<Role, bool>>>()))
             .Callback<Expression<Func<Role, Role>>, Expression<Func<Role, bool>>>((update, _) => capturedUpdate = update)
             .ReturnsAsync(1);
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(item => item.Map<RoleVo>(It.IsAny<object>()))
-            .Returns((object source) =>
-            {
-                var sourceRole = Assert.IsType<Role>(source);
-                return new RoleVo
-                {
-                    VoId = sourceRole.Id,
-                    VoRoleName = sourceRole.RoleName,
-                    VoCreateId = sourceRole.CreateId,
-                    VoCreateBy = sourceRole.CreateBy,
-                    VoCreateTime = sourceRole.CreateTime
-                };
-            });
-        var service = new RoleGovernanceService(mapper.Object, repository.Object);
+
+        var service = new RoleGovernanceService(repository.Object);
 
         var result = await service.UpdateRoleAsync(
             role.Id,

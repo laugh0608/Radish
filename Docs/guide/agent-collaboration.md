@@ -56,7 +56,7 @@
 - records、changelog 和 archive 只记录批次事实、验证证据、历史流水和交接信息，不作为功能设计主文档。
 - records、changelog 和其他带日期的协作记录统一使用 Asia/Shanghai（UTC+8）口径。
 - 小规模 bug、低风险文案或样式调整、纯清理和不改变功能边界的验证补漏，不强制新建专题；若暴露说明与实现不一致，应同步修正真相源。
-- 文档拆分、篇幅与索引规则统一遵循[文档篇幅治理](/guide/document-governance)。
+- 文档拆分、篇幅、三级规划职责与单一状态来源统一遵循[文档篇幅治理](/guide/document-governance#planning-hierarchy)；能力归属从[专题地图](/planning/topics)进入，实施切片不另建平行任务。
 
 ## 4. 开发节奏与个人开发者阶段
 

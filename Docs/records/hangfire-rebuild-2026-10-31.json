@@ -1,0 +1,765 @@
+{
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "taskId": "radish-hangfire-source-20261031-c9e4",
+  "status": "local-source-rebuild-verified",
+  "preparationCommit": "e4ed1dc7",
+  "applicationRevision": "9bc15795",
+  "hostSdk": "10.0.300",
+  "privateSdk": "10.0.403",
+  "applicationProjects": 19,
+  "applicationPackages": 219,
+  "feedPackages": 42,
+  "sourceTargets": 5,
+  "runtimeGroups": 18,
+  "registrationChecks": 288,
+  "eventualSucceededJobs": 36,
+  "jobAttempts": 54,
+  "nodeContracts": 8,
+  "actualNegativeProbes": 3,
+  "graphs": [
+    {
+      "name": "Cronos",
+      "identities": [
+        "Microsoft.NETCore.Platforms/1.1.0",
+        "NETStandard.Library/2.0.3"
+      ]
+    },
+    {
+      "name": "Hangfire.Core",
+      "identities": [
+        "Cronos/0.8.3",
+        "LibLog/1.5.0",
+        "Microsoft.CSharp/4.4.0",
+        "Microsoft.NETCore.Platforms/1.1.0",
+        "MoreLinq.Source.MoreEnumerable.Pairwise/1.0.1",
+        "NETStandard.Library/2.0.3",
+        "Newtonsoft.Json/13.0.4",
+        "StackTraceFormatter.Source/1.1.0",
+        "StackTraceParser.Source/1.3.0"
+      ]
+    },
+    {
+      "name": "Hangfire.NetCore",
+      "identities": [
+        "Cronos/0.8.3",
+        "LibLog/1.5.0",
+        "Microsoft.CSharp/4.4.0",
+        "Microsoft.Extensions.Configuration.Abstractions/3.0.0",
+        "Microsoft.Extensions.DependencyInjection.Abstractions/3.0.0",
+        "Microsoft.Extensions.FileProviders.Abstractions/3.0.0",
+        "Microsoft.Extensions.Hosting.Abstractions/3.0.0",
+        "Microsoft.Extensions.Logging.Abstractions/3.0.0",
+        "Microsoft.Extensions.Primitives/3.0.0",
+        "MoreLinq.Source.MoreEnumerable.Pairwise/1.0.1",
+        "Newtonsoft.Json/13.0.4",
+        "StackTraceFormatter.Source/1.1.0",
+        "StackTraceParser.Source/1.3.0",
+        "System.Buffers/4.4.0",
+        "System.Memory/4.5.2",
+        "System.Numerics.Vectors/4.4.0",
+        "System.Runtime.CompilerServices.Unsafe/4.6.0",
+        "NETStandard.Library.Ref/2.1.0"
+      ]
+    },
+    {
+      "name": "Hangfire.AspNetCore",
+      "identities": [
+        "Cronos/0.8.3",
+        "LibLog/1.5.0",
+        "Microsoft.CSharp/4.4.0",
+        "Microsoft.Extensions.Configuration.Abstractions/3.0.0",
+        "Microsoft.Extensions.DependencyInjection.Abstractions/3.0.0",
+        "Microsoft.Extensions.FileProviders.Abstractions/3.0.0",
+        "Microsoft.Extensions.Hosting.Abstractions/3.0.0",
+        "Microsoft.Extensions.Logging.Abstractions/3.0.0",
+        "Microsoft.Extensions.Primitives/3.0.0",
+        "MoreLinq.Source.MoreEnumerable.Pairwise/1.0.1",
+        "Newtonsoft.Json/13.0.4",
+        "StackTraceFormatter.Source/1.1.0",
+        "StackTraceParser.Source/1.3.0",
+        "Microsoft.AspNetCore.App.Ref/3.0.1",
+        "Microsoft.NETCore.App.Ref/3.0.0"
+      ]
+    },
+    {
+      "name": "Hangfire.PostgreSql",
+      "identities": [
+        "Dapper/2.0.123",
+        "GitVersion.MsBuild/5.11.1",
+        "Hangfire.Core/1.8.0",
+        "Microsoft.Bcl.AsyncInterfaces/6.0.0",
+        "Microsoft.Bcl.HashCode/1.1.1",
+        "Microsoft.CSharp/4.7.0",
+        "Microsoft.NETCore.Platforms/1.1.0",
+        "NETStandard.Library/2.0.3",
+        "Newtonsoft.Json/13.0.4",
+        "Npgsql/6.0.11",
+        "System.Buffers/4.5.1",
+        "System.Collections.Immutable/6.0.0",
+        "System.Diagnostics.DiagnosticSource/6.0.0",
+        "System.Memory/4.5.4",
+        "System.Numerics.Vectors/4.5.0",
+        "System.Reflection.Emit.ILGeneration/4.7.0",
+        "System.Reflection.Emit.Lightweight/4.7.0",
+        "System.Runtime.CompilerServices.Unsafe/6.0.0",
+        "System.Text.Encodings.Web/6.0.0",
+        "System.Text.Json/6.0.10",
+        "System.Threading.Channels/6.0.0",
+        "System.Threading.Tasks.Extensions/4.5.4"
+      ]
+    }
+  ],
+  "finalDllRuntimeHashesVerified": true,
+  "sourceLinkCanonical": true,
+  "localOnly": true,
+  "approvedAdaptations": [
+    "SDK-bundled analyzers and SourceLink",
+    "Newtonsoft.Json 13.0.4",
+    "System.Text.Json 6.0.10",
+    "JsonStats CamelCaseNamingStrategy (equivalence verified)",
+    "NetCore IsEnabled callback guard (separately approved)",
+    "Canonical PathMap and SourceLink roots; embed modified sources"
+  ],
+  "sourceTrees": [
+    {
+      "repository": "hangfire",
+      "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "preparationApiShaField": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "actualCommitTree": "b5ee5d721d64442d4bff4d9592bd05e9f5fda421",
+      "allBlobPathsModesAndHashesEqual": true,
+      "blobCount": 607,
+      "reviewedFileHashesEqual": true
+    },
+    {
+      "repository": "cronos",
+      "commit": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+      "preparationApiShaField": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+      "actualCommitTree": "d6fe40daf2b07b26f837fa36fb47002ca38ca9c7",
+      "allBlobPathsModesAndHashesEqual": true,
+      "blobCount": 38,
+      "reviewedFileHashesEqual": true
+    },
+    {
+      "repository": "postgresql",
+      "commit": "a5a728233ac8feb447695acb01f607bd848b00f7",
+      "preparationApiShaField": "a5a728233ac8feb447695acb01f607bd848b00f7",
+      "actualCommitTree": "f6f0556f83951060c076a08500e8a42435c8262a",
+      "allBlobPathsModesAndHashesEqual": true,
+      "blobCount": 108,
+      "reviewedFileHashesEqual": true
+    }
+  ],
+  "sdk": {
+    "version": "10.0.403",
+    "archiveSha512": "5893c66b48ea3674c7da18501059d606e96f3672fabe4d5e41762e692c7c83df3ee0b2b9dc5a0786191da2dc413d7335158101c14c935ab217f31ac2529770f3",
+    "bundledVersionsSha256": "1c667e863d9b22a2dff9cdf8b94e16a833e7b689ca77dcbc279612819435419a"
+  },
+  "assemblies": {
+    "original": {
+      "Hangfire.Core": {
+        "version": "1.8.14.0",
+        "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+        "mvid": "c6621c02-4524-42fc-9e4c-2110e8f856e4",
+        "apiEntries": 5050,
+        "resources": 17,
+        "fullMetadataArtifact": "evidence/assemblies/original-Hangfire.Core.json"
+      },
+      "Hangfire.NetCore": {
+        "version": "1.8.14.0",
+        "sha256": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+        "mvid": "96f18dcf-b6e9-4bd4-8324-ba0d68b2dc15",
+        "apiEntries": 112,
+        "resources": 0,
+        "fullMetadataArtifact": "evidence/assemblies/original-Hangfire.NetCore.json"
+      },
+      "Hangfire.AspNetCore": {
+        "version": "1.8.14.0",
+        "sha256": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+        "mvid": "56ed3090-3b43-4cc0-87f9-37025a2c823f",
+        "apiEntries": 53,
+        "resources": 0,
+        "fullMetadataArtifact": "evidence/assemblies/original-Hangfire.AspNetCore.json"
+      },
+      "Hangfire.PostgreSql": {
+        "version": "1.20.12.0",
+        "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+        "mvid": "bfc53de0-5896-4f22-b0da-3e61a6c82530",
+        "apiEntries": 623,
+        "resources": 21,
+        "fullMetadataArtifact": "evidence/assemblies/original-Hangfire.PostgreSql.json"
+      }
+    },
+    "source": {
+      "Hangfire.Core": {
+        "version": "1.8.14.0",
+        "sha256": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+        "mvid": "e1d43972-df23-440a-a9a5-32e77542f05f",
+        "apiEntries": 5050,
+        "resources": 17,
+        "fullMetadataArtifact": "evidence/assemblies/source-Hangfire.Core.json"
+      },
+      "Hangfire.NetCore": {
+        "version": "1.8.14.0",
+        "sha256": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "mvid": "943ebbc4-ea83-4d33-a783-430c3f29b7ad",
+        "apiEntries": 112,
+        "resources": 0,
+        "fullMetadataArtifact": "evidence/assemblies/source-Hangfire.NetCore.json"
+      },
+      "Hangfire.AspNetCore": {
+        "version": "1.8.14.0",
+        "sha256": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "mvid": "11e88bdd-d758-4ae3-baee-310e5503f5de",
+        "apiEntries": 53,
+        "resources": 0,
+        "fullMetadataArtifact": "evidence/assemblies/source-Hangfire.AspNetCore.json"
+      },
+      "Hangfire.PostgreSql": {
+        "version": "1.20.12.0",
+        "sha256": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89",
+        "mvid": "3405b5e3-24d5-4593-a102-196c9ebc1ba1",
+        "apiEntries": 623,
+        "resources": 21,
+        "fullMetadataArtifact": "evidence/assemblies/source-Hangfire.PostgreSql.json"
+      }
+    },
+    "marked": {
+      "Hangfire.Core": {
+        "version": "1.8.14.0",
+        "sha256": "f7f3335046dfa9551228aad108682f3a509c91c820dd946b1b5a133801b6927d",
+        "mvid": "8e04538d-cfc1-4f89-9e25-b7f9f2153320",
+        "apiEntries": 5050,
+        "resources": 17,
+        "fullMetadataArtifact": "evidence/assemblies/marked-Hangfire.Core.json"
+      },
+      "Hangfire.NetCore": {
+        "version": "1.8.14.0",
+        "sha256": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "mvid": "943ebbc4-ea83-4d33-a783-430c3f29b7ad",
+        "apiEntries": 112,
+        "resources": 0,
+        "fullMetadataArtifact": "evidence/assemblies/marked-Hangfire.NetCore.json"
+      },
+      "Hangfire.AspNetCore": {
+        "version": "1.8.14.0",
+        "sha256": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "mvid": "11e88bdd-d758-4ae3-baee-310e5503f5de",
+        "apiEntries": 53,
+        "resources": 0,
+        "fullMetadataArtifact": "evidence/assemblies/marked-Hangfire.AspNetCore.json"
+      },
+      "Hangfire.PostgreSql": {
+        "version": "1.20.12.0",
+        "sha256": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89",
+        "mvid": "3405b5e3-24d5-4593-a102-196c9ebc1ba1",
+        "apiEntries": 623,
+        "resources": 21,
+        "fullMetadataArtifact": "evidence/assemblies/marked-Hangfire.PostgreSql.json"
+      }
+    }
+  },
+  "replay": [
+    {
+      "name": "Cronos",
+      "firstSha256": "c7fdcf90f24d58db907a3208592f9d519b43f4922ac50867cc76199bfec7409f",
+      "replaySha256": "c7fdcf90f24d58db907a3208592f9d519b43f4922ac50867cc76199bfec7409f",
+      "byteEqual": true,
+      "publicApiEqual": true,
+      "resourcesEqual": true,
+      "methodIlEqual": true,
+      "firstMvid": "0b6e0396-e19f-43ad-bc0f-c7373e48762f",
+      "replayMvid": "0b6e0396-e19f-43ad-bc0f-c7373e48762f",
+      "sourceDocumentsChecked": 12,
+      "razorDocumentsWithoutChecksum": 0
+    },
+    {
+      "name": "Hangfire.Core",
+      "firstSha256": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+      "replaySha256": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+      "byteEqual": true,
+      "publicApiEqual": true,
+      "resourcesEqual": true,
+      "methodIlEqual": true,
+      "firstMvid": "e1d43972-df23-440a-a9a5-32e77542f05f",
+      "replayMvid": "e1d43972-df23-440a-a9a5-32e77542f05f",
+      "sourceDocumentsChecked": 211,
+      "razorDocumentsWithoutChecksum": 22
+    },
+    {
+      "name": "Hangfire.NetCore",
+      "firstSha256": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+      "replaySha256": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+      "byteEqual": true,
+      "publicApiEqual": true,
+      "resourcesEqual": true,
+      "methodIlEqual": true,
+      "firstMvid": "943ebbc4-ea83-4d33-a783-430c3f29b7ad",
+      "replayMvid": "943ebbc4-ea83-4d33-a783-430c3f29b7ad",
+      "sourceDocumentsChecked": 12,
+      "razorDocumentsWithoutChecksum": 0
+    },
+    {
+      "name": "Hangfire.AspNetCore",
+      "firstSha256": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+      "replaySha256": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+      "byteEqual": true,
+      "publicApiEqual": true,
+      "resourcesEqual": true,
+      "methodIlEqual": true,
+      "firstMvid": "11e88bdd-d758-4ae3-baee-310e5503f5de",
+      "replayMvid": "11e88bdd-d758-4ae3-baee-310e5503f5de",
+      "sourceDocumentsChecked": 10,
+      "razorDocumentsWithoutChecksum": 0
+    },
+    {
+      "name": "Hangfire.PostgreSql",
+      "firstSha256": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89",
+      "replaySha256": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89",
+      "byteEqual": true,
+      "publicApiEqual": true,
+      "resourcesEqual": true,
+      "methodIlEqual": true,
+      "firstMvid": "3405b5e3-24d5-4593-a102-196c9ebc1ba1",
+      "replayMvid": "3405b5e3-24d5-4593-a102-196c9ebc1ba1",
+      "sourceDocumentsChecked": 46,
+      "razorDocumentsWithoutChecksum": 0
+    }
+  ],
+  "sourceChecks": [
+    {
+      "variant": "source",
+      "name": "Hangfire.Core",
+      "checksumDocuments": 211,
+      "embeddedDocuments": 1,
+      "razorDocumentsWithoutChecksum": 22
+    },
+    {
+      "variant": "source",
+      "name": "Hangfire.NetCore",
+      "checksumDocuments": 12,
+      "embeddedDocuments": 2,
+      "razorDocumentsWithoutChecksum": 0
+    },
+    {
+      "variant": "source",
+      "name": "Hangfire.AspNetCore",
+      "checksumDocuments": 10,
+      "embeddedDocuments": 1,
+      "razorDocumentsWithoutChecksum": 0
+    },
+    {
+      "variant": "source",
+      "name": "Hangfire.PostgreSql",
+      "checksumDocuments": 46,
+      "embeddedDocuments": 4,
+      "razorDocumentsWithoutChecksum": 0
+    },
+    {
+      "variant": "marked",
+      "name": "Hangfire.Core",
+      "checksumDocuments": 212,
+      "embeddedDocuments": 4,
+      "razorDocumentsWithoutChecksum": 22
+    },
+    {
+      "variant": "marked",
+      "name": "Hangfire.NetCore",
+      "checksumDocuments": 12,
+      "embeddedDocuments": 2,
+      "razorDocumentsWithoutChecksum": 0
+    },
+    {
+      "variant": "marked",
+      "name": "Hangfire.AspNetCore",
+      "checksumDocuments": 10,
+      "embeddedDocuments": 1,
+      "razorDocumentsWithoutChecksum": 0
+    },
+    {
+      "variant": "marked",
+      "name": "Hangfire.PostgreSql",
+      "checksumDocuments": 46,
+      "embeddedDocuments": 4,
+      "razorDocumentsWithoutChecksum": 0
+    }
+  ],
+  "runtime": [
+    {
+      "id": "sqlite-Debug-original",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+        "Hangfire.NetCore": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+        "Hangfire.AspNetCore": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+        "Hangfire.PostgreSql": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+      }
+    },
+    {
+      "id": "sqlite-Release-original",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+        "Hangfire.NetCore": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+        "Hangfire.AspNetCore": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+        "Hangfire.PostgreSql": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+      }
+    },
+    {
+      "id": "pg17-Debug-original",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+        "Hangfire.NetCore": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+        "Hangfire.AspNetCore": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+        "Hangfire.PostgreSql": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+      }
+    },
+    {
+      "id": "pg17-Release-original",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+        "Hangfire.NetCore": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+        "Hangfire.AspNetCore": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+        "Hangfire.PostgreSql": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+      }
+    },
+    {
+      "id": "pg16-Debug-original",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+        "Hangfire.NetCore": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+        "Hangfire.AspNetCore": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+        "Hangfire.PostgreSql": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+      }
+    },
+    {
+      "id": "pg16-Release-original",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+        "Hangfire.NetCore": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+        "Hangfire.AspNetCore": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+        "Hangfire.PostgreSql": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72"
+      }
+    },
+    {
+      "id": "sqlite-Debug-source",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "sqlite-Debug-marked",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "f7f3335046dfa9551228aad108682f3a509c91c820dd946b1b5a133801b6927d",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "sqlite-Release-source",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "sqlite-Release-marked",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "f7f3335046dfa9551228aad108682f3a509c91c820dd946b1b5a133801b6927d",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "pg17-Debug-source",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "pg17-Debug-marked",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "f7f3335046dfa9551228aad108682f3a509c91c820dd946b1b5a133801b6927d",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "pg17-Release-source",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "pg17-Release-marked",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "f7f3335046dfa9551228aad108682f3a509c91c820dd946b1b5a133801b6927d",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "pg16-Debug-source",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "pg16-Debug-marked",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "f7f3335046dfa9551228aad108682f3a509c91c820dd946b1b5a133801b6927d",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "pg16-Release-source",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "8da439cff07157ee0d9c135a48e5eee90103af60af5fa3a37dfb589d1b830f51",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    },
+    {
+      "id": "pg16-Release-marked",
+      "registered": 16,
+      "successId": "1",
+      "retryId": "2",
+      "retryAttempts": 2,
+      "hostedServices": 1,
+      "otherHostedServices": [
+        "Microsoft.AspNetCore.DataProtection.Internal.DataProtectionHostedService"
+      ],
+      "status": 200,
+      "statsStatus": 200,
+      "expected": {
+        "Hangfire.Core": "f7f3335046dfa9551228aad108682f3a509c91c820dd946b1b5a133801b6927d",
+        "Hangfire.NetCore": "3371b14416b3e9fe6cec24bdd1257f7e150da0d06d263f91b295c31186b73118",
+        "Hangfire.AspNetCore": "76273e7ac6b0685ab044801540891fa9a9ca0307795395504dc92c86d64596ea",
+        "Hangfire.PostgreSql": "bb77a857b67f2d1d57486fcf72efaff288f9ffa945dd1f70b2f4d56736f06e89"
+      }
+    }
+  ],
+  "cleanup": {
+    "taskId": "radish-hangfire-source-20261031-c9e4",
+    "taskRootRemoved": true,
+    "containers": 0,
+    "volumes": 0,
+    "port15432Unused": true,
+    "sdkRemoved": true,
+    "globalSdkChanged": false,
+    "sharedImagesRetained": true,
+    "proxyChanged": false,
+    "ownedProcesses": 0
+  },
+  "archive": {
+    "relativePath": "artifacts/source-bundles/radish-hangfire-source-20261031-c9e4",
+    "files": 869,
+    "bytes": 160350382,
+    "indexSha256": "f788ba5a979b3fc94fc3eab813003231482db19161d4f190746342f7812c2df8",
+    "sdkIncluded": false,
+    "businessApplicationIncluded": false
+  },
+  "openItems": [
+    "Windows Full MSBuild / Razor regeneration",
+    "Original PostgreSql DLL source binding",
+    "Formal public source acquisition endpoint and complete distribution review",
+    "SQLite remaining hosted native matrix (not remotely run)"
+  ],
+  "externalActions": {
+    "push": false,
+    "remoteWorkflow": false,
+    "release": false,
+    "deployment": false
+  },
+  "projectGraphDistinctPackages": 41,
+  "mergeTool": "ILRepack 2.0.27 (42nd feed entry, outside project assets graphs)"
+}

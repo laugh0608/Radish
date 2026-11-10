@@ -6,7 +6,6 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -440,15 +439,13 @@ public sealed class PostQuickReplyLoggingTests
             Outbox.Setup(r => r.AddAsync(It.IsAny<ReliableOutboxDraft>())).ReturnsAsync((ReliableOutboxDraft draft) =>
             { Steps.Add("outbox"); Drafts.Add(draft); return 1; });
             Permission.Setup(p => p.GetPublishPermissionAsync(UserId)).ReturnsAsync(new ContentModerationPermissionVo { VoCanPublish = true });
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(m => m.Map<PostQuickReplyVo>(It.IsAny<PostQuickReply>())).Returns((PostQuickReply reply) => new PostQuickReplyVo
-            {
-                VoId = reply.Id, VoPostId = reply.PostId, VoAuthorId = reply.AuthorId, VoAuthorName = reply.AuthorName,
-                VoAuthorAvatarUrl = Secret + "/avatar", VoContent = reply.Content, VoCreateTime = reply.CreateTime
-            });
+
+            var attachments = new Mock<IAttachmentService>();
+            attachments.Setup(a => a.GetLatestAvatarAssetMapAsync(It.IsAny<IReadOnlyCollection<long>>()))
+                .ReturnsAsync(new Dictionary<long, AttachmentAssetDto> { [UserId] = new() { Url = Secret + "/avatar" } });
             _factory = LoggerFactory.Create(b => b.SetMinimumLevel(LogLevel.Trace).AddSerilog(Log.Logger, dispose: false));
-            var service = new PostQuickReplyService(mapper.Object, Replies.Object, Posts.Object, Cache.Object, Settings.Object,
-                Microsoft.Extensions.Options.Options.Create(Options), logger: _factory.CreateLogger<PostQuickReplyService>(),
+            var service = new PostQuickReplyService(Replies.Object, Posts.Object, Cache.Object, Settings.Object,
+                Microsoft.Extensions.Options.Options.Create(Options), attachmentService: attachments.Object, logger: _factory.CreateLogger<PostQuickReplyService>(),
                 userRepository: Users.Object, reliableOutboxService: missingOutbox ? null : new ReliableOutboxService(Outbox.Object));
             var unit = new Mock<IUnitOfWorkManage>();
             unit.Setup(u => u.BeginTran(It.IsAny<MethodInfo>())).Callback(() => Steps.Add("begin"));

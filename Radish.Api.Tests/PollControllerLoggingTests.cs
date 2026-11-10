@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +27,6 @@ using Radish.Common.HttpContextTool;
 using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.Extension.Log;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -372,7 +370,6 @@ public sealed class PollControllerLoggingTests
 
     private sealed class Fixture : IDisposable
     {
-        private static readonly IMapper Mapper = new MapperConfiguration(c => c.AddProfile<ForumProfile>(), NullLoggerFactory.Instance).CreateMapper();
         private readonly string _operation;
         public SqlSugarScope Db { get; }
         public UnitOfWorkManage Unit { get; }
@@ -418,7 +415,7 @@ public sealed class PollControllerLoggingTests
             var votes = Wrap<IBaseRepository<PostPollVote>>(new BaseRepository<PostPollVote>(Unit), "votes");
             var postTags = new Mock<IBaseRepository<PostTag>>();
             postTags.Setup(r => r.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>())).ReturnsAsync(new List<PostTag>());
-            var detail = new PostService(Mapper, posts, Mock.Of<IBaseRepository<UserPostLike>>(),
+            var detail = new PostService(posts, Mock.Of<IBaseRepository<UserPostLike>>(),
                 Wrap(postTags.Object, "post-tags"), Mock.Of<IBaseRepository<Category>>(), Mock.Of<IBaseRepository<Tag>>(),
                 polls, options, votes, Wrap(Mock.Of<IBaseRepository<PostQuestion>>(), "questions"), Mock.Of<IBaseRepository<PostAnswer>>(),
                 Mock.Of<ITagService>(), Mock.Of<ICoinRewardService>(), Mock.Of<INotificationService>(), Mock.Of<INotificationDedupService>(),

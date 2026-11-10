@@ -267,7 +267,9 @@ public static class SqlSugarSetup
         }
         catch (Exception ex)
         {
-            Log.Warning(ex, "[SqlSugar] SQLite PRAGMA 执行失败，Sql: {Sql}", sql);
+            Radish.Common.LogTool.RuntimeLogIngestDiagnostics.DatabaseSetup.Report(
+                sql.Contains("busy_timeout", StringComparison.OrdinalIgnoreCase) ? "busy-timeout" :
+                sql.Contains("journal_mode", StringComparison.OrdinalIgnoreCase) ? "wal" : "synchronous", ex);
             return false;
         }
     }

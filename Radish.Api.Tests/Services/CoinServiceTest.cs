@@ -4,7 +4,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoMapper;
 using JetBrains.Annotations;
 using Moq;
 using Radish.Common.Exceptions;
@@ -36,7 +35,6 @@ namespace Radish.Api.Tests.Services;
 [TestSubject(typeof(CoinService))]
 public class CoinServiceTest
 {
-    private readonly Mock<IMapper> _mapperMock;
     private readonly Mock<IUserBalanceRepository> _userBalanceRepositoryMock;
     private readonly Mock<IBaseRepository<User>> _userRepositoryMock;
     private readonly Mock<IBaseRepository<CoinTransaction>> _coinTransactionRepositoryMock;
@@ -44,7 +42,6 @@ public class CoinServiceTest
 
     public CoinServiceTest()
     {
-        _mapperMock = new Mock<IMapper>();
         _userBalanceRepositoryMock = new Mock<IUserBalanceRepository>();
         _userRepositoryMock = new Mock<IBaseRepository<User>>();
         _coinTransactionRepositoryMock = new Mock<IBaseRepository<CoinTransaction>>();
@@ -105,10 +102,6 @@ public class CoinServiceTest
             .Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<UserBalance, bool>>>() ))
             .ReturnsAsync(userBalance);
 
-        _mapperMock
-            .Setup(m => m.Map<UserBalanceVo>(userBalance))
-            .Returns(expectedVo);
-
         var service = CreateCoinService();
 
         // Act
@@ -155,10 +148,6 @@ public class CoinServiceTest
             VoBalanceDisplay = "0.000"
         };
 
-        _mapperMock
-            .Setup(m => m.Map<UserBalanceVo>(It.IsAny<UserBalance>()))
-            .Returns(expectedVo);
-
         var service = CreateCoinService();
 
         // Act
@@ -201,14 +190,6 @@ public class CoinServiceTest
         _userBalanceRepositoryMock
             .Setup(r => r.QueryAsync(It.IsAny<Expression<Func<UserBalance, bool>>>()))
             .ReturnsAsync(userBalances);
-
-        _mapperMock
-            .Setup(m => m.Map<UserBalanceVo>(It.IsAny<UserBalance>()))
-            .Returns<UserBalance>(ub => new UserBalanceVo
-            {
-                VoUserId = ub.UserId,
-                VoBalance = ub.Balance
-            });
 
         var service = CreateCoinService();
 
@@ -566,21 +547,6 @@ public class CoinServiceTest
                 var filtered = transactions.Where(predicate).ToList();
                 return (filtered, filtered.Count);
             });
-
-        _mapperMock
-            .Setup(m => m.Map<List<CoinTransactionVo>>(It.IsAny<List<CoinTransaction>>()))
-            .Returns((List<CoinTransaction> source) => source.Select(transaction => new CoinTransactionVo
-            {
-                VoId = transaction.Id,
-                VoFromUserId = transaction.FromUserId,
-                VoToUserId = transaction.ToUserId,
-                VoAmount = transaction.Amount,
-                VoTransactionType = transaction.TransactionType,
-                VoStatus = transaction.Status,
-                VoBusinessType = transaction.BusinessType,
-                VoBusinessId = transaction.BusinessId,
-                VoCreateTime = transaction.CreateTime
-            }).ToList());
 
         var service = CreateCoinService();
 
@@ -1263,7 +1229,6 @@ public class CoinServiceTest
         IOperationIdempotencyService? operationIdempotencyService = null)
     {
         return new CoinService(
-            _mapperMock.Object,
             _userBalanceRepositoryMock.Object,
             _userRepositoryMock.Object,
             _coinTransactionRepositoryMock.Object,

@@ -2,7 +2,9 @@
 
 - 日期：2026-10-20（Asia/Shanghai）
 - 批次基线：`master f5262a09` → `dev 9b17484d`，49 个提交、301 个文件；检查开始时工作区干净，`dev` 与 `origin/dev` 一致，已包含 `origin/master`。
-- 结论：**暂缓 PR**。合并前检查时项目所有者选择申请 Six Labors Community 许可；随后明确建立[第三方依赖许可治理与替代专题](../features/dependency-license-governance.md)，当前先评估完整替代与适用许可路径，不以取得 key 作为唯一恢复方式。检查阶段未创建 PR、提交或推送；同日后续获准将这批开发候选与方案提交保存，严格构建阻断仍保留。
+- 当时结论：**暂缓 PR**。合并前检查时项目所有者选择申请 Six Labors Community 许可；随后明确建立[第三方依赖许可治理与替代专题](../features/dependency-license-governance.md)，当前先评估完整替代与适用许可路径，不以取得 key 作为唯一恢复方式。检查阶段未创建 PR、提交或推送；同日后续获准将这批开发候选与方案提交保存，严格构建阻断仍保留。
+
+> 后续状态（2026-10-21）：Six Labors 四包已由 Rust 单实现替代，修正后的完整预检通过；PR #75 已合并为 `4a8589b6` 并回灌 dev。详见[图片替代记录](./rust-image-replacement-2026-10-20.md)。下文保留原检查时的失败和停止线，不作为当前阻塞结论。
 
 ## 范围与远端门禁
 

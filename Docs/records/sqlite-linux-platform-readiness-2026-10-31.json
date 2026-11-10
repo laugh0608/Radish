@@ -1,0 +1,902 @@
+{
+  "schemaVersion": 1,
+  "kind": "read-only-readiness",
+  "capturedAt": "2026-10-31T11:50:45.609004+08:00",
+  "timeZone": "Asia/Shanghai",
+  "status": "awaiting-mcr-input-freeze-and-owner-execution-confirmation",
+  "temporaryEvidenceRoot": "/var/folders/dp/rzjx58m54kng6tn5k5gjw71h0000gn/T/radish-linux-readiness-eifk_2eh",
+  "operationsNotPerformed": [
+    "package-install",
+    "dependency-update",
+    "restore",
+    "build",
+    "test",
+    "publish",
+    "docker-pull",
+    "docker-build",
+    "docker-create",
+    "docker-run",
+    "service-start",
+    "vm-start",
+    "remote-workflow",
+    "git-push",
+    "release",
+    "production-access"
+  ],
+  "sourceFilesSha256": {
+    "Radish.Api/Dockerfile": "8e84b5a25a8582be85b2a7d4751da281ccd30a743832b3b4a0a9ac7a8c8dc7b5",
+    "Radish.Auth/Dockerfile": "27d210ec4f04c53cac49367945bb7b084d2807cecc19039378fd6199786a8643",
+    "Radish.Gateway/Dockerfile": "7ea4d21a6f47242f9f33dc9812a00e07c536403cc4933b5df315d8e875332dba",
+    "Radish.DbMigrate/Dockerfile": "d95edde5aea0f8b8aec2ce95d666022b0f9c39bf2aa537bf3b11ec03c81a5709",
+    "Scripts/check-sqlite-native.mjs": "30f897b5a4a3c6642913c46c488fa000011293aedff8c2ef98352c9007b500b5",
+    "Scripts/sqlite-native-contract.json": "2a14c27b198347008500a371e4c8a0098f87c33d01bf852a07fa2fb9fc92ae84",
+    "Scripts/run-sqlite-runtime-probe.mjs": "376670deb2584fbb0f2ab7b912d74dc2358aac4d98c43bbde3e43a84b4a08045",
+    "Scripts/sqlite/RuntimeProbe.cs": "c922553bf0601b067cbb68cb6bec0ffba44ecef68793cd46ab2a7a9a994c44f2",
+    "Scripts/build-native-images.mjs": "d49eceff040301aec529b41609aef3e3fcc0bbb607b21757fb6d1af79b330217",
+    "Directory.Build.targets": "05f5d981eaf1d6bbde276d4557ea581583d1099d24e00eb41d81788ce098c7de",
+    "Lib/radish.lib/Cargo.lock": "b49f8c1f810f6daa259407345af50d91c8f84b16d3423893405507816ec61b90",
+    "Lib/radish.lib/rust-toolchain.toml": "2c388180d0d5476ed0d69975b382feaf709bb072d51a342add3030cfb3d1bdb2",
+    ".dockerignore": "2b03924c9d46b325abd78df8cf7383742b75890131afd80029588e1c241a7fb3",
+    ".github/workflows/native-images.yml": "4d2f49d05d90caad28ee1e73a00a5487feb4ffd68aa05127ce1380990c3bdb10",
+    ".github/workflows/docker-images.yml": "8930b184963009aa35af31736a1388d458019ec7823cc572efb5c84d7dad427c",
+    ".github/image-vulnerability-exceptions.json": "af779c1dea4c6b472330c33e22f55b6e880c3973478e0a3639ed3e4a9fa62ac4"
+  },
+  "localInventory": {
+    "docker_context": {
+      "argv": [
+        "docker",
+        "context",
+        "inspect",
+        "orbstack",
+        "--format",
+        "{{json .Endpoints.docker.Host}}"
+      ],
+      "exit": 0,
+      "output": "\"unix:///Users/luobo/.orbstack/run/docker.sock\"",
+      "stderr": ""
+    },
+    "docker_info": {
+      "argv": [
+        "docker",
+        "info",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "output": {
+        "ServerVersion": "29.8.2",
+        "OSType": "linux",
+        "Architecture": "aarch64",
+        "OperatingSystem": "OrbStack",
+        "KernelVersion": "7.2.12-orbstack-00394-gbecdd6130068",
+        "NCPU": 10,
+        "MemTotal": 16818991104,
+        "Driver": "overlayfs",
+        "DockerRootDir": "/var/lib/docker",
+        "Name": "orbstack",
+        "Containers": 2,
+        "Images": 33
+      },
+      "stderr": ""
+    },
+    "docker_version": {
+      "argv": [
+        "docker",
+        "version",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "output": {
+        "Client": {
+          "Version": "29.8.2",
+          "ApiVersion": "1.56",
+          "DefaultAPIVersion": "1.56",
+          "GitCommit": "7fc2dff",
+          "GoVersion": "go1.26.8",
+          "Os": "darwin",
+          "Arch": "arm64",
+          "BuildTime": "Sun Oct 11 12:42:20 2026",
+          "Context": "orbstack"
+        },
+        "Server": {
+          "Platform": {
+            "Name": "Docker Engine - Community"
+          },
+          "Version": "29.8.2",
+          "ApiVersion": "1.56",
+          "MinAPIVersion": "1.40",
+          "Os": "linux",
+          "Arch": "arm64",
+          "Components": [
+            {
+              "Name": "Engine",
+              "Version": "29.8.2",
+              "Details": {
+                "ApiVersion": "1.56",
+                "Arch": "arm64",
+                "BuildTime": "Wed Sep 30 19:32:49 2026",
+                "Experimental": "true",
+                "GitCommit": "8af9fe3",
+                "GoVersion": "go1.26.8",
+                "KernelVersion": "7.2.12-orbstack-00394-gbecdd6130068",
+                "MinAPIVersion": "1.40",
+                "Module": "github.com/moby/moby/v2",
+                "ModuleVersion": "v2.0.0+unknown",
+                "Os": "linux"
+              }
+            },
+            {
+              "Name": "containerd",
+              "Version": "v2.3.6",
+              "Details": {
+                "GitCommit": "ee2735368117d2eb259779949d5e75cdafec9761"
+              }
+            },
+            {
+              "Name": "runc",
+              "Version": "1.5.2",
+              "Details": {
+                "GitCommit": "29dd3dc2b13b4123162e5fe132504bb4b15569f1"
+              }
+            },
+            {
+              "Name": "docker-init",
+              "Version": "0.19.0",
+              "Details": {
+                "GitCommit": "de40ad0"
+              }
+            }
+          ],
+          "GitCommit": "8af9fe3",
+          "GoVersion": "go1.26.8",
+          "KernelVersion": "7.2.12-orbstack-00394-gbecdd6130068",
+          "Experimental": true,
+          "BuildTime": "2026-09-30T19:32:49.000000000+00:00"
+        }
+      },
+      "stderr": ""
+    },
+    "buildx": {
+      "argv": [
+        "docker",
+        "buildx",
+        "inspect",
+        "orbstack"
+      ],
+      "exit": 0,
+      "output": "Name:          orbstack\nDriver:        docker\nLast Activity: 2026-10-20 14:42:46 +0000 UTC\n\nNodes:\nName:             orbstack\nEndpoint:         orbstack\nStatus:           running\nBuildKit version: v0.33.1\nPlatforms:        linux/arm64, linux/amd64, linux/amd64/v2, linux/riscv64, linux/ppc64le, linux/s390x, linux/386, linux/mips64le\nLabels:\n org.mobyproject.buildkit.worker.containerd.namespace: moby\n org.mobyproject.buildkit.worker.containerd.uuid:      bc4ce283-c6e0-4bb0-887c-64e523901836\n org.mobyproject.buildkit.worker.executor:             containerd\n org.mobyproject.buildkit.worker.hostname:             orbstack\n org.mobyproject.buildkit.worker.moby.host-gateway-ip: 0.250.250.254\n org.mobyproject.buildkit.worker.network:              host\n org.mobyproject.buildkit.worker.selinux.enabled:      false\n org.mobyproject.buildkit.worker.snapshotter:          overlayfs\nGC Policy rule#0:\n All:           true\n Filters:       \n Keep Duration: 720h0m0.000000875s\nGC Policy rule#1:\n All:            true\n Filters:        \n Reserved Space: 44.77GiB",
+      "stderr": ""
+    },
+    "containers": {
+      "argv": [
+        "docker",
+        "ps",
+        "-a",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "output": [
+        {
+          "ID": "90446f13de1b",
+          "Names": "radishmind-workbench-acceptance-20261031-fixture-1",
+          "Image": "radishmind-workbench:acceptance-20261031",
+          "State": "exited",
+          "Ports": ""
+        },
+        {
+          "ID": "1f153bffc28d",
+          "Names": "radishmind-workbench-acceptance-20261031-workbench-1",
+          "Image": "radishmind-workbench:acceptance-20261031",
+          "State": "running",
+          "Ports": "127.0.0.1:14100->7000/tcp"
+        }
+      ],
+      "stderr": ""
+    },
+    "volumes": {
+      "argv": [
+        "docker",
+        "volume",
+        "ls",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "output": [
+        {
+          "Name": "2fda179aff99a31b4751662ff906db27181e2d2a21e577e7ec4df299797fae76",
+          "Driver": "local"
+        },
+        {
+          "Name": "3c4a13d81b76332f4e5fb0b95158142138c0c4a39cade8dffd397de9983b97e0",
+          "Driver": "local"
+        },
+        {
+          "Name": "8c64d8c7dcafd13b60b524c3687bff61f4447932030facf3f3dc58449b82d5ca",
+          "Driver": "local"
+        },
+        {
+          "Name": "64f267cf58ecb467ce15ed40883eb72999c9249450f70f1829bd9ab9206eca4a",
+          "Driver": "local"
+        },
+        {
+          "Name": "b6627c4e278cee85235ff28291b790b5537a2641fc3d6ef58fe3ad540a04a8d3",
+          "Driver": "local"
+        },
+        {
+          "Name": "f2c928945a113d4f3315ef8f465341939f777ba36a6e4bee8207510f91ed6a5a",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishlex-linux-fcitx5-cargo",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishlex-linux-fcitx5-target",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishlex-sync-local_sync-gateway-config",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishlex-sync-local_sync-gateway-data",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishlex-sync-local_sync-server-data",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishmind-saved-draft-dev-test_saved-draft-postgres-data",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishnexus-authenticated-web-caddy-8593-52101-config",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishnexus-authenticated-web-caddy-8593-52101-data",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishnexus-authenticated-web-caddy-18510-66040-config",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishnexus-authenticated-web-caddy-18510-66040-data",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishnexus-authenticated-web-caddy-19187-75496-config",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishnexus-authenticated-web-caddy-19187-75496-data",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishnexus-authenticated-web-caddy-25257-36507-config",
+          "Driver": "local"
+        },
+        {
+          "Name": "radishnexus-authenticated-web-caddy-25257-36507-data",
+          "Driver": "local"
+        }
+      ],
+      "stderr": ""
+    },
+    "networks": {
+      "argv": [
+        "docker",
+        "network",
+        "ls",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "output": [
+        {
+          "ID": "1a607a202d34",
+          "Name": "bridge",
+          "Driver": "bridge",
+          "Scope": "local"
+        },
+        {
+          "ID": "e7f0c8415514",
+          "Name": "host",
+          "Driver": "host",
+          "Scope": "local"
+        },
+        {
+          "ID": "abc4fcaa7d31",
+          "Name": "none",
+          "Driver": "null",
+          "Scope": "local"
+        },
+        {
+          "ID": "9bae7a95489b",
+          "Name": "radishmind-workbench-acceptance-20261031_default",
+          "Driver": "bridge",
+          "Scope": "local"
+        }
+      ],
+      "stderr": ""
+    },
+    "images": {
+      "argv": [
+        "docker",
+        "image",
+        "ls",
+        "--digests",
+        "--no-trunc",
+        "--format",
+        "{{json .}}"
+      ],
+      "exit": 0,
+      "output": [
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-10-21 08:53:52 +0800 CST",
+          "CreatedSince": "10 days ago",
+          "Digest": "sha256:3ed98443660ff48413b5af19ecefce3b9d50845a901a43420d47cc63a9fddbe9",
+          "ID": "sha256:3ed98443660ff48413b5af19ecefce3b9d50845a901a43420d47cc63a9fddbe9",
+          "Repository": "node",
+          "SharedSize": "N/A",
+          "Size": "673MB",
+          "Tag": "22.23.3-bookworm-slim",
+          "UniqueSize": "N/A"
+        },
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-10-21 08:41:07 +0800 CST",
+          "CreatedSince": "10 days ago",
+          "Digest": "sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+          "ID": "sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+          "Repository": "postgres",
+          "SharedSize": "N/A",
+          "Size": "660MB",
+          "Tag": "<none>",
+          "UniqueSize": "N/A"
+        },
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-10-21 08:40:22 +0800 CST",
+          "CreatedSince": "10 days ago",
+          "Digest": "sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+          "ID": "sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+          "Repository": "postgres",
+          "SharedSize": "N/A",
+          "Size": "664MB",
+          "Tag": "<none>",
+          "UniqueSize": "N/A"
+        },
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-09-19 08:51:43 +0800 CST",
+          "CreatedSince": "6 weeks ago",
+          "Digest": "sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6",
+          "ID": "sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6",
+          "Repository": "node",
+          "SharedSize": "N/A",
+          "Size": "349MB",
+          "Tag": "24-bookworm-slim",
+          "UniqueSize": "N/A"
+        },
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-08-14 03:15:27 +0800 CST",
+          "CreatedSince": "2 months ago",
+          "Digest": "sha256:e42539a54ee3e82e21f19d7eded61b579869585f86b90b5e851ff0d3dd8b4001",
+          "ID": "sha256:e42539a54ee3e82e21f19d7eded61b579869585f86b90b5e851ff0d3dd8b4001",
+          "Repository": "postgres",
+          "SharedSize": "N/A",
+          "Size": "664MB",
+          "Tag": "17",
+          "UniqueSize": "N/A"
+        },
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-07-08 01:46:49 +0800 CST",
+          "CreatedSince": "3 months ago",
+          "Digest": "sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193",
+          "ID": "sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193",
+          "Repository": "postgres",
+          "SharedSize": "N/A",
+          "Size": "416MB",
+          "Tag": "17-alpine",
+          "UniqueSize": "N/A"
+        },
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-07-08 01:46:49 +0800 CST",
+          "CreatedSince": "3 months ago",
+          "Digest": "sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193",
+          "ID": "sha256:742f40ea20b9ff2ff31db5458d127452988a2164df9e17441e191f3b72252193",
+          "Repository": "postgres",
+          "SharedSize": "N/A",
+          "Size": "416MB",
+          "Tag": "17.10-alpine",
+          "UniqueSize": "N/A"
+        },
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-07-01 07:39:48 +0800 CST",
+          "CreatedSince": "4 months ago",
+          "Digest": "sha256:a339861ae23e9abb272cea45dfafde21760d2ce6577a70f8a926153677902663",
+          "ID": "sha256:a339861ae23e9abb272cea45dfafde21760d2ce6577a70f8a926153677902663",
+          "Repository": "rust",
+          "SharedSize": "N/A",
+          "Size": "2.08GB",
+          "Tag": "<none>",
+          "UniqueSize": "N/A"
+        },
+        {
+          "Containers": "0",
+          "CreatedAt": "2026-05-22 02:51:41 +0800 CST",
+          "CreatedSince": "5 months ago",
+          "Digest": "sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14",
+          "ID": "sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14",
+          "Repository": "node",
+          "SharedSize": "N/A",
+          "Size": "227MB",
+          "Tag": "24.16.0-alpine3.23",
+          "UniqueSize": "N/A"
+        }
+      ],
+      "stderr": ""
+    },
+    "dotnet": {
+      "argv": [
+        "dotnet",
+        "--info"
+      ],
+      "exit": 0,
+      "output": ".NET SDK:\n Version:           10.0.300\n Commit:            caa81fa497\n Workload version:  10.0.300-manifests.b47d7e23\n MSBuild version:   18.6.3+caa81fa49\n\n运行时环境:\n OS Name:     Mac OS X\n OS Version:  27.0\n OS Platform: Darwin\n RID:         osx-arm64\n Base Path:   /usr/local/share/dotnet/sdk/10.0.300/\n\n已安装 .NET 工作负载:\n没有要显示的已安装工作负载。\n已配置为在安装新清单时使用 workload sets。\n未安装任何 workload sets。运行 “dotnet workload restore” 以安装工作负载集。\n\nHost:\n  Version:      10.0.8\n  Architecture: arm64\n  Commit:       94ea82652c\n\n.NET SDKs installed:\n  10.0.300 [/usr/local/share/dotnet/sdk]\n\n.NET runtimes installed:\n  Microsoft.AspNetCore.App 10.0.8 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.NETCore.App 10.0.8 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n\nOther architectures found:\n  None\n\nEnvironment variables:\n  Not set\n\nglobal.json file:\n  Not found\n\nLearn more:\n  https://aka.ms/dotnet/info\n\nDownload .NET:\n  https://aka.ms/dotnet/download",
+      "stderr": ""
+    },
+    "node": {
+      "argv": [
+        "node",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "v24.16.0",
+      "stderr": ""
+    },
+    "cargo": {
+      "argv": [
+        "cargo",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "cargo 1.96.0 (30a34c682 2026-05-25)",
+      "stderr": ""
+    },
+    "rust": {
+      "argv": [
+        "rustc",
+        "--version"
+      ],
+      "exit": 0,
+      "output": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+      "stderr": ""
+    },
+    "os": {
+      "argv": [
+        "sw_vers"
+      ],
+      "exit": 0,
+      "output": "ProductName:\t\tmacOS\nProductVersion:\t\t27.0.1\nBuildVersion:\t\t26A434",
+      "stderr": ""
+    },
+    "orb": {
+      "argv": [
+        "orb",
+        "version"
+      ],
+      "exit": 0,
+      "output": "Version: 2.2.5 (2020500)\nCommit: bf842321f95fc3ca7cda3227bf0cd41cb188c471 (v2.2.5)",
+      "stderr": ""
+    },
+    "disk": {
+      "argv": [
+        "df",
+        "-k",
+        "."
+      ],
+      "exit": 0,
+      "output": "Filesystem   1024-blocks      Used Available Capacity iused      ifree %iused  Mounted on\n/dev/disk3s5   971298980 572000000 368800000    61% 3546423 3688344480    0%   /System/Volumes/Data",
+      "stderr": ""
+    },
+    "postgres_port": {
+      "argv": [
+        "lsof",
+        "-nP",
+        "-iTCP:15432",
+        "-sTCP:LISTEN"
+      ],
+      "exit": 1,
+      "output": "",
+      "stderr": ""
+    },
+    "tools": {
+      "docker": "/usr/local/bin/docker",
+      "dotnet": "/usr/local/share/dotnet/dotnet",
+      "node": "/Users/luobo/.local/share/mise/installs/node/lts/bin/node",
+      "cargo": "/Users/luobo/.cargo/bin/cargo",
+      "rustc": "/Users/luobo/.cargo/bin/rustc",
+      "rustup": "/Users/luobo/.cargo/bin/rustup",
+      "clang": "/usr/bin/clang",
+      "file": "/usr/bin/file",
+      "lipo": "/usr/bin/lipo",
+      "otool": "/usr/bin/otool",
+      "objdump": "/usr/bin/objdump",
+      "readelf": null,
+      "llvm-readelf": null,
+      "trivy": null,
+      "grype": null,
+      "syft": null,
+      "pwsh": null,
+      "prlctl": null,
+      "limactl": null,
+      "qemu-x86_64": null,
+      "qemu-aarch64": null,
+      "gh": "/opt/homebrew/bin/gh",
+      "jq": "/usr/bin/jq",
+      "orb": "/opt/homebrew/bin/orb"
+    },
+    "source": {
+      "head": "848fd0077926d8db32489854084f281281d6e9da",
+      "branch": "dev",
+      "initialWorktreeClean": true
+    },
+    "localImageDetails": [
+      {
+        "ref": "node:24-bookworm-slim",
+        "id": "sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6",
+        "architecture": "arm64",
+        "os": "linux",
+        "digests": [
+          "node@sha256:0e0ff40c39bc087845bfb27465a0df4ea419520094bc35842ff83dd8cbe6f9b6"
+        ],
+        "versions": [
+          "NODE_VERSION=24.21.0"
+        ],
+        "size": 346302955
+      },
+      {
+        "ref": "sha256:a339861ae23e9abb272cea45dfafde21760d2ce6577a70f8a926153677902663",
+        "id": "sha256:a339861ae23e9abb272cea45dfafde21760d2ce6577a70f8a926153677902663",
+        "architecture": "arm64",
+        "os": "linux",
+        "digests": [
+          "rust@sha256:a339861ae23e9abb272cea45dfafde21760d2ce6577a70f8a926153677902663"
+        ],
+        "versions": [
+          "RUST_VERSION=1.96.1"
+        ],
+        "size": 2065855438
+      },
+      {
+        "ref": "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+        "id": "sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939",
+        "architecture": "arm64",
+        "os": "linux",
+        "digests": [
+          "postgres@sha256:a63c1ea3f6a3a5a1621f97d2aba3b30faecfab4224c1b0000cc85ced57bb1939"
+        ],
+        "versions": [
+          "PG_MAJOR=17",
+          "PG_VERSION=17.11-1.pgdg13+2"
+        ],
+        "size": 658490319
+      },
+      {
+        "ref": "postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+        "id": "sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690",
+        "architecture": "arm64",
+        "os": "linux",
+        "digests": [
+          "postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690"
+        ],
+        "versions": [
+          "PG_MAJOR=16",
+          "PG_VERSION=16.15-1.pgdg13+2"
+        ],
+        "size": 654721558
+      }
+    ],
+    "sqliteLinuxAssets": [
+      {
+        "rid": "linux-x64",
+        "pathInPackage": "runtimes/linux-x64/native/libe_sqlite3.so",
+        "size": 1470784,
+        "sha256": "b0f5c48026fedcf9f05cf31c6fadf9e1e001ca59cd85aa68b8b6814e52c18a07",
+        "elfMachine": 62,
+        "referencedGlibcVersions": [
+          "GLIBC_2.2.5",
+          "GLIBC_2.3.4",
+          "GLIBC_2.4",
+          "GLIBC_2.14",
+          "GLIBC_2.28",
+          "GLIBC_2.33",
+          "GLIBC_2.34"
+        ],
+        "glibcNote": "ASCII references only; not a complete ELF dynamic version requirement audit",
+        "file": "/Users/luobo/Code/Radish/.nuget/packages/sqlitepclraw.lib.e_sqlite3/3.53.3/runtimes/linux-x64/native/libe_sqlite3.so: ELF 64-bit LSB shared object, x86-64, version 1 (SYSV), dynamically linked, BuildID[sha1]=e770a0c9df053a3b8eb153be81dea442bbc587ea, not stripped"
+      },
+      {
+        "rid": "linux-arm64",
+        "pathInPackage": "runtimes/linux-arm64/native/libe_sqlite3.so",
+        "size": 1534296,
+        "sha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5",
+        "elfMachine": 183,
+        "referencedGlibcVersions": [
+          "GLIBC_2.17",
+          "GLIBC_2.28",
+          "GLIBC_2.33",
+          "GLIBC_2.34"
+        ],
+        "glibcNote": "ASCII references only; not a complete ELF dynamic version requirement audit",
+        "file": "/Users/luobo/Code/Radish/.nuget/packages/sqlitepclraw.lib.e_sqlite3/3.53.3/runtimes/linux-arm64/native/libe_sqlite3.so: ELF 64-bit LSB shared object, ARM aarch64, version 1 (SYSV), dynamically linked, BuildID[sha1]=ee3168f6c3a7c7ff0f88335629c357501444ec66, not stripped"
+      }
+    ],
+    "nativeManifests": [
+      {
+        "path": "artifacts/native/osx-arm64/Release/manifest.json",
+        "value": {
+          "abi": 65536,
+          "rid": "osx-arm64",
+          "target": "aarch64-apple-darwin",
+          "profile": "release",
+          "rustVersion": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+          "sha256": "24a1ee90eff125c2e7ecedfedb3b52e14ed150638b5886a233aa8e410bb636a1",
+          "inputSha256": "3ddf3e2eb0e9c57e328e04eee805098aac8ea40c8e9b3a962559498d54589447",
+          "minimumPlatform": "macOS 13",
+          "cargoLockSha256": "b49f8c1f810f6daa259407345af50d91c8f84b16d3423893405507816ec61b90",
+          "fonts": {
+            "DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+            "NotoSansSC-VF.ttf": "d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964"
+          }
+        }
+      },
+      {
+        "path": "artifacts/native/osx-arm64/Debug/manifest.json",
+        "value": {
+          "abi": 65536,
+          "rid": "osx-arm64",
+          "target": "aarch64-apple-darwin",
+          "profile": "debug",
+          "rustVersion": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+          "sha256": "e971c1b0735289d039292b6bdfd3efb7a4c78366e4effa247330dcb9b928388d",
+          "inputSha256": "3ddf3e2eb0e9c57e328e04eee805098aac8ea40c8e9b3a962559498d54589447",
+          "minimumPlatform": "macOS 13",
+          "cargoLockSha256": "b49f8c1f810f6daa259407345af50d91c8f84b16d3423893405507816ec61b90",
+          "fonts": {
+            "DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+            "NotoSansSC-VF.ttf": "d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964"
+          }
+        }
+      }
+    ]
+  },
+  "registryMetadata": [
+    {
+      "image": "mcr.microsoft.com/dotnet/sdk:10.0",
+      "error": "Command '['docker', 'buildx', 'imagetools', 'inspect', '--raw', 'mcr.microsoft.com/dotnet/sdk:10.0']' timed out after 20 seconds"
+    },
+    {
+      "image": "mcr.microsoft.com/dotnet/aspnet:10.0",
+      "error": "Command '['docker', 'buildx', 'imagetools', 'inspect', '--raw', 'mcr.microsoft.com/dotnet/aspnet:10.0']' timed out after 20 seconds"
+    },
+    {
+      "image": "node:24-bookworm-slim",
+      "targets": [
+        {
+          "digest": "sha256:a43f7fc3e52e87d12a905f46eea0275def84ca8f2981a5b53fed44d7fb398ee0",
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          },
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "size": 1929
+        },
+        {
+          "digest": "sha256:e80dee4ed3709cf1f8004e34ecfb90df71b7eac8ba0d7d6222ba238a823d1eea",
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux",
+            "variant": "v8"
+          },
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "size": 1931
+        }
+      ]
+    },
+    {
+      "image": "rust:1.96.0-bookworm",
+      "targets": [
+        {
+          "digest": "sha256:c993d32d95cc146bd12c84d66f0b924a6a96f3988325f39c144f2f9893dea120",
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          },
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "size": 1940
+        },
+        {
+          "digest": "sha256:05f85ef6eb0f2600ac62e9d779642b5b362d5be2ed67b80e162fae6e28b66524",
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux",
+            "variant": "v8"
+          },
+          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+          "size": 1942
+        }
+      ]
+    },
+    {
+      "image": "aquasec/trivy:0.70.0",
+      "targets": [
+        {
+          "digest": "sha256:85e87be1a96459c38a4eea47dc64eb2d342bb14cd4b4cef96adcf6ff03378b7c",
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          },
+          "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+          "size": 1159
+        },
+        {
+          "digest": "sha256:06c0a1359e4d745c6d709f5b64421db79fe0b5602c87d6eb5d6ba7d3d79d91ab",
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux"
+          },
+          "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+          "size": 1159
+        }
+      ]
+    }
+  ],
+  "remoteImageConfigs": [
+    {
+      "image": "node:24-bookworm-slim",
+      "digest": "sha256:a43f7fc3e52e87d12a905f46eea0275def84ca8f2981a5b53fed44d7fb398ee0",
+      "architecture": "amd64",
+      "os": "linux",
+      "created": "2026-10-28T20:56:52.2122198Z",
+      "versions": [
+        "NODE_VERSION=24.22.2"
+      ],
+      "entrypoint": [
+        "docker-entrypoint.sh"
+      ]
+    },
+    {
+      "image": "node:24-bookworm-slim",
+      "digest": "sha256:e80dee4ed3709cf1f8004e34ecfb90df71b7eac8ba0d7d6222ba238a823d1eea",
+      "architecture": "arm64",
+      "os": "linux",
+      "created": "2026-10-28T20:56:36.569312412Z",
+      "versions": [
+        "NODE_VERSION=24.22.2"
+      ],
+      "entrypoint": [
+        "docker-entrypoint.sh"
+      ]
+    },
+    {
+      "image": "rust:1.96.0-bookworm",
+      "digest": "sha256:c993d32d95cc146bd12c84d66f0b924a6a96f3988325f39c144f2f9893dea120",
+      "architecture": "amd64",
+      "os": "linux",
+      "created": "2026-06-24T05:03:49.649549459Z",
+      "versions": [
+        "RUST_VERSION=1.96.0"
+      ],
+      "entrypoint": null
+    },
+    {
+      "image": "rust:1.96.0-bookworm",
+      "digest": "sha256:05f85ef6eb0f2600ac62e9d779642b5b362d5be2ed67b80e162fae6e28b66524",
+      "architecture": "arm64",
+      "os": "linux",
+      "created": "2026-06-24T05:09:58.223634965Z",
+      "versions": [
+        "RUST_VERSION=1.96.0"
+      ],
+      "entrypoint": null
+    },
+    {
+      "image": "aquasec/trivy:0.70.0",
+      "digest": "sha256:06c0a1359e4d745c6d709f5b64421db79fe0b5602c87d6eb5d6ba7d3d79d91ab",
+      "architecture": "arm64",
+      "os": "linux",
+      "created": "2026-04-17T06:46:19.250041182Z",
+      "versions": [],
+      "entrypoint": [
+        "trivy"
+      ]
+    }
+  ],
+  "mcrAlternativeReadAttempts": [
+    [
+      {
+        "image": "mcr.microsoft.com/dotnet/sdk:10.0",
+        "error": "<urlopen error _ssl.c:1112: The handshake operation timed out>"
+      },
+      {
+        "image": "mcr.microsoft.com/dotnet/aspnet:10.0",
+        "error": "<urlopen error _ssl.c:1112: The handshake operation timed out>"
+      }
+    ],
+    [
+      {
+        "kind": "sdk",
+        "exit": 28,
+        "error": "curl: (28) SSL connection timeout\n"
+      },
+      {
+        "kind": "aspnet",
+        "exit": 28,
+        "error": "curl: (28) SSL connection timeout\n"
+      }
+    ]
+  ],
+  "limitations": [
+    "MCR SDK/ASP.NET metadata request timeout; no verified digest, exact container versions or distro",
+    "Buildx platform declaration only; no target process executed in this task",
+    "Local AMD64 execution would be emulated, native AMD64 runner not confirmed",
+    "ELF GLIBC version strings are not a full dynamic dependency audit",
+    "Shared daemon state changed externally during audit; preserve unrelated resources",
+    "No current Windows x64 or Intel macOS execution resource confirmed"
+  ],
+  "proposedExecution": {
+    "taskId": "radish-sqlite-linux-20261031-a7c2",
+    "dockerContext": "orbstack",
+    "builder": "orbstack",
+    "labelKey": "io.radish.sqlite-linux",
+    "sourceRevision": "848fd0077926d8db32489854084f281281d6e9da",
+    "ports": [],
+    "finalImages": 8,
+    "sdkPublishOutputs": 32,
+    "sdkPublishColdProcesses": 96,
+    "finalImageColdProcesses": 24,
+    "sdkConfigurations": [
+      "Debug",
+      "Release"
+    ],
+    "finalImageConfiguration": "Release",
+    "databaseServices": [],
+    "sdkImageInputsComplete": false,
+    "scanner": {
+      "image": "aquasec/trivy:0.70.0",
+      "digest": "sha256:06c0a1359e4d745c6d709f5b64421db79fe0b5602c87d6eb5d6ba7d3d79d91ab",
+      "architecture": "arm64",
+      "os": "linux",
+      "created": "2026-04-17T06:46:19.250041182Z",
+      "versions": [],
+      "entrypoint": [
+        "trivy"
+      ]
+    },
+    "sdkLimits": {
+      "cpus": 4,
+      "memory": "6g",
+      "pids": 512
+    },
+    "runtimeProbeLimits": {
+      "cpus": 2,
+      "memory": "1g",
+      "pids": 256,
+      "tmpfs": "/tmp:rw,nosuid,nodev,size=256m"
+    },
+    "cleanup": "Exact task label + recorded container/image IDs; preserve external volumes, networks, base images and shared BuildKit cache"
+  }
+}

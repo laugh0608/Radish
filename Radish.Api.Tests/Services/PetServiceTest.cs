@@ -3,11 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Radish.Common.Exceptions;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.IRepository.Base;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -23,7 +21,6 @@ public class PetServiceTest
     [Fact]
     public async Task ClaimAsync_Should_Create_Default_Pet_When_NotClaimed()
     {
-        var mapper = CreateMapper();
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logRepository = CreateLogRepository();
 
@@ -40,7 +37,7 @@ public class PetServiceTest
                 pet.PublicId.StartsWith(PetProfile.PublicIdPrefix, StringComparison.Ordinal))))
             .ReturnsAsync(7001);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.ClaimAsync(1001, "Tester", 9, new PetClaimDto { Name = "   " });
 
@@ -54,7 +51,7 @@ public class PetServiceTest
     public async Task ClaimAsync_Should_Return_Existing_Pet_When_AlreadyClaimed()
     {
         var pet = CreatePet();
-        var mapper = CreateMapper();
+
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logRepository = CreateLogRepository();
 
@@ -62,7 +59,7 @@ public class PetServiceTest
             .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<PetProfile, bool>>?>()))
             .ReturnsAsync(pet);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.ClaimAsync(1001, "Tester", 0, new PetClaimDto { Name = "新名字" });
 
@@ -75,7 +72,7 @@ public class PetServiceTest
     public async Task GetMyPetAsync_Should_Return_Action_States_Without_Write()
     {
         var pet = CreatePet();
-        var mapper = CreateMapper();
+
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logRepository = CreateLogRepository();
 
@@ -83,7 +80,7 @@ public class PetServiceTest
             .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<PetProfile, bool>>?>()))
             .ReturnsAsync(pet);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.GetMyPetAsync(1001);
 
@@ -111,10 +108,10 @@ public class PetServiceTest
         pet.LastCareTime = DateTime.UtcNow;
         pet.EquippedBackgroundKey = "unregistered-background";
         pet.EquippedToyKey = "unregistered-toy";
-        var mapper = CreateMapper();
+
         var petRepository = CreatePetRepository(pet);
         var logRepository = CreateLogRepository();
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.GetPublicCardAsync(1001, 9);
 
@@ -144,9 +141,9 @@ public class PetServiceTest
         pet.TenantId = 9;
         pet.IsPublic = isPublic;
         pet.IsDeleted = isDeleted;
-        var mapper = CreateMapper();
+
         var petRepository = CreatePetRepository(pet);
-        var service = new PetService(mapper, petRepository.Object, CreateLogRepository().Object);
+        var service = new PetService(petRepository.Object, CreateLogRepository().Object);
 
         var result = await service.GetPublicCardAsync(1001, requestedTenantId);
 
@@ -167,9 +164,9 @@ public class PetServiceTest
         pet.PublicId = publicId;
         pet.SpeciesKey = speciesKey;
         pet.ShapeKey = shapeKey;
-        var mapper = CreateMapper();
+
         var petRepository = CreatePetRepository(pet);
-        var service = new PetService(mapper, petRepository.Object, CreateLogRepository().Object);
+        var service = new PetService(petRepository.Object, CreateLogRepository().Object);
 
         var result = await service.GetPublicCardAsync(1001, 0);
 
@@ -180,7 +177,7 @@ public class PetServiceTest
     public async Task CareAsync_Should_Update_Pet_And_Write_Log()
     {
         var pet = CreatePet();
-        var mapper = CreateMapper();
+
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logRepository = CreateLogRepository();
 
@@ -208,7 +205,7 @@ public class PetServiceTest
                 entry.IdempotencyKey == "care-1")))
             .ReturnsAsync(9001);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.CareAsync(1001, "Tester", new PetCareDto
         {
@@ -243,7 +240,7 @@ public class PetServiceTest
             beforeEnergy: 70,
             afterEnergy: 66,
             growthDelta: 5);
-        var mapper = CreateMapper();
+
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logRepository = CreateLogRepository([existingLog]);
 
@@ -251,7 +248,7 @@ public class PetServiceTest
             .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<PetProfile, bool>>?>()))
             .ReturnsAsync(pet);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.CareAsync(1001, "Tester", new PetCareDto
         {
@@ -270,7 +267,7 @@ public class PetServiceTest
     public async Task CareAsync_Should_Reject_When_DailyLimit_Reached()
     {
         var pet = CreatePet();
-        var mapper = CreateMapper();
+
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var today = DateTime.UtcNow.Date;
         var logs = new List<PetStatLog>
@@ -285,7 +282,7 @@ public class PetServiceTest
             .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<PetProfile, bool>>?>()))
             .ReturnsAsync(pet);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var error = await Assert.ThrowsAsync<BusinessException>(() => service.CareAsync(1001, "Tester", new PetCareDto
         {
@@ -303,7 +300,7 @@ public class PetServiceTest
     public async Task CareAsync_Should_Reject_When_Cooldown_Active()
     {
         var pet = CreatePet();
-        var mapper = CreateMapper();
+
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logs = new List<PetStatLog>
         {
@@ -315,7 +312,7 @@ public class PetServiceTest
             .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<PetProfile, bool>>?>()))
             .ReturnsAsync(pet);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var error = await Assert.ThrowsAsync<BusinessException>(() => service.CareAsync(1001, "Tester", new PetCareDto
         {
@@ -336,7 +333,7 @@ public class PetServiceTest
         pet.Satiety = 90;
         pet.Energy = 2;
         pet.GrowthValue = 118;
-        var mapper = CreateMapper();
+
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logRepository = CreateLogRepository();
 
@@ -361,7 +358,7 @@ public class PetServiceTest
                 entry.GrowthDelta == 5)))
             .ReturnsAsync(9002);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.CareAsync(1001, "Tester", new PetCareDto
         {
@@ -393,7 +390,7 @@ public class PetServiceTest
             CreateLog(8003, pet, PetCareActionTypes.Feed, "feed-3", now.Date.AddHours(3)),
             CreateLog(8101, pet, PetCareActionTypes.Clean, "clean-1", cleanCreateTime)
         };
-        var mapper = CreateMapper();
+
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logRepository = CreateLogRepository(logs);
 
@@ -401,7 +398,7 @@ public class PetServiceTest
             .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<PetProfile, bool>>?>()))
             .ReturnsAsync(pet);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.GetMyPetAsync(1001);
 
@@ -422,7 +419,6 @@ public class PetServiceTest
     [Fact]
     public async Task GetMyLogsAsync_Should_Return_Empty_Page_When_NotClaimed()
     {
-        var mapper = CreateMapper();
         var petRepository = new Mock<IBaseRepository<PetProfile>>(MockBehavior.Strict);
         var logRepository = new Mock<IBaseRepository<PetStatLog>>(MockBehavior.Strict);
 
@@ -430,7 +426,7 @@ public class PetServiceTest
             .Setup(repo => repo.QueryFirstAsync(It.IsAny<Expression<Func<PetProfile, bool>>?>()))
             .ReturnsAsync((PetProfile?)null);
 
-        var service = new PetService(mapper, petRepository.Object, logRepository.Object);
+        var service = new PetService(petRepository.Object, logRepository.Object);
 
         var result = await service.GetMyLogsAsync(1001, 0, 0);
 
@@ -448,14 +444,6 @@ public class PetServiceTest
                 It.IsAny<Expression<Func<PetStatLog, object>>?>(),
                 It.IsAny<OrderByType>()),
             Times.Never);
-    }
-
-    private static IMapper CreateMapper()
-    {
-        var configuration = new MapperConfiguration(
-            cfg => cfg.AddProfile<PetMappingProfile>(),
-            NullLoggerFactory.Instance);
-        return configuration.CreateMapper();
     }
 
     private static PetProfile CreatePet()

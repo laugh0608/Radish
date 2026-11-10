@@ -161,7 +161,7 @@ public class CommentController : ControllerBase
             };
             if (ex is not CommentContentValidationException)
             {
-                Log.ForContext("EventCode", "comment.create_failed").ForContext("SourceCategory", "business")
+                Log.ForContext<CommentController>().ForContext("EventCode", "comment.create_failed").ForContext("SourceCategory", "business")
                     .Error("Comment creation failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             }
             return response;
@@ -234,7 +234,7 @@ public class CommentController : ControllerBase
             };
             if (ex is not CommentOperationRejectedException)
             {
-                Log.ForContext("EventCode", "comment.like_failed").ForContext("SourceCategory", "business")
+                Log.ForContext<CommentController>().ForContext("EventCode", "comment.like_failed").ForContext("SourceCategory", "business")
                     .Error("Comment like failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             }
             return response;
@@ -600,7 +600,7 @@ public class CommentController : ControllerBase
             };
             if (ex is not CommentOperationRejectedException)
             {
-                Log.ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
+                Log.ForContext<CommentController>().ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
                     .Error("Comment edit failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             }
             return response;
@@ -615,7 +615,7 @@ public class CommentController : ControllerBase
             };
             if (ex is not CommentContentValidationException)
             {
-                Log.ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
+                Log.ForContext<CommentController>().ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
                     .Error("Comment edit failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             }
             return response;

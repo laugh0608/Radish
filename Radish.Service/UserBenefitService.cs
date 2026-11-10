@@ -1,5 +1,5 @@
 using System.Linq.Expressions;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Common.AttributeTool;
 using Radish.IRepository;
@@ -27,7 +27,6 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
     private readonly TimeProvider _timeProvider;
 
     public UserBenefitService(
-        IMapper mapper,
         IBaseRepository<UserBenefit> userBenefitRepository,
         IBaseRepository<ShopEntitlementOperation> operationRepository,
         IUserBenefitRepository userBenefitCustomRepository,
@@ -35,7 +34,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
         IAttachmentUrlResolver attachmentUrlResolver,
         IReliableOutboxService? reliableOutboxService = null,
         TimeProvider? timeProvider = null)
-        : base(mapper, userBenefitRepository)
+        : base(ShopMapper.ToUserBenefitVo, userBenefitRepository)
     {
         _userBenefitRepository = userBenefitRepository;
         _operationRepository = operationRepository;
@@ -60,7 +59,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 .ToList();
         }
         var selections = await _userBenefitCustomRepository.GetActiveSelectionsAsync(userId);
-        var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
+        var benefitVos = ShopMapper.ToUserBenefitVoList(benefits.OrderByDescending(b => b.CreateTime).ToList());
         FillBenefitState(benefits, benefitVos, selections, now);
         return benefitVos;
     }
@@ -80,7 +79,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 .ToList();
         }
         var selections = await _userBenefitCustomRepository.GetActiveSelectionsAsync(userId);
-        var benefitVos = Mapper.Map<List<UserBenefitVo>>(benefits.OrderByDescending(b => b.CreateTime).ToList());
+        var benefitVos = ShopMapper.ToUserBenefitVoList(benefits.OrderByDescending(b => b.CreateTime).ToList());
         FillBenefitState(benefits, benefitVos, selections, now);
         return benefitVos;
     }
@@ -525,7 +524,7 @@ public class UserBenefitService : BaseService<UserBenefit, UserBenefitVo>, IUser
                 benefit => benefit.Id == result.CurrentBenefitId.Value && !benefit.IsDeleted);
             if (current != null)
             {
-                currentBenefit = Mapper.Map<UserBenefitVo>(current);
+                currentBenefit = ShopMapper.ToUserBenefitVo(current);
                 FillBenefitState(
                     [current],
                     [currentBenefit],

@@ -5,6 +5,7 @@ using Hangfire.Common;
 using Hangfire.Logging;
 using Hangfire.States;
 using Radish.Common.LogTool;
+using Radish.Extension.Log;
 using Serilog;
 using Serilog.Events;
 
@@ -25,7 +26,8 @@ public sealed class HangfireRuntimeStateFilter : JobFilterAttribute, IElectState
         if (!retrying && context.CandidateState is not (FailedState or DeletedState)) return;
 
         var identity = SHA256.HashData(Encoding.UTF8.GetBytes($"radish:hangfire:{context.BackgroundJob.Id}"));
-        var logger = Log.ForContext("SourceCategory", "job")
+        var logger = Log.ForContext("SourceContext", HangfireLogSink.StateSource)
+            .ForContext("SourceCategory", "job")
             .ForContext("EventCode", retrying ? "job.retrying" : "job.failed")
             .ForContext("operationId", new Guid(identity.AsSpan(0, 16)).ToString("D"))
             .ForContext("failureKind", RuntimeFailureSummary.Classify(failure.Exception))
@@ -58,8 +60,10 @@ public sealed class HangfireRuntimeLogProvider : ILogProvider
             if (messageFunc == null) return true;
             var code = mapped >= LogEventLevel.Error ? "hangfire.runtime_failed"
                 : mapped == LogEventLevel.Warning ? "hangfire.runtime_warning" : "hangfire.diagnostic";
-            var logger = Serilog.Log.ForContext("SourceCategory", "job").ForContext("EventCode", code);
-            if (exception != null) logger = logger.ForContext("failureKind", RuntimeFailureSummary.Classify(exception));
+            var logger = Serilog.Log.ForContext("SourceContext", HangfireLogSink.ProviderSource)
+                .ForContext("SourceCategory", "job").ForContext("EventCode", code)
+                // 显式缺省值防止无异常时从 LogContext 合并出伪造的 failureKind。
+                .ForContext("failureKind", exception == null ? null : RuntimeFailureSummary.Classify(exception));
             logger.Write(mapped, "Hangfire runtime event");
             return true;
         }

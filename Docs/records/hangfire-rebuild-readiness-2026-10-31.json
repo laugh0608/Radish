@@ -1,0 +1,841 @@
+{
+  "schemaVersion": 1,
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "status": "readiness-and-proposed-inputs-only-awaiting-owner-approval",
+  "baseRevision": "9bc15795",
+  "fullSourceArchivesAcquired": false,
+  "sourceProjectsEvaluated": false,
+  "sourceOrPackageCodeExecuted": false,
+  "packagesInstalled": false,
+  "sdkInstalled": false,
+  "databaseOrHostStarted": false,
+  "workflowChanged": false,
+  "remoteWritePerformed": false,
+  "repositories": {
+    "hangfire": {
+      "repository": "HangfireIO/Hangfire",
+      "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "treeSha": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "blobCount": 607,
+      "submodules": []
+    },
+    "cronos": {
+      "repository": "HangfireIO/Cronos",
+      "commit": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+      "treeSha": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+      "blobCount": 38,
+      "submodules": []
+    },
+    "postgresql": {
+      "repository": "hangfire-postgres/Hangfire.PostgreSql",
+      "commit": "a5a728233ac8feb447695acb01f607bd848b00f7",
+      "treeSha": "a5a728233ac8feb447695acb01f607bd848b00f7",
+      "blobCount": 108,
+      "submodules": []
+    }
+  },
+  "sourceFilesRead": [
+    {
+      "repository": "hangfire",
+      "path": "Directory.Build.props",
+      "gitBlob": "756a27a7ac383e4574e11c7bafe83f39591887a9",
+      "sha256": "3bc398c29ef7230d0c6c3ab8042fc3662e9b2e69650022f7300a62f243bb0952"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/Directory.Build.props",
+      "gitBlob": "5cf43b24fbea68da2bf4fa05170d70106244b293",
+      "sha256": "c2cfd01601b7c30f8244e4ff5a3a3d49b7e95d9ced356d9427e16f3c8926bade"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/Hangfire.Core/Hangfire.Core.csproj",
+      "gitBlob": "eab5035e01c12b2d499bae5dd65cf18e6dc87269",
+      "sha256": "bd4a5a6cc79d13e3f713ff9cad74a0cb94139cc24c61d212b5dcdb6efc82a984"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/Hangfire.NetCore/Hangfire.NetCore.csproj",
+      "gitBlob": "f3db566c3f171d0e3fb93814bad98e90dafeaac2",
+      "sha256": "8e7d08c613f30a0b46bb627349c76ca2e6dfaf2a42aa31ba53a00f437f4fc751"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/Hangfire.AspNetCore/Hangfire.AspNetCore.csproj",
+      "gitBlob": "e5f58b64d7926003f7c98878f3c3530fd57bc842",
+      "sha256": "1616051574f51c67b120386565f45f0012957ac037ad20397b70a16ea360b6fc"
+    },
+    {
+      "repository": "hangfire",
+      "path": ".nuget/packages.lock.json",
+      "gitBlob": "49002394baaeb613722f2f8f6fc454345ad4e6f7",
+      "sha256": "95f255c64bc0a302b70b2e99ef22ebfca006edb56ef4bb30701e54751e590b4f"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/Hangfire.Core/packages.lock.json",
+      "gitBlob": "1f1dc58c71621efcd88cf332247ba26710270488",
+      "sha256": "7e52fb6cd7254605d5aa8303ce3deae72abfe7d03759319c859065c54d65f03c"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/Hangfire.NetCore/packages.lock.json",
+      "gitBlob": "8a3194ce010c771e4aa9f54876d48511f0bbc6c9",
+      "sha256": "1aaa76c8f5f1bd786f8acdbef33b91b825623d43a88dc0653af6771d57e455fb"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/Hangfire.AspNetCore/packages.lock.json",
+      "gitBlob": "65bd0206879f14813ff5a4ceb781676f6bda38da",
+      "sha256": "f105d88efdfc577364f83260bc8d3485aed407e1ec3691cbaad51ef401c655a2"
+    },
+    {
+      "repository": "hangfire",
+      "path": "psake-project.ps1",
+      "gitBlob": "29ea46d922f14751d34abf1e669c3497e19dc0e7",
+      "sha256": "f1296344b2998869ee4145dd859774e826480c3fdec44a7acc0c8e0807d57b63"
+    },
+    {
+      "repository": "hangfire",
+      "path": "appveyor.yml",
+      "gitBlob": "702fe31f45687d90e2a9d040f8d748d4bf68cc51",
+      "sha256": "d5399da9a394660fa79845851e158b6f68af5d6f1d16ed06a8c8d3d8e27ba4a1"
+    },
+    {
+      "repository": "hangfire",
+      "path": "nuspecs/Hangfire.Core.nuspec",
+      "gitBlob": "7cdf062cf6f644ef3b48041f09cad969e1779955",
+      "sha256": "a620520431086ae18ddd70f9093d0aa3e76163c5025582972329ac1216d0f4be"
+    },
+    {
+      "repository": "cronos",
+      "path": "Directory.build.props",
+      "gitBlob": "2d0acb1bf466f097cee205b59d88ca1cca0916b6",
+      "sha256": "e27e27b9733670631e4723e0146d2da86bfd5d6e9013b50d3b4e4ea40403da4a"
+    },
+    {
+      "repository": "cronos",
+      "path": "src/Directory.build.props",
+      "gitBlob": "1a52bc0734076c7659e1411f9ba079e3df469022",
+      "sha256": "65cec761b1793f85dbcbb6f54a3e75edfd67a9af1cae94a585599c1077acf555"
+    },
+    {
+      "repository": "cronos",
+      "path": "src/Cronos/Cronos.csproj",
+      "gitBlob": "2bdec3bf78e680373c79b8cdff5ecbf8d7e44b24",
+      "sha256": "545105c62888e69b128b23f611e264290e6e8d9b0950aade1f7820c476efb407"
+    },
+    {
+      "repository": "cronos",
+      "path": "src/Cronos/packages.lock.json",
+      "gitBlob": "f77a9f90bca0865b0a1fb4df1839da3523fdf379",
+      "sha256": "841a9e1a3ceba3a6687e37663e2d4408a147d5653ace0e2de44040cb8313db60"
+    },
+    {
+      "repository": "cronos",
+      "path": "nuspecs/Cronos.nuspec",
+      "gitBlob": "204fb7e78694050020ee0ada19ebb0fc443b38da",
+      "sha256": "25fee8ee0a3f9b6ded04d45fbc41a488884ffa5813a04fbc7171019ed0622950"
+    },
+    {
+      "repository": "cronos",
+      "path": "psake-project.ps1",
+      "gitBlob": "b95bfe899b3bc7a93b7aa57dbb5213d74decc91f",
+      "sha256": "59138b66f41c9c7dbc84e3026b1865fa6b380b44f645fd153f2c8614342c401f"
+    },
+    {
+      "repository": "postgresql",
+      "path": "src/Hangfire.PostgreSql/Hangfire.PostgreSql.csproj",
+      "gitBlob": "102d2e17547457d9d6eebd5b91e5f6c71d2209c3",
+      "sha256": "d8d79c7389e12fb271f8329d06053e56e9e7bd49f0886ced7e50e358359f2134"
+    },
+    {
+      "repository": "postgresql",
+      "path": "src/Common/Hangfire.targets",
+      "gitBlob": "65bdabebc3e21b22d309d5e5dc333b0d282aa586",
+      "sha256": "3197fcb6fcc7e27f50fad9c360778c279464923de52414c914ec936a4173496a"
+    },
+    {
+      "repository": "postgresql",
+      "path": ".github/workflows/ci.yml",
+      "gitBlob": "542bb98317c44ac94b58ea1596f2d4e377a93e92",
+      "sha256": "a361d2c869082865d70039951e93a816e644ba2b24cde4b5b517eb919a55d531"
+    },
+    {
+      "repository": "postgresql",
+      "path": ".github/workflows/pack.yml",
+      "gitBlob": "3aca17a3f7fe3f17f4b3c17ccf53ece2c9aa15d9",
+      "sha256": "3cec3dd42628375e1c3dd02320fc30352fa385ed78c6573b26e78034da326c81"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/SharedAssemblyInfo.cs",
+      "gitBlob": "a53eaab3534978a74efcd178707526ea4a161a65",
+      "sha256": "3f88e8d81cba6830ecf4f3ce575f68c4d7a1aced1c748f544a1c9b7582fe55cb"
+    },
+    {
+      "repository": "hangfire",
+      "path": "src/Hangfire.Core/Razor.build",
+      "gitBlob": "778761c93df5c7e08b1af17e55f205c34409e173",
+      "sha256": "0f15b3eac6b433029786f69c12c70da3d3e3ed1ac92d89581e74004ffef6d070"
+    },
+    {
+      "repository": "hangfire",
+      "path": ".nuget/packages.config",
+      "gitBlob": "23919423831e34d1f9bf927a959df6fa93d59184",
+      "sha256": "fc63756bdd135f749b3e89f3a102af5813932f88d97856e31ab636ec361d74d4"
+    },
+    {
+      "repository": "hangfire",
+      "path": "LICENSE.md",
+      "gitBlob": "2a437bc6b81bc1311edfdb2afccf9ff51401efdc",
+      "sha256": "3e9ba6caf11683d153d1786abb702c1f7ec88458017c2e0615bc0f877d91c953"
+    },
+    {
+      "repository": "hangfire",
+      "path": ".gitattributes",
+      "gitBlob": "1f56106b03ad99c40ec1079625e89c30194a8cc4",
+      "sha256": "cacbac05e639fa0e88c7b329f4387ec6752a8d421f9419ed65c48aabe9fceb5f"
+    },
+    {
+      "repository": "cronos",
+      "path": "src/SharedAssemblyInfo.cs",
+      "gitBlob": "81fb74df050a7ccf796df43476341981624b609d",
+      "sha256": "de545bc0a5656944d7851290650113ff6382c5312f629de4252a11cd2a81508b"
+    },
+    {
+      "repository": "cronos",
+      "path": ".nuget/packages.config",
+      "gitBlob": "80f57dc64576688e9d512a8535ad4421fa023343",
+      "sha256": "5e39305785bbdca61632874c7567f3fa2b686dc3897922ae6f357647fa949a58"
+    },
+    {
+      "repository": "cronos",
+      "path": "LICENSE",
+      "gitBlob": "a900d60a8e78a4b83c9a454ea661a2579ebf3e0f",
+      "sha256": "48e6c7a1b9a9e687391e6613269b4aa81b6c910f8e2bb53bee7a7e86e53b584a"
+    },
+    {
+      "repository": "cronos",
+      "path": ".gitattributes",
+      "gitBlob": "d918140a4eb60efd3828d0aebb6685865898769f",
+      "sha256": "8411e45ba51ae0f0c63d44b2dd24d8f324c8578e8a08e5f66a4899074c802c37"
+    },
+    {
+      "repository": "postgresql",
+      "path": "LICENSE.md",
+      "gitBlob": "3592c238ad093f10bf67b2f773a3d09d24c79db1",
+      "sha256": "e3388ea0c5d8cb570d6baf32937523640c942a46b99ec509c8ca2e2d1a5c6e46"
+    },
+    {
+      "repository": "postgresql",
+      "path": ".gitattributes",
+      "gitBlob": "1ff0c423042b46cb1d617b81efb715defbe8054d",
+      "sha256": "45a7cbb7d9942ba7ffce0b20bc8dbe2d1196533bc6e4bd245871d77fb1eedfdc"
+    },
+    {
+      "repository": "hangfire",
+      "path": "NOTICES",
+      "gitBlob": "0f417d2a742c1038f19ef3a6830f832f3aaaf871",
+      "sha256": "9c330aa46c8c30de312f5fff05b658e95b6b7ef8947b200d86aad245027afbf4"
+    }
+  ],
+  "postgresqlTag": {
+    "ref": "refs/tags/1.20.12",
+    "node_id": "MDM6UmVmMjYwNjc2OTk6cmVmcy90YWdzLzEuMjAuMTI=",
+    "url": "https://api.github.com/repos/hangfire-postgres/Hangfire.PostgreSql/git/refs/tags/1.20.12",
+    "object": {
+      "sha": "a5a728233ac8feb447695acb01f607bd848b00f7",
+      "type": "commit",
+      "url": "https://api.github.com/repos/hangfire-postgres/Hangfire.PostgreSql/git/commits/a5a728233ac8feb447695acb01f607bd848b00f7"
+    }
+  },
+  "hostSdkInspection": {
+    "sdk": "10.0.300",
+    "releaseMetadata": "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json",
+    "osxArm64SdkArchive": {
+      "name": "dotnet-sdk-osx-arm64.tar.gz",
+      "rid": "osx-arm64",
+      "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.300/dotnet-sdk-10.0.300-osx-arm64.tar.gz",
+      "hash": "6b3b86af17e833f90069461e463d75f1923cc62f4ebf79cd605097b155dcfea2257a321c1ae9d20f75f75920c5beb8232b68ce5b2993aedc33312b41ff09abf5"
+    },
+    "installedSdkKnownFrameworkSha256": "387ed0b98a799d06377e275744b93219c67737382bb49408ffeee840a68152a7",
+    "installedNetstandardRefVersion": [],
+    "netstandard21ReferencePackDownloadRequired": true
+  },
+  "proposedSdk": {
+    "sdk": "10.0.403",
+    "runtime": "10.0.14",
+    "releaseMetadata": "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json",
+    "archive": {
+      "name": "dotnet-sdk-osx-arm64.tar.gz",
+      "rid": "osx-arm64",
+      "url": "https://builds.dotnet.microsoft.com/dotnet/Sdk/10.0.403/dotnet-sdk-10.0.403-osx-arm64.tar.gz",
+      "hash": "5893c66b48ea3674c7da18501059d606e96f3672fabe4d5e41762e692c7c83df3ee0b2b9dc5a0786191da2dc413d7335158101c14c935ab217f31ac2529770f3"
+    },
+    "installation": "proposed-task-private-only-not-downloaded-or-installed",
+    "reason": "Use patched SDK-bundled SourceLink/analyzers and preserve selected runtime TFMs; direct 10.x NuGet package compatibility was not restored or tested."
+  },
+  "referencePacks": [
+    {
+      "package": "microsoft.netcore.app.ref",
+      "version": "3.0.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.ref/3.0.0/microsoft.netcore.app.ref.3.0.0.nupkg",
+      "bytes": 3861988,
+      "sha256": "3c7a2fbddfa63cdf47a02174ac51274b4d79a7b623efaf9ef5c7d253824023e2",
+      "reviewedFiles": [
+        "Microsoft.NETCore.App.Ref.nuspec"
+      ],
+      "executed": false,
+      "installed": false
+    },
+    {
+      "package": "microsoft.aspnetcore.app.ref",
+      "version": "3.0.1",
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.app.ref/3.0.1/microsoft.aspnetcore.app.ref.3.0.1.nupkg",
+      "bytes": 2247827,
+      "sha256": "cb8550f2d78264e9c2272834ae1decd526dba9fa047250794fa9427ccaf1594c",
+      "reviewedFiles": [
+        "Microsoft.AspNetCore.App.Ref.nuspec"
+      ],
+      "executed": false,
+      "installed": false
+    },
+    {
+      "package": "netstandard.library.ref",
+      "version": "2.1.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/netstandard.library.ref/2.1.0/netstandard.library.ref.2.1.0.nupkg",
+      "bytes": 2955681,
+      "sha256": "46ea2fcbd10a817685b85af7ce0c397d12944bdc81209e272de1e05efd33c78a",
+      "executed": false,
+      "installed": false
+    }
+  ],
+  "gitVersionStaticReview": {
+    "version": "5.11.1",
+    "archiveSha256": "363abed38ebd044c8ce3157d126b381ca9bb8cfb5005114d96101eb736af9f97",
+    "defaultCli": "dotnet --roll-forward Major tools/netcoreapp3.1/gitversion.dll",
+    "defaultTaskAssembly": "tools/netcoreapp3.1/GitVersion.MsBuild.dll",
+    "osxArm64Libgit2Present": true,
+    "osxArm64Libgit2Package": "LibGit2Sharp.NativeBinaries/2.0.315-alpha.0.9",
+    "nativeExecutionVerified": false
+  },
+  "securityReview": {
+    "feedIndex": [
+      {
+        "@name": "base",
+        "@id": "https://api.nuget.org/v3-vulnerabilities/2026.10.28.05.41.06/vulnerability.base.json",
+        "@updated": "2026-10-28T05:41:06.8059565Z",
+        "comment": "The base data for vulnerability update periodically"
+      },
+      {
+        "@name": "update",
+        "@id": "https://api.nuget.org/v3-vulnerabilities/2026.10.28.05.41.06/2026.10.31.05.41.29/vulnerability.update.json",
+        "@updated": "2026-10-31T05:41:29.5089812Z",
+        "comment": "The patch data for the vulnerability. Contains all the vulnerabilities since base was last updated."
+      }
+    ],
+    "originalDeclaredCandidateFindings": [
+      {
+        "package": "newtonsoft.json",
+        "version": "11.0.1",
+        "url": "https://github.com/advisories/GHSA-5crp-9r3c-p9vr",
+        "severity": 2,
+        "versions": "(, 13.0.1)"
+      },
+      {
+        "package": "system.text.json",
+        "version": "6.0.0",
+        "url": "https://github.com/advisories/GHSA-8g4q-xg66-9fp4",
+        "severity": 2,
+        "versions": "[6.0.0, 6.0.9]"
+      },
+      {
+        "package": "microsoft.build.tasks.git",
+        "version": "8.0.0",
+        "url": "https://github.com/advisories/GHSA-23fw-v26w-5fgq",
+        "severity": 1,
+        "versions": "[8.0.0, 8.0.0]"
+      }
+    ],
+    "proposedStaticCandidateFindings": [],
+    "claim": "Official NuGet range matching for static candidates only; not dotnet restore, a completed NuGet audit, SDK execution or a bundled-native-tool scan.",
+    "sdkSourceLinkReferences": "https://github.com/dotnet/sourcelink",
+    "explicit10xNugetSourceLinkRejected": "Package nuspec has net472/net8.0 dependency groups, not the old runtime targets. Use pinned SDK-bundled providers instead."
+  },
+  "proposedPrivatePackageCount": 42,
+  "packageAllowlist": [
+    {
+      "package": "cronos",
+      "version": "0.8.3",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/cronos/0.8.3/cronos.0.8.3.nupkg",
+      "upstreamContentHash": "lep1gKd68dBEt7isLnnHadJHwUlhctMd+gYGMk3p8eOT9dIfw6fXJFkreYBQ8dIXm23S01ilHgpk2ttou5Wvtw=="
+    },
+    {
+      "package": "dapper",
+      "version": "2.0.123",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/dapper/2.0.123/dapper.2.0.123.nupkg",
+      "existingApplicationAssetsContentHash": "RDFF4rBLLmbpi6pwkY7q/M6UXHRJEOerplDGE5jwEkP/JGJnBauAClYavNKJPW1yOTWRPIyfj4is3EaJxQXILQ==",
+      "existingCacheArchiveSha256": "21cde9307b6ae6317de2d3e2f25e4c1431b22e71196287dcab16c7e720cb1d96",
+      "nuspecSha256": "fcb91c4c23b96d50f3af59115d0170f5566fdc3c03582464c5cf3f574d1ed3c2"
+    },
+    {
+      "package": "gitversion.msbuild",
+      "version": "5.11.1",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/gitversion.msbuild/5.11.1/gitversion.msbuild.5.11.1.nupkg",
+      "reviewedArchiveSha256": "363abed38ebd044c8ce3157d126b381ca9bb8cfb5005114d96101eb736af9f97",
+      "nuspecSha256": "56efd53790dee7154f2bd4d5dff7cff4089c9d189b341f090ec225763c90f0e0"
+    },
+    {
+      "package": "hangfire.core",
+      "version": "1.8.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/hangfire.core/1.8.0/hangfire.core.1.8.0.nupkg",
+      "existingCacheArchiveSha256": "16119d185ae82c5e8236ec5671e357e3a1ffeed696a68aaf6d627c2b3428ef10",
+      "nuspecSha256": "df7bebb576675aa6a6764ece9c5db8a96324afde6ce7a941424b866a012efd79"
+    },
+    {
+      "package": "ilrepack",
+      "version": "2.0.27",
+      "scope": [
+        "merge-tool"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/ilrepack/2.0.27/ilrepack.2.0.27.nupkg",
+      "upstreamContentHash": "N5nhVwlgU2ipeonLBVuv1HpsIclJI/5QujuLeo3BW7irD2KnSFXkHa5FmXwzdCkB36D0XGOxNMxh99P7kjgU2A==",
+      "reviewedArchiveSha256": "b4d43d96c781a8b837d95f649a753ec68f49c9f7dfbeddf38f63fb3c7f208dad"
+    },
+    {
+      "package": "liblog",
+      "version": "1.5.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/liblog/1.5.0/liblog.1.5.0.nupkg",
+      "upstreamContentHash": "0bNoz50GPHYnS3fv/qTS2dFBeYgoppM1t//gWULGxY/TM5TNxxknUWqOqzE8eZgLIa2ENfIwzumvbeWFnx14rg=="
+    },
+    {
+      "package": "microsoft.aspnetcore.app.ref",
+      "version": "3.0.1",
+      "scope": [
+        "reference-pack"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.aspnetcore.app.ref/3.0.1/microsoft.aspnetcore.app.ref.3.0.1.nupkg",
+      "reviewedArchiveSha256": "cb8550f2d78264e9c2272834ae1decd526dba9fa047250794fa9427ccaf1594c"
+    },
+    {
+      "package": "microsoft.bcl.asyncinterfaces",
+      "version": "6.0.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.bcl.asyncinterfaces/6.0.0/microsoft.bcl.asyncinterfaces.6.0.0.nupkg",
+      "existingCacheArchiveSha256": "e3df87fe2170a7e01f0880af59caa8f6eb380b3c40a4f282dfb43912aaf0f895",
+      "nuspecSha256": "9c9c0ef645a8753ef9e496b7fa3de40c2f876a1eb91c6b63d077b1f7d2a095eb"
+    },
+    {
+      "package": "microsoft.bcl.hashcode",
+      "version": "1.1.1",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.bcl.hashcode/1.1.1/microsoft.bcl.hashcode.1.1.1.nupkg",
+      "nuspecSha256": "73a7204f5936529f7dae77ffaa291e8fde755be4bcdbbadb69a8a238f0169f06"
+    },
+    {
+      "package": "microsoft.csharp",
+      "version": "4.4.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.csharp/4.4.0/microsoft.csharp.4.4.0.nupkg",
+      "upstreamContentHash": "vvVR/B08YVghQ4jHEloxqw2ZWzEGE1AOA5E0DioUM3ujbXz6FD3AfB/0Jl2ohJPd0nXYGwmPe1En6HTsSriq1A=="
+    },
+    {
+      "package": "microsoft.csharp",
+      "version": "4.7.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.csharp/4.7.0/microsoft.csharp.4.7.0.nupkg",
+      "existingCacheArchiveSha256": "127927bf646c145ebc9443ddadfe4cf81a55d641e82d3551029294c2e93fa63d",
+      "nuspecSha256": "ced9cceff05862778f93e5a2ab9e84f007ec6cef6fb00ba8b155186861da4d13"
+    },
+    {
+      "package": "microsoft.extensions.configuration.abstractions",
+      "version": "3.0.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.configuration.abstractions/3.0.0/microsoft.extensions.configuration.abstractions.3.0.0.nupkg",
+      "upstreamContentHash": "Lge/PbXC53jI1MF2J92X5EZOeKV8Q/rlB1aV3H9I/ZTDyQGOyBcL03IAvnviWpHKj43BDkNy6kU2KKoh8kAS0g==",
+      "existingCacheArchiveSha256": "1890efb77a850227f94e81631e0b3c8a609a50447bcaf6098219e5617887ac75"
+    },
+    {
+      "package": "microsoft.extensions.dependencyinjection.abstractions",
+      "version": "3.0.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.dependencyinjection.abstractions/3.0.0/microsoft.extensions.dependencyinjection.abstractions.3.0.0.nupkg",
+      "upstreamContentHash": "ofQRroDlzJ0xKOtzNuaVt6QKNImFkhkG0lIMpGl7PtXnIf5SuLWBeiQZAP8DNSxDBJJdcsPkiJiMYK2WA5H8dQ==",
+      "existingCacheArchiveSha256": "7464dbeac1ec8d9f3a7e22e7c1b6ae19ff4241d37b1bdea508ce000e3692481b"
+    },
+    {
+      "package": "microsoft.extensions.fileproviders.abstractions",
+      "version": "3.0.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.fileproviders.abstractions/3.0.0/microsoft.extensions.fileproviders.abstractions.3.0.0.nupkg",
+      "upstreamContentHash": "kahEeykb6FyQytoZNNXuz74X85B4weIEt8Kd+0klK48bkXDWOIHAOvNjlGsPMcS9CL935Te8QGQS83JqCbpdHA==",
+      "existingCacheArchiveSha256": "4222c122c014707916934228e981283f3dde42ef24e742761b32c59a2c18b498"
+    },
+    {
+      "package": "microsoft.extensions.hosting.abstractions",
+      "version": "3.0.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.hosting.abstractions/3.0.0/microsoft.extensions.hosting.abstractions.3.0.0.nupkg",
+      "upstreamContentHash": "qeDWS5ErmkUN96BdQqpmeCmLk5HJWQ/SPw3ux5v5/Qb0hKZS5wojBMulnBC7JUEiBwg7Ir71Yjf1lFiRT5MdtQ==",
+      "existingCacheArchiveSha256": "894302451f6e1d2a2e6f8f0c6e87b04f1a243f9430ac2e3b5f9b7e0be254328e"
+    },
+    {
+      "package": "microsoft.extensions.logging.abstractions",
+      "version": "3.0.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.logging.abstractions/3.0.0/microsoft.extensions.logging.abstractions.3.0.0.nupkg",
+      "upstreamContentHash": "+PsosTYZn+omucI0ff9eywo9QcPLwcbIWf7dz7ZLM1zGR8gVZXJ3wo6+tkuIedUNW5iWENlVJPEvrGjiVeoNNQ==",
+      "existingCacheArchiveSha256": "a7bd2e4c435641cd09ee26cb1e54475a4dd16198340cc3f78369b890051aa310"
+    },
+    {
+      "package": "microsoft.extensions.primitives",
+      "version": "3.0.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.extensions.primitives/3.0.0/microsoft.extensions.primitives.3.0.0.nupkg",
+      "upstreamContentHash": "6gwewTbmOh+ZVBicVkL1XRp79sx4O7BVY6Yy+7OYZdwn3pyOKe9lOam+3gXJ3TZMjhJZdV0Ub8hxHt2vkrmN5Q==",
+      "existingCacheArchiveSha256": "730963d17d7d82781c381ee4a4e0e117f87debf2faa6c30b04839dda97f709b5"
+    },
+    {
+      "package": "microsoft.netcore.app.ref",
+      "version": "3.0.0",
+      "scope": [
+        "reference-pack"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.app.ref/3.0.0/microsoft.netcore.app.ref.3.0.0.nupkg",
+      "reviewedArchiveSha256": "3c7a2fbddfa63cdf47a02174ac51274b4d79a7b623efaf9ef5c7d253824023e2"
+    },
+    {
+      "package": "microsoft.netcore.platforms",
+      "version": "1.1.0",
+      "scope": [
+        "hangfire-cronos",
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/microsoft.netcore.platforms/1.1.0/microsoft.netcore.platforms.1.1.0.nupkg",
+      "upstreamContentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A==",
+      "existingCacheArchiveSha256": "15e338d24b5c39b4099389cc612841eb51ff13c07bb4829f97d39b27420e7023",
+      "nuspecSha256": "0d2c35bda9b060d2b4f6f62f8bb0d381aac8f6e966773747afceb88d73a0be23"
+    },
+    {
+      "package": "morelinq.source.moreenumerable.pairwise",
+      "version": "1.0.1",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/morelinq.source.moreenumerable.pairwise/1.0.1/morelinq.source.moreenumerable.pairwise.1.0.1.nupkg",
+      "upstreamContentHash": "N1bmYqxItSwixZ72KJ/V4e3mEnIO5AtMcmjtilqe+Ulp4GpSje9DP+1Cv4j01s3uG4h7P4G1axUEODL1yWB5Og=="
+    },
+    {
+      "package": "netstandard.library",
+      "version": "2.0.3",
+      "scope": [
+        "hangfire-cronos",
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/netstandard.library/2.0.3/netstandard.library.2.0.3.nupkg",
+      "upstreamContentHash": "st47PosZSHrjECdjeIzZQbzivYBJFv6P2nv4cj2ypdI204DO+vZ7l5raGMiX4eXMJ53RfOIg+/s4DHVZ54Nu2A==",
+      "nuspecSha256": "f0c9c450d3c84f9c6c2728834843731a09e259d3aa784b65a557fbd370d73d77"
+    },
+    {
+      "package": "netstandard.library.ref",
+      "version": "2.1.0",
+      "scope": [
+        "reference-pack"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/netstandard.library.ref/2.1.0/netstandard.library.ref.2.1.0.nupkg",
+      "reviewedArchiveSha256": "46ea2fcbd10a817685b85af7ce0c397d12944bdc81209e272de1e05efd33c78a"
+    },
+    {
+      "package": "newtonsoft.json",
+      "version": "13.0.4",
+      "scope": [
+        "hangfire-cronos",
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/newtonsoft.json/13.0.4/newtonsoft.json.13.0.4.nupkg",
+      "existingApplicationAssetsContentHash": "pdgNNMai3zv51W5aq268sujXUyx7SNdE2bj1wZcWjAQrKMFZV260lbqYop1d2GM67JI1huLRwxo9ZqnfF/lC6A==",
+      "existingCacheArchiveSha256": "f09081d457405baf35a973fa0c50d6bf272ed683f2568c5a620a49da952f6529",
+      "nuspecSha256": "00d99dfaad3488147cdba54d1a5efd4d8ea9686749f7417ce13335dae8324c01"
+    },
+    {
+      "package": "npgsql",
+      "version": "6.0.11",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/npgsql/6.0.11/npgsql.6.0.11.nupkg",
+      "existingCacheArchiveSha256": "03bd22f59cad7bf0cc137f3b57d51f434399949b5c61a10333c86c7044f803e0",
+      "nuspecSha256": "f5a5c0a6f6c15201427c2e87a9cdf80c361a9b5b398aaa5a40d991bcb245f771"
+    },
+    {
+      "package": "stacktraceformatter.source",
+      "version": "1.1.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/stacktraceformatter.source/1.1.0/stacktraceformatter.source.1.1.0.nupkg",
+      "upstreamContentHash": "69Zxg50Sm1kq9hvxPgEo0w9li8oiD2qVT87GGsqXJP2vfYs33LVKGHRMSP2Z4iTP3UC0PJTeurCeWY2t7X/76Q=="
+    },
+    {
+      "package": "stacktraceparser.source",
+      "version": "1.3.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/stacktraceparser.source/1.3.0/stacktraceparser.source.1.3.0.nupkg",
+      "upstreamContentHash": "tOdf1XpHE2YQJpBERplZA2kMTJQtJnKzSc7GMO/yeNNGuXNueVqySfIr/gfU1vx9k2FO8u0zD4mtnZGwKQM+Zg=="
+    },
+    {
+      "package": "system.buffers",
+      "version": "4.4.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.buffers/4.4.0/system.buffers.4.4.0.nupkg",
+      "upstreamContentHash": "AwarXzzoDwX6BgrhjoJsk6tUezZEozOT5Y9QKF94Gl4JK91I4PIIBkBco9068Y9/Dra8Dkbie99kXB8+1BaYKw=="
+    },
+    {
+      "package": "system.buffers",
+      "version": "4.5.1",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.buffers/4.5.1/system.buffers.4.5.1.nupkg",
+      "nuspecSha256": "1d91cfeda4befe060d1766b5d9dfe6b5732fb82002766aea411fceef58ef41dd"
+    },
+    {
+      "package": "system.collections.immutable",
+      "version": "6.0.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.collections.immutable/6.0.0/system.collections.immutable.6.0.0.nupkg",
+      "nuspecSha256": "9c8eeb9c1708b390e1c21165ee4333a78cf051faae3c47686037ba11c9343737"
+    },
+    {
+      "package": "system.diagnostics.diagnosticsource",
+      "version": "6.0.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.diagnostics.diagnosticsource/6.0.0/system.diagnostics.diagnosticsource.6.0.0.nupkg",
+      "nuspecSha256": "7d7537e36f10bcbcac3a648b7c83d0b81972241949d02fb03599a3bba5c2cfb8"
+    },
+    {
+      "package": "system.memory",
+      "version": "4.5.2",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.memory/4.5.2/system.memory.4.5.2.nupkg",
+      "upstreamContentHash": "fvq1GNmUFwbKv+aLVYYdgu/+gc8Nu9oFujOxIjPrsf+meis9JBzTPDL6aP/eeGOz9yPj6rRLUbOjKMpsMEWpNg=="
+    },
+    {
+      "package": "system.memory",
+      "version": "4.5.4",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.memory/4.5.4/system.memory.4.5.4.nupkg",
+      "existingCacheArchiveSha256": "dec0847f33b8823e4260672d97d657411461c00ada3107ec7bbcb32a845eeb91",
+      "nuspecSha256": "f5e13147ecff79fca4d14df81170e2e4dc9b48e8863ec5db0d146f73be14b52c"
+    },
+    {
+      "package": "system.numerics.vectors",
+      "version": "4.4.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.numerics.vectors/4.4.0/system.numerics.vectors.4.4.0.nupkg",
+      "upstreamContentHash": "UiLzLW+Lw6HLed1Hcg+8jSRttrbuXv7DANVj0DkL9g6EnnzbL75EB7EWsw5uRbhxd/4YdG8li5XizGWepmG3PQ=="
+    },
+    {
+      "package": "system.numerics.vectors",
+      "version": "4.5.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.numerics.vectors/4.5.0/system.numerics.vectors.4.5.0.nupkg",
+      "existingCacheArchiveSha256": "a9d49320581fda1b4f4be6212c68c01a22cdf228026099c20a8eabefcf90f9cf",
+      "nuspecSha256": "4d8fc002a8820a4364bf1cb5dc8211c2d14e45ebd4292e86d8dd8d6a94b4ca8c"
+    },
+    {
+      "package": "system.reflection.emit.ilgeneration",
+      "version": "4.7.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.reflection.emit.ilgeneration/4.7.0/system.reflection.emit.ilgeneration.4.7.0.nupkg",
+      "nuspecSha256": "8566652640c3574925a4b482fdf3e6e0292de1a95188df7791279cfa3de09985"
+    },
+    {
+      "package": "system.reflection.emit.lightweight",
+      "version": "4.7.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.reflection.emit.lightweight/4.7.0/system.reflection.emit.lightweight.4.7.0.nupkg",
+      "nuspecSha256": "1361541a35c7031c1af7935f41375049f2008e85e06640a31da1d7875a0ec03c"
+    },
+    {
+      "package": "system.runtime.compilerservices.unsafe",
+      "version": "4.6.0",
+      "scope": [
+        "hangfire-cronos"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.runtime.compilerservices.unsafe/4.6.0/system.runtime.compilerservices.unsafe.4.6.0.nupkg",
+      "upstreamContentHash": "HxozeSlipUK7dAroTYwIcGwKDeOVpQnJlpVaOkBz7CM4TsE5b/tKlQBZecTjh6FzcSbxndYaxxpsBMz+wMJeyw==",
+      "existingCacheArchiveSha256": "1538d078cbafaa72b1a6856c561fce950db534c699885b4e76fed5759f88bf76"
+    },
+    {
+      "package": "system.runtime.compilerservices.unsafe",
+      "version": "6.0.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.runtime.compilerservices.unsafe/6.0.0/system.runtime.compilerservices.unsafe.6.0.0.nupkg",
+      "existingCacheArchiveSha256": "6c41b53e70e9eee298cff3a02ce5acdd15b04125589be0273f0566026720a762",
+      "nuspecSha256": "2abdc146ca0e819da1b0230ad41511b628a6995550488b818e17a9d068566583"
+    },
+    {
+      "package": "system.text.encodings.web",
+      "version": "6.0.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.text.encodings.web/6.0.0/system.text.encodings.web.6.0.0.nupkg",
+      "nuspecSha256": "27df6d3303d768b2a95f62d4a9cbef84d0674303ea722fcdbf335d59172d3e06"
+    },
+    {
+      "package": "system.text.json",
+      "version": "6.0.10",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.text.json/6.0.10/system.text.json.6.0.10.nupkg",
+      "nuspecSha256": "287a1bce08a9995da19e0b83d843795e9de0c97bec42b0c0f400dc492b38f877"
+    },
+    {
+      "package": "system.threading.channels",
+      "version": "6.0.0",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.threading.channels/6.0.0/system.threading.channels.6.0.0.nupkg",
+      "nuspecSha256": "e63dfe1be6c8fffa67f3ffc3a3e783a14f3621fbdb8caff3331eb1e477907427"
+    },
+    {
+      "package": "system.threading.tasks.extensions",
+      "version": "4.5.4",
+      "scope": [
+        "postgresql"
+      ],
+      "url": "https://api.nuget.org/v3-flatcontainer/system.threading.tasks.extensions/4.5.4/system.threading.tasks.extensions.4.5.4.nupkg",
+      "existingCacheArchiveSha256": "a304a963cc0796c5179f9c6b7d8022bbce3b2fa7c029eb6196f631f7b462d678",
+      "nuspecSha256": "57eaf7d4f69e866101306d44af269d2812c2f8444c8ece87bd6aae69f835d3e3"
+    }
+  ],
+  "reviewDraftPatches": {
+    "cronos-selected-runtime.patch": "0dda58c2f14d45cefc3f45186cc4df1faf7c58c765549e364a2b73d878e9acdf",
+    "hangfire-selected-runtime.patch": "600a1f6e26de113141450a8d8ccca7fdd5dd4ded439ae32f6e63f59387fc79f8",
+    "patch-contract.json": "6ffc4b5c2459fceb1ec13ab20c2a263e6189d3d41d2f20a58bf2d4119d376f45",
+    "postgresql-private-build.patch": "5c8bfe899f9536c26d24036ad27ea5ed97289b45331f40c0bf1ea547d336729f"
+  },
+  "executionResourceRecheck": {
+    "port15432ListenerPresent": false,
+    "containersPresent": false,
+    "pg17Cached": true,
+    "pg16Cached": true
+  },
+  "restoreLockGenerated": false,
+  "applicationDependencyChangesProposed": false,
+  "upstreamBuildAdaptationsProposed": [
+    "single selected runtime TFM per Hangfire/Cronos project",
+    "replace explicit NetAnalyzers 8.0.0 and SourceLink.GitHub 8.0.0 PackageReferences with SDK-bundled components",
+    "pin Newtonsoft.Json 13.0.4 in Core and private PostgreSql build",
+    "pin System.Text.Json 6.0.10 in private PostgreSql build",
+    "disable GeneratePackageOnBuild only for the private plugin build; preserve active GitVersion 5.11.1 task",
+    "derive and validate private per-target lockfiles; retain original files and patch"
+  ],
+  "runtimeValidationProposed": {
+    "apiConfigurations": [
+      "Debug",
+      "Release"
+    ],
+    "variants": [
+      "original",
+      "source-baseline",
+      "core-diagnostic"
+    ],
+    "sqliteGroups": 6,
+    "postgresqlVersions": [
+      17,
+      16
+    ],
+    "postgresqlGroups": 12,
+    "totalGroups": 18,
+    "registrationContracts": 288,
+    "jobsEventuallySucceeded": 36,
+    "dashboard": "in-memory RequestDelegate, no HTTP server/listener"
+  },
+  "archive": {
+    "path": "/Users/luobo/Code/Radish/artifacts/source-readiness/hangfire-20261031",
+    "gitIgnored": true,
+    "indexSha256": "f9fdd8cf29c4a3a06e16a0019ddde72048cc422f1bc1d42c093a62bd970d6c78",
+    "indexedFiles": 110,
+    "indexedBytes": 48347179
+  },
+  "officialReferences": [
+    "https://github.com/dotnet/sourcelink/security/advisories/GHSA-23fw-v26w-5fgq",
+    "https://github.com/dotnet/runtime/security/advisories/GHSA-8g4q-xg66-9fp4",
+    "https://api.nuget.org/v3/vulnerabilities/index.json",
+    "https://github.com/dotnet/sourcelink",
+    "https://builds.dotnet.microsoft.com/dotnet/release-metadata/10.0/releases.json"
+  ],
+  "qualityChecks": {
+    "docs": true,
+    "changedRepoHygiene": true,
+    "gitDiffCheck": true,
+    "jsonParse": true,
+    "threeReviewPatchParses": true,
+    "evidenceIndexFilesVerified": 110,
+    "knownSoftWarning": "Docs/records/index.md is 332 lines; no broken link or text hygiene error."
+  }
+}

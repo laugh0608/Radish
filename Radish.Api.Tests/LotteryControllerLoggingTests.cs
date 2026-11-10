@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -28,7 +27,6 @@ using Radish.Common.HttpContextTool;
 using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.AutoMapperExtension.CustomProfiles;
 using Radish.Extension.Log;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -116,7 +114,6 @@ public sealed class LotteryControllerLoggingTests
             capture.Clear();
         }
     }
-
 
     [Theory]
     [MemberData(nameof(OutputModes))]
@@ -473,10 +470,8 @@ public sealed class LotteryControllerLoggingTests
         public override DateTimeOffset GetUtcNow() { tick(); return Now; }
     }
 
-
     private sealed class Fixture : IDisposable
     {
-        private static readonly IMapper Mapper = new MapperConfiguration(c => c.AddProfile<ForumProfile>(), NullLoggerFactory.Instance).CreateMapper();
         private readonly string _operation;
         private readonly ILoggerFactory _loggerFactory;
         private int _failureMatches;
@@ -514,7 +509,7 @@ public sealed class LotteryControllerLoggingTests
             var comments = Wrap<IBaseRepository<Comment>>(new BaseRepository<Comment>(Unit), "comments");
             var postTags = new Mock<IBaseRepository<PostTag>>();
             postTags.Setup(r => r.QueryAsync(It.IsAny<Expression<Func<PostTag, bool>>?>())).ReturnsAsync(new List<PostTag>());
-            var detail = new PostService(Mapper, posts, Mock.Of<IBaseRepository<UserPostLike>>(),
+            var detail = new PostService(posts, Mock.Of<IBaseRepository<UserPostLike>>(),
                 Wrap(postTags.Object, "post-tags"), Mock.Of<IBaseRepository<Category>>(), Mock.Of<IBaseRepository<Tag>>(),
                 Wrap(Mock.Of<IBaseRepository<PostPoll>>(), "polls"), Mock.Of<IBaseRepository<PostPollOption>>(), Mock.Of<IBaseRepository<PostPollVote>>(),
                 Wrap(Mock.Of<IBaseRepository<PostQuestion>>(), "questions"), Mock.Of<IBaseRepository<PostAnswer>>(),

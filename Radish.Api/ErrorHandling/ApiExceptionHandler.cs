@@ -53,6 +53,6 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             ["EventCode"] = "http.failed", ["SourceCategory"] = "http"
         });
         // 不把 Exception、URL、业务错误文案交给旧 sink；候选与旧路径同样安全。
-        logger.LogError("Request failed with {statusCode}; kind={failureKind}", statusCode, RuntimeFailureSummary.Classify(exception));
+        logger.LogError(new EventId(1, "ApiRequestFailed"), "Request failed with {statusCode}; kind={failureKind}", statusCode, RuntimeFailureSummary.Classify(exception));
     }
 }

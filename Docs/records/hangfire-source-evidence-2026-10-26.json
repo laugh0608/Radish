@@ -1,0 +1,859 @@
+{
+  "reviewedOn": "2026-10-26",
+  "baseRevision": "7a449453bd4538f32bbc4464cc4923b374ee37b0",
+  "sourceInspection": "PE/PDB metadata only; no upstream executable or build script executed",
+  "pdbSummary": [
+    {
+      "assembly": "Hangfire.Core",
+      "documentCount": 233,
+      "counts": {
+        "hangfire-source": 204,
+        "razor-line-document-without-checksum": 22,
+        "cronos-source": 7
+      }
+    },
+    {
+      "assembly": "Hangfire.NetCore",
+      "documentCount": 12,
+      "counts": {
+        "hangfire-source": 11,
+        "embedded-generated-source": 1
+      }
+    },
+    {
+      "assembly": "Hangfire.AspNetCore",
+      "documentCount": 10,
+      "counts": {
+        "hangfire-source": 9,
+        "embedded-generated-source": 1
+      }
+    },
+    {
+      "assembly": "Hangfire.PostgreSql",
+      "documentCount": 0,
+      "counts": {}
+    }
+  ],
+  "checksumVerifiedCount": 233,
+  "checksumAbsentRazorCount": 22,
+  "cronosSource": {
+    "url": "https://codeload.github.com/HangfireIO/Cronos/tar.gz/9d6e349e58fda615e47be10c3d9a539e9ce85073",
+    "bytes": 2832618,
+    "sha256": "ccafd15ecc9f8e26fb4e943bc811c5a6e44125acc89b153a5deb68976d50816b",
+    "commit": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+    "fileCount": 38,
+    "rawGitBlobMatches": 34,
+    "crlfExports": [
+      "Cronos.sln",
+      "benchmarks/Cronos.Benchmarks/Cronos.Benchmarks.csproj",
+      "src/Cronos/Cronos.csproj",
+      "tests/Cronos.Tests/Cronos.Tests.csproj"
+    ],
+    "treeTruncated": false
+  },
+  "assemblies": [
+    {
+      "assemblyName": "Hangfire.Core",
+      "assemblyVersion": "1.8.14.0",
+      "publicKey": "",
+      "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+      "debugTypes": [
+        "CodeView",
+        "PdbChecksum",
+        "EmbeddedPortablePdb"
+      ],
+      "sourceLinks": [
+        "{\"documents\":{\"C:\\\\projects\\\\hangfire-525\\\\*\":\"https://raw.githubusercontent.com/HangfireIO/Hangfire/51647c20e36ab010f7dfc4fa8b1ed666070d7f4f/*\",\"C:\\\\projects\\\\cronos\\\\*\":\"https://raw.githubusercontent.com/HangfireIO/Cronos/9d6e349e58fda615e47be10c3d9a539e9ce85073/*\"}}"
+      ],
+      "references": [
+        {
+          "name": "netstandard",
+          "version": "2.0.0.0",
+          "publicKeyOrToken": "cc7b13ffcd2ddd51"
+        },
+        {
+          "name": "Newtonsoft.Json",
+          "version": "11.0.0.0",
+          "publicKeyOrToken": "30ad4fe6b2a6aeed"
+        },
+        {
+          "name": "Microsoft.CSharp",
+          "version": "4.0.0.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        }
+      ]
+    },
+    {
+      "assemblyName": "Hangfire.NetCore",
+      "assemblyVersion": "1.8.14.0",
+      "publicKey": "",
+      "sha256": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+      "debugTypes": [
+        "CodeView",
+        "PdbChecksum",
+        "Reproducible",
+        "EmbeddedPortablePdb"
+      ],
+      "sourceLinks": [
+        "{\"documents\":{\"C:\\\\projects\\\\hangfire-525\\\\*\":\"https://raw.githubusercontent.com/HangfireIO/Hangfire/51647c20e36ab010f7dfc4fa8b1ed666070d7f4f/*\"}}"
+      ],
+      "references": [
+        {
+          "name": "netstandard",
+          "version": "2.1.0.0",
+          "publicKeyOrToken": "cc7b13ffcd2ddd51"
+        },
+        {
+          "name": "Microsoft.Extensions.Hosting.Abstractions",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "Hangfire.Core",
+          "version": "1.8.14.0",
+          "publicKeyOrToken": ""
+        },
+        {
+          "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "Microsoft.Extensions.Logging.Abstractions",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        }
+      ]
+    },
+    {
+      "assemblyName": "Hangfire.AspNetCore",
+      "assemblyVersion": "1.8.14.0",
+      "publicKey": "",
+      "sha256": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+      "debugTypes": [
+        "CodeView",
+        "PdbChecksum",
+        "Reproducible",
+        "EmbeddedPortablePdb"
+      ],
+      "sourceLinks": [
+        "{\"documents\":{\"C:\\\\projects\\\\hangfire-525\\\\*\":\"https://raw.githubusercontent.com/HangfireIO/Hangfire/51647c20e36ab010f7dfc4fa8b1ed666070d7f4f/*\"}}"
+      ],
+      "references": [
+        {
+          "name": "System.Runtime",
+          "version": "4.2.1.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "Microsoft.AspNetCore.Http.Abstractions",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "Hangfire.Core",
+          "version": "1.8.14.0",
+          "publicKeyOrToken": ""
+        },
+        {
+          "name": "System.ComponentModel",
+          "version": "4.0.3.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "Microsoft.AspNetCore.Routing",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "Microsoft.AspNetCore.Antiforgery",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "Hangfire.NetCore",
+          "version": "1.8.14.0",
+          "publicKeyOrToken": ""
+        },
+        {
+          "name": "System.Threading.Tasks",
+          "version": "4.1.1.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "System.Text.RegularExpressions",
+          "version": "4.2.1.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "System.Diagnostics.Debug",
+          "version": "4.1.1.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "Microsoft.AspNetCore.Http.Features",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "Microsoft.Extensions.DependencyInjection.Abstractions",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "Microsoft.Extensions.Hosting.Abstractions",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "System.Linq",
+          "version": "4.2.1.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "Microsoft.AspNetCore.Authorization.Policy",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        },
+        {
+          "name": "System.Security.Claims",
+          "version": "4.1.1.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "System.Security.Principal",
+          "version": "4.1.1.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "System.Net.Primitives",
+          "version": "4.1.1.0",
+          "publicKeyOrToken": "b03f5f7f11d50a3a"
+        },
+        {
+          "name": "Microsoft.Extensions.Primitives",
+          "version": "3.0.0.0",
+          "publicKeyOrToken": "adb9793829ddae60"
+        }
+      ]
+    },
+    {
+      "assemblyName": "Hangfire.PostgreSql",
+      "assemblyVersion": "1.20.12.0",
+      "publicKey": "",
+      "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+      "debugTypes": [
+        "CodeView",
+        "PdbChecksum",
+        "Reproducible"
+      ],
+      "sourceLinks": [],
+      "references": [
+        {
+          "name": "netstandard",
+          "version": "2.0.0.0",
+          "publicKeyOrToken": "cc7b13ffcd2ddd51"
+        },
+        {
+          "name": "Hangfire.Core",
+          "version": "1.8.0.0",
+          "publicKeyOrToken": ""
+        },
+        {
+          "name": "Npgsql",
+          "version": "6.0.11.0",
+          "publicKeyOrToken": "5d8b90d52f46fda7"
+        },
+        {
+          "name": "Dapper",
+          "version": "2.0.0.0",
+          "publicKeyOrToken": ""
+        },
+        {
+          "name": "System.Text.Json",
+          "version": "6.0.0.0",
+          "publicKeyOrToken": "cc7b13ffcd2ddd51"
+        }
+      ]
+    }
+  ],
+  "reviewedArchives": [
+    {
+      "package": "Cronos",
+      "version": "0.8.3",
+      "url": "https://api.nuget.org/v3-flatcontainer/cronos/0.8.3/cronos.0.8.3.nupkg",
+      "bytes": 159289,
+      "sha256": "00cdd68c48002ac3a64cbd690025b8836f0757de473027f90efe30fdc80334f7",
+      "archiveSha512": "0iM863ItNt6OxjKQcGH7P1Ug+LdH9xyA92IkZRPBEdqzrtKuq0g5a5HVI/XE0mTkTV2hfsLyPy7ZWkaQSRKlAg==",
+      "contentHash": "lep1gKd68dBEt7isLnnHadJHwUlhctMd+gYGMk3p8eOT9dIfw6fXJFkreYBQ8dIXm23S01ilHgpk2ttou5Wvtw==",
+      "computedNuGetContentHash": "lep1gKd68dBEt7isLnnHadJHwUlhctMd+gYGMk3p8eOT9dIfw6fXJFkreYBQ8dIXm23S01ilHgpk2ttou5Wvtw==",
+      "nuGetContentHashMatchesLock": true
+    },
+    {
+      "package": "Hangfire.Build",
+      "version": "0.4.4",
+      "url": "https://api.nuget.org/v3-flatcontainer/hangfire.build/0.4.4/hangfire.build.0.4.4.nupkg",
+      "bytes": 49395,
+      "sha256": "caf73ce3c7bce259d1ee65e110e4cd57c421632fc048f7a1cb95a74d23556232",
+      "archiveSha512": "MY/4wjsjYK5m9eyUQOrKqETScYaIvS7TXQhsC3S/wBNeH25NmQmPGMjyOiEIhkc3d+4jZ9JAQfyi1Lbzt2CuYA==",
+      "contentHash": "CCHrwgG0oSr5uPSx6ONcDpSAYkcUyEkd5EC/qS6Mb1//8dmaxYzfPP/GYGUdKoKgHI5J2/NqsrBP3MprstLPIg==",
+      "computedNuGetContentHash": "CCHrwgG0oSr5uPSx6ONcDpSAYkcUyEkd5EC/qS6Mb1//8dmaxYzfPP/GYGUdKoKgHI5J2/NqsrBP3MprstLPIg==",
+      "nuGetContentHashMatchesLock": true
+    },
+    {
+      "package": "ILRepack",
+      "version": "2.0.27",
+      "url": "https://api.nuget.org/v3-flatcontainer/ilrepack/2.0.27/ilrepack.2.0.27.nupkg",
+      "bytes": 726162,
+      "sha256": "b4d43d96c781a8b837d95f649a753ec68f49c9f7dfbeddf38f63fb3c7f208dad",
+      "archiveSha512": "u65vMg4pZNbjWA2rCjYyRrE3Pc9xGCIGX2zkEZ0e5EM1PIvG3g0sHARuR+DCk02k1o3QcOTs2dEor2X3wwcVVQ==",
+      "contentHash": "N5nhVwlgU2ipeonLBVuv1HpsIclJI/5QujuLeo3BW7irD2KnSFXkHa5FmXwzdCkB36D0XGOxNMxh99P7kjgU2A==",
+      "computedNuGetContentHash": "N5nhVwlgU2ipeonLBVuv1HpsIclJI/5QujuLeo3BW7irD2KnSFXkHa5FmXwzdCkB36D0XGOxNMxh99P7kjgU2A==",
+      "nuGetContentHashMatchesLock": true
+    },
+    {
+      "package": "LibLog",
+      "version": "1.5.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/liblog/1.5.0/liblog.1.5.0.nupkg",
+      "bytes": 21728,
+      "sha256": "c34a6783ca318476a780f86d56ff316bfe98c8e1d4ecb954e40f13fedd9f1f09",
+      "archiveSha512": "X0S1Sc5D17sINL+lbe19MWP0zeM1TaXEW/A9NDxhjtdOYiQ/szUmCdlUfsYdUtP4Cw6CiJU6a0P/OuLcYh6glg==",
+      "contentHash": "0bNoz50GPHYnS3fv/qTS2dFBeYgoppM1t//gWULGxY/TM5TNxxknUWqOqzE8eZgLIa2ENfIwzumvbeWFnx14rg==",
+      "computedNuGetContentHash": "0bNoz50GPHYnS3fv/qTS2dFBeYgoppM1t//gWULGxY/TM5TNxxknUWqOqzE8eZgLIa2ENfIwzumvbeWFnx14rg==",
+      "nuGetContentHashMatchesLock": true
+    },
+    {
+      "package": "MoreLinq.Source.MoreEnumerable.Pairwise",
+      "version": "1.0.1",
+      "url": "https://api.nuget.org/v3-flatcontainer/morelinq.source.moreenumerable.pairwise/1.0.1/morelinq.source.moreenumerable.pairwise.1.0.1.nupkg",
+      "bytes": 14262,
+      "sha256": "9d4ff811acc7ab29333b87c0350815d658fbc2d70b5d7ffd26f9e2873e3e0577",
+      "archiveSha512": "tulxwsVhLoPCu34Axw4u0y3xb/KMJ21wZcTnuXd7w5bvyhMmXB2ZZ34W3GJO1mH9EQS7s+QMZTP4qRKB9ys7vg==",
+      "contentHash": "N1bmYqxItSwixZ72KJ/V4e3mEnIO5AtMcmjtilqe+Ulp4GpSje9DP+1Cv4j01s3uG4h7P4G1axUEODL1yWB5Og==",
+      "computedNuGetContentHash": "N1bmYqxItSwixZ72KJ/V4e3mEnIO5AtMcmjtilqe+Ulp4GpSje9DP+1Cv4j01s3uG4h7P4G1axUEODL1yWB5Og==",
+      "nuGetContentHashMatchesLock": true
+    },
+    {
+      "package": "psake",
+      "version": "4.4.1",
+      "url": "https://api.nuget.org/v3-flatcontainer/psake/4.4.1/psake.4.4.1.nupkg",
+      "bytes": 39238,
+      "sha256": "318bffa3cd9d982d76631ef39280a788e24881c6f8d26cb665c3c4421391221d",
+      "archiveSha512": "Xli74/5MEnVQoQuJpY4PqmPp2epbLpiOYhTP29vuY3TtM78B0uBbu6REvEIT8kqtXgVUh4FD5HfUHK32WfdTyQ==",
+      "contentHash": "Hn5kdGPEoapi+wAAjaGjKEZVnuYp7fUrPK3IivLYG6Bn4adhd8l+KXXPMEmte41RmrLvfV7XGZa9KsSTc0gjDA==",
+      "computedNuGetContentHash": "Hn5kdGPEoapi+wAAjaGjKEZVnuYp7fUrPK3IivLYG6Bn4adhd8l+KXXPMEmte41RmrLvfV7XGZa9KsSTc0gjDA==",
+      "nuGetContentHashMatchesLock": true
+    },
+    {
+      "package": "RazorGenerator.MsBuild",
+      "version": "2.5.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/razorgenerator.msbuild/2.5.0/razorgenerator.msbuild.2.5.0.nupkg",
+      "bytes": 1416977,
+      "sha256": "1f2c549056cff967cdf4d1c92f9fa78e7f5a2d292a15d5a427bf76caa542c064",
+      "archiveSha512": "iL1Bb20eDdy3+U0BtQeubp1+1N00w9qZrlfFJYe+vTbLTDvAtGOuUDpJhGu1bi3LSI3KBwMcTQZE/lXtCFY3uA==",
+      "contentHash": "yOu2KEjDFvE20b+YK/+Ovf4czUHWH2DlBB9lIKDXdBjcMh3PXrPJTxPzi468XrFvE1dVEiWu+pGNkVFE9+VpMA==",
+      "computedNuGetContentHash": "yOu2KEjDFvE20b+YK/+Ovf4czUHWH2DlBB9lIKDXdBjcMh3PXrPJTxPzi468XrFvE1dVEiWu+pGNkVFE9+VpMA==",
+      "nuGetContentHashMatchesLock": true
+    },
+    {
+      "package": "StackTraceFormatter.Source",
+      "version": "1.1.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/stacktraceformatter.source/1.1.0/stacktraceformatter.source.1.1.0.nupkg",
+      "bytes": 18269,
+      "sha256": "423acb95be9bf7713ee72a8e51d60da34d491e672eaa70218990393958f99abf",
+      "archiveSha512": "JsUwYBKeHbSDr8V6ot3IeWXfgYQ0JaP4mRu2mti9ba1PQZ/J+4nAk/5i/YK8TOtw0Xf9JfzT9Tb31zb3eOAjKg==",
+      "contentHash": "69Zxg50Sm1kq9hvxPgEo0w9li8oiD2qVT87GGsqXJP2vfYs33LVKGHRMSP2Z4iTP3UC0PJTeurCeWY2t7X/76Q==",
+      "computedNuGetContentHash": "69Zxg50Sm1kq9hvxPgEo0w9li8oiD2qVT87GGsqXJP2vfYs33LVKGHRMSP2Z4iTP3UC0PJTeurCeWY2t7X/76Q==",
+      "nuGetContentHashMatchesLock": true
+    },
+    {
+      "package": "StackTraceParser.Source",
+      "version": "1.3.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/stacktraceparser.source/1.3.0/stacktraceparser.source.1.3.0.nupkg",
+      "bytes": 17229,
+      "sha256": "6138aa4e2fca5c85e4351b04011e40747db44a536b7251a22e4af5c64acafc83",
+      "archiveSha512": "Bl8U4J01MQMzSBKdcSAKlyzqpn6RcxHgj1NIca493VtSLlhFYt3PZyFWoFWXAoCKLyNpznT+IVVRtcyqARPdog==",
+      "contentHash": "tOdf1XpHE2YQJpBERplZA2kMTJQtJnKzSc7GMO/yeNNGuXNueVqySfIr/gfU1vx9k2FO8u0zD4mtnZGwKQM+Zg==",
+      "computedNuGetContentHash": "tOdf1XpHE2YQJpBERplZA2kMTJQtJnKzSc7GMO/yeNNGuXNueVqySfIr/gfU1vx9k2FO8u0zD4mtnZGwKQM+Zg==",
+      "nuGetContentHashMatchesLock": true
+    }
+  ],
+  "nuGetHashMethod": {
+    "sdk": "10.0.300",
+    "NuGet.PackagingVersion": "7.6.0.0",
+    "method": "NuGet.Packaging.PackageArchiveReader.GetContentHash(CancellationToken.None)",
+    "note": "Signed archive SHA512 differs from lockfile contentHash. The NuGet content hash matches all nine lock entries; no hash was replaced or ignored.",
+    "source": "https://source.dot.net/NuGet.Packaging/PackageArchiveReader.cs.html"
+  },
+  "cronosNotice": {
+    "package": "Cronos",
+    "version": "0.8.3",
+    "mergedInto": "Hangfire.Core 1.8.14 netstandard2.0",
+    "repositoryCommit": "9d6e349e58fda615e47be10c3d9a539e9ce85073",
+    "sourceLinkMatchesNuspec": true,
+    "sourceBytes": 1079,
+    "sourceSha256": "48e6c7a1b9a9e687391e6613269b4aa81b6c910f8e2bb53bee7a7e86e53b584a",
+    "normalizedSha256": "48e6c7a1b9a9e687391e6613269b4aa81b6c910f8e2bb53bee7a7e86e53b584a"
+  },
+  "postgresql": {
+    "commit": "a5a728233ac8feb447695acb01f607bd848b00f7",
+    "package": "1.20.12",
+    "directReferences": {
+      "Dapper": "2.0.123",
+      "GitVersion.MsBuild": "5.11.1",
+      "Hangfire.Core": "1.8.0",
+      "Microsoft.CSharp": "4.7.0",
+      "Npgsql": "6.0.11"
+    },
+    "lockfile": "none in inspected archive",
+    "buildWorkflowSdk": "9.0.x (not patch-pinned)",
+    "gitCheckoutFetchDepth": 0,
+    "status": "Source/PDB binding and fully resolved build closure remain open; no independent plugin rebuild performed."
+  },
+  "tools": {
+    "dotnetSdkInstalled": [
+      "10.0.300"
+    ],
+    "pwshInstalled": false,
+    "ilrepackRuntimeConfig": {
+      "framework": "Microsoft.NETCore.App",
+      "version": "6.0.0",
+      "rollForward": "major"
+    },
+    "upstreamRazorRequirement": "Full Windows MSBuild for regenerating .cshtml.cs; existing generated files are in source archive."
+  },
+  "evidenceHashes": {
+    "Inspect.cs": "70916a4d5606080f73581313835ea0aabdf929cc09193e2599e6b44273d6e1ee",
+    "PackageHash.cs": "0505001e6178860815c2e95f8cfcf4657882b98404bfd47e719bf2530dc2281d",
+    "evidence/assemblies.json": "5e5c41bf727b259921ef52573649ed4d973cbc73689d6e9e80f3feda99a98f75",
+    "evidence/document-verification.json": "52166502e52c4b44067a819817dfc638b2b82a2d5e369ae14a5eeba4f0631dcb",
+    "evidence/cronos-archive-proof.json": "a3af71dae15f8045d6ace01cfae68960e52cffa340d9a4f6acfd4763af9596f2",
+    "evidence/cronos-tree.json": "d3171e70b2cebe32467cbf5f6707a13cf75ff850269148027d67d8db9cef9947"
+  },
+  "diagnosticCorrections": [
+    "One TLS handshake failed while reading public archives; the retry retained completed downloads and used the same URLs with TLS verification enabled.",
+    "Initial exploratory comparison treated checksum-less Razor line documents as hash mismatches; these 22 entries have empty PDB checksum fields and are now reported as unverified, not passed.",
+    "Publish comparison identified an existing SQLite test/publish native version split, confirmed by file identity and sqlite3_libversion(); the actual difference is retained as an open dependency issue."
+  ],
+  "publishVerification": [
+    {
+      "host": "Radish.Api",
+      "noticeComponents": 11,
+      "noticeFiles": 42,
+      "publishFiles": 420,
+      "addedFiles": [
+        "third-party-notices/nuget/hangfire.core/1.8.14/LICENSE-Cronos-0.8.3.txt"
+      ],
+      "changedFiles": [
+        "Radish.Api.deps.json",
+        "Radish.Api.dll",
+        "Radish.Api.pdb",
+        "Radish.Auth.Migrations.PostgreSql.dll",
+        "Radish.Auth.Migrations.PostgreSql.pdb",
+        "Radish.Auth.Migrations.Sqlite.dll",
+        "Radish.Auth.Migrations.Sqlite.pdb",
+        "Radish.Auth.Persistence.dll",
+        "Radish.Auth.Persistence.pdb",
+        "Radish.Common.dll",
+        "Radish.Common.pdb",
+        "Radish.Extension.Log.dll",
+        "Radish.Extension.Log.pdb",
+        "Radish.Extension.dll",
+        "Radish.Extension.pdb",
+        "Radish.IRepository.dll",
+        "Radish.IRepository.pdb",
+        "Radish.IService.dll",
+        "Radish.IService.pdb",
+        "Radish.Infrastructure.dll",
+        "Radish.Infrastructure.pdb",
+        "Radish.Model.dll",
+        "Radish.Model.pdb",
+        "Radish.Repository.dll",
+        "Radish.Repository.pdb",
+        "Radish.Service.dll",
+        "Radish.Service.pdb",
+        "Radish.Shared.dll",
+        "Radish.Shared.pdb",
+        "en/Radish.Api.resources.dll",
+        "third-party-notices/nuget/hangfire.core/1.8.14/ATTRIBUTION.txt",
+        "third-party-notices/nuget/manifest.json",
+        "zh/Radish.Api.resources.dll"
+      ],
+      "depsDelta": [
+        {
+          "package": "SourceGear.sqlite3/3.50.4.5",
+          "removedDuplicateRuntimeTargets": [
+            "runtimes/android-arm/native/libe_sqlite3.so",
+            "runtimes/android-arm64/native/libe_sqlite3.so",
+            "runtimes/android-x64/native/libe_sqlite3.so",
+            "runtimes/android-x86/native/libe_sqlite3.so",
+            "runtimes/browser-wasm/nativeassets/net9.0/e_sqlite3.a",
+            "runtimes/ios-arm/native/e_sqlite3.a",
+            "runtimes/ios-arm64/native/e_sqlite3.a",
+            "runtimes/iossimulator-arm64/native/e_sqlite3.a",
+            "runtimes/iossimulator-x64/native/e_sqlite3.a",
+            "runtimes/iossimulator-x86/native/e_sqlite3.a",
+            "runtimes/linux-arm/native/libe_sqlite3.so",
+            "runtimes/linux-arm64/native/libe_sqlite3.so",
+            "runtimes/linux-armel/native/libe_sqlite3.so",
+            "runtimes/linux-mips64/native/libe_sqlite3.so",
+            "runtimes/linux-musl-arm/native/libe_sqlite3.so",
+            "runtimes/linux-musl-arm64/native/libe_sqlite3.so",
+            "runtimes/linux-musl-s390x/native/libe_sqlite3.so",
+            "runtimes/linux-musl-x64/native/libe_sqlite3.so",
+            "runtimes/linux-ppc64le/native/libe_sqlite3.so",
+            "runtimes/linux-s390x/native/libe_sqlite3.so",
+            "runtimes/linux-x64/native/libe_sqlite3.so",
+            "runtimes/linux-x86/native/libe_sqlite3.so",
+            "runtimes/maccatalyst-arm64/native/libe_sqlite3.dylib",
+            "runtimes/maccatalyst-x64/native/libe_sqlite3.dylib",
+            "runtimes/osx-arm64/native/libe_sqlite3.dylib",
+            "runtimes/osx-x64/native/libe_sqlite3.dylib",
+            "runtimes/win-arm64/native/e_sqlite3.dll",
+            "runtimes/win-x64/native/e_sqlite3.dll",
+            "runtimes/win-x86/native/e_sqlite3.dll"
+          ],
+          "physicalFilesMatch": "SourceGear.sqlite3/3.50.4.5"
+        }
+      ],
+      "allOtherPayloadHashesUnchanged": true
+    },
+    {
+      "host": "Radish.Auth",
+      "noticeComponents": 6,
+      "noticeFiles": 16,
+      "publishFiles": 586,
+      "addedFiles": [],
+      "changedFiles": [
+        "Radish.Auth.Migrations.PostgreSql.dll",
+        "Radish.Auth.Migrations.PostgreSql.pdb",
+        "Radish.Auth.Migrations.Sqlite.dll",
+        "Radish.Auth.Migrations.Sqlite.pdb",
+        "Radish.Auth.Persistence.dll",
+        "Radish.Auth.Persistence.pdb",
+        "Radish.Auth.deps.json",
+        "Radish.Auth.dll",
+        "Radish.Auth.pdb",
+        "Radish.Common.dll",
+        "Radish.Common.pdb",
+        "Radish.Extension.Log.dll",
+        "Radish.Extension.Log.pdb",
+        "Radish.Extension.dll",
+        "Radish.Extension.pdb",
+        "Radish.IRepository.dll",
+        "Radish.IRepository.pdb",
+        "Radish.IService.dll",
+        "Radish.IService.pdb",
+        "Radish.Infrastructure.dll",
+        "Radish.Infrastructure.pdb",
+        "Radish.Model.dll",
+        "Radish.Model.pdb",
+        "Radish.Repository.dll",
+        "Radish.Repository.pdb",
+        "Radish.Service.dll",
+        "Radish.Service.pdb",
+        "Radish.Shared.dll",
+        "Radish.Shared.pdb",
+        "en/Radish.Auth.resources.dll",
+        "zh/Radish.Auth.resources.dll"
+      ],
+      "depsDelta": [
+        {
+          "package": "SourceGear.sqlite3/3.50.4.5",
+          "removedDuplicateRuntimeTargets": [
+            "runtimes/android-arm/native/libe_sqlite3.so",
+            "runtimes/android-arm64/native/libe_sqlite3.so",
+            "runtimes/android-x64/native/libe_sqlite3.so",
+            "runtimes/android-x86/native/libe_sqlite3.so",
+            "runtimes/browser-wasm/nativeassets/net9.0/e_sqlite3.a",
+            "runtimes/ios-arm/native/e_sqlite3.a",
+            "runtimes/ios-arm64/native/e_sqlite3.a",
+            "runtimes/iossimulator-arm64/native/e_sqlite3.a",
+            "runtimes/iossimulator-x64/native/e_sqlite3.a",
+            "runtimes/iossimulator-x86/native/e_sqlite3.a",
+            "runtimes/linux-arm/native/libe_sqlite3.so",
+            "runtimes/linux-arm64/native/libe_sqlite3.so",
+            "runtimes/linux-armel/native/libe_sqlite3.so",
+            "runtimes/linux-mips64/native/libe_sqlite3.so",
+            "runtimes/linux-musl-arm/native/libe_sqlite3.so",
+            "runtimes/linux-musl-arm64/native/libe_sqlite3.so",
+            "runtimes/linux-musl-s390x/native/libe_sqlite3.so",
+            "runtimes/linux-musl-x64/native/libe_sqlite3.so",
+            "runtimes/linux-ppc64le/native/libe_sqlite3.so",
+            "runtimes/linux-s390x/native/libe_sqlite3.so",
+            "runtimes/linux-x64/native/libe_sqlite3.so",
+            "runtimes/linux-x86/native/libe_sqlite3.so",
+            "runtimes/maccatalyst-arm64/native/libe_sqlite3.dylib",
+            "runtimes/maccatalyst-x64/native/libe_sqlite3.dylib",
+            "runtimes/osx-arm64/native/libe_sqlite3.dylib",
+            "runtimes/osx-x64/native/libe_sqlite3.dylib",
+            "runtimes/win-arm64/native/e_sqlite3.dll",
+            "runtimes/win-x64/native/e_sqlite3.dll",
+            "runtimes/win-x86/native/e_sqlite3.dll"
+          ],
+          "physicalFilesMatch": "SourceGear.sqlite3/3.50.4.5"
+        },
+        {
+          "package": "SystemCommon/8.5.0",
+          "removedDuplicateCompileAsset": "lib/netstandard2.1/SqlSugar.dll"
+        }
+      ],
+      "allOtherPayloadHashesUnchanged": true
+    },
+    {
+      "host": "Radish.Gateway",
+      "noticeComponents": 6,
+      "noticeFiles": 16,
+      "publishFiles": 107,
+      "addedFiles": [],
+      "changedFiles": [
+        "Radish.Common.dll",
+        "Radish.Common.pdb",
+        "Radish.Extension.Log.dll",
+        "Radish.Extension.Log.pdb",
+        "Radish.Gateway.dll",
+        "Radish.Gateway.pdb",
+        "Radish.Model.dll",
+        "Radish.Model.pdb",
+        "Radish.Shared.dll",
+        "Radish.Shared.pdb"
+      ],
+      "depsDelta": [],
+      "allOtherPayloadHashesUnchanged": true
+    },
+    {
+      "host": "Radish.DbMigrate",
+      "noticeComponents": 6,
+      "noticeFiles": 16,
+      "publishFiles": 212,
+      "addedFiles": [],
+      "changedFiles": [
+        "Radish.Auth.Migrations.PostgreSql.dll",
+        "Radish.Auth.Migrations.PostgreSql.pdb",
+        "Radish.Auth.Migrations.Sqlite.dll",
+        "Radish.Auth.Migrations.Sqlite.pdb",
+        "Radish.Auth.Persistence.dll",
+        "Radish.Auth.Persistence.pdb",
+        "Radish.Common.dll",
+        "Radish.Common.pdb",
+        "Radish.DbMigrate.deps.json",
+        "Radish.DbMigrate.dll",
+        "Radish.DbMigrate.pdb",
+        "Radish.Extension.Log.dll",
+        "Radish.Extension.Log.pdb",
+        "Radish.Extension.dll",
+        "Radish.Extension.pdb",
+        "Radish.IRepository.dll",
+        "Radish.IRepository.pdb",
+        "Radish.IService.dll",
+        "Radish.IService.pdb",
+        "Radish.Infrastructure.dll",
+        "Radish.Infrastructure.pdb",
+        "Radish.Model.dll",
+        "Radish.Model.pdb",
+        "Radish.Repository.dll",
+        "Radish.Repository.pdb",
+        "Radish.Service.dll",
+        "Radish.Service.pdb",
+        "Radish.Shared.dll",
+        "Radish.Shared.pdb"
+      ],
+      "depsDelta": [
+        {
+          "package": "SourceGear.sqlite3/3.50.4.5",
+          "removedDuplicateRuntimeTargets": [
+            "runtimes/android-arm/native/libe_sqlite3.so",
+            "runtimes/android-arm64/native/libe_sqlite3.so",
+            "runtimes/android-x64/native/libe_sqlite3.so",
+            "runtimes/android-x86/native/libe_sqlite3.so",
+            "runtimes/browser-wasm/nativeassets/net9.0/e_sqlite3.a",
+            "runtimes/ios-arm/native/e_sqlite3.a",
+            "runtimes/ios-arm64/native/e_sqlite3.a",
+            "runtimes/iossimulator-arm64/native/e_sqlite3.a",
+            "runtimes/iossimulator-x64/native/e_sqlite3.a",
+            "runtimes/iossimulator-x86/native/e_sqlite3.a",
+            "runtimes/linux-arm/native/libe_sqlite3.so",
+            "runtimes/linux-arm64/native/libe_sqlite3.so",
+            "runtimes/linux-armel/native/libe_sqlite3.so",
+            "runtimes/linux-mips64/native/libe_sqlite3.so",
+            "runtimes/linux-musl-arm/native/libe_sqlite3.so",
+            "runtimes/linux-musl-arm64/native/libe_sqlite3.so",
+            "runtimes/linux-musl-s390x/native/libe_sqlite3.so",
+            "runtimes/linux-musl-x64/native/libe_sqlite3.so",
+            "runtimes/linux-ppc64le/native/libe_sqlite3.so",
+            "runtimes/linux-s390x/native/libe_sqlite3.so",
+            "runtimes/linux-x64/native/libe_sqlite3.so",
+            "runtimes/linux-x86/native/libe_sqlite3.so",
+            "runtimes/maccatalyst-arm64/native/libe_sqlite3.dylib",
+            "runtimes/maccatalyst-x64/native/libe_sqlite3.dylib",
+            "runtimes/osx-arm64/native/libe_sqlite3.dylib",
+            "runtimes/osx-x64/native/libe_sqlite3.dylib",
+            "runtimes/win-arm64/native/e_sqlite3.dll",
+            "runtimes/win-x64/native/e_sqlite3.dll",
+            "runtimes/win-x86/native/e_sqlite3.dll"
+          ],
+          "physicalFilesMatch": "SourceGear.sqlite3/3.50.4.5"
+        }
+      ],
+      "allOtherPayloadHashesUnchanged": true
+    }
+  ],
+  "publishCommands": [
+    {
+      "host": "Radish.Api",
+      "command": [
+        "dotnet",
+        "publish",
+        "Radish.Api/Radish.Api.csproj",
+        "-c",
+        "Release",
+        "--no-restore",
+        "--warnaserror",
+        "-o",
+        "/private/tmp/radish-hangfire-source-inputs-bz46loib/publish/Radish.Api"
+      ],
+      "exitCode": 0
+    },
+    {
+      "host": "Radish.Auth",
+      "command": [
+        "dotnet",
+        "publish",
+        "Radish.Auth/Radish.Auth.csproj",
+        "-c",
+        "Release",
+        "--no-restore",
+        "--warnaserror",
+        "-o",
+        "/private/tmp/radish-hangfire-source-inputs-bz46loib/publish/Radish.Auth"
+      ],
+      "exitCode": 0
+    },
+    {
+      "host": "Radish.Gateway",
+      "command": [
+        "dotnet",
+        "publish",
+        "Radish.Gateway/Radish.Gateway.csproj",
+        "-c",
+        "Release",
+        "--no-restore",
+        "--warnaserror",
+        "-o",
+        "/private/tmp/radish-hangfire-source-inputs-bz46loib/publish/Radish.Gateway"
+      ],
+      "exitCode": 0
+    },
+    {
+      "host": "Radish.DbMigrate",
+      "command": [
+        "dotnet",
+        "publish",
+        "Radish.DbMigrate/Radish.DbMigrate.csproj",
+        "-c",
+        "Release",
+        "--no-restore",
+        "--warnaserror",
+        "-o",
+        "/private/tmp/radish-hangfire-source-inputs-bz46loib/publish/Radish.DbMigrate"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "logs": {
+    "evidence/publish-api-diagnostic.log": "921f5aa8a4c9047cd1333285f7c67f017b05f540f41b30ed55518746d6494435",
+    "evidence/publish-Radish.Gateway.log": "15c89acd19d48c9363182da92a1f11d80e9b32ab341628fe47961a8b681e60d8",
+    "evidence/publish-Radish.Api.log": "8c061e0c9593d5ac6838fe010c2a39367816be3efe403678400b92726b3760c9",
+    "evidence/publish-Radish.DbMigrate.log": "1f1cd097427dc0e1b844b18c5cf94b6a025fb403286b15db8b939e31f581af19",
+    "evidence/publish-Radish.Auth.log": "008f9cf5fea329557bde0d4424c854b8527c7f9d6da57f33d781f86f41cbafe2"
+  },
+  "sqliteNativeIdentity": [
+    {
+      "path": "Radish.Api.Tests/bin/Release/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "sqliteVersion": "3.50.3"
+    },
+    {
+      "path": "/private/tmp/radish-hangfire-source-inputs-bz46loib/publish/Radish.Api/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "7b319cd32435ab28c97041fad74b892be218e6f0f74790802105309c1ec515a9",
+      "sqliteVersion": "3.50.4"
+    },
+    {
+      "path": ".nuget/packages/sqlitepclraw.lib.e_sqlite3/3.50.3/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "sqliteVersion": "3.50.3"
+    },
+    {
+      "path": ".nuget/packages/sourcegear.sqlite3/3.50.4.5/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "7b319cd32435ab28c97041fad74b892be218e6f0f74790802105309c1ec515a9",
+      "sqliteVersion": "3.50.4"
+    }
+  ],
+  "publishComparisonNote": "Normal publish performs SDK conflict selection; the preceding batch used --no-build. The exact deps differences are recorded per host; library versions and all physical third-party binaries are unchanged. SQLite conflicts have equal file versions and the SDK chooses one arbitrarily. The deps index attributes overlapping assets to SQLitePCLRaw.lib.e_sqlite3 3.50.3 while physical files match SourceGear.sqlite3 3.50.4.5. Native read-only version probes confirm the existing test/publish split of 3.50.3/3.50.4; no deterministic selection guarantee is established.",
+  "sourcePackagesMatchedInRepository": [
+    {
+      "assembly": "Hangfire.Core",
+      "path": "src/Hangfire.Core/MoreLinq/MoreEnumerable.Pairwise.cs",
+      "kind": "hangfire-source",
+      "sha256": "072ca3167d2d770e893d0f305f1b422796e0f59f17010e234b4535e7193d69f7",
+      "pdbHash": "072ca3167d2d770e893d0f305f1b422796e0f59f17010e234b4535e7193d69f7"
+    },
+    {
+      "assembly": "Hangfire.Core",
+      "path": "src/Hangfire.Core/App_Packages/StackTraceFormatter/StackTraceFormatter.cs",
+      "kind": "hangfire-source",
+      "sha256": "03df661f61bdeb363f0b53037ca687d45cda1c67f62557a3d2c15a8e225d854f",
+      "pdbHash": "03df661f61bdeb363f0b53037ca687d45cda1c67f62557a3d2c15a8e225d854f"
+    },
+    {
+      "assembly": "Hangfire.Core",
+      "path": "src/Hangfire.Core/App_Packages/StackTraceParser/StackTraceParser.cs",
+      "kind": "hangfire-source",
+      "sha256": "647b39c47142ec63ade948ae5454bfdae8f6ceae5decfc0a49badda01d29ff44",
+      "pdbHash": "647b39c47142ec63ade948ae5454bfdae8f6ceae5decfc0a49badda01d29ff44"
+    },
+    {
+      "assembly": "Hangfire.Core",
+      "path": "src/Hangfire.Core/App_Packages/LibLog.1.4/LibLog.cs",
+      "kind": "hangfire-source",
+      "sha256": "4be842d9ac8241af64130ca8ec099ff1fbe47b959aae2a79f0e79b5af7a59f05",
+      "pdbHash": "4be842d9ac8241af64130ca8ec099ff1fbe47b959aae2a79f0e79b5af7a59f05"
+    }
+  ],
+  "reviewPacket": {
+    "filename": "hangfire-source-input-review-2026-10-26.zip",
+    "bytes": 9047571,
+    "sha256": "55e4bba119a3c1a975935425ff5a9c7438c55388e0fc50dab95d88c963b87fe6",
+    "entries": 35,
+    "purpose": "Local source/build-input review; not a public source release or complete corresponding source clearance."
+  },
+  "inputHashes": {
+    "ThirdParty/nuget/manifest.json": "edd339dfabd9e4493d5dbb4c8ae9785d1039406e8ce789d26421a0633a9ee01e",
+    "ThirdParty/nuget/hangfire.core/1.8.14/LICENSE-Cronos-0.8.3.txt": "48e6c7a1b9a9e687391e6613269b4aa81b6c910f8e2bb53bee7a7e86e53b584a",
+    "Scripts/build/nuget-notices.props": "e95a4e22dd9dbf4b75daccfc171b7490a2e4a3037c1e7002d7a92feacdb6d2fe",
+    "Docs/records/hangfire-build-inputs-2026-10-26.json": "8079009d89cccd4a6f081d1fc851243a11546677e954d1745cbb47660f288df4"
+  },
+  "cachedCoreArchivesVerified": [
+    {
+      "package": "Newtonsoft.Json",
+      "version": "11.0.1",
+      "contentHash": "pNN4l+J6LlpIvHOeNdXlwxv39NPJ2B5klz+Rd2UQZIx30Squ5oND1Yy3wEAUoKn0GPUj6Yxt9lxlYWQqfZcvKg==",
+      "matchesUpstreamLock": true
+    },
+    {
+      "package": "Microsoft.NETCore.Platforms",
+      "version": "1.1.0",
+      "contentHash": "kz0PEW2lhqygehI/d6XsPCQzD7ff7gUJaVGPVETX611eadGsA3A877GdSlU0LRVMCTH/+P3o2iDTak+S08V2+A==",
+      "matchesUpstreamLock": true
+    }
+  ],
+  "quality": {
+    "changedFiles": 15,
+    "repositoryFiles": 903,
+    "markdownFiles": 849,
+    "localLinks": 1077,
+    "errors": 0,
+    "advisory": "Existing records index length 323, recommended 300",
+    "diffCheck": "passed"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "description": "Existing native / SQLite jobs at preparation commit 35d22fe2; this scope must preserve all five jobs.",
+  "jobs": {
+    "native-sanitizer": "d194d9b4280424bb8bfd74242521141fc934c794a24021b980d61ae9276a7a0f",
+    "native-platforms": "9b175181e81ac34be6901eb943e69a21be432934dfc3a4c7a9fb6fbd4b486fa4",
+    "native-docker": "349134e84a403ef2812d98995d4261047014c8b259385fdf48bbafe5505a8b2f",
+    "sqlite-native-platforms": "99cb6fa721f9c7c9760789c27f2bc6ff585ce930165fc4f34f01b3d3c9b3a927",
+    "sqlite-native-docker": "52022f17a03b0cd72cdeb237ad7427fb508722fc8bd79989b2a459721ed98003"
+  }
+}

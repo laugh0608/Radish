@@ -21,7 +21,7 @@ export const SecuritySettings = () => {
   const hasPaymentPasscode = Boolean(status?.hasPaymentPassword);
 
   const handleTabChange = (tab: SecurityTab) => {
-    log.debug('SecuritySettings', `切换到标签页: ${tab}`);
+    log.debug('SecuritySettings', '切换到标签页');
     setActiveTab(tab);
   };
 

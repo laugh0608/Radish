@@ -42,7 +42,7 @@ export const RadishPitApp = () => {
   }
 
   const handleTabChange = (tab: TabType) => {
-    log.debug('RadishPit', `切换到标签页: ${tab}`);
+    log.debug('RadishPit', '切换到标签页');
     setActiveTab(tab);
   };
 

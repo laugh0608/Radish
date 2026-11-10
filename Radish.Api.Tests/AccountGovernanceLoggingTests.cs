@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading.Tasks;
-using AutoMapper;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -325,17 +324,8 @@ public sealed class AccountGovernanceLoggingTests
             Idempotency.Setup(s => s.NormalizeKey(Secret)).Returns(Secret);
             Idempotency.Setup(s => s.CreateRequestSnapshot(It.IsAny<IReadOnlyDictionary<string, object?>>())).Returns(new OperationIdempotencyRequestSnapshot { RequestHash = Secret, RequestSummary = Secret });
             Idempotency.Setup(s => s.BeginAsync(It.IsAny<OperationIdempotencyBeginRequest>())).ReturnsAsync(new OperationIdempotencyBeginResult { Status = OperationIdempotencyBeginStatus.Started, RecordId = 3 });
-            var mapper = new Mock<IMapper>();
-            mapper.Setup(m => m.Map<UserBalanceVo>(It.IsAny<object>())).Returns((object o) => new UserBalanceVo { VoUserId = ((UserBalance)o).UserId, VoBalance = ((UserBalance)o).Balance });
-            mapper.Setup(m => m.Map<CoinTransactionVo>(It.IsAny<object>())).Returns((object o) => new CoinTransactionVo { VoTransactionNo = ((CoinTransaction)o).TransactionNo, VoToUserId = 1 });
-            mapper.Setup(m => m.Map<List<CoinTransactionVo>>(It.IsAny<object>())).Returns((object o) => ((List<CoinTransaction>)o).Select(t => mapper.Object.Map<CoinTransactionVo>(t)).ToList());
-            mapper.Setup(m => m.Map<UserExperienceVo>(It.IsAny<object>())).Returns((object o) =>
-            {
-                var e = (UserExperience)o;
-                return new UserExperienceVo { VoUserId = e.UserId, VoVersion = e.Version, VoCurrentLevel = e.CurrentLevel, VoTotalExp = e.TotalExp, VoExpFrozen = e.ExpFrozen };
-            });
-            mapper.Setup(m => m.Map<ExpTransactionVo>(It.IsAny<object>())).Returns((object o) => new ExpTransactionVo { VoId = ((ExpTransaction)o).Id });
-            Coin = new CoinService(mapper.Object, Balances.Object, Users.Object, Transactions.Object, Changes.Object, Mock.Of<IPaymentPasswordService>(), Idempotency.Object);
+
+            Coin = new CoinService(Balances.Object, Users.Object, Transactions.Object, Changes.Object, Mock.Of<IPaymentPasswordService>(), Idempotency.Object);
             Controller = CreateController(Coin);
             var experiences = new Mock<IBaseRepository<UserExperience>>();
             experiences.Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<UserExperience, bool>>>())).ReturnsAsync(ExperienceAccount);
@@ -359,7 +349,7 @@ public sealed class AccountGovernanceLoggingTests
                 return new ExperienceGovernanceMutationResult(ExperienceAccount, c.Action);
             });
             var clock = TimeProvider.System;
-            Experience = new ExperienceService(mapper.Object, experiences.Object, Mock.Of<IBaseRepository<ExpTransaction>>(), levels.Object,
+            Experience = new ExperienceService(experiences.Object, Mock.Of<IBaseRepository<ExpTransaction>>(), levels.Object,
                 Mock.Of<IBaseRepository<UserExpDailyStats>>(), Users.Object, Governance.Object, Mock.Of<IExperienceCalculator>(), Coin,
                 Mock.Of<IAttachmentUrlResolver>(), Mock.Of<INotificationService>(), Mock.Of<ICaching>(), clock,
                 new BusinessCalendar(clock, Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" })), operationIdempotencyService: Idempotency.Object);

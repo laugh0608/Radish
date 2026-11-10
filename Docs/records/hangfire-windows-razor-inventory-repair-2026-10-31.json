@@ -1,0 +1,88 @@
+{
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "status": "local-repair-checked-windows-runtime-pending",
+  "baseCommit": "26ba4390752b85e06ce10043b9bfe4496c83033a",
+  "previousRun": {
+    "id": 41190198055,
+    "attempt": 1,
+    "conclusion": "failure",
+    "unchanged": true
+  },
+  "workflow": {
+    "job": "hangfire-windows-razor",
+    "runner": "windows-2022",
+    "vsRange": "[17.0,18.0)",
+    "existingJobsUnchanged": 5,
+    "fullHeadShaRequired": true,
+    "verifyReviewedIdentitiesRequired": 4
+  },
+  "officialSnapshot": {
+    "repository": "actions/runner-images",
+    "commit": "4da2307112a0fad2fd2ecaca8ba7d08683b8c581",
+    "mappingBlob": "8de90fd8b3b5bf9aeec88151e87a3469973bbecd",
+    "windows2022ReadmeBlob": "b27a30ca8423b555ca3b1640c82a1d335183cd12",
+    "imageVersion": "20261026.347.1",
+    "vsVersion": "17.14.37824.6",
+    "powershell": "7.6.9",
+    "actualRunnerEvidence": false,
+    "reviewedVerifyValuesPopulated": false
+  },
+  "changes": [
+    "Separate CommandName from environmentKey",
+    "Persist incomplete identity and discovery progress before failure gates",
+    "Write complete inventory only after all checks",
+    "Run owned PowerShell contracts before actual inventory"
+  ],
+  "localValidation": {
+    "nodePassed": 28,
+    "razorNodeContracts": 11,
+    "previousSqliteNodeContracts": 9,
+    "previousHangfireNodeContracts": 8,
+    "newNodeChecksAreStatic": true,
+    "repoQualityChanged": "passed",
+    "diffCheck": "passed"
+  },
+  "powershellContracts": {
+    "count": 8,
+    "executed": false,
+    "entry": "Scripts/hangfire/windows/Invoke-Validation.ps1",
+    "script": "Scripts/hangfire/windows/Contracts.ps1",
+    "ownedPwshChildProcesses": 2,
+    "timeoutSecondsPerChild": 30,
+    "expectedExitCodes": [
+      0,
+      23
+    ],
+    "fixtureOnly": true,
+    "fixtureDirectory": "work/powershell-contracts",
+    "report": "powershell-contracts.json"
+  },
+  "inventoryEvidence": {
+    "schemaVersion": 2,
+    "progressReport": "inventory-progress.json",
+    "progressComplete": false,
+    "completeReport": "inventory.json",
+    "completeReportRequiresAllChecks": true,
+    "capturesWorkflowSha": true
+  },
+  "limits": {
+    "powershellParserExecuted": false,
+    "powershellBehaviorExecuted": false,
+    "newWindowsInventoryExecuted": false,
+    "verifyExecuted": false,
+    "csharpChangedOrRebuilt": false,
+    "toolsOrPackagesInstalled": false,
+    "push": false,
+    "dispatch": false,
+    "otherMatricesExecuted": false,
+    "release": false,
+    "deployment": false
+  },
+  "cleanup": {
+    "newRuntimeResourcesCreated": false,
+    "previousFailureArchivePreserved": true,
+    "contractFixtureCleanupWired": true,
+    "newWindowsCleanupExecuted": false
+  }
+}

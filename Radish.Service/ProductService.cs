@@ -1,6 +1,6 @@
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.Exceptions;
@@ -70,13 +70,12 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     private const int BaseRetryDelayMs = 50;
 
     public ProductService(
-        IMapper mapper,
         IBaseRepository<Product> productRepository,
         IBaseRepository<ProductCategory> categoryRepository,
         IBaseRepository<Order> orderRepository,
         IAttachmentUrlResolver attachmentUrlResolver,
         IBaseRepository<Attachment>? attachmentRepository = null)
-        : base(mapper, productRepository)
+        : base(ShopMapper.ToProductVo, productRepository)
     {
         _productRepository = productRepository;
         _categoryRepository = categoryRepository;
@@ -91,7 +90,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
     public async Task<List<ProductCategoryVo>> GetCategoriesAsync()
     {
         var categories = await _categoryRepository.QueryAsync(c => c.IsEnabled);
-        var categoryVos = Mapper.Map<List<ProductCategoryVo>>(categories.OrderBy(c => c.SortOrder).ToList());
+        var categoryVos = ShopMapper.ToProductCategoryVoList(categories.OrderBy(c => c.SortOrder).ToList());
 
         // 统计每个分类下的商品数量
         foreach (var category in categoryVos)
@@ -110,7 +109,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         var category = await _categoryRepository.QueryFirstAsync(c => c.Id == categoryId);
         if (category == null) return null;
 
-        var vo = Mapper.Map<ProductCategoryVo>(category);
+        var vo = ShopMapper.ToProductCategoryVo(category);
         vo.VoProductCount = await _productRepository.QueryCountAsync(
             PublicVisibleProductExpression.And(p => p.CategoryId == categoryId));
 
@@ -155,7 +154,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             orderByExpression: p => p.SortOrder,
             orderByType: OrderByType.Asc);
 
-        var productVos = Mapper.Map<List<ProductListItemVo>>(products);
+        var productVos = ShopMapper.ToProductListItemVoList(products);
         FillProductListItemUrls(productVos);
 
         return new PageModel<ProductListItemVo>
@@ -175,7 +174,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             SupportedPublicProductExpression.And(p => p.Id == productId && p.IsEnabled && !p.IsDeleted));
         if (product == null) return null;
 
-        var vo = Mapper.Map<ProductVo>(product);
+        var vo = ShopMapper.ToProductVo(product);
 
         // 填充分类名称
         var category = await _categoryRepository.QueryFirstAsync(c => c.Id == product.CategoryId);
@@ -424,7 +423,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             dto.IconAttachmentId);
 
         var tenantId = NormalizeTenantId(App.CurrentUser.TenantId);
-        var product = Mapper.Map<Product>(dto);
+        var product = ShopMapper.ToProduct(dto);
         product.TenantId = tenantId;
         product.CreateId = operatorId;
         product.CreateBy = operatorName;
@@ -460,7 +459,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             dto.BenefitValue,
             dto.IconAttachmentId);
 
-        Mapper.Map(dto, product);
+        ShopMapper.UpdateProduct(dto, product);
         product.ModifyId = operatorId;
         product.ModifyBy = operatorName;
         product.ModifyTime = DateTime.Now;
@@ -755,7 +754,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             thenByExpression: p => p.Id,
             thenByType: OrderByType.Desc);
 
-        var productVos = Mapper.Map<List<ProductVo>>(products);
+        var productVos = ShopMapper.ToProductVoList(products);
         await FillProductCategoryNamesAsync(productVos);
         FillProductUrls(productVos);
 
@@ -778,7 +777,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
             return null;
         }
 
-        var productVo = Mapper.Map<ProductVo>(product);
+        var productVo = ShopMapper.ToProductVo(product);
         await FillProductCategoryNamesAsync([productVo]);
         FillProductUrl(productVo);
         return productVo;

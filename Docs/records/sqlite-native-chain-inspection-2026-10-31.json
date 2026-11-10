@@ -1,0 +1,1044 @@
+{
+  "date": "2026-10-31",
+  "timezone": "Asia/Shanghai",
+  "revision": "29e7030122bc2462262ebd714964106a00242c65",
+  "scope": "Read existing assets and outputs; read official package archives in memory; native version/source/compile-option queries only. No restore, build, publish, database access or service startup.",
+  "existing_assets_are_not_new_restore_results": true,
+  "projects": [
+    {"project": "Radish.Api", "assets_sha256": "7541cb58f6685ced8a20c15d637699b529e998a4e0cba91530f7c75a2ef868ac", "resolved_graph": "graph-1"},
+    {"project": "Radish.Api.Tests", "assets_sha256": "394d247ec08b2f8097eacaea99e8146acabe1e3baaa9216fb99ded86aea3d17f", "resolved_graph": "graph-2"},
+    {"project": "Radish.Auth", "assets_sha256": "50256286b18277ed1153d0e122f243543202a0c5675ae8feab563b9b370cc56d", "resolved_graph": "graph-3"},
+    {"project": "Radish.Auth.Migrations.PostgreSql", "assets_sha256": "0daf1d668357b9f93e9bd26e4c56bc067a2b09ef05cd8fbef6633360824a302f", "resolved_graph": "graph-4"},
+    {"project": "Radish.Auth.Migrations.Sqlite", "assets_sha256": "c0b91433cb7e8c9d2e9c68ed7c73e05b7b3cbf47c4544e73fc6a3752974f2758", "resolved_graph": "graph-4"},
+    {"project": "Radish.Auth.Persistence", "assets_sha256": "2b45340ef07048dec153dde429fb31e9e230b5d96d14c549a80e2544d7b6fda5", "resolved_graph": "graph-4"},
+    {"project": "Radish.Common", "assets_sha256": "3c77187888ad8a18b078d0c04ac242c3ac1a96a842c28f253e53345d4cc908d2", "resolved_graph": "graph-5"},
+    {"project": "Radish.Core", "assets_sha256": "381c5142e6045888ced195e6ebce3a6fbdc9dbb767612462b9e53659598e2131", "resolved_graph": "graph-6"},
+    {"project": "Radish.DbMigrate", "assets_sha256": "9248e5f735b43f08c27ed4bba912e274dfb5b229fddd2c48b6dbd90cc34dff32", "resolved_graph": "graph-7"},
+    {"project": "Radish.Extension", "assets_sha256": "d947541f5ad4268da6ae1c9d1e43d3c679e8958cf4dc5ea5457ca7220b4e8351", "resolved_graph": "graph-8"},
+    {"project": "Radish.Extension.Log", "assets_sha256": "bfe53de3b708fc906063f3d1639dcd04dba45bf56b31934f8d7af20ac868e897", "resolved_graph": "graph-5"},
+    {"project": "Radish.Gateway", "assets_sha256": "38c391b3b7c9c407ea785962ee734bfcdd4e88340e08076a1c36c94319da734e", "resolved_graph": "graph-5"},
+    {"project": "Radish.IRepository", "assets_sha256": "f96fc619598e52021753b66c2de5ae7ba7cbc817666c45e70accd39c32dd8a70", "resolved_graph": "graph-5"},
+    {"project": "Radish.IService", "assets_sha256": "c62abd0b6cf5319d91cc9ab67783f46e0369d0c110e1c81d5ea2d6780ec5be4c", "resolved_graph": "graph-5"},
+    {"project": "Radish.Infrastructure", "assets_sha256": "4aaa035c5ee7345f315a71bd771b6f91d8d7a7ef38526eeff0a70810c910812f", "resolved_graph": "graph-5"},
+    {"project": "Radish.Model", "assets_sha256": "d1cf419df229d2d5018d51125c56a4199ab404a26f47608384dcdefc86e07a94", "resolved_graph": "graph-5"},
+    {"project": "Radish.Repository", "assets_sha256": "4abf18ae0a1d673200c51cca6bc26ec1a0d28461ebb784a189a0293d7c4c6536", "resolved_graph": "graph-5"},
+    {"project": "Radish.Service", "assets_sha256": "5009a7f8bdc64ced2f5926a2eaaa6d5755ee0fabdaec76486fa3bdb0665ea56c", "resolved_graph": "graph-5"},
+    {"project": "Radish.Shared", "assets_sha256": "7cc428d8e9fe575e4aee6def44a12bdd7431f70799cee5f2e96a04a973c59889", "resolved_graph": "graph-6"}
+  ],
+  "current_packages": [
+    {
+      "id": "sqlitepclraw.lib.e_sqlite3",
+      "version": "3.50.3",
+      "archive_sha256": "ae03faddc4dbdea903a2693eaeda642b766c3c316c2553b496259eecd7c1fe87",
+      "nuspec_sha256": "23d394b7c7004d68a8384d5cfc9f550b364436be53bf5b745bf144a541810e50",
+      "runtime_files": [
+        {"path": "runtimes/android-arm/native/libe_sqlite3.so", "size": 1212940, "sha256": "9492555d29d67663a4442d32020586a2a3e743523f328973d505a1cb53135c35"},
+        {"path": "runtimes/android-arm64/native/libe_sqlite3.so", "size": 1727824, "sha256": "de98e8fb4517e1c7f7dbe8ae7f537bac25b6981978ac10840f17796e3ab6778f"},
+        {"path": "runtimes/android-x64/native/libe_sqlite3.so", "size": 1759864, "sha256": "285b74ce5175435f5d3d00c5c71c92fc1286245bc61b6a50686e60bf2740f3b5"},
+        {"path": "runtimes/android-x86/native/libe_sqlite3.so", "size": 1770980, "sha256": "7b985ce0f2f6be8120ea3bfc297949a4e9d68e71e3cddceec9fa1ec7debc910f"},
+        {"path": "runtimes/browser-wasm/nativeassets/net8.0/e_sqlite3.a", "size": 1280156, "sha256": "64eeae176aec3526facfec077889a56a2fd72a1ad7c8531f2de8aa42348dcf2c"},
+        {"path": "runtimes/browser-wasm/nativeassets/net9.0/e_sqlite3.a", "size": 1273052, "sha256": "ad043b86e6a448988c98a8e567537562d9c869d6de4768f3871fa829de27057b"},
+        {"path": "runtimes/ios-arm/native/e_sqlite3.a", "size": 5464784, "sha256": "ad095e8ce8126abecf94ecd9d733b0cadd70212437ec02e2a33dd4c9a379ed26"},
+        {"path": "runtimes/ios-arm64/native/e_sqlite3.a", "size": 5464784, "sha256": "ad095e8ce8126abecf94ecd9d733b0cadd70212437ec02e2a33dd4c9a379ed26"},
+        {"path": "runtimes/iossimulator-arm64/native/e_sqlite3.a", "size": 6373216, "sha256": "1862ecb851451a8748f5254e2ce0bf9bc7dcb07a829fc298c1279bb882200971"},
+        {"path": "runtimes/iossimulator-x64/native/e_sqlite3.a", "size": 6373216, "sha256": "1862ecb851451a8748f5254e2ce0bf9bc7dcb07a829fc298c1279bb882200971"},
+        {"path": "runtimes/iossimulator-x86/native/e_sqlite3.a", "size": 6373216, "sha256": "1862ecb851451a8748f5254e2ce0bf9bc7dcb07a829fc298c1279bb882200971"},
+        {"path": "runtimes/linux-arm/native/libe_sqlite3.so", "size": 952724, "sha256": "fe034e8cb53cac60fe121d516682b91830c67f5b4c9bdd690044d564ee01e19f"},
+        {"path": "runtimes/linux-arm64/native/libe_sqlite3.so", "size": 1530552, "sha256": "ac6cbb9e3b7cd33ebfe7fb16da09dc6bfb2258426ef40e42980ed1e744ae517b"},
+        {"path": "runtimes/linux-armel/native/libe_sqlite3.so", "size": 1337688, "sha256": "76e53ad6abdd966d7b60f3e108d7a6256913c10b1aaf7e35468ced07beb393ca"},
+        {"path": "runtimes/linux-mips64/native/libe_sqlite3.so", "size": 1750592, "sha256": "386a02b01cc9ea953ec8de7f012dc5ccaf1955c41660f2ce9e7d2463fa47ee1b"},
+        {"path": "runtimes/linux-musl-arm/native/libe_sqlite3.so", "size": 1285752, "sha256": "b8aee898ab9ee8e2912f4f25a827ee862eda8792e54b36317bee03d49ff27202"},
+        {"path": "runtimes/linux-musl-arm64/native/libe_sqlite3.so", "size": 1414224, "sha256": "daedee2db762691d6ba3119833698739b1975fd08bd6dc3feb609ff90d1252b1"},
+        {"path": "runtimes/linux-musl-s390x/native/libe_sqlite3.so", "size": 1645088, "sha256": "af5cd75d0a408b9a1c819e11f3d6baf68d3857d557fd892582e543d443c35a7f"},
+        {"path": "runtimes/linux-musl-x64/native/libe_sqlite3.so", "size": 1404864, "sha256": "11f22cda735dc861348cd070746ae2c55e90369ff80afdfb9e2107d1120cbcb1"},
+        {"path": "runtimes/linux-ppc64le/native/libe_sqlite3.so", "size": 1868088, "sha256": "7bfd5169400b887580d77d2ad5be55ec94a9301bfa1d58d596069297ab457b25"},
+        {"path": "runtimes/linux-s390x/native/libe_sqlite3.so", "size": 1611112, "sha256": "892a2ee12845c08eb1261d80f93991f2a719976888d95342392d0fc940fbb3d6"},
+        {"path": "runtimes/linux-x64/native/libe_sqlite3.so", "size": 1434448, "sha256": "63ed8433123cf71158ecdb7981abcb54401193d0d1bf80562633888cd21d02c4"},
+        {"path": "runtimes/linux-x86/native/libe_sqlite3.so", "size": 1507776, "sha256": "0d686e9223d9cf5e64c83a1fc774c68db686d00602945c2fb8c6b3c8d95416b6"},
+        {"path": "runtimes/maccatalyst-arm64/native/libe_sqlite3.dylib", "size": 1676352, "sha256": "92727c2ea77d1ac662cdb6c18d6e378057bf0af322f4100ecb2594a8185fea58"},
+        {"path": "runtimes/maccatalyst-x64/native/libe_sqlite3.dylib", "size": 1713640, "sha256": "07b93606bdc9e64c833bc2a3768dc7cd0e034ca7d53cc46d30f721a32273603e"},
+        {"path": "runtimes/osx-arm64/native/libe_sqlite3.dylib", "size": 1661152, "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c"},
+        {"path": "runtimes/osx-x64/native/libe_sqlite3.dylib", "size": 1680952, "sha256": "7441434cfc4f4b9628d4e438d653c781c7f06636d56fbb92a7e2dbfeb05e3015"},
+        {"path": "runtimes/win-arm64/native/e_sqlite3.dll", "size": 1695232, "sha256": "397eaa7cd8edc933fdc47830cc7e2efc4b1408fd5e97b284cac984ebd272eb60"},
+        {"path": "runtimes/win-x64/native/e_sqlite3.dll", "size": 1910272, "sha256": "3061b1c0e66be7ba1a3223b5b3af90aff353c9bca07bd0a02aefbe2dfbacb81f"},
+        {"path": "runtimes/win-x86/native/e_sqlite3.dll", "size": 1502208, "sha256": "c875da94d47f21cc71de268687363d736f4af3c9a18f731fc25596a9abb20c81"}
+      ],
+      "osx_arm64_native_probe": {
+        "sqlite3_libversion": "3.50.3",
+        "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543",
+        "compile_options": [
+          "ATOMIC_INTRINSICS=1",
+          "COMPILER=clang-15.0.0",
+          "DEFAULT_AUTOVACUUM",
+          "DEFAULT_CACHE_SIZE=-2000",
+          "DEFAULT_FILE_FORMAT=4",
+          "DEFAULT_FOREIGN_KEYS",
+          "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+          "DEFAULT_MMAP_SIZE=0",
+          "DEFAULT_PAGE_SIZE=4096",
+          "DEFAULT_PCACHE_INITSZ=20",
+          "DEFAULT_RECURSIVE_TRIGGERS",
+          "DEFAULT_SECTOR_SIZE=4096",
+          "DEFAULT_SYNCHRONOUS=2",
+          "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+          "DEFAULT_WAL_SYNCHRONOUS=2",
+          "DEFAULT_WORKER_THREADS=0",
+          "DIRECT_OVERFLOW_READ",
+          "DQS=0",
+          "ENABLE_COLUMN_METADATA",
+          "ENABLE_FTS3",
+          "ENABLE_FTS3_PARENTHESIS",
+          "ENABLE_FTS4",
+          "ENABLE_FTS5",
+          "ENABLE_GEOPOLY",
+          "ENABLE_MATH_FUNCTIONS",
+          "ENABLE_PREUPDATE_HOOK",
+          "ENABLE_RTREE",
+          "ENABLE_SESSION",
+          "ENABLE_SNAPSHOT",
+          "LIKE_DOESNT_MATCH_BLOBS",
+          "MALLOC_SOFT_LIMIT=1024",
+          "MAX_ATTACHED=10",
+          "MAX_COLUMN=2000",
+          "MAX_COMPOUND_SELECT=500",
+          "MAX_DEFAULT_PAGE_SIZE=8192",
+          "MAX_EXPR_DEPTH=1000",
+          "MAX_FUNCTION_ARG=1000",
+          "MAX_LENGTH=1000000000",
+          "MAX_LIKE_PATTERN_LENGTH=50000",
+          "MAX_MMAP_SIZE=0x7fff0000",
+          "MAX_PAGE_COUNT=0xfffffffe",
+          "MAX_PAGE_SIZE=65536",
+          "MAX_SQL_LENGTH=1000000000",
+          "MAX_TRIGGER_DEPTH=1000",
+          "MAX_VARIABLE_NUMBER=32766",
+          "MAX_VDBE_OP=250000000",
+          "MAX_WORKER_THREADS=8",
+          "MUTEX_PTHREADS",
+          "SYSTEM_MALLOC",
+          "TEMP_STORE=1",
+          "THREADSAFE=1"
+        ]
+      }
+    },
+    {
+      "id": "sourcegear.sqlite3",
+      "version": "3.50.4.5",
+      "archive_sha256": "c8f3b22e22b84284df1372040f48459752496239adf11041ddfa756b50b0bea1",
+      "nuspec_sha256": "4708deb3b3a384701b62c87ddeb658d5846954cffc4ce04be74b36d51503eaab",
+      "runtime_files": [
+        {"path": "runtimes/android-arm/native/libe_sqlite3.so", "size": 1213068, "sha256": "1b74b20791081922fd00e001385815da007597709607eda9488322ff60996ee4"},
+        {"path": "runtimes/android-arm64/native/libe_sqlite3.so", "size": 1728080, "sha256": "8570990253a2143b4792af64314402a9b419c9366b69ba2ab5a668416ea4bad4"},
+        {"path": "runtimes/android-x64/native/libe_sqlite3.so", "size": 1760040, "sha256": "01b7c8739b22eb4b41e58cbe83b0f5f71a3fb1d9d4159ad1565d0db27a539520"},
+        {"path": "runtimes/android-x86/native/libe_sqlite3.so", "size": 1771220, "sha256": "f4b2193c775e8c103e200710087266a9dc24f928bd73842acdd5f10b66ffb9a0"},
+        {"path": "runtimes/browser-wasm/nativeassets/net8.0/e_sqlite3.a", "size": 1280374, "sha256": "535887da5111d87ea3d085cf2fa2189e17cbf4687f74c993cd19145d1fbfb1e0"},
+        {"path": "runtimes/browser-wasm/nativeassets/net9.0/e_sqlite3.a", "size": 1273274, "sha256": "8ff5ac13b3f3e8e7efffded270b426dee52859c027c998a8091db9a6a8b2094d"},
+        {"path": "runtimes/ios-arm/native/e_sqlite3.a", "size": 5465392, "sha256": "55186237bf848884e095eed2babd4d0c61aa5f8282ffdba2287b02b20b325970"},
+        {"path": "runtimes/ios-arm64/native/e_sqlite3.a", "size": 5465392, "sha256": "55186237bf848884e095eed2babd4d0c61aa5f8282ffdba2287b02b20b325970"},
+        {"path": "runtimes/iossimulator-arm64/native/e_sqlite3.a", "size": 6374080, "sha256": "7a2eaea0948a04152a2e03346d25f70843d6135b33478bb4f812d8bb5919516b"},
+        {"path": "runtimes/iossimulator-x64/native/e_sqlite3.a", "size": 6374080, "sha256": "7a2eaea0948a04152a2e03346d25f70843d6135b33478bb4f812d8bb5919516b"},
+        {"path": "runtimes/iossimulator-x86/native/e_sqlite3.a", "size": 6374080, "sha256": "7a2eaea0948a04152a2e03346d25f70843d6135b33478bb4f812d8bb5919516b"},
+        {"path": "runtimes/linux-arm/native/libe_sqlite3.so", "size": 952800, "sha256": "2d854f448fb938223535a57e721d3340139d38211f79d8a382f0fbe7b10143bc"},
+        {"path": "runtimes/linux-arm64/native/libe_sqlite3.so", "size": 1530608, "sha256": "1e3d72f01195cd8fc1e9f17a7d1e9a8fa589b390c08f81b4d3a7af721effe0eb"},
+        {"path": "runtimes/linux-armel/native/libe_sqlite3.so", "size": 1337732, "sha256": "3f03680395719e579d6057d5c1a6b983ed3aee104ca66cf008f4ac293120d4e6"},
+        {"path": "runtimes/linux-mips64/native/libe_sqlite3.so", "size": 1750688, "sha256": "efb1664a6d8c6f0317bf0befb30717073b6b61e1ac5c9c902df77e1561c64eab"},
+        {"path": "runtimes/linux-musl-arm/native/libe_sqlite3.so", "size": 1285764, "sha256": "12dc07f3d53f941048e34c6b89a85111b920078d88609196ce3205c20183f14a"},
+        {"path": "runtimes/linux-musl-arm64/native/libe_sqlite3.so", "size": 1414272, "sha256": "d881b6b8a258f5e3fe1419b46366fc1afd90e941818d30aa2d2cec650449fed0"},
+        {"path": "runtimes/linux-musl-riscv64/native/libe_sqlite3.so", "size": 995824, "sha256": "c2c1068ebd1f84c6e4a2836d9a8bb2f560ca02fdb14bcd5128c5e8f99747156b"},
+        {"path": "runtimes/linux-musl-s390x/native/libe_sqlite3.so", "size": 1645144, "sha256": "1672540e0af343d62f5c9a8e1b66df267833a25de520552243dfd0f0a410914b"},
+        {"path": "runtimes/linux-musl-x64/native/libe_sqlite3.so", "size": 1404920, "sha256": "73b683c168b3cdc68f1fd005645da7fdedf17895378c2b41903172e296a990c2"},
+        {"path": "runtimes/linux-ppc64le/native/libe_sqlite3.so", "size": 1868144, "sha256": "11439415dedc32206271497acb9eb5d471ad4ed4d49a673736a9f86e74bae2c9"},
+        {"path": "runtimes/linux-riscv64/native/libe_sqlite3.so", "size": 1263704, "sha256": "88f772c63a08ea586020d40bb02e443ad7cf39e213d02fbb853646534307d0aa"},
+        {"path": "runtimes/linux-s390x/native/libe_sqlite3.so", "size": 1611168, "sha256": "f1d66857efe72dce75c280b1c3a60fbaf365d2445b40622056b0da93cf8cf58a"},
+        {"path": "runtimes/linux-x64/native/libe_sqlite3.so", "size": 1434496, "sha256": "a5e8aed525023e6c209d37d3e762e2e76ed3a830464569a419abfc3cf12d7a6c"},
+        {"path": "runtimes/linux-x86/native/libe_sqlite3.so", "size": 1507844, "sha256": "2bfc22ddf99e8e0d0aa8bb20818b99f164935547b1940d8700e3d1d3398a16a4"},
+        {"path": "runtimes/maccatalyst-arm64/native/libe_sqlite3.dylib", "size": 1676400, "sha256": "5f7258e3d9ef0d863a223a0ece5dd7aa71903fe26a7b5f7f77a1b94c6eae8c4f"},
+        {"path": "runtimes/maccatalyst-x64/native/libe_sqlite3.dylib", "size": 1713688, "sha256": "292d34ba0fee9cc57fbc51866c9ef076cadee22cfb073e7e10695c5a9b4663d6"},
+        {"path": "runtimes/osx-arm64/native/libe_sqlite3.dylib", "size": 1661200, "sha256": "7b319cd32435ab28c97041fad74b892be218e6f0f74790802105309c1ec515a9"},
+        {"path": "runtimes/osx-x64/native/libe_sqlite3.dylib", "size": 1680992, "sha256": "68cbf7a2b78587bcfde9ec55f56a2d0f061260209daafd41bb3ac6f2650dfeae"},
+        {"path": "runtimes/win-arm64/native/e_sqlite3.dll", "size": 1695744, "sha256": "c2088aec5eeb223e810cea6745d257ce8e05f65b0665ad6325c660975a0feb40"},
+        {"path": "runtimes/win-x64/native/e_sqlite3.dll", "size": 1911296, "sha256": "aabf85d7a8b416fb15203cb754fcfc9858c8f1dd3bbc7eab82335f6c362ba0d6"},
+        {"path": "runtimes/win-x86/native/e_sqlite3.dll", "size": 1503232, "sha256": "61544338560ccf41a665bac6faba5a2270cd0088dcdf63f6906ab7ccf6b34e5e"}
+      ],
+      "osx_arm64_native_probe": {
+        "sqlite3_libversion": "3.50.4",
+        "sqlite3_sourceid": "2025-07-30 19:33:53 4d8adfb30e03f9cf27f800a2c1ba3c48fb4ca1b08b0f5ed59a4d5ecbf45e20a3",
+        "compile_options": [
+          "ATOMIC_INTRINSICS=1",
+          "COMPILER=clang-15.0.0",
+          "DEFAULT_AUTOVACUUM",
+          "DEFAULT_CACHE_SIZE=-2000",
+          "DEFAULT_FILE_FORMAT=4",
+          "DEFAULT_FOREIGN_KEYS",
+          "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+          "DEFAULT_MMAP_SIZE=0",
+          "DEFAULT_PAGE_SIZE=4096",
+          "DEFAULT_PCACHE_INITSZ=20",
+          "DEFAULT_RECURSIVE_TRIGGERS",
+          "DEFAULT_SECTOR_SIZE=4096",
+          "DEFAULT_SYNCHRONOUS=2",
+          "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+          "DEFAULT_WAL_SYNCHRONOUS=2",
+          "DEFAULT_WORKER_THREADS=0",
+          "DIRECT_OVERFLOW_READ",
+          "DQS=0",
+          "ENABLE_COLUMN_METADATA",
+          "ENABLE_FTS3",
+          "ENABLE_FTS3_PARENTHESIS",
+          "ENABLE_FTS4",
+          "ENABLE_FTS5",
+          "ENABLE_GEOPOLY",
+          "ENABLE_MATH_FUNCTIONS",
+          "ENABLE_PREUPDATE_HOOK",
+          "ENABLE_RTREE",
+          "ENABLE_SESSION",
+          "ENABLE_SNAPSHOT",
+          "LIKE_DOESNT_MATCH_BLOBS",
+          "MALLOC_SOFT_LIMIT=1024",
+          "MAX_ATTACHED=10",
+          "MAX_COLUMN=2000",
+          "MAX_COMPOUND_SELECT=500",
+          "MAX_DEFAULT_PAGE_SIZE=8192",
+          "MAX_EXPR_DEPTH=1000",
+          "MAX_FUNCTION_ARG=1000",
+          "MAX_LENGTH=1000000000",
+          "MAX_LIKE_PATTERN_LENGTH=50000",
+          "MAX_MMAP_SIZE=0x7fff0000",
+          "MAX_PAGE_COUNT=0xfffffffe",
+          "MAX_PAGE_SIZE=65536",
+          "MAX_SQL_LENGTH=1000000000",
+          "MAX_TRIGGER_DEPTH=1000",
+          "MAX_VARIABLE_NUMBER=32766",
+          "MAX_VDBE_OP=250000000",
+          "MAX_WORKER_THREADS=8",
+          "MUTEX_PTHREADS",
+          "SYSTEM_MALLOC",
+          "TEMP_STORE=1",
+          "THREADSAFE=1"
+        ]
+      }
+    }
+  ],
+  "existing_build_outputs": [
+    {
+      "host": "Radish.Api",
+      "configuration": "Debug",
+      "path": "Radish.Api/bin/Debug/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.Api",
+      "configuration": "Release",
+      "path": "Radish.Api/bin/Release/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.Auth",
+      "configuration": "Debug",
+      "path": "Radish.Auth/bin/Debug/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.Auth",
+      "configuration": "Release",
+      "path": "Radish.Auth/bin/Release/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.Gateway",
+      "configuration": "Debug",
+      "path": "Radish.Gateway/bin/Debug/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.Gateway",
+      "configuration": "Release",
+      "path": "Radish.Gateway/bin/Release/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.DbMigrate",
+      "configuration": "Debug",
+      "path": "Radish.DbMigrate/bin/Debug/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.DbMigrate",
+      "configuration": "Release",
+      "path": "Radish.DbMigrate/bin/Release/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.Api.Tests",
+      "configuration": "Debug",
+      "path": "Radish.Api.Tests/bin/Debug/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    },
+    {
+      "host": "Radish.Api.Tests",
+      "configuration": "Release",
+      "path": "Radish.Api.Tests/bin/Release/net10.0/runtimes/osx-arm64/native/libe_sqlite3.dylib",
+      "sha256": "c2e6eb6f3acdd204502111f158400e65bf7af73c30869a238e7dc9e5c704265c",
+      "source": {"package": "sqlitepclraw.lib.e_sqlite3", "version": "3.50.3", "path": "runtimes/osx-arm64/native/libe_sqlite3.dylib"},
+      "probe": {"sqlite3_libversion": "3.50.3", "sqlite3_sourceid": "2025-07-17 13:25:10 3ce993b8657d6d9deda380a93cdd6404a8c8ba1b185b2bc423703e41ae5f2543"}
+    }
+  ],
+  "proposed_native_package": {
+    "id": "sqlitepclraw.lib.e_sqlite3",
+    "version": "3.53.3",
+    "url": "https://api.nuget.org/v3-flatcontainer/sqlitepclraw.lib.e_sqlite3/3.53.3/sqlitepclraw.lib.e_sqlite3.3.53.3.nupkg",
+    "archive_bytes": 39311643,
+    "archive_sha256": "72cb724779218e024833a21e2903c795a9e90c0bfa01520f27990c36413f32d4",
+    "nuspec_sha256": "a9ada8f3c708991b46e236b5900e5ef49bc8635eb8d76631b42bb755c0276a6e",
+    "repository": {"type": "git", "url": "https://github.com/sourcegear/sqlite-builds", "branch": "refs/heads/public_package_alternate_name_js", "commit": "e7d537a1576bac9d7452411c4468640fa730de3e"},
+    "runtime_files": [
+      {"path": "runtimes/android-arm/native/libe_sqlite3.so", "size": 1246020, "sha256": "54d5326235f0bbe5199d441941885c1f34c9fba5578b0285ab20ea2b5b70e606"},
+      {"path": "runtimes/android-arm64/native/libe_sqlite3.so", "size": 1771632, "sha256": "f6672612ceb79d6f5681773ba8343776bc34fdc963f4d5882bed774c890aaabd"},
+      {"path": "runtimes/android-x64/native/libe_sqlite3.so", "size": 1801336, "sha256": "b7b9fe877a96f1a8e161f91e497da666d95be5723043a0dc3fffed30109bb65c"},
+      {"path": "runtimes/android-x86/native/libe_sqlite3.so", "size": 1819116, "sha256": "e7ff0b19a6db1d2abb654cdd1fea66979596bf2549964006b27f24ac8ca99b47"},
+      {"path": "runtimes/browser-wasm/nativeassets/net8.0/e_sqlite3.a", "size": 1316048, "sha256": "528790d8ebb1fde0e43383beb015e8084dbcd0d963e09e1b690244205f52dadf"},
+      {"path": "runtimes/browser-wasm/nativeassets/net9.0/e_sqlite3.a", "size": 1308854, "sha256": "c64ae8d44dc3e1aa03aca4e79ccc501cbc3a3c490e8e2ea9e369367f68cf0f21"},
+      {"path": "runtimes/ios-arm/native/e_sqlite3.a", "size": 2218576, "sha256": "ec9c290bfd1fa6de2e36d40ad0fcab572ba63d175ca8ba20a2226ab5adef598c"},
+      {"path": "runtimes/ios-arm64/native/e_sqlite3.a", "size": 2218576, "sha256": "ec9c290bfd1fa6de2e36d40ad0fcab572ba63d175ca8ba20a2226ab5adef598c"},
+      {"path": "runtimes/iossimulator-arm64/native/e_sqlite3.a", "size": 4274728, "sha256": "f2561b76cf8ec98e70dabd956ad12d79e1df65aca86936902e7675c7d43d508a"},
+      {"path": "runtimes/iossimulator-x64/native/e_sqlite3.a", "size": 4274728, "sha256": "f2561b76cf8ec98e70dabd956ad12d79e1df65aca86936902e7675c7d43d508a"},
+      {"path": "runtimes/linux-arm/native/libe_sqlite3.a", "size": 1077316, "sha256": "9030aa218568da7ac16e9deaca5fae3457697517ede9acb64f8f07188c988db8"},
+      {"path": "runtimes/linux-arm/native/libe_sqlite3.so", "size": 982224, "sha256": "43556c2f5075857bf57be1136d556733bdc27195884fbdde127cd976d1c25ad5"},
+      {"path": "runtimes/linux-arm64/native/libe_sqlite3.a", "size": 1879000, "sha256": "74b399e6b7ebc3050a254b6d7f27db74c8fe21e4fa702af817fc1969faf0295a"},
+      {"path": "runtimes/linux-arm64/native/libe_sqlite3.so", "size": 1534296, "sha256": "707fff6b18c1f083158e7a543c8d2545d5485f547ffd96db29679a95f52878d5"},
+      {"path": "runtimes/linux-armel/native/libe_sqlite3.a", "size": 1462900, "sha256": "2ae37d6440cd7fb8028dd8c99995cbb21c97348aecbe904a791ed98347114fc7"},
+      {"path": "runtimes/linux-armel/native/libe_sqlite3.so", "size": 1375344, "sha256": "3f4d9b9ca49bb3f100882e78ba85807398cee19b481bfd4c301a8f5f58d48540"},
+      {"path": "runtimes/linux-mips64/native/libe_sqlite3.a", "size": 3300464, "sha256": "003a556e9005f0f05783e7d5e2d6f43d7a92d6dd0d93d7432b59d919dfa052dd"},
+      {"path": "runtimes/linux-mips64/native/libe_sqlite3.so", "size": 1756544, "sha256": "985884523e512414f3e50aa359f08dad3ce635e99405e7823de9b26a7db38d09"},
+      {"path": "runtimes/linux-musl-arm/native/libe_sqlite3.a", "size": 1356948, "sha256": "bdef9815bd9d0276e4839765ff2b320f53204d71bceb35e52f49c963783a80f8"},
+      {"path": "runtimes/linux-musl-arm/native/libe_sqlite3.so", "size": 1322584, "sha256": "7fec7057d16e8b5ae54fed0c42a0e6b85e40df0d57092ef20cd647a4e1c1e0ed"},
+      {"path": "runtimes/linux-musl-arm64/native/libe_sqlite3.a", "size": 1730216, "sha256": "f646d6ec137d233e8671b81c411f2fb0ebfa096dea845ae44f9879a25ebba868"},
+      {"path": "runtimes/linux-musl-arm64/native/libe_sqlite3.so", "size": 1450704, "sha256": "530e2f74f259fe04faa4b595336e671fab5eedbb6f4e94dad59494efb7b00c2a"},
+      {"path": "runtimes/linux-musl-riscv64/native/libe_sqlite3.a", "size": 4218448, "sha256": "f55323689c063df048e808d223945a9cd4d55d94c78a76edaefff85752eb4b05"},
+      {"path": "runtimes/linux-musl-riscv64/native/libe_sqlite3.so", "size": 1015888, "sha256": "d8e54eb7dc52ea0a7df9b78ac6feb85af429e7264613099df478825dea5805d4"},
+      {"path": "runtimes/linux-musl-s390x/native/libe_sqlite3.a", "size": 2299168, "sha256": "77ef7a3fc5b7db45adeac9f7cb9642ea6a3ac6589c94f06b70b07d8e376b73aa"},
+      {"path": "runtimes/linux-musl-s390x/native/libe_sqlite3.so", "size": 1685752, "sha256": "64260c0460ad6efa7dce9263bff7a4b64ad66172ccc580cb09181c845e1a3407"},
+      {"path": "runtimes/linux-musl-x64/native/libe_sqlite3.a", "size": 1797624, "sha256": "593ae82adaf90decc35e90d687ec5d6a86663de922b6ec7e74f442a85dd0ac22"},
+      {"path": "runtimes/linux-musl-x64/native/libe_sqlite3.so", "size": 1445336, "sha256": "647b7b5886526691aed58e0fcbb56dc1e6dea8b1f9f5390782f0c95269250db1"},
+      {"path": "runtimes/linux-ppc64le/native/libe_sqlite3.a", "size": 2598288, "sha256": "df68b9e401f1884c8dfae83678f33652b4e3d3e50a22176e1cff43e7a45f795d"},
+      {"path": "runtimes/linux-ppc64le/native/libe_sqlite3.so", "size": 1937408, "sha256": "1ef00b5e3ac63e491f59ecf587680fc52ad844cea62e0a879a1315ef6bd10fc6"},
+      {"path": "runtimes/linux-riscv64/native/libe_sqlite3.a", "size": 6170840, "sha256": "891dbe55938323a2e5d092f19eab2930e6c698ac727b1d127691ebb8c49c62ed"},
+      {"path": "runtimes/linux-riscv64/native/libe_sqlite3.so", "size": 1291896, "sha256": "6b390eecbc6f55c44d9ab8a774f1fe4283dfb33a72e6f29f4e0b173065e7e105"},
+      {"path": "runtimes/linux-s390x/native/libe_sqlite3.a", "size": 2314664, "sha256": "bb15ea2f63a83b14b69c2ffd85248e3b8c2ac250ee30fe73203c05fe4caeed11"},
+      {"path": "runtimes/linux-s390x/native/libe_sqlite3.so", "size": 1655776, "sha256": "dfd5ab35f6d61155a3c629d0bceff4d6e0f0f190983f3fb8f681fb34ec08c67e"},
+      {"path": "runtimes/linux-x64/native/libe_sqlite3.a", "size": 1799072, "sha256": "75a5e562fb311c8850d0206239fa0007c7a25579aeaf15a708acc0ad553a60db"},
+      {"path": "runtimes/linux-x64/native/libe_sqlite3.so", "size": 1470784, "sha256": "b0f5c48026fedcf9f05cf31c6fadf9e1e001ca59cd85aa68b8b6814e52c18a07"},
+      {"path": "runtimes/linux-x86/native/libe_sqlite3.a", "size": 1680362, "sha256": "3c267476fc4b7377f4e663b3c39fe7a6d70b32a9f7df664856ce7fa25802f009"},
+      {"path": "runtimes/linux-x86/native/libe_sqlite3.so", "size": 1547984, "sha256": "fe8229e5baeaf21e721cf65626a6b07ec22d9b17d07bd624e7a77927174277f1"},
+      {"path": "runtimes/maccatalyst-arm64/native/libe_sqlite3.dylib", "size": 1695264, "sha256": "8d63d80bc6caa754679d6fc89fd741a32c156f136c34759cc8fff8cd51468a93"},
+      {"path": "runtimes/maccatalyst-x64/native/libe_sqlite3.dylib", "size": 1724352, "sha256": "43d27adbc5ba40850bac42a12aea08314a22a43d3ce77cdc7a6cc47ecffb5746"},
+      {"path": "runtimes/osx-arm64/native/libe_sqlite3.dylib", "size": 1696624, "sha256": "09fe20a6c050912a7944b2f2f2981debe31679f7919f523c87251ae8cf0f2daa"},
+      {"path": "runtimes/osx-x64/native/libe_sqlite3.dylib", "size": 1724472, "sha256": "02344e1d0bcb5ed447ad9b79ed19e37a590fb1ece3eba1e63efbc35e36e47bdf"},
+      {"path": "runtimes/win-arm64/native/e_sqlite3.dll", "size": 1814528, "sha256": "4177542756bd94f75b55fb74367e0cf34e66a88ffaf95755489af14c6ca2f792"},
+      {"path": "runtimes/win-x64/native/e_sqlite3.dll", "size": 1978880, "sha256": "b7385d722c83fb52142a00477a726723745916d22a555711ee89834c1111fb2e"},
+      {"path": "runtimes/win-x86/native/e_sqlite3.dll", "size": 1533952, "sha256": "d13eb819d1353d98c684c88672868bbfcc6a52eb5987bdf2557ec02fabce4ea7"}
+    ],
+    "license_text": "\nSQLite is Public Domain\n\nhttps://sqlite.org/copyright.html\n\n",
+    "osx_arm64_native_probe": {
+      "sqlite3_libversion": "3.53.3",
+      "sqlite3_sourceid": "2026-06-26 20:14:12 d4c0e51e4aeb96955b99185ab9cde75c339e2c29c3f3f12428d364a10d782c62",
+      "compile_options": [
+        "ATOMIC_INTRINSICS=1",
+        "COMPILER=clang-17.0.0",
+        "DEFAULT_AUTOVACUUM",
+        "DEFAULT_CACHE_SIZE=-2000",
+        "DEFAULT_FILE_FORMAT=4",
+        "DEFAULT_FOREIGN_KEYS",
+        "DEFAULT_JOURNAL_SIZE_LIMIT=-1",
+        "DEFAULT_MMAP_SIZE=0",
+        "DEFAULT_PAGE_SIZE=4096",
+        "DEFAULT_PCACHE_INITSZ=20",
+        "DEFAULT_RECURSIVE_TRIGGERS",
+        "DEFAULT_SECTOR_SIZE=4096",
+        "DEFAULT_SYNCHRONOUS=2",
+        "DEFAULT_WAL_AUTOCHECKPOINT=1000",
+        "DEFAULT_WAL_SYNCHRONOUS=2",
+        "DEFAULT_WORKER_THREADS=0",
+        "DIRECT_OVERFLOW_READ",
+        "DQS=0",
+        "ENABLE_COLUMN_METADATA",
+        "ENABLE_FTS3",
+        "ENABLE_FTS3_PARENTHESIS",
+        "ENABLE_FTS4",
+        "ENABLE_FTS5",
+        "ENABLE_GEOPOLY",
+        "ENABLE_MATH_FUNCTIONS",
+        "ENABLE_PREUPDATE_HOOK",
+        "ENABLE_RTREE",
+        "ENABLE_SESSION",
+        "ENABLE_SNAPSHOT",
+        "LIKE_DOESNT_MATCH_BLOBS",
+        "MALLOC_SOFT_LIMIT=1024",
+        "MAX_ATTACHED=10",
+        "MAX_COLUMN=2000",
+        "MAX_COMPOUND_SELECT=500",
+        "MAX_DEFAULT_PAGE_SIZE=8192",
+        "MAX_EXPR_DEPTH=1000",
+        "MAX_FUNCTION_ARG=1000",
+        "MAX_LENGTH=1000000000",
+        "MAX_LIKE_PATTERN_LENGTH=50000",
+        "MAX_MMAP_SIZE=0x7fff0000",
+        "MAX_PAGE_COUNT=0xfffffffe",
+        "MAX_PAGE_SIZE=65536",
+        "MAX_SQL_LENGTH=1000000000",
+        "MAX_TRIGGER_DEPTH=1000",
+        "MAX_VARIABLE_NUMBER=32766",
+        "MAX_VDBE_OP=250000000",
+        "MAX_WORKER_THREADS=8",
+        "MUTEX_PTHREADS",
+        "SYSTEM_MALLOC",
+        "TEMP_STORE=1",
+        "THREADSAFE=1"
+      ]
+    }
+  },
+  "proposed_native_was_not_restored_or_used_by_dotnet": true,
+  "resolved_graphs": {
+    "graph-1": {
+      "net10.0": {
+        "Hangfire.AspNetCore/1.8.14": {
+          "dependencies": {"Hangfire.NetCore": "[1.8.14]"},
+          "runtime": [
+            "lib/netcoreapp3.0/Hangfire.AspNetCore.dll"
+          ],
+          "build": []
+        },
+        "Hangfire.Core/1.8.14": {
+          "dependencies": {"Newtonsoft.Json": "11.0.1"},
+          "runtime": [
+            "lib/netstandard2.0/Hangfire.Core.dll"
+          ],
+          "build": []
+        },
+        "Hangfire.NetCore/1.8.14": {
+          "dependencies": {"Hangfire.Core": "[1.8.14]"},
+          "runtime": [
+            "lib/netstandard2.1/Hangfire.NetCore.dll"
+          ],
+          "build": []
+        },
+        "Hangfire.PostgreSql/1.20.12": {
+          "dependencies": {"Dapper": "2.0.123", "Hangfire.Core": "1.8.0", "Npgsql": "6.0.11"},
+          "runtime": [
+            "lib/netstandard2.0/Hangfire.PostgreSql.dll"
+          ],
+          "build": []
+        },
+        "Hangfire.Storage.SQLite/0.4.2": {
+          "dependencies": {"Hangfire.Core": "1.8.0", "sqlite-net-pcl": "1.8.116"},
+          "runtime": [
+            "lib/netstandard2.0/Hangfire.Storage.SQLite.dll"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite.Core/10.0.0": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net8.0/Microsoft.Data.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite.Core": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite.Core/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "Microsoft.EntityFrameworkCore.Relational": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/Microsoft.EntityFrameworkCore.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "SourceGear.sqlite3/3.50.4.5": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SourceGear.sqlite3.targets"
+          ],
+          "runtimeTarget_count": 31
+        },
+        "sqlite-net-pcl/1.8.116": {
+          "dependencies": {"SQLitePCLRaw.bundle_green": "2.0.4"},
+          "runtime": [
+            "lib/netstandard2.0/SQLite-net.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.bundle_e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.config.e_sqlite3": "3.0.3", "SourceGear.sqlite3": "3.50.4.5"},
+          "runtime": [],
+          "build": []
+        },
+        "SQLitePCLRaw.bundle_green/2.0.4": {
+          "dependencies": {"SQLitePCLRaw.core": "2.0.4", "SQLitePCLRaw.lib.e_sqlite3": "2.0.4", "SQLitePCLRaw.provider.dynamic_cdecl": "2.0.4"},
+          "runtime": [
+            "lib/netcoreapp3.1/SQLitePCLRaw.batteries_v2.dll",
+            "lib/netcoreapp3.1/SQLitePCLRaw.nativelibrary.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.config.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.provider.e_sqlite3": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.batteries_v2.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.core/3.0.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.core.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.lib.e_sqlite3/3.50.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SQLitePCLRaw.lib.e_sqlite3.targets"
+          ],
+          "runtimeTarget_count": 29
+        },
+        "SQLitePCLRaw.provider.dynamic_cdecl/2.0.4": {
+          "dependencies": {"SQLitePCLRaw.core": "2.0.4"},
+          "runtime": [
+            "lib/netstandard2.0/SQLitePCLRaw.provider.dynamic_cdecl.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.provider.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.core": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll"
+          ],
+          "build": []
+        },
+        "Radish.Auth.Migrations.Sqlite/26.8.2": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite": "10.0.0", "Radish.Auth.Persistence": "26.8.2"},
+          "runtime": [
+            "bin/placeholder/Radish.Auth.Migrations.Sqlite.dll"
+          ],
+          "build": []
+        }
+      }
+    },
+    "graph-2": {
+      "net10.0": {
+        "Hangfire.AspNetCore/1.8.14": {
+          "dependencies": {"Hangfire.NetCore": "[1.8.14]"},
+          "runtime": [
+            "lib/netcoreapp3.0/Hangfire.AspNetCore.dll"
+          ],
+          "build": []
+        },
+        "Hangfire.Core/1.8.14": {
+          "dependencies": {"Newtonsoft.Json": "11.0.1"},
+          "runtime": [
+            "lib/netstandard2.0/Hangfire.Core.dll"
+          ],
+          "build": []
+        },
+        "Hangfire.NetCore/1.8.14": {
+          "dependencies": {"Hangfire.Core": "[1.8.14]", "Microsoft.Extensions.DependencyInjection.Abstractions": "3.0.0", "Microsoft.Extensions.Hosting.Abstractions": "3.0.0", "Microsoft.Extensions.Logging.Abstractions": "3.0.0"},
+          "runtime": [
+            "lib/netstandard2.1/Hangfire.NetCore.dll"
+          ],
+          "build": []
+        },
+        "Hangfire.PostgreSql/1.20.12": {
+          "dependencies": {"Dapper": "2.0.123", "Hangfire.Core": "1.8.0", "Npgsql": "6.0.11"},
+          "runtime": [
+            "lib/netstandard2.0/Hangfire.PostgreSql.dll"
+          ],
+          "build": []
+        },
+        "Hangfire.Storage.SQLite/0.4.2": {
+          "dependencies": {"Hangfire.Core": "1.8.0", "sqlite-net-pcl": "1.8.116"},
+          "runtime": [
+            "lib/netstandard2.0/Hangfire.Storage.SQLite.dll"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite.Core/10.0.0": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net8.0/Microsoft.Data.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite.Core": "10.0.0", "Microsoft.Extensions.Caching.Memory": "10.0.0", "Microsoft.Extensions.Configuration.Abstractions": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "Microsoft.Extensions.Logging": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite.Core/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "Microsoft.EntityFrameworkCore.Relational": "10.0.0", "Microsoft.Extensions.Caching.Memory": "10.0.0", "Microsoft.Extensions.Configuration.Abstractions": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "Microsoft.Extensions.Logging": "10.0.0", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/Microsoft.EntityFrameworkCore.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "SourceGear.sqlite3/3.50.4.5": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SourceGear.sqlite3.targets"
+          ],
+          "runtimeTarget_count": 31
+        },
+        "sqlite-net-pcl/1.8.116": {
+          "dependencies": {"SQLitePCLRaw.bundle_green": "2.0.4"},
+          "runtime": [
+            "lib/netstandard2.0/SQLite-net.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.bundle_e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.config.e_sqlite3": "3.0.3", "SourceGear.sqlite3": "3.50.4.5"},
+          "runtime": [],
+          "build": []
+        },
+        "SQLitePCLRaw.bundle_green/2.0.4": {
+          "dependencies": {"SQLitePCLRaw.core": "2.0.4", "SQLitePCLRaw.lib.e_sqlite3": "2.0.4", "SQLitePCLRaw.provider.dynamic_cdecl": "2.0.4"},
+          "runtime": [
+            "lib/netcoreapp3.1/SQLitePCLRaw.batteries_v2.dll",
+            "lib/netcoreapp3.1/SQLitePCLRaw.nativelibrary.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.config.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.provider.e_sqlite3": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.batteries_v2.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.core/3.0.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.core.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.lib.e_sqlite3/3.50.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SQLitePCLRaw.lib.e_sqlite3.targets"
+          ],
+          "runtimeTarget_count": 29
+        },
+        "SQLitePCLRaw.provider.dynamic_cdecl/2.0.4": {
+          "dependencies": {"SQLitePCLRaw.core": "2.0.4"},
+          "runtime": [
+            "lib/netstandard2.0/SQLitePCLRaw.provider.dynamic_cdecl.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.provider.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.core": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll"
+          ],
+          "build": []
+        },
+        "Radish.Auth.Migrations.Sqlite/26.8.2": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite": "10.0.0", "Radish.Auth.Persistence": "26.8.2", "System.Security.Cryptography.Xml": "10.0.13"},
+          "runtime": [
+            "bin/placeholder/Radish.Auth.Migrations.Sqlite.dll"
+          ],
+          "build": []
+        }
+      }
+    },
+    "graph-3": {
+      "net10.0": {
+        "Microsoft.Data.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite.Core/10.0.0": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net8.0/Microsoft.Data.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite.Core": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite.Core/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "Microsoft.EntityFrameworkCore.Relational": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/Microsoft.EntityFrameworkCore.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "SourceGear.sqlite3/3.50.4.5": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SourceGear.sqlite3.targets"
+          ],
+          "runtimeTarget_count": 31
+        },
+        "SQLitePCLRaw.bundle_e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.config.e_sqlite3": "3.0.3", "SourceGear.sqlite3": "3.50.4.5"},
+          "runtime": [],
+          "build": []
+        },
+        "SQLitePCLRaw.config.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.provider.e_sqlite3": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.batteries_v2.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.core/3.0.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.core.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.lib.e_sqlite3/3.50.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SQLitePCLRaw.lib.e_sqlite3.targets"
+          ],
+          "runtimeTarget_count": 29
+        },
+        "SQLitePCLRaw.provider.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.core": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll"
+          ],
+          "build": []
+        },
+        "Radish.Auth.Migrations.Sqlite/26.8.2": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite": "10.0.0", "Radish.Auth.Persistence": "26.8.2"},
+          "runtime": [
+            "bin/placeholder/Radish.Auth.Migrations.Sqlite.dll"
+          ],
+          "build": []
+        }
+      }
+    },
+    "graph-4": {
+      "net10.0": {
+        "Microsoft.Data.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite.Core/10.0.0": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net8.0/Microsoft.Data.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite.Core": "10.0.0", "Microsoft.Extensions.Caching.Memory": "10.0.0", "Microsoft.Extensions.Configuration.Abstractions": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "Microsoft.Extensions.Logging": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite.Core/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "Microsoft.EntityFrameworkCore.Relational": "10.0.0", "Microsoft.Extensions.Caching.Memory": "10.0.0", "Microsoft.Extensions.Configuration.Abstractions": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "Microsoft.Extensions.Logging": "10.0.0", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/Microsoft.EntityFrameworkCore.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.bundle_e_sqlite3/2.1.11": {
+          "dependencies": {"SQLitePCLRaw.lib.e_sqlite3": "2.1.11", "SQLitePCLRaw.provider.e_sqlite3": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/SQLitePCLRaw.batteries_v2.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.core/2.1.11": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/SQLitePCLRaw.core.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.lib.e_sqlite3/3.50.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SQLitePCLRaw.lib.e_sqlite3.targets"
+          ],
+          "runtimeTarget_count": 29
+        },
+        "SQLitePCLRaw.provider.e_sqlite3/2.1.11": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net6.0/SQLitePCLRaw.provider.e_sqlite3.dll"
+          ],
+          "build": []
+        }
+      }
+    },
+    "graph-5": {
+      "net10.0": {
+        "Microsoft.Data.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite.Core/10.0.0": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net8.0/Microsoft.Data.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.bundle_e_sqlite3/2.1.11": {
+          "dependencies": {"SQLitePCLRaw.lib.e_sqlite3": "2.1.11", "SQLitePCLRaw.provider.e_sqlite3": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/SQLitePCLRaw.batteries_v2.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.core/2.1.11": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/SQLitePCLRaw.core.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.lib.e_sqlite3/3.50.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SQLitePCLRaw.lib.e_sqlite3.targets"
+          ],
+          "runtimeTarget_count": 29
+        },
+        "SQLitePCLRaw.provider.e_sqlite3/2.1.11": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net6.0/SQLitePCLRaw.provider.e_sqlite3.dll"
+          ],
+          "build": []
+        }
+      }
+    },
+    "graph-6": {
+      "net10.0": {}
+    },
+    "graph-7": {
+      "net10.0": {
+        "Microsoft.Data.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite.Core/10.0.0": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net8.0/Microsoft.Data.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite.Core": "10.0.0", "Microsoft.Extensions.Caching.Memory": "10.0.0", "Microsoft.Extensions.Configuration.Abstractions": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "Microsoft.Extensions.Logging": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.EntityFrameworkCore.Sqlite.Core/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "Microsoft.EntityFrameworkCore.Relational": "10.0.0", "Microsoft.Extensions.Caching.Memory": "10.0.0", "Microsoft.Extensions.Configuration.Abstractions": "10.0.0", "Microsoft.Extensions.DependencyModel": "10.0.0", "Microsoft.Extensions.Logging": "10.0.0", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net10.0/Microsoft.EntityFrameworkCore.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "SourceGear.sqlite3/3.50.4.5": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SourceGear.sqlite3.targets"
+          ],
+          "runtimeTarget_count": 31
+        },
+        "SQLitePCLRaw.bundle_e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.config.e_sqlite3": "3.0.3", "SourceGear.sqlite3": "3.50.4.5"},
+          "runtime": [],
+          "build": []
+        },
+        "SQLitePCLRaw.config.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.provider.e_sqlite3": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.batteries_v2.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.core/3.0.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.core.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.lib.e_sqlite3/3.50.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SQLitePCLRaw.lib.e_sqlite3.targets"
+          ],
+          "runtimeTarget_count": 29
+        },
+        "SQLitePCLRaw.provider.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.core": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll"
+          ],
+          "build": []
+        },
+        "Radish.Auth.Migrations.Sqlite/26.8.2": {
+          "dependencies": {"Microsoft.EntityFrameworkCore.Sqlite": "10.0.0", "Radish.Auth.Persistence": "26.8.2", "System.Security.Cryptography.Xml": "10.0.13"},
+          "runtime": [
+            "bin/placeholder/Radish.Auth.Migrations.Sqlite.dll"
+          ],
+          "build": []
+        }
+      }
+    },
+    "graph-8": {
+      "net10.0": {
+        "Microsoft.Data.Sqlite/10.0.0": {
+          "dependencies": {"Microsoft.Data.Sqlite.Core": "10.0.0", "SQLitePCLRaw.bundle_e_sqlite3": "2.1.11", "SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": []
+        },
+        "Microsoft.Data.Sqlite.Core/10.0.0": {
+          "dependencies": {"SQLitePCLRaw.core": "2.1.11"},
+          "runtime": [
+            "lib/net8.0/Microsoft.Data.Sqlite.dll"
+          ],
+          "build": []
+        },
+        "SourceGear.sqlite3/3.50.4.5": {
+          "dependencies": {},
+          "runtime": [
+            "lib/netstandard2.0/_._"
+          ],
+          "build": [
+            "buildTransitive/net9.0/SourceGear.sqlite3.targets"
+          ],
+          "runtimeTarget_count": 31
+        },
+        "SQLitePCLRaw.bundle_e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.config.e_sqlite3": "3.0.3", "SourceGear.sqlite3": "3.50.4.5"},
+          "runtime": [],
+          "build": []
+        },
+        "SQLitePCLRaw.config.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.provider.e_sqlite3": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.batteries_v2.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.core/3.0.3": {
+          "dependencies": {},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.core.dll"
+          ],
+          "build": []
+        },
+        "SQLitePCLRaw.provider.e_sqlite3/3.0.3": {
+          "dependencies": {"SQLitePCLRaw.core": "3.0.3"},
+          "runtime": [
+            "lib/net8.0/SQLitePCLRaw.provider.e_sqlite3.dll"
+          ],
+          "build": []
+        }
+      }
+    }
+  }
+}

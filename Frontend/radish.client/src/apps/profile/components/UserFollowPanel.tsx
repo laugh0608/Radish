@@ -98,7 +98,7 @@ export const UserFollowPanel = ({ displayTimeZone, onPostClick, onUserClick }: U
       setFeedItems(data.voItems || []);
       setFeedTotal(data.voTotal || 0);
     } catch (error) {
-      log.error('UserFollowPanel', `加载关系链内容失败(${viewType}):`, error);
+      log.error('UserFollowPanel', '加载关系链内容失败:', error, { viewType });
       setErrorMessage(error instanceof Error ? error.message : t('profile.social.loadFeedFailed'));
       setFeedItems([]);
       setFeedTotal(0);

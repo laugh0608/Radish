@@ -5,8 +5,69 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-05 日终代码与文档回顾](./day-end-doc-review-2026-11-05.md)：六个提交、浏览器与后端日志 / L3-A 本地成果、指南修正及下一有限批次建议
+
+- [2026-11-05 Controller 最终输出本地收口](./unified-logging-l2-controller-output-2026-11-05.md)：14 个精确来源、逐事件白名单、scope 污染与原业务回归；其他来源及真实运行门禁保留
+
+- [2026-11-05 Controller 最终输出准备](./unified-logging-l2-controller-output-readiness-2026-11-05.md)：14 个来源有限目录、Reaction 旧链 scope 缺口复现及命令输出例外核对；实施结果见上方收口记录
+
+- [2026-11-05 L2 剩余自有操作与直接异常消费者](./unified-logging-l2-owned-operations-2026-11-05.md)：七个来源收口、API 异常消费出口补漏及本地验证；保留真实运行与其他已登记来源门禁
+
+- [2026-11-05 L3-A 接收与幂等持久化本地实施](./unified-logging-l3-ingest-local-2026-11-05.md)：默认关闭的内网接收、事务与迁移；临时 SQLite / 内存 HTTP 验证，真实 PostgreSQL / 监听 / collector 未执行
+
+- [2026-11-05 L2 浏览器日志最终输出收口](./unified-logging-l2-browser-output-2026-11-05.md)：公共安全出口、两应用固定目录、三级 / diagnostic、HTTP 语义与本地自动化验收；未执行真实 Smoke 或遥测上传
+
+- [2026-11-04 日终代码与文档回顾](./day-end-doc-review-2026-11-04.md)：八个提交、SQLite 本次平台收口、Hangfire 最终输出修正、指南同步及浏览器日志下一步
+
+- [2026-11-04 L2 Hangfire 最终输出修正](./unified-logging-l2-hangfire-output-2026-11-04.md) · [结果 JSON](./unified-logging-l2-hangfire-output-2026-11-04.json)：两个精确来源 / 三条出口收口，Debug / Release 各 222 项及 52 项 Node 契约通过，L2 整体未关闭
+
+- [2026-11-04 Hangfire 来源与源码交付复核](./hangfire-source-delivery-review-2026-11-04.md) · [摘要 JSON](./hangfire-source-delivery-review-2026-11-04.json)：869 文件 / 753 blobs / 42 项 feed 留存通过，原 PostgreSql DLL commit 声明补证；匹配 PDB、Windows 与正式入口仍未关闭，询证草稿未发送
+
+- [2026-11-04 SQLite 模块修正候选单次托管验收](./sqlite-hosted-native-module-run-2026-11-04.md) · [结果 JSON](./sqlite-hosted-native-module-run-2026-11-04.json)：七 job 全部通过，492 项测试、48 份 publish、156 份冷进程 / 模块清单及清理完整；Windows 本批缺口关闭，未重试 / 发布 / 部署
+
+- [2026-11-04 SQLite 探针模块识别本地修正](./sqlite-probe-module-local-repair-2026-11-04.md)：上轮结果已提交；模块 / PE / CLR 识别与失败清单留存完成，两配置各 82 项、32 项 Node、8 份探针编译 / 24 个本机冷 mode 通过，未 push / 远端验收
+
+- [2026-11-04 SQLite 夹具候选单次托管验收](./sqlite-hosted-native-fixture-run-2026-11-04.md) · [结果 JSON](./sqlite-hosted-native-fixture-run-2026-11-04.json)：6 项通过，Windows Release 60 项通过后首个冷探针报告模块数量为 2；七份证据归档与清理完整，未重试
+
+- [2026-11-04 Windows SQLite 夹具本地修正](./sqlite-windows-fixture-local-repair-2026-11-04.md)：三个迁移用例统一关闭临时连接池，Debug / Release 严格构建及各 60 项定向测试通过；同步 Hangfire 上游进展，未 push / 远端验收
+
+- [2026-11-01 规划结构统一](./planning-structure-alignment-2026-11-01.md)：能力地图、状态来源与保留历史摘要。
+
+- [2026-10-31 日终代码与文档回顾](./day-end-doc-review-2026-10-31.md)：18 个提交、代码 / 文档校准，以及 Windows SQLite 夹具和 Razor 身份门禁接续事项
+
+- [SQLite 修正后的第二次托管验收](./sqlite-hosted-native-second-run-2026-10-31.md) · [结果 JSON](./sqlite-hosted-native-second-run-2026-10-31.json)：6 项通过，Windows Release 三项临时 SQLite 删除失败；七份 artifact 校验与清理完成，未重试
+
+- [SQLite 四类托管失败的本地成组修正](./sqlite-hosted-validation-repair-2026-10-31.md) · [结果 JSON](./sqlite-hosted-validation-repair-2026-10-31.json)：50 项 Node、12 组真实 MSBuild 参数、四宿主探针严格编译与 ARM64 C / C++ 链接通过；未 push / 远端运行
+
+- [Windows runner image 询证与关闭记录](./hangfire-windows-runner-image-inquiry-review-2026-10-31.md) · [英文 Issue 草稿](./hangfire-windows-runner-image-inquiry-draft-2026-10-31.md)。上游更正根因，`20261101.353.1` 独立复测通过，[#15201](https://github.com/actions/runner-images/issues/15201) 以 `completed` 关闭。Radish Windows Razor 验证留在维护队列。
+- [SQLite 托管三平台与 AMD64 镜像单次验证](./sqlite-hosted-native-run-2026-10-31.md) · [结果 JSON](./sqlite-hosted-native-run-2026-10-31.json)：Linux x64 通过，其余六项失败；七份 artifact 已校验，清理完成，未重试
+- [SQLite 托管执行契约复核与本地修正](./sqlite-hosted-execution-contracts-2026-10-31.md)：批准 SHA、失败证据、清理结果、实际编译器与 notices 留痕；38 项本地检查通过，未 push / dispatch
+- [Windows Razor 诊断 inventory 与身份门禁](./hangfire-windows-razor-inventory-diagnostic-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-diagnostic-2026-10-31.json)：20 组契约通过，文件 / Machine 环境冲突触发门禁失败；证据与清理完成，未重试 / verify
+- [Windows Razor image 身份诊断增强](./hangfire-windows-razor-image-identity-diagnostics-2026-10-31.md)：只读来源核对后补齐本地采集、来源一致性门禁及 12 组 PowerShell 契约；31 项 Node 通过，新候选未 push / dispatch
+- [Windows Razor 第二次 inventory 与身份差异](./hangfire-windows-razor-inventory-second-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-second-2026-10-31.json)：修复 SHA 已 push；8 组 PowerShell 契约、库存、归档与清理通过，image 两处版本不一致，verify 未执行
+- [Windows Razor inventory 本地修复](./hangfire-windows-razor-inventory-repair-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-repair-2026-10-31.json)：专项改用 windows-2022 / VS 2022，修复命令身份、补齐早期证据与 8 组 PowerShell 契约接线；28 项 Node 通过，未重跑 Windows
+- [Windows Razor 首次 inventory 与失败清理](./hangfire-windows-razor-inventory-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-inventory-2026-10-31.json)：指定 SHA 已 push；实际 image 为 VS 2026，VS 2022 限定查询为空，未完成库存；失败证据已归档、清理通过，未重跑或 verify
+- [Windows Razor 本地工具与限定 CI](./hangfire-windows-razor-local-implementation-2026-10-31.md) · [结果 JSON](./hangfire-windows-razor-local-implementation-2026-10-31.json)：25 项 Node / 11 组 C# 契约、两组原 Core 片段和四类拒绝通过；未执行 Windows / 远端
+- [Windows Razor 准备快照](./hangfire-windows-razor-readiness-2026-10-31.json) · [分段执行方案](../features/hangfire-windows-razor-validation-plan.md)：官方 runner 清单、11 项包、23 对输入与生成文件 / LF 与 CRLF、24 个包内 DLL；未运行 Windows 或改 CI
+- [Hangfire 本机源码重建与验证](./hangfire-rebuild-2026-10-31.md) · [结果 JSON](./hangfire-rebuild-2026-10-31.json)：42 项封存、五目标字节一致重放、18 组最终调用及清理完成；Windows Razor 与正式源码入口未关闭
+- [Hangfire 重建准备清单](./hangfire-rebuild-readiness-2026-10-31.json) · [实施方案](../features/hangfire-rebuild-delivery-plan.md)：保留准备期 34 个精确源文件、SDK / ref pack、42 项候选及旧输入审计；实际 tree 字段更正、构建和运行结果见上一条
+- [PostgreSQL 回归与托管 CI 本地接线](./postgres-regression-2026-10-31.md) · [结果 JSON](./postgres-regression-2026-10-31.json)：PG17 两配置全量、PG16 两配置专项与四组 worker 通过，任务资源清理完成；本地 CI 验证通过，未 push / 远端触发
+- [PG / 剩余原生平台准备快照](./postgres-native-readiness-2026-10-31.json) · [PG 执行方案](../features/postgres-regression-execution-plan.md) · [托管 runner 方案](../features/sqlite-hosted-native-validation-plan.md)：缓存、43 个 PG 源码方法、工具精确输入与 Hangfire 留存缺口；未启动服务、未修改 CI 或远端触发
+- [SQLite Linux 双架构执行与清理](./sqlite-linux-platform-validation-2026-10-31.md)：两配置 / 架构各 60 项定向测试、32 份 publish、120 个冷进程与八 final 镜像通过；代理恢复及本任务资源清理完成
+- [SQLite Linux 双架构准备快照](./sqlite-linux-platform-readiness-2026-10-31.json) · [精确输入清单](./sqlite-linux-platform-inputs-2026-10-31.json) · [已批准执行方案](../features/sqlite-linux-platform-validation-plan.md)：保留当时尚未执行的盘点事实，后续运行和清理结果见上一条
+- [SQLite 原生依赖统一实施与本机验证](./sqlite-native-unification-2026-10-31.md)：双配置全量、通用 / 本机 RID 产物、实际加载、分发材料及其他平台未关闭范围
+- [2026-10-26 日终代码与文档回顾](./day-end-doc-review-2026-10-26.md)：当日 7 个提交、代码与文档对照、验证边界及下一步建议
+
+- [2026-10-21 日终代码与文档回顾](./day-end-doc-review-2026-10-21.md)：当日 9 个提交、PR #75 集成、Mapperly 替代、隔离验证、上传配额修复及接续事项
+- [NoDrive 正式采用](./nodrive-adoption-2026-10-26.md) · [NoDrive 来源补证与分发预审](./nodrive-source-review-2026-10-26.md) · [重点 NuGet notices 分发接线](./nuget-notices-distribution-2026-10-26.md)
+- [剩余依赖发行边界核对](./dependency-distribution-boundaries-2026-10-26.md)：Hangfire 精确源码快照、库替换 / 授权边界、NoDrive 询证与 SNI 分发事项
+- [LGPL 狭义例外与本机验证](./lgpl-exception-validation-2026-10-26.md)：已批准许可补充、离线 native 重建、双配置严格构建及四宿主发布核对
+- [Hangfire 源码 / 构建输入补证](./hangfire-source-inputs-2026-10-26.md)：PDB checksum、Cronos 声明、锁定输入与 SQLite 测试 / 发布差异
+- [Hangfire Core 源码替换验证](./hangfire-core-replacement-2026-10-26.md)：获批的分析器调整、严格构建、接口对照与三组真实 SQLite 注册 / 执行
+- [Mapperly 映射迁移](./mapperly-migration-2026-10-21.md) · [NoDrive / Valkey 隔离验证](./nodrive-valkey-validation-2026-10-21.md) · [上传配额边界修复](./upload-quota-boundary-fix-2026-10-21.md)
+
 - [2026-10-20 第三方依赖许可盘点](./dependency-license-audit-2026-10-20.md)：947 条依赖、重点许可边界与待补证据；[逐包 CSV](./dependency-license-inventory-2026-10-20.csv)
-- [2026-10-20 dev → master 合并前检查（暂缓）](./master-pr-regression-2026-10-20.md)：49 个提交的批次检查、NuGet 安全修复及 Six Labors 许可证停止线
+- [2026-10-20 dev → master 合并前检查（历史停止线）](./master-pr-regression-2026-10-20.md)：49 个提交的批次检查、NuGet 安全修复及 Six Labors 许可证停止线
 - [2026-10-15 日终代码与文档回顾](./day-end-doc-review-2026-10-15.md)：六个日志 L2 开发提交、完整批次索引、运行指南校准与下次恢复事项
 
 - [2026-10-11 日终代码与文档回顾](./day-end-doc-review-2026-10-11.md)：11 个日志 L2 开发提交、完整批次索引、文档校准与 10 月 12 日事项

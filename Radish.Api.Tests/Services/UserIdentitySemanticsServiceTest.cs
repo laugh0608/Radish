@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Moq;
 using Radish.Common.AttributeTool;
 using Radish.IRepository;
@@ -628,45 +627,6 @@ public class UserIdentitySemanticsServiceTest
         string? reservedIndexes = null,
         string? vanityRules = null)
     {
-        var mapper = new Mock<IMapper>();
-        mapper.Setup(item => item.Map<UserVo>(It.IsAny<User>()))
-            .Returns<User>(user => new UserVo
-            {
-                Uuid = user.Id,
-                VoPublicId = user.PublicId,
-                VoPublicIndex = user.PublicIndex,
-                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoUserEmail = user.UserEmail,
-                VoTenantId = user.TenantId,
-                VoIsEnable = user.IsEnable,
-                VoIsDeleted = user.IsDeleted
-            });
-        mapper.Setup(item => item.Map<List<UserVo>>(It.IsAny<List<User>>()))
-            .Returns<List<User>>(users => users.Select(user => new UserVo
-            {
-                Uuid = user.Id,
-                VoPublicId = user.PublicId,
-                VoPublicIndex = user.PublicIndex,
-                VoUserName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoDisplayName = User.NormalizeDisplayName(user.UserName, user.Id),
-                VoDisplayHandle = User.BuildDisplayHandle(user.UserName, user.PublicIndex, user.Id),
-                VoTenantId = user.TenantId,
-                VoIsEnable = user.IsEnable,
-                VoIsDeleted = user.IsDeleted
-            }).ToList());
-        mapper.Setup(item => item.Map<List<UserMentionVo>>(It.IsAny<List<UserVo>>()))
-            .Returns<List<UserVo>>(users => users.Select(user => new UserMentionVo
-            {
-                VoId = user.Uuid,
-                VoPublicId = user.VoPublicId,
-                VoPublicIndex = user.VoPublicIndex,
-                VoUserName = user.VoDisplayName,
-                VoDisplayName = user.VoDisplayName,
-                VoDisplayHandle = user.VoDisplayHandle
-            }).ToList());
-
         var baseRepository = new Mock<IBaseRepository<User>>();
         var userRepository = new Mock<IUserRepository>();
         var displayNameChangeRecordRepository = new Mock<IBaseRepository<UserDisplayNameChangeRecord>>();
@@ -674,7 +634,6 @@ public class UserIdentitySemanticsServiceTest
         var systemSettingProvider = new Mock<ISystemSettingProvider>();
         SetupPublicIndexSettings(systemSettingProvider, reservedIndexes, vanityRules);
         var service = new UserService(
-            mapper.Object,
             baseRepository.Object,
             userRepository.Object,
             displayNameChangeRecordRepository.Object,

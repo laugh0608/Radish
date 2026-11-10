@@ -1,0 +1,30 @@
+Radish third-party NuGet notices - Radish.Gateway
+
+Scope: selected reviewed components only, not all dependencies or complete redistribution clearance.
+Each component retains its own terms. The Radish root license does not replace them.
+Commercial alternatives included by upstream do not establish purchased commercial rights.
+NoDrive/SystemCommon source correspondence and Apache/MIT assertion differences remain unresolved.
+Consult each ATTRIBUTION.txt and manifest.json for provenance, hashes and remaining evidence.
+
+Isopoh.Cryptography.Argon2 2.0.0 [runtime]
+  isopoh.cryptography.argon2/2.0.0/ATTRIBUTION.txt
+Isopoh.Cryptography.Blake2b 2.0.0 [runtime]
+  isopoh.cryptography.blake2b/2.0.0/ATTRIBUTION.txt
+Isopoh.Cryptography.SecureArray 2.0.0 [runtime]
+  isopoh.cryptography.securearray/2.0.0/ATTRIBUTION.txt
+Microsoft.Data.SqlClient.SNI.runtime 5.2.0 [runtime]
+  microsoft.data.sqlclient.sni.runtime/5.2.0/ATTRIBUTION.txt
+SqlSugarCoreNoDrive 5.1.4.207 [runtime]
+  sqlsugarcorenodrive/5.1.4.207/ATTRIBUTION.txt
+SystemCommon 8.5.0 [runtime]
+  systemcommon/8.5.0/ATTRIBUTION.txt
+SQLitePCLRaw.lib.e_sqlite3 3.53.3 [runtime]
+  sqlitepclraw.lib.e_sqlite3/3.53.3/ATTRIBUTION.txt
+SQLitePCLRaw.config.e_sqlite3 3.0.3 [runtime]
+  sqlitepclraw.config.e_sqlite3/3.0.3/ATTRIBUTION.txt
+SQLitePCLRaw.core 3.0.3 [runtime]
+  sqlitepclraw.core/3.0.3/ATTRIBUTION.txt
+SQLitePCLRaw.provider.e_sqlite3 3.0.3 [runtime]
+  sqlitepclraw.provider.e_sqlite3/3.0.3/ATTRIBUTION.txt
+Microsoft.Data.Sqlite.Core 10.0.0 [runtime]
+  microsoft.data.sqlite.core/10.0.0/ATTRIBUTION.txt

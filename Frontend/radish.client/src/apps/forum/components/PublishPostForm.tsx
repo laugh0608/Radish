@@ -64,7 +64,7 @@ export const PublishPostForm = ({
         avatar: user.voAvatar
       }));
     } catch (error) {
-      log.error(t('forum.mention.searchFailed'), error);
+      log.error('搜索帖子提及用户失败', error);
       throw error;
     }
   }, [t]);
@@ -167,7 +167,7 @@ export const PublishPostForm = ({
   };
 
   const handleEditorUploadError = useCallback((kind: 'image' | 'document', error: unknown) => {
-    log.error('PublishPostForm', `Markdown ${kind} upload failed:`, error);
+    log.error('PublishPostForm', 'Markdown 附件上传失败:', error, { kind });
   }, []);
 
   const handleEditorUploadingChange = useCallback((uploading: boolean) => {

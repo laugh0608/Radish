@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model.Models;
@@ -15,8 +15,7 @@ public class UserTimePreferenceService : BaseService<UserTimePreference, UserTim
     private readonly IBaseRepository<UserTimePreference> _repository;
 
     public UserTimePreferenceService(
-        IMapper mapper,
-        IBaseRepository<UserTimePreference> baseRepository) : base(mapper, baseRepository)
+        IBaseRepository<UserTimePreference> baseRepository) : base(UserMapper.ToUserTimePreferenceVo, baseRepository)
     {
         _repository = baseRepository;
     }
@@ -60,7 +59,7 @@ public class UserTimePreferenceService : BaseService<UserTimePreference, UserTim
 
             var id = await _repository.AddAsync(entity);
             entity.Id = id;
-            return Mapper.Map<UserTimePreferenceVo>(entity);
+            return UserMapper.ToUserTimePreferenceVo(entity);
         }
 
         existing.TimeZoneId = timeZoneId;
@@ -69,6 +68,6 @@ public class UserTimePreferenceService : BaseService<UserTimePreference, UserTim
         existing.ModifyTime = DateTime.UtcNow;
 
         await _repository.UpdateAsync(existing);
-        return Mapper.Map<UserTimePreferenceVo>(existing);
+        return UserMapper.ToUserTimePreferenceVo(existing);
     }
 }

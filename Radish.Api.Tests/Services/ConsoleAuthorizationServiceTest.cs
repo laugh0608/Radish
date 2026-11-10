@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Moq;
 using Radish.Common.Exceptions;
 using Radish.Common.PermissionTool;
@@ -63,7 +62,6 @@ public class ConsoleAuthorizationServiceTest
             });
 
         var service = new ConsoleAuthorizationService(
-            Mock.Of<IMapper>(),
             roleRepository.Object,
             consoleResourceRepository.Object,
             roleConsoleResourceRepository.Object,
@@ -240,7 +238,6 @@ public class ConsoleAuthorizationServiceTest
         Mock<IBaseRepository<RoleConsoleResource>>? linkRepository = null)
     {
         return new ConsoleAuthorizationService(
-            Mock.Of<IMapper>(),
             roleRepository.Object,
             (resourceRepository ?? new Mock<IBaseRepository<ConsoleResource>>()).Object,
             (linkRepository ?? new Mock<IBaseRepository<RoleConsoleResource>>()).Object,

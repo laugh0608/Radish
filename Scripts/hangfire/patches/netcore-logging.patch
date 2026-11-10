@@ -1,0 +1,11 @@
+--- a/src/Hangfire.NetCore/AspNetCore/AspNetCoreLog.cs
++++ b/src/Hangfire.NetCore/AspNetCore/AspNetCoreLog.cs
+@@ -47,3 +47,8 @@
++            if (!_targetLogger.IsEnabled(targetLogLevel))
++            {
++                return false;
++            }
++
+             _targetLogger.Log(targetLogLevel, 0, messageFunc(), exception, MessageFormatterFunc);
+             return true;
+         }

@@ -237,6 +237,8 @@ public sealed class SchemaMigrationLedgerTest
         {
             var logDb = db.GetConnectionScope("Log");
             logDb.CodeFirst.InitTables<AuditLog>();
+            // 当前非分表模型必须具备；本用例仍验证旧分表族无需逻辑模板表。
+            logDb.CodeFirst.InitTables<RuntimeLogEventRecord, RuntimeLogRejectionBucket>();
             var templateTableName = logDb.EntityMaintenance.GetEntityInfo<AuditLog>().DbTableName;
             Assert.False(logDb.DbMaintenance.IsAnyTable(templateTableName, false));
             Assert.Contains(

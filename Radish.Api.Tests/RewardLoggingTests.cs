@@ -5,7 +5,6 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text.Json;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -322,9 +321,9 @@ public sealed class RewardLoggingTests
             Levels.Setup(r => r.QueryAsync(It.IsAny<Expression<Func<LevelConfig, bool>>>())).ReturnsAsync([]);
             var clock = TimeProvider.System;
             var calendar = new BusinessCalendar(clock, Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" }));
-            Coin = new CoinService(Mock.Of<IMapper>(), Balances.Object, Users.Object, CoinTransactions.Object,
+            Coin = new CoinService(Balances.Object, Users.Object, CoinTransactions.Object,
                 BalanceChanges.Object, Mock.Of<IPaymentPasswordService>());
-            Experience = new ExperienceService(Mock.Of<IMapper>(), Experiences.Object, ExpTransactions.Object,
+            Experience = new ExperienceService(Experiences.Object, ExpTransactions.Object,
                 Levels.Object, Stats.Object, Users.Object, Mock.Of<IExperienceGovernanceRepository>(),
                 Mock.Of<IExperienceCalculator>(), Mock.Of<ICoinService>(), Mock.Of<IAttachmentUrlResolver>(),
                 Mock.Of<INotificationService>(), Cache.Object, clock, calendar);

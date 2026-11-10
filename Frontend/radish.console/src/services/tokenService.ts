@@ -181,7 +181,7 @@ class TokenService {
   }
 
   logTokenDebug(stage: string): void {
-    log.debug('TokenService', `Token 状态快照 (${stage})`, this.getTokenDebugInfo());
+    log.debug('TokenService', 'Token 状态快照', this.getTokenDebugInfo(), { stage });
   }
 
   getLastSessionClearReason(): SessionClearReason | null {

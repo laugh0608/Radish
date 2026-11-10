@@ -54,6 +54,8 @@
 > - [P7-A iOS 平台 readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30)
 > - [P7-B iOS platform foundation 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30)
 
+规划归属：[能力专题地图](../planning/topics.md#experience)。P1–P8 是本专题内的实施 / 平台切片，状态及验收来源继续由本文件维护；关联页面族与业务能力只引用原专题，不复制同一业务任务。
+
 ## 1. 结论摘要
 
 Radish 长期只维护两条正式产品线：

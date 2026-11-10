@@ -1,4 +1,3 @@
-using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Common.Exceptions;
@@ -325,7 +324,6 @@ public class PaymentPasswordServiceTest
         return new PaymentPasswordService(
             repository.Object,
             new Mock<IAuditLogService>(MockBehavior.Loose).Object,
-            new Mock<IMapper>(MockBehavior.Loose).Object,
             new Mock<ILogger<PaymentPasswordService>>(MockBehavior.Loose).Object,
             new FixedTimeProvider(FixedNow));
     }

@@ -79,7 +79,7 @@
   - [x] 余额查询
   - [x] 支付扣款
   - [x] 退款（预留）
-- [x] AutoMapper 配置
+- [x] 实体映射配置（现为 Mapperly `ShopMapper`）
   - [x] `ShopProfile` - 商城模块映射
 - [x] 种子数据
   - [x] 初始商品分类（5 个分类）

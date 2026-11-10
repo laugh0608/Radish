@@ -309,7 +309,7 @@ async function hydrateAuthUserCore(
     if (cachedUser) {
       setUserFromCurrentUser(cachedUser, token);
       authStore.setAuthenticated(true);
-      log.info('AuthBootstrap', '✅ 使用绑定当前令牌的缓存用户信息完成初始化');
+      log.debug('AuthBootstrap', '✅ 使用绑定当前令牌的缓存用户信息完成初始化');
       return cachedUser;
     }
   }
@@ -319,7 +319,7 @@ async function hydrateAuthUserCore(
     cacheCurrentUser(token, userData);
     setUserFromCurrentUser(userData, token);
     authStore.setAuthenticated(true);
-    log.info('AuthBootstrap', '✅ 用户信息初始化完成');
+    log.debug('AuthBootstrap', '✅ 用户信息初始化完成');
     return userData;
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Options;
 using Moq;
 using Radish.Common.CacheTool;
@@ -404,7 +403,6 @@ public class CommentHighlightRealtimeServiceTest
         int commentHighlightStabilityWindowMinutes = 10,
         int commentHighlightReplacementMinLikeDelta = 2)
     {
-        var mapper = new Mock<IMapper>();
         var userCommentLikeRepository = new Mock<IBaseRepository<UserCommentLike>>();
         var commentEditHistoryRepository = new Mock<IBaseRepository<CommentEditHistory>>();
         var postService = new Mock<IPostService>();
@@ -442,7 +440,6 @@ public class CommentHighlightRealtimeServiceTest
             .ReturnsAsync(true);
 
         return new CommentService(
-            mapper.Object,
             commentRepository.Object,
             userCommentLikeRepository.Object,
             highlightRepository.Object,

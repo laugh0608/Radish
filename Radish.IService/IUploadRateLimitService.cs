@@ -20,7 +20,7 @@ public interface IUploadRateLimitService
         TimeSpan? reservationLifetime = null);
 
     /// <summary>
-    /// 原子结算已成功的上传：释放并发预留，并将预留容量计入预留时所属业务日期的已用配额。
+    /// 原子结算尚未过期的成功上传：释放并发预留，容量计入预留时所属业务日期。过期或缺失仅释放 / 空操作。
     /// </summary>
     /// <param name="userId">用户 ID</param>
     /// <param name="uploadId">上传 ID</param>
@@ -110,7 +110,7 @@ public class UploadStatistics
     public long ReservedUploadSizeToday { get; set; }
 
     /// <summary>今日已用与预留容量合计（字节）</summary>
-    public long OccupiedUploadSizeToday => UploadedSizeToday + ReservedUploadSizeToday;
+    public long OccupiedUploadSizeToday => checked(UploadedSizeToday + ReservedUploadSizeToday);
 
     /// <summary>今日已上传总大小（格式化）</summary>
     public string UploadedSizeTodayFormatted => FormatFileSize(UploadedSizeToday);

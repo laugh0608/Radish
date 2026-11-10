@@ -1,0 +1,378 @@
+{
+  "date": "2026-10-26",
+  "baseRevision": "890ea5d798210dc404071d14a9c6a596e9f02115",
+  "scope": "Approved LGPL exception text; offline osx-arm64 native rebuild and existing .NET build/publish verification only",
+  "license": {
+    "beforeSha256": "61209331caa0ef71dadf04120b9108ab14cf0f296c6d5a4bf21b4c8f7c0bbff9",
+    "afterSha256": "212a95eef8e3c00d99d062101a1c792dd8cdc291119bcc2ef68a7e620afb50b2",
+    "approvedTextExactMatch": true
+  },
+  "native": {
+    "Debug": {
+      "fileCount": 164,
+      "changedFiles": [
+        "licenses/LICENSE-Radish.txt",
+        "manifest.json"
+      ],
+      "unchangedFileCount": 162,
+      "manifest": {
+        "abi": 65536,
+        "rid": "osx-arm64",
+        "target": "aarch64-apple-darwin",
+        "profile": "debug",
+        "rustVersion": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+        "sha256": "e971c1b0735289d039292b6bdfd3efb7a4c78366e4effa247330dcb9b928388d",
+        "inputSha256": "3ddf3e2eb0e9c57e328e04eee805098aac8ea40c8e9b3a962559498d54589447",
+        "minimumPlatform": "macOS 13",
+        "cargoLockSha256": "b49f8c1f810f6daa259407345af50d91c8f84b16d3423893405507816ec61b90",
+        "fonts": {
+          "DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+          "NotoSansSC-VF.ttf": "d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964"
+        }
+      },
+      "licenseSha256": "212a95eef8e3c00d99d062101a1c792dd8cdc291119bcc2ef68a7e620afb50b2"
+    },
+    "Release": {
+      "fileCount": 164,
+      "changedFiles": [
+        "licenses/LICENSE-Radish.txt",
+        "manifest.json"
+      ],
+      "unchangedFileCount": 162,
+      "manifest": {
+        "abi": 65536,
+        "rid": "osx-arm64",
+        "target": "aarch64-apple-darwin",
+        "profile": "release",
+        "rustVersion": "rustc 1.96.0 (ac68faa20 2026-05-25)",
+        "sha256": "24a1ee90eff125c2e7ecedfedb3b52e14ed150638b5886a233aa8e410bb636a1",
+        "inputSha256": "3ddf3e2eb0e9c57e328e04eee805098aac8ea40c8e9b3a962559498d54589447",
+        "minimumPlatform": "macOS 13",
+        "cargoLockSha256": "b49f8c1f810f6daa259407345af50d91c8f84b16d3423893405507816ec61b90",
+        "fonts": {
+          "DejaVuSans.ttf": "ae7b7855e115a5966d8b1b3f80f254ccc117ec86f9965e202ee2940453837280",
+          "NotoSansSC-VF.ttf": "d68bafcb48a2707749396aa12bbbd833cb70401f3a9a689fd2902c7e0d295964"
+        }
+      },
+      "licenseSha256": "212a95eef8e3c00d99d062101a1c792dd8cdc291119bcc2ef68a7e620afb50b2"
+    }
+  },
+  "builds": [
+    {
+      "configuration": "Debug",
+      "command": "dotnet build Radish.slnx -c Debug --no-restore --warnaserror",
+      "warnings": 0,
+      "errors": 0
+    },
+    {
+      "configuration": "Release",
+      "command": "dotnet build Radish.slnx -c Release --no-restore --warnaserror",
+      "warnings": 0,
+      "errors": 0
+    }
+  ],
+  "publish": [
+    {
+      "host": "Radish.Api",
+      "noticeComponents": 11,
+      "noticeFiles": 41,
+      "noticeTreeSha256": "7e4aa3fc27e9806a09b42d850322e84fdb85adc5b220c0859e0822df138587ec",
+      "nativeLicenseSha256": "212a95eef8e3c00d99d062101a1c792dd8cdc291119bcc2ef68a7e620afb50b2",
+      "fileCount": 419,
+      "changedAgainstPreviousPublish": [
+        "Radish.Api.dll",
+        "Radish.Api.pdb",
+        "Radish.Auth.Migrations.PostgreSql.dll",
+        "Radish.Auth.Migrations.PostgreSql.pdb",
+        "Radish.Auth.Migrations.Sqlite.dll",
+        "Radish.Auth.Migrations.Sqlite.pdb",
+        "Radish.Auth.Persistence.dll",
+        "Radish.Auth.Persistence.pdb",
+        "Radish.Common.dll",
+        "Radish.Common.pdb",
+        "Radish.Extension.Log.dll",
+        "Radish.Extension.Log.pdb",
+        "Radish.Extension.dll",
+        "Radish.Extension.pdb",
+        "Radish.IRepository.dll",
+        "Radish.IRepository.pdb",
+        "Radish.IService.dll",
+        "Radish.IService.pdb",
+        "Radish.Infrastructure.dll",
+        "Radish.Infrastructure.pdb",
+        "Radish.Model.dll",
+        "Radish.Model.pdb",
+        "Radish.Repository.dll",
+        "Radish.Repository.pdb",
+        "Radish.Service.dll",
+        "Radish.Service.pdb",
+        "Radish.Shared.dll",
+        "Radish.Shared.pdb",
+        "en/Radish.Api.resources.dll",
+        "native/licenses/LICENSE-Radish.txt",
+        "native/manifest.json",
+        "zh/Radish.Api.resources.dll"
+      ],
+      "allOtherPayloadHashesUnchanged": true,
+      "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "assemblyInformationalVersionCheck": {
+        "assemblyCount": 16,
+        "before": "26.8.2+5fe407cec3ea6490f37ef769c7dad957249e294a",
+        "after": "26.8.2+890ea5d798210dc404071d14a9c6a596e9f02115",
+        "allMatched": true
+      }
+    },
+    {
+      "host": "Radish.Auth",
+      "noticeComponents": 6,
+      "noticeFiles": 16,
+      "noticeTreeSha256": "dbeacbc4ae30e1450a5397abc7bb7e847f5544c6b24b411123c95e92473f12a6",
+      "nativeLicenseSha256": null,
+      "fileCount": 586,
+      "changedAgainstPreviousPublish": [
+        "Radish.Auth.Migrations.PostgreSql.dll",
+        "Radish.Auth.Migrations.PostgreSql.pdb",
+        "Radish.Auth.Migrations.Sqlite.dll",
+        "Radish.Auth.Migrations.Sqlite.pdb",
+        "Radish.Auth.Persistence.dll",
+        "Radish.Auth.Persistence.pdb",
+        "Radish.Auth.dll",
+        "Radish.Auth.pdb",
+        "Radish.Common.dll",
+        "Radish.Common.pdb",
+        "Radish.Extension.Log.dll",
+        "Radish.Extension.Log.pdb",
+        "Radish.Extension.dll",
+        "Radish.Extension.pdb",
+        "Radish.IRepository.dll",
+        "Radish.IRepository.pdb",
+        "Radish.IService.dll",
+        "Radish.IService.pdb",
+        "Radish.Infrastructure.dll",
+        "Radish.Infrastructure.pdb",
+        "Radish.Model.dll",
+        "Radish.Model.pdb",
+        "Radish.Repository.dll",
+        "Radish.Repository.pdb",
+        "Radish.Service.dll",
+        "Radish.Service.pdb",
+        "Radish.Shared.dll",
+        "Radish.Shared.pdb",
+        "en/Radish.Auth.resources.dll",
+        "zh/Radish.Auth.resources.dll"
+      ],
+      "allOtherPayloadHashesUnchanged": true,
+      "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "assemblyInformationalVersionCheck": {
+        "assemblyCount": 16,
+        "before": "26.8.2+5fe407cec3ea6490f37ef769c7dad957249e294a",
+        "after": "26.8.2+890ea5d798210dc404071d14a9c6a596e9f02115",
+        "allMatched": true
+      }
+    },
+    {
+      "host": "Radish.Gateway",
+      "noticeComponents": 6,
+      "noticeFiles": 16,
+      "noticeTreeSha256": "59255e17215ff7b4aafe0e95f57c9a43ae7928b5536c353d0ebbc809ca853951",
+      "nativeLicenseSha256": null,
+      "fileCount": 107,
+      "changedAgainstPreviousPublish": [
+        "Radish.Common.dll",
+        "Radish.Common.pdb",
+        "Radish.Extension.Log.dll",
+        "Radish.Extension.Log.pdb",
+        "Radish.Gateway.dll",
+        "Radish.Gateway.pdb",
+        "Radish.Model.dll",
+        "Radish.Model.pdb",
+        "Radish.Shared.dll",
+        "Radish.Shared.pdb"
+      ],
+      "allOtherPayloadHashesUnchanged": true,
+      "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "assemblyInformationalVersionCheck": {
+        "assemblyCount": 5,
+        "before": "26.8.2+5fe407cec3ea6490f37ef769c7dad957249e294a",
+        "after": "26.8.2+890ea5d798210dc404071d14a9c6a596e9f02115",
+        "allMatched": true
+      }
+    },
+    {
+      "host": "Radish.DbMigrate",
+      "noticeComponents": 6,
+      "noticeFiles": 16,
+      "noticeTreeSha256": "ef25033fcf45f48395b38d63b22e9b972a7e8f036a7e3735902f4db16ce10c59",
+      "nativeLicenseSha256": null,
+      "fileCount": 212,
+      "changedAgainstPreviousPublish": [
+        "Radish.Auth.Migrations.PostgreSql.dll",
+        "Radish.Auth.Migrations.PostgreSql.pdb",
+        "Radish.Auth.Migrations.Sqlite.dll",
+        "Radish.Auth.Migrations.Sqlite.pdb",
+        "Radish.Auth.Persistence.dll",
+        "Radish.Auth.Persistence.pdb",
+        "Radish.Common.dll",
+        "Radish.Common.pdb",
+        "Radish.DbMigrate.dll",
+        "Radish.DbMigrate.pdb",
+        "Radish.Extension.Log.dll",
+        "Radish.Extension.Log.pdb",
+        "Radish.Extension.dll",
+        "Radish.Extension.pdb",
+        "Radish.IRepository.dll",
+        "Radish.IRepository.pdb",
+        "Radish.IService.dll",
+        "Radish.IService.pdb",
+        "Radish.Infrastructure.dll",
+        "Radish.Infrastructure.pdb",
+        "Radish.Model.dll",
+        "Radish.Model.pdb",
+        "Radish.Repository.dll",
+        "Radish.Repository.pdb",
+        "Radish.Service.dll",
+        "Radish.Service.pdb",
+        "Radish.Shared.dll",
+        "Radish.Shared.pdb"
+      ],
+      "allOtherPayloadHashesUnchanged": true,
+      "sqlSugarSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "assemblyInformationalVersionCheck": {
+        "assemblyCount": 14,
+        "before": "26.8.2+5fe407cec3ea6490f37ef769c7dad957249e294a",
+        "after": "26.8.2+890ea5d798210dc404071d14a9c6a596e9f02115",
+        "allMatched": true
+      }
+    }
+  ],
+  "temporaryNativeDirectoriesRemaining": 0,
+  "noticesCheck": {
+    "components": 13,
+    "hosts": 4,
+    "result": "passed"
+  },
+  "publishCommands": [
+    {
+      "host": "Radish.Api",
+      "command": [
+        "dotnet",
+        "publish",
+        "Radish.Api/Radish.Api.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--warnaserror",
+        "-o",
+        "/private/tmp/radish-lgpl-exception-says1l57/publish/Radish.Api"
+      ],
+      "exitCode": 0
+    },
+    {
+      "host": "Radish.Auth",
+      "command": [
+        "dotnet",
+        "publish",
+        "Radish.Auth/Radish.Auth.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--warnaserror",
+        "-o",
+        "/private/tmp/radish-lgpl-exception-says1l57/publish/Radish.Auth"
+      ],
+      "exitCode": 0
+    },
+    {
+      "host": "Radish.Gateway",
+      "command": [
+        "dotnet",
+        "publish",
+        "Radish.Gateway/Radish.Gateway.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--warnaserror",
+        "-o",
+        "/private/tmp/radish-lgpl-exception-says1l57/publish/Radish.Gateway"
+      ],
+      "exitCode": 0
+    },
+    {
+      "host": "Radish.DbMigrate",
+      "command": [
+        "dotnet",
+        "publish",
+        "Radish.DbMigrate/Radish.DbMigrate.csproj",
+        "-c",
+        "Release",
+        "--no-build",
+        "--no-restore",
+        "--warnaserror",
+        "-o",
+        "/private/tmp/radish-lgpl-exception-says1l57/publish/Radish.DbMigrate"
+      ],
+      "exitCode": 0
+    }
+  ],
+  "inputHashes": {
+    "LICENSE": "212a95eef8e3c00d99d062101a1c792dd8cdc291119bcc2ef68a7e620afb50b2",
+    "Scripts/build-native-images.mjs": "d49eceff040301aec529b41609aef3e3fcc0bbb607b21757fb6d1af79b330217",
+    "Lib/radish.lib/Cargo.lock": "b49f8c1f810f6daa259407345af50d91c8f84b16d3423893405507816ec61b90",
+    "Lib/radish.lib/Cargo.toml": "17be9fc47b2ec178fad63b79d1b94db9a935aa92e49a0dbd23e6fc1231a45027",
+    "Lib/radish.lib/rust-toolchain.toml": "2c388180d0d5476ed0d69975b382feaf709bb072d51a342add3030cfb3d1bdb2",
+    "Directory.Build.targets": "83538c72ed94f21390642b443ed75c7f6d32a0ba89f463ea2a26295cd7d68cc1",
+    "ThirdParty/nuget/manifest.json": "805c2d635ca9f7be0bf72737b890a57754ba739f073a85a552315db8d49baeb1",
+    "Scripts/build/nuget-notices.props": "4cfaff9c82e19e87e9a06f89ba193a010bc3e1f2b4f5ee4fd9e724906313f805",
+    "Scripts/build/nuget-notices.targets": "5a30d4687b24ed488a2a304241f416376a5d5c3b04a605a32807217ae71d72eb"
+  },
+  "logs": {
+    "evidence/build-debug.log": "de351af9eb7daf066358e8d5b5f279669914524d4b64a08cbc57880bd0b6f74d",
+    "evidence/build-release.log": "64cf97883e34e626d2249e8aec8deef24df3ecd3840c79449d84206b1e5dd72f",
+    "evidence/native-debug.log": "49321d6f683705999da310a4c0d860048ead46c21e4cf603eb0fc6f2f84b13e2",
+    "evidence/native-release.log": "3b6cc32f2f2d029ee53636eb3b2411f1c54de9bd36c0d5e805a4c07b228bd6db",
+    "evidence/notices-check.log": "28b9e348c00290a929236d4c66e39160ed744ee072be29a532cd1cc5ccdb3086",
+    "evidence/publish-Radish.Api.log": "8839e8afbefb6d98b709161662ac0cf9d824732ea4a14cb66230bc54383ad31e",
+    "evidence/publish-Radish.Auth.log": "b082e02d511e39c63d4da174ce300bf004edacfbfe8ae009b61380e0aff9c0e8",
+    "evidence/publish-Radish.DbMigrate.log": "66fdb2202ac903e5ebcd38fcd8dced209c286db3a827898bfb22e8f0dc4035ee",
+    "evidence/publish-Radish.Gateway.log": "dac9ada056ec855bc12a8583e7e1f3277923b9c81dcd3ba4497b594bb8c33a7b"
+  },
+  "notPerformed": [
+    "package/toolchain download or restore",
+    "product services or database containers",
+    "source rebuild or modified Hangfire runtime substitution",
+    "other four native platforms",
+    "PR/push/tag/release/deploy"
+  ],
+  "verificationScriptSha256": "6f5ace025467186e2e414dcaf98d4c372e27a2f219bf936720a68369255cd3ac",
+  "verificationCorrection": "The first comparison omitted Radish satellite resources from self-owned assemblies and stopped on en/zh Radish.Api.resources.dll. Their informational versions were checked against the old/new revisions before correcting the comparison; no product files or build rules changed.",
+  "quality": {
+    "changedFiles": 7,
+    "repositoryFiles": 899,
+    "markdownFiles": 847,
+    "localLinks": 1064,
+    "errors": 0,
+    "advisory": "Existing records index length: 322 lines, recommended 300",
+    "diffCheck": "passed"
+  },
+  "nativeCommands": [
+    {
+      "command": "CARGO_NET_OFFLINE=true node Scripts/build-native-images.mjs --debug",
+      "exitCode": 0
+    },
+    {
+      "command": "CARGO_NET_OFFLINE=true node Scripts/build-native-images.mjs",
+      "exitCode": 0
+    },
+    {
+      "command": "CARGO_NET_OFFLINE=true node Scripts/build-native-images.mjs --debug --verify",
+      "exitCode": 0
+    },
+    {
+      "command": "CARGO_NET_OFFLINE=true node Scripts/build-native-images.mjs --verify",
+      "exitCode": 0
+    }
+  ]
+}

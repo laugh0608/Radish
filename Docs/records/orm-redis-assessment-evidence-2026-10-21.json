@@ -1,0 +1,293 @@
+{
+  "observedOn": "2026-10-21",
+  "sourceCommit": "b8debb260e9b52d9ea02a3f4a1316bf2cba6e349",
+  "scope": "Read-only package ZIP, existing assets/publish, and public registry manifest/config inspection; no candidate installation, layer pull, service execution or production access.",
+  "packages": [
+    {
+      "id": "SqlSugarCoreNoDrive",
+      "version": "5.1.4.207",
+      "url": "https://api.nuget.org/v3-flatcontainer/sqlsugarcorenodrive/5.1.4.207/sqlsugarcorenodrive.5.1.4.207.nupkg",
+      "sha256": "6f5f41957dc83bf729a4d74309123cf08ae80a877877102c0f456479ebc3ec2a",
+      "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0.html",
+      "dependencies": {
+        "Newtonsoft.Json": "13.0.2",
+        "SystemCommon": "8.5.0"
+      },
+      "assemblies": {
+        "lib/netstandard2.1/SqlSugar.dll": {
+          "bytes": 3019776,
+          "sha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b"
+        }
+      }
+    },
+    {
+      "id": "SystemCommon",
+      "version": "8.5.0",
+      "url": "https://api.nuget.org/v3-flatcontainer/systemcommon/8.5.0/systemcommon.8.5.0.nupkg",
+      "sha256": "d45acf8bfc8b10e179f2b4f1e84581471717bf0f42070a795015811b8abfce20",
+      "licenseUrl": "http://www.apache.org/licenses/LICENSE-2.0.html",
+      "dependencies": {
+        "Microsoft.Data.SqlClient": "5.2.2",
+        "System.Data.Common": "4.3.0",
+        "System.Reflection.Emit.Lightweight": "4.3.0",
+        "System.Text.RegularExpressions": "4.3.1",
+        "System.IdentityModel.Tokens.Jwt": "7.6.3"
+      },
+      "assemblies": {
+        "lib/netstandard2.1/SqlSugar.dll": {
+          "bytes": 2874368,
+          "sha256": "062c457dc941dcd1f063ebc40d8c4286132fa8682f09762ba16c54f758be21f0"
+        }
+      }
+    }
+  ],
+  "existingHostGraphs": {
+    "Radish.Api": [
+      "Microsoft.Data.Sqlite.Core/10.0.0",
+      "Npgsql/10.0.0",
+      "SqlSugarCore/5.1.4.207"
+    ],
+    "Radish.Auth": [
+      "Microsoft.Data.Sqlite.Core/10.0.0",
+      "Npgsql/10.0.0",
+      "SqlSugarCore/5.1.4.207"
+    ],
+    "Radish.Gateway": [
+      "Microsoft.Data.Sqlite.Core/9.0.0",
+      "Npgsql/5.0.18",
+      "SqlSugarCore/5.1.4.207"
+    ],
+    "Radish.DbMigrate": [
+      "Microsoft.Data.Sqlite.Core/10.0.0",
+      "Npgsql/10.0.0",
+      "SqlSugarCore/5.1.4.207"
+    ]
+  },
+  "existingPublish": {
+    "Radish.Api": {
+      "driverPackages": [
+        "Microsoft.Data.SqlClient/5.2.2",
+        "Microsoft.Data.SqlClient.SNI.runtime/5.2.0",
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905"
+      ],
+      "driverFiles": [
+        "Kdbndp.dll",
+        "Microsoft.Data.SqlClient.dll",
+        "MySqlConnector.dll",
+        "Oracle.ManagedDataAccess.dll",
+        "Oscar.Data.SqlClient.dll",
+        "runtimes/unix/lib/net8.0/Microsoft.Data.SqlClient.dll",
+        "runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll",
+        "runtimes/win-arm/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
+      ]
+    },
+    "Radish.Auth": {
+      "driverPackages": [
+        "Microsoft.Data.SqlClient/5.2.2",
+        "Microsoft.Data.SqlClient.SNI.runtime/5.2.0",
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905"
+      ],
+      "driverFiles": [
+        "Kdbndp.dll",
+        "Microsoft.Data.SqlClient.dll",
+        "MySqlConnector.dll",
+        "Oracle.ManagedDataAccess.dll",
+        "Oscar.Data.SqlClient.dll",
+        "refs/Microsoft.Data.SqlClient.dll",
+        "runtimes/unix/lib/net8.0/Microsoft.Data.SqlClient.dll",
+        "runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll",
+        "runtimes/win-arm/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
+      ]
+    },
+    "Radish.Gateway": {
+      "driverPackages": [
+        "Microsoft.Data.SqlClient/5.2.2",
+        "Microsoft.Data.SqlClient.SNI.runtime/5.2.0",
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905"
+      ],
+      "driverFiles": [
+        "Kdbndp.dll",
+        "Microsoft.Data.SqlClient.dll",
+        "MySqlConnector.dll",
+        "Oracle.ManagedDataAccess.dll",
+        "Oscar.Data.SqlClient.dll",
+        "runtimes/unix/lib/net8.0/Microsoft.Data.SqlClient.dll",
+        "runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll",
+        "runtimes/win-arm/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
+      ]
+    },
+    "Radish.DbMigrate": {
+      "driverPackages": [
+        "Microsoft.Data.SqlClient/5.2.2",
+        "Microsoft.Data.SqlClient.SNI.runtime/5.2.0",
+        "MySqlConnector/2.2.5",
+        "Oracle.ManagedDataAccess.Core/23.8.0",
+        "Oscar.Data.SqlClient/4.0.4",
+        "SqlSugarCore.Dm/8.8.1",
+        "SqlSugarCore.Kdbndp/9.3.7.905"
+      ],
+      "driverFiles": [
+        "Kdbndp.dll",
+        "Microsoft.Data.SqlClient.dll",
+        "MySqlConnector.dll",
+        "Oracle.ManagedDataAccess.dll",
+        "Oscar.Data.SqlClient.dll",
+        "runtimes/unix/lib/net8.0/Microsoft.Data.SqlClient.dll",
+        "runtimes/win/lib/net8.0/Microsoft.Data.SqlClient.dll",
+        "runtimes/win-arm/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-arm64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x64/native/Microsoft.Data.SqlClient.SNI.dll",
+        "runtimes/win-x86/native/Microsoft.Data.SqlClient.SNI.dll"
+      ]
+    }
+  },
+  "registrySnapshots": [
+    {
+      "repository": "library/redis",
+      "tag": "7",
+      "digest": "sha256:44960b3100c48159a66d28c18b0588c193492e25f7551d60e51dd464fc3eca5b",
+      "manifests": [
+        {
+          "digest": "sha256:026c880268ce52fb3a63b66150af583108a38c13af7633e325ae82a145f53a87",
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "digest": "sha256:4b1eae5c36f265dbb4e4432eea5764d17f6eeae8b074d1004be02faf30d12a50",
+          "platform": {
+            "architecture": "arm",
+            "os": "linux",
+            "variant": "v7"
+          }
+        },
+        {
+          "digest": "sha256:617bd2a7a36d215e3e0c61353a17cb5c856b192664e774455ef8023a60bee6ac",
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux",
+            "variant": "v8"
+          }
+        },
+        {
+          "digest": "sha256:6eaa32769b84117f1806e7df36ee06147ce8f99557336c3160af01a43ae3f06c",
+          "platform": {
+            "architecture": "386",
+            "os": "linux"
+          }
+        },
+        {
+          "digest": "sha256:694badbdc03929b02bac8585ec82856ac5574023d79fbbc60d1aacae91c95869",
+          "platform": {
+            "architecture": "ppc64le",
+            "os": "linux"
+          }
+        }
+      ],
+      "linux_amd64_version_env": [
+        "REDIS_VERSION=7.4.11"
+      ]
+    },
+    {
+      "repository": "valkey/valkey",
+      "tag": "8.1.10",
+      "digest": "sha256:640c5e62cea04b6d6f2084232651d0cc70362d31f4f805e7be94dbed6855e8f2",
+      "manifests": [
+        {
+          "digest": "sha256:0f62bfecc0b713dc2111af3ee307d5cd53c6877b7a112c6143c4de20f1325e4c",
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "digest": "sha256:d2a1f2cbd6f69b933b82a930a44b7330b046bbd4c0d24bfc262967624c696dde",
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux"
+          }
+        },
+        {
+          "digest": "sha256:75626f5135b58bc0a486e36036eba42986828ea517100b0f62d44ecc7c2ea567",
+          "platform": {
+            "architecture": "arm",
+            "os": "linux",
+            "variant": "v7"
+          }
+        },
+        {
+          "digest": "sha256:5e35285496f9a7e211d33f26b48218c391666f8e80448c4d0d944872b40dadd1",
+          "platform": {
+            "architecture": "ppc64le",
+            "os": "linux"
+          }
+        }
+      ],
+      "linux_amd64_version_env": [
+        "VALKEY_VERSION=8.1.10"
+      ]
+    },
+    {
+      "repository": "valkey/valkey",
+      "tag": "9.1.2",
+      "digest": "sha256:418652cfb58ef879d4978c33553735d7147016032d5aefaa14c828e611eb9dfd",
+      "manifests": [
+        {
+          "digest": "sha256:ac9c858b86dc81f3482d53a9d854547379a5f41e012500f839ab257c399063e0",
+          "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+          }
+        },
+        {
+          "digest": "sha256:5a6ac3cceea0d4cebe48911dfa5f393f49feea86a2c55c5ac6b0ba733a1713b6",
+          "platform": {
+            "architecture": "arm64",
+            "os": "linux"
+          }
+        },
+        {
+          "digest": "sha256:ab00dff73d66898788b47a5ca99e2902e4031c10fe7deb653ac57e2ddb1d380e",
+          "platform": {
+            "architecture": "arm",
+            "os": "linux",
+            "variant": "v7"
+          }
+        },
+        {
+          "digest": "sha256:aa22b3dc018db69bc7c1258a15560f2f07c69f03ec4f4310d759781cb932db91",
+          "platform": {
+            "architecture": "ppc64le",
+            "os": "linux"
+          }
+        }
+      ],
+      "linux_amd64_version_env": [
+        "VALKEY_VERSION=9.1.2"
+      ]
+    }
+  ],
+  "existingSqlSugarDllSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b"
+}

@@ -35,6 +35,10 @@ Radish.Api/
 - ✅ **宿主私有非敏感配置放在各自 appsettings.json**：CORS、端口、服务路由、`Snowflake.WorkId`、`Redis.InstanceName` 等
 - ✅ **利用深度合并**：Local.json 只写需要修改的配置项，其他自动继承
 
+## 日志内网接收候选
+
+`RadishLogging:Ingest` 默认为关闭。启用前需指定独立端口、明确公共 Kestrel endpoints、部署 / 服务允许列表及独立 collector 凭据；`Credential` 只放本地未提交配置或环境变量。接收模式继承 `RadishLogging:Mode`，不从载荷决定。完整键、预算、失败行为与运行授权边界见[接收入库方案](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)。配置存在不代表当前任务获得服务启动授权。
+
 ## 配置加载优先级
 
 ASP.NET Core 按以下顺序加载配置（后面的会覆盖前面的）：
@@ -445,7 +449,7 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 }
 ```
 
-**DbType 枚举对照表**：
+**DbType 历史枚举对照表**（正式支持仅 `2=Sqlite`、`4=PostgreSql`）：
 ```
 0 = MySql
 1 = SqlServer
@@ -455,6 +459,10 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 5 = DaMeng (达梦)
 6 = Kdbndp (金仓)
 ```
+
+启用的 `Databases` 连接、分库租户以及 `OpenIddict:Database` / `Hangfire` 配置都执行相同的 provider 支持校验。其他已知类型或未知整数在连接前明确失败；业务配置整组校验通过后才处理 SQLite 路径。错误提示只包含配置位置、provider 和支持类型，不回显连接串。`Enabled=false` 的历史业务条目不加载，重新启用时仍须满足支持范围；枚举数值保持不变，不自动转换存量配置或租户数据。SQL Server / MySQL / Oracle 的历史 `dbCountPsw1_*Conn.txt` 读取路径已移除。
+
+正式依赖为 `SqlSugarCoreNoDrive 5.1.4.207`，Common 显式提供 Npgsql / Microsoft.Data.Sqlite `10.0.0` 并固定 SystemCommon `8.5.0`；SQL Server / SNI 仍为传递资产，不表示支持 SQL Server 配置。采用与验证边界见[NoDrive 正式收缩方案](../features/nodrive-adoption-plan.md)。
 
 ### 3. Redis 配置
 
@@ -568,19 +576,9 @@ OpenIddict 使用 EF Core 存储，`Radish.Auth` 负责 OIDC Server 与种子数
 
 新测试 / 生产环境首次部署后，当系统检测到还没有 `System / Admin` 管理员时，前端会进入首个管理员初始化页。当前代码由 `BrowserAppRouter` 在顶层统一挂载 `BootstrapGate`，覆盖公开路由、Workbench、登录态私域、WebOS 历史 Root 和 OIDC 回调；各业务入口不再重复包裹门禁。只有 bootstrap 状态为 `ready` 时才挂载实际页面和 OIDC 回调，避免初始化未完成时提前进入认证或业务路由。初始化页要求部署人员输入展示名、邮箱和强密码，后端会做服务端校验和并发保护；已有管理员后，初始化接口不可再创建账号。
 
-### 4. AutoMapper 许可证
+### 4. 编译期映射
 
-如果你购买了 AutoMapper 的商业许可证：
-
-```json
-{
-  "AutoMapper": {
-    "LicenseKey": "your-license-key-here"
-  }
-}
-```
-
-当前注册代码在配置为空时跳过 `expression.LicenseKey` 赋值；这是运行时接线事实，不代表当前包可在任意条件下免费使用。仓库使用 `AutoMapper 16.1.1`，包内为 RPL-1.5 / 厂商协议选择；Radish 的 Source-Available 定位不能直接替代适用条款判断。许可盘点与替代方案见[第三方依赖许可治理](../features/dependency-license-governance.md)。
+实体映射使用 `Riok.Mapperly 4.3.1` 与 `Radish.Service/Mapping` 中的显式转换，不需要运行时许可配置。旧 `AutoMapper:LicenseKey` / `AutoMapper__LicenseKey` 已无读取入口，可从本地和部署 Secret 配置中删除；无需为 Mapperly 新建配置文件。映射规范见[开发规范](../architecture/specifications.md)。
 
 ### 5. CORS 配置
 
@@ -720,7 +718,6 @@ environment:
   - Hangfire__ConnectionString=Host=postgres-prod;Port=5432;Database=radish_hangfire;Username=radish_user;Password=${DB_PASSWORD}
   - Redis__Enable=true
   - Redis__ConnectionString=redis-prod:6379,password=${REDIS_PASSWORD},ssl=true
-  - AutoMapper__LicenseKey=${AUTOMAPPER_LICENSE}
 ```
 
 环境变量使用双下划线 `__` 表示嵌套层级。

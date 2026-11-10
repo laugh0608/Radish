@@ -1,0 +1,159 @@
+{
+  "reviewedOn": "2026-10-26",
+  "sourceArchives": [
+    {
+      "repository": "HangfireIO/Hangfire",
+      "commit": "51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "sourceUrl": "https://codeload.github.com/HangfireIO/Hangfire/tar.gz/51647c20e36ab010f7dfc4fa8b1ed666070d7f4f",
+      "archivePath": "/private/tmp/radish-distribution-review.zzetph/hangfire-51647c20e36ab010f7dfc4fa8b1ed666070d7f4f.tar.gz",
+      "archiveSha256": "dd557b8065188f4a840ce72bef27e28a4875573dfb2372947358fa55cb298475",
+      "archiveBytes": 3652690,
+      "treeEntries": 666,
+      "eolConvertedFiles": [
+        "Hangfire.sln",
+        "samples/ConsoleSample/ConsoleSample.csproj",
+        "samples/NetCoreSample/NetCoreSample.csproj",
+        "src/Hangfire.AspNetCore/Hangfire.AspNetCore.csproj",
+        "src/Hangfire.Core/Hangfire.Core.csproj",
+        "src/Hangfire.NetCore/Hangfire.NetCore.csproj",
+        "src/Hangfire.SqlServer.Msmq/Hangfire.SqlServer.Msmq.csproj",
+        "src/Hangfire.SqlServer/Hangfire.SqlServer.csproj",
+        "tests/Hangfire.Core.Tests/Hangfire.Core.Tests.csproj",
+        "tests/Hangfire.SqlServer.Msmq.Tests/Hangfire.SqlServer.Msmq.Tests.csproj",
+        "tests/Hangfire.SqlServer.Tests/Hangfire.SqlServer.Tests.csproj"
+      ],
+      "scope": "Repository snapshot verified; not a complete corresponding-source or reproducible-binary result.",
+      "sourceFileCount": 607,
+      "rawBlobMatches": 596,
+      "eolOnlyMatches": 11
+    },
+    {
+      "repository": "hangfire-postgres/Hangfire.PostgreSql",
+      "commit": "a5a728233ac8feb447695acb01f607bd848b00f7",
+      "sourceUrl": "https://codeload.github.com/hangfire-postgres/Hangfire.PostgreSql/tar.gz/a5a728233ac8feb447695acb01f607bd848b00f7",
+      "archivePath": "/private/tmp/radish-distribution-review.zzetph/hangfire-postgresql-a5a728233ac8feb447695acb01f607bd848b00f7.tar.gz",
+      "archiveSha256": "b84d72669f7140949351ee7cab1ca7e3001f9204cc3497adfcc0e0a274dcd39d",
+      "archiveBytes": 103975,
+      "treeEntries": 125,
+      "eolConvertedFiles": [],
+      "scope": "Repository snapshot verified; not a complete corresponding-source or reproducible-binary result.",
+      "sourceFileCount": 108,
+      "rawBlobMatches": 108,
+      "eolOnlyMatches": 0
+    }
+  ],
+  "packageArtifacts": [
+    {
+      "package": "Hangfire.Core/1.8.14",
+      "runtimeAsset": "lib/netstandard2.0/Hangfire.Core.dll",
+      "sha256": "a65de824dc686217326599c9b0c5e7b0f470bd4425ac0b891d6cdc2351df7522",
+      "matchesUnmodifiedNugetAsset": true,
+      "separatePublishedDll": true
+    },
+    {
+      "package": "Hangfire.AspNetCore/1.8.14",
+      "runtimeAsset": "lib/netcoreapp3.0/Hangfire.AspNetCore.dll",
+      "sha256": "84f2bd51bd1dda20a201cb14486b9e6dcf5556caa9c014752b039f9f5673604e",
+      "matchesUnmodifiedNugetAsset": true,
+      "separatePublishedDll": true
+    },
+    {
+      "package": "Hangfire.NetCore/1.8.14",
+      "runtimeAsset": "lib/netstandard2.1/Hangfire.NetCore.dll",
+      "sha256": "865b38a150ed0c297ca61fe2345caceeaf54aa6efae0c20ebdd554964fd789a9",
+      "matchesUnmodifiedNugetAsset": true,
+      "separatePublishedDll": true
+    },
+    {
+      "package": "Hangfire.PostgreSql/1.20.12",
+      "runtimeAsset": "lib/netstandard2.0/Hangfire.PostgreSql.dll",
+      "sha256": "659c72e0e1f458154d6244b32697181e2dc538c2f88eae50a4249cadd1faff72",
+      "matchesUnmodifiedNugetAsset": true,
+      "separatePublishedDll": true
+    }
+  ],
+  "noDriveDebugEvidence": [
+    {
+      "package": "sqlsugarcorenodrive/5.1.4.207",
+      "dllSha256": "38a361e486a809ee2242861ce5ecb94016dca99bcaa9541d8f54cda8b06e9d0b",
+      "debugDirectoryTypes": [
+        2,
+        19,
+        16
+      ],
+      "embeddedPortablePdbPresent": false,
+      "finding": "CodeView reference exists but no package PDB or embedded portable PDB provides a source commit; source mapping remains open."
+    },
+    {
+      "package": "systemcommon/8.5.0",
+      "dllSha256": "062c457dc941dcd1f063ebc40d8c4286132fa8682f09762ba16c54f758be21f0",
+      "debugDirectoryTypes": [
+        2,
+        19,
+        16
+      ],
+      "embeddedPortablePdbPresent": false,
+      "finding": "CodeView reference exists but no package PDB or embedded portable PDB provides a source commit; source mapping remains open."
+    }
+  ],
+  "legalSources": [
+    {
+      "url": "https://www.hangfire.io/licenses.html",
+      "role": "Current publisher license routes and explicit package coverage; not substituted for exact package terms."
+    },
+    {
+      "url": "https://www.hangfire.io/licensing/lgpl.html",
+      "role": "Publisher copy of LGPLv3, especially section 4."
+    },
+    {
+      "path": "ThirdParty/nuget/hangfire.core/1.8.14/COPYING",
+      "role": "Exact package GPLv3 text, section 6."
+    },
+    {
+      "path": "ThirdParty/nuget/microsoft.data.sqlclient.sni.runtime/5.2.0/LICENSE.txt",
+      "role": "Exact SNI package terms, sections 3 and 5."
+    }
+  ],
+  "sourceAcquisitionFailures": [
+    "GNU official HTML and text endpoints timed out through web fetch; used the exact packaged texts and publisher LGPL page.",
+    "First raw-blob archive check stopped at Hangfire.sln; upstream .gitattributes declares CRLF for sln/csproj. All 11 differences were verified as CRLF-only; source archives were not rewritten."
+  ],
+  "inspectedBuildFiles": [
+    {
+      "url": "https://github.com/HangfireIO/Hangfire/blob/51647c20e36ab010f7dfc4fa8b1ed666070d7f4f/src/Hangfire.Core/Hangfire.Core.csproj",
+      "gitBlobSha1": "eab5035e01c12b2d499bae5dd65cf18e6dc87269",
+      "sha256": "bd4a5a6cc79d13e3f713ff9cad74a0cb94139cc24c61d212b5dcdb6efc82a984",
+      "content": "﻿<Project Sdk=\"Microsoft.NET.Sdk\">\n  <PropertyGroup>\n    <TargetFrameworks>net451;net46;netstandard1.3;netstandard2.0;</TargetFrameworks>\n    <GenerateDocumentationFile>true</GenerateDocumentationFile>\n    <RootNamespace>Hangfire</RootNamespace>\n  </PropertyGroup>\n  \n  <PropertyGroup Condition=\"'$(TargetFramework)'=='net451' or '$(TargetFramework)'=='net46'\">\n    <DefineConstants>$(DefineConstants);FEATURE_CRONDESCRIPTOR;FEATURE_OWIN;</DefineConstants>\n  </PropertyGroup>\n  \n  <ItemGroup>\n    <PackageReference Include=\"MoreLinq.Source.MoreEnumerable.Pairwise\" Version=\"1.0.1\" />\n    <PackageReference Include=\"LibLog\" Version=\"1.5.0\" />\n    <PackageReference Include=\"Cronos\" Version=\"0.8.3\" />\n    <PackageReference Include=\"StackTraceFormatter.Source\" Version=\"1.1.0\" />\n    <PackageReference Include=\"StackTraceParser.Source\" Version=\"1.3.0\" />\n  </ItemGroup>\n  \n  <ItemGroup Condition=\"'$(TargetFramework)'=='net451' or '$(TargetFramework)'=='net46'\">\n    <PackageReference Include=\"Microsoft.NETFramework.ReferenceAssemblies\" Version=\"1.0.3\" />\n    <PackageReference Include=\"Owin\" Version=\"1.0\" />\n    <PackageReference Include=\"CronExpressionDescriptor\" Version=\"1.21.0\" />\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"5.0.1\" NoWarn=\"NU1903\" />\n    <PackageReference Include=\"Microsoft.Owin\" Version=\"4.2.2\" />\n  </ItemGroup>\n  \n  <ItemGroup Condition=\"'$(TargetFramework)'=='netstandard1.3'\">\n    <PackageReference Include=\"System.Threading.Thread\" Version=\"4.0.0\" />\n    <PackageReference Include=\"System.Threading.ThreadPool\" Version=\"4.0.10\" />\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"9.0.1\" NoWarn=\"NU1903\" />\n  </ItemGroup>\n\n  <ItemGroup Condition=\"'$(TargetFramework)'=='netstandard2.0'\">\n    <PackageReference Include=\"Microsoft.CSharp\" Version=\"4.4.0\" />\n    <PackageReference Include=\"Newtonsoft.Json\" Version=\"11.0.1\" NoWarn=\"NU1903\" />\n  </ItemGroup>\n  \n  <ItemGroup Condition=\"'$(TargetFramework)'=='netstandard1.3' or '$(TargetFramework)'=='netstandard2.0'\">\n    <Compile Remove=\"AppBuilderExtensions.cs\" />\n    <Compile Remove=\"Dashboard/Owin/**\" />\n    <Compile Remove=\"Obsolete/**\" />\n    <Compile Include=\"Obsolete/CreateJobFailedException.cs\" />\n    <Compile Include=\"Obsolete/IServerComponent.cs\" />\n    <Compile Include=\"Obsolete/IServerProcess.cs\" />\n    <Compile Include=\"Obsolete/Job.Obsolete.cs\" />\n    <Compile Include=\"Obsolete/ServerWatchdogOptions.cs\" />\n    <Compile Include=\"Obsolete/StateContext.cs\" />\n  </ItemGroup>\n  \n  <!-- Full MSBuild is required to generate Razor classes -->\n  <PropertyGroup>\n    <MSBuild14FullPath>$(MSBuildProgramFiles32)\\..\\Windows\\Microsoft.NET\\Framework64\\v4.0.30319\\MSBuild.exe</MSBuild14FullPath>\n    <MSBuildCurrentFullPath>$(MSBuildBinPath)\\MSBuild.exe</MSBuildCurrentFullPath>\n    <RazorProjectFile>Razor.build</RazorProjectFile>\n    <InnerTargets>GenerateRazorClasses;Build</InnerTargets>\n  </PropertyGroup>\n\n  <Target Name=\"GenerateRazorClasses\">\n    <Exec Command=\"&quot;$(MSBuildCurrentFullPath)&quot; $(RazorProjectFile) /v:quiet /nologo\" Condition=\"Exists('$(MSBuildCurrentFullPath)')\" />\n    <Exec Command=\"&quot;$(MSBuild14FullPath)&quot; $(RazorProjectFile) /v:quiet /nologo\" Condition=\"Exists('$(MSBuild14FullPath)') and !Exists('$(MSBuildCurrentFullPath)')\" />\n    <Warning Text=\"Classes for Razor files (*.cshtml) weren't re-generated: couldn't find the '$(MSBuild14FullPath)' or '$(MSBuildCurrentFullPath)' file\" Condition=\"!Exists('$(MSBuild14FullPath)') and !Exists('$(MSBuildCurrentFullPath)')\" />\n  </Target>\n  \n  <ItemGroup>\n    <EmbeddedResource Include=\"Dashboard\\Content\\css\\bootstrap.min.css\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\css\\Chart.min.css\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\css\\hangfire.css\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\css\\hangfire-dark.css\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\fonts\\glyphicons-halflings-regular.eot\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\fonts\\glyphicons-halflings-regular.svg\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\fonts\\glyphicons-halflings-regular.ttf\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\fonts\\glyphicons-halflings-regular.woff\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\fonts\\glyphicons-halflings-regular.woff2\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\js\\bootstrap.min.js\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\js\\hangfire.js\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\js\\jquery-3.7.1.min.js\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\js\\moment-with-locales.min.js\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\js\\Chart.min.js\" />\n    <EmbeddedResource Include=\"Dashboard\\Content\\js\\chartjs-plugin-streaming.min.js\" />\n  </ItemGroup>\n\n  <ItemGroup>\n    <EmbeddedResource Update=\"Dashboard\\Content\\resx\\Strings.resx\">\n      <Generator>PublicResXFileCodeGenerator</Generator>\n      <LastGenOutput>Strings.Designer.cs</LastGenOutput>\n      <CustomToolNamespace>Hangfire.Dashboard.Resources</CustomToolNamespace>\n    </EmbeddedResource>\n    <Compile Update=\"Dashboard\\Content\\resx\\Strings.Designer.cs\">\n      <DesignTime>True</DesignTime>\n      <AutoGen>True</AutoGen>\n      <DependentUpon>Strings.resx</DependentUpon>\n    </Compile>\n  </ItemGroup>\n\n  <ItemGroup>\n    <Compile Update=\"Dashboard\\Pages\\_BlockMetric.cshtml.cs\">\n      <DependentUpon>_BlockMetric.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_BlockMetric.cs\">\n      <DependentUpon>_BlockMetric.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_Breadcrumbs.cshtml.cs\">\n      <DependentUpon>_Breadcrumbs.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_Breadcrumbs.cs\">\n      <DependentUpon>_Breadcrumbs.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_ErrorAlert.cshtml.cs\">\n      <DependentUpon>_ErrorAlert.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_InlineMetric.cshtml.cs\">\n      <DependentUpon>_InlineMetric.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_InlineMetric.cs\">\n      <DependentUpon>_InlineMetric.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_Navigation.cshtml.cs\">\n      <DependentUpon>_Navigation.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_Paginator.cshtml.cs\">\n      <DependentUpon>_Paginator.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_Paginator.cs\">\n      <DependentUpon>_Paginator.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_PerPageSelector.cshtml.cs\">\n      <DependentUpon>_PerPageSelector.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_PerPageSelector.cs\">\n      <DependentUpon>_PerPageSelector.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_SidebarMenu.cshtml.cs\">\n      <DependentUpon>_SidebarMenu.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\_SidebarMenu.cs\">\n      <DependentUpon>_SidebarMenu.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\AwaitingJobsPage.cshtml.cs\">\n      <DependentUpon>AwaitingJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\DeletedJobsPage.cshtml.cs\">\n      <DependentUpon>DeletedJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\EnqueuedJobsPage.cshtml.cs\">\n      <DependentUpon>EnqueuedJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\EnqueuedJobsPage.cs\">\n      <DependentUpon>EnqueuedJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\FailedJobsPage.cshtml.cs\">\n      <DependentUpon>FailedJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\FetchedJobsPage.cshtml.cs\">\n      <DependentUpon>FetchedJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\FetchedJobsPage.cs\">\n      <DependentUpon>FetchedJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\HomePage.cshtml.cs\">\n      <DependentUpon>HomePage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\HomePage.cs\">\n      <DependentUpon>HomePage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\JobDetailsPage.cshtml.cs\">\n      <DependentUpon>JobDetailsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\JobDetailsPage.cs\">\n      <DependentUpon>JobDetailsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\LayoutPage.cshtml.cs\">\n      <DependentUpon>LayoutPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\LayoutPage.cs\">\n      <DependentUpon>LayoutPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\ProcessingJobsPage.cshtml.cs\">\n      <DependentUpon>ProcessingJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\QueuesPage.cshtml.cs\">\n      <DependentUpon>QueuesPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\RecurringJobsPage.cshtml.cs\">\n      <DependentUpon>RecurringJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\RetriesPage.cshtml.cs\">\n      <DependentUpon>RetriesPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\ScheduledJobsPage.cshtml.cs\">\n      <DependentUpon>ScheduledJobsPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\ServersPage.cshtml.cs\">\n      <DependentUpon>ServersPage.cshtml</DependentUpon>\n    </Compile>\n    <Compile Update=\"Dashboard\\Pages\\SucceededJobs.cshtml.cs\">\n      <DependentUpon>SucceededJobs.cshtml</DependentUpon>\n    </Compile>\n  </ItemGroup>\n</Project>"
+    },
+    {
+      "url": "https://github.com/hangfire-postgres/Hangfire.PostgreSql/blob/a5a728233ac8feb447695acb01f607bd848b00f7/src/Hangfire.PostgreSql/Hangfire.PostgreSql.csproj",
+      "gitBlobSha1": "102d2e17547457d9d6eebd5b91e5f6c71d2209c3",
+      "sha256": "d8d79c7389e12fb271f8329d06053e56e9e7bd49f0886ced7e50e358359f2134",
+      "content": "﻿<Project Sdk=\"Microsoft.NET.Sdk\">\n\n  <PropertyGroup>\n    <Description>PostgreSql storage implementation for Hangfire (background job system for ASP.NET and aspnet core applications).</Description>\n    <Copyright>Copyright © 2014-2024 Frank Hommers and others</Copyright>\n    <AssemblyTitle>Hangfire PostgreSql Storage</AssemblyTitle>\n    <VersionPrefix>1.9.4</VersionPrefix>\n    <Authors>Frank Hommers, Vytautas Kasparavičius, Žygimantas Arūna</Authors>\n    <TargetFramework>netstandard2.0</TargetFramework>\n    <AssemblyName>Hangfire.PostgreSql</AssemblyName>\n    <OutputType>Library</OutputType>\n    <PackageTags>Hangfire;PostgreSql;Postgres</PackageTags>\n    <PackageId>Hangfire.PostgreSql</PackageId>\n    <PackageReleaseNotes>https://github.com/frankhommers/Hangfire.PostgreSql/releases</PackageReleaseNotes>\n    <PackageProjectUrl>http://hmm.rs/Hangfire.PostgreSql</PackageProjectUrl>\n    <PackageLicenseUrl></PackageLicenseUrl>\n    <Version>1.9.4.0</Version>\n    <FileVersion>1.9.4.0</FileVersion>\n    <AssemblyVersion>1.9.4.0</AssemblyVersion>\n    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>\n    <PackageLicenseFile>LICENSE.md</PackageLicenseFile>\n    <RepositoryUrl>https://github.com/frankhommers/Hangfire.PostgreSql</RepositoryUrl>\n    <RepositoryType>git</RepositoryType>\n    <Company>https://github.com/hangfire-postgres</Company>\n    <LangVersion>default</LangVersion>\n    <GenerateDocumentationFile>true</GenerateDocumentationFile>\n    <NoWarn>$(NoWarn);1591</NoWarn>\n  </PropertyGroup>\n\n  <ItemGroup>\n    <EmbeddedResource Include=\"Scripts\\*.sql\" />\n  </ItemGroup>\n\n  <ItemGroup>\n    <PackageReference Include=\"Dapper\" Version=\"2.0.123\" />\n    <PackageReference Include=\"GitVersion.MsBuild\" Version=\"5.11.1\">\n      <PrivateAssets>all</PrivateAssets>\n      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>\n    </PackageReference>\n    <PackageReference Include=\"Hangfire.Core\" Version=\"1.8.0\" />\n    <PackageReference Include=\"Microsoft.CSharp\" Version=\"4.7.0\" />\n    <PackageReference Include=\"Npgsql\" Version=\"6.0.11\" />\n  </ItemGroup>\n\n  <ItemGroup>\n    <None Include=\"..\\..\\LICENSE.md\">\n      <Pack>True</Pack>\n      <PackagePath></PackagePath>\n    </None>\n  </ItemGroup>\n\n</Project>\n"
+    },
+    {
+      "url": "https://github.com/HangfireIO/Hangfire/blob/51647c20e36ab010f7dfc4fa8b1ed666070d7f4f/src/Directory.Build.props",
+      "gitBlobSha1": "5cf43b24fbea68da2bf4fa05170d70106244b293",
+      "sha256": "c2cfd01601b7c30f8244e4ff5a3a3d49b7e95d9ced356d9427e16f3c8926bade",
+      "content": "<Project>\n    <Import Project=\"$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))\" />\n    <!-- Custom AssemblyInfo.cs file -->\n    <PropertyGroup>\n        <GenerateAssemblyInfo>false</GenerateAssemblyInfo>\n        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>\n        <DebugType>embedded</DebugType>\n        <EmbedUntrackedSources>true</EmbedUntrackedSources>\n        <LangVersion>Latest</LangVersion>\n    </PropertyGroup>\n    <ItemGroup>\n        <Compile Include=\"..\\SharedAssemblyInfo.cs\" Link=\"Properties\\SharedAssemblyInfo.cs\" />\n    </ItemGroup>\n\n    <!-- Plugging in Roslyn Analysers -->\n    <ItemGroup>\n        <PackageReference Include=\"Microsoft.CodeAnalysis.NetAnalyzers\" Version=\"8.0.0\" />\n    </ItemGroup>\n\n    <PropertyGroup>\n        <NoWarn>CA1200;CA1859;1591</NoWarn>\n        <EnableNETAnalyzers>true</EnableNETAnalyzers>\n        <AnalysisLevel>latest</AnalysisLevel>\n        <AnalysisMode>Recommended</AnalysisMode>\n        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>\n    </PropertyGroup>\n\n    <ItemGroup>\n        <PackageReference Include=\"Microsoft.SourceLink.GitHub\" Version=\"8.0.0\" />\n    </ItemGroup>\n\n    <PropertyGroup Condition=\"'$(APPVEYOR)' == 'True'\">\n        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>\n        <!-- Deterministic paths work bad when using ILRepack, because it combines everything with a wrong repository -->\n        <DeterministicSourcePaths>false</DeterministicSourcePaths>\n    </PropertyGroup>\n</Project>"
+    },
+    {
+      "url": "https://github.com/HangfireIO/Hangfire/blob/51647c20e36ab010f7dfc4fa8b1ed666070d7f4f/psake-project.ps1",
+      "gitBlobSha1": "29ea46d922f14751d34abf1e669c3497e19dc0e7",
+      "sha256": "f1296344b2998869ee4145dd859774e826480c3fdec44a7acc0c8e0807d57b63",
+      "content": "Include \"packages\\Hangfire.Build.0.4.4\\tools\\psake-common.ps1\"\n\nTask Default -Depends Pack\n\nTask Merge -Depends Compile -Description \"Run ILRepack /internalize to merge required assemblies.\" {\n    Repack-Assembly @(\"Hangfire.Core\", \"net451\") @(\"Cronos\", \"CronExpressionDescriptor\", \"Microsoft.Owin\")\n    Repack-Assembly @(\"Hangfire.Core\", \"net46\") @(\"Cronos\", \"CronExpressionDescriptor\", \"Microsoft.Owin\")\n    Repack-Assembly @(\"Hangfire.SqlServer\", \"net451\") @(\"Dapper\")\n\n    Repack-Assembly @(\"Hangfire.Core\", \"netstandard1.3\") @(\"Cronos\")\n    Repack-Assembly @(\"Hangfire.Core\", \"netstandard2.0\") @(\"Cronos\")\n    Repack-Assembly @(\"Hangfire.SqlServer\", \"netstandard1.3\") @(\"Dapper\")\n    Repack-Assembly @(\"Hangfire.SqlServer\", \"netstandard2.0\") @(\"Dapper\")\n}\n\nTask Test -Depends Merge -Description \"Run unit and integration tests against merged assemblies.\" {\n    # Dependencies shouldn't be re-built, because we need to run tests against merged assemblies to test\n    # the same assemblies that are distributed to users. Since the `dotnet test` command doesn't support\n    # the `--no-dependencies` command directly, we need to re-build tests themselves first.\n    Exec { ls \"tests\\**\\*.csproj\" | % { dotnet build -c Release --no-restore --no-dependencies $_.FullName } }\n\n    # We are running unit test project one by one, because pipelined version like the line above does not\n    # support halting the whole execution pipeline when \"dotnet test\" command fails due to a failed test,\n    # silently allowing build process to continue its execution even with failed tests.\n    Exec { dotnet test -c Release --no-build \"tests\\Hangfire.Core.Tests\" }\n    Exec { dotnet test -c Release --no-build \"tests\\Hangfire.SqlServer.Tests\" }\n    Exec { dotnet test -c Release --no-build \"tests\\Hangfire.SqlServer.Msmq.Tests\" }\n}\n\nTask Collect -Depends Test -Description \"Copy all artifacts to the build folder.\" {\n    Collect-Assembly \"Hangfire.Core\" \"net451\"\n    Collect-Assembly \"Hangfire.SqlServer\" \"net451\"\n    Collect-Assembly \"Hangfire.SqlServer.Msmq\" \"net451\"\n    Collect-Assembly \"Hangfire.NetCore\" \"net451\"\n    Collect-Assembly \"Hangfire.AspNetCore\" \"net451\"\n\n    Collect-Assembly \"Hangfire.Core\" \"net46\"\n\n    Collect-Assembly \"Hangfire.Core\" \"netstandard1.3\"\n    Collect-Assembly \"Hangfire.SqlServer\" \"netstandard1.3\"\n    Collect-Assembly \"Hangfire.NetCore\" \"netstandard1.3\"\n    Collect-Assembly \"Hangfire.AspNetCore\" \"netstandard1.3\"\n    \n    Collect-Assembly \"Hangfire.Core\" \"netstandard2.0\"\n    Collect-Assembly \"Hangfire.SqlServer\" \"netstandard2.0\"\n    Collect-Assembly \"Hangfire.AspNetCore\" \"netstandard2.0\"\n    Collect-Assembly \"Hangfire.NetCore\" \"netstandard2.0\"\n\n    Collect-Assembly \"Hangfire.NetCore\" \"net461\"\n    Collect-Assembly \"Hangfire.AspNetCore\" \"net461\"\n\n    Collect-Assembly \"Hangfire.AspNetCore\" \"netcoreapp3.0\"\n    Collect-Assembly \"Hangfire.NetCore\" \"netstandard2.1\"\n    \n    Collect-Tool \"src\\Hangfire.SqlServer\\DefaultInstall.sql\"\n\n    Collect-Localizations \"Hangfire.Core\" \"net451\"\n    Collect-Localizations \"Hangfire.Core\" \"net46\"\n    Collect-Localizations \"Hangfire.Core\" \"netstandard1.3\"\n    Collect-Localizations \"Hangfire.Core\" \"netstandard2.0\"\n\n    Collect-File \"README.md\"\n    Collect-File \"LICENSE.md\"\n    Collect-File \"NOTICES\"\n    Collect-File \"COPYING.LESSER\"\n    Collect-File \"COPYING\"\n    Collect-File \"LICENSE_STANDARD\"\n    Collect-File \"LICENSE_ROYALTYFREE\"\n}\n\nTask Pack -Depends Collect -Description \"Create NuGet packages and archive files.\" {\n    $version = Get-PackageVersion\n\n    Create-Package \"Hangfire\" $version\n    Create-Package \"Hangfire.Core\" $version\n    Create-Package \"Hangfire.SqlServer\" $version\n    Create-Package \"Hangfire.SqlServer.Msmq\" $version\n    Create-Package \"Hangfire.AspNetCore\" $version\n    Create-Package \"Hangfire.NetCore\" $version\n\n    Create-Archive \"Hangfire-$version\"\n}\n\nTask Sign -Depends Pack -Description \"Sign artifacts.\" {\n    $version = Get-PackageVersion\n    Sign-ArchiveContents \"Hangfire-$version\" \"hangfire\"\n}\n"
+    },
+    {
+      "url": "https://github.com/hangfire-postgres/Hangfire.PostgreSql/blob/a5a728233ac8feb447695acb01f607bd848b00f7/.github/workflows/pack.yml",
+      "gitBlobSha1": "3aca17a3f7fe3f17f4b3c17ccf53ece2c9aa15d9",
+      "sha256": "3cec3dd42628375e1c3dd02320fc30352fa385ed78c6573b26e78034da326c81",
+      "content": "name: Build and tests\n\non:\n  workflow_dispatch:\n  push:\n    branches: [\"master\"]\n    paths: [\"src/**\"]\n\njobs:\n  build:\n    runs-on: ubuntu-latest\n\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Setup .NET\n        uses: actions/setup-dotnet@v4\n        with:\n          dotnet-version: 9.0.x\n      - name: Restore dependencies\n        run: dotnet restore\n      - name: Build\n        run: dotnet build --no-restore -c Release\n      - name: Pack\n        run: dotnet pack -c Release --no-build --output publish\n      - name: Upload a Build Artifact\n        uses: actions/upload-artifact@v4\n        with:\n          name: Package\n          path: publish/**.nupkg\n\n  test:\n    permissions: write-all\n    runs-on: ubuntu-latest\n\n    services:\n      postgres:\n        image: postgres\n        env:\n          POSTGRES_PASSWORD: postgres\n          POSTGRES_HOST_AUTH_METHOD: trust\n          TZ: UTC+13\n          PGTZ: UTC+13\n        options: >-\n          --health-cmd pg_isready\n          --health-interval 10s\n          --health-timeout 5s\n          --health-retries 5\n        ports:\n          - 5432:5432\n\n    steps:\n      - name: Checkout\n        uses: actions/checkout@v4\n        with:\n          fetch-depth: 0\n      - name: Setup .NET\n        uses: actions/setup-dotnet@v4\n        with:\n          dotnet-version: 9.0.x\n      - name: Restore dependencies\n        run: dotnet restore\n      - name: Build\n        run: dotnet build -c Release --no-restore\n      - name: Test\n        run: dotnet test -c Release --no-build --verbosity normal --logger \"trx;LogFileName=TestResults.trx\" || true\n      - name: Test Report\n        uses: dorny/test-reporter@v1\n        if: always()\n        with:\n          name: Test results\n          path: \"**/TestResults.trx\"\n          reporter: dotnet-trx\n          fail-on-error: true\n"
+    },
+    {
+      "url": "https://github.com/hangfire-postgres/Hangfire.PostgreSql/blob/a5a728233ac8feb447695acb01f607bd848b00f7/src/Common/Hangfire.targets",
+      "gitBlobSha1": "65bdabebc3e21b22d309d5e5dc333b0d282aa586",
+      "sha256": "3197fcb6fcc7e27f50fad9c360778c279464923de52414c914ec936a4173496a",
+      "content": "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<Project ToolsVersion=\"4.0\" DefaultTargets=\"Build\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n  <PropertyGroup Condition=\"'$(ArtifactsDir)' != ''\">\n    <OutputPath Condition=\"$(UseBinPath) == ''\">$(ArtifactsDir)\\$(MSBuildProjectName)</OutputPath>\n    <OutputPath Condition=\"$(UseBinPath) == 'true'\">$(ArtifactsDir)\\$(MSBuildProjectName)\\bin</OutputPath>\n  </PropertyGroup>\n\n  <PropertyGroup>\n    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)Hangfire.ruleset</CodeAnalysisRuleSet>\n    <RunCodeAnalysis Condition=\"'$(RunCodeAnalysis)' == ''\">false</RunCodeAnalysis>\n    <NoWarn>1591</NoWarn>\n    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>\n  </PropertyGroup>\n\n  <PropertyGroup Condition=\"'$(RunCodeAnalysis)' == 'true'\">\n      <DefineConstants>$(DefineConstants);CODE_ANALYSIS</DefineConstants>\n      <VisualStudioVersion>11.0</VisualStudioVersion>\n  </PropertyGroup>\n\n  <PropertyGroup Condition=\"'$(OS)' != 'Windows_NT'\">\n      <DefineConstants>$(DefineConstants);MONO</DefineConstants>\n  </PropertyGroup>\n\n  <PropertyGroup Condition=\"'$(KeyFile)' != '' And '$(DisableSigning)' != 'true'\">\n    <DefineConstants>$(DefineConstants);SIGNED</DefineConstants>\n    <SignAssembly>true</SignAssembly>\n    <DelaySign>true</DelaySign>\n    <AssemblyOriginatorKeyFile>$(KeyFile)</AssemblyOriginatorKeyFile>\n  </PropertyGroup>\n\n  <ItemGroup Condition=\"Exists('$(MSBuildThisFileDirectory)GlobalSuppressions.cs')\">\n    <Compile Include=\"$(MSBuildThisFileDirectory)GlobalSuppressions.cs\">\n        <Link>GlobalSuppressions.cs</Link>\n    </Compile>\n  </ItemGroup>\n\n  <ItemGroup>\n  <CodeAnalysisDictionary Include=\"$(MSBuildThisFileDirectory)CodeAnalysisDictionary.xml\" />\n  </ItemGroup>\n</Project>"
+    }
+  ]
+}

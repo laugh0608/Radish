@@ -262,7 +262,7 @@ export const PostAnswerLifecycleSection = ({
   }, [t]);
 
   const handleUploadError = useCallback((kind: 'image' | 'document', uploadError: unknown) => {
-    log.error('PostAnswerLifecycleSection', `Answer ${kind} upload failed:`, uploadError);
+    log.error('PostAnswerLifecycleSection', '回答附件上传失败:', uploadError, { kind });
   }, []);
 
   const reloadAfterMutation = useCallback(async (message: string) => {

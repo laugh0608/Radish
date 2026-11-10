@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
-using AutoMapper;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
@@ -1311,7 +1310,6 @@ public class ExperienceServiceTest
         }
 
         return new ExperienceService(
-            CreateMapper(),
             (userExpRepository ?? new Mock<IBaseRepository<UserExperience>>(MockBehavior.Loose)).Object,
             (expTransactionRepository ?? new Mock<IBaseRepository<ExpTransaction>>(MockBehavior.Loose)).Object,
             resolvedLevelConfigRepository.Object,
@@ -1326,57 +1324,6 @@ public class ExperienceServiceTest
             timeProvider,
             businessCalendar,
             operationIdempotencyService: operationIdempotencyService?.Object);
-    }
-
-    private static IMapper CreateMapper()
-    {
-        var mapper = new Mock<IMapper>(MockBehavior.Strict);
-        mapper
-            .Setup(service => service.Map<List<LevelConfigVo>>(It.IsAny<object>()))
-            .Returns((object source) =>
-            {
-                var levelConfigs = (source as IEnumerable<LevelConfig>)?.ToList() ?? [];
-                return levelConfigs.Select(MapLevelConfig).ToList();
-            });
-        mapper
-            .Setup(service => service.Map<List<UserExpDailyStatsVo>>(It.IsAny<object>()))
-            .Returns((object source) =>
-            {
-                var dailyStats = (source as IEnumerable<UserExpDailyStats>)?.ToList() ?? [];
-                return dailyStats.Select(MapDailyStats).ToList();
-            });
-        mapper
-            .Setup(service => service.Map<List<ExpTransactionVo>>(It.IsAny<object>()))
-            .Returns((object source) =>
-            {
-                var transactions = (source as IEnumerable<ExpTransaction>)?.ToList() ?? [];
-                return transactions.Select(MapExpTransaction).ToList();
-            });
-        mapper
-            .Setup(service => service.Map<LevelConfigVo>(It.IsAny<object>()))
-            .Returns((object source) => MapLevelConfig((LevelConfig)source));
-        mapper
-            .Setup(service => service.Map<UserExperienceVo>(It.IsAny<object>()))
-            .Returns((object source) =>
-            {
-                var item = (UserExperience)source;
-                return new UserExperienceVo
-                {
-                    VoUserId = item.UserId,
-                    VoCurrentLevel = item.CurrentLevel,
-                    VoCurrentExp = item.CurrentExp,
-                    VoTotalExp = item.TotalExp,
-                    VoLevelUpAt = item.LevelUpAt,
-                    VoExpFrozen = item.ExpFrozen,
-                    VoFrozenUntil = item.FrozenUntil,
-                    VoFrozenReason = item.FrozenReason,
-                    VoVersion = item.Version
-                };
-            });
-        mapper
-            .Setup(service => service.Map<ExpTransactionVo>(It.IsAny<object>()))
-            .Returns((object source) => MapExpTransaction((ExpTransaction)source));
-        return mapper.Object;
     }
 
     private static LevelConfig CloneLevelConfig(LevelConfig source)

@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-10-15。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-11-05。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -9,7 +9,7 @@
 - .NET：作为 `Radish.Common` 嵌入资源，由 `RuntimeLogPolicy` 读取；不依赖业务层。
 - Node：`Frontend/scripts/logging/runtime-event.mjs` 读取同一文件；静态服务器已接入候选输出，Dockerfile 随运行脚本复制此策略。
 - 两端运行同一组 [`runtime-events.json`](../../Scripts/logging/fixtures/runtime-events.json) 样本，不各写一份脱敏规则。
-- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器 / Flutter logger 和数据库接收仍待迁移。旧默认行为见[日志系统](../guide/logging.md)。
+- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器本地 logger 已完成本批迁移，边界见第 74 节；Flutter logger 仍待确认；数据库接收已完成 L3-A 本地切片，运行接入与迁移验收见第 75 节。旧默认行为见[日志系统](../guide/logging.md)。
 
 ## 2. 生成契约 v1 首批字段
 
@@ -53,6 +53,8 @@
 这些是 L1 的实测修订，不改变“stdout → 独立 collector → 文件 + 内网 API → 日志库”的架构。
 
 ## 5. 验证入口与剩余门禁
+
+2026-11-05 的剩余门禁与下一批候选已整理为[L1 / L2 → L3-A 衔接方案](./unified-logging-l3-ingest-plan.md)。其中列出当前仍有旧调用的自有来源；L3-A 已获批完成本地实现；实际边界见第 75 节，不改变下列已关闭来源的结论。
 
 无需启动业务服务：
 
@@ -123,7 +125,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 - API 的 `HangfireRuntimeStateFilter` 在既有 AutomaticRetry 状态选举之后观察候选结果：失败转为 Scheduled / Enqueued 时记录 `job.retrying` Warning，保留 Failed 或转为 Deleted 时记录 `job.failed` Error；普通调度、成功和无 FailedState 的停机重入队不生成失败事件。不修改次数、延迟、候选状态、异常传播或 Hangfire 存储审计。
 - 这是**存储提交前的处理决定**，不是状态已提交或跨重放恰好一次的证据。存储提交失败、进程中断或状态选举重入可产生新的事件。`operationId` 由固定前缀与 Hangfire Job ID 的 SHA-256 前 16 字节转换为 Guid，同一部署 / 存储内可关联；不输出 Job ID、参数、任务类型原文或异常正文。
-- 默认全局 AutomaticRetry 与当前清理 / Outbox 的方法属性关闭 `LogEvents`；`HangfireRuntimeLogProvider` 同时抑制该来源的重复输出。其他 Hangfire Warning / Error / Fatal 分别保留安全 `hangfire.runtime_warning / hangfire.runtime_failed`，异常仅映射 `failureKind`；不求值框架消息工厂。框架 Info 及以下降为 Debug 诊断，候选生产模式不输出。该 provider 在 AddHangfire 配置回调中接入，旧 sink 同样只能收到安全摘要。
+- 默认全局 AutomaticRetry 与当前清理 / Outbox 的方法属性关闭 `LogEvents`；`HangfireRuntimeLogProvider` 同时抑制该来源的重复输出。其他 Hangfire Warning / Error / Fatal 分别生成 `hangfire.runtime_warning / hangfire.runtime_failed`，异常仅映射 `failureKind`；不求值框架消息工厂。框架 Info 及以下降为 Debug 诊断，候选生产模式不输出。该 provider 在 AddHangfire 配置回调中接入。2026-11-04 复现的上下文合并后旧链载荷 / 候选跨事件字段混入，已由第 73 节按独立批准的范围修正；原生成端验证不代替后续最终输出证据。
 - 通知收件箱、Wiki 草稿正文、Chat 回应幂等事实只在有清理数量时生成 `job.cleanup.completed`；收件箱只删除关系也属于有效变更。容量告警按本批用户数量聚合为 `job.cleanup.capacity_warning`，不输出 tenant / user 标识。仓储异常继续抛给 Hangfire，不在 Job 重复记录 Error。
 - 文件软删除、临时文件、回收站和孤立附件清理使用局部批次计数。成功一次 Info，缺失文件 / 空目录清理异常一次 Warning，已消费的主流程 / 单项异常一次 Error；混合结果为 partial。空批次或仅引用保护跳过保持安静。原有“单项失败继续、外层失败返回 0”、保留期、分片目录排除和引用保护保持不变，不新增重试。
 - 文件 `processedCount` 沿用原返回计数口径：软删除 / 孤立附件可包含源文件缺失的已处理记录；`movedCount` 才表示实际移动的主文件与缩略图数量。两者不可互换。`missingCount / failedCount / directoryFailureCount / skippedCount / removedDirectoryCount` 分别记录缺失、已消费异常、目录异常、引用保护与删除空目录数量；不包含路径、文件名或附件身份。
@@ -692,3 +694,56 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Gateway 改用 RuntimeLoggingSession.AttachGatewayLifetime：候选保留 started、由一个受控 stopped 回调记录；旧链补充同一 ApplicationStopped 通知的受控输出。复用 `runtime.stopped`（非诊断 Information、lifecycle，无业务属性），删除 RunAsync 返回后的额外日志；旧 logger 仍归宿主释放，候选 logger 仍归 Session 释放。停止通知不保证后续宿主 / logger Dispose 成功，不新增 Auth / API 旧链生命周期接管。注册本身、Stopping 和未发出 Stopped 的路径均不输出 stopped；Session 释放注销回调。
 - 同来源未知编码改为 `runtime.program_unknown`，保持原等级，低于 Warning 标为 diagnostic；已知事件不依赖 Diagnostics 开关，仍受 MinimumLevel 约束。字段按事件分别校验，跨事件或类型错误的属性丢弃。
 - 四模式、真实静态 Hangfire 注册 + 存储替身、SQLite 内存表查询、同步服务替身 / 既有真实服务回归、受控停止通知及 HostBuilder Build / Dispose、scope / WriteTo / AuditTo / 应急通道验证见[本批记录](../records/unified-logging-l2-program-operations-2026-10-15.md)。未启动项目服务 / Hangfire worker、访问真实数据库或绑定端口；不能代替调度执行、真实存储事务、系统停机和部署验收。浏览器输出未扩展，生产候选开关仍关闭，L2 未整体完成。
+
+## 73. L2 Hangfire provider / 状态观察器最终输出
+
+- API 的两个自有生产者分别绑定 `Radish.Api.Services.HangfireRuntimeLogProvider` 与 `Radish.Api.Services.HangfireRuntimeStateFilter` 完整 SourceContext。新 `HangfireLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 与候选输出；其他来源及来源格式不匹配的事件沿原链传递，不按 Hangfire 前缀截获第三方日志。
+- provider 的 `hangfire.runtime_warning / hangfire.runtime_failed / hangfire.diagnostic` 只保留登记的 failureKind；没有异常时生产者显式设置 null，避免普通 LogContext / AddPropertyIfAbsent enricher 填入同名故障类型。provider 不接受环境 operationId、jobKind、outcome 或 count；消息工厂和原异常正文仍不求值，AutomaticRetry 重复来源仍安静，null messageFunc 的级别查询 / 返回语义保持。
+- 状态观察器的 `job.retrying / job.failed` 仅保留 failureKind、与事件一致的 outcome 及规范小写 D 格式的 operationId；关联 ID 仍由固定前缀与原 Job ID 的 SHA-256 派生。实际重试次数 / 延迟、候选状态、原异常、存储 / 事务 / 提交和方法属性不变，事件继续只描述提交前的处理决定。
+- 各来源未知、缺失、非字符串或不属于该来源的编码，分别转为 `hangfire.runtime_unknown / job.state_unknown`，不保留业务扩展字段。固定模板 / 来源 / job 分类、原 Timestamp / 等级及 diagnostic 重建；Exception、原模板、任意 scope / 嵌套值与跨事件属性丢弃。trace / span 仅采用强类型 LogEvent 值或原 Activity 回退，不从自由字符串恢复。
+- `hangfire.diagnostic` 与未知低于 Warning 的事件标记 diagnostic；候选继续按模式、Diagnostics、MinimumLevel 和三级 / Fatal 策略过滤。旧链保留原 MinimumLevel，不新增环境过滤或将 Fatal 降级；代码 / 配置 WriteTo 继续消费 sink 输出故障，AuditTo 继续传播，候选沿原应急通道处理输出失败，logger 释放所有权与故障行为保持。
+- 这些标识用于已登记生产路径的重建，不认证进程内任意恶意代码；外部 enricher 的提前求值和独立 logger 不自动受保护。Debug / Release 严格构建、各 222 项定向回归（各含 83 项新增 Hangfire 专项）、4 个新增共享 fixture 与 52 项 Node 契约通过，见[实施记录](../records/unified-logging-l2-hangfire-output-2026-11-04.md)。真实服务 / worker、真实存储、文件 / 数据库落盘和部署未验收；只关闭这两个来源的本次缺口，浏览器输出未扩展，生产候选开关关闭，L2 尚未整体完成。
+
+## 74. L2 浏览器公共安全出口与三级（2026-11-05）
+
+- 按[已批准方案](./unified-logging-l2-browser-output-plan.md)完成 `@radish/http/logging` 公共子路径、Client / Console 真实 logger 和共享 HTTP 五处错误出口。两应用旧 sanitizer 仅重导出，Node 静态宿主与后端候选开关不变。
+- 固定应用来源、精确 tag / message 目录和逐事件字段规则决定输出；Client 328 项、Console 153 项说明覆盖当前 484 处直接调用。动态模板 / 翻译说明改为固定消息与受控枚举；目录覆盖测试同时检查遗漏和闲置条目，未知文本转为固定未登记摘要。
+- 三级为 Info / Warning / Error；debug 保留调用兼容，转为 Info + diagnostic。仅 env.isDev 且 env.debug 时生成诊断；Production 即使 runtime debug=true 也禁止诊断。已复核的 11 处 Info 中六处过程日志转为诊断，五处明确状态 / 结果保留 Info。
+- 字段只接受本事件登记的整数范围、布尔和封闭枚举；没有通用字符串或数字放行，也不复制完整对象。异常不读取文本访问器；安全位置仅保留已识别应用资源类别及行列。Proxy 反射失败、循环、超深对象、敏感键和自定义转换不造成原文透传。
+- 最终 console 仅接收固定格式串及序列化快照；最多 32 个参数、32 个业务属性、4 个异常摘要 / 各 32 帧，UTF-8 JSON 上限 8 KiB。超限优先省略位置，保留固定说明并标记裁剪；输出器故障被日志边界隔离，重入不递归。
+- 共享 HTTP 保留原回调参数与次数、Response、一次刷新重放、网络 / 服务器失败和认证失效通知。已有非 Error 包装、调用前实参求值与业务错误解读仍属于原业务路径，不把日志内不读取访问器扩大为所有调用方均无输入访问。
+- 这是浏览器本地安全快照，不是服务器 RuntimeLogEvent 入库或跨容器汇聚证据；不自动回传日志，不接管第三方 SignalR / 浏览器自身输出。现行规则见[前端日志说明](../guide/frontend-logging.md)，候选、测试和构建事实见[实施记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。真实服务、PC / mobile Smoke、部署未执行，L1 剩余门禁、L2 整体和 L3–L6 仍未关闭。
+
+## 75. L3-A 内网接收与幂等持久化（2026-11-05）
+
+- `RadishLogging:Ingest:Enabled=false` 默认保持；专用端口与 collector 凭据在读取 body 前校验，公共 API 端口和 Gateway 拒绝 `/internal`，专用端口拒绝业务 / 文档 / Hub。Controller 仅注入 `IRuntimeLogIngestService`，不使用用户 JWT 或公开 Console 权限。
+- JSONL 按行及 16 MiB / 32768 条候选预算读取，严格 UTF-8、重复字段与深度检查；共享策略校验固定说明、来源、模式与属性。每 200 条内部事务提交一次，全包成功前不返回 200；语义拒收只记安全日桶。格式 / 超限失败可能已有提交前缀，不返回假成功。
+- Log 库增加 `runtime_log_event` 与 `runtime_log_rejection_bucket`，migration 为 `20261105_023_runtime_log_ingest`。唯一键 `(deployment_id,event_id)` 处理重放；同键异内容拒收、不覆盖；保留原 eventId / UTC 毫秒时间，存储主键和入库时间独立。新表不继承旧分表或软删除模型。
+- Repository 选择既有 Log 配置，用独立参数化事务避开 ORM 日志 / 业务事务；API 不建表。拒收桶保留当前 UTC 日及此前 6 日，每次事务最多清理 200 个过期桶，旧运行 / 审计表不变。
+- 接收分支不进入通用 body audit，主日志链抑制接收作用域及 Hosting 的正常 `/internal` 请求事件；失败走独立限频 stderr。SQLite PRAGMA catch 改为固定操作 / failureKind 摘要，仍返回 false，不改变初始化重试或事务行为。
+- 内存 HTTP 与临时 SQLite 的认证 / 端口分流、预算、取消、并发、幂等、回滚、迁移和最终输出回归见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。PostgreSQL 16、真实监听 / collector、ENOSPC、部署恢复和旧版回滚尚未验收；L1 / L2 / L3 整体未关闭。
+- 完整配置、响应与下一顺位见[衔接方案](./unified-logging-l3-ingest-plan.md)。生产链路、浏览器 / Native 回传、Console 查询和告警未开启。
+
+
+## 76. L2 剩余自有操作及直接异常消费者（2026-11-05）
+
+- 按[衔接方案第 8 节](./unified-logging-l3-ingest-plan.md#8-已批准切片剩余七个自有来源)完成 UserController、ClientController、Bootstrap、通知去重、聊天搜索、限流与经验扩展。聊天搜索 / 经验扩展无保留输出；其他五个精确来源由 `ApplicationOperationLogSink` 重建，另覆盖 Client 写入异常的直接消费者 `Radish.Api.ErrorHandling.ApiExceptionHandler`。
+- User 两种降级为 `user.current_permissions_degraded / user.current_avatar_degraded`；Bootstrap 为 `bootstrap.reward_degraded`，均为非致命 Error、application 分类，仅保留 failureKind。原正常用户过程与搜索 Info、通知正常 Debug、经验注册 Info 移除；空权限集 / 忽略头像、创建管理员后的奖励失败消费、缓存检查失败放行与写入 / 删除失败消费保持。
+- Client 固定 EventId 为 `1/ClientListFailed`、`2/ClientDetailFailed`、`3/ClientCreated`、`4/ClientUpdated`、`5/ClientSoftDeleted`、`6/ClientSecretReset`；分别映射 `client.management.list_failed / detail_failed / created / updated / soft_deleted / secret_reset`。前两项只保留 failureKind，后四项无扩展字段；写入失败仍外抛既有 BusinessException，不另增本地失败事件。原 manager 调用及返回数据保持，密钥仍仅存在授权业务响应中。
+- NotificationDedup 固定 EventId 为 `1/DedupCheckFailed`、`2/DedupRecordFailed`、`3/DedupClearFailed`；映射 `notification.dedup.check_failed / record_failed / clear_failed`，只保留 failureKind。源码仅检出两个构造注入，未检出业务方法调用；直接服务回归不等于生产链触达，不借本批补接业务。
+- 限流只保留一个 `rate_limit.configured` 注册返回摘要，字段 `rateLimitState=enabled|disabled`；不表示中间件已处理请求。`rate_limit.whitelist_observed / blacklist_observed / rejected` 为 Info + diagnostic，生成端要求 `RateLimit.EnableLogging=true`、Development 宿主、`RadishLogging.Mode=Development` 且 `Diagnostics=true`；旧 / 候选最终输出再次执行宿主诊断门禁，不信任事件自带 Diagnostic。注册时确定模式与诊断配置，不承诺热切换。
+- 限流观察不输出 IP、路径、请求头、方法原文或 Lease。黑名单分区仍返回 GetNoLimiter；实际拒绝回调仍可由命名策略触发 403，普通限流维持 429 / Retry-After。`blacklist_observed` 只表示匹配，不能解释为已拒绝；本批不修复既有黑名单决策或代理地址信任规则。
+- 直接异常消费者以 `EventId(1, ApiRequestFailed)` 映射既有 `http.failed`，仅保留 int 500–599 状态与 failureKind、http 分类；仍在响应写入成功之后记录。此前旧链泄漏任意 scope 的直接消费路径已补齐，不增加第二个异常所有者。
+- 六个精确来源在上下文合并后重建旧链代码 / 配置 WriteTo、AuditTo 和候选输出；保留原时间 / 等级、固定分类与强类型 trace/span，不传原模板、异常对象、字符串关联键、身份、任意 scope 或跨事件字段。未知身份分别进入 `user.current.unknown / client.management.unknown / bootstrap.unknown / notification.dedup.unknown / rate_limit.unknown / http.handler.unknown`；Warning 以上保留安全摘要，较低等级仅显式开发诊断。相邻来源不匹配。
+- WriteTo 输出故障继续被消费；AuditTo 仍可传播异常。Client 写入完成后的 AuditTo 故障仍会被原 catch 包装，先前业务副作用不撤销；候选 writer 失败走既有限频安全应急通道。独立 logger、外部 enricher 提前求值及其他来源不自动受保护。
+- 本地实现、四模式 / 配置 AuditTo / 代码 console、内存限流、直接异常消费、scope 污染及故障回归见[实施记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。没有安装依赖、启动服务 / 容器、绑定端口或连接真实存储。L1 剩余门禁、L2 其他已登记来源最终出口、L3 真实链路与后续查询 / 告警仍未关闭。
+
+## 77. API Controller 最终输出边界（2026-11-05）
+
+- 按[衔接方案第 9 节](./unified-logging-l3-ingest-plan.md#9-下一批api-controller-最终输出收口)完成 Coin、PaymentPassword、Attachment、Shop、Reaction、PostQuickReply、Poll、Lottery、Question、Post、Comment、Tag、Category、Sticker 共 14 个 Controller 的精确来源适配；有限事件目录沿用该节表格，不按 `http.failed` 等共享 EventCode 全局拦截。
+- Serilog 生成点使用本 Controller 的固定 SourceContext；Attachment 使用命名 EventId `1/AttachmentUploadFailed → http.failed`、`2/UploadAccountingFailed → upload.cleanup.failed`，不能仅由 scope EventCode 选择事件。
+- 上述已登记事件只保留封闭 failureKind；`http.failed` 另允许 int 500–599 的 statusCode，`upload.cleanup.failed` 另允许 quota-complete / quota-release 的 cleanupOperation。其他事件不继承这两个字段。http.failed、Coin 三种拒绝、Shop 取消 / 重试拒绝固定 http 分类，其余固定 application，旧 business 分类不进入候选类别集合。
+- `ApplicationOperationLogSink` 在 scope 合并后重建代码 console、配置 WriteTo / AuditTo 和候选输出，剔除任意属性、原模板、异常对象及自由字符串关联键；保留 Timestamp / Level 与强类型 trace/span。邻接类型和 Service 同名事件不匹配，原有六来源规则保持。
+- 每个 Controller 的未知 / 缺失 / 跨来源身份进入 `controller.{owner}.unknown`；owner 为 coin、payment_password、attachment、shop、reaction、quick_reply、poll、lottery、question、post、comment、tag、category、sticker。共享事件目录同步固定说明。Warning 以上保留安全摘要；更低等级仅 Development 宿主、Development 模式且显式 Diagnostics 时输出，不信任载荷 Diagnostic。
+- 原 catch 类型、结果构造 / 本地化 / Message 求值顺序、状态与业务副作用不变。第 57 节的早期消费边界继续保持；本批不增加重试、回滚或全请求去重。WriteTo 故障仍消费，AuditTo 仍可传播；候选输出故障走既有限频应急通道。
+- 本地最终出口、真实 action 与定向反射消费方法、原业务回归及证据限制见[实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)。不据此关闭 Service / Job / Hub、真实 File / DB 故障、运行 Smoke 或 L2 整体；生产开关保持关闭。

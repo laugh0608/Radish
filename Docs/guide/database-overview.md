@@ -10,6 +10,8 @@
 
 ## 1. 当前逻辑库划分
 
+正式数据库 provider 仅支持 PostgreSQL 与 SQLite。业务连接和分库租户由 SqlSugar 管理；OpenIddict 使用 EF Core，Hangfire 使用各自的存储 provider。枚举中保留其他数据库的历史数值以兼容配置 / 数据标识，但启用或使用时会在连接前明确拒绝，不会自动改用 SQLite。依赖采用 `SqlSugarCoreNoDrive` 与显式 PG / SQLite 驱动，仍包含 SqlClient / SNI 传递资产，不能据包内存在驱动推定产品支持该数据库。
+
 共享配置 [`appsettings.Shared.json`](../../appsettings.Shared.json) 当前定义了四个逻辑库连接：
 
 | ConnId | 默认本地类型 | 默认连接串名 | 主要职责 |
@@ -63,6 +65,7 @@
 ### 多库边界
 
 - `Log` 作为共享日志库，不要把它当普通业务库使用
+- L3-A 新增 `runtime_log_event` / `runtime_log_rejection_bucket`，由 Log scope 的 `20261105_023_runtime_log_ingest` migration 管理；不继承旧分表与业务软删除。默认关闭接收，既有日志 / 审计表保留，配置与本地验证边界见[接收入库方案](../features/unified-logging-l3-ingest-plan.md)
 - `Message` 与 `Chat` 的存在，意味着高频消息类数据已经开始按职责隔离
 - 需要新增独立逻辑库前，应先确认是否真有性能、数据生命周期或边界隔离需求
 

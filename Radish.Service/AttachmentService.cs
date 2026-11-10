@@ -1,4 +1,4 @@
-using AutoMapper;
+using Radish.Service.Mapping;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Radish.Common.AttributeTool;
@@ -35,7 +35,6 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
     private readonly string _tempPath;
 
     public AttachmentService(
-        IMapper mapper,
         IBaseRepository<Attachment> baseRepository,
         IFileStorage fileStorage,
         IImageProcessor imageProcessor,
@@ -43,7 +42,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
         IChatChannelAccessService chatChannelAccessService,
         IWikiAttachmentAccessService wikiAttachmentAccessService,
         IOptions<FileStorageOptions> fileStorageOptions)
-        : base(mapper, baseRepository)
+        : base(new AttachmentMapper(attachmentUrlResolver).ToAttachmentVo, baseRepository)
     {
         _attachmentRepository = baseRepository;
         _fileStorage = fileStorage;
@@ -169,7 +168,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                         var physicalFileExists = await _fileStorage.ExistsAsync(existingAttachment.StoragePath);
                         if (physicalFileExists)
                         {
-                            return Mapper.Map<AttachmentVo>(existingAttachment);
+                            return MapToVo(existingAttachment);
                         }
                         else
                         {
@@ -268,7 +267,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             attachment.Id = attachmentId;
             attachmentPersisted = true;
 
-            return Mapper.Map<AttachmentVo>(attachment);
+            return MapToVo(attachment);
         }
         catch (BusinessException)
         {
@@ -378,7 +377,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
                  && !a.IsDeleted
         );
 
-        return Mapper.Map<List<AttachmentVo>>(attachments);
+        return MapToVoList(attachments);
     }
 
     public async Task<AttachmentVo?> GetAccessibleByIdAsync(
@@ -400,7 +399,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             return null;
         }
 
-        return Mapper.Map<AttachmentVo>(attachment);
+        return MapToVo(attachment);
     }
 
     public async Task<List<AttachmentVo>> GetAccessibleByBusinessAsync(
@@ -426,7 +425,7 @@ public class AttachmentService : BaseService<Attachment, AttachmentVo>, IAttachm
             }
         }
 
-        return Mapper.Map<List<AttachmentVo>>(accessibleAttachments);
+        return MapToVoList(accessibleAttachments);
     }
 
     public async Task<AttachmentAssetDto?> GetAttachmentAssetAsync(long attachmentId)

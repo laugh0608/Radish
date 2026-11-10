@@ -1,0 +1,18 @@
+SQLitePCLRaw.lib.e_sqlite3 3.53.3
+Authors: Eric Sink
+Copyright: Copyright 2014-2026 SourceGear, LLC
+Package license metadata: file:LICENSE.txt
+Project: https://sqlite.org/
+Package source commit: e7d537a1576bac9d7452411c4468640fa730de3e
+Usage: runtime
+Radish does not modify the package binaries in this integration.
+Notice copies only normalize encoding, line endings and trailing whitespace.
+
+Materials:
+- LICENSE.txt (package-license)
+  Source: https://api.nuget.org/v3-flatcontainer/sqlitepclraw.lib.e_sqlite3/3.53.3/sqlitepclraw.lib.e_sqlite3.3.53.3.nupkg [LICENSE.txt]
+  Original SHA256: 99464c3a88df7b708ce59e462cdcb85f72dfc9b1335b4fcc68be56131b634b95
+  Distributed SHA256: 6ea0f46456e631703902146c937a94c7664d433b0671cd1c75af19a87de02fe9
+
+Remaining evidence:
+- No additional component-specific gap recorded in this focused material review. This is not full release clearance.
