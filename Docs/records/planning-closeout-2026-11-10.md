@@ -49,4 +49,12 @@ Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误。定�
 | 诊断开关 | 外层 `Diagnostic=true` 使候选 Production 丢掉整条失败摘要。候选 Development 和两个旧链出口均把该失败摘要标为诊断事件 |
 | 异常归属 | 批量值 0 限制为 1，空批次返回 0。扫描异常原样传播，两种情况均无 Job 摘要。输出失败时 WriteTo 和候选仍返回 1，候选产生安全的 `pipeline.output_failed`。AuditTo 抛出的聚合异常保留原 sink 故障实例 |
 
-用 `CustomAfterMicrosoftCommonTargets` 仅向 `Radish.Api.Tests` 导入临时探针。`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore` 过滤 `LotteryFinalOutputProbe`、`BusinessJobLoggingTests` 和 `LotteryControllerLoggingTests`，共 78 项通过，其中 13 项为探针。既有抽奖测试含本地 SQLite 事务、审计和 Outbox 回归。探针验证到本地输出，真实 Hangfire 调度、生产介质和 collector 仍待对应环境验收。实施范围见[抽奖 Job 最终输出提案](../features/unified-logging-l3-ingest-plan.md#l2-lottery-job-output)。
+用 `CustomAfterMicrosoftCommonTargets` 仅向 `Radish.Api.Tests` 导入临时探针。`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore` 过滤 `LotteryFinalOutputProbe`、`BusinessJobLoggingTests` 和 `LotteryControllerLoggingTests`，共 78 项通过，其中 13 项为探针。既有抽奖测试含本地 SQLite 事务、审计和 Outbox 回归。探针验证到本地输出，真实 Hangfire 调度、生产介质和 collector 仍待对应环境验收。实施范围见[衔接方案第 10.4 节](../features/unified-logging-l3-ingest-plan.md#l2-lottery-job-output)。
+
+<a id="l2-lottery-job-output-implementation"></a>
+
+## 抽奖 Job 最终输出实施
+
+所有者确认后，在既有 `BusinessJobLogSink` 接线中为 `PostLotteryJob` 增加独立事件与字段白名单。Production 候选在合成外层 `Diagnostic=true` 下仍输出普通完成和失败摘要。旧链与候选都移除无关计数、scope `operationId` 和成功事件继承的 `failureKind`，保留本批计数及类型化 trace / span。业务生成端、事务及调度代码沿用原实现。见[事件契约第 79 节](../features/unified-logging-contract.md#l2-lottery-job-final-output)。
+
+Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误。定向 .NET 回归 327 项通过，覆盖两环境的配置 WriteTo / AuditTo、候选 JSONL、代码 console、抽奖 SQLite 业务回归和相邻日志适配。`npm run check:logging-contract` 70 项通过。配置输出用测试 sink / writer，真实 Hangfire 调度、生产介质和 collector 仍待目标环境验收。

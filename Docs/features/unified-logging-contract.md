@@ -755,3 +755,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 精确来源为 `Radish.Service.Jobs.BusinessJobSummary`，覆盖商城取消、权益到期、商城日报、评论高亮和保留奖励五个入口。三个既有 `job.batch.completed / warning / failed` 事件保留原等级、时间和类型化 trace / span，固定 `SourceCategory=job` 及 `Diagnostic=false`。抽奖 Job 等同名事件沿各自的来源处理。
 - `BusinessJobLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选输出。只保留该 helper 的五种 `jobKind`、事件允许的 `outcome`、六项非负计数及有界 `durationMs`，只有失败事件保留封闭 `failureKind`。剔除原模板、异常对象、字符串关联键、无关字段和普通 scope。精确来源上未登记的事件使用既有 `runtime.unclassified` 安全摘要，等级低于 Warning 时标为诊断。
 - 原业务计数、返回、锁释放、事务、重试和异常归属保持。WriteTo 输出失败仍由该链消费，AuditTo 仍可传播，候选输出走既有限频应急。五入口回归和商城取消的真实配置输出证据见[实施记录](../records/planning-closeout-2026-11-10.md#l2-job-output-implementation)。真实任务调度、File / DB sink、collector 以及 L2 整体继续沿各自验收条件。
+
+<a id="l2-lottery-job-final-output"></a>
+
+## 79. L2 抽奖 Job 最终输出（2026-11-10）
+
+- 精确来源为 `Radish.Service.Jobs.PostLotteryJob`。`ExecuteAutoDrawAsync` 保留 `job.batch.completed`（Information，`succeeded`）与 `job.batch.failed`（Error，`partial` / `failed`）。`BusinessJobLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选输出。固定 `SourceCategory=job`、`jobKind=post-lottery`、`Diagnostic=false`，保留原事件时间与类型化 trace / span。
+- 摘要只携带原批次的非负 `processedCount` / `failedCount`、有界 `durationMs`、对应的 `outcome`，失败时保留封闭 `failureKind`。适配使用固定模板，剔除外层 scope、字符串关联值和异常对象。该来源的 `job.batch.warning` 等未登记事件按 `runtime.unclassified` 安全摘要处理，等级低于 Warning 时标为诊断。同名异来源沿各自规则处理。
+- 空批次保持安静，原扫描异常交给 Hangfire，单项失败继续处理。保留去重、返回值、开奖事务、审计与 Outbox，以及 WriteTo、AuditTo 和候选输出各自的故障处理。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-lottery-job-output-implementation)。真实调度、生产介质和 collector 依各自条件验收。

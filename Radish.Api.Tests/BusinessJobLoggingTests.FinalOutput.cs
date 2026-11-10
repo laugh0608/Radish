@@ -171,8 +171,10 @@ public sealed partial class BusinessJobLoggingTests
         finally { Console.SetOut(previous); }
     }
 
-    [Fact]
-    public void Sink_ShouldRejectInvalidFieldsAndUnregisteredCodesWithoutClaimingOtherSources()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Sink_ShouldRejectInvalidFieldsAndUnregisteredCodesWithoutClaimingOtherSources(bool lottery)
     {
         using var capture = new HttpBoundaryTestSink();
         var sink = new BusinessJobLogSink(capture);
@@ -180,27 +182,37 @@ public sealed partial class BusinessJobLoggingTests
         var trace = ActivityTraceId.CreateRandom();
         var span = ActivitySpanId.CreateRandom();
         var template = new MessageTemplateParser().Parse(HttpBoundaryCapture.Secret);
-        var adjacent = new LogEvent(timestamp, LogEventLevel.Warning, null, template,
-            [new("SourceContext", new ScalarValue(typeof(PostLotteryJob).FullName)), new("EventCode", new ScalarValue("job.batch.warning"))],
+        var adjacent = new LogEvent(timestamp, LogEventLevel.Error, null, template,
+            [new("SourceContext", new ScalarValue($"{typeof(PostLotteryJob).FullName}.Adjacent")), new("EventCode", new ScalarValue("job.batch.failed"))],
             trace, span);
         sink.Emit(adjacent);
         Assert.Same(adjacent, Assert.Single(capture.Events));
         capture.Events.Clear();
 
-        foreach (var code in new[] { "job.batch.failed", "job.cleanup.failed", null })
+        var source = lottery ? typeof(PostLotteryJob).FullName : typeof(BusinessJobSummary).FullName;
+        foreach (var code in new[] { "job.batch.failed", "job.batch.warning", "job.cleanup.failed", null })
         {
             var raw = new LogEvent(timestamp, LogEventLevel.Error, new IOException(Secret), template,
             [
-                new("SourceContext", new ScalarValue(typeof(BusinessJobSummary).FullName)),
-                new("EventCode", new ScalarValue(code)), new("jobKind", new ScalarValue("post-lottery")),
+                new("SourceContext", new ScalarValue(source)),
+                new("EventCode", new ScalarValue(code)), new("jobKind", new ScalarValue(lottery ? "shop-timeouts" : "post-lottery")),
                 new("outcome", new ScalarValue("succeeded")), new("failureKind", new ScalarValue(Secret)),
                 new("failedCount", new ScalarValue(-1)), new("processedCount", new ScalarValue(3L)),
                 new("durationMs", new ScalarValue(double.PositiveInfinity))
             ], trace, span);
             sink.Emit(raw);
             var value = Assert.Single(capture.Events);
-            Assert.Equal(code == "job.batch.failed" ? code : "runtime.unclassified", Scalar(value, "EventCode"));
-            Assert.Equal(EventFields.Order(), value.Properties.Keys.Order());
+            var registered = code == "job.batch.failed" || (!lottery && code == "job.batch.warning");
+            Assert.Equal(registered ? code : "runtime.unclassified", Scalar(value, "EventCode"));
+            Assert.Equal(source, Scalar(value, "SourceContext"));
+            Assert.False(Assert.IsType<bool>(Scalar(value, "Diagnostic")));
+            var fields = EventFields.AsEnumerable();
+            if (lottery && registered)
+            {
+                Assert.Equal("post-lottery", Scalar(value, "jobKind"));
+                fields = fields.Append("jobKind");
+            }
+            Assert.Equal(fields.Order(), value.Properties.Keys.Order());
             Assert.Equal(timestamp, value.Timestamp);
             Assert.Equal(LogEventLevel.Error, value.Level);
             Assert.Equal(trace, value.TraceId);
@@ -213,17 +225,19 @@ public sealed partial class BusinessJobLoggingTests
 
     private static object? Scalar(LogEvent value, string field) => Assert.IsType<ScalarValue>(value.Properties[field]).Value;
 
-    private static IDisposable PolluteSummaryScope() => LogContext.Push(
+    private static IDisposable PolluteSummaryScope(string? source = null, string jobKind = "post-lottery") => LogContext.Push(
         new PropertyEnricher("probePrivate", HttpBoundaryCapture.Secret),
-        new PropertyEnricher("SourceContext", typeof(PostLotteryJob).FullName!),
+        new PropertyEnricher("SourceContext", source ?? typeof(PostLotteryJob).FullName!),
         new PropertyEnricher("SourceCategory", "http"),
-        new PropertyEnricher("EventCode", "job.cleanup.failed"),
-        new PropertyEnricher("jobKind", "post-lottery"),
+        new PropertyEnricher("EventCode", "job.batch.warning"),
+        new PropertyEnricher("jobKind", jobKind),
+        new PropertyEnricher("outcome", "failed"),
         new PropertyEnricher("statusCode", 503),
         new PropertyEnricher("operationId", "12345678-1234-4234-8234-123456789abc"),
         new PropertyEnricher("traceId", "11111111111111111111111111111111"),
         new PropertyEnricher("spanId", "1111111111111111"),
         new PropertyEnricher("processedCount", 999),
+        new PropertyEnricher("updatedCount", 9),
         new PropertyEnricher("failureKind", "database"),
         new PropertyEnricher("Diagnostic", true));
 

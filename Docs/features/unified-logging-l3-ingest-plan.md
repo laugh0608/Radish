@@ -22,7 +22,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 本页承接总纲[四个收口批次](unified-logging-governance-design.md#closeout-batches)的前两批；后两批沿原 L4/L5/L6，不因本页只写接收入库而删除。L3-A、七个来源和 14 个 Controller 保持本地完成，不恢复为待实现。
 
-第一批按共享生成和消费链核对剩余 Service / Job / Hub。首组 Job 已完成本地最终输出收口。有限清单、诊断字段取舍和验证范围见[第 10 节](#l2-final-output-first-slice)。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
+第一批按共享生成和消费链核对剩余 Service / Job / Hub。共享后台 Job 和抽奖 Job 已完成本地最终输出收口，下一组核验文件及记录清理。有限清单、诊断字段取舍和验证范围见[第 10 节](#l2-final-output-first-slice)。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
 
 第二批将下表 L1 剩余项与 L3 实际 collector、接收器及 SQLite / PostgreSQL 组合验证：先明确目标架构、镜像、隔离存储、端口、故障方式和恢复 / 清理边界；每个尚缺条件对应一次可验结果，不追加多平台矩阵。真实运行另获授权，替身、合成格式或模块通过不能关闭真实链路。传输、磁盘、持久化与留存出口未齐时不提前进入生产切换。
 
@@ -257,12 +257,12 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 
 ### 10.1 已登记调用链
 
-以下清单按[事件契约](./unified-logging-contract.md)的精确来源分组。旧链在 `SerilogSetup.ConfigureLegacy` 合并上下文后分流，候选链经 `RuntimeLoggingConfiguration` 和 `RuntimeSerilogSink` 生成 JSONL。已有生成端及直接消费者证据按原范围引用。首组已完成本地最终输出收口，其余按组补证。
+以下清单按[事件契约](./unified-logging-contract.md)的精确来源分组。旧链在 `SerilogSetup.ConfigureLegacy` 合并上下文后分流，候选链经 `RuntimeLoggingConfiguration` 和 `RuntimeSerilogSink` 生成 JSONL。已有生成端及直接消费者证据按原范围引用。共享后台 Job 和抽奖 Job 已完成本地最终输出收口，其余按组补证。
 
 | 分组 | 实际入口与生成点 | 消费边界和证据 |
 | --- | --- | --- |
 | 首组业务 Job | `ShopJob.CancelTimeoutOrdersAsync / MarkExpiredBenefitsAsync / GenerateDailyStatsAsync`、`CommentHighlightJob.ExecuteAsync`、`RetentionRewardJob.ExecuteAsync` 均由 `ApiRecurringJobRegistration` 登记，共用 `BusinessJobSummary.Write` | 契约 §11、78 和 `BusinessJobLoggingTests`。商城取消通过真实配置验证最终出口，另外四个入口沿原方法回归 |
-| 抽奖 Job | `PostLotteryJob.ExecuteAutoDrawAsync` 用自己的 `ILogger<PostLotteryJob>` scope 写摘要，扫描异常交给 Hangfire | 契约 §11、`BusinessJobLoggingTests` 和 `LotteryControllerLoggingTests`。已复现最终输出缺口，[第 10.4 节](#l2-lottery-job-output)待确认 |
+| 抽奖 Job | `PostLotteryJob.ExecuteAutoDrawAsync` 用自己的 `ILogger<PostLotteryJob>` scope 写摘要，扫描异常交给 Hangfire | 契约 §11、79、`BusinessJobLoggingTests` 和 `LotteryControllerLoggingTests`。[第 10.4 节](#l2-lottery-job-output)已完成本地切片 |
 | 文件及记录清理 | `FileCleanupJob` 的软删除、临时文件、回收站、孤立附件入口用内部批次摘要。通知收件箱、Wiki 草稿、聊天回应三个 Job 各在 `ExecuteAsync` 用类型化 logger | 契约 §10 和 `CleanupLoggingTests`。分别核对计数、部分失败及 Hangfire 外抛 |
 | 上传及令牌清理 | `ChunkedUploadService.CleanupExpiredSessionsAsync`、`FileAccessTokenService.CleanupExpiredTokensAsync` 用 `ServiceCleanupSummary`。前台目录 / 配额失败走同 helper 的 `RecordStandaloneFailure` | 契约 §13、21–24 和 `ServiceCleanupLoggingTests`、`ChunkedUploadLoggingTests` 及附件回归。区分后台摘要、前台失败与 Controller 已收口事件 |
 | Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9 和 `OutboxNativeLoggingTests`。沿状态写入核对既有 `operationId`。Hangfire provider / 状态观察器沿用 §73 证据 |
@@ -294,10 +294,10 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 
 <a id="l2-lottery-job-output"></a>
 
-### 10.4 抽奖 Job 最终输出提案
+### 10.4 抽奖 Job 最终输出与本地验收
 
-`PostLotteryJob` 已有独立的类型化来源。现有 `BusinessJobLogSink` 只处理 `BusinessJobSummary`，抽奖的两条事件因此仍继承外层 scope。候选 JSONL 会输出合法但不属于抽奖摘要的字段，且 Production 下外层 `Diagnostic=true` 会使失败摘要整条消失。见[本地核验记录](../records/planning-closeout-2026-11-10.md#l2-lottery-job-output-audit)。
+`PostLotteryJob` 已有独立的类型化来源。修复前，`BusinessJobLogSink` 只处理 `BusinessJobSummary`，抽奖摘要会继承外层 scope。候选 JSONL 会输出合法但不属于抽奖摘要的字段，且 Production 下外层 `Diagnostic=true` 会使失败摘要整条消失。见[本地核验记录](../records/planning-closeout-2026-11-10.md#l2-lottery-job-output-audit)。
 
 1. 复用 `BusinessJobLogSink` 和既有日志接线，为精确来源 `Radish.Service.Jobs.PostLotteryJob` 定义独立的事件和字段白名单。只登记 `job.batch.completed`（Information、`succeeded`）与 `job.batch.failed`（Error、`partial` / `failed`）。输出采用固定模板、`sourceCategory=job`、`jobKind=post-lottery`、本批次的 `processedCount` / `failedCount` / `durationMs`，失败事件另保留封闭 `failureKind`。两条均为普通事件，保留原时间及类型化 trace / span，排除 scope 的 `operationId`、普通上下文和原异常。该来源的未登记事件按安全通用事件处理，同名异来源保持各自归属。
 2. 保留现有扫描条件、顺序、批量边界、帖子去重、返回值和单项失败后继续处理。开奖服务的事务、审计、Outbox 和 Hangfire 的扫描异常归属保持原行为。配置 WriteTo 消费 sink 故障，AuditTo 保留异常传播，候选输出故障沿用有限应急。
-3. 定向回归覆盖两种环境的配置 WriteTo / AuditTo 与候选 JSONL、旧链代码 console、scope 污染和同名异来源。验证完成、部分失败、全部失败、空批次、扫描异常、批量边界与去重，复跑抽奖业务回归。真实调度、生产日志介质和 collector 留到对应环境验收。
+3. 定向回归覆盖两种环境的配置 WriteTo / AuditTo 与候选 JSONL、旧链代码 console、scope 污染和同名异来源。验证完成、部分失败、全部失败、空批次、扫描异常、批量边界与去重，并复跑抽奖业务回归。见[实施记录](../records/planning-closeout-2026-11-10.md#l2-lottery-job-output-implementation)。真实调度、生产日志介质和 collector 留到对应环境验收。
