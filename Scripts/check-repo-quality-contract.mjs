@@ -23,6 +23,7 @@ const repoRoot = process.cwd();
 const workflowPath = path.join(repoRoot, '.github', 'workflows', 'repo-quality.yml');
 const candidateWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'candidate-quality.yml');
 const dockerWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'docker-images.yml');
+const nativeImagesWorkflowPath = path.join(repoRoot, '.github', 'workflows', 'native-images.yml');
 const rulesetPath = path.join(repoRoot, '.github', 'rulesets', 'master-protection.json');
 const packageJsonPath = path.join(repoRoot, 'package.json');
 const validateCiPath = path.join(repoRoot, 'Scripts', 'validate-ci.mjs');
@@ -246,6 +247,7 @@ function assertDotnetAuditContract(label, source, failures) {
 const workflowContent = readUtf8(workflowPath);
 const candidateWorkflowContent = readUtf8(candidateWorkflowPath);
 const dockerWorkflowContent = readUtf8(dockerWorkflowPath);
+const nativeImagesWorkflowContent = readUtf8(nativeImagesWorkflowPath);
 const rulesetContent = readUtf8(rulesetPath);
 const packageJsonContent = JSON.parse(readUtf8(packageJsonPath));
 const validateCiSource = readUtf8(validateCiPath);
@@ -402,6 +404,32 @@ if (imagePolicyEvaluatorCount !== 2) {
 }
 
 const dockerWorkflowJobs = parseWorkflowJobs(dockerWorkflowContent);
+const releaseCandidateJob = dockerWorkflowJobs.find((job) => job.jobId === 'candidate-quality');
+const backendImagesJob = dockerWorkflowJobs.find((job) => job.jobId === 'backend-images');
+const apiArm64ScanInput = /^      scan_api_arm64:\n        description: [^\n]+\n        type: boolean\n        default: false$/m;
+if (workflowContent.includes('scan_api_arm64:') || workflowContent.includes('aquasecurity/trivy-action@') ||
+    !apiArm64ScanInput.test(candidateWorkflowContent) || !apiArm64ScanInput.test(nativeImagesWorkflowContent)) {
+  failures.push('PR 门禁必须默认关闭最终镜像 Trivy 扫描。');
+}
+
+if (!releaseCandidateJob?.block.includes('needs: prepare') ||
+    !releaseCandidateJob.block.includes("scan_api_arm64: ${{ needs.prepare.outputs.should_push_backend == 'true' }}") ||
+    !candidateWorkflowContent.includes('scan_api_arm64: ${{ inputs.scan_api_arm64 || false }}') ||
+    !backendImagesJob?.block.includes('- candidate-quality')) {
+  failures.push('API arm64 镜像扫描必须在实际后端镜像推送前由 Docker Images 启用。');
+}
+
+const apiArm64ScanCondition = "inputs.scan_api_arm64 && matrix.platform == 'linux/arm64'";
+for (const [step, condition] of [
+  ['Scan final API image', apiArm64ScanCondition],
+  ['Evaluate existing image vulnerability policy', apiArm64ScanCondition],
+  ['Save platform vulnerability evidence', `always() && ${apiArm64ScanCondition}`],
+]) {
+  if (!nativeImagesWorkflowContent.includes(`      - name: ${step}\n        if: ${condition}\n`)) {
+    failures.push(`Native Images workflow 的镜像漏洞步骤缺少发布条件: ${step}`);
+  }
+}
+
 const githubReleaseJob = dockerWorkflowJobs.find((job) => job.jobId === 'github-release');
 const dockerWorkflowTopLevelPermissions = 'permissions:\n  contents: read\n  packages: write';
 if (!dockerWorkflowContent.includes(dockerWorkflowTopLevelPermissions)) {

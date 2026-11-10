@@ -1,6 +1,11 @@
 name: Native Images
 on:
   workflow_call:
+    inputs:
+      scan_api_arm64:
+        description: 'Require the API arm64 image vulnerability check before backend publication'
+        type: boolean
+        default: false
   workflow_dispatch:
     inputs:
       validation_scope:
@@ -116,6 +121,7 @@ jobs:
       - name: Build and execute without pushing
         run: node Scripts/check-native-image-docker.mjs --platform=${{ matrix.platform }} --keep-image
       - name: Scan final API image
+        if: inputs.scan_api_arm64 && matrix.platform == 'linux/arm64'
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0, shared release scanner
         with:
           scan-type: image
@@ -128,6 +134,7 @@ jobs:
           severity: HIGH,CRITICAL
           scanners: vuln
       - name: Evaluate existing image vulnerability policy
+        if: inputs.scan_api_arm64 && matrix.platform == 'linux/arm64'
         run: |
           node Scripts/evaluate-image-vulnerabilities.mjs \
             --report native-image-vulnerabilities.json \
@@ -136,7 +143,7 @@ jobs:
             --output native-image-evaluation.json \
             --summary "${GITHUB_STEP_SUMMARY}"
       - name: Save platform vulnerability evidence
-        if: always()
+        if: always() && inputs.scan_api_arm64 && matrix.platform == 'linux/arm64'
         uses: actions/upload-artifact@v4
         with:
           name: native-image-security-${{ matrix.architecture }}
@@ -144,6 +151,7 @@ jobs:
             native-image-vulnerabilities.json
             native-image-evaluation.json
           if-no-files-found: ignore
+          retention-days: 30
       - name: Remove disposable image
         if: always()
         run: |

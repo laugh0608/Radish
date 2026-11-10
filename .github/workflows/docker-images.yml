@@ -33,7 +33,10 @@ env:
 jobs:
   candidate-quality:
     name: Candidate Quality Gate
+    needs: prepare
     uses: ./.github/workflows/candidate-quality.yml
+    with:
+      scan_api_arm64: ${{ needs.prepare.outputs.should_push_backend == 'true' }}
 
   prepare:
     name: Prepare Image Vars

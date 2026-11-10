@@ -2,6 +2,11 @@ name: Candidate Quality
 
 on:
   workflow_call:
+    inputs:
+      scan_api_arm64:
+        description: 'Require the API arm64 image vulnerability check before backend publication'
+        type: boolean
+        default: false
   workflow_dispatch:
 
 permissions:
@@ -15,6 +20,8 @@ jobs:
   native-images:
     name: Native Images
     uses: ./.github/workflows/native-images.yml
+    with:
+      scan_api_arm64: ${{ inputs.scan_api_arm64 || false }}
   candidate-quality:
     name: Candidate Quality
     needs: native-images
