@@ -22,7 +22,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 本页承接总纲[四个收口批次](unified-logging-governance-design.md#closeout-batches)的前两批；后两批沿原 L4/L5/L6，不因本页只写接收入库而删除。L3-A、七个来源和 14 个 Controller 保持本地完成，不恢复为待实现。
 
-第一批先固定剩余 Service / Job / Hub 清单，按共享生成和消费链分组；没有精确来源与可复现缺口不泛化全仓改写。诊断类型 / 栈帧和权威关联字段逐项裁决必需或增强，未决字段保持缺失，不放宽为自由文本。Flutter 只核对本地入口与规则，CLI 协议 / 应急例外分别登记。
+第一批按共享生成和消费链核对剩余 Service / Job / Hub。首组 Job 已完成本地最终输出收口。有限清单、诊断字段取舍和验证范围见[第 10 节](#l2-final-output-first-slice)。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
 
 第二批将下表 L1 剩余项与 L3 实际 collector、接收器及 SQLite / PostgreSQL 组合验证：先明确目标架构、镜像、隔离存储、端口、故障方式和恢复 / 清理边界；每个尚缺条件对应一次可验结果，不追加多平台矩阵。真实运行另获授权，替身、合成格式或模块通过不能关闭真实链路。传输、磁盘、持久化与留存出口未齐时不提前进入生产切换。
 
@@ -246,3 +246,48 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 - DbMigrate doctor / verify / help 的 stdout 仍是命令结果协议；Program 的运行诊断写 stderr，目标描述已使用固定 configured 占位，不输出连接串。此次只核对代码，不启动命令访问真实库，不把协议输出机械替换成运行事件。
 - 实际 ConsoleHelper 方法为 WriteColorLine 及 WriteErrorLine / WriteWarningLine / WriteInfoLine / WriteSuccessLine 扩展；仓库 C# 搜索只命中定义和内部转发，未发现外部调用。保留未使用工具，不宣称反射或外部调用绝不存在，也不为未证实的运行缺口增加重构。
 - 本批后回到已登记 Service / 后台任务 / Hub 来源的最终出口清单，按共享生成 helper 和真实消费链组织有限批次；随后接续 L1 上界 / 磁盘及 L3 真实监听 / PostgreSQL / collector 联验。诊断上下文完整性、Flutter 来源仍保留各自边界，不重启已经关闭的 Controller 切片。
+
+<a id="l2-final-output-first-slice"></a>
+
+## 10. L2 最终输出核验与首组修复
+
+2026-11-10 在 `dev` 的 `546b0968` 复现。商城订单取消探针经真实 Job 方法和日志配置到达旧链配置 WriteTo / AuditTo 和候选 JSONL。结果见[核验记录](../records/planning-closeout-2026-11-10.md#l2-job-output-audit)。
+
+复现时，`BusinessJobSummary` 在全局 logger 上绑定事件码和计数，缺少固定的 `SourceContext`。原精确来源适配未重建这条输出，候选公共白名单仍会接受合法但不属于该 Job 事件的上下文。确认范围后完成本地修复，输出契约见[事件契约第 78 节](./unified-logging-contract.md#l2-business-job-final-output)。
+
+### 10.1 已登记调用链
+
+以下清单按[事件契约](./unified-logging-contract.md)的精确来源分组。旧链在 `SerilogSetup.ConfigureLegacy` 合并上下文后分流，候选链经 `RuntimeLoggingConfiguration` 和 `RuntimeSerilogSink` 生成 JSONL。已有生成端及直接消费者证据按原范围引用。首组已完成本地最终输出收口，其余按组补证。
+
+| 分组 | 实际入口与生成点 | 消费边界和证据 |
+| --- | --- | --- |
+| 首组业务 Job | `ShopJob.CancelTimeoutOrdersAsync / MarkExpiredBenefitsAsync / GenerateDailyStatsAsync`、`CommentHighlightJob.ExecuteAsync`、`RetentionRewardJob.ExecuteAsync` 均由 `ApiRecurringJobRegistration` 登记，共用 `BusinessJobSummary.Write` | 契约 §11、78 和 `BusinessJobLoggingTests`。商城取消通过真实配置验证最终出口，另外四个入口沿原方法回归 |
+| 抽奖 Job | `PostLotteryJob.ExecuteAutoDrawAsync` 用自己的 `ILogger<PostLotteryJob>` scope 写摘要，扫描异常交给 Hangfire | 契约 §11 和 `BusinessJobLoggingTests`。单列实际来源，与首组共用事件编码 |
+| 文件及记录清理 | `FileCleanupJob` 的软删除、临时文件、回收站、孤立附件入口用内部批次摘要。通知收件箱、Wiki 草稿、聊天回应三个 Job 各在 `ExecuteAsync` 用类型化 logger | 契约 §10 和 `CleanupLoggingTests`。分别核对计数、部分失败及 Hangfire 外抛 |
+| 上传及令牌清理 | `ChunkedUploadService.CleanupExpiredSessionsAsync`、`FileAccessTokenService.CleanupExpiredTokensAsync` 用 `ServiceCleanupSummary`。前台目录 / 配额失败走同 helper 的 `RecordStandaloneFailure` | 契约 §13、21–24 和 `ServiceCleanupLoggingTests`、`ChunkedUploadLoggingTests` 及附件回归。区分后台摘要、前台失败与 Controller 已收口事件 |
+| Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9 和 `OutboxNativeLoggingTests`。沿状态写入核对既有 `operationId`。Hangfire provider / 状态观察器沿用 §73 证据 |
+| 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 和 `RewardLoggingTests`、`CoinMovementLoggingTests`、`AccountGovernanceLoggingTests`。区分重试决定、已消费失败与发放结果 |
+| 商城、库存与口令 | `OrderService.PurchaseAsync` 扣币及履约分支，及已登记的 `ProductService`、`UserInventoryService`、权益和 `PaymentPasswordService` 生成点 | 契约 §14、16、19–20、25 和对应业务回归。逐链核验失败归属、响应、事务和审计 |
+| 公开查询与报表 | `PublicHeadSnapshotService`、`PublicSitemapService` 的缓存及生成分支，`PublicDiscoverService.GetFeedAsync`、`LeaderboardService.GetLeaderboardAsync / GetUserRankAsync` 和 `StatisticsService` 查询链 | 契约 §26–29 和现有公开查询 / 统计回归。区分服务端降级与 Gateway / Controller 消费 |
+| 通知与实时推送 | `UserFollowService` 通知入队，`NotificationService.CreateNotificationAsync` 到 `NotificationPushService.PushInboxChangedAsync`，以及 `UserInteractionRealtimeNotifier.NotifyRelationshipChangedAsync`、`CommentRealtimePushService.PushAsync` | 契约 §30–31、33、35、38。各降级处保留原消费边界，轻回应沿已有事务与 Controller 证据 |
+| Hub 生命周期 | `ChatHub.OnDisconnectedAsync` 和 `NotificationHub.OnDisconnectedAsync` 在既有清理后用类型化 logger 写摘要。`CommentHub` 进组、退组和输入中路径已有安静性回归 | 契约 §32、34、36 和三组 Hub 测试。核验两条自有断开摘要的出口，真实连接另行验收 |
+| 内容及表情 | `CommentService` 高亮重算、`ContentSubmissionService` 冲突恢复、`ForumContentRevisionService` 恢复失败、`ReactionService` 重试、`StickerService` 缓存与缩略图降级 | 契约 §37、40–42、48–49 和对应业务回归。分别核对 Service 所有权，已收口的 Controller 做关联防回归 |
+
+浏览器、七个已收口的自有来源及其直接消费者、14 个 Controller、已登记的 Hangfire provider / 状态观察器，沿用事件契约 §73–77 的本地结论。DbMigrate `doctor / verify / help` 的 stdout 保留命令输出语义，应急 stderr 沿现有独立预算。Flutter 的实际本地入口与规则仍单列核对。
+
+### 10.2 首版诊断字段建议
+
+| 字段 | 首版取舍与生成边界 |
+| --- | --- |
+| 事件身份、等级、服务与安全计数 | 首版必需。Job 事件码、`jobKind`、`outcome`、计数与 `durationMs` 来自已登记的摘要生成点，实际消费的异常经 `RuntimeFailureSummary.Classify` 生成封闭 `failureKind` |
+| `traceId / spanId / operationId` | 首版按已有契约有值时保留。trace / span 使用已绑定的 W3C 类型，operation ID 使用已登记的权威生成点，例如 Hangfire 状态观察器与 Outbox 状态写入。首组 Job 摘要不从普通 scope 继承关联值 |
+| `requestId` | 后置。首版按既有 trace 查询。若需用用户提供的 `X-Correlation-ID` 查找无有效 trace 的请求，另从服务端 `HttpContext.TraceIdentifier` 定义格式与映射，并验证与 W3C trace 的区别 |
+| `jobId` | 后置原始标识。任务失败关联已有 Hangfire / Outbox 各自派生的 `operationId`。若需关联批次摘要与调度记录，先验证排障场景及跨重试含义 |
+| `tenantId` | 后置。首版已规划的查询依赖部署、服务与关联字段。租户级排障或权限另行确认，并从服务端解析且校验的租户上下文生成 |
+| 安全异常类型及栈帧 | 后置。首版用 `failureKind` 和精确来源定位。若实际排障仍有缺口，另登记固定异常类别与受控帧标识，制定大小预算和允许来源 |
+
+### 10.3 首组修复与本地验收
+
+1. `BusinessJobSummary` 绑定固定生成身份。`BusinessJobLogSink` 在旧链代码 / 配置 WriteTo、配置 AuditTo 和候选链合并上下文后，按精确身份及三个已登记事件重建摘要。字段白名单剔除普通 scope 和无关字段，保留原时间、等级和类型化 trace / span。已登记的摘要固定为普通事件。同名事件继续按各自来源处理。
+2. 本地修改限于共享 helper 与输出适配。保留五个入口的计数口径、锁释放、Job 返回、业务写入 / 事务和 Hangfire 重试，以及 WriteTo 消费输出故障、AuditTo 传播故障、候选有限应急的行为。
+3. 正式回归覆盖旧 / 候选与 Development / Production、代码 console 与配置 WriteTo / AuditTo、固定身份、同名异来源、scope 污染、空批次、部分失败、计数、输出故障和锁释放。真实任务、介质和 collector 联验在获批的目标环境另行执行。见[实施记录](../records/planning-closeout-2026-11-10.md#l2-job-output-implementation)。

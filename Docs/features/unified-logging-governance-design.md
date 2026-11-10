@@ -12,7 +12,9 @@
 
 浏览器 L2 接续范围见[浏览器最终输出收口方案](./unified-logging-l2-browser-output-plan.md)：2026-11-05 已获批完成公共实现、调用迁移和本地自动化验收，见[实施记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。本批不包含真实浏览器 Smoke 或遥测回传。
 
-L1 / L2 剩余门禁、自有来源切片与 L3-A 接收 / 幂等入库方案见[衔接实施方案](./unified-logging-l3-ingest-plan.md)。L3-A 已获批完成默认关闭的接收、表与本地回归，见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)；真实监听、PostgreSQL 与 collector 接入仍待授权验收。剩余七个自有来源与直接 API 异常消费者已按第 8 节批准完成本地切片，见[实施记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。第 9 节的 14 个 Controller 也已完成[最终输出本地收口](../records/unified-logging-l2-controller-output-2026-11-05.md)；其余 Service / 后台任务 / Hub 最终出口仍待核验。
+L1 / L2 剩余门禁、自有来源切片与 L3-A 接收 / 幂等入库方案见[衔接实施方案](./unified-logging-l3-ingest-plan.md)。L3-A 已获批完成默认关闭的接收、表与本地回归。真实监听、PostgreSQL 与 collector 接入仍待授权验收。见[L3-A 实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。
+
+七个自有来源与直接 API 异常消费者、14 个 Controller 和共用 `BusinessJobSummary` 的五个入口已完成各自的本地最终输出收口。其他已登记 Service / Job / Hub 沿来源清单核验。见[自有来源实施记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)、[Controller 实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)及[来源清单](./unified-logging-l3-ingest-plan.md#l2-final-output-first-slice)。
 
 ## 1. 结论与目标
 

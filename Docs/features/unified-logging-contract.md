@@ -747,3 +747,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 每个 Controller 的未知 / 缺失 / 跨来源身份进入 `controller.{owner}.unknown`；owner 为 coin、payment_password、attachment、shop、reaction、quick_reply、poll、lottery、question、post、comment、tag、category、sticker。共享事件目录同步固定说明。Warning 以上保留安全摘要；更低等级仅 Development 宿主、Development 模式且显式 Diagnostics 时输出，不信任载荷 Diagnostic。
 - 原 catch 类型、结果构造 / 本地化 / Message 求值顺序、状态与业务副作用不变。第 57 节的早期消费边界继续保持；本批不增加重试、回滚或全请求去重。WriteTo 故障仍消费，AuditTo 仍可传播；候选输出故障走既有限频应急通道。
 - 本地最终出口、真实 action 与定向反射消费方法、原业务回归及证据限制见[实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)。不据此关闭 Service / Job / Hub、真实 File / DB 故障、运行 Smoke 或 L2 整体；生产开关保持关闭。
+
+<a id="l2-business-job-final-output"></a>
+
+## 78. L2 共享后台业务 Job 最终输出（2026-11-10）
+
+- 精确来源为 `Radish.Service.Jobs.BusinessJobSummary`，覆盖商城取消、权益到期、商城日报、评论高亮和保留奖励五个入口。三个既有 `job.batch.completed / warning / failed` 事件保留原等级、时间和类型化 trace / span，固定 `SourceCategory=job` 及 `Diagnostic=false`。抽奖 Job 等同名事件沿各自的来源处理。
+- `BusinessJobLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选输出。只保留该 helper 的五种 `jobKind`、事件允许的 `outcome`、六项非负计数及有界 `durationMs`，只有失败事件保留封闭 `failureKind`。剔除原模板、异常对象、字符串关联键、无关字段和普通 scope。精确来源上未登记的事件使用既有 `runtime.unclassified` 安全摘要，等级低于 Warning 时标为诊断。
+- 原业务计数、返回、锁释放、事务、重试和异常归属保持。WriteTo 输出失败仍由该链消费，AuditTo 仍可传播，候选输出走既有限频应急。五入口回归和商城取消的真实配置输出证据见[实施记录](../records/planning-closeout-2026-11-10.md#l2-job-output-implementation)。真实任务调度、File / DB sink、collector 以及 L2 整体继续沿各自验收条件。

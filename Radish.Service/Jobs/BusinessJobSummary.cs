@@ -29,7 +29,7 @@ internal sealed class BusinessJobSummary(string jobKind)
         var hasWork = ProcessedCount > 0 || UpdatedCount > 0 || RewardCount > 0;
         var outcome = FailedCount > 0 || RejectedCount > 0 ? (hasWork ? "partial" : "failed") : "succeeded";
         var code = FailedCount > 0 ? "job.batch.failed" : RejectedCount > 0 ? "job.batch.warning" : "job.batch.completed";
-        var logger = Log.ForContext("SourceCategory", "job").ForContext("EventCode", code)
+        var logger = Log.ForContext<BusinessJobSummary>().ForContext("SourceCategory", "job").ForContext("EventCode", code)
             .ForContext("jobKind", jobKind).ForContext("outcome", outcome)
             .ForContext("processedCount", ProcessedCount).ForContext("updatedCount", UpdatedCount)
             .ForContext("rewardCount", RewardCount).ForContext("skippedCount", SkippedCount)

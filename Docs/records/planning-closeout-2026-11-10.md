@@ -10,3 +10,28 @@
 已运行 `npm run check:docs`：973 个文件文本卫生、894 个 Markdown / 1522 个相对链接通过；`npm run check:repo-hygiene:changed` 与 `git diff --check` 通过。记录索引为 379 行，保留既有超出 300 行建议值的提醒；未借本轮改动拆分历史索引。未运行产品构建、测试、服务 / 容器、平台或部署验收，静态结果不代替阶段出口。
 
 启动时 dev 工作树干净。当前仅有未提交文档；未暂存、提交、推送或启动后台进程。
+
+<a id="l2-job-output-audit"></a>
+
+## 同日接续的 L2 Job 最终输出核验
+
+候选为 `dev` 的 `546b0968`。使用真实 `ShopJob.CancelTimeoutOrdersAsync`、固定替身仓储和订单服务，以及现有 `HttpBoundaryCapture`。探针分别调用 `SerilogSetup.ConfigureLegacy` 的配置 WriteTo / AuditTo 和 `RuntimeLoggingConfiguration.Configure` 的候选 JSONL，各覆盖 Development 与 Production。使用合成上下文字段，无业务数据。
+
+| 核验 | 观察 |
+| --- | --- |
+| 空批次和部分失败 | 空批次返回 0 且安静。四个订单依次正常返回 true、false、拒绝及 IO 异常时返回 2，输出一条 `job.batch.failed`。摘要记录 processed 2、updated 1、rejected 1、failed 1、outcome partial、failureKind io。scope 内同名计数未覆盖生成点计数 |
+| 旧链上下文 | 两个配置出口均保留无关自定义字符串、`statusCode` 和 scope 的 `operationId`。输出事件不带原异常对象 |
+| 候选上下文 | JSONL 剔除了自定义字符串，仍输出与 Job 无关的 `statusCode` 和 scope 的 `operationId`。额外 scope 的 `Diagnostic=true` 使候选生产模式整条不输出，候选开发诊断模式将其标为诊断事件 |
+| 输出失败 | WriteTo 消费 sink 故障，Job 仍返回 2。AuditTo 传播聚合异常，展开后包含原 sink 故障实例。候选 writer 故障仍返回 2 并产生安全的 `pipeline.output_failed`。各场景后续调用均实际重新查询，锁已释放 |
+
+用 `CustomAfterMicrosoftCommonTargets` 导入临时 targets，仅为 `Radish.Api.Tests` 添加探针源码。执行 `dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore`，过滤器为 `FullyQualifiedName~JobFinalOutputProbe|FullyQualifiedName~BusinessJobLoggingTests`。12 项探针和 21 项既有 Job 回归共 33 项通过。初跑中两项 AuditTo 的异常包装断言仅检查一层，按实际聚合结构校正后复跑。移除临时编译参数后单独重跑原 Job 测试，21 项通过。
+
+替身用于验证 Job 返回与调用顺序。真实调度、事务、重试、File / DB sink、网络和 collector 仍需目标环境证据。本轮保留产品代码和机器契约。首组实施范围及字段建议见[衔接方案第 10 节](../features/unified-logging-l3-ingest-plan.md#l2-final-output-first-slice)。
+
+<a id="l2-job-output-implementation"></a>
+
+## 首组 Job 最终输出实施
+
+所有者确认首组后，为 `BusinessJobSummary` 固定来源，在三条日志接线中引入 `BusinessJobLogSink`。旧链代码 console、配置 WriteTo / AuditTo 与候选 JSONL 都经同一精确来源重建。商城取消在含合成 scope 的 Production 候选中保留一条正常失败摘要，旧链和候选均排除无关字段及 scope 关联值。真实业务方法与替身验证原返回、计数、输出故障传播及锁释放。共享 helper 的其余四入口沿既有测试核验，另验证同名抽奖来源透传。
+
+Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误。定向 .NET 回归 292 项通过，含 20 项新增最终输出验证及既有 Job、Hangfire、应用操作、Controller 和运行日志适配测试。`npm run check:logging-contract` 70 项通过。该证据来自本地日志出口和测试替身，运行调度、真实 File / DB sink 和 collector 仍待对应验收。输出契约见[第 78 节](../features/unified-logging-contract.md#l2-business-job-final-output)。
