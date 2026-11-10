@@ -265,7 +265,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | 抽奖 Job | `PostLotteryJob.ExecuteAutoDrawAsync` 用自己的 `ILogger<PostLotteryJob>` scope 写摘要，扫描异常交给 Hangfire | 契约 §11、79、`BusinessJobLoggingTests` 和 `LotteryControllerLoggingTests`。[第 10.4 节](#l2-lottery-job-output)已完成本地切片 |
 | 文件及记录清理 | `FileCleanupJob` 的软删除、临时文件、回收站、孤立附件入口用内部批次摘要。通知收件箱、Wiki 草稿、聊天回应三个 Job 各在 `ExecuteAsync` 用类型化 logger | 契约 §10、80、`CleanupLoggingTests` 和 `FileCleanupJobTest`。[第 10.5 节](#l2-cleanup-job-output)已完成本地切片 |
 | 上传及令牌清理 | `ChunkedUploadService.CleanupExpiredSessionsAsync`、`FileAccessTokenService.CleanupExpiredTokensAsync` 用 `ServiceCleanupSummary`。前台目录 / 配额失败走同 helper 的 `RecordStandaloneFailure` | 契约 §13、21–24、81。[第 10.6 节](#l2-service-cleanup-output)已完成本地切片 |
-| Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9 和 `OutboxNativeLoggingTests`。沿状态写入核对既有 `operationId`。Hangfire provider / 状态观察器沿用 §73 证据 |
+| Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9 和 `OutboxNativeLoggingTests`。已核验 `operationId` 和状态写入，复现最终输出缺口，修复范围见[第 10.7 节](#l2-outbox-output)。Hangfire provider / 状态观察器沿用 §73 证据 |
 | 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 和 `RewardLoggingTests`、`CoinMovementLoggingTests`、`AccountGovernanceLoggingTests`。区分重试决定、已消费失败与发放结果 |
 | 商城、库存与口令 | `OrderService.PurchaseAsync` 扣币及履约分支，及已登记的 `ProductService`、`UserInventoryService`、权益和 `PaymentPasswordService` 生成点 | 契约 §14、16、19–20、25 和对应业务回归。逐链核验失败归属、响应、事务和审计 |
 | 公开查询与报表 | `PublicHeadSnapshotService`、`PublicSitemapService` 的缓存及生成分支，`PublicDiscoverService.GetFeedAsync`、`LeaderboardService.GetLeaderboardAsync / GetUserRankAsync` 和 `StatisticsService` 查询链 | 契约 §26–29 和现有公开查询 / 统计回归。区分服务端降级与 Gateway / Controller 消费 |
@@ -333,3 +333,18 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | `upload-sessions` 批次 | 完成、中断为 Info，已消费失败为 Error。`SourceCategory=job`，保留该 `jobKind`、对应 `outcome`、`durationMs` 和原六项计数 `processedCount / updatedCount / removedDirectoryCount / settlementCount / skippedCount / failedCount`。只有失败事件保留封闭 `failureKind` |
 | `file-tokens` 批次 | 只登记完成和中断，使用同一计数结构和 `SourceCategory=job`，保持真实撤销、已处理及并发跳过的区别。中断为 Info，剔除外层 `failureKind` |
 | 前台 `RecordStandaloneFailure` | 只登记 `upload.cleanup.failed` Error，固定 `SourceCategory=application`。仅保留封闭的 `cleanupOperation`（`directory / quota-release / quota-complete`）和 `failureKind` |
+
+<a id="l2-outbox-output"></a>
+
+### 10.7 Outbox 最终输出提案
+
+分派的类型化来源稳定，但会继承外层关联值、分类和无关字段。状态摘要由 Repository 绑定权威 `operationId`，缺少固定来源时可能被其他适配器重建为 `runtime.unclassified`，连同状态字段一起丢失。生产候选链在外层 `Diagnostic=true` 时会丢掉三类事件。直接调用 Repository 时也能继承非本次失败的 `failureKind`。见[核验记录](../records/planning-closeout-2026-11-10.md#l2-outbox-output-audit)。
+
+1. 保留 `Radish.Api.Services.ReliableOutboxDispatcherJob` 类型化来源，为状态摘要固定 `Radish.Repository.ReliableOutboxRepository` 来源。在旧链代码及配置 WriteTo、配置 AuditTo 和候选 JSONL 合并上下文后，按下表重建已登记事件。固定 `SourceCategory=job` 和 `Diagnostic=false`，保留类型化 trace / span 及 Serilog 事件的原等级与时间戳。未登记的组合使用安全通用摘要。
+2. `ReliableOutboxService` 使用现有分类器，经仓储接口把可选的 `failureKind` 显式交给 Repository。Repository 在事件中绑定这一值，包括缺省的空值，最终适配只输出合法分类。保留仓储直接调用路径，并保留 `operationId` 的原算法和库域。状态关联只取 Repository 绑定的规范 GUID。
+3. 保留分派入队计数、条件更新影响行后才生成状态事件、零行和重复执行安静、既有审计字段、重试和死信规则。回归覆盖 main / chat SQLite、两种环境的最终出口、来源错配、生产过滤、事件字段、入队和输出故障。WriteTo、AuditTo 和候选沿用现有故障语义。租约归属、实际调度、PostgreSQL 并发和生产采集链路依各自边界处理。
+
+| 精确来源 | 登记事件与字段 |
+| --- | --- |
+| `ReliableOutboxDispatcherJob` | `outbox.dispatched` Info，仅保留 `count / durationMs`。分派是入队数，和执行成功数分别统计 |
+| `ReliableOutboxRepository` | `outbox.retrying` Warning 和 `outbox.dead_letter` Error，仅保留 `databaseScope / attempt / outcome / failureKind` 及由本次状态写入方生成的 `operationId` |

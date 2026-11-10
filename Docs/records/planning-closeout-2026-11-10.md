@@ -106,3 +106,19 @@ Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误，定�
 所有者确认第 10.6 节后，批次与前台失败绑定 `ServiceCleanupSummary` 来源，`ServiceCleanupLogSink` 按登记事件重建最终输出。外层来源为 `FileCleanupJob` 且 `Diagnostic=true` 时，生产候选仍保留真实完成、中断和失败摘要。后台保留本批原计数，前台只保留操作和失败分类。同名附件 Controller 事件继续使用其独立来源。见[事件契约第 81 节](../features/unified-logging-contract.md#l2-service-cleanup-final-output)。
 
 Debug 解决方案 `--no-restore --warnaserror` 构建零警告及错误。定向 .NET 回归 410 项通过，含 21 项新增用例。`npm run check:logging-contract` 70 项通过。回归覆盖旧链代码 console、两环境的配置 WriteTo / AuditTo、候选 JSONL 及邻近日志。配置 AuditTo 输出失败仍可覆盖中断时正在传播的仓储异常。前台目录失败以路径校验触发，真实目录权限故障、Hangfire 调度、生产日志介质和 collector 留到对应环境验收。
+
+<a id="l2-outbox-output-audit"></a>
+
+## Outbox 最终输出核验
+
+以 `dev` 的 `960a27ef` 为基线，经实际 Dispatcher、ExecutionJob、Service、Repository、main / chat 内存 SQLite 和 Hangfire 客户端替身，检查 Development / Production 的旧链配置 WriteTo / AuditTo 与候选 JSONL。代码 console 用同一实际 Repository 核验来源错配。scope 使用合成值。
+
+| 核验 | 观察 |
+| --- | --- |
+| 分派 | 空批次返回 0 且安静，main / chat 各成功入队一次后返回 2 并输出一条摘要。第二次入队抛错时原异常传播，两条已领取记录均保持 Processing，且没有完成摘要。分派类型化来源优先于外层同名字段，仍继承外层 `operationId` 和 `failureKind` |
+| 状态与关联 | main / chat 均按实际写入输出 Pending 重试及 DeadLetter，attempt 依次为 1、2。两个事件的 `operationId` 与本库、本任务派生值一致，外层关联值不能覆盖。Service 分类优先于外层分类。Repository 直接调用没有本次异常分类，仍可能输出外层 `failureKind` |
+| 零行与异常所有权 | 尚未重新领取的重复执行及无效状态写入均安静。另在 SQLite UPDATE 前通过 AOP 模拟状态已先更新为 Succeeded，实际条件 UPDATE 影响 0 行，attempt 保持 0 且无状态事件。ExecutionJob 没有重复状态日志 |
+| 字段、来源和诊断 | 配置旧链和候选均带出外层 `statusCode` 和无关计数，旧链另保留合成自定义字段。Repository 在无外层来源时缺少 `SourceContext`。外层来源为 `ServiceCleanupSummary` 时，死信被重建为 `runtime.unclassified`，原 `operationId` 和状态字段消失，代码 console 同样显示未识别模板。仅设置 `Diagnostic=true` 时，生产候选链丢掉分派、重试、死信，开发候选与旧链将这些事件标为诊断 |
+| 输出失败 | 配置 WriteTo 和候选保留既有分派结果及状态写入，候选进入有限 `pipeline.output_failed`。AuditTo 的聚合异常包含原 sink 故障，错误传播时入队调用已发生，SQLite 的死信状态也已可见 |
+
+通过 `CustomAfterMicrosoftCommonTargets` 为 `Radish.Api.Tests` 临时导入探针。`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore` 定向执行 44 项，含 26 项探针。去掉临时导入后，18 项既有 Outbox 生成、分派、Job、Service 和 Repository 回归再次通过。条件 UPDATE 探针验证实际零行结果，PostgreSQL 并发、真实 Hangfire 调度、生产介质及 collector 依各自条件验收。修复范围见[衔接方案第 10.7 节](../features/unified-logging-l3-ingest-plan.md#l2-outbox-output)。
