@@ -70,6 +70,14 @@ Radish 是面向小规模兴趣或创作社区的可独立部署社区产品：�
 
 完整功能入口与退出边界见[发布后维护与功能完成线](/planning/post-release-maintenance-feature-completion)、[家族 UI 专题](/features/family-ui-convergence-design)和[Flutter Native 专题](/features/flutter-native-product-ui-design)。
 
+## 功能完成阶段的收口出口
+
+2026-11-10 所有者确认保持既定产品范围，按统一日志 → Native 平台 → 客户端连接收口。统一日志保留 L1–L6，交付在指定隔离部署环境可查询、可识别故障、可处理站内告警并可升级 / 恢复 / 回滚的完整候选，细分见[四个收口批次](features/unified-logging-governance-design.md#closeout-batches)。只完成生成端或接收入库不代表专题退出，生产实际部署不反向作为开发验收前置。
+
+Native 按 P8-C / D / E 的已确认平台范围验收，客户端连接按同一安装包的实例发现、认证 / 缓存隔离、切换和恢复验收；资源阻塞先登记，确需重排时明确决定，不自动新增环境工程。两实例技术验证、官方服务交付和各平台分发分别报告。
+
+上述计划内范围通过后再确认转入维护为主；不以全部 backlog、商店发布、所有真机或依赖复现材料清零作为总前置。缺失的设备、正式发行和运营条件仍约束对应声明，不因阶段评审写成通过。当前仅调整文档，无新增实现、平台验收或发布授权。
+
 ## 阶段衔接与改进候选
 
 1. Native 继续按已经确认的平台阶段推进；即时顺位、外部条件和运行范围见[当前进行中](/planning/current)。

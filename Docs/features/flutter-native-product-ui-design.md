@@ -390,6 +390,14 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - P8-A、P8-B readiness、P8-B1 与 P8-B2 已关闭：macOS runner、真实 runtime owner 与本地 Gateway 运行矩阵均已落地并给出 `macOS local runtime acceptance Go`。Windows 与 Linux 的日常 / CleanBase VM 分工已冻结，工具链与平台工程分别进入 P8-C / D，最终由 P8-E 成组关闭输入、窗口、认证、持久化与构建门禁。
 - 平台工程与分发要求独立授权和记录，不因 Dart UI 可运行自动宣称产品完成。
 
+### 2026-11-10 平台收口与连接衔接
+
+日志完整候选退出后，按 P8-C Windows、P8-D Linux、P8-E 成组验收接续。每个平台先固定工具链 / runner、身份 / OIDC、安全存储 / preferences、窗口 / 输入及退出 / 重启的剩余清单；已有共享层与其他平台结果只按适用域复用，不重做整套 UI，也不代替目标平台运行。
+
+平台资源或工具链不可达时，输出具名阻塞与恢复条件，不自动建立新的 VM / 管理框架、安装工具或改变 CleanBase。可以评审在已有可用平台提前实现[客户端连接](../frontend/client-server-connection-plan.md)，但必须明确顺位调整及未完成平台，不自动取消 P8-C / D / E。
+
+已声明范围的运行与成组门禁关闭才记对应平台退出；真机、签名、公证、安装包及商店分发继续按原平台分别验收。阶段性功能收口不要求所有外部条件同时清零，也不把模拟器 / 本地 Go 升级为正式分发。当前仅改规划，无新平台实现或验收。
+
 ## 12. P2 技术基座结果
 
 P2 已按 **Flutter Theme Foundation + Adaptive Shell + Discover + Forum Detail** 落地可退出技术基座，不等于 P3 代表设计或 P4–P5 全量实现。
