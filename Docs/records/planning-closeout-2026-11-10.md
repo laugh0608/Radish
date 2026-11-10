@@ -35,3 +35,18 @@
 所有者确认首组后，为 `BusinessJobSummary` 固定来源，在三条日志接线中引入 `BusinessJobLogSink`。旧链代码 console、配置 WriteTo / AuditTo 与候选 JSONL 都经同一精确来源重建。商城取消在含合成 scope 的 Production 候选中保留一条正常失败摘要，旧链和候选均排除无关字段及 scope 关联值。真实业务方法与替身验证原返回、计数、输出故障传播及锁释放。共享 helper 的其余四入口沿既有测试核验，另验证同名抽奖来源透传。
 
 Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误。定向 .NET 回归 292 项通过，含 20 项新增最终输出验证及既有 Job、Hangfire、应用操作、Controller 和运行日志适配测试。`npm run check:logging-contract` 70 项通过。该证据来自本地日志出口和测试替身，运行调度、真实 File / DB sink 和 collector 仍待对应验收。输出契约见[第 78 节](../features/unified-logging-contract.md#l2-business-job-final-output)。
+
+<a id="l2-lottery-job-output-audit"></a>
+
+## 抽奖 Job 最终输出核验
+
+以 `dev` 的 `0ed03b5f` 为基线，通过真实 `PostLotteryJob.ExecuteAutoDrawAsync`、替身仓储和开奖服务及 `HttpBoundaryCapture`，核验 Development / Production 的旧链配置 WriteTo / AuditTo 与候选 JSONL。探针使用合成上下文。
+
+| 核验 | 观察 |
+| --- | --- |
+| 来源与批次 | 配置 WriteTo 验证 `SourceContext=Radish.Service.Jobs.PostLotteryJob`、`job.batch.failed` 和 `SourceCategory=job` 抵抗外层同名字段。批量值 999 限制为 100，三行记录按两个帖子处理。一项 IO 异常后继续，返回 1，摘要计数为 processed 1、failed 1，outcome 为 partial，failureKind 为 io |
+| 上下文字段 | 两个旧链出口带出无关自定义字符串、`statusCode`、`updatedCount` 和 scope 的 `operationId`。候选 JSONL 剔除自定义字符串，仍带出后三项。各出口的成功摘要均继承外层 `failureKind` |
+| 诊断开关 | 外层 `Diagnostic=true` 使候选 Production 丢掉整条失败摘要。候选 Development 和两个旧链出口均把该失败摘要标为诊断事件 |
+| 异常归属 | 批量值 0 限制为 1，空批次返回 0。扫描异常原样传播，两种情况均无 Job 摘要。输出失败时 WriteTo 和候选仍返回 1，候选产生安全的 `pipeline.output_failed`。AuditTo 抛出的聚合异常保留原 sink 故障实例 |
+
+用 `CustomAfterMicrosoftCommonTargets` 仅向 `Radish.Api.Tests` 导入临时探针。`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore` 过滤 `LotteryFinalOutputProbe`、`BusinessJobLoggingTests` 和 `LotteryControllerLoggingTests`，共 78 项通过，其中 13 项为探针。既有抽奖测试含本地 SQLite 事务、审计和 Outbox 回归。探针验证到本地输出，真实 Hangfire 调度、生产介质和 collector 仍待对应环境验收。实施范围见[抽奖 Job 最终输出提案](../features/unified-logging-l3-ingest-plan.md#l2-lottery-job-output)。
