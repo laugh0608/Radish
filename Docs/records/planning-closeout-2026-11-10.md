@@ -74,3 +74,11 @@ Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误。定�
 | 失败归属 | 文件查询失败由 Job 消费，生成一条失败摘要并返回 0。三个记录 Job 的仓储异常按原实例传播，均无本地失败摘要。文件和收件箱输出故障探针中，WriteTo 和候选保留业务返回，候选走有限 `pipeline.output_failed`。AuditTo 的聚合异常仍包含原 sink 故障 |
 
 用 `CustomAfterMicrosoftCommonTargets` 仅向 `Radish.Api.Tests` 导入临时探针。`dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore` 过滤 `CleanupFinalOutputProbe`、`CleanupLoggingTests` 和 `FileCleanupJobTest`，28 项探针和 40 项既有回归共 68 项通过。去掉临时导入后，40 项既有回归再次通过，含过滤器一并命中的 `ServiceCleanupLoggingTests`。真实目录权限故障、Hangfire 调度、生产日志介质及 collector 仍待对应环境验收。修复范围见[衔接方案第 10.5 节](../features/unified-logging-l3-ingest-plan.md#l2-cleanup-job-output)。
+
+<a id="l2-cleanup-job-output-implementation"></a>
+
+## 文件及记录清理 Job 最终输出实施
+
+所有者确认后，文件摘要固定为 `FileCleanupJob` 来源，四个来源由 `CleanupJobLogSink` 按事件限定字段。旧链的文件警告保留原事件和计数。候选 Production 在外层 `Diagnostic=true` 时仍输出清理失败、记录完成和收件箱容量告警。目录异常警告保留分类，只有文件缺失的警告和收件箱容量告警剔除无关字段。见[事件契约第 80 节](../features/unified-logging-contract.md#l2-cleanup-job-final-output)。
+
+Debug 解决方案 `--no-restore --warnaserror` 构建无警告及错误，定向 .NET 回归 327 项通过，含 21 项新增用例。覆盖实际七个入口、旧链代码 console、两环境的配置 WriteTo / AuditTo 与候选 JSONL、临时文件操作、仓储及输出故障归属。`npm run check:logging-contract` 70 项通过。目录异常警告的分类用适配器输入验证。真实目录权限故障、Hangfire 调度、生产日志介质及 collector 留到对应环境验收。

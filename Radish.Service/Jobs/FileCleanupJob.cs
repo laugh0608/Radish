@@ -493,7 +493,7 @@ public class FileCleanupJob
             var changed = MovedCount > 0 || RemovedDirectoryCount > 0 || ProcessedCount > 0;
             var outcome = FailedCount > 0 ? (changed ? "partial" : "failed") : warned ? "partial" : "succeeded";
             var code = FailedCount > 0 ? "job.cleanup.failed" : warned ? "job.cleanup.warning" : "job.cleanup.completed";
-            var logger = Log.ForContext("EventCode", code).ForContext("SourceCategory", "job")
+            var logger = Log.ForContext<FileCleanupJob>().ForContext("EventCode", code).ForContext("SourceCategory", "job")
                 .ForContext("jobKind", jobKind).ForContext("outcome", outcome)
                 .ForContext("processedCount", ProcessedCount).ForContext("movedCount", MovedCount)
                 .ForContext("missingCount", MissingCount).ForContext("skippedCount", SkippedCount)

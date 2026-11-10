@@ -763,3 +763,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 精确来源为 `Radish.Service.Jobs.PostLotteryJob`。`ExecuteAutoDrawAsync` 保留 `job.batch.completed`（Information，`succeeded`）与 `job.batch.failed`（Error，`partial` / `failed`）。`BusinessJobLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选输出。固定 `SourceCategory=job`、`jobKind=post-lottery`、`Diagnostic=false`，保留原事件时间与类型化 trace / span。
 - 摘要只携带原批次的非负 `processedCount` / `failedCount`、有界 `durationMs`、对应的 `outcome`，失败时保留封闭 `failureKind`。适配使用固定模板，剔除外层 scope、字符串关联值和异常对象。该来源的 `job.batch.warning` 等未登记事件按 `runtime.unclassified` 安全摘要处理，等级低于 Warning 时标为诊断。同名异来源沿各自规则处理。
 - 空批次保持安静，原扫描异常交给 Hangfire，单项失败继续处理。保留去重、返回值、开奖事务、审计与 Outbox，以及 WriteTo、AuditTo 和候选输出各自的故障处理。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-lottery-job-output-implementation)。真实调度、生产介质和 collector 依各自条件验收。
+
+<a id="l2-cleanup-job-final-output"></a>
+
+## 80. L2 文件及记录清理 Job 最终输出（2026-11-10）
+
+- `CleanupJobLogSink` 在上下文合并后重建四个精确来源，覆盖旧链代码及配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件使用固定模板、`SourceCategory=job` 和 `Diagnostic=false`，仅保留对应事件的字段及类型化 trace / span。重建的 Serilog 事件保留原等级和时间戳，候选 JSONL 由现行公共策略在规范化时生成时间字段。精确来源上未登记的事件使用 `runtime.unclassified` 安全摘要，等级低于 Warning 时标为诊断。
+- `Radish.Service.Jobs.FileCleanupJob` 的四个入口使用该固定来源。完成、警告和失败保留原 `jobKind`、`outcome`、七项非负计数及有界 `durationMs`。只有失败或目录清理异常警告携带封闭 `failureKind`。缺失文件仍计入原已处理数，实际移动数量仍由 `movedCount` 表示。
+- `Radish.Api.Services` 下的 `NotificationInboxCleanupJob`、`WikiDraftPayloadCleanupJob` 和 `ChatMessageReactionOperationCleanupJob` 各自固定 `jobKind`。收件箱完成保留三种删除计数和时长，容量告警只保留本批告警条数。Wiki 与聊天完成各保留数量和时长。
+- 文件批次和记录清理保持第 10 节的清理行为及异常归属。WriteTo 输出故障由该链消费，AuditTo 保留异常传播，候选输出故障走有限应急。真实目录权限故障、Hangfire 调度、生产介质与 collector 仍有各自验收条件。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-cleanup-job-output-implementation)。

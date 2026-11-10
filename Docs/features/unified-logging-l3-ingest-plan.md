@@ -22,7 +22,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 本页承接总纲[四个收口批次](unified-logging-governance-design.md#closeout-batches)的前两批；后两批沿原 L4/L5/L6，不因本页只写接收入库而删除。L3-A、七个来源和 14 个 Controller 保持本地完成，不恢复为待实现。
 
-第一批按共享生成和消费链核对剩余 Service / Job / Hub。共享后台 Job 和抽奖 Job 已完成本地最终输出收口，下一组核验文件及记录清理。有限清单、诊断字段取舍和验证范围见[第 10 节](#l2-final-output-first-slice)。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
+第一批按共享生成和消费链核对剩余 Service / Job / Hub。共享后台 Job、抽奖 Job 及文件和记录清理已完成本地最终输出收口，下一组核验上传会话及文件访问令牌清理。有限清单、诊断字段取舍和验证范围见[第 10 节](#l2-final-output-first-slice)。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
 
 第二批将下表 L1 剩余项与 L3 实际 collector、接收器及 SQLite / PostgreSQL 组合验证：先明确目标架构、镜像、隔离存储、端口、故障方式和恢复 / 清理边界；每个尚缺条件对应一次可验结果，不追加多平台矩阵。真实运行另获授权，替身、合成格式或模块通过不能关闭真实链路。传输、磁盘、持久化与留存出口未齐时不提前进入生产切换。
 
@@ -257,13 +257,13 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 
 ### 10.1 已登记调用链
 
-以下清单按[事件契约](./unified-logging-contract.md)的精确来源分组。旧链在 `SerilogSetup.ConfigureLegacy` 合并上下文后分流，候选链经 `RuntimeLoggingConfiguration` 和 `RuntimeSerilogSink` 生成 JSONL。已有生成端及直接消费者证据按原范围引用。共享后台 Job 和抽奖 Job 已完成本地最终输出收口，其余按组补证。
+以下清单按[事件契约](./unified-logging-contract.md)的精确来源分组。旧链在 `SerilogSetup.ConfigureLegacy` 合并上下文后分流，候选链经 `RuntimeLoggingConfiguration` 和 `RuntimeSerilogSink` 生成 JSONL。已有生成端及直接消费者证据按原范围引用。共享后台 Job、抽奖 Job 及文件和记录清理已完成本地最终输出收口，其余按组补证。
 
 | 分组 | 实际入口与生成点 | 消费边界和证据 |
 | --- | --- | --- |
 | 首组业务 Job | `ShopJob.CancelTimeoutOrdersAsync / MarkExpiredBenefitsAsync / GenerateDailyStatsAsync`、`CommentHighlightJob.ExecuteAsync`、`RetentionRewardJob.ExecuteAsync` 均由 `ApiRecurringJobRegistration` 登记，共用 `BusinessJobSummary.Write` | 契约 §11、78 和 `BusinessJobLoggingTests`。商城取消通过真实配置验证最终出口，另外四个入口沿原方法回归 |
 | 抽奖 Job | `PostLotteryJob.ExecuteAutoDrawAsync` 用自己的 `ILogger<PostLotteryJob>` scope 写摘要，扫描异常交给 Hangfire | 契约 §11、79、`BusinessJobLoggingTests` 和 `LotteryControllerLoggingTests`。[第 10.4 节](#l2-lottery-job-output)已完成本地切片 |
-| 文件及记录清理 | `FileCleanupJob` 的软删除、临时文件、回收站、孤立附件入口用内部批次摘要。通知收件箱、Wiki 草稿、聊天回应三个 Job 各在 `ExecuteAsync` 用类型化 logger | 契约 §10、`CleanupLoggingTests` 和 `FileCleanupJobTest`。四个来源均已复现最终输出缺口，[第 10.5 节](#l2-cleanup-job-output)列出修复范围 |
+| 文件及记录清理 | `FileCleanupJob` 的软删除、临时文件、回收站、孤立附件入口用内部批次摘要。通知收件箱、Wiki 草稿、聊天回应三个 Job 各在 `ExecuteAsync` 用类型化 logger | 契约 §10、80、`CleanupLoggingTests` 和 `FileCleanupJobTest`。[第 10.5 节](#l2-cleanup-job-output)已完成本地切片 |
 | 上传及令牌清理 | `ChunkedUploadService.CleanupExpiredSessionsAsync`、`FileAccessTokenService.CleanupExpiredTokensAsync` 用 `ServiceCleanupSummary`。前台目录 / 配额失败走同 helper 的 `RecordStandaloneFailure` | 契约 §13、21–24 和 `ServiceCleanupLoggingTests`、`ChunkedUploadLoggingTests` 及附件回归。区分后台摘要、前台失败与 Controller 已收口事件 |
 | Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9 和 `OutboxNativeLoggingTests`。沿状态写入核对既有 `operationId`。Hangfire provider / 状态观察器沿用 §73 证据 |
 | 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 和 `RewardLoggingTests`、`CoinMovementLoggingTests`、`AccountGovernanceLoggingTests`。区分重试决定、已消费失败与发放结果 |
@@ -304,17 +304,16 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 
 <a id="l2-cleanup-job-output"></a>
 
-### 10.5 文件及记录清理 Job 最终输出提案
+### 10.5 文件及记录清理 Job 最终输出与本地验收
 
-四个来源共七个入口已完成本地核验。文件摘要未绑定 `SourceContext`，外层已有业务 Job 来源时会被其他适配器重建为 `runtime.unclassified`，丢失原事件和计数。三个记录清理 Job 的类型化来源稳定，但同样会带出外层字段。生产候选链会因外层 `Diagnostic=true` 丢掉文件失败、记录完成和收件箱容量告警。见[核验记录](../records/planning-closeout-2026-11-10.md#l2-cleanup-job-output-audit)。
+修复前，文件摘要未绑定 `SourceContext`，外层已有业务 Job 来源时会被其他适配器重建为 `runtime.unclassified`，丢失原事件和计数。三个记录清理 Job 的类型化来源稳定，但同样会带出外层字段。生产候选链会因外层 `Diagnostic=true` 丢掉文件失败、记录完成和收件箱容量告警。见[核验记录](../records/planning-closeout-2026-11-10.md#l2-cleanup-job-output-audit)。
 
-1. 为文件摘要固定 `Radish.Service.Jobs.FileCleanupJob` 来源，在现有旧链 WriteTo / AuditTo 和候选输出接线中，增加只处理这四个精确来源的清理 Job 适配。登记事件按下表重建，固定 `SourceCategory=job` 和 `Diagnostic=false`，保留等级、原事件时间及类型化 trace / span。移除外层字段、字符串关联值和异常对象。精确来源的未登记事件用安全通用摘要处理，同名事件继续按各自来源处理。
+1. 文件摘要固定 `Radish.Service.Jobs.FileCleanupJob` 来源。`CleanupJobLogSink` 在旧链 WriteTo / AuditTo 和候选输出中按下表重建登记事件，固定 `SourceCategory=job` 和 `Diagnostic=false`，保留类型化 trace / span 及 Serilog 事件的原等级和时间戳。精确来源的未登记事件用安全通用摘要处理，同名事件继续按各自来源处理。
+2. 保留文件移动 / 删除和原计数口径、分片排除、引用保护、空批次安静及已消费失败的返回行为。保留记录仓储调用、结果对象和异常外抛，由 Hangfire 按原策略重试。WriteTo、AuditTo 和候选链各自沿用现有输出故障行为。上传会话、文件访问令牌和 Hangfire 自有日志继续按原分组处理。
+3. 定向回归覆盖七个入口、两种环境的配置 WriteTo / AuditTo、代码 console 和候选 JSONL。已验证来源错配、无关字段、生产过滤、收件箱两事件的字段隔离、空批次和异常归属。目录失败警告用适配器输入验证，真实目录权限故障、生产日志介质、Hangfire 调度及 collector 留到对应环境验收。见[实施记录](../records/planning-closeout-2026-11-10.md#l2-cleanup-job-output-implementation)。
 
 | 来源 | 登记事件与字段 |
 | --- | --- |
 | `FileCleanupJob` | 保留完成、警告、失败。`jobKind` 限于 `file-deleted / file-temp / file-recycle / file-orphan`，保留对应 `outcome`、`durationMs` 和原七项计数 `processedCount / movedCount / missingCount / skippedCount / removedDirectoryCount / failedCount / directoryFailureCount`。失败或含真实目录清理异常的警告保留封闭 `failureKind`，仅缺失文件的警告排除该字段 |
 | `NotificationInboxCleanupJob` | 固定 `jobKind=notification-inbox`。完成只保留 `relationCount / groupCount / notificationCount / durationMs`。`job.cleanup.capacity_warning` 只保留聚合 `count`，对应本批容量告警条数 |
 | `WikiDraftPayloadCleanupJob` / `ChatMessageReactionOperationCleanupJob` | 各自固定 `jobKind=wiki-drafts / chat-reactions`，完成只保留 `count / durationMs` |
-
-2. 保留文件移动 / 删除和原计数口径、分片排除、引用保护、空批次安静及已消费失败的返回行为。保留记录仓储调用、结果对象和异常外抛，由 Hangfire 按原策略重试。WriteTo、AuditTo 和候选链各自沿用现有输出故障行为。上传会话、文件访问令牌和 Hangfire 自有日志继续按原分组处理。
-3. 定向回归覆盖七个入口、两种环境的配置 WriteTo / AuditTo、代码 console 和候选 JSONL。验证来源错配、无关字段、生产过滤、收件箱两事件的字段隔离、仅缺失与目录失败警告的区别、空批次和异常归属。真实目录故障、生产日志介质、Hangfire 调度及 collector 在对应环境验收。

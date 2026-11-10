@@ -13,7 +13,7 @@
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
 - **下一完整交付**：在指定隔离部署环境完成统一日志查询、管道故障识别、站内告警和升级 / 恢复 / 回滚；先固定剩余 Service / Job / Hub 最终出口及诊断必需字段清单，再按下述四批完成。L3-A、浏览器、七个自有来源与 14 个 Controller 的本地成果不重复实施。
 - **规划复核日期**：`2026-11-10`；所有者确认收口顺序，本轮只改文档，无新增产品验收。已有成果已由 `8d6cc63a` 集成，集成不关闭日志 L1–L6、Native 或连接能力的剩余门禁。[本次记录](../records/planning-closeout-2026-11-10.md)区分方案、事实和验证边界；11 月 4–5 日运行与实现证据仍沿原记录。
-- **日志专题复核日期**：`2026-11-10`；共享后台 Job 和抽奖 Job 最终输出已完成本地修复与回归。文件及记录清理已复现缺口，[修复范围](../features/unified-logging-l3-ingest-plan.md#l2-cleanup-job-output)待确认。已实现范围见[事件契约第 7–79 节](../features/unified-logging-contract.md)。L2 整体和真实链路仍按各自退出条件推进。
+- **日志专题复核日期**：`2026-11-10`；共享后台 Job、抽奖 Job 及文件和记录清理最终输出已完成本地修复与回归。下一组核验上传会话及文件访问令牌清理。已实现范围见[事件契约第 7–80 节](../features/unified-logging-contract.md)。L2 整体和真实链路仍按各自退出条件推进。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -68,10 +68,10 @@
 
 ## 当前主线：日志专题恢复顺位
 
-2026-11-04 恢复[统一日志专题](../features/unified-logging-governance-design.md)，保留 2026-10-15 已完成结论。当前范围见[事件契约第 7–79 节](../features/unified-logging-contract.md)，此前批次与证据限制见[11 月 5 日日终回顾](../records/day-end-doc-review-2026-11-05.md)。下面按已有生产接线和明确缺口收口，不向未使用框架、外部任意订阅器或全进程证明扩张。
+2026-11-04 恢复[统一日志专题](../features/unified-logging-governance-design.md)，保留 2026-10-15 已完成结论。当前范围见[事件契约第 7–80 节](../features/unified-logging-contract.md)，此前批次与证据限制见[11 月 5 日日终回顾](../records/day-end-doc-review-2026-11-05.md)。下面按已有生产接线和明确缺口收口，不向未使用框架、外部任意订阅器或全进程证明扩张。
 
 1. **浏览器输出本批已完成**：共享 HTTP 五处错误出口和两套应用 logger 已接入公共实现，固定文本 / 字段、三级 / diagnostic、兼容调用与最终 console 有成组自动化回归，见[本批记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。不自动增加遥测回传，也不将模块替身证据视为真实浏览器 Smoke；后续不重复该切片，按“接下来的事项”推进剩余来源。
-2. **保留自有来源的准确边界**：Common 两处 catch、API 周期注册 / 固定文档同步、Gateway 停止及两个 Hangfire 来源保持已完成结论。User / Client / Bootstrap / 通知去重 / 搜索 / 限流 / 经验七个来源与直接异常消费者、14 个 Controller、共享后台 Job 和抽奖 Job 已完成对应的本地输出切片。其他 Service / Job / Hub 沿已登记调用链核验最终输出和消费边界。见[自有来源记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)、[Controller 记录](../records/unified-logging-l2-controller-output-2026-11-05.md)及[剩余分组](../features/unified-logging-l3-ingest-plan.md#l2-final-output-first-slice)。
+2. **保留自有来源的准确边界**：Common 两处 catch、API 周期注册 / 固定文档同步、Gateway 停止及两个 Hangfire 来源保持已完成结论。User / Client / Bootstrap / 通知去重 / 搜索 / 限流 / 经验七个来源与直接异常消费者、14 个 Controller、共享后台 Job、抽奖 Job 及文件和记录清理已完成对应的本地输出切片。其他 Service / Job / Hub 沿已登记调用链核验最终输出和消费边界。见[自有来源记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)、[Controller 记录](../records/unified-logging-l2-controller-output-2026-11-05.md)及[剩余分组](../features/unified-logging-l3-ingest-plan.md#l2-final-output-first-slice)。
 3. **保留未使用 / 外部通道边界**：DataProtection 列明来源已治理，OpenIddict Client / Validation / DataProtection 集成未注册；外部 EventPipe / DiagnosticListener / Activity / metrics 不自动受控，详见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 后置，不将这些已知限制重新放到功能收口之前进行无限调查。
 4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认。Rust `.tmp` 水印回退已由图片替代移除，改用内容识别与显式输出格式，交付验收及 PR 集成已完成。
 
