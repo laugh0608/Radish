@@ -64,6 +64,12 @@ public sealed class RuntimeLogIngestPostgreSqlTests
             RuntimeLogPolicy.TryReadUtc(value.OccurredAtUtc, out var expected);
             Assert.Equal(expected.Ticks, row.OccurredAtUtc.Ticks);
             Assert.Equal("Warning", row.Level);
+
+            await database.Ado.ExecuteCommandAsync("ALTER TABLE runtime_log_rejection_bucket ALTER COLUMN attempt_count TYPE integer");
+            const string invalidCountColumn = "Invalid column runtime_log_rejection_bucket.attempt_count";
+            Assert.Contains(invalidCountColumn, migration.Verify(database, services));
+            var drift = Assert.Throws<InvalidOperationException>(() => migration.Apply(database, services));
+            Assert.Contains(invalidCountColumn, drift.Message, StringComparison.Ordinal);
         }
         finally { await admin.Ado.ExecuteCommandAsync("DROP SCHEMA " + schema + " CASCADE"); }
     }

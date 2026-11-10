@@ -145,6 +145,8 @@ npm run check:logging-contract
 
 新增 PostgreSQL 集成测试带 `Database=PostgreSQL` trait，只有另行授权隔离连接后才能执行；本批未执行。现有 Log baseline 升级走 `20261105_023_runtime_log_ingest`；尚无 baseline 的旧库仍须满足当前结构接管规则，不借新迁移自动放宽接管或修补已有漂移。
 
+`20261105_023_runtime_log_ingest` 对拒收计数 `attempt_count` 按数据库验证 64 位存储。PostgreSQL 接受 `bigint` 和 SqlSugar 元数据返回的 `int8`，拒绝 32 位 `integer` / `int4`。SQLite 继续接受 `INTEGER`，迁移 ID 和账本校验和保持原值。
+
 ## 8. 已批准切片：剩余七个自有来源
 
 2026-11-05 基于 `7002cd75` 完成只读核对，方案由 `29e8b4f4` 保存。状态：**项目所有者已批准，本地实施与回归已完成**。本批一次处理第 3 节剩余七个来源的生成、最终出口与回归，不逐文件重复申请；不扩展到所有旧业务来源，也不把本批完成等同于 L2 整体退出。

@@ -75,6 +75,7 @@ internal sealed class RuntimeLogIngestSchemaMigration : ISchemaMigration
     {
         if (!Exists(db, table)) { if (required) issues.Add("Missing table " + table); return; }
         var actual = db.DbMaintenance.GetColumnInfosByTableName(table, false);
+        var isPostgreSql = db.CurrentConnectionConfig.DbType == DbType.PostgreSQL;
         foreach (var expected in db.EntityMaintenance.GetEntityInfo<T>().Columns.Where(c => !c.IsIgnore))
         {
             var column = actual.SingleOrDefault(c => c.DbColumnName == expected.DbColumnName);
@@ -82,13 +83,17 @@ internal sealed class RuntimeLogIngestSchemaMigration : ISchemaMigration
             var type = Nullable.GetUnderlyingType(expected.PropertyInfo.PropertyType) ?? expected.PropertyInfo.PropertyType;
             var storageType = column.DataType.ToLowerInvariant();
             var validType = type == typeof(DateTime) ? storageType is "datetime" or "timestamp" or "timestamp without time zone"
-                : type == typeof(long) ? storageType is "bigint" or "integer"
+                : type == typeof(long) ? IsInt64Storage(storageType, isPostgreSql)
                 : storageType is "text" or "varchar" or "character varying" or "nvarchar";
             if (!validType || column.IsNullable != expected.IsNullable || column.IsPrimarykey != expected.IsPrimarykey ||
-                (db.CurrentConnectionConfig.DbType == DbType.PostgreSQL && expected.Length > 0 && column.Length != expected.Length))
+                (isPostgreSql && expected.Length > 0 && column.Length != expected.Length))
                 issues.Add("Invalid column " + table + "." + expected.DbColumnName);
         }
     }
+
+    // SqlSugar reads PostgreSQL's udt_name. SQLite INTEGER also stores signed 64-bit values.
+    private static bool IsInt64Storage(string storageType, bool isPostgreSql) =>
+        isPostgreSql ? storageType is "bigint" or "int8" : storageType is "bigint" or "integer";
 
     private static bool Exists(ISqlSugarClient db, string table) => db.DbMaintenance.GetTableInfoList(false).Any(t => t.Name == table);
     private static void EnsureProvider(ISqlSugarClient db)
