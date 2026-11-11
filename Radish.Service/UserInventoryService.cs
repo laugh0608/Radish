@@ -313,7 +313,7 @@ public class UserInventoryService : BaseService<UserInventory, UserInventoryVo>,
         {
             if (ex is InvalidOperationException)
             {
-                Log.ForContext("EventCode", "inventory.rename_rejected")
+                Log.ForContext(typeof(UserInventoryService)).ForContext("EventCode", "inventory.rename_rejected")
                     .ForContext("SourceCategory", "application")
                     .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
                     .Warning("Inventory rename effect rejected");

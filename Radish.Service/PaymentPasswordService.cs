@@ -430,11 +430,8 @@ public class PaymentPasswordService : IPaymentPasswordService
 
         if (clearedCount > 0)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "payment.locks_cleared", ["SourceCategory"] = "business"
-            });
-            _logger.LogInformation("Expired payment locks cleared: {processedCount}", clearedCount);
+            _logger.LogInformation(new EventId(1, "PaymentLocksCleared"),
+                "Expired payment locks cleared: {processedCount}", clearedCount);
         }
 
         return clearedCount;
@@ -509,11 +506,8 @@ public class PaymentPasswordService : IPaymentPasswordService
         }
         catch (Exception ex)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "payment.suggestions_failed", ["SourceCategory"] = "business"
-            });
-            _logger.LogError("Payment security suggestions failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            _logger.LogError(new EventId(2, "PaymentSuggestionsFailed"),
+                "Payment security suggestions failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             suggestions.Add("无法获取安全建议，请稍后重试");
         }
 

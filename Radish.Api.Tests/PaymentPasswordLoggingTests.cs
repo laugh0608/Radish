@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using System.Text.Json;
+using Radish.Api.Tests.ErrorHandling;
 using Radish.Model.Models;
 using Radish.Common.HelpTool;
 using Radish.Shared.Security;
@@ -33,7 +35,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class PaymentPasswordLoggingTests
+public sealed partial class PaymentPasswordLoggingTests
 {
     private const string Secret = "PAYMENT_PASSWORD_PRIVATE_SENTINEL";
     public static TheoryData<bool, string> OutputModes => new()
@@ -128,7 +130,7 @@ public sealed class PaymentPasswordLoggingTests
         f.Repository.Setup(r => r.ClearExpiredLocksAsync(Now)).ReturnsAsync(3);
         Assert.Equal(3, (await f.Controller.AdminClearExpiredLocks()).ResponseData);
         capture.AssertSingle("payment.locks_cleared", "Info");
-        Assert.Contains(candidate ? "\"processedCount\":3" : "cleared: 3", capture.Output.ToString());
+        capture.AssertProcessedCount(3);
     }
 
     [Theory]
@@ -229,6 +231,7 @@ public sealed class PaymentPasswordLoggingTests
         public Mock<IAuditLogService> Audit { get; } = new();
         public UserPaymentPassword? Row { get; set; }
         public PaymentPasswordController Controller { get; }
+        public PaymentPasswordService Service { get; }
         private readonly Serilog.Extensions.Logging.SerilogLoggerFactory _factory;
         public Fixture(Serilog.ILogger logger)
         {
@@ -236,7 +239,7 @@ public sealed class PaymentPasswordLoggingTests
             Repository.Setup(r => r.GetByUserIdAsync(7)).ReturnsAsync(() => Row);
             Repository.Setup(r => r.AddAsync(It.IsAny<UserPaymentPassword>())).Callback<UserPaymentPassword>(row => Row = row).ReturnsAsync(1);
 
-            var service = new PaymentPasswordService(Repository.Object, Audit.Object, _factory.CreateLogger<PaymentPasswordService>(), new FixedTime());
+            var service = Service = new PaymentPasswordService(Repository.Object, Audit.Object, _factory.CreateLogger<PaymentPasswordService>(), new FixedTime());
             var current = new Mock<ICurrentUserAccessor>();
             current.SetupGet(c => c.Current).Returns(new CurrentUser { UserId = 7, UserName = Secret, Roles = [] });
             var localizer = new Mock<IStringLocalizer<Errors>>();
@@ -266,23 +269,41 @@ public sealed class PaymentPasswordLoggingTests
     private sealed class Capture : IDisposable
     {
         private readonly Serilog.ILogger _previous = Log.Logger;
-        public StringWriter Output { get; } = new();
-        public Serilog.Core.Logger Logger { get; }
-        public string[] Lines => Output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        private readonly HttpBoundaryCapture _capture;
+        private readonly StringWriter _rendered = new();
+        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
+        public Serilog.Core.Logger Logger => _capture.Logger;
+        public StringWriter Output
+        {
+            get
+            {
+                if (_capture.Candidate) return _capture.Output;
+                _rendered.GetStringBuilder().Clear();
+                foreach (var item in _capture.Sink.Events) _formatter.Format(item, _rendered);
+                return _rendered;
+            }
+        }
         public Capture(bool candidate, string environment)
         {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate) RuntimeLoggingConfiguration.Configure(config, new ConfigurationBuilder().Build(), environment, "api", Output, Output);
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(Output));
-            Logger = config.CreateLogger(); Log.Logger = Logger;
+            _capture = new HttpBoundaryCapture(candidate, environment);
+            Log.Logger = Logger;
         }
-        public void AssertQuiet() => Assert.Equal("", Output.ToString());
+        public void AssertQuiet() => Assert.Empty(_capture.Events);
         public void AssertSingle(string code, string level)
         {
-            Assert.Single(Lines);
-            Assert.Contains(code, Output.ToString());
-            Assert.Contains(level, Output.ToString());
+            var item = Assert.Single(_capture.Events);
+            Assert.Equal(code, item.Code);
+            Assert.Contains(level, item.Level);
             AssertSafe();
+        }
+        public void AssertProcessedCount(int expected)
+        {
+            if (_capture.Candidate)
+            {
+                using var json = JsonDocument.Parse(Output.ToString());
+                Assert.Equal(expected, json.RootElement.GetProperty("properties").GetProperty("processedCount").GetInt32());
+            }
+            else Assert.Equal(expected, ShopOutputAssertions.ReadScalar(Assert.Single(_capture.Sink.Events), "processedCount"));
         }
         public void AssertSafe()
         {
@@ -292,12 +313,7 @@ public sealed class PaymentPasswordLoggingTests
             Assert.DoesNotContain("$argon2id", Output.ToString());
             Assert.DoesNotContain("runtime.unclassified", Output.ToString());
         }
-        public void Clear() => Output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; Logger.Dispose(); Output.Dispose(); }
-    }
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
+        public void Clear() => _capture.Clear();
+        public void Dispose() { Log.Logger = _previous; _capture.Dispose(); _rendered.Dispose(); }
     }
 }

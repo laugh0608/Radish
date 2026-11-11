@@ -1,6 +1,6 @@
-# 商城、库存与支付口令最终日志输出核验
+# 商城、库存与支付口令最终日志输出核验与实施
 
-日期：2026-11-11（Asia/Shanghai）。基线：`dev` 的 `4200e6d9`（奖励、币与经验最终输出修复）。本轮只核验缺口并提出有限修复范围，未修改产品代码或正式测试。待确认方案见[衔接计划第 10.9 节](../features/unified-logging-l3-ingest-plan.md#l2-shop-output)。
+日期：2026-11-11（Asia/Shanghai）。基线：`dev` 的 `4200e6d9`（奖励、币与经验最终输出修复）。初次核验只确认缺口并提出有限范围，未修改产品代码或正式测试；随后所有者批准并完成下文[本地实施](#implementation)。范围见[衔接计划第 10.9 节](../features/unified-logging-l3-ingest-plan.md#l2-shop-output)。
 
 ## 实际调用与有限范围
 
@@ -61,4 +61,37 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-build --no-restore --f
 
 ## 结论与停止线
 
-需同时固定前三个来源的生成身份、明确支付口令的事件身份，并在最终输出逐事件约束字段与诊断属性。有限方案只包含四个来源、七个事件码和既有两条输出链，不扩入无日志的权益服务、已完成 Controller、业务补偿改造或口令算法。第 10.9 节待所有者确认后实施；本次核验不关闭本组最终输出门禁或 L2 整体。
+需同时固定前三个来源的生成身份、明确支付口令的事件身份，并在最终输出逐事件约束字段与诊断属性。有限方案只包含四个来源、七个事件码和既有两条输出链，不扩入无日志的权益服务、已完成 Controller、业务补偿改造或口令算法。核验时第 10.9 节待确认，该轮探针不关闭最终输出门禁。随后所有者明确批准实施，完成情况见下节；L2 整体与真实链路门禁继续保留。
+
+
+<a id="implementation"></a>
+
+## 已批准范围的本地实施
+
+实施基线为 `cb7c03c0`。2026-11-11 所有者确认按第 10.9 节完成修复、回归与文档同步；本批只改变日志身份与输出适配，保留前述业务和输出故障边界。
+
+- 三个 Serilog 来源绑定自身类型；支付口令两个生成点改用命名 EventId。`ShopLogSink` 已接入旧链代码 / 配置 WriteTo、AuditTo 与候选 JSONL，在上下文合并后按精确来源、身份、等级和购买阶段重建。登记事件固定 application / 非诊断属性，保留允许字段、原等级 / Serilog 时间和类型化关联。
+- 配置拒绝、库存重试和清理数量不继承外层 failureKind；未知或错配身份输出安全 unknown，数值 / 分类非法则丢弃。支付口令 EventId 的数值与名称必须同时匹配，普通 EventCode 不能补齐或覆盖身份。字段契约见[第 84 节](../features/unified-logging-contract.md#l2-shop-final-output)。
+- 正式回归复用商城履约、权益与支付口令 fixture，分别用 Serilog / MEL scope 注入合成来源、身份、诊断、关联和载荷污染。覆盖真实库存重试恢复 / 耗尽、正常购买、支付 / 履约失败、独立库存补偿和后续订单写入失败、改名包装与直接 Controller 消费、口令清理数量与建议回退。
+- 输出故障测试确认 AuditTo 仍可中断重试、回补、包装及回退，而 WriteTo / 候选仍消费输出故障；同时检查仓储调用、原 InnerException、400 包装和已发生操作。结构化断言逐事件检查字段集合，不只比较渲染文本。代码 console、错误身份 / 等级 / 阶段、非法数值 / 分类、原时间与类型化 trace / span、邻接来源另有矩阵回归。
+- 支付口令原测试的旧链只接直接 formatter sink，不能执行新增 EventId 映射；本批将该 capture 改接正式日志配置，并按结构化 processedCount 检查数量。其他原业务断言保持，不通过添加生成端 EventCode scope 来兼容绕过正式接线的测试。
+
+### 实施验证
+
+- 严格构建 `dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --warnaserror` 通过，0 warning、0 error。初次新增测试在 params 数组参数处使用目标类型 new 导致编译失败，改为显式 Expected 类型后重新构建通过。
+- 新增最终输出范围在沙盒 93 项全部通过，0 失败、0 跳过：24 项事件 / 非法身份矩阵、1 项字段类型与时间 / 关联、2 项代码 console、48 项真实方法 × 出口 / scope 组合、18 项输出故障。覆盖四个精确来源、七个事件码及两个购买阶段。
+- 关联回归先在沙盒执行，71 项通过后在既有 `PaymentPasswordLoggingTests.StorageFailures_ShouldReachApiOnce` 中无进展；30 秒诊断终止并保留 sequence，未采集内存转储。该次中止不计通过，不据此认定产品缺陷。
+- 相同已编译程序集在宿主环境约 36 秒完成 437 项关联回归，0 失败、0 跳过；包含上述新增 93 项、商城 / 口令日志、五个 Service、Shop / PaymentPassword Controller、Controller 最终输出及直接消费者、Outbox 与奖励输出回归。沙盒等待的底层原因未进一步确定。
+- `npm run check:repo-quality:changed`、`git diff --check` 通过。事件契约及记录索引有非阻断篇幅建议提醒，未达到硬上限；本批未扩展为其他专题的文档拆分。
+
+本地切片完成不等于真实账本 / 库存事务、数据库并发、生产 File / DB sink、collector 或 L2 整体验收。没有安装依赖、启动项目服务 / 容器或执行浏览器 Smoke；生产开关保持关闭。
+
+复跑入口（关联范围在宿主使用相同已编译程序集）：
+
+```bash
+dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --warnaserror
+dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~ShopOutputLoggingTests|(FullyQualifiedName~FinalOutput_Should&(FullyQualifiedName~ShopFulfillmentLoggingTests|FullyQualifiedName~ShopEntitlementLoggingTests|FullyQualifiedName~PaymentPasswordLoggingTests))'
+dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~ShopFulfillmentLoggingTests|FullyQualifiedName~ShopManagementLoggingTests|FullyQualifiedName~ShopEntitlementLoggingTests|FullyQualifiedName~PaymentPasswordLoggingTests|FullyQualifiedName~ShopOutputLoggingTests|FullyQualifiedName~Services.OrderServiceTest|FullyQualifiedName~Services.ProductServiceTest|FullyQualifiedName~Services.UserBenefitServiceTest|FullyQualifiedName~Services.UserInventoryServiceTest|FullyQualifiedName~Services.PaymentPasswordServiceTest|FullyQualifiedName~OutboxNativeLoggingTests|FullyQualifiedName~ControllerFinalOutputTests|FullyQualifiedName~ControllerConsumerOutputTests|FullyQualifiedName~ApplicationOperationOutputTests|FullyQualifiedName~Controllers.ShopControllerTest|FullyQualifiedName~Controllers.PaymentPasswordControllerTest|FullyQualifiedName~RewardOutputLoggingTests' --logger 'console;verbosity=normal' --logger 'trx;LogFileName=shop-related-host.trx' --results-directory /tmp/radish-shop-implementation-results
+npm run check:repo-quality:changed
+git diff --check
+```

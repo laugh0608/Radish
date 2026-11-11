@@ -229,7 +229,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
         }
         if (productConfigurationError != null)
         {
-            Log.ForContext("EventCode", "product.configuration_rejected")
+            Log.ForContext(typeof(ProductService)).ForContext("EventCode", "product.configuration_rejected")
                 .ForContext("SourceCategory", "application")
                 .Warning("Product configuration rejected purchase");
             return (false, "商品配置不完整，请联系管理员");
@@ -847,7 +847,7 @@ public class ProductService : BaseService<Product, ProductVo>, IProductService
                 }
 
                 var delay = BaseRetryDelayMs * (int)Math.Pow(2, i);
-                Log.ForContext("EventCode", "product.stock_retrying")
+                Log.ForContext(typeof(ProductService)).ForContext("EventCode", "product.stock_retrying")
                     .ForContext("SourceCategory", "application")
                     .Warning("Stock update retry {attempt}; delay={delayMs}", i + 1, delay);
                 await Task.Delay(delay);

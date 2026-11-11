@@ -802,3 +802,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - attempt 允许 0–1,000,000，delayMs 允许 0–60,000；计数仅接受非负 int。非法数值或 failureKind 丢弃，不转成自由文本。原模板、异常对象、普通 scope 的 operationId、字符串 trace / span 与无关字段剔除；保留类型化 trace / span、Serilog 原时间及等级，JSONL 时间沿公共规范化策略。精确来源上未知 / 缺失 / 跨来源事件身份、错误等级或未登记业务枚举组合生成安全 `runtime.unclassified`，低于 Warning 标为诊断并沿既有出口门禁处理；邻接来源不匹配。
 - 保留币三次及经验六次重试、延迟 / 抖动、发放、幂等、调账、转账、审计、事务及 Outbox。经验单项已消费失败不再次算作批次异常；转账 recovered 仅表示完成记录重试调用返回。查询失败返回 true / 0、坏快照空列表、分页和缓存回退保持原结果。
 - WriteTo 消费输出故障，AuditTo 传播，候选输出走有限应急。AuditTo 可在币批次写入后抛错、使经验失败路径无法返回 false、使缓存错误后的数据库回退不再执行；本批保留这些既有语义。业务真实方法及最终出口回归见[实施记录](../records/unified-logging-l2-reward-output-audit-2026-11-11.md#implementation)。依赖替身不替代真实账本 / Redis / 调度 / collector 验收，生产开关保持关闭。
+
+<a id="l2-shop-final-output"></a>
+
+## 84. L2 商城、库存与支付口令最终输出（2026-11-11）
+
+- `OrderService`、`ProductService` 与 `UserInventoryService` 在现有 Serilog 生成点固定各自 SourceContext；`PaymentPasswordService` 保持类型化来源，使用 `1/PaymentLocksCleared` 与 `2/PaymentSuggestionsFailed` 两个命名 EventId。普通 scope 的 EventCode 不能选择支付口令事件，两个 ID 的数值与名称必须同时匹配。
+- `ShopLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。精确来源、七个事件码及等级见[第 10.9 节](./unified-logging-l3-ingest-plan.md#l2-shop-output)。登记事件固定 application 分类与 `Diagnostic=false`，使用固定模板，保留 Serilog 原时间 / 等级与类型化 trace / span；JSONL 时间沿公共规范化策略。
+- `product.configuration_rejected` 不保留扩展字段；`product.stock_retrying` 仅保留 int attempt / delayMs，分别为 0–1,000,000 / 0–60,000。`order.purchase_failed` 仅保留 payment / fulfillment 的 purchaseStage 与封闭 failureKind；`order.purchase_interrupted`、`inventory.rename_rejected` 仅保留 failureKind。`payment.locks_cleared` 仅保留正 int processedCount，`payment.suggestions_failed` 仅保留 failureKind。无异常的配置拒绝、库存重试与锁定清理不继承外层失败分类。
+- 原模板、异常对象、普通 operationId、字符串 trace / span、任意 scope 和跨事件字段剔除；非法数值 / failureKind 丢弃。未知 / 缺失 / 错配事件身份、错误等级或非法购买阶段使用安全 `runtime.unclassified`，低于 Warning 标为诊断并沿既有出口门禁处理；邻接来源不匹配，不按共享事件码全局拦截。
+- 第 14、16、19–20、25 节业务和异常归属保持：库存最多五次尝试及原退避，支付失败的库存回补，履约失败后的订单 / 已售数调用，独立补偿或后续写入失败的外层包装，改名两类包装差异，权益 / 幂等 / Outbox 与口令算法 / 锁定 / 审计 / 回退文字均不改。无运行日志的 UserBenefitService 不增加事件，Controller 已完成适配仅作防回归。
+- WriteTo 消费输出故障，AuditTo 传播，候选输出走有限应急。AuditTo 仍可中断库存重试、在支付失败回补前抛错、阻止改名 400 包装及安全建议回退、在仓储已返回清理数量后抛错；不将 mock 调用顺序解释为真实事务最终状态。最终出口与真实方法回归见[实施记录](../records/unified-logging-l2-shop-output-audit-2026-11-11.md#implementation)。真实数据库 / 介质 / collector 验收及 L2 整体继续沿原门禁，生产开关保持关闭。
