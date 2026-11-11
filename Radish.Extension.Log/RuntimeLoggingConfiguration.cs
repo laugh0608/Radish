@@ -24,7 +24,7 @@ public static class RuntimeLoggingConfiguration
         logger.MinimumLevel.Verbose().Enrich.FromLogContext()
             .Filter.ByExcluding(RuntimeProcess.OwnsStartupFailure)
             .Filter.ByExcluding(Radish.Common.LogTool.RuntimeLogIngestScope.Suppress)
-            .WriteTo.Sink(new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(new DataProtectionLogSink(new HostStartupLogSink(new HostProgramLogSink(new HangfireLogSink(new BusinessJobLogSink(new CleanupJobLogSink(new ServiceCleanupLogSink(new ApplicationOperationLogSink(new RuntimeSerilogSink(writer), mode == "Development" && section.GetValue<bool>("Diagnostics"))))))))))))))))));
+            .WriteTo.Sink(new HttpServerFrameworkLogSink(new HttpExceptionFrameworkLogSink(new SignalRFrameworkLogSink(new OutboundHttpFrameworkLogSink(new AuthenticationLogSink(new RoutingLogSink(new HealthCheckLogSink(new OpenIddictLogSink(new DataProtectionLogSink(new HostStartupLogSink(new HostProgramLogSink(new HangfireLogSink(new BusinessJobLogSink(new CleanupJobLogSink(new ServiceCleanupLogSink(new OutboxLogSink(new ApplicationOperationLogSink(new RuntimeSerilogSink(writer), mode == "Development" && section.GetValue<bool>("Diagnostics")))))))))))))))))));
         return writer;
     }
 }

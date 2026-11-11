@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-11 Outbox 最终输出本地收口](./unified-logging-l2-outbox-output-2026-11-11.md)：分派 / 重试 / 死信字段隔离、显式失败分类与 main / chat SQLite 回归；真实采集链路和 PostgreSQL 验收保留
+
 - [2026-11-10 功能完成主线收口](./planning-closeout-2026-11-10.md)：日志四批、Native 与连接衔接、阶段出口和后置；仅文档调整
 
 - [2026-11-05 日终代码与文档回顾](./day-end-doc-review-2026-11-05.md)：六个提交、浏览器与后端日志 / L3-A 本地成果、指南修正及下一有限批次建议

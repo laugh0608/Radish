@@ -115,7 +115,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 - Outbox 空分派保持安静，实际分派一批后仅生成 `outbox.dispatched`，包含 count / durationMs。分派数量不等同于成功处理数量；逐消息成功仍以 Outbox 状态为准，不增加逐条运行日志。
 - `ReliableOutboxRepository` 在条件更新确实影响行后记录 `outbox.retrying`（Warning）或 `outbox.dead_letter`（Error）；使用本次真正选择的 Pending / DeadLetter 状态，不在 Job 根据旧快照猜测重试是否耗尽。无效状态、重复执行和未影响行的写入不生成状态事件。`ReliableOutboxExecutionJob` 不再追加携带异常及业务标识的 Error。
-- `attempt / databaseScope / outcome` 均为受控属性，Service 通过逻辑上下文补充安全 `failureKind`。`operationId` 由固定前缀、规范库名与 Outbox ID 的 SHA-256 前 16 字节转换为 Guid，同一部署同一库同一任务重试 / 重放可关联；部署之间须同时使用日志 source 区分。它不是凭据，也不替代权威审计键。载荷、任务类型原文、机器名、用户标识和异常文本不进入本批日志。
+- `attempt / databaseScope / outcome` 均为受控属性，Service 通过仓储接口显式传递安全 `failureKind`；最终出口规则见[第 82 节](#l2-outbox-final-output)。`operationId` 由固定前缀、规范库名与 Outbox ID 的 SHA-256 前 16 字节转换为 Guid，同一部署同一库同一任务重试 / 重放可关联；部署之间须同时使用日志 source 区分。它不是凭据，也不替代权威审计键。载荷、任务类型原文、机器名、用户标识和异常文本不进入本批日志。
 - 重试间隔、抖动、MaxAttempts、租约、审计错误码及永久失败摘要和内容治理失败记录保持原义。瞬时失败的固定审计提示改为查看错误码和安全摘要，不再误导读者寻找已禁止输出的完整异常。本批没有修复既有租约归属保护问题；日志不是额外数据库事务，也不保证跨重放全局只记录一次失败。领取 / 写库 / 内容治理记录自身抛出的异常仍传播，其 Hangfire 处理边界见第 10 节。
 - Rust FFI 移除显式 stderr 打印，只返回既有 ABI 错误码：watermark 为 0 / -1，hash 为 0 / -1 / -2。.NET 使用受控 `nativeOperation / nativeReason / failureKind` 生成安全事件，不输出文件路径、水印、哈希、异常文本或原生错误正文。
 - `native.fallback` 与 `native.cleanup_failed` 是 Warning；直接 hash 失败或 native 声称成功却无输出文件使用 `native.failed` Error。图片水印本来就走 C#，无需降级警告；正常工厂创建也不逐次打印 Info。水印 fallback 只调用一次，其结果 / 异常继续交给业务调用方最终处理。
@@ -781,3 +781,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `upload-sessions` 登记完成、中断和失败，`file-tokens` 登记完成和中断。后台事件固定 `SourceCategory=job`，保留原六项非负计数、合法 `jobKind`、对应 `outcome` 及有界 `durationMs`，已消费失败另保留封闭 `failureKind`。中断事件为 Info，只描述此前完成的进度。
 - 前台 `upload.cleanup.failed` 固定 `SourceCategory=application`，只保留 `directory / quota-release / quota-complete` 之一及封闭 `failureKind`。附件 Controller 的同名事件沿自身来源适配。
 - 业务及异常归属依第 13 节。WriteTo 消费输出故障，候选输出故障走有限应急。AuditTo 保留输出异常传播，写入中断摘要失败时可覆盖正在传播的仓储异常。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-service-cleanup-output-implementation)。
+
+<a id="l2-outbox-final-output"></a>
+
+## 82. L2 Outbox 最终输出（2026-11-11）
+
+- `OutboxLogSink` 在上下文合并后按精确来源重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件固定 `SourceCategory=job`、`Diagnostic=false`，保留类型化 trace / span 及 Serilog 事件的原等级和时间戳；候选 JSONL 的时间字段沿公共规范化策略生成。未知事件、来源与事件码错配或等级不符使用 `runtime.unclassified` 安全摘要，低于 Warning 时标为诊断；邻接来源不匹配。
+- `Radish.Api.Services.ReliableOutboxDispatcherJob` 仅登记 `outbox.dispatched` Information，保留非负整数 `count` 和有界 `durationMs`。数量表示入队次数，不表示执行成功数；分派摘要不继承外层 `operationId`、失败分类和状态字段。
+- `Radish.Repository.ReliableOutboxRepository` 固定绑定状态来源，登记 `outbox.retrying` Warning 与 `outbox.dead_letter` Error。仅保留 `databaseScope=main / chat`、有界整数 `attempt`、对应 `outcome=retrying / failed`、封闭 `failureKind` 和状态写入方绑定的规范 GUID `operationId`。沿用第 9 节的关联算法及库域，不从自由上下文补齐状态身份。
+- `IReliableOutboxRepository.MarkFailedAsync` 增加缺省为 null 的可选 `failureKind`；Service 使用既有分类器显式传入，Repository 绑定该值（包括 null），最终适配丢弃非法分类。直接调用兼容原参数，缺省时不继承外层分类。保留实际条件更新影响行后才输出、重复执行及零行更新安静、原重试 / 死信 / 审计 / 租约语义。
+- WriteTo 消费输出故障，AuditTo 继续传播原 sink 的聚合异常，候选输出走有限应急；日志失败不回滚已经完成的状态写入或入队。见[本地实施记录](../records/unified-logging-l2-outbox-output-2026-11-11.md)。真实 Hangfire、PostgreSQL 并发和 collector / 介质仍按原门禁验收。
