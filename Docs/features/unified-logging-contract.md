@@ -791,3 +791,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `Radish.Repository.ReliableOutboxRepository` 固定绑定状态来源，登记 `outbox.retrying` Warning 与 `outbox.dead_letter` Error。仅保留 `databaseScope=main / chat`、有界整数 `attempt`、对应 `outcome=retrying / failed`、封闭 `failureKind` 和状态写入方绑定的规范 GUID `operationId`。沿用第 9 节的关联算法及库域，不从自由上下文补齐状态身份。
 - `IReliableOutboxRepository.MarkFailedAsync` 增加缺省为 null 的可选 `failureKind`；Service 使用既有分类器显式传入，Repository 绑定该值（包括 null），最终适配丢弃非法分类。直接调用兼容原参数，缺省时不继承外层分类。保留实际条件更新影响行后才输出、重复执行及零行更新安静、原重试 / 死信 / 审计 / 租约语义。
 - WriteTo 消费输出故障，AuditTo 继续传播原 sink 的聚合异常，候选输出走有限应急；日志失败不回滚已经完成的状态写入或入队。见[本地实施记录](../records/unified-logging-l2-outbox-output-2026-11-11.md)。真实 Hangfire、PostgreSQL 并发和 collector / 介质仍按原门禁验收。
+
+<a id="l2-reward-final-output"></a>
+
+## 83. L2 奖励、币与经验最终输出（2026-11-11）
+
+- 六个生成来源固定绑定自己的 `SourceContext`；`RewardLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 与候选 JSONL。精确来源、13 个事件码及各自领域 / 操作 / 等级目录见[第 10.8 节字段表](./unified-logging-l3-ingest-plan.md#l2-reward-output)。登记事件固定 `SourceCategory=application`、`Diagnostic=false`，生产候选不会再因外层诊断标记丢弃这些事件。
+- `RewardRuntimeLog` 的 retrying 仅保留 coin / experience、整数 attempt 与 delayMs；failed 仅接受 experience 的 grant / grant-once / initialize；conflict 固定 experience / grant-once；cache_fallback 仅接受 experience 的三个缓存操作。batch_completed / batch_failed 保留领域、原 outcome 和三项非负整数计数，不按计数重新推断结果。completed 可表示拒绝或部分结果，仅 failed 保留本批消费异常的封闭 failureKind。
+- `CoinService` 的 transfer_completion_recovered 和 `CoinRewardService` 的 existence_check_failed 仅保留封闭 failureKind；`OperationIdempotencyService` 的 completion_missing 仅保留 success / failure 的 completionKind。`ExperienceService` 的排名查询失败和坏快照事件仅保留 failureKind，排行榜缺失用户仅保留非负整数 skippedCount。`ExperienceCalculator` 的缓存降级仅保留 cache-read / cache-write / cache-invalidate 与 failureKind。
+- attempt 允许 0–1,000,000，delayMs 允许 0–60,000；计数仅接受非负 int。非法数值或 failureKind 丢弃，不转成自由文本。原模板、异常对象、普通 scope 的 operationId、字符串 trace / span 与无关字段剔除；保留类型化 trace / span、Serilog 原时间及等级，JSONL 时间沿公共规范化策略。精确来源上未知 / 缺失 / 跨来源事件身份、错误等级或未登记业务枚举组合生成安全 `runtime.unclassified`，低于 Warning 标为诊断并沿既有出口门禁处理；邻接来源不匹配。
+- 保留币三次及经验六次重试、延迟 / 抖动、发放、幂等、调账、转账、审计、事务及 Outbox。经验单项已消费失败不再次算作批次异常；转账 recovered 仅表示完成记录重试调用返回。查询失败返回 true / 0、坏快照空列表、分页和缓存回退保持原结果。
+- WriteTo 消费输出故障，AuditTo 传播，候选输出走有限应急。AuditTo 可在币批次写入后抛错、使经验失败路径无法返回 false、使缓存错误后的数据库回退不再执行；本批保留这些既有语义。业务真实方法及最终出口回归见[实施记录](../records/unified-logging-l2-reward-output-audit-2026-11-11.md#implementation)。依赖替身不替代真实账本 / Redis / 调度 / collector 验收，生产开关保持关闭。

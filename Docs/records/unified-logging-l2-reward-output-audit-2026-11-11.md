@@ -1,6 +1,6 @@
-# 奖励、币与经验最终日志输出核验
+# 奖励、币与经验最终日志输出核验与实施
 
-日期：2026-11-11（Asia/Shanghai）。基线：`dev` 的 `38d15bd3`（Outbox 最终输出修复）。本任务只核验实际缺口及修复范围；未修改本组产品代码。待批准方案见[衔接计划第 10.8 节](../features/unified-logging-l3-ingest-plan.md#l2-reward-output)。
+日期：2026-11-11（Asia/Shanghai）。基线：`dev` 的 `38d15bd3`（Outbox 最终输出修复）。初次核验仅确认实际缺口及修复范围，未修改本组产品代码；其后所有者批准并完成下文[本地实施](#implementation)。范围见[衔接计划第 10.8 节](../features/unified-logging-l3-ingest-plan.md#l2-reward-output)。
 
 ## 实际调用与有限范围
 
@@ -57,4 +57,42 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-build --no-restore --f
 
 本组需要同时固定生成身份与最终事件字段，不能只新增全局白名单或关闭诊断过滤。有限实施范围是上述六个来源和 13 个事件码，保持原业务返回、重试、审计、事务及输出故障归属。新日志关联键、错误响应改造、资金 / 经验规则、全仓日志重构和真实环境建设均不进入此批。
 
-第 10.8 节为待批准提案；本次核验不关闭这些来源的最终输出门禁，也不关闭 L2 整体。后续先确认修复范围，再实施成组回归。
+核验时第 10.8 节仍为待批准提案；该轮探针不关闭最终输出门禁。随后所有者明确批准实施，完成情况见下节；L2 整体及真实链路门禁继续保留。
+
+
+<a id="implementation"></a>
+
+## 已批准范围的本地实施
+
+实施基线为 `419513d6`。2026-11-11 所有者确认按第 10.8 节完成修复、回归及文档同步；本批仅修改日志生成身份和最终输出适配。
+
+- 六个生成来源绑定固定 `SourceContext`，新增 `RewardLogSink` 接入旧链 WriteTo / AuditTo 与候选日志既有接线。在上下文合并后按精确来源、事件码、等级及合法业务枚举重建，固定 application / 非诊断属性、文本和事件字段，保留原等级、Serilog 时间与类型化关联。
+- 重试、批次完成、幂等记录缺失和排行榜缺失用户不继承外层 failureKind；实际消费异常的事件才保留封闭分类。自由 operationId、字符串 trace / span、无关计数、业务载荷、原模板和异常对象均剔除。未知 / 错配事件及非法枚举走安全 unknown；数值类型和范围非法时丢弃该字段。
+- 正式测试复用三组原 fixture，通过真实公开方法覆盖批次、发放、重试恢复、冲突、初始化、转账、完成记录缺失、奖励存在检查、排名 / 分页 / 快照及缓存三个操作。事务、账本、返回、审计和异常归属不作变更。字段矩阵另外覆盖全部登记组合、非法身份 / 等级 / 枚举、时间和关联类型、数值边界、邻接来源与代码 console。
+- 输出故障回归保持 WriteTo 消费、AuditTo 聚合异常传播、候选有限应急；断言币批次已写入、经验失败不再返回 false、缓存回退被 AuditTo 中断等既有后果。生成点业务结果与 sink 接收到的最终事件同时验证，不只比较渲染文本。
+
+### 本批验证
+
+- `dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --warnaserror` 通过，0 warning、0 error。初次编译发现新增测试缺少命名空间引用及 Scalar 名称冲突，已在测试代码内修正后重新严格构建。
+- 最终输出定向范围 `FullyQualifiedName~RewardOutputLoggingTests|FullyQualifiedName~FinalOutput_Should` 在沙盒通过 75 项，0 失败、0 跳过。该筛选也包括既有最终输出用例，不将 75 全计为新增测试。
+- 关联范围首次在沙盒内触发 30 秒无进展终止，sequence 指向既有 `AccountGovernanceLoggingTests.CoinAdjustment_ShouldRollbackAndLeaveOneErrorToHttpBoundary`；该次中止不计通过，也不据此认定产品缺陷。未采集内存转储。
+- 首次宿主成组运行在测试启动阶段无进展，主动中止后拆分范围、移除 blame 采集并启用正常进度。相同已编译程序集的奖励与相关服务 283 项全部通过（含本次新增 51 项），Controller 最终输出及直接消费 66 项全部通过。启动等待的底层原因未确认，不据成功重试归因产品或运行环境。
+- Outbox / Controller 及 ApplicationOperation 关联回归在宿主完成：413 项通过、0 失败、1 跳过，耗时约 5.68 分钟；唯一跳过为未提供 PostgreSQL 环境的 `ReliableOutboxPostgresIntegrationTest.Outbox_ShouldPreserveTransactionAndClaimSemantics_OnPostgreSql`。该跳过不作为 PostgreSQL 验收通过。各筛选含部分重叠用例，不将各组数量相加为独立覆盖数。
+- `npm run check:repo-quality:changed` 和 `git diff --check` 通过。事件契约 804 行与记录索引 383 行有非阻断篇幅建议提醒，未达到硬上限；未借本批重新拆分其他已完成来源。
+
+本批本地切片完成，契约、衔接计划和当前进度同步；L2 整体继续按既有门禁推进。
+
+本批未安装依赖、启动项目服务 / 容器或执行浏览器 Smoke。正式配置 File / DB sink 的介质故障、真实资金 / 经验事务、PostgreSQL 并发、Redis、Hangfire 调度和 collector 均保留原验收条件；不以 mock 或内存 HTTP 边界代替真实运行证据。
+
+
+复跑入口（先严格编译；服务 / Controller 内存 HTTP 用例在宿主完成）：
+
+```bash
+dotnet build Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --warnaserror
+dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~RewardOutputLoggingTests|FullyQualifiedName~FinalOutput_Should'
+dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~RewardLoggingTests|FullyQualifiedName~RewardOutputLoggingTests|FullyQualifiedName~CoinMovementLoggingTests|FullyQualifiedName~AccountGovernanceLoggingTests|FullyQualifiedName~CoinRewardEntryLoggingTests|FullyQualifiedName~ExperienceQueryGovernanceLoggingTests|FullyQualifiedName~Services.CoinServiceTest|FullyQualifiedName~Services.ExperienceServiceTest|FullyQualifiedName~Services.ExperienceCalculatorTest|FullyQualifiedName~Services.OperationIdempotencyServiceTest'
+dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~Outbox|FullyQualifiedName~ControllerLoggingTests|FullyQualifiedName~ApplicationOperationLoggingTests'
+dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-build --no-restore --filter 'FullyQualifiedName~ControllerFinalOutputTests|FullyQualifiedName~ControllerConsumerOutputTests|FullyQualifiedName~ApplicationOperationOutputTests'
+npm run check:repo-quality:changed
+git diff --check
+```

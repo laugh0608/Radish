@@ -88,7 +88,7 @@ public partial class ExperienceService
 
         if (skippedCount > 0)
         {
-            Log.ForContext("EventCode", "experience.leaderboard_incomplete")
+            Log.ForContext(typeof(ExperienceService)).ForContext("EventCode", "experience.leaderboard_incomplete")
                 .ForContext("SourceCategory", "application")
                 .ForContext("skippedCount", skippedCount)
                 .Warning("Experience leaderboard omitted missing users");
@@ -205,7 +205,7 @@ public partial class ExperienceService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "experience.rank_query_failed")
+            Log.ForContext(typeof(ExperienceService)).ForContext("EventCode", "experience.rank_query_failed")
                 .ForContext("SourceCategory", "application")
                 .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
                 .Error("Experience rank query failed; zero returned");

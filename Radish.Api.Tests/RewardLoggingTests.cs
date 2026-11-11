@@ -26,7 +26,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class RewardLoggingTests
+public sealed partial class RewardLoggingTests
 {
     private const string Secret = "REWARD_PRIVATE_SENTINEL";
 

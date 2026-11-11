@@ -5,7 +5,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
-- [2026-11-11 奖励、币与经验最终输出核验](./unified-logging-l2-reward-output-audit-2026-11-11.md)：六个生成来源、13 个事件码的最终出口缺口与有限修复范围；未实施
+- [2026-11-11 奖励、币与经验最终输出核验与实施](./unified-logging-l2-reward-output-audit-2026-11-11.md)：六个生成来源、13 个事件码的缺口复现、字段隔离修复与本地回归；真实链路门禁保留
 
 - [2026-11-11 Outbox 最终输出本地收口](./unified-logging-l2-outbox-output-2026-11-11.md)：分派 / 重试 / 死信字段隔离、显式失败分类与 main / chat SQLite 回归；真实采集链路和 PostgreSQL 验收保留
 

@@ -642,7 +642,7 @@ public partial class CoinService : BaseService<UserBalance, UserBalanceVo>, ICoi
                 if (completedTransactionNo != null)
                 {
                     await CompleteTransferIdempotencyAsync(idempotencyResult, completedTransactionNo);
-                    Log.ForContext("EventCode", "coin.transfer_completion_recovered")
+                    Log.ForContext(typeof(CoinService)).ForContext("EventCode", "coin.transfer_completion_recovered")
                         .ForContext("SourceCategory", "application")
                         .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
                         .Warning("Transfer completion recording recovered after retry");

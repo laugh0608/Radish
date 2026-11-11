@@ -408,7 +408,7 @@ public class CoinRewardService : ICoinRewardService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "reward.existence_check_failed")
+            Log.ForContext(typeof(CoinRewardService)).ForContext("EventCode", "reward.existence_check_failed")
                 .ForContext("SourceCategory", "application")
                 .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
                 .Error("Reward existence check failed; existing assumed");

@@ -266,7 +266,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | 文件及记录清理 | `FileCleanupJob` 的软删除、临时文件、回收站、孤立附件入口用内部批次摘要。通知收件箱、Wiki 草稿、聊天回应三个 Job 各在 `ExecuteAsync` 用类型化 logger | 契约 §10、80、`CleanupLoggingTests` 和 `FileCleanupJobTest`。[第 10.5 节](#l2-cleanup-job-output)已完成本地切片 |
 | 上传及令牌清理 | `ChunkedUploadService.CleanupExpiredSessionsAsync`、`FileAccessTokenService.CleanupExpiredTokensAsync` 用 `ServiceCleanupSummary`。前台目录 / 配额失败走同 helper 的 `RecordStandaloneFailure` | 契约 §13、21–24、81。[第 10.6 节](#l2-service-cleanup-output)已完成本地切片 |
 | Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9、82 和 `OutboxNativeLoggingTests`。main / chat 的状态写入、权威 `operationId` 和旧 / 候选最终出口已完成本地回归，见[第 10.7 节](#l2-outbox-output)。Hangfire provider / 状态观察器沿用 §73 证据 |
-| 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 及奖励 / 币 / 经验日志回归。2026-11-11 已核验六个生成来源，复现来源误归、scope 污染和生产过滤缺口；修复范围见[第 10.8 节](#l2-reward-output)，待确认 |
+| 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 及奖励 / 币 / 经验日志回归。2026-11-11 已核验六个生成来源，复现来源误归、scope 污染和生产过滤缺口；已按[第 10.8 节](#l2-reward-output)完成本地修复，输出契约见 §83 |
 | 商城、库存与口令 | `OrderService.PurchaseAsync` 扣币及履约分支，及已登记的 `ProductService`、`UserInventoryService`、权益和 `PaymentPasswordService` 生成点 | 契约 §14、16、19–20、25 和对应业务回归。逐链核验失败归属、响应、事务和审计 |
 | 公开查询与报表 | `PublicHeadSnapshotService`、`PublicSitemapService` 的缓存及生成分支，`PublicDiscoverService.GetFeedAsync`、`LeaderboardService.GetLeaderboardAsync / GetUserRankAsync` 和 `StatisticsService` 查询链 | 契约 §26–29 和现有公开查询 / 统计回归。区分服务端降级与 Gateway / Controller 消费 |
 | 通知与实时推送 | `UserFollowService` 通知入队，`NotificationService.CreateNotificationAsync` 到 `NotificationPushService.PushInboxChangedAsync`，以及 `UserInteractionRealtimeNotifier.NotifyRelationshipChangedAsync`、`CommentRealtimePushService.PushAsync` | 契约 §30–31、33、35、38。各降级处保留原消费边界，轻回应沿已有事务与 Controller 证据 |
@@ -349,18 +349,18 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | `ReliableOutboxDispatcherJob` | `outbox.dispatched` Info，仅保留 `count / durationMs`。分派是入队数，和执行成功数分别统计 |
 | `ReliableOutboxRepository` | `outbox.retrying` Warning 和 `outbox.dead_letter` Error，仅保留 `databaseScope / attempt / outcome / failureKind` 及由本次状态写入方生成的 `operationId` |
 
-2026-11-11 所有者确认上述范围，已由 `OutboxLogSink` 和显式分类参数完成本地实现。旧链代码 console、两环境的配置 WriteTo / AuditTo 与候选 JSONL，以及 main / chat SQLite 的状态转换、零行更新和输出故障回归通过；结果及未执行边界见[实施记录](../records/unified-logging-l2-outbox-output-2026-11-11.md)。奖励、币与经验的后续核验和待批准范围见第 10.8 节，不重做已完成切片。
+2026-11-11 所有者确认上述范围，已由 `OutboxLogSink` 和显式分类参数完成本地实现。旧链代码 console、两环境的配置 WriteTo / AuditTo 与候选 JSONL，以及 main / chat SQLite 的状态转换、零行更新和输出故障回归通过；结果及未执行边界见[实施记录](../records/unified-logging-l2-outbox-output-2026-11-11.md)。奖励、币与经验的核验和本地实现见第 10.8 节，不重做已完成切片。
 
 <a id="l2-reward-output"></a>
 
-### 10.8 奖励、币与经验最终输出提案
+### 10.8 奖励、币与经验最终输出与本地验收
 
-2026-11-11 基于 `38d15bd3`，六个生成来源的实际方法经旧链 WriteTo / AuditTo、代码 console 和候选 JSONL 核验。普通上下文可污染字段；外层来源为 `ServiceCleanupSummary` 时事件被重建为该来源的 unknown；外层 `Diagnostic=true` 可使生产候选链丢掉事件。生成端安全分类和业务结果已有回归，尚不能据此关闭最终出口，见[核验记录](../records/unified-logging-l2-reward-output-audit-2026-11-11.md)。以下为待批准范围，未实施。
+2026-11-11 基于 `38d15bd3`，六个生成来源的实际方法经旧链 WriteTo / AuditTo、代码 console 和候选 JSONL 核验。普通上下文可污染字段；外层来源为 `ServiceCleanupSummary` 时事件被重建为该来源的 unknown；外层 `Diagnostic=true` 可使生产候选链丢掉事件。修复前证据见[核验记录](../records/unified-logging-l2-reward-output-audit-2026-11-11.md)。2026-11-11 所有者批准以下范围，已由固定生成来源和 `RewardLogSink` 完成本地实现；输出契约见[第 83 节](./unified-logging-contract.md#l2-reward-final-output)。
 
 1. 在下表六个生成点绑定各自固定 `SourceContext`，复用现有日志接线，在合并上下文后的最终输出按精确来源、事件码、等级及业务枚举重建。登记事件固定 `SourceCategory=application`、`Diagnostic=false`，仅保留本事件所需字段与类型化 trace / span；Serilog 重建保留原时间和等级，JSONL 继续沿公共时间策略。不继承普通 scope 的 `operationId`、自由文本、无关计数或失败分类。
 2. 只给实际消费异常的事件保留封闭 `failureKind`；重试、完成摘要、幂等记录缺失和排行榜缺失用户不继承外层失败。未知 / 缺失 / 跨来源身份、错误等级与未登记组合使用安全 unknown，低等级依原诊断门禁处理；邻接来源不匹配。保持原生成点的结果、计数和异常所有权，不用最终适配重新推断业务成功。
 3. 保留币三次及经验六次重试、延迟与抖动、发放 / 幂等 / 调账 / 转账、审计、事务和 Outbox 语义。经验单项已消费失败仍只在单项记录，批次 completed 可表示拒绝或部分结果；资金写入后幂等完成重试成功仅表示调用返回。查询失败返回 true / 0、坏快照空列表、分页和缓存回退均沿原边界，不借日志修改业务契约。
-4. 保留 WriteTo 消费输出失败、AuditTo 传播故障、候选有限应急。已观察到 AuditTo 的 sink 故障可使经验单项不再返回 false、缓存读取失败后不再执行数据库回退，以及批次完成后向调用方抛错；这些是本次核验到的既有语义，不在此提案静默改变。
+4. 保留 WriteTo 消费输出失败、AuditTo 传播故障、候选有限应急。已观察到 AuditTo 的 sink 故障可使经验单项不再返回 false、缓存读取失败后不再执行数据库回退，以及批次完成后向调用方抛错；这些是本次核验到的既有语义，本批保持该语义。
 
 | 固定来源 | 登记事件与允许字段 |
 | --- | --- |
@@ -371,4 +371,6 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | `Radish.Service.ExperienceService` | `experience.rank_query_failed` Error 和 `experience.governance_snapshot_invalid` Warning：仅 failureKind；`experience.leaderboard_incomplete` Warning：仅 skippedCount |
 | `Radish.Extension.ExperienceExtension.ExperienceCalculator` | `experience.calculator_cache_fallback` Warning：`rewardOperation=cache-read / cache-write / cache-invalidate`、failureKind |
 
-实现后验收覆盖六个精确来源、13 个事件码、各合法领域 / 操作组合和非法组合；两环境的配置 WriteTo / AuditTo、代码 console 与候选 JSONL，scope 污染、真实方法返回 / 写入调用、批次计数、重试耗尽及恢复、正常安静、同名异来源、未知事件、类型化关联和输出故障。复跑奖励、币流转、账户治理、奖励入口、经验查询治理及现有 Outbox / Controller 关联回归。事务 / 仓储 / 缓存替身不替代真实数据库、Redis、调度或 collector 验收；不扩入商城、库存、支付口令及其他下一分组。
+本地回归覆盖六个精确来源、13 个事件码、各合法领域 / 操作组合和非法组合；两环境的配置 WriteTo / AuditTo、代码 console 与候选 JSONL，scope 污染、真实方法返回 / 写入调用、批次计数、重试耗尽及恢复、正常安静、同名异来源、未知事件、类型化关联和输出故障。复跑奖励、币流转、账户治理、奖励入口、经验查询治理及现有 Outbox / Controller 关联回归。事务 / 仓储 / 缓存替身不替代真实数据库、Redis、调度或 collector 验收；不扩入商城、库存、支付口令及其他下一分组。
+
+实现与验证结果见[本批实施记录](../records/unified-logging-l2-reward-output-audit-2026-11-11.md#implementation)。本组本地切片完成不关闭 L2 整体或真实链路门禁。

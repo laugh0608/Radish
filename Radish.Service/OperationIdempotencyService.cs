@@ -122,7 +122,7 @@ public class OperationIdempotencyService : IOperationIdempotencyService
         var record = await _recordRepository.QueryByIdAsync(request.RecordId);
         if (record == null)
         {
-            Log.ForContext("EventCode", "idempotency.completion_missing")
+            Log.ForContext(typeof(OperationIdempotencyService)).ForContext("EventCode", "idempotency.completion_missing")
                 .ForContext("SourceCategory", "application")
                 .ForContext("completionKind", "success")
                 .Warning("Idempotency completion record is missing");
@@ -155,7 +155,7 @@ public class OperationIdempotencyService : IOperationIdempotencyService
         var record = await _recordRepository.QueryByIdAsync(recordId);
         if (record == null)
         {
-            Log.ForContext("EventCode", "idempotency.completion_missing")
+            Log.ForContext(typeof(OperationIdempotencyService)).ForContext("EventCode", "idempotency.completion_missing")
                 .ForContext("SourceCategory", "application")
                 .ForContext("completionKind", "failure")
                 .Warning("Idempotency completion record is missing");

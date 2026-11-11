@@ -29,7 +29,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class CoinMovementLoggingTests
+public sealed partial class CoinMovementLoggingTests
 {
     private const string Secret = "MOVEMENT_PRIVATE_SENTINEL";
 

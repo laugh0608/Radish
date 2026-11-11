@@ -94,7 +94,7 @@ public partial class ExperienceService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "experience.governance_snapshot_invalid")
+            Log.ForContext(typeof(ExperienceService)).ForContext("EventCode", "experience.governance_snapshot_invalid")
                 .ForContext("SourceCategory", "application")
                 .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
                 .Warning("Experience governance snapshot could not be read");

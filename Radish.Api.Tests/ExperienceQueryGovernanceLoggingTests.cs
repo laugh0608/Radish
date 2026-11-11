@@ -39,7 +39,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class ExperienceQueryGovernanceLoggingTests
+public sealed partial class ExperienceQueryGovernanceLoggingTests
 {
     private const string Secret = "EXPERIENCE_QUERY_PRIVATE_SENTINEL";
     public static TheoryData<bool, string> OutputModes => new()
