@@ -257,7 +257,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 
 ### 10.1 已登记调用链
 
-以下清单按[事件契约](./unified-logging-contract.md)的精确来源分组。旧链在 `SerilogSetup.ConfigureLegacy` 合并上下文后分流，候选链经 `RuntimeLoggingConfiguration` 和 `RuntimeSerilogSink` 生成 JSONL。已有生成端及直接消费者证据按原范围引用。共享后台 Job、抽奖 Job、文件和记录清理、服务内清理以及 Outbox 已完成本地最终输出收口，其余按组补证。
+以下清单按[事件契约](./unified-logging-contract.md)的精确来源分组。旧链在 `SerilogSetup.ConfigureLegacy` 合并上下文后分流，候选链经 `RuntimeLoggingConfiguration` 和 `RuntimeSerilogSink` 生成 JSONL。已有生成端及直接消费者证据按原范围引用。共享后台 Job、抽奖 Job、文件和记录清理、服务内清理、Outbox 以及奖励 / 币 / 经验已完成本地最终输出收口，其余按组补证。
 
 | 分组 | 实际入口与生成点 | 消费边界和证据 |
 | --- | --- | --- |
@@ -267,7 +267,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | 上传及令牌清理 | `ChunkedUploadService.CleanupExpiredSessionsAsync`、`FileAccessTokenService.CleanupExpiredTokensAsync` 用 `ServiceCleanupSummary`。前台目录 / 配额失败走同 helper 的 `RecordStandaloneFailure` | 契约 §13、21–24、81。[第 10.6 节](#l2-service-cleanup-output)已完成本地切片 |
 | Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9、82 和 `OutboxNativeLoggingTests`。main / chat 的状态写入、权威 `operationId` 和旧 / 候选最终出口已完成本地回归，见[第 10.7 节](#l2-outbox-output)。Hangfire provider / 状态观察器沿用 §73 证据 |
 | 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 及奖励 / 币 / 经验日志回归。2026-11-11 已核验六个生成来源，复现来源误归、scope 污染和生产过滤缺口；已按[第 10.8 节](#l2-reward-output)完成本地修复，输出契约见 §83 |
-| 商城、库存与口令 | `OrderService.PurchaseAsync` 扣币及履约分支，及已登记的 `ProductService`、`UserInventoryService`、权益和 `PaymentPasswordService` 生成点 | 契约 §14、16、19–20、25 和对应业务回归。逐链核验失败归属、响应、事务和审计 |
+| 商城、库存与口令 | `OrderService.PurchaseAsync` 扣币及履约分支，及已登记的 `ProductService`、`UserInventoryService`、权益和 `PaymentPasswordService` 生成点 | 契约 §14、16、19–20、25 和对应业务回归。四个生成来源已复现最终输出缺口，有限修复范围见[第 10.9 节](#l2-shop-output)，待确认 |
 | 公开查询与报表 | `PublicHeadSnapshotService`、`PublicSitemapService` 的缓存及生成分支，`PublicDiscoverService.GetFeedAsync`、`LeaderboardService.GetLeaderboardAsync / GetUserRankAsync` 和 `StatisticsService` 查询链 | 契约 §26–29 和现有公开查询 / 统计回归。区分服务端降级与 Gateway / Controller 消费 |
 | 通知与实时推送 | `UserFollowService` 通知入队，`NotificationService.CreateNotificationAsync` 到 `NotificationPushService.PushInboxChangedAsync`，以及 `UserInteractionRealtimeNotifier.NotifyRelationshipChangedAsync`、`CommentRealtimePushService.PushAsync` | 契约 §30–31、33、35、38。各降级处保留原消费边界，轻回应沿已有事务与 Controller 证据 |
 | Hub 生命周期 | `ChatHub.OnDisconnectedAsync` 和 `NotificationHub.OnDisconnectedAsync` 在既有清理后用类型化 logger 写摘要。`CommentHub` 进组、退组和输入中路径已有安静性回归 | 契约 §32、34、36 和三组 Hub 测试。核验两条自有断开摘要的出口，真实连接另行验收 |
@@ -374,3 +374,26 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 本地回归覆盖六个精确来源、13 个事件码、各合法领域 / 操作组合和非法组合；两环境的配置 WriteTo / AuditTo、代码 console 与候选 JSONL，scope 污染、真实方法返回 / 写入调用、批次计数、重试耗尽及恢复、正常安静、同名异来源、未知事件、类型化关联和输出故障。复跑奖励、币流转、账户治理、奖励入口、经验查询治理及现有 Outbox / Controller 关联回归。事务 / 仓储 / 缓存替身不替代真实数据库、Redis、调度或 collector 验收；不扩入商城、库存、支付口令及其他下一分组。
 
 实现与验证结果见[本批实施记录](../records/unified-logging-l2-reward-output-audit-2026-11-11.md#implementation)。本组本地切片完成不关闭 L2 整体或真实链路门禁。
+
+<a id="l2-shop-output"></a>
+
+### 10.9 商城、库存与支付口令最终输出提案
+
+2026-11-11 基于 `4200e6d9` 核验四个生成来源。商城 / 库存三个 Serilog 来源缺少固定身份，外层来源可使其误归为 unknown；支付口令已有类型化来源。四个来源都存在最终字段污染和生产诊断过滤缺口，见[核验记录](../records/unified-logging-l2-shop-output-audit-2026-11-11.md)。以下为待确认范围，尚未实施。
+
+1. `OrderService`、`ProductService`、`UserInventoryService` 在现有日志生成点绑定各自固定 SourceContext。`PaymentPasswordService` 保持类型化 logger，将两个局部事件 scope 改为命名 EventId：`1/PaymentLocksCleared`、`2/PaymentSuggestionsFailed`，最终映射下表事件；不让普通 scope 的 EventCode 决定支付口令事件身份。
+2. 新增本组 `ShopLogSink`，复用旧链 WriteTo / AuditTo 与候选链已有接线，在上下文合并后按四个精确来源、事件身份、等级及合法 purchaseStage 重建。登记事件固定 `SourceCategory=application`、`Diagnostic=false`，采用固定模板，仅保留下表字段、类型化 trace / span 及 Serilog 原时间 / 等级；JSONL 时间沿公共策略。普通 operationId、字符串关联键、原异常对象、业务载荷和跨事件字段剔除。
+3. 未知 / 缺失 / 跨来源身份、错误等级和非法购买阶段使用安全 `runtime.unclassified`；低等级沿既有诊断门禁，邻接来源不匹配。数值仅接收 int：attempt / delayMs 沿现有公共上界 1,000,000 / 60,000 且非负，processedCount 只保留正数；非法数值与非法 failureKind 丢弃。不按计数重新解释业务成功，不给无异常的配置拒绝、重试或清理数量继承 failureKind。
+4. 保留库存五次尝试和退避、现有冲突识别、购买支付 / 履约阶段、库存回补与已售数、订单 FailReason / 幂等 / Outbox、历史权益快照、道具条件扣减与权威操作记录。保留改名 ArgumentException 安静、InvalidOperationException 包装 400、其他异常交直接消费者。口令算法、旧版本升级、五次失败锁定 30 分钟、审计与建议回退文字不变。
+5. 保留 WriteTo 消费输出失败、AuditTo 传播及候选有限应急。已复现 AuditTo 可中断库存重试、在支付失败回补前抛错、阻止改名 400 包装及建议回退、在清理已经返回仓储数量后抛错；本批不借日志隔离改变这些既有语义。业务事务与响应改造需独立范围。
+
+| 精确来源 | 登记事件、等级及允许字段 |
+| --- | --- |
+| `Radish.Service.ProductService` | `product.configuration_rejected` Warning，无扩展字段；`product.stock_retrying` Warning，仅 attempt / delayMs |
+| `Radish.Service.OrderService` | `order.purchase_failed` Error，仅 `purchaseStage=payment / fulfillment` 与 failureKind；`order.purchase_interrupted` Error，仅 failureKind |
+| `Radish.Service.UserInventoryService` | `inventory.rename_rejected` Warning，仅封闭 failureKind |
+| `Radish.Service.PaymentPasswordService` | `1/PaymentLocksCleared → payment.locks_cleared` Information，仅 processedCount；`2/PaymentSuggestionsFailed → payment.suggestions_failed` Error，仅 failureKind |
+
+批准后验收覆盖四个来源、七个事件码及两种购买阶段；两环境的配置 WriteTo / AuditTo、代码 console 和候选 JSONL；scope / MEL scope 污染、固定身份、未知与错配事件、非法字段、类型化关联、正常安静、库存重试恢复 / 耗尽、支付 / 履约及独立补偿失败、改名包装与 Controller 消费、口令建议和清理结果、输出故障。复跑商城履约 / 管理 / 权益与口令日志、相关服务及 Controller / Outbox 关联回归。
+
+`UserBenefitService` 无保留日志，不增加输出；已完成的 ShopController / PaymentPasswordController 适配只作关联防回归。真实库存 / 资金事务、PostgreSQL 并发、介质和 collector 仍需对应环境证据。接口、表结构、依赖、生产开关与下一组公开查询 / 报表不进入本提案。
