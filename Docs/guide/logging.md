@@ -1,6 +1,6 @@
 # 日志系统
 
-Radish 项目采用 Serilog 结构化日志。本文描述当前默认的旧链路；统一日志重构已提供 `RadishLogging.Enabled` 候选入口，默认关闭，启用后的配置、输出与迁移限制以[统一事件契约](../features/unified-logging-contract.md)为准，不沿用本文的旧 sink 配置。已治理生成端与列明来源的最终输出准确范围见契约第 7–77 节；L2 尚未整体完成。
+Radish 项目采用 Serilog 结构化日志。当前默认使用本文描述的旧链路。统一日志的 `RadishLogging.Enabled` 候选入口启用后使用独立配置和输出。已治理生成端、最终输出范围和迁移限制见[统一事件契约第 7–89 节](../features/unified-logging-contract.md)。
 
 L3-A 已增加默认关闭的内网接收与 Log 库统一事件表，本地回归已完成；配置、幂等 / 拒收、迁移和未关闭运行门禁见[接收入库方案](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)。这不改变本文描述的默认旧链路，也不代表 production Compose 已接入。
 
@@ -18,6 +18,9 @@ L3-A 已增加默认关闭的内网接收与 Log 库统一事件表，本地回�
 | API 自有 Hangfire provider / 状态观察器 | 第 73 节 |
 | 当前用户 / 客户端管理、Bootstrap / 通知去重、限流及 API 异常消费者 | 第 76 节 |
 | Coin / PaymentPassword / Attachment / Shop 及十个论坛相关 Controller | 第 77 节 |
+| 共享业务 Job、抽奖、清理及 Outbox | 第 78–82 节 |
+| 奖励、币、经验、商城、公开查询、通知、Hub 断开及内容 / 表情 | 第 83–88 节 |
+| API 5xx 反馈关联、Flutter 应用本地报告、CLI 和应急 | [第 89 节](../features/unified-logging-contract.md#l2-diagnostic-output-boundaries) |
 
 宿主健康服务、OpenIddict 与 DataProtection 的已列明来源另在 ILogger → Serilog 桥接前阻止读取原 state、formatter 和 exception；最终 sink 继续清理合并后的 scope。其他来源不能继承此桥接保护结论。日志治理不改变协议响应、认证结果、存储 / 缓存与事务语义，也不代表客户端已收到响应；其他自有日志、集成及非 Serilog 通道仍需独立核对。详细限制见[敏感数据保护](./logging-sensitive-data.md)与[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)。
 
@@ -220,7 +223,7 @@ Log.ForContext("EventCode", "order.purchase_failed")
 
 ### 上下文与批次口径
 
-- `BeginScope`、`ForContext` 或 `LogContext` 仅承载已登记的安全字段。候选 `traceId / spanId / operationId` 需符合规范，权威 tenant / request / job 上下文尚未完整接入，不能随意添加身份字段并假定会被安全持久化。
+- `BeginScope`、`ForContext` 和 `LogContext` 仅承载已登记的安全字段。候选 Serilog 的 `traceId / spanId` 来自类型化 W3C 关联，`operationId` 来自已登记的 Hangfire / Outbox 状态路径。API 5xx 反馈 `requestId` 由最终异常处理器绑定，普通 scope 和请求 header 无权填充。[关联字段契约](../features/unified-logging-contract.md#l2-diagnostic-output-boundaries)
 - 正常单项成功、业务拒绝、空扫描及纯幂等重放按专题保持安静；批次摘要明确区分查询数、正常返回数、实际更新数和已消费失败数。
 - 各批次边界及保留行为以[统一事件契约](../features/unified-logging-contract.md)为准；日志不证明数据库事务已提交，也不替代业务审计。
 
@@ -312,7 +315,7 @@ SELECT 'Error', COUNT(*) FROM ErrorLog_20251201;
 
 ### DbMigrate 命令输出
 
-`doctor / verify / help` 报告继续写 stdout；CLI 诊断写 stderr，使用统一 JSONL 策略，不连接旧文件 / 数据库 sink。诊断入口记录命令类别、阶段、变更数量和耗时；原始 argv、连接串和 provider 异常消息不进入诊断。doctor / verify 的报告保留判定、问题分类和退出成功 / 失败语义，连接目标及异常原文改为安全说明。
+`help / doctor / verify` 和 `apply` 内嵌的 doctor 将人读报告写 stdout。报告中的环境、主库和连接标识经过控制字符转义和限长，连接目标使用安全占位，退出码沿用各命令原规则。阶段诊断与有界应急 JSONL 走 stderr，字段限于登记的命令类别、阶段、数量和耗时等安全摘要。真实采集的流识别与独立应急留存随 L1 / L3 联验。[本地输出契约](../features/unified-logging-contract.md#l2-diagnostic-output-boundaries)
 
 Seed 不再捕获或回放 `Console.Out`。每阶段记录受控 `seedStep`、`outcome` 和耗时；缺失资源、冲突、未解决回填使用安全警告，不附路径、邮箱或业务载荷。阶段失败摘要为 Info，异常原样交给顶层记录一次 Error。
 

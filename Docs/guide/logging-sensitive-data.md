@@ -1,6 +1,6 @@
 # 日志敏感数据与查询凭据保护
 
-> 最后更新：2026-10-15（Asia/Shanghai）
+> 最后更新：2026-11-12（Asia/Shanghai）
 >
 > 本页说明应用日志、网关日志与审计日志中的敏感数据边界；日志输出、存储、查询和归档仍以 [日志系统](/guide/logging) 为准，前端规则见 [前端日志与敏感字段脱敏](/guide/frontend-logging)。
 
@@ -64,10 +64,12 @@ API / Auth / Gateway 在 `RadishLogging.Enabled=false` 的旧 `AddSerilogSetup` 
 - 自有 Auth 账户与 IdleSession、三宿主启动摘要、API 周期任务注册 / 固定文档启动同步和 Gateway 停止通知，按[事件契约第 67、70、72 节](../features/unified-logging-contract.md)生成固定事件，并在最终输出重建，清除合并后的任意 scope。只覆盖列明来源，不推定完整宿主已治理；结果准备、注册返回和生命周期通知也不代表响应、业务或释放全部完成。
 - API 自有 Hangfire provider / 状态观察器按[第 73 节](../features/unified-logging-contract.md#73-l2-hangfire-provider--状态观察器最终输出)在旧 WriteTo / AuditTo 与候选出口逐事件重建。provider 无异常时显式保留缺省标记，避免 scope 补入合法 failureKind；状态来源只接受其事件对应的 outcome 与规范 operationId。原消息、异常、自由关联字符串、嵌套载荷和跨事件字段不透传；源标识不认证任意进程内代码，也不改变原重试 / 状态提交与输出故障语义。
 - 当前用户 / 客户端、Bootstrap、通知去重、限流及直接 API 异常消费者按[第 76 节](../features/unified-logging-contract.md#76-l2-剩余自有操作及直接异常消费者2026-11-05)治理；另有 14 个 Controller 按[第 77 节](../features/unified-logging-contract.md#77-api-controller-最终输出边界2026-11-05)绑定精确来源。最终输出只保留逐事件字段，不因共享 http.failed 拦截所有 Service；旧链也清理 scope，诊断门禁不信任载荷标志。
+- 第 78–88 节列明的 Service / Job / Hub 使用精确来源、事件身份和逐事件字段重建最终输出。候选 Serilog 只取类型化 W3C trace / span，任务 `operationId` 仅来自登记状态路径。API 5xx 的 `requestId` 取已写入响应的服务端 ID，排除入站 header 与普通 scope。[最终输出及关联字段契约](../features/unified-logging-contract.md)
 - 浏览器本地公共出口已按[前端日志契约](./frontend-logging.md)收口：固定目录、逐事件字段与有界 JSON 快照，生产不放开 diagnostic；不自动上传，不覆盖浏览器网络面板、第三方独立日志或调用前的实参求值。
 - L3-A 接收作用域与内部 Hosting 请求事件不进入普通 Serilog 持久化；PRAGMA / 接收故障使用独立限频 stderr。拒收只存受信来源、固定原因、UTC 日桶及计数，不存原文或 eventId；这是默认关闭的本地接收切片，真实介质 / collector 故障仍待验证。
 - SelfLog 按第 68 节统一写入独立安全 stderr，只输出固定 Warning 事件和受控计数，限频并覆盖 logger 初始化 / 释放边界；不转回 Serilog，不读取原诊断文本，原文文件停止新增，历史文件保留。
 - Common 两处程序集加载 / 类型枚举 catch 按第 71 节写入独立安全 stderr，只输出固定 Error 事件与受控 failureKind，并隔离诊断二次失败；不扩展其他裸输出、扫描容错或反射行为。
+- Flutter 应用框架报告只打印固定摘要，显式引导失败只传播固定错误和空原始栈。DbMigrate 人读 stdout 的标签有界，阶段诊断和应急走 stderr。设备与真实采集证据按对应批次验收。[本地输出契约](../features/unified-logging-contract.md#l2-diagnostic-output-boundaries)
 
 这些独立通道有各自的输出与生命周期约束，不能据此宣称所有非 Serilog 输出已安全。历史来源与验证限制见[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)，新增 Hangfire 最终输出结果见[11 月 4 日记录](../records/unified-logging-l2-hangfire-output-2026-11-04.md)；均不覆盖浏览器或全进程任意输出。
 

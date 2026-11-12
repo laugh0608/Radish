@@ -66,13 +66,13 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，表情管理消费与降级边界见第 49 节，API 已处理 404 完成边界见第 50 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已有本机证据。L2 生成端、框架及精确来源的本地输出见第 6–74、76–89 节，L3-A 本地接收见第 75 节。真实 API / SQLite / PostgreSQL 入库、正式传输上界、目标部署与磁盘故障随 [L1 / L3 联验](./unified-logging-l3-ingest-plan.md#l1-l3-first-runtime-verification)。L4 查询、L5 告警及 L6 迁移沿[专题收口批次](./unified-logging-governance-design.md#closeout-batches)推进。
 
-2026-10-02 日终静态复核补充：第 38、39、41 节中的早期轻回应 / 评论 / 帖子消费点仍在响应构造或失败结果转换之前记录日志，再读取异常 Message。若该 getter 自身抛错，可能已输出原消费事件，又把新异常交给 API；这类“错误处理再次失败”路径尚未包含在这些批次的单次输出结论中，后续需独立核对。第 42–48 节已在各自已列明的转换 / 响应边界补验先构造成功再记录，不应反推全部早期入口已经具备同样保证。
+2026-10-02 日终复核发现第 38、39、41 节的早期轻回应 / 评论 / 帖子消费点会在错误结果构造前记录。第 57 节已修复并验证列明的消费点，第 77、88 节分别补齐 Controller 和 Service 的最终输出证据。
 
 ## 6. L2 候选生成入口
 
-`RadishLogging.Enabled` 默认 false；这是一项阶段性迁移开关，不是新增日志模式。API / Auth / Gateway 在配置加载完成后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例；启用时不再读取旧 Serilog sink / MinimumLevel 配置。DbMigrate 已将命令报告与诊断分开；seed / 具体 migration 已接入安全事件，其他裸输出旁路尚未收口，禁止据此提前切换生产。
+`RadishLogging.Enabled` 是默认关闭的迁移开关。API / Auth / Gateway 在配置加载后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例。启用时使用候选 JSONL 输出和独立的最低等级配置。DbMigrate 命令报告与诊断分流，seed / 具体 migration 使用安全事件。CLI 与应急的真实流识别随第 89 节所列批次验收。
 
 | 配置 | 默认 / 约束 |
 | --- | --- |

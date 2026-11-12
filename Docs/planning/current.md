@@ -11,10 +11,9 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
-- **下一完整交付**：在指定隔离部署环境完成统一日志查询、管道故障识别、站内告警和升级 / 恢复 / 回滚；先固定剩余 Service / Job / Hub 最终出口及诊断必需字段清单，再按下述四批完成。L3-A、浏览器、七个自有来源与 14 个 Controller 的本地成果不重复实施。
-- **规划复核日期**：`2026-11-10`；所有者确认收口顺序，本轮只改文档，无新增产品验收。已有成果已由 `8d6cc63a` 集成，集成不关闭日志 L1–L6、Native 或连接能力的剩余门禁。[本次记录](../records/planning-closeout-2026-11-10.md)区分方案、事实和验证边界；11 月 4–5 日运行与实现证据仍沿原记录。
-- **日志专题复核日期**：`2026-11-11`；共享后台 Job、抽奖 Job、文件和记录清理、上传会话及文件访问令牌清理以及 Outbox 的最终输出已完成本地修复与回归。[Outbox 本批记录](../records/unified-logging-l2-outbox-output-2026-11-11.md)保留真实链路边界；奖励、币与经验六个来源已按[第 10.8 节](../features/unified-logging-l3-ingest-plan.md#l2-reward-output)完成本地最终输出修复与回归，见[实施记录](../records/unified-logging-l2-reward-output-audit-2026-11-11.md#implementation)。商城、库存与支付口令四个来源已按[第 10.9 节](../features/unified-logging-l3-ingest-plan.md#l2-shop-output)完成本地修复与回归，见[实施记录](../records/unified-logging-l2-shop-output-audit-2026-11-11.md#implementation)。已实现范围见[事件契约第 7–84 节](../features/unified-logging-contract.md)。L2 整体和真实链路仍按各自退出条件推进。
-- **当前日志切片**：2026-11-12 已完成公开查询与报表、通知与实时推送、Hub 自有断开事件、内容及表情的本地最终输出修复。[第 10.14 节](../features/unified-logging-l3-ingest-plan.md#l2-diagnostic-and-output-boundaries)已完成 API 5xx 反馈 ID、关联字段、Flutter 应用本地报告及 CLI / 应急边界的本地回归。真实采集与介质走 L1 / L3，反馈 ID 的索引与受权查询走 L3 / L4，原生输出走目标设备验收。见[本批实施记录](../records/unified-logging-l2-diagnostic-output-boundary-audit-2026-11-12.md#implementation)。
+- **下一完整交付**是在指定隔离部署环境完成统一日志查询、管道故障识别、站内告警和升级 / 恢复 / 回滚。当前从 L2 本地输出收口接续到 L1 / L3 真实采集与持久化。
+- **规划复核日期**为 2026-11-10，所有者确认日志、Native、客户端连接的收口顺序。该次规划以 `8d6cc63a` 集成的成果为基线。[规划复核记录](../records/planning-closeout-2026-11-10.md)
+- **当前日志切片（2026-11-12）**。已登记的后台任务、清理、Outbox、奖励 / 商城、公开查询、通知、Hub 断开及内容 / 表情输出完成本地修复。API 5xx 反馈 ID、Flutter 应用本地报告和 CLI / 应急边界也已通过本地回归。范围与运行限制见[事件契约第 78–89 节](../features/unified-logging-contract.md)及[日终回顾](../records/day-end-doc-review-2026-11-12.md)。
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -32,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **按四批完成日志交付**：最终出口与诊断范围 → 真实采集 / 持久化 → Console 查询 / 站内告警 → 迁移 / 候选验收。四批沿原 L1–L6，不新建另一套阶段；任务与结束条件见[日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)。第一批只读列明精确来源、共享 helper、消费链、旧 / 候选出口和已有证据，按缺口成组实施；诊断字段先区分首版必需和后续增强，不默许全部删除或无限补齐。
+1. **下次先准备 L2 → L1 / L3 联验**。对照已登记来源与证据，仅列出阻断联验的可复现缺口，再确认一个隔离部署目标和运行范围。首轮用 API 5xx 反馈 ID、DbMigrate stdout 报告和独立应急 stderr，验证真实 collector、文件、内网 API 和 SQLite。随后接续 PostgreSQL、传输上界、磁盘 / 队列故障与恢复，再按既定批次推进查询、告警和迁移验收。[联验顺序](../features/unified-logging-l3-ingest-plan.md#l1-l3-first-runtime-verification) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
 2. **日志退出后接续 Native**：按 P8-C Windows、P8-D Linux、P8-E 成组验收完成已确认平台范围。必要阻塞为工具链、真实认证 / 安全存储、窗口 / 输入和持续状态的目标平台证据；签名、真机与分发继续按平台单列。平台资源不可达时形成具名等待项，再评审是否在已有可用平台提前推进连接能力，不自动扩建环境或取消平台目标。
 3. **完成客户端连接能力**：先冻结实例身份、兼容发现、地址 / TLS、OIDC 和旧单实例状态迁移，再实现同包选择、会话 / 缓存 / 实时连接隔离与切换恢复。两个测试实例只证明机制，官方与自部署的正式交付各需对应证据，见[连接规划](../frontend/client-server-connection-plan.md)。
 4. **按范围验收后转入维护为主**：日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审；不等待全部 backlog、商店分发或所有外部设备条件清零。批次集成与正式发行 / 生产部署分开，后置来源材料不等于发行放行。
@@ -58,7 +57,7 @@
 
 ## 最近结论
 
-最新日终回顾见[2026-11-05 日终记录](../records/day-end-doc-review-2026-11-05.md)，汇总六个开发 / 方案提交、代码与文档对照、验证边界及下次恢复建议。此前平台与依赖结果见[11 月 4 日回顾](../records/day-end-doc-review-2026-11-04.md)；历史事实不作为当前待办。
+最新日终回顾覆盖 11 月 10–12 日的 19 个提交及联验准备顺序。[2026-11-12 日终记录](../records/day-end-doc-review-2026-11-12.md)
 
 ## 当前平台边界
 
@@ -69,7 +68,7 @@
 
 ## 当前主线：日志专题恢复顺位
 
-2026-11-04 恢复[统一日志专题](../features/unified-logging-governance-design.md)，保留 2026-10-15 已完成结论。当前范围见[事件契约第 7–88 节](../features/unified-logging-contract.md)，此前批次与证据限制见[11 月 5 日日终回顾](../records/day-end-doc-review-2026-11-05.md)。下面按已有生产接线和明确缺口收口，不向未使用框架、外部任意订阅器或全进程证明扩张。
+2026-11-04 恢复统一日志专题。当前本地覆盖范围以[事件契约第 7–89 节](../features/unified-logging-contract.md)为准，此前批次与证据限制见[11 月 5 日日终回顾](../records/day-end-doc-review-2026-11-05.md)。
 
 1. **浏览器输出本批已完成**：共享 HTTP 五处错误出口和两套应用 logger 已接入公共实现，固定文本 / 字段、三级 / diagnostic、兼容调用与最终 console 有成组自动化回归，见[本批记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。不自动增加遥测回传，也不将模块替身证据视为真实浏览器 Smoke；后续不重复该切片，按“接下来的事项”推进剩余来源。
 2. **保留自有来源的准确边界**：Common 两处 catch、API 周期注册 / 固定文档同步、Gateway 停止及两个 Hangfire 来源保持已完成结论。User / Client / Bootstrap / 通知去重 / 搜索 / 限流 / 经验七个来源与直接异常消费者、14 个 Controller、共享后台 Job、抽奖 Job、文件和记录清理、服务内清理、Outbox、奖励 / 币 / 经验、商城 / 库存 / 支付口令、公开查询与报表、通知与实时推送、两条 Hub 自有断开事件及内容与表情已完成对应的本地输出切片。见[自有来源记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)、[Controller 记录](../records/unified-logging-l2-controller-output-2026-11-05.md)及[调用链清单](../features/unified-logging-l3-ingest-plan.md#l2-final-output-first-slice)。

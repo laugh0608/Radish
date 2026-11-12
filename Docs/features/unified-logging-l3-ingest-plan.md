@@ -1,6 +1,6 @@
 # 日志 L1 / L2 剩余门禁与 L3-A 接收入库方案
 
-> 2026-11-05（Asia/Shanghai）。状态：**L3-A、第 8 节及第 9 节 Controller 已完成本地实现；其他来源及真实运行门禁接续**。准备基线为 `dev` 的 `fee65b97`；结果见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。只使用内存 HTTP 和临时 SQLite；未启动项目服务、容器或连接 PostgreSQL。
+> 更新于 2026-11-12（Asia/Shanghai）。L3-A、第 8 节自有来源、第 9 节 Controller 与第 10 节已登记切片均有本地实现和回归。L3-A 的内存 HTTP / 临时 SQLite 证据见[接收实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)，真实采集与持久化接续见[联验顺序](#l1-l3-first-runtime-verification)。
 >
 > 本页属于[统一日志专题](./unified-logging-governance-design.md)，承接[事件契约](./unified-logging-contract.md)。已完成来源仍以事件契约为准；本页维护剩余门禁及下一批实施边界，不另建主线。
 
@@ -10,7 +10,7 @@
 
 L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻止把全宿主真实日志接入直接认定为安全完成。L1 上界未关闭时，接收端只能是受控候选，不能开启 production Compose 汇聚。上述顺位保持一个日志专题串行推进，不同时开展 Native 或客户端连接实施。
 
-准备核对确认：
+2026-11-05 实施前的基线核对：
 
 - `Scripts/logging/collector-mock.mjs` 将请求累积到内存并追加文件，没有真实事务、认证或幂等存储，不能复用为产品接收器。
 - 产品 API / Model / Repository / Service / DbMigrate 中尚无该内网接收与存储实现；Common 已存在生成契约 `Radish.Common.LogTool.RuntimeLogEvent`，新增持久实体需避免同名歧义。
@@ -37,6 +37,14 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
 
 依据：[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)、[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。已有通过项不机械重做；只有配置 / 策略变化或组合故障新增时补回归。目标平台未确定前，不把本机 arm64 digest 当作多平台放行。
+
+<a id="l1-l3-first-runtime-verification"></a>
+
+### 2.1 首轮联验建议（2026-11-12）
+
+1. 对照第 10 节调用清单、事件契约和各批回归，列出尚会阻断真实联验的已登记来源。随后确认单一隔离环境的架构、镜像 digest、Docker daemon 到 collector 的路径、服务与流标识、独立内网端口、专用凭据、测试存储、故障注入和清理。此清单用于确认本次运行范围。
+2. 先以三个边界对账。API 5xx 的响应反馈 ID 与文件及真实 API 接收后 SQLite 的 canonical JSON 一致，旧事件缺省兼容，提交后响应丢失重投只保留一个事件。用受信的服务与流元数据识别 DbMigrate stdout 报告，使其在 JSON parser 前退出事件链。对独立启动 / 入库应急 stderr 验证有界证据和失败通道隔离，入库应急避开同一失败链。
+3. 再验 PostgreSQL、传输正式上界与坏批、磁盘 / 队列故障及恢复，按第 2 节逐项记录实际证据。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
 
 ## 3. L2 剩余来源与退出条件
 
@@ -69,7 +77,7 @@ L2 整体退出要求：上述实际接线来源完成分类，正常生产不�
 
 ### 4.1 接口与隔离
 
-- 沿用主方案 `POST /internal/logs/ingest`，默认关闭；在 API 内配置独立监听端口，不增加新宿主。内网端口只开放该入口及必要探活；普通业务端口拒绝 `/internal`，内网端口拒绝业务、文档、静态文件与 Hub。
+- `POST /internal/logs/ingest` 默认关闭。启用后由 API 的独立内网端口接收，当前端口只接受该接收路径。普通业务端口拒绝 `/internal`。
 - 判断实际连接的本地端口，不信任 Host、转发头或请求路径代替监听隔离；Gateway 不转发 `/internal`。校验在读取请求体及通用审计之前完成。
 - 使用专用 collector 凭据，独立于用户 JWT；凭据绑定配置中的 deployment 和允许 service 集合，载荷不得自行扩权。配置缺失、端口冲突或重复绑定应阻止启用；日志不得回显凭据。
 - 配置仍归 `RadishLogging`、共享 / 宿主 appsettings 与未提交的本地覆盖；本批不写 production Compose、不公开宿主端口。跨主机 TLS / mTLS 保留后续范围。
@@ -243,9 +251,8 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 
 ### 9.4 命令输出例外与后续顺位
 
-- DbMigrate doctor / verify / help 的 stdout 仍是命令结果协议；Program 的运行诊断写 stderr，目标描述已使用固定 configured 占位，不输出连接串。此次只核对代码，不启动命令访问真实库，不把协议输出机械替换成运行事件。
-- 实际 ConsoleHelper 方法为 WriteColorLine 及 WriteErrorLine / WriteWarningLine / WriteInfoLine / WriteSuccessLine 扩展；仓库 C# 搜索只命中定义和内部转发，未发现外部调用。保留未使用工具，不宣称反射或外部调用绝不存在，也不为未证实的运行缺口增加重构。
-- 本批后回到已登记 Service / 后台任务 / Hub 来源的最终出口清单，按共享生成 helper 和真实消费链组织有限批次；随后接续 L1 上界 / 磁盘及 L3 真实监听 / PostgreSQL / collector 联验。诊断上下文完整性、Flutter 来源仍保留各自边界，不重启已经关闭的 Controller 切片。
+- 本节原核对确认 DbMigrate 人读报告与运行诊断分流，`ConsoleHelper` 在仓库内没有调用。第 10.14 节已限制报告标签并移除该 helper，见[现行边界](#l2-diagnostic-and-output-boundaries)。
+- 后续的 Service / Job / Hub 按第 10 节完成已登记本地切片，真实采集及持久化按[第 2.1 节](#l1-l3-first-runtime-verification)接续。
 
 <a id="l2-final-output-first-slice"></a>
 
@@ -273,7 +280,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | Hub 生命周期 | `ChatHub.OnDisconnectedAsync` 和 `NotificationHub.OnDisconnectedAsync` 在既有清理后用类型化 logger 写摘要。`CommentHub` 进组、退组和输入中路径已有安静性回归 | 契约 §32、34、36、87。两条自有断开摘要已按[第 10.12 节](#l2-hub-lifecycle-output)完成本地最终输出修复 |
 | 内容及表情 | `CommentService` 编辑与高亮、`ContentSubmissionService` 冲突恢复、`ForumContentRevisionService` 恢复失败、`ReactionService` 重试、`StickerService` 缓存、批量附件与缩略图降级 | 契约 §37、39–40、42、48–49、88。五个来源、13 个事件按[第 10.13 节](#l2-content-sticker-output)完成本地最终输出，已收口 Controller 做关联回归 |
 
-浏览器、七个已收口的自有来源及其直接消费者、14 个 Controller、已登记的 Hangfire provider / 状态观察器，沿用事件契约 §73–77 的本地结论。DbMigrate `doctor / verify / help` 的 stdout 保留命令输出语义，应急 stderr 沿现有独立预算。Flutter 的实际本地入口与规则仍单列核对。
+浏览器、七个已收口的自有来源及其直接消费者、14 个 Controller、已登记的 Hangfire provider / 状态观察器，沿用事件契约 §73–77 的本地结论。Flutter 应用引导、DbMigrate 命令报告和应急输出见[第 10.14 节](#l2-diagnostic-and-output-boundaries)。
 
 ### 10.2 首版诊断字段建议
 
