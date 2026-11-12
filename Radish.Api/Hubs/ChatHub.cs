@@ -52,11 +52,8 @@ public class ChatHub : Hub
 
         if (exception != null)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "chat.connection_closed", ["SourceCategory"] = "business"
-            });
-            _logger.LogWarning("Chat connection closed with a failure; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
+            _logger.LogWarning(new EventId(1, "ChatConnectionClosed"),
+                "Chat connection closed with a failure; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
         }
 
         await base.OnDisconnectedAsync(exception);

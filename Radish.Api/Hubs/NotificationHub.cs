@@ -65,11 +65,8 @@ public sealed class NotificationHub : Hub
 
         if (exception != null)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "notification.connection_closed", ["SourceCategory"] = "business"
-            });
-            _logger.LogWarning("Notification connection closed with a failure; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
+            _logger.LogWarning(new EventId(1, "NotificationConnectionClosed"),
+                "Notification connection closed with a failure; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
         }
 
         await base.OnDisconnectedAsync(exception);

@@ -10,9 +10,9 @@ internal sealed class NotificationRealtimeOutputCapture : IDisposable
     private static readonly MessageTemplateTextFormatter LegacyFormatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
     private readonly ApplicationLogScope _global;
 
-    public NotificationRealtimeOutputCapture(bool candidate, string environment)
+    public NotificationRealtimeOutputCapture(bool candidate, string environment, bool audit = false)
     {
-        Output = new HttpBoundaryCapture(candidate, environment);
+        Output = new HttpBoundaryCapture(candidate, environment, audit: audit);
         _global = new ApplicationLogScope(Output.Logger);
     }
 

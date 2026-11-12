@@ -7,13 +7,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Api.Hubs;
+using Radish.Api.Tests.ErrorHandling;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
-using Radish.Extension.Log;
 using Radish.IService;
 using Radish.Model;
 using Radish.Service;
@@ -23,23 +22,17 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class ChatHubLoggingTests
+public sealed partial class ChatHubLoggingTests
 {
     private const string Secret = "CHAT_HUB_PRIVATE_SENTINEL";
     private const long UserId = 812345679;
     private const long TenantId = 923456781;
     private const long ChannelId = 734567891;
-    public static TheoryData<bool, string> OutputModes => new()
-    {
-        { false, "Production" }, { true, "Production" },
-        { false, "Development" }, { true, "Development" }
-    };
-
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task NormalLifecycle_ShouldKeepOrderingTenantGroupsAndTypingPayloadQuiet(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task NormalLifecycle_ShouldKeepOrderingTenantGroupsAndTypingPayloadQuiet(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         using var f = new Fixture(capture.Logger);
         await f.Hub.OnConnectedAsync();
         await f.Hub.JoinChannel(ChannelId);
@@ -56,10 +49,10 @@ public sealed class ChatHubLoggingTests
     }
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task Presence_ShouldRetainOtherConnectionUntilItsOwnDisconnect(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task Presence_ShouldRetainOtherConnectionUntilItsOwnDisconnect(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         var presence = new ChatPresenceService();
         using var first = new Fixture(capture.Logger, presence);
         using var second = new Fixture(capture.Logger, presence);
@@ -82,10 +75,10 @@ public sealed class ChatHubLoggingTests
     }
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task DisconnectFailure_ShouldLogOnlyAfterPresenceAndGroupCleanup(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task DisconnectFailure_ShouldLogOnlyAfterPresenceAndGroupCleanup(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         foreach (var (failure, kind) in new (Exception, string)[]
         {
             (new IOException(Secret), "io"), (new TimeoutException(Secret), "timeout"),
@@ -103,10 +96,10 @@ public sealed class ChatHubLoggingTests
     }
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task DependencyFailures_ShouldPropagateSameExceptionAndStopLaterSteps(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task DependencyFailures_ShouldPropagateSameExceptionAndStopLaterSteps(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         foreach (var stage in new[] { "identity", "connect-group", "join", "join-group", "join-presence", "leave", "leave-group", "leave-presence", "disconnect-presence", "disconnect-group", "typing-access", "typing-send" })
         {
             using var f = new Fixture(capture.Logger);
@@ -137,10 +130,10 @@ public sealed class ChatHubLoggingTests
     }
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task Rejections_ShouldKeepExistingSemanticsWithoutLogsOrPresenceChanges(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task Rejections_ShouldKeepExistingSemanticsWithoutLogsOrPresenceChanges(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         using var f = new Fixture(capture.Logger);
         Assert.Equal("频道 Id 无效", (await Assert.ThrowsAsync<HubException>(() => f.Hub.JoinChannel(0))).Message);
         await f.Hub.LeaveChannel(0);
@@ -212,49 +205,27 @@ public sealed class ChatHubLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        private readonly StringWriter _output = new();
-        private readonly string? _candidateMode;
-        public Serilog.Core.Logger Logger { get; }
-        public Capture(bool candidate, string environment)
-        {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate)
-            {
-                _candidateMode = environment;
-                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["RadishLogging:Mode"] = environment,
-                    ["RadishLogging:Diagnostics"] = environment == "Development" ? "true" : "false"
-                }).Build();
-                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
-            }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
-            Logger = config.CreateLogger();
-            Log.Logger = Logger;
-        }
-        public void AssertQuiet() => Assert.Equal("", _output.ToString());
+        private readonly NotificationRealtimeOutputCapture _capture;
+        public Capture(bool candidate, string environment, bool audit) =>
+            _capture = new NotificationRealtimeOutputCapture(candidate, environment, audit);
+        public Serilog.Core.Logger Logger => _capture.Logger;
+        public void AssertQuiet() => Assert.Equal("", _capture.Text);
         public void AssertWarning(string kind)
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             Assert.Single(text.Split('\n', StringSplitOptions.RemoveEmptyEntries));
             Assert.Contains("chat.connection_closed", text);
             Assert.Contains("Warning", text);
             Assert.Contains(kind, text);
-            if (_candidateMode != null)
+            if (_capture.Output.Candidate)
             {
                 using var json = JsonDocument.Parse(text);
-                Assert.Equal(_candidateMode, json.RootElement.GetProperty("mode").GetString());
+                Assert.Equal(_capture.Output.Environment, json.RootElement.GetProperty("mode").GetString());
             }
             foreach (var forbidden in new[] { Secret, UserId.ToString(), TenantId.ToString(), ChannelId.ToString(), "ConnectionId", "runtime.unclassified", "System.IO.IOException" })
                 Assert.DoesNotContain(forbidden, text);
         }
-        public void Clear() => _output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; Logger.Dispose(); _output.Dispose(); }
-    }
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
+        public void Clear() => _capture.Output.Clear();
+        public void Dispose() => _capture.Dispose();
     }
 }

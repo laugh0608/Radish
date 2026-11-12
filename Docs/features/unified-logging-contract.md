@@ -832,3 +832,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `NotificationRealtimeLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 及候选 JSONL 的固定摘要。登记事件为 `application` 和 `Diagnostic=false`，仅保留封闭 `failureKind`。无效字段丢弃。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断并沿各出口既有门禁处理。
 - 保留 Serilog 原时间、等级与类型化 W3C trace / span，优先用事件关联，缺省取当前 W3C Activity。JSONL 时间沿公共规范化策略。重建剔除外层 `operationId`、字符串关联、任意属性、异常、原模板及载荷。
 - 第 30–31、33、35、38 节的业务与异常归属沿用既有契约，包含关注响应、通知入箱与 Outbox、双 Hub 和接收者顺序、评论成功响应及后续高亮推送。WriteTo 消费输出故障，候选 writer 使用有界应急，AuditTo 继续传播并可中断既有调用。见[实施记录](../records/unified-logging-l2-notification-realtime-output-audit-2026-11-12.md#implementation)。真实 WebSocket、介质与 collector 随各自批次验收。
+
+<a id="l2-hub-lifecycle-final-output"></a>
+
+## 87. L2 Hub 自有生命周期最终输出（2026-11-12）
+
+- `ChatHub` 和 `NotificationHub` 沿用类型化 logger，分别使用 `1/ChatConnectionClosed` 和 `1/NotificationConnectionClosed`。精确来源、数值、名称和 Warning 共同识别 `chat.connection_closed` 与 `notification.connection_closed`。普通 scope 的 EventCode 和 SignalR 框架的 EventId 均不能补齐 Hub 自有事件身份。
+- 两个来源复用 `NotificationRealtimeLogSink` 的字段重建逻辑，覆盖旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件使用固定摘要、`application` 分类及 `Diagnostic=false`，仅保留封闭 `failureKind`。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断并按各出口既有门禁处理。
+- 保留原 Serilog 时间、等级和类型化 W3C trace / span，优先使用事件自带关联，缺省取当前 W3C Activity。JSONL 时间沿公共规范化策略。重建剔除连接 / 用户 / 租户属性、额外字段、普通字符串关联、`operationId`、异常、原模板及载荷。
+- 第 32、34、36 节的清理顺序、凭据与身份规则、正常断开、非正用户 ID 分支和异常传播保持。WriteTo 消费 sink 故障，候选 writer 使用有界应急，AuditTo 仍可在清理完成后中断断开回调。CommentHub 安静性和 SignalR 框架各自沿原事件归属。见[第 10.12 节](./unified-logging-l3-ingest-plan.md#l2-hub-lifecycle-output)及[实施记录](../records/unified-logging-l2-hub-lifecycle-output-audit-2026-11-12.md#implementation)。

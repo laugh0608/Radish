@@ -9,12 +9,11 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Connections.Features;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Api.Hubs;
+using Radish.Api.Tests.ErrorHandling;
 using Radish.Common.HttpContextTool;
-using Radish.Extension.Log;
 using Radish.IService;
 using Radish.Model.ViewModels;
 using Serilog;
@@ -23,22 +22,16 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class NotificationHubLoggingTests
+public sealed partial class NotificationHubLoggingTests
 {
     private const string Secret = "HUB_PRIVATE_SENTINEL";
     private const long UserId = 812345679;
     private const long TenantId = 923456781;
-    public static TheoryData<bool, string> OutputModes => new()
-    {
-        { false, "Production" }, { true, "Production" },
-        { false, "Development" }, { true, "Development" }
-    };
-
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task NormalLifecycle_ShouldKeepGroupAndAuthoritativeEventsQuiet(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task NormalLifecycle_ShouldKeepGroupAndAuthoritativeEventsQuiet(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         using var f = new Fixture(capture.Logger);
         await f.Hub.OnConnectedAsync();
         await f.Hub.OnDisconnectedAsync(null);
@@ -58,10 +51,10 @@ public sealed class NotificationHubLoggingTests
     }
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task DisconnectFailure_ShouldRemoveGroupThenWriteOneSafeWarning(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task DisconnectFailure_ShouldRemoveGroupThenWriteOneSafeWarning(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         foreach (var (failure, kind) in new (Exception, string)[]
         {
             (new IOException(Secret), "io"), (new TimeoutException(Secret), "timeout"),
@@ -82,10 +75,10 @@ public sealed class NotificationHubLoggingTests
     }
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task LifecycleFailures_ShouldPropagateWithoutAddingHubFailureLog(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task LifecycleFailures_ShouldPropagateWithoutAddingHubFailureLog(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         foreach (var stage in new[] { "identity-connect", "add", "summary", "NotificationInboxChanged", "UnreadCountChanged", "identity-disconnect", "remove" })
         {
             using var f = new Fixture(capture.Logger);
@@ -113,10 +106,10 @@ public sealed class NotificationHubLoggingTests
     }
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task IdentityRejection_ShouldKeepExistingConnectAndDisconnectRules(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task IdentityRejection_ShouldKeepExistingConnectAndDisconnectRules(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         using (var missing = new Fixture(capture.Logger))
         {
             missing.Context.SetupGet(c => c.User).Returns((ClaimsPrincipal?)null);
@@ -136,10 +129,10 @@ public sealed class NotificationHubLoggingTests
     }
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task CredentialSelection_ShouldStayInsideNormalizerAndOutOfLogs(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task CredentialSelection_ShouldStayInsideNormalizerAndOutOfLogs(bool candidate, string environment, bool audit)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit);
         foreach (var (query, header, expected) in new (string?, string?, string?)[]
         {
             (Secret + "_QUERY", "Bearer " + Secret + "_HEADER", Secret + "_QUERY"),
@@ -201,28 +194,14 @@ public sealed class NotificationHubLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        private readonly StringWriter _output = new();
-        public Serilog.Core.Logger Logger { get; }
-        public Capture(bool candidate, string environment)
-        {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate)
-            {
-                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["RadishLogging:Mode"] = environment
-                }).Build();
-                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
-            }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
-            Logger = config.CreateLogger();
-            Log.Logger = Logger;
-        }
-        public void AssertQuiet() => Assert.Equal("", _output.ToString());
+        private readonly NotificationRealtimeOutputCapture _capture;
+        public Capture(bool candidate, string environment, bool audit) =>
+            _capture = new NotificationRealtimeOutputCapture(candidate, environment, audit);
+        public Serilog.Core.Logger Logger => _capture.Logger;
+        public void AssertQuiet() => Assert.Equal("", _capture.Text);
         public void AssertWarning(string kind)
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             Assert.Single(text.Split('\n', StringSplitOptions.RemoveEmptyEntries));
             Assert.Contains("notification.connection_closed", text);
             Assert.Contains("Warning", text);
@@ -230,12 +209,7 @@ public sealed class NotificationHubLoggingTests
             foreach (var forbidden in new[] { Secret, UserId.ToString(), TenantId.ToString(), "runtime.unclassified", "System.IO.IOException", "ConnectionId", "access_token", "Bearer" })
                 Assert.DoesNotContain(forbidden, text);
         }
-        public void Clear() => _output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; Logger.Dispose(); _output.Dispose(); }
-    }
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
+        public void Clear() => _capture.Output.Clear();
+        public void Dispose() => _capture.Dispose();
     }
 }

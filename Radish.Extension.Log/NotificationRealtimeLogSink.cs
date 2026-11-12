@@ -5,14 +5,17 @@ using Serilog.Parsing;
 
 namespace Radish.Extension.Log;
 
-/// <summary>按精确生成身份重建关注通知与实时推送的运行事件。</summary>
+/// <summary>按精确生成身份重建关注通知、实时推送与 Hub 自有事件。</summary>
 internal sealed class NotificationRealtimeLogSink(ILogEventSink next) : ILogEventSink
 {
     private const string Follow = "Radish.Service.UserFollowService";
     private const string Notification = "Radish.Api.Services.NotificationPushService";
     private const string Interaction = "Radish.Api.Services.UserInteractionRealtimeNotifier";
     private const string Comment = "Radish.Api.Services.CommentRealtimePushService";
+    private const string ChatHub = "Radish.Api.Hubs.ChatHub";
+    private const string NotificationHub = "Radish.Api.Hubs.NotificationHub";
     private const string Unknown = "runtime.unclassified";
+    private static readonly MessageTemplate UnknownHubTemplate = new MessageTemplateParser().Parse("Unrecognized Hub lifecycle event.");
 
     private static readonly Dictionary<string, MessageTemplate> Templates = new(StringComparer.Ordinal)
     {
@@ -21,6 +24,8 @@ internal sealed class NotificationRealtimeLogSink(ILogEventSink next) : ILogEven
         ["user_interaction.chat_push_failed"] = new MessageTemplateParser().Parse("Relationship invalidation chat push is unavailable."),
         ["user_interaction.notification_push_failed"] = new MessageTemplateParser().Parse("Relationship invalidation notification push is unavailable."),
         ["comment.push_failed"] = new MessageTemplateParser().Parse("Comment realtime push is unavailable."),
+        ["chat.connection_closed"] = new MessageTemplateParser().Parse("Chat connection closed with a failure."),
+        ["notification.connection_closed"] = new MessageTemplateParser().Parse("Notification connection closed with a failure."),
         [Unknown] = new MessageTemplateParser().Parse("Unrecognized notification or realtime push event.")
     };
 
@@ -28,7 +33,7 @@ internal sealed class NotificationRealtimeLogSink(ILogEventSink next) : ILogEven
     {
         if (!value.Properties.TryGetValue("SourceContext", out var owner) ||
             owner is not ScalarValue { Value: string source } ||
-            source is not (Follow or Notification or Interaction or Comment))
+            source is not (Follow or Notification or Interaction or Comment or ChatHub or NotificationHub))
         {
             next.Emit(value);
             return;
@@ -41,6 +46,8 @@ internal sealed class NotificationRealtimeLogSink(ILogEventSink next) : ILogEven
             (Interaction, (1, "ChatRelationshipPushFailed"), LogEventLevel.Warning) => "user_interaction.chat_push_failed",
             (Interaction, (2, "NotificationRelationshipPushFailed"), LogEventLevel.Warning) => "user_interaction.notification_push_failed",
             (Comment, (1, "CommentPushFailed"), LogEventLevel.Warning) => "comment.push_failed",
+            (ChatHub, (1, "ChatConnectionClosed"), LogEventLevel.Warning) => "chat.connection_closed",
+            (NotificationHub, (1, "NotificationConnectionClosed"), LogEventLevel.Warning) => "notification.connection_closed",
             _ => Unknown
         };
         var properties = new List<LogEventProperty>
@@ -56,7 +63,8 @@ internal sealed class NotificationRealtimeLogSink(ILogEventSink next) : ILogEven
             properties.Add(new("failureKind", failure));
 
         var activity = Activity.Current is { IdFormat: ActivityIdFormat.W3C } current ? current : null;
-        next.Emit(new LogEvent(value.Timestamp, value.Level, null, Templates[code], properties,
+        var template = code == Unknown && source is ChatHub or NotificationHub ? UnknownHubTemplate : Templates[code];
+        next.Emit(new LogEvent(value.Timestamp, value.Level, null, template, properties,
             value.TraceId ?? activity?.TraceId ?? default, value.SpanId ?? activity?.SpanId ?? default));
     }
 
