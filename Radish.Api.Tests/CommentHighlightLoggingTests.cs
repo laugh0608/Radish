@@ -9,7 +9,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Castle.DynamicProxy;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -20,7 +19,6 @@ using Radish.Common.CacheTool;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.Log;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -38,7 +36,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class CommentHighlightLoggingTests
+public sealed partial class CommentHighlightLoggingTests
 {
     private const string Secret = "COMMENT_HIGHLIGHT_PRIVATE_SENTINEL";
     private const long PostId = 812345679;
@@ -446,40 +444,22 @@ public sealed class CommentHighlightLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        private readonly StringWriter _output = new();
-        private readonly string? _mode;
-        private readonly Serilog.Core.Logger _logger;
-        public Capture(bool candidate, string environment)
-        {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate)
-            {
-                _mode = environment;
-                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["RadishLogging:Mode"] = environment,
-                    ["RadishLogging:Diagnostics"] = environment == "Development" ? "true" : "false"
-                }).Build();
-                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
-            }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
-            _logger = config.CreateLogger();
-            Log.Logger = _logger;
-        }
+        private readonly FinalOutputCapture _capture;
+
+        public Capture(bool candidate, string environment) => _capture = new FinalOutputCapture(candidate, environment);
         public void AssertEvents(params (string Code, string Kind)[] events)
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(events.Length, lines.Length);
             for (var i = 0; i < lines.Length; i++)
             {
                 Assert.Contains(events[i].Code, lines[i]);
                 Assert.Contains("Error", lines[i]);
-                if (_mode != null)
+                if (_capture.Output.Candidate)
                 {
                     using var json = JsonDocument.Parse(lines[i]);
-                    Assert.Equal(_mode, json.RootElement.GetProperty("mode").GetString());
+                    Assert.Equal(_capture.Output.Environment, json.RootElement.GetProperty("mode").GetString());
                     Assert.Equal(events[i].Code, json.RootElement.GetProperty("eventCode").GetString());
                     Assert.Equal("Error", json.RootElement.GetProperty("level").GetString());
                     var properties = json.RootElement.GetProperty("properties");
@@ -491,12 +471,7 @@ public sealed class CommentHighlightLoggingTests
             foreach (var forbidden in new[] { Secret, PostId.ToString(), CommentId.ToString(), ParentId.ToString(), UserId.ToString(), HighlightId.ToString(), "System.IO.IOException", "runtime.unclassified", "god_comments:", "sofas:parent:", "task:highlight-" })
                 Assert.DoesNotContain(forbidden, text);
         }
-        public void Clear() => _output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; _logger.Dispose(); _output.Dispose(); }
-    }
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
+        public void Clear() => _capture.Output.Clear();
+        public void Dispose() => _capture.Dispose();
     }
 }

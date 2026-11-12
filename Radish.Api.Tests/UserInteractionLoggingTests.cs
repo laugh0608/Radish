@@ -194,9 +194,9 @@ public sealed partial class UserInteractionLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly NotificationRealtimeOutputCapture _capture;
+        private readonly FinalOutputCapture _capture;
 
-        public Capture(bool candidate, string environment) => _capture = new NotificationRealtimeOutputCapture(candidate, environment);
+        public Capture(bool candidate, string environment) => _capture = new FinalOutputCapture(candidate, environment);
         public Serilog.Core.Logger Logger => _capture.Logger;
         public void AssertEvents(params (string Code, string Level, string Kind)[] events)
         {

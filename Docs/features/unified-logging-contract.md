@@ -841,3 +841,11 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 两个来源复用 `NotificationRealtimeLogSink` 的字段重建逻辑，覆盖旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件使用固定摘要、`application` 分类及 `Diagnostic=false`，仅保留封闭 `failureKind`。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断并按各出口既有门禁处理。
 - 保留原 Serilog 时间、等级和类型化 W3C trace / span，优先使用事件自带关联，缺省取当前 W3C Activity。JSONL 时间沿公共规范化策略。重建剔除连接 / 用户 / 租户属性、额外字段、普通字符串关联、`operationId`、异常、原模板及载荷。
 - 第 32、34、36 节的清理顺序、凭据与身份规则、正常断开、非正用户 ID 分支和异常传播保持。WriteTo 消费 sink 故障，候选 writer 使用有界应急，AuditTo 仍可在清理完成后中断断开回调。CommentHub 安静性和 SignalR 框架各自沿原事件归属。见[第 10.12 节](./unified-logging-l3-ingest-plan.md#l2-hub-lifecycle-output)及[实施记录](../records/unified-logging-l2-hub-lifecycle-output-audit-2026-11-12.md#implementation)。
+
+<a id="l2-content-sticker-final-output"></a>
+
+## 88. L2 内容及表情最终输出（2026-11-12）
+
+- `CommentService`、`ContentSubmissionService` 和 `ForumContentRevisionService` 固定 Serilog 类型来源及原事件码。`ReactionService` 和 `StickerService` 使用类型化 logger 与固定命名 EventId。13 个事件的精确来源、等级和身份见[第 10.13 节](./unified-logging-l3-ingest-plan.md#l2-content-sticker-output)。`CommentService` 的 `comment.edit_failed` 由服务自身绑定来源，Controller 的同名事件沿原适配器。
+- `ContentStickerLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 与候选 JSONL。登记事件固定模板、`application` 分类与 `Diagnostic=false`，扩展字段仅允许封闭 `failureKind`。原等级、Serilog 时间、事件自带或当前 W3C Activity 的类型化关联保留，JSONL 时间沿公共策略。普通 scope 关联、`operationId`、额外属性、原模板、异常及载荷剔除。精确来源的错配或缺失身份、错误等级使用受控 `runtime.unclassified`，低于 Warning 标为诊断。
+- 第 37、39–40、42、48–49 节的业务返回、事务与异常归属保持。WriteTo 消费输出故障，候选 writer 使用有界应急，AuditTo 仍可阻止返回既有恢复结果、打断重试或缓存回源。评论内层日志输出失败仍可进入外层重算 catch。见[实施记录](../records/unified-logging-l2-content-sticker-output-audit-2026-11-12.md#implementation)。真实介质、数据库并发与 collector 随对应批次验收。

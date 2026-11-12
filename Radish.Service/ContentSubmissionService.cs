@@ -139,7 +139,7 @@ public class ContentSubmissionService : IContentSubmissionService
                     ? await ResolveExistingRecordAsync(existing, request, now)
                     : ResolveFingerprintRecord(existing, now, request.DuplicateWindowSeconds);
                 // 只声明已从既有记录取得结果；后续业务操作与外层事务仍可能失败。
-                Log.ForContext("EventCode", "content_submission.conflict_resolved").ForContext("SourceCategory", "business")
+                Log.ForContext<ContentSubmissionService>().ForContext("EventCode", "content_submission.conflict_resolved").ForContext("SourceCategory", "business")
                     .Warning("Content submission conflict resolved from an existing record; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
                 return result;
             }

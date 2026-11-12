@@ -56,7 +56,7 @@ internal sealed class HttpBoundaryCapture : IDisposable
     public readonly string Environment;
     private readonly string _key = Guid.NewGuid().ToString("N");
 
-    public HttpBoundaryCapture(bool candidate, string environment, string service = "api", bool diagnostics = true, bool audit = false, TextWriter? output = null)
+    public HttpBoundaryCapture(bool candidate, string environment, string service = "api", bool diagnostics = true, bool audit = false, TextWriter? output = null, ILogEventSink? additionalAudit = null)
     {
         Candidate = candidate;
         Environment = environment;
@@ -81,6 +81,7 @@ internal sealed class HttpBoundaryCapture : IDisposable
                 MinimumLevel = "Verbose", Console = new() { Enable = false }, File = new() { Enable = false }, Database = new() { Enable = false }
             }, environment);
         }
+        if (additionalAudit != null) logger.AuditTo.Sink(additionalAudit);
         Logger = logger.CreateLogger();
         Factory = new Serilog.Extensions.Logging.SerilogLoggerFactory(Logger, dispose: false);
     }

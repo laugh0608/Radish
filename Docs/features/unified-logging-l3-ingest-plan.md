@@ -22,7 +22,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 本页承接总纲[四个收口批次](unified-logging-governance-design.md#closeout-batches)的前两批；后两批沿原 L4/L5/L6，不因本页只写接收入库而删除。L3-A、七个来源和 14 个 Controller 保持本地完成，不恢复为待实现。
 
-第一批按共享生成和消费链核对剩余 Service / Job / Hub。已完成范围见[第 10 节](#l2-final-output-first-slice)。Hub 自有生命周期已按[第 10.12 节](#l2-hub-lifecycle-output)完成本地收口，下一组核验内容及表情。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
+第一批按共享生成和消费链核对剩余 Service / Job / Hub。已完成范围见[第 10 节](#l2-final-output-first-slice)。内容及表情已按[第 10.13 节](#l2-content-sticker-output)完成本地收口，接续第一批的诊断字段裁决、Flutter 本地入口及 CLI / 应急例外。
 
 第二批将下表 L1 剩余项与 L3 实际 collector、接收器及 SQLite / PostgreSQL 组合验证：先明确目标架构、镜像、隔离存储、端口、故障方式和恢复 / 清理边界；每个尚缺条件对应一次可验结果，不追加多平台矩阵。真实运行另获授权，替身、合成格式或模块通过不能关闭真实链路。传输、磁盘、持久化与留存出口未齐时不提前进入生产切换。
 
@@ -271,7 +271,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | 公开查询与报表 | `PublicHeadSnapshotService`、`PublicSitemapService` 的缓存及生成分支，Gateway 快照客户端 / 注入中间件，以及公开发现流、排行榜和统计查询链 | 契约 §26–29、85。前四个来源的 11 个事件已按[第 10.10 节](#l2-public-query-output)完成本地最终输出修复；发现流、排行榜和统计沿用 API 最终异常消费回归 |
 | 通知与实时推送 | `UserFollowService` 通知入队，`NotificationService` 与可靠任务的收件箱变更到 `NotificationPushService.PushInboxChangedAsync`，以及 `UserInteractionRealtimeNotifier.NotifyRelationshipChangedAsync`、`CommentRealtimePushService.PushAsync` | 契约 §30–31、33、35、38、86。四个生成来源的五个事件已按[第 10.11 节](#l2-notification-realtime-output)完成本地最终输出修复。轻回应沿已有事务与 Controller 证据 |
 | Hub 生命周期 | `ChatHub.OnDisconnectedAsync` 和 `NotificationHub.OnDisconnectedAsync` 在既有清理后用类型化 logger 写摘要。`CommentHub` 进组、退组和输入中路径已有安静性回归 | 契约 §32、34、36、87。两条自有断开摘要已按[第 10.12 节](#l2-hub-lifecycle-output)完成本地最终输出修复 |
-| 内容及表情 | `CommentService` 高亮重算、`ContentSubmissionService` 冲突恢复、`ForumContentRevisionService` 恢复失败、`ReactionService` 重试、`StickerService` 缓存与缩略图降级 | 契约 §37、40–42、48–49 和对应业务回归。分别核对 Service 所有权，已收口的 Controller 做关联防回归 |
+| 内容及表情 | `CommentService` 编辑与高亮、`ContentSubmissionService` 冲突恢复、`ForumContentRevisionService` 恢复失败、`ReactionService` 重试、`StickerService` 缓存、批量附件与缩略图降级 | 契约 §37、39–40、42、48–49、88。五个来源、13 个事件按[第 10.13 节](#l2-content-sticker-output)完成本地最终输出，已收口 Controller 做关联回归 |
 
 浏览器、七个已收口的自有来源及其直接消费者、14 个 Controller、已登记的 Hangfire provider / 状态观察器，沿用事件契约 §73–77 的本地结论。DbMigrate `doctor / verify / help` 的 stdout 保留命令输出语义，应急 stderr 沿现有独立预算。Flutter 的实际本地入口与规则仍单列核对。
 
@@ -446,3 +446,22 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 1. 沿用 `ILogger<ChatHub>` 和 `ILogger<NotificationHub>`。各自用 `1/ChatConnectionClosed` 和 `1/NotificationConnectionClosed` 标识 `chat.connection_closed` 和 `notification.connection_closed`，移除仅用于标记身份和分类的 scope。精确来源、数值、名称和 Warning 必须匹配，普通 EventCode 不补齐身份。
 2. 在旧链代码 / 配置 WriteTo、AuditTo 和候选 JSONL 的上下文合并后，由 `NotificationRealtimeLogSink` 处理两个 Hub 自有事件。固定模板、`application` 分类和非诊断标记，旧链此前为 `business`。仅保留封闭 `failureKind`、Serilog 原时间 / 等级和类型化 W3C trace / span。剔除普通字符串关联、`operationId`、连接 / 用户 / 租户属性、额外字段、原模板、载荷和异常对象。精确来源的错误身份或等级输出受控 unknown，沿原等级与低级别诊断门禁。
 3. 回归清理完成前安静、清理失败原样传播、正常断开安静及通知 Hub 非正用户 ID 跳过退组但仍记录异常的行为。保留 AuditTo 在清理后传播原 sink 故障、WriteTo 消费故障与候选 writer 有界应急的语义。覆盖正式三条路径和代码 console、两种 scope、类型化关联、错配和非法字段。CommentHub 的安静性及 SignalR 框架 `signalr.disconnect_failed` 只做关联回归，真实 WebSocket、日志介质及 collector 另行验收。
+
+<a id="l2-content-sticker-output"></a>
+
+### 10.13 内容及表情最终输出与本地验收
+
+2026-11-12 基于 `c15eb0a0` 核验五个来源、13 个事件。三个 Serilog 服务未固定来源，既能被相邻适配器误归，也能使共享的 `comment.edit_failed` 归到 Controller。五个来源的正式旧链均继承外层载荷，候选 JSONL 可继承不相关字段和关联值，生产候选会因外层诊断标记漏记。所有者确认以下范围。见[核验与实施记录](../records/unified-logging-l2-content-sticker-output-audit-2026-11-12.md)及[事件契约第 88 节](./unified-logging-contract.md#l2-content-sticker-final-output)。
+
+1. 为 `CommentService`、`ContentSubmissionService` 和 `ForumContentRevisionService` 的八处 Serilog 生成点绑定类型来源，沿用显式事件码。回应和表情沿用类型化 logger，六个生成点改为命名 EventId。两类来源均匹配精确类型与原等级，命名身份还须同时匹配数值和名称。
+2. 在上下文合并后，以 `ContentStickerLogSink` 重建旧链代码 / 配置 WriteTo、AuditTo 和候选 JSONL。固定模板、`application` 分类和非诊断标记，事件只保留封闭 `failureKind`，保留原 Serilog 时间 / 等级及类型化 W3C trace / span。去除普通 scope 关联、`operationId`、额外字段、异常与原载荷。错配事件走安全 unknown 和既有低级别诊断门禁。
+
+| 来源 | 事件身份与等级 |
+| --- | --- |
+| `CommentService` | `comment.edit_failed`、`comment.god_recheck_failed`、`comment.sofa_recheck_failed`、`comment.highlight_recheck_failed`、`comment.highlight_fill_failed`，均 Error |
+| `ContentSubmissionService` | `content_submission.conflict_resolved` Warning |
+| `ForumContentRevisionService` | 两个异常转换分支共用 `post.restore_failed` Error |
+| `ReactionService` | `1/ReactionRetrying` → `reaction.retrying` Warning |
+| `StickerService` | `1/StickerCacheReadFailed` → `sticker.cache_read_failed`、`2/StickerCacheWriteFailed` → `sticker.cache_write_failed`、`3/StickerCacheInvalidationFailed` → `sticker.cache_invalidation_failed`、`5/StickerThumbnailFailed` → `sticker.thumbnail_failed` 均为 Warning；`4/StickerBatchItemFailed` → `sticker.batch_item_failed` Error |
+
+回归覆盖真实业务方法、正式出口、两种 scope 与 W3C Activity、共享事件码的服务归属、错误身份和等级、非法字段、代码 console 及输出故障。保留评论部分进度与既有事务结果、提交台账的 savepoint 恢复、版本恢复 409、回应单次重试与二次失败归属、表情批量结果、缩略图及缓存降级。WriteTo 消费故障，候选 writer 使用有界应急，AuditTo 保留传播和外层重算 catch 的既有行为。Controller 已收口事件只做关联回归。真实数据库并发、文件介质与 collector 按对应批次验收。

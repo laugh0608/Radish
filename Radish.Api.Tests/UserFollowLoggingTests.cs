@@ -270,9 +270,9 @@ public sealed partial class UserFollowLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly NotificationRealtimeOutputCapture _capture;
+        private readonly FinalOutputCapture _capture;
 
-        public Capture(bool candidate, string environment) => _capture = new NotificationRealtimeOutputCapture(candidate, environment);
+        public Capture(bool candidate, string environment) => _capture = new FinalOutputCapture(candidate, environment);
         public Serilog.Core.Logger Logger => _capture.Logger;
         public void AssertQuiet() => Assert.Equal("", _capture.Text);
         public void AssertSingle(string code, string kind)

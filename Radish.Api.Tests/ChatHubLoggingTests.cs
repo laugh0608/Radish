@@ -205,9 +205,9 @@ public sealed partial class ChatHubLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly NotificationRealtimeOutputCapture _capture;
+        private readonly FinalOutputCapture _capture;
         public Capture(bool candidate, string environment, bool audit) =>
-            _capture = new NotificationRealtimeOutputCapture(candidate, environment, audit);
+            _capture = new FinalOutputCapture(candidate, environment, audit);
         public Serilog.Core.Logger Logger => _capture.Logger;
         public void AssertQuiet() => Assert.Equal("", _capture.Text);
         public void AssertWarning(string kind)

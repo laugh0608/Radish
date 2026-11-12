@@ -5,12 +5,12 @@ using Serilog.Formatting.Display;
 
 namespace Radish.Api.Tests;
 
-internal sealed class NotificationRealtimeOutputCapture : IDisposable
+internal sealed class FinalOutputCapture : IDisposable
 {
     private static readonly MessageTemplateTextFormatter LegacyFormatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
     private readonly ApplicationLogScope _global;
 
-    public NotificationRealtimeOutputCapture(bool candidate, string environment, bool audit = false)
+    public FinalOutputCapture(bool candidate, string environment, bool audit = false)
     {
         Output = new HttpBoundaryCapture(candidate, environment, audit: audit);
         _global = new ApplicationLogScope(Output.Logger);

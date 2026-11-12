@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-12 内容及表情最终输出核验与实施](./unified-logging-l2-content-sticker-output-audit-2026-11-12.md)：五个来源、13 个事件的正式出口证据、字段隔离及本地回归
+
 - [2026-11-12 Hub 自有生命周期最终输出核验与实施](./unified-logging-l2-hub-lifecycle-output-audit-2026-11-12.md)：两个异常断开事件的正式旧链和候选 JSONL 修复及本地回归
 
 - [2026-11-12 通知与实时推送最终输出核验与实施](./unified-logging-l2-notification-realtime-output-audit-2026-11-12.md)：四个来源、五个事件的正式旧链和候选 JSONL 修复及本地回归
