@@ -813,3 +813,13 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 原模板、异常对象、普通 operationId、字符串 trace / span、任意 scope 和跨事件字段剔除；非法数值 / failureKind 丢弃。未知 / 缺失 / 错配事件身份、错误等级或非法购买阶段使用安全 `runtime.unclassified`，低于 Warning 标为诊断并沿既有出口门禁处理；邻接来源不匹配，不按共享事件码全局拦截。
 - 第 14、16、19–20、25 节业务和异常归属保持：库存最多五次尝试及原退避，支付失败的库存回补，履约失败后的订单 / 已售数调用，独立补偿或后续写入失败的外层包装，改名两类包装差异，权益 / 幂等 / Outbox 与口令算法 / 锁定 / 审计 / 回退文字均不改。无运行日志的 UserBenefitService 不增加事件，Controller 已完成适配仅作防回归。
 - WriteTo 消费输出故障，AuditTo 传播，候选输出走有限应急。AuditTo 仍可中断库存重试、在支付失败回补前抛错、阻止改名 400 包装及安全建议回退、在仓储已返回清理数量后抛错；不将 mock 调用顺序解释为真实事务最终状态。最终出口与真实方法回归见[实施记录](../records/unified-logging-l2-shop-output-audit-2026-11-11.md#implementation)。真实数据库 / 介质 / collector 验收及 L2 整体继续沿原门禁，生产开关保持关闭。
+
+<a id="l2-public-query-final-output"></a>
+
+## 85. L2 公开查询与报表最终输出（2026-11-12）
+
+- `PublicHeadSnapshotService` 和 `PublicSitemapService` 在合计六个 Serilog 生成点绑定各自类型来源及事件码，最终分类为 `application`。Gateway 客户端和注入中间件保留类型化来源，最终分类为 `http`。`PublicMetadataLogSink` 在上下文合并后为旧链代码 / 配置 WriteTo、AuditTo 和候选 JSONL 重建固定摘要。精确来源、等级和字段见[第 10.10 节](./unified-logging-l3-ingest-plan.md#l2-public-query-output)。
+- `PublicHeadSnapshotClient` 使用 `1/PublicHeadSnapshotUnavailable`、`2/PublicHeadSnapshotRequestFailed`、`3/PublicHeadHtmlUnavailable` 和 `4/PublicHeadHtmlRequestFailed`。中间件使用 `1/PublicHeadInjectionFailed`。命名 EventId 必须同时匹配来源、数值和名称，普通 EventCode 不能补齐 Gateway 身份。
+- 九个失败摘要仅接受封闭 `failureKind`。两个不可用摘要仅接受 100–599 内的非 2xx `int` 状态，快照不可用额外排除 404，前端 HTML 不可用允许 404。非法字段丢弃。登记事件固定为非诊断。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断，按各出口的既有门禁处理。
+- 保留原等级、Serilog 时间和类型化 W3C trace / span，优先使用事件自带关联，其次使用当前 W3C Activity。JSONL 时间沿公共规范化策略。重建后仅保留事件身份和该事件登记字段；异常、原始模板及载荷、外层普通关联属性和 `operationId` 均被剔除。
+- 第 26–29 节的缓存、TTL、XML 回退、部分索引、快照 404、Gateway 后续管道与既有 HTTP 响应保持。API 与 Gateway 分别记录各自消费边界；发现流、排行榜及统计报表沿原 API 最终处理器。WriteTo 消费 sink 故障，AuditTo 继续传播，候选 writer 故障使用有界应急摘要。见[实施记录](../records/unified-logging-l2-public-query-output-audit-2026-11-12.md#implementation)。真实介质和 collector 随对应批次验收。

@@ -74,13 +74,8 @@ public sealed class PublicHeadSnapshotMiddleware
         }
         catch (Exception ex)
         {
-            using (_logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "public_head.injection_failed", ["SourceCategory"] = "http"
-            }))
-            {
-                _logger.LogWarning("Public head HTML injection or response failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
-            }
+            _logger.LogWarning(new EventId(1, "PublicHeadInjectionFailed"),
+                "Public head HTML injection or response failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             await _next(context);
         }
     }

@@ -22,7 +22,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 本页承接总纲[四个收口批次](unified-logging-governance-design.md#closeout-batches)的前两批；后两批沿原 L4/L5/L6，不因本页只写接收入库而删除。L3-A、七个来源和 14 个 Controller 保持本地完成，不恢复为待实现。
 
-第一批按共享生成和消费链核对剩余 Service / Job / Hub。共享后台 Job、抽奖 Job、文件和记录清理以及服务内清理已完成本地最终输出收口，下一组核验 Outbox。有限清单、诊断字段取舍和验证范围见[第 10 节](#l2-final-output-first-slice)。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
+第一批按共享生成和消费链核对剩余 Service / Job / Hub。已完成范围见[第 10 节](#l2-final-output-first-slice)。公开查询与报表已按[第 10.10 节](#l2-public-query-output)完成本地收口，下一组核验通知与实时推送。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
 
 第二批将下表 L1 剩余项与 L3 实际 collector、接收器及 SQLite / PostgreSQL 组合验证：先明确目标架构、镜像、隔离存储、端口、故障方式和恢复 / 清理边界；每个尚缺条件对应一次可验结果，不追加多平台矩阵。真实运行另获授权，替身、合成格式或模块通过不能关闭真实链路。传输、磁盘、持久化与留存出口未齐时不提前进入生产切换。
 
@@ -268,7 +268,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | Outbox | `ReliableOutboxDispatcherJob.DispatchAsync` 输出分派摘要。`ReliableOutboxExecutionJob.ExecuteAsync` 消费任务，`ReliableOutboxRepository` 的条件更新确实影响行后输出重试 / 死信 | 契约 §9、82 和 `OutboxNativeLoggingTests`。main / chat 的状态写入、权威 `operationId` 和旧 / 候选最终出口已完成本地回归，见[第 10.7 节](#l2-outbox-output)。Hangfire provider / 状态观察器沿用 §73 证据 |
 | 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 及奖励 / 币 / 经验日志回归。2026-11-11 已核验六个生成来源，复现来源误归、scope 污染和生产过滤缺口；已按[第 10.8 节](#l2-reward-output)完成本地修复，输出契约见 §83 |
 | 商城、库存与口令 | `OrderService.PurchaseAsync` 扣币及履约分支，及已登记的 `ProductService`、`UserInventoryService`、权益和 `PaymentPasswordService` 生成点 | 契约 §14、16、19–20、25 和对应业务回归。四个生成来源已按[第 10.9 节](#l2-shop-output)完成本地最终输出修复，契约见 §84 |
-| 公开查询与报表 | `PublicHeadSnapshotService`、`PublicSitemapService` 的缓存及生成分支，`PublicDiscoverService.GetFeedAsync`、`LeaderboardService.GetLeaderboardAsync / GetUserRankAsync` 和 `StatisticsService` 查询链 | 契约 §26–29 和现有公开查询 / 统计回归。区分服务端降级与 Gateway / Controller 消费 |
+| 公开查询与报表 | `PublicHeadSnapshotService`、`PublicSitemapService` 的缓存及生成分支，Gateway 快照客户端 / 注入中间件，以及公开发现流、排行榜和统计查询链 | 契约 §26–29、85。前四个来源的 11 个事件已按[第 10.10 节](#l2-public-query-output)完成本地最终输出修复；发现流、排行榜和统计沿用 API 最终异常消费回归 |
 | 通知与实时推送 | `UserFollowService` 通知入队，`NotificationService.CreateNotificationAsync` 到 `NotificationPushService.PushInboxChangedAsync`，以及 `UserInteractionRealtimeNotifier.NotifyRelationshipChangedAsync`、`CommentRealtimePushService.PushAsync` | 契约 §30–31、33、35、38。各降级处保留原消费边界，轻回应沿已有事务与 Controller 证据 |
 | Hub 生命周期 | `ChatHub.OnDisconnectedAsync` 和 `NotificationHub.OnDisconnectedAsync` 在既有清理后用类型化 logger 写摘要。`CommentHub` 进组、退组和输入中路径已有安静性回归 | 契约 §32、34、36 和三组 Hub 测试。核验两条自有断开摘要的出口，真实连接另行验收 |
 | 内容及表情 | `CommentService` 高亮重算、`ContentSubmissionService` 冲突恢复、`ForumContentRevisionService` 恢复失败、`ReactionService` 重试、`StickerService` 缓存与缩略图降级 | 契约 §37、40–42、48–49 和对应业务回归。分别核对 Service 所有权，已收口的 Controller 做关联防回归 |
@@ -399,3 +399,22 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 `UserBenefitService` 无保留日志，不增加输出；已完成的 ShopController / PaymentPasswordController 适配只作关联防回归。真实库存 / 资金事务、PostgreSQL 并发、介质和 collector 仍需对应环境证据。接口、表结构、依赖、生产开关与下一组公开查询 / 报表不进入本批。
 
 实现、验证结果与未执行边界见[本批实施记录](../records/unified-logging-l2-shop-output-audit-2026-11-11.md#implementation)。本地切片完成不关闭 L2 整体或真实链路门禁。
+
+<a id="l2-public-query-output"></a>
+
+### 10.10 公开查询与报表最终输出与本地验收
+
+2026-11-12 基于 `edd47101` 核验四个来源、11 个事件。修复前，API 两个来源的六个事件可能被相邻来源适配器改写为 `runtime.unclassified`。四个来源均继承外层字段，`Diagnostic=true` 可使生产候选链丢掉全部登记事件。所有者确认以下范围，已完成本地实施，见[输出契约第 85 节](./unified-logging-contract.md#l2-public-query-final-output)及[本批记录](../records/unified-logging-l2-public-query-output-audit-2026-11-12.md#implementation)。
+
+1. 为两个 API Service 的六个 Serilog 生成点绑定各自类型的 `SourceContext`，继续使用显式事件码。两个 Gateway 类型保留类型化 logger，为五个事件使用固定的命名 `EventId`，以数值和名称共同识别，去掉仅用于标记事件身份的 scope。
+2. 在旧链代码 / 配置 WriteTo、AuditTo 和候选 JSONL 的既有适配链共用 `PublicMetadataLogSink`。按精确来源、事件身份和等级重建固定摘要，登记事件固定为非诊断。API 分类在两链统一为 `application`，旧链此前为 `business`。Gateway 使用 `http`。错配身份和等级沿现行策略输出受控 unknown，保留原等级及低级别诊断门禁。
+3. 九个失败摘要只接收封闭 `failureKind`，两个不可用事件只接收符合其分支的整数 HTTP 状态。保留原 Serilog 事件时间和类型化 W3C trace / span（含当前 Activity）；自由 scope 中的关联字符串、`operationId`、额外字段、异常和原始载荷均不进入该摘要。
+
+| 精确来源 | 事件与允许字段 |
+| --- | --- |
+| `PublicHeadSnapshotService` | `public_head.cache_read_failed`、`public_head.cache_write_failed` 均为 Warning，仅 `failureKind` |
+| `PublicSitemapService` | `sitemap.cache_read_failed`、`sitemap.cache_write_failed`、`sitemap.section_count_failed` 均为 Warning，`sitemap.generation_failed` 为 Error，均仅 `failureKind` |
+| `PublicHeadSnapshotClient` | `public_head.snapshot_unavailable`、`public_head.html_unavailable` 均为 Warning，仅 `statusCode`；`public_head.snapshot_request_failed`、`public_head.html_request_failed` 均为 Warning，仅 `failureKind` |
+| `PublicHeadSnapshotMiddleware` | `public_head.injection_failed` Warning，仅 `failureKind` |
+
+验证覆盖真实生成方法、正式出口、两种 scope、诊断开关、错配与非法字段、无 Activity 与类型化关联、代码 console 及输出故障语义。回归缓存和 TTL、sitemap 上次成功 / 空 XML / 部分索引、Gateway 404、JSON 异常原样传播、注入失败后的后续管道，以及 API 与 Gateway 各自的异常归属。公开发现流、排行榜、统计报表及已收口 API 异常处理器只作关联回归。缓存、HTTP 响应、接口、数据模型、依赖和生产开关沿用现有行为与配置，真实介质及采集仍归对应批次。

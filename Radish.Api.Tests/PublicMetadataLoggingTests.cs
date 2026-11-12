@@ -18,7 +18,6 @@ using Moq;
 using Radish.Api.Controllers;
 using Radish.Api.ErrorHandling;
 using Radish.Common.CacheTool;
-using Radish.Extension.Log;
 using Radish.Gateway.PublicHead;
 using Radish.IRepository;
 using Radish.IRepository.Base;
@@ -32,20 +31,14 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class PublicMetadataLoggingTests
+public sealed partial class PublicMetadataLoggingTests
 {
     private const string Secret = "PUBLIC_METADATA_PRIVATE_SENTINEL";
-    public static TheoryData<bool, string> OutputModes => new()
-    {
-        { false, "Production" }, { true, "Production" },
-        { false, "Development" }, { true, "Development" }
-    };
-
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task CacheHitsAndMissingRoutes_ShouldStayQuiet(bool candidate, string environment)
+    public async Task CacheHitsAndMissingRoutes_ShouldStayQuiet(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit, mel, activity);
         var f = new Fixture();
         f.Cache.Setup(c => c.GetStringAsync(It.IsAny<string>())).ReturnsAsync("{\"voTitle\":\"" + Secret + "\"}");
         Assert.Equal(Secret, (await f.Head.GetDocsSnapshotAsync(Secret, f.BaseUrl))!.VoTitle);
@@ -61,9 +54,9 @@ public sealed class PublicMetadataLoggingTests
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task HeadCacheFailures_ShouldKeepGeneratedSnapshotAndTtl(bool candidate, string environment)
+    public async Task HeadCacheFailures_ShouldKeepGeneratedSnapshotAndTtl(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit, mel, activity);
         var f = new Fixture();
         foreach (var failure in new[] { "read", "json", "write" })
         {
@@ -73,7 +66,8 @@ public sealed class PublicMetadataLoggingTests
             if (failure == "write") f.Cache.Setup(c => c.SetStringAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>())).ThrowsAsync(new IOException(Secret));
             var snapshot = Assert.IsType<PublicHeadSnapshotVo>(Assert.IsType<OkObjectResult>(await f.HeadController.GetStaticRoute("forum")).Value);
             Assert.Equal(f.BaseUrl + "/forum", snapshot.VoCanonicalUrl);
-            capture.AssertSingle(failure == "write" ? "public_head.cache_write_failed" : "public_head.cache_read_failed", "Warning");
+            capture.AssertSingle(failure == "write" ? "public_head.cache_write_failed" : "public_head.cache_read_failed",
+                failure == "json" ? "other" : "io");
             capture.Clear();
         }
         f.Cache.Verify(c => c.SetStringAsync(It.Is<string>(k => k.StartsWith("public-head:static-route:")), It.IsAny<string>(), TimeSpan.FromMinutes(20)), Times.Exactly(3));
@@ -81,20 +75,20 @@ public sealed class PublicMetadataLoggingTests
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task HeadQueryFailure_ShouldReachApiExactlyOnce(bool candidate, string environment)
+    public async Task HeadQueryFailure_ShouldReachApiExactlyOnce(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit, mel, activity);
         var f = new Fixture();
         f.Posts.Setup(r => r.QueryFirstAsync(It.IsAny<Expression<Func<Post, bool>>>())).ThrowsAsync(new IOException(Secret));
         await InvokeApiAsync(() => f.HeadController.GetForumPost(Secret), capture.Logger, 500);
-        capture.AssertSingle("http.failed", "Error");
+        capture.AssertApiFailure(500, "io");
     }
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task SitemapCacheFailures_ShouldKeepXmlAndTtl(bool candidate, string environment)
+    public async Task SitemapCacheFailures_ShouldKeepXmlAndTtl(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit, mel, activity);
         foreach (var read in new[] { true, false })
         {
             var f = new Fixture();
@@ -104,16 +98,16 @@ public sealed class PublicMetadataLoggingTests
             Assert.Contains(f.BaseUrl + "/discover", response.Content);
             Assert.Equal("application/xml; charset=utf-8", response.ContentType);
             f.Cache.Verify(c => c.SetStringAsync(It.Is<string>(k => k.StartsWith("public-sitemap:section:static:")), It.IsAny<string>(), TimeSpan.FromMinutes(30)), Times.Once);
-            capture.AssertSingle(read ? "sitemap.cache_read_failed" : "sitemap.cache_write_failed", "Warning");
+            capture.AssertSingle(read ? "sitemap.cache_read_failed" : "sitemap.cache_write_failed", "io");
             capture.Clear();
         }
     }
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task SitemapGenerationFailure_ShouldKeepLastSuccessOrEmptyFallback(bool candidate, string environment)
+    public async Task SitemapGenerationFailure_ShouldKeepLastSuccessOrEmptyFallback(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit, mel, activity);
         var f = new Fixture();
         f.Tags.Setup(t => t.QueryIndexableTagPageAsync(1, PublicSitemapService.SectionPageSize)).ReturnsAsync([new Tag(Secret) { Slug = Secret }]);
         var previous = await f.Sitemap.GetSectionXmlAsync("tags", 1, f.BaseUrl);
@@ -121,20 +115,20 @@ public sealed class PublicMetadataLoggingTests
         capture.AssertQuiet();
         f.Tags.Setup(t => t.QueryIndexableTagPageAsync(1, PublicSitemapService.SectionPageSize)).ThrowsAsync(new IOException(Secret));
         Assert.Equal(previous, await f.Sitemap.GetSectionXmlAsync("tags", 1, f.BaseUrl));
-        capture.AssertSingle("sitemap.generation_failed", "Error");
+        capture.AssertSingle("sitemap.generation_failed", "io");
         capture.Clear();
         var empty = await f.Sitemap.GetSectionXmlAsync("tags", 1, f.BaseUrl + "/cold");
         Assert.Contains("<urlset", empty);
         Assert.DoesNotContain("<url>", empty);
-        capture.AssertSingle("sitemap.generation_failed", "Error");
+        capture.AssertSingle("sitemap.generation_failed", "io");
         f.Cache.Verify(c => c.SetStringAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<TimeSpan>()), Times.Once);
     }
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task SitemapCountFailure_ShouldKeepOtherSectionsAndOnlyWarnAtConsumer(bool candidate, string environment)
+    public async Task SitemapCountFailure_ShouldKeepOtherSectionsAndOnlyWarnAtConsumer(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment);
+        using var capture = new Capture(candidate, environment, audit, mel, activity);
         var f = new Fixture();
         f.Posts.Setup(r => r.QueryCountAsync(It.IsAny<Expression<Func<Post, bool>>>())).ThrowsAsync(new IOException(Secret));
         f.Tags.Setup(t => t.QueryIndexableTagCountAsync()).ReturnsAsync(PublicSitemapService.SectionPageSize + 1);
@@ -142,14 +136,14 @@ public sealed class PublicMetadataLoggingTests
         Assert.Contains("/sitemaps/static.xml", xml);
         Assert.Contains("/sitemaps/tags-2.xml", xml);
         Assert.DoesNotContain("/sitemaps/forum-1.xml", xml);
-        capture.AssertSingle("sitemap.section_count_failed", "Warning");
+        capture.AssertSingle("sitemap.section_count_failed", "io");
     }
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task GatewayUnavailableResponses_ShouldKeepFallbackAndSafeStatus(bool candidate, string environment)
+    public async Task GatewayUnavailableResponses_ShouldKeepFallbackAndSafeStatus(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment, "gateway");
+        using var capture = new Capture(candidate, environment, audit, mel, activity, "gateway");
         using var f = new GatewayFixture(capture.Logger);
         f.Handler.Response = _ => new(HttpStatusCode.NotFound);
         Assert.Null(await f.Client.GetSnapshotAsync("/" + Secret, TestContext.Current.CancellationToken));
@@ -159,38 +153,37 @@ public sealed class PublicMetadataLoggingTests
             f.Handler.Response = _ => new(status);
             await f.Middleware.InvokeAsync(f.Context(), f.Client);
             Assert.True(f.NextCalled);
-            capture.AssertSingle("public_head.snapshot_unavailable", "Warning");
-            Assert.Contains(((int)status).ToString(), capture.Output.ToString());
+            capture.AssertSingle("public_head.snapshot_unavailable", (int)status);
             capture.Clear();
             Assert.Null(await f.Client.GetFrontendIndexHtmlAsync(TestContext.Current.CancellationToken));
-            capture.AssertSingle("public_head.html_unavailable", "Warning");
+            capture.AssertSingle("public_head.html_unavailable", (int)status);
             capture.Clear();
         }
     }
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task GatewayTransportFailures_ShouldKeepNullAndSafeClassification(bool candidate, string environment)
+    public async Task GatewayTransportFailures_ShouldKeepNullAndSafeClassification(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment, "gateway");
+        using var capture = new Capture(candidate, environment, audit, mel, activity, "gateway");
         using var f = new GatewayFixture(capture.Logger);
         foreach (var failure in new Exception[] { new HttpRequestException(Secret), new TaskCanceledException(Secret) })
         {
             f.Handler.Response = _ => throw failure;
             Assert.Null(await f.Client.GetSnapshotAsync("/" + Secret, TestContext.Current.CancellationToken));
-            capture.AssertSingle("public_head.snapshot_request_failed", "Warning");
+            capture.AssertSingle("public_head.snapshot_request_failed", failure is TaskCanceledException ? "cancelled" : "other");
             capture.Clear();
             Assert.Null(await f.Client.GetFrontendIndexHtmlAsync(TestContext.Current.CancellationToken));
-            capture.AssertSingle("public_head.html_request_failed", "Warning");
+            capture.AssertSingle("public_head.html_request_failed", failure is TaskCanceledException ? "cancelled" : "other");
             capture.Clear();
         }
     }
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task GatewaySuccessAndMalformedJson_ShouldPreserveExistingBoundaries(bool candidate, string environment)
+    public async Task GatewaySuccessAndMalformedJson_ShouldPreserveExistingBoundaries(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment, "gateway");
+        using var capture = new Capture(candidate, environment, audit, mel, activity, "gateway");
         using var f = new GatewayFixture(capture.Logger);
         var context = f.Context();
         await f.Middleware.InvokeAsync(context, f.Client);
@@ -208,15 +201,15 @@ public sealed class PublicMetadataLoggingTests
 
     [Theory]
     [MemberData(nameof(OutputModes))]
-    public async Task GatewayResponseFailure_ShouldKeepNextFallbackAndSingleWarning(bool candidate, string environment)
+    public async Task GatewayResponseFailure_ShouldKeepNextFallbackAndSingleWarning(bool candidate, string environment, bool audit, bool mel, bool activity)
     {
-        using var capture = new Capture(candidate, environment, "gateway");
+        using var capture = new Capture(candidate, environment, audit, mel, activity, "gateway");
         using var f = new GatewayFixture(capture.Logger);
         var context = f.Context();
         context.Response.Body = new FailingStream();
         await f.Middleware.InvokeAsync(context, f.Client);
         Assert.True(f.NextCalled);
-        capture.AssertSingle("public_head.injection_failed", "Warning");
+        capture.AssertSingle("public_head.injection_failed", "io");
     }
 
     private sealed class Fixture
@@ -307,43 +300,5 @@ public sealed class PublicMetadataLoggingTests
         context.RequestServices = app.Services;
         await ((IApplicationBuilder)app).Build()(context);
         Assert.Equal(status, context.Response.StatusCode);
-    }
-
-    private sealed class Capture : IDisposable
-    {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        public StringWriter Output { get; } = new();
-        public Serilog.Core.Logger Logger { get; }
-        public string[] Lines => Output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
-        public Capture(bool candidate, string environment, string service = "api")
-        {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate) RuntimeLoggingConfiguration.Configure(config, new ConfigurationBuilder().Build(), environment, service, Output, Output);
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(Output));
-            Logger = config.CreateLogger(); Log.Logger = Logger;
-        }
-        public void AssertQuiet() => Assert.Equal("", Output.ToString());
-        public void AssertSingle(string code, string level)
-        {
-            Assert.Single(Lines);
-            Assert.Contains(code, Output.ToString());
-            Assert.Contains(level, Output.ToString());
-            AssertSafe();
-        }
-        public void AssertSafe()
-        {
-            Assert.DoesNotContain(Secret, Output.ToString());
-            Assert.DoesNotContain("public-head:", Output.ToString());
-            Assert.DoesNotContain("public-sitemap:", Output.ToString());
-            Assert.DoesNotContain("https://", Output.ToString());
-            Assert.DoesNotContain("runtime.unclassified", Output.ToString());
-        }
-        public void Clear() => Output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; Logger.Dispose(); Output.Dispose(); }
-    }
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
     }
 }

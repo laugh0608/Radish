@@ -47,11 +47,8 @@ public sealed class PublicHeadSnapshotClient
 
             if (!response.IsSuccessStatusCode)
             {
-                using var scope = _logger.BeginScope(new Dictionary<string, object>
-                {
-                    ["EventCode"] = "public_head.snapshot_unavailable", ["SourceCategory"] = "http"
-                });
-                _logger.LogWarning("Public head snapshot response is unavailable. status={statusCode}", (int)response.StatusCode);
+                _logger.LogWarning(new EventId(1, "PublicHeadSnapshotUnavailable"),
+                    "Public head snapshot response is unavailable. status={statusCode}", (int)response.StatusCode);
                 return null;
             }
 
@@ -59,11 +56,8 @@ public sealed class PublicHeadSnapshotClient
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "public_head.snapshot_request_failed", ["SourceCategory"] = "http"
-            });
-            _logger.LogWarning("Public head snapshot request failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            _logger.LogWarning(new EventId(2, "PublicHeadSnapshotRequestFailed"),
+                "Public head snapshot request failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return null;
         }
     }
@@ -88,11 +82,8 @@ public sealed class PublicHeadSnapshotClient
             using var response = await _httpClient.GetAsync(requestUrl, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
-                using var scope = _logger.BeginScope(new Dictionary<string, object>
-                {
-                    ["EventCode"] = "public_head.html_unavailable", ["SourceCategory"] = "http"
-                });
-                _logger.LogWarning("Frontend HTML response is unavailable. status={statusCode}", (int)response.StatusCode);
+                _logger.LogWarning(new EventId(3, "PublicHeadHtmlUnavailable"),
+                    "Frontend HTML response is unavailable. status={statusCode}", (int)response.StatusCode);
                 return null;
             }
 
@@ -107,11 +98,8 @@ public sealed class PublicHeadSnapshotClient
         }
         catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "public_head.html_request_failed", ["SourceCategory"] = "http"
-            });
-            _logger.LogWarning("Frontend HTML request failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            _logger.LogWarning(new EventId(4, "PublicHeadHtmlRequestFailed"),
+                "Frontend HTML request failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return null;
         }
     }

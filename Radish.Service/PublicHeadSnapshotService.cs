@@ -227,7 +227,7 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "public_head.cache_read_failed")
+            Log.ForContext<PublicHeadSnapshotService>().ForContext("EventCode", "public_head.cache_read_failed")
                 .ForContext("SourceCategory", "business")
                 .Warning("Public head cache read failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return null;
@@ -242,7 +242,7 @@ public class PublicHeadSnapshotService : IPublicHeadSnapshotService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "public_head.cache_write_failed")
+            Log.ForContext<PublicHeadSnapshotService>().ForContext("EventCode", "public_head.cache_write_failed")
                 .ForContext("SourceCategory", "business")
                 .Warning("Public head cache write failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
         }
