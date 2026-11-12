@@ -823,3 +823,12 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 九个失败摘要仅接受封闭 `failureKind`。两个不可用摘要仅接受 100–599 内的非 2xx `int` 状态，快照不可用额外排除 404，前端 HTML 不可用允许 404。非法字段丢弃。登记事件固定为非诊断。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断，按各出口的既有门禁处理。
 - 保留原等级、Serilog 时间和类型化 W3C trace / span，优先使用事件自带关联，其次使用当前 W3C Activity。JSONL 时间沿公共规范化策略。重建后仅保留事件身份和该事件登记字段；异常、原始模板及载荷、外层普通关联属性和 `operationId` 均被剔除。
 - 第 26–29 节的缓存、TTL、XML 回退、部分索引、快照 404、Gateway 后续管道与既有 HTTP 响应保持。API 与 Gateway 分别记录各自消费边界；发现流、排行榜及统计报表沿原 API 最终处理器。WriteTo 消费 sink 故障，AuditTo 继续传播，候选 writer 故障使用有界应急摘要。见[实施记录](../records/unified-logging-l2-public-query-output-audit-2026-11-12.md#implementation)。真实介质和 collector 随对应批次验收。
+
+<a id="l2-notification-realtime-final-output"></a>
+
+## 86. L2 通知与实时推送最终输出（2026-11-12）
+
+- `UserFollowService`、`NotificationPushService`、`UserInteractionRealtimeNotifier` 和 `CommentRealtimePushService` 沿用类型化 logger，五个生成点使用命名 EventId。匹配精确来源、数值、名称和原等级，普通 scope 的 EventCode 不能补齐身份。事件表见[第 10.11 节](./unified-logging-l3-ingest-plan.md#l2-notification-realtime-output)。
+- `NotificationRealtimeLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 及候选 JSONL 的固定摘要。登记事件为 `application` 和 `Diagnostic=false`，仅保留封闭 `failureKind`。无效字段丢弃。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断并沿各出口既有门禁处理。
+- 保留 Serilog 原时间、等级与类型化 W3C trace / span，优先用事件关联，缺省取当前 W3C Activity。JSONL 时间沿公共规范化策略。重建剔除外层 `operationId`、字符串关联、任意属性、异常、原模板及载荷。
+- 第 30–31、33、35、38 节的业务与异常归属沿用既有契约，包含关注响应、通知入箱与 Outbox、双 Hub 和接收者顺序、评论成功响应及后续高亮推送。WriteTo 消费输出故障，候选 writer 使用有界应急，AuditTo 继续传播并可中断既有调用。见[实施记录](../records/unified-logging-l2-notification-realtime-output-audit-2026-11-12.md#implementation)。真实 WebSocket、介质与 collector 随各自批次验收。

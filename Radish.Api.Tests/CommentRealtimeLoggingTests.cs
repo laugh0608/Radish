@@ -7,14 +7,12 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Api.Controllers;
 using Radish.Api.Hubs;
 using Radish.Api.Services;
 using Radish.Common.HttpContextTool;
-using Radish.Extension.Log;
 using Radish.IService;
 using Radish.Model;
 using Radish.Model.DtoModels;
@@ -26,7 +24,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class CommentRealtimeLoggingTests
+public sealed partial class CommentRealtimeLoggingTests
 {
     private const string Secret = "COMMENT_PUSH_PRIVATE_SENTINEL";
     private const long PostId = 812345679;
@@ -338,30 +336,13 @@ public sealed class CommentRealtimeLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        private readonly StringWriter _output = new();
-        private readonly string? _candidateMode;
-        public Serilog.Core.Logger Logger { get; }
-        public Capture(bool candidate, string environment)
-        {
-            var config = new Serilog.LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate)
-            {
-                _candidateMode = environment;
-                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["RadishLogging:Mode"] = environment,
-                    ["RadishLogging:Diagnostics"] = environment == "Development" ? "true" : "false"
-                }).Build();
-                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
-            }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
-            Logger = config.CreateLogger();
-            Log.Logger = Logger;
-        }
+        private readonly NotificationRealtimeOutputCapture _capture;
+
+        public Capture(bool candidate, string environment) => _capture = new NotificationRealtimeOutputCapture(candidate, environment);
+        public Serilog.Core.Logger Logger => _capture.Logger;
         public void AssertFailure(string code, string kind)
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             Assert.Single(text.Split('\n', StringSplitOptions.RemoveEmptyEntries));
             Assert.Contains(code, text);
             Assert.Contains("Error", text);
@@ -370,35 +351,35 @@ public sealed class CommentRealtimeLoggingTests
         }
         public void AssertWarnings(int count, string kind = "io")
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(count, lines.Length);
+            Assert.All(_capture.Output.Events, item =>
+            {
+                Assert.Equal("comment.push_failed", item.Code);
+                Assert.Equal("Warning", item.Level);
+                Assert.Equal(kind, item.FailureKind);
+            });
             foreach (var line in lines)
             {
                 Assert.Contains("comment.push_failed", line);
                 Assert.Contains("Warning", line);
-                if (_candidateMode != null)
+                if (_capture.Output.Candidate)
                 {
                     using var json = JsonDocument.Parse(line);
                     var root = json.RootElement;
-                    Assert.Equal(_candidateMode, root.GetProperty("mode").GetString());
+                    Assert.Equal(_capture.Output.Environment, root.GetProperty("mode").GetString());
                     Assert.Equal("comment.push_failed", root.GetProperty("eventCode").GetString());
                     Assert.Equal("Warning", root.GetProperty("level").GetString());
                     var properties = root.GetProperty("properties");
                     Assert.Equal(kind, properties.GetProperty("failureKind").GetString());
                     Assert.Single(properties.EnumerateObject());
                 }
-                else Assert.Contains($"kind={kind}", line);
             }
             foreach (var forbidden in new[] { Secret, PostId.ToString(), CommentId.ToString(), UserId.ToString(), ParentId.ToString(), RootId.ToString(), "post-comments:", "EventName", "System.IO.IOException", "runtime.unclassified" }.Concat(Events))
                 Assert.DoesNotContain(forbidden, text);
         }
-        public void Clear() => _output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; Logger.Dispose(); _output.Dispose(); }
-    }
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
+        public void Clear() => _capture.Output.Clear();
+        public void Dispose() => _capture.Dispose();
     }
 }

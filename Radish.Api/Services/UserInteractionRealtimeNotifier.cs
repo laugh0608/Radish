@@ -43,11 +43,8 @@ public sealed class UserInteractionRealtimeNotifier : IUserInteractionRealtimeNo
             }
             catch (Exception exception)
             {
-                using var scope = _logger.BeginScope(new Dictionary<string, object>
-                {
-                    ["EventCode"] = "user_interaction.chat_push_failed", ["SourceCategory"] = "business"
-                });
-                _logger.LogWarning("Relationship invalidation chat push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
+                _logger.LogWarning(new EventId(1, "ChatRelationshipPushFailed"),
+                    "Relationship invalidation chat push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
             }
 
             try
@@ -57,11 +54,8 @@ public sealed class UserInteractionRealtimeNotifier : IUserInteractionRealtimeNo
             }
             catch (Exception exception)
             {
-                using var scope = _logger.BeginScope(new Dictionary<string, object>
-                {
-                    ["EventCode"] = "user_interaction.notification_push_failed", ["SourceCategory"] = "business"
-                });
-                _logger.LogWarning("Relationship invalidation notification push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
+                _logger.LogWarning(new EventId(2, "NotificationRelationshipPushFailed"),
+                    "Relationship invalidation notification push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
             }
         }
     }

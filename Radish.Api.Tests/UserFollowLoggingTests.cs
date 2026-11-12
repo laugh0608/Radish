@@ -19,7 +19,6 @@ using Radish.Api.Resources;
 using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.OptionTool;
-using Radish.Extension.Log;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -32,7 +31,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class UserFollowLoggingTests
+public sealed partial class UserFollowLoggingTests
 {
     private const string Secret = "FOLLOW_PRIVATE_SENTINEL";
     private const long FollowerId = 819234561;
@@ -271,28 +270,14 @@ public sealed class UserFollowLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        private readonly StringWriter _output = new();
-        public Serilog.Core.Logger Logger { get; }
-        public Capture(bool candidate, string environment)
-        {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate)
-            {
-                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["RadishLogging:Mode"] = environment
-                }).Build();
-                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
-            }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
-            Logger = config.CreateLogger();
-            Log.Logger = Logger;
-        }
-        public void AssertQuiet() => Assert.Equal("", _output.ToString());
+        private readonly NotificationRealtimeOutputCapture _capture;
+
+        public Capture(bool candidate, string environment) => _capture = new NotificationRealtimeOutputCapture(candidate, environment);
+        public Serilog.Core.Logger Logger => _capture.Logger;
+        public void AssertQuiet() => Assert.Equal("", _capture.Text);
         public void AssertSingle(string code, string kind)
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             Assert.Single(text.Split('\n', StringSplitOptions.RemoveEmptyEntries));
             Assert.Contains(code, text);
             Assert.Contains("Error", text);
@@ -300,13 +285,7 @@ public sealed class UserFollowLoggingTests
             foreach (var forbidden in new[] { Secret, FollowerId.ToString(), TargetId.ToString(), TenantId.ToString(), "runtime.unclassified", "System.IO.IOException", "System.ArgumentException", "System.InvalidOperationException", "notification:followed", "task:notification", "新增粉丝" })
                 Assert.DoesNotContain(forbidden, text);
         }
-        public void Clear() => _output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; Logger.Dispose(); _output.Dispose(); }
-    }
-
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
+        public void Clear() => _capture.Output.Clear();
+        public void Dispose() => _capture.Dispose();
     }
 }

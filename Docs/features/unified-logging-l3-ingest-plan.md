@@ -22,7 +22,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 本页承接总纲[四个收口批次](unified-logging-governance-design.md#closeout-batches)的前两批；后两批沿原 L4/L5/L6，不因本页只写接收入库而删除。L3-A、七个来源和 14 个 Controller 保持本地完成，不恢复为待实现。
 
-第一批按共享生成和消费链核对剩余 Service / Job / Hub。已完成范围见[第 10 节](#l2-final-output-first-slice)。公开查询与报表已按[第 10.10 节](#l2-public-query-output)完成本地收口，下一组核验通知与实时推送。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
+第一批按共享生成和消费链核对剩余 Service / Job / Hub。已完成范围见[第 10 节](#l2-final-output-first-slice)。通知与实时推送已按[第 10.11 节](#l2-notification-realtime-output)完成本地收口，下一组核验 Hub 自有生命周期。Flutter 只核对本地入口与规则，CLI 协议和应急例外分别登记。
 
 第二批将下表 L1 剩余项与 L3 实际 collector、接收器及 SQLite / PostgreSQL 组合验证：先明确目标架构、镜像、隔离存储、端口、故障方式和恢复 / 清理边界；每个尚缺条件对应一次可验结果，不追加多平台矩阵。真实运行另获授权，替身、合成格式或模块通过不能关闭真实链路。传输、磁盘、持久化与留存出口未齐时不提前进入生产切换。
 
@@ -269,7 +269,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | 奖励、币与经验 | `CoinService` 批量及并发重试、`ExperienceService` 发放 / 幂等 / 初始化和等级配置缓存使用 `RewardRuntimeLog`。调账、转账幂等、奖励存在检查和经验治理各有登记生成点 | 契约 §12、14–15、17–18 及奖励 / 币 / 经验日志回归。2026-11-11 已核验六个生成来源，复现来源误归、scope 污染和生产过滤缺口；已按[第 10.8 节](#l2-reward-output)完成本地修复，输出契约见 §83 |
 | 商城、库存与口令 | `OrderService.PurchaseAsync` 扣币及履约分支，及已登记的 `ProductService`、`UserInventoryService`、权益和 `PaymentPasswordService` 生成点 | 契约 §14、16、19–20、25 和对应业务回归。四个生成来源已按[第 10.9 节](#l2-shop-output)完成本地最终输出修复，契约见 §84 |
 | 公开查询与报表 | `PublicHeadSnapshotService`、`PublicSitemapService` 的缓存及生成分支，Gateway 快照客户端 / 注入中间件，以及公开发现流、排行榜和统计查询链 | 契约 §26–29、85。前四个来源的 11 个事件已按[第 10.10 节](#l2-public-query-output)完成本地最终输出修复；发现流、排行榜和统计沿用 API 最终异常消费回归 |
-| 通知与实时推送 | `UserFollowService` 通知入队，`NotificationService.CreateNotificationAsync` 到 `NotificationPushService.PushInboxChangedAsync`，以及 `UserInteractionRealtimeNotifier.NotifyRelationshipChangedAsync`、`CommentRealtimePushService.PushAsync` | 契约 §30–31、33、35、38。各降级处保留原消费边界，轻回应沿已有事务与 Controller 证据 |
+| 通知与实时推送 | `UserFollowService` 通知入队，`NotificationService` 与可靠任务的收件箱变更到 `NotificationPushService.PushInboxChangedAsync`，以及 `UserInteractionRealtimeNotifier.NotifyRelationshipChangedAsync`、`CommentRealtimePushService.PushAsync` | 契约 §30–31、33、35、38、86。四个生成来源的五个事件已按[第 10.11 节](#l2-notification-realtime-output)完成本地最终输出修复。轻回应沿已有事务与 Controller 证据 |
 | Hub 生命周期 | `ChatHub.OnDisconnectedAsync` 和 `NotificationHub.OnDisconnectedAsync` 在既有清理后用类型化 logger 写摘要。`CommentHub` 进组、退组和输入中路径已有安静性回归 | 契约 §32、34、36 和三组 Hub 测试。核验两条自有断开摘要的出口，真实连接另行验收 |
 | 内容及表情 | `CommentService` 高亮重算、`ContentSubmissionService` 冲突恢复、`ForumContentRevisionService` 恢复失败、`ReactionService` 重试、`StickerService` 缓存与缩略图降级 | 契约 §37、40–42、48–49 和对应业务回归。分别核对 Service 所有权，已收口的 Controller 做关联防回归 |
 
@@ -418,3 +418,21 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | `PublicHeadSnapshotMiddleware` | `public_head.injection_failed` Warning，仅 `failureKind` |
 
 验证覆盖真实生成方法、正式出口、两种 scope、诊断开关、错配与非法字段、无 Activity 与类型化关联、代码 console 及输出故障语义。回归缓存和 TTL、sitemap 上次成功 / 空 XML / 部分索引、Gateway 404、JSON 异常原样传播、注入失败后的后续管道，以及 API 与 Gateway 各自的异常归属。公开发现流、排行榜、统计报表及已收口 API 异常处理器只作关联回归。缓存、HTTP 响应、接口、数据模型、依赖和生产开关沿用现有行为与配置，真实介质及采集仍归对应批次。
+
+<a id="l2-notification-realtime-output"></a>
+
+### 10.11 通知与实时推送最终输出与本地验收
+
+2026-11-12 基于 `818ba299` 核验四个类型化来源、五个事件。修复前，已输出事件的身份及等级保持正确，旧链继承外层任意字段，候选 JSONL 继承无关白名单字段和关联值，外层 `Diagnostic=true` 可使生产候选丢掉所有五类事件。所有者确认以下范围，已完成本地实施。见[事件契约第 86 节](./unified-logging-contract.md#l2-notification-realtime-final-output)及[实施记录](../records/unified-logging-l2-notification-realtime-output-audit-2026-11-12.md#implementation)。
+
+1. 沿用四个 `ILogger<T>` 类型来源。五个生成点改用固定的命名 `EventId`，去掉仅标记事件身份和分类的 scope。按精确类型、数值、名称和原等级共同识别，普通 EventCode 不补齐身份。
+2. 在上下文合并后接入 `NotificationRealtimeLogSink`，覆盖旧链代码 / 配置 WriteTo、AuditTo 和候选 JSONL。固定摘要、`application` 分类和非诊断标记，旧链此前为 `business`。扩展字段仅允许封闭 `failureKind`。保留原 Serilog 时间及类型化 W3C trace / span，去掉自由 scope 中的关联值、`operationId`、额外属性、异常和原载荷。精确来源的错配身份或等级进入受控 unknown，沿原等级与低级别诊断门禁。
+
+| 来源 | 命名 EventId 与事件 |
+| --- | --- |
+| `UserFollowService` | `1/FollowNotificationEnqueueFailed` → `user_follow.notification_enqueue_failed` Error |
+| `NotificationPushService` | `1/NotificationPushFailed` → `notification.push_failed` Warning |
+| `UserInteractionRealtimeNotifier` | `1/ChatRelationshipPushFailed` → `user_interaction.chat_push_failed` Warning，`2/NotificationRelationshipPushFailed` → `user_interaction.notification_push_failed` Warning |
+| `CommentRealtimePushService` | `1/CommentPushFailed` → `comment.push_failed` Warning |
+
+验证覆盖两环境的正式出口和代码 console、两种 scope、无 Activity / 类型化 Activity、错误身份或等级、非法字段和 sink 故障。保留关注关系与通知入队的既有提交边界、400 / 404 与上抛所有权、通知持久化及幂等、Outbox 成功和失败分工、双 Hub 和多接收者发送顺序、评论成功结果及后续高亮推送。WriteTo 消费输出故障，候选 writer 走有界应急，AuditTo 保留传播及其中断现有调用的行为。轻回应、已收口 Controller、Outbox 和 SignalR 框架路径仅做关联防回归。Hub 自有生命周期、业务事务调整及真实网络 / 介质 / collector 进入各自批次。

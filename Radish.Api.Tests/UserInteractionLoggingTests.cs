@@ -6,12 +6,10 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Radish.Api.Hubs;
 using Radish.Api.Services;
-using Radish.Extension.Log;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -26,7 +24,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class UserInteractionLoggingTests
+public sealed partial class UserInteractionLoggingTests
 {
     private const string Secret = "INTERACTION_PRIVATE_SENTINEL";
     private const long FirstUser = 812345679;
@@ -196,29 +194,13 @@ public sealed class UserInteractionLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        private readonly StringWriter _output = new();
-        private readonly string? _candidateMode;
-        public Serilog.Core.Logger Logger { get; }
-        public Capture(bool candidate, string environment)
-        {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate)
-            {
-                _candidateMode = environment;
-                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["RadishLogging:Mode"] = environment
-                }).Build();
-                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
-            }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
-            Logger = config.CreateLogger();
-            Log.Logger = Logger;
-        }
+        private readonly NotificationRealtimeOutputCapture _capture;
+
+        public Capture(bool candidate, string environment) => _capture = new NotificationRealtimeOutputCapture(candidate, environment);
+        public Serilog.Core.Logger Logger => _capture.Logger;
         public void AssertEvents(params (string Code, string Level, string Kind)[] events)
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(events.Length, lines.Length);
             for (var i = 0; i < events.Length; i++)
@@ -226,21 +208,16 @@ public sealed class UserInteractionLoggingTests
                 Assert.Contains(events[i].Code, lines[i]);
                 Assert.Contains(events[i].Level, lines[i]);
                 Assert.Contains(events[i].Kind, lines[i]);
-                if (_candidateMode != null)
+                if (_capture.Output.Candidate)
                 {
                     using var json = JsonDocument.Parse(lines[i]);
-                    Assert.Equal(_candidateMode, json.RootElement.GetProperty("mode").GetString());
+                    Assert.Equal(_capture.Output.Environment, json.RootElement.GetProperty("mode").GetString());
                 }
             }
             foreach (var forbidden in new[] { Secret, FirstUser.ToString(), SecondUser.ToString(), Version.ToString(), "RelationshipVersion", "user:", "System.IO.IOException", "runtime.unclassified" })
                 Assert.DoesNotContain(forbidden, text);
         }
-        public void Clear() => _output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; Logger.Dispose(); _output.Dispose(); }
-    }
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
+        public void Clear() => _capture.Output.Clear();
+        public void Dispose() => _capture.Dispose();
     }
 }
