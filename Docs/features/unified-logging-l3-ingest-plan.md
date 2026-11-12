@@ -22,7 +22,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 本页承接总纲[四个收口批次](unified-logging-governance-design.md#closeout-batches)的前两批；后两批沿原 L4/L5/L6，不因本页只写接收入库而删除。L3-A、七个来源和 14 个 Controller 保持本地完成，不恢复为待实现。
 
-第一批按共享生成和消费链核对剩余 Service / Job / Hub。已完成范围见[第 10 节](#l2-final-output-first-slice)。内容及表情已按[第 10.13 节](#l2-content-sticker-output)完成本地收口，接续第一批的诊断字段裁决、Flutter 本地入口及 CLI / 应急例外。
+第一批按共享生成和消费链核对剩余 Service / Job / Hub。内容及表情已按[第 10.13 节](#l2-content-sticker-output)完成本地收口。[第 10.14 节](#l2-diagnostic-and-output-boundaries)已完成首版诊断字段、Flutter 本地入口及 CLI / 应急边界的本地实现，真实采集与设备按各自批次验收。
 
 第二批将下表 L1 剩余项与 L3 实际 collector、接收器及 SQLite / PostgreSQL 组合验证：先明确目标架构、镜像、隔离存储、端口、故障方式和恢复 / 清理边界；每个尚缺条件对应一次可验结果，不追加多平台矩阵。真实运行另获授权，替身、合成格式或模块通过不能关闭真实链路。传输、磁盘、持久化与留存出口未齐时不提前进入生产切换。
 
@@ -56,9 +56,9 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 其他必须保留的退出工作：
 
 1. **已登记业务来源最终出口核验**：生成端安全不代表旧 sink 上继承的任意 scope 已受控。第 9 节的 14 个 Controller 已完成精确来源与最终输出收口，见[实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)。其余 Service / Job / Hub 按现有注册来源建立“生成点 → 消费边界 → 旧 / 候选输出 → 证据”的清单；已有完整证据直接引用，只补缺口，不重新调查任意外部订阅器。
-2. **诊断信息完整性**：现行契约只有固定 `failureKind`，安全异常类型 / 栈帧及 `requestId / jobId / tenantId` 权威上下文尚未全齐。继续保持字段缺失，不在 L3 猜测、重造或放开自由文本；后续作为明确契约切片确认，不默认为已实现。
-3. **裸输出例外**：DbMigrate doctor / verify / help 的 stdout 是命令协议，应急 stderr 有独立预算；`ConsoleHelper.WriteColorLine` 及其四个扩展方法本次未检出外部调用，保留为待明确处置项，不当作已证明可达漏洞。检查真实调用与例外表后才决定删除或限制。
-4. **客户端与原生边界**：浏览器本地公共出口已完成；Flutter 日志规则 / 实际本地入口仍待确认。显式 print 文本扫描不能证明插件或整个设备无输出；不因此新增遥测、扩平台或恢复 Rust 已删除的裸打印。
+2. **诊断信息完整性**。API 5xx 的反馈 `requestId` 已绑定并可随 canonical JSON 接收。L3 的精确索引与 L4 的受权筛选待对应批次。jobId、tenantId、异常类型及安全栈帧按第 10.14 节后置。
+3. **裸输出例外**。DbMigrate 命令报告走 stdout，阶段诊断与有界应急走 stderr。报告标签已转义并限长，无调用的 `ConsoleHelper` 已移除。受信流识别及独立应急证据路线待 L1 / L3 联验。
+4. **客户端与原生边界**。浏览器本地公共出口已完成，Flutter 应用框架报告和显式引导失败已收口。root isolate、原生引擎 / 插件及子 isolate 的输出随目标平台验收。
 5. **成组运行验收**：真实登录、业务读取 / 写入、后台空轮询、网络 / 存储故障须在后续授权环境按已登记链验证安静性、安全及异常所有权；模块替身与内存管道不替代它们。
 
 不再挂回当前队列：第 57 节已关闭的早期错误结果构造问题、第 69 节已登记 DataProtection 来源、Hangfire 第 73 节、浏览器第 74 节。未注册 OpenIddict 集成、无产品调用的 Socket `.Client`、HttpSys delegation 与外部 EventPipe / Activity / metrics 保持原专题边界。
@@ -281,7 +281,7 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | --- | --- |
 | 事件身份、等级、服务与安全计数 | 首版必需。Job 事件码、`jobKind`、`outcome`、计数与 `durationMs` 来自已登记的摘要生成点，实际消费的异常经 `RuntimeFailureSummary.Classify` 生成封闭 `failureKind` |
 | `traceId / spanId / operationId` | 首版按已有契约有值时保留。trace / span 使用已绑定的 W3C 类型，operation ID 使用已登记的权威生成点，例如 Hangfire 状态观察器与 Outbox 状态写入。首组 Job 摘要不从普通 scope 继承关联值 |
-| `requestId` | 后置。首版按既有 trace 查询。若需用用户提供的 `X-Correlation-ID` 查找无有效 trace 的请求，另从服务端 `HttpContext.TraceIdentifier` 定义格式与映射，并验证与 W3C trace 的区别 |
+| `requestId` | 首版 API 5xx 用户反馈字段。已在最终输出绑定服务端 `HttpContext.TraceIdentifier`，与 W3C `traceId` 独立。权威来源、接收兼容及查询交付边界见[第 10.14 节](#l2-diagnostic-and-output-boundaries) |
 | `jobId` | 后置原始标识。任务失败关联已有 Hangfire / Outbox 各自派生的 `operationId`。若需关联批次摘要与调度记录，先验证排障场景及跨重试含义 |
 | `tenantId` | 后置。首版已规划的查询依赖部署、服务与关联字段。租户级排障或权限另行确认，并从服务端解析且校验的租户上下文生成 |
 | 安全异常类型及栈帧 | 后置。首版用 `failureKind` 和精确来源定位。若实际排障仍有缺口，另登记固定异常类别与受控帧标识，制定大小预算和允许来源 |
@@ -465,3 +465,23 @@ Client 写入失败接入真实 `ApiExceptionHandler.TryHandleAsync` 的回归�
 | `StickerService` | `1/StickerCacheReadFailed` → `sticker.cache_read_failed`、`2/StickerCacheWriteFailed` → `sticker.cache_write_failed`、`3/StickerCacheInvalidationFailed` → `sticker.cache_invalidation_failed`、`5/StickerThumbnailFailed` → `sticker.thumbnail_failed` 均为 Warning；`4/StickerBatchItemFailed` → `sticker.batch_item_failed` Error |
 
 回归覆盖真实业务方法、正式出口、两种 scope 与 W3C Activity、共享事件码的服务归属、错误身份和等级、非法字段、代码 console 及输出故障。保留评论部分进度与既有事务结果、提交台账的 savepoint 恢复、版本恢复 409、回应单次重试与二次失败归属、表情批量结果、缩略图及缓存降级。WriteTo 消费故障，候选 writer 使用有界应急，AuditTo 保留传播和外层重算 catch 的既有行为。Controller 已收口事件只做关联回归。真实数据库并发、文件介质与 collector 按对应批次验收。
+
+<a id="l2-diagnostic-and-output-boundaries"></a>
+
+### 10.14 首版诊断字段与本地输出边界（本地已实施）
+
+基于 `8d02535a` 核验三组边界，项目所有者已确认实施。[事件契约第 89 节](./unified-logging-contract.md#l2-diagnostic-output-boundaries)记录字段与通道规则，[本批记录](../records/unified-logging-l2-diagnostic-output-boundary-audit-2026-11-12.md#implementation)维护证据。首版字段按实际排障场景取舍。
+
+| 排障场景 | 首版字段与来源 |
+| --- | --- |
+| 识别故障和采集缺口 | 事件身份与时间、受信部署 / 服务 / 实例 / 版本、来源类别、等级 / Fatal / diagnostic、规范化状态与固定摘要。保留登记事件的封闭 `failureKind`、状态、结果、计数及耗时；只在事件有对应业务含义时输出 |
+| 串联服务请求 | 有权威值时保留类型化 W3C `traceId / spanId`，使用事件自带值或当前 W3C Activity。无关联时字段缺省；trace 只用于关联 |
+| 由用户反馈定位 API 5xx | 增加可选 `requestId`，首批只由 `ApiExceptionHandler` 已成功写入响应的 `http.failed` 从服务端 `HttpContext.TraceIdentifier` 绑定。长度 1–64，字符限 ASCII 字母、数字及 `:`、`_`、`-`。原响应 ID 及 W3C 关联各自保持；入站 header 和普通 scope 不能补齐 |
+| 串联任务重试与最终失败 | 只保留已登记的 Hangfire 状态选举及 Outbox 状态写入各自派生的 `operationId`，两者的处理决定和已落库状态继续按原事件解释 |
+| 后置增强 | 原始 `jobId`、`tenantId`、异常类型与安全栈帧。首版按派生任务关联、平台运维范围、事件码与 `failureKind` 排障。新增租户视图、栈帧或原始任务标识须单独给出场景、生成权威与大小预算 |
+
+1. **诊断输出**。在现有 API 最终异常适配中绑定并限定 `requestId`。通用 .NET Serilog fallback 不再从普通属性取字符串 trace / span，`operationId` 只从已登记的权威适配路径进入。覆盖有 / 无 Activity、原响应 ID、恶意 header / scope、缺省与超限。可选字段需让 .NET / Node 共享规范、Lua 与接收白名单兼容缺省样本；接收侧须在启用新输出前支持字段。L3 按独立迁移增加可空列及精确查找索引，L4 加受权的精确筛选。已有入库迁移不改写，生产候选开关沿现状。
+2. **Flutter 本地出口**。在 Dart 引导入口接管 `FlutterError.onError` 的应用框架报告，输出固定安全摘要，沿用当前静默规则；保持 ErrorWidget 和业务状态路径。显式 bootstrap 失败使用无原异常内容的固定失败及空原始栈重新抛出，保持启动失败。普通业务故障继续由现有认证、会话及 HTTP 状态消费。通用 root isolate 的处理语义、原生引擎 / 插件和子 isolate 按目标平台另验，首版不新增远端遥测。
+3. **CLI 与应急例外**。`help`、`doctor`、`verify` 及 `apply` 内嵌 doctor 的 stdout 是本地命令报告。对环境和连接标识等配置来源文本做单行控制字符转义及有界长度处理，保持报告判定、目标占位和退出码。移除仓库内无调用的 `ConsoleHelper` 裸写入口。DbMigrate 阶段 JSONL 及已登记有界应急事件沿 stderr。L1 / L3 联验用受信来源和流元数据让 CLI 报告在 parser 前退出日志链；独立 bootstrap 应急保留于有界的宿主 / 文件证据，集中接入需单独验证来源和故障通道，入库应急避免回到同一失败链。
+
+本地证据包括 API 反馈 ID 与旧链 / 最终 JSONL 的对照、CLI 两条标准流与退出码、Flutter 合成异常正文 / 栈帧裁剪，以及 Lua 对命令报告、应急事件与可选字段的处理。真实采集负责验证受信流识别、应急留存与新字段实际投递，设备批次负责验证各目标平台输出。

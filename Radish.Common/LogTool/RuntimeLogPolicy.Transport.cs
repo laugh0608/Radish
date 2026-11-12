@@ -10,7 +10,7 @@ public sealed partial class RuntimeLogPolicy
     {
         "schemaVersion", "eventId", "eventCode", "occurredAtUtc", "observedAtUtc", "deploymentId", "service",
         "instanceId", "containerId", "release", "mode", "sourceCategory", "level", "diagnostic", "isFatal",
-        "messageTemplate", "message", "properties", "traceId", "spanId", "operationId", "normalizationStatus",
+        "messageTemplate", "message", "properties", "traceId", "spanId", "requestId", "operationId", "normalizationStatus",
         "redacted", "truncated"
     };
     public const string UtcFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
@@ -54,8 +54,9 @@ public sealed partial class RuntimeLogPolicy
         if (!input.TryGetProperty("properties", out var properties) || properties.ValueKind != JsonValueKind.Object) return null;
         // 只给共享生成策略它所拥有的字段；它负责属性、关联键、固定说明和分类规则。
         var payload = new Dictionary<string, JsonElement>(StringComparer.Ordinal);
-        foreach (var key in new[] { "level", "diagnostic", "eventCode", "sourceCategory", "properties", "traceId", "spanId", "operationId" })
+        foreach (var key in new[] { "level", "diagnostic", "eventCode", "sourceCategory", "properties", "traceId", "spanId", "requestId", "operationId" })
             if (input.TryGetProperty(key, out var value)) payload.Add(key, value);
+        if (fatal && payload.ContainsKey("requestId")) return null;
         var policy = new RuntimeLogPolicy(new RuntimeLogSource(deployment, service, instance, release), mode,
             diagnostics: mode == "Development");
         var normalized = policy.Create(JsonSerializer.SerializeToElement(payload));

@@ -262,6 +262,11 @@ public sealed class ProducerLoggingTests
             new Radish.Common.Exceptions.BusinessException("public business message", status), TestContext.Current.CancellationToken));
         Assert.Equal(status, context.Response.StatusCode);
         Assert.Equal(events, Lines(output).Length);
+        if (events == 1)
+        {
+            using var result = JsonDocument.Parse(Assert.Single(Lines(output)));
+            Assert.Equal(context.TraceIdentifier, result.RootElement.GetProperty("requestId").GetString());
+        }
     }
 
     private sealed class EventSink : Serilog.Core.ILogEventSink

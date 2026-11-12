@@ -34,7 +34,7 @@ public static class ApiErrorResultFactory
         };
     }
 
-    public static async Task WriteAsync(
+    public static async Task<string?> WriteAsync(
         HttpContext httpContext,
         int statusCode,
         string message,
@@ -45,11 +45,13 @@ public static class ApiErrorResultFactory
         CancellationToken cancellationToken = default)
     {
         var result = Create(httpContext, statusCode, message, code, messageKey, messageArguments, responseData);
+        var response = (MessageModel)result.Value!;
         httpContext.Response.StatusCode = statusCode;
         await httpContext.Response.WriteAsJsonAsync(
-            result.Value,
-            result.Value!.GetType(),
+            response,
+            typeof(MessageModel),
             cancellationToken: cancellationToken);
+        return response.TraceId;
     }
 
     public static string ApplyTraceId(HttpContext httpContext)

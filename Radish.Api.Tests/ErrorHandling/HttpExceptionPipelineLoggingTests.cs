@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -7,6 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Radish.Common.Exceptions;
+using Serilog.Context;
+using Serilog.Events;
 using Xunit;
 
 namespace Radish.Api.Tests.ErrorHandling;
@@ -20,14 +23,17 @@ public sealed class HttpExceptionPipelineLoggingTests
     };
 
     [Theory]
-    [MemberData(nameof(OutputModes))]
-    public async Task ApiFailure_ShouldWaitForErrorResponseWriteBeforeLogging(bool candidate, string environment)
+    [MemberData(nameof(HangfireOutputLoggingTests.OutputRoutes), MemberType = typeof(HangfireOutputLoggingTests))]
+    public async Task ApiFailure_ShouldBindWrittenResponseIdBeforeLogging(bool candidate, string environment, bool audit)
     {
-        using var capture = new HttpBoundaryCapture(candidate, environment);
+        using var capture = new HttpBoundaryCapture(candidate, environment, audit: audit);
+        using var scope = LogContext.PushProperty("requestId", "forged-scope-request");
+        using var activity = new Activity("http-failure").SetIdFormat(ActivityIdFormat.W3C).Start();
         foreach (var business in new[] { false, true })
         {
             Exception failure = business ? new BusinessException("Public service failure", 503) : new IOException(HttpBoundaryCapture.Secret);
             await using var pipeline = new HttpBoundaryPipeline(capture, _ => throw failure);
+            pipeline.Context.Request.Headers["X-Correlation-ID"] = "forged-inbound-request";
             var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             using var bytes = new MemoryStream();
@@ -53,6 +59,23 @@ public sealed class HttpExceptionPipelineLoggingTests
             Assert.False(json.RootElement.GetProperty("isSuccess").GetBoolean());
             Assert.Equal("boundary-correlation", json.RootElement.GetProperty("traceId").GetString());
             Assert.Equal("boundary-correlation", pipeline.Context.Response.Headers["X-Correlation-ID"]);
+            if (candidate)
+            {
+                using var output = JsonDocument.Parse(capture.Output.ToString());
+                Assert.Equal("boundary-correlation", output.RootElement.GetProperty("requestId").GetString());
+                Assert.Equal(activity.TraceId.ToHexString(), output.RootElement.GetProperty("traceId").GetString());
+                Assert.Equal(activity.SpanId.ToHexString(), output.RootElement.GetProperty("spanId").GetString());
+                Assert.DoesNotContain("forged-", capture.Output.ToString());
+            }
+            else
+            {
+                var entry = Assert.Single(capture.Sink.Events);
+                Assert.Equal("boundary-correlation", ((ScalarValue)entry.Properties["requestId"]).Value);
+                Assert.Contains("boundary-correlation", entry.RenderMessage());
+                Assert.DoesNotContain("forged-", entry.RenderMessage());
+                Assert.Equal(activity.TraceId, entry.TraceId);
+                Assert.Equal(activity.SpanId, entry.SpanId);
+            }
             Assert.DoesNotContain(HttpBoundaryCapture.Secret, json.RootElement.GetRawText());
             capture.AssertSafe();
             capture.Clear();

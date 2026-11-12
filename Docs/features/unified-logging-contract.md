@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-11-05。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-11-12。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)，采集证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 显式候选开关见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)，首版诊断字段与本地输出见第 89 节。生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -9,7 +9,7 @@
 - .NET：作为 `Radish.Common` 嵌入资源，由 `RuntimeLogPolicy` 读取；不依赖业务层。
 - Node：`Frontend/scripts/logging/runtime-event.mjs` 读取同一文件；静态服务器已接入候选输出，Dockerfile 随运行脚本复制此策略。
 - 两端运行同一组 [`runtime-events.json`](../../Scripts/logging/fixtures/runtime-events.json) 样本，不各写一份脱敏规则。
-- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器本地 logger 已完成本批迁移，边界见第 74 节；Flutter logger 仍待确认；数据库接收已完成 L3-A 本地切片，运行接入与迁移验收见第 75 节。旧默认行为见[日志系统](../guide/logging.md)。
+- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用。浏览器本地 logger 见第 74 节，Flutter 应用本地报告见第 89 节。数据库接收已完成 L3-A 本地切片，运行接入与迁移验收见第 75 节。旧默认行为见[日志系统](../guide/logging.md)。
 
 ## 2. 生成契约 v1 首批字段
 
@@ -25,10 +25,11 @@
 | `sourceCategory` | 注册表内的来源分类；未知分类回到 application 并标记裁剪 |
 | `messageTemplate / message` | 首批仅登记的静态安全说明；没有自由文本插值 |
 | `properties` | 有限数值 / 整数范围或固定枚举；尚不接受自由文本、数组及嵌套对象 |
-| `traceId / spanId / operationId` | 可选、格式严格限制；trace / span 拒绝全零值 |
+| `traceId / spanId / operationId` | 可选，格式严格限制。trace / span 拒绝全零值；.NET Serilog 关联来源见第 89 节 |
+| `requestId` | 可选，1–64 个 ASCII 字母、数字、`:`、`_`、`-`。仅用于 API 自有异常处理器成功写入的 5xx `http.failed`，与响应反馈 ID 一致 |
 | `normalizationStatus / redacted / truncated` | 未分类或裁剪行为可辨识；当前是省略未知数据，不把省略伪称字符串截断 |
 
-`containerId` 现由采集规范化层从 Docker FullID 标签补充；instanceId 只保留与 FullID 匹配的完整 / 短 ID，否则使用受信 FullID 并标记裁剪。`requestId / jobId / tenantId` 的权威上下文、异常类型 / 安全栈帧在宿主适配时补齐。当前最终处理边界只提供固定枚举 `failureKind`；未知异常归为 other，不回显 `Exception.Message / StackTrace / Data`。不能把首批字段子集称为最终全部 schema。
+`containerId` 由采集规范化层从 Docker FullID 标签补充。instanceId 只保留与 FullID 匹配的完整 / 短 ID，否则使用受信 FullID 并标记裁剪。异常摘要使用固定枚举 `failureKind`，未知异常归为 other，省略 `Exception.Message / StackTrace / Data`。`jobId / tenantId`、异常类型与安全栈帧列为后续增强。
 
 ## 3. 安全与模式
 
@@ -849,3 +850,14 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - `CommentService`、`ContentSubmissionService` 和 `ForumContentRevisionService` 固定 Serilog 类型来源及原事件码。`ReactionService` 和 `StickerService` 使用类型化 logger 与固定命名 EventId。13 个事件的精确来源、等级和身份见[第 10.13 节](./unified-logging-l3-ingest-plan.md#l2-content-sticker-output)。`CommentService` 的 `comment.edit_failed` 由服务自身绑定来源，Controller 的同名事件沿原适配器。
 - `ContentStickerLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 与候选 JSONL。登记事件固定模板、`application` 分类与 `Diagnostic=false`，扩展字段仅允许封闭 `failureKind`。原等级、Serilog 时间、事件自带或当前 W3C Activity 的类型化关联保留，JSONL 时间沿公共策略。普通 scope 关联、`operationId`、额外属性、原模板、异常及载荷剔除。精确来源的错配或缺失身份、错误等级使用受控 `runtime.unclassified`，低于 Warning 标为诊断。
 - 第 37、39–40、42、48–49 节的业务返回、事务与异常归属保持。WriteTo 消费输出故障，候选 writer 使用有界应急，AuditTo 仍可阻止返回既有恢复结果、打断重试或缓存回源。评论内层日志输出失败仍可进入外层重算 catch。见[实施记录](../records/unified-logging-l2-content-sticker-output-audit-2026-11-12.md#implementation)。真实介质、数据库并发与 collector 随对应批次验收。
+
+<a id="l2-diagnostic-output-boundaries"></a>
+
+## 89. L2 首版诊断字段与本地输出边界（2026-11-12）
+
+- `ApiExceptionHandler` 的 `1/ApiRequestFailed` 在 5xx 响应写入成功后绑定 `requestId`。值来自该响应使用的 `HttpContext.TraceIdentifier`，与原响应体 `traceId`、`X-Correlation-ID` 一致。非法值省略于日志，响应状态、正文及 header 保持原语义。普通 scope、入站 header、Controller 的同名 `http.failed` 及框架异常事件不能补齐该字段。
+- 旧链 WriteTo / AuditTo 的安全消息与结构化属性保留有效 ID；候选 JSONL 放在独立根字段。规范化仅接受 `api / http / http.failed / Error` 的非 Fatal、非诊断事件及整数 500–599。.NET、Node 和 Lua 省略非法值并标记裁剪；接收侧拒绝仍带非法字段的记录，兼容既有缺省记录。L3-A 将有效字段保存在 canonical JSON。独立可空列和精确索引随 L3 迁移，受权精确筛选随 L4。启用该生成输出前，采集和接收版本须支持该字段。
+- .NET 候选 Serilog 路径的 `traceId / spanId` 取类型化事件关联或当前 W3C Activity，缺省时省略。普通关联属性不能填充；`operationId` 仅沿 Hangfire 状态选举及 Outbox 状态写入的两个已登记事件对进入。原始 jobId、tenantId、异常类型与安全栈帧后置。
+- Flutter 在 Dart 引导接管 `FlutterError.onError`，保留 SDK 的静默规则，框架本地报告只输出固定摘要。显式引导异常以固定异常和空原始栈继续失败；认证、会话和 HTTP 继续由既有状态路径消费。root isolate、原生引擎、插件和子 isolate 随目标设备核验。
+- DbMigrate 的 help、doctor、verify 和 apply 内嵌 doctor 将人读报告写 stdout。环境名、主库和连接标识在报告中转义控制、格式和换行字符并限制至 80 个 UTF-16 码元，目标仍用安全占位；诊断 JSONL 与已登记有界应急继续走 stderr，保留原退出码。移除无调用的 `ConsoleHelper`。受信流分类与独立应急证据路线随 L1 / L3 真实采集联验，入库应急避开同一故障链。
+- 本地回归与剩余范围见[实施记录](../records/unified-logging-l2-diagnostic-output-boundary-audit-2026-11-12.md#implementation)及[第 10.14 节](./unified-logging-l3-ingest-plan.md#l2-diagnostic-and-output-boundaries)。

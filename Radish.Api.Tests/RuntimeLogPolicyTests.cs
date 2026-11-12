@@ -42,6 +42,9 @@ public class RuntimeLogPolicyTests
         using var output = JsonDocument.Parse(serialized);
         foreach (var field in expected.EnumerateObject())
             Assert.True(JsonElement.DeepEquals(field.Value, output.RootElement.GetProperty(field.Name)), $"{name}: {field.Name}");
+        if (fixture.TryGetProperty("absent", out var absent))
+            foreach (var field in absent.EnumerateArray())
+                Assert.False(output.RootElement.TryGetProperty(field.GetString()!, out _), $"{name}: {field.GetString()}");
         Assert.True(Guid.TryParse(value.EventId, out _));
         Assert.Equal("2026-09-19T00:00:00.123Z", value.OccurredAtUtc);
         Assert.Equal(value.OccurredAtUtc, value.ObservedAtUtc);

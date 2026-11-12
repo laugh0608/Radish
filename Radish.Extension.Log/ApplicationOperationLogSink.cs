@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Radish.Common.LogTool;
 using Serilog.Core;
 using Serilog.Events;
 using Serilog.Parsing;
@@ -8,9 +9,11 @@ namespace Radish.Extension.Log;
 /// <summary>重建 API Controller、引导奖励、通知去重、限流及直接 API 异常消费边界的精确自有来源。</summary>
 public sealed class ApplicationOperationLogSink(ILogEventSink next, bool diagnostics = false) : ILogEventSink
 {
+    internal const string HttpHandlerSource = "Radish.Api.ErrorHandling.ApiExceptionHandler";
     private static readonly MessageTemplate EventTemplate = new MessageTemplateParser().Parse("Application operation {EventCode}.");
     private static readonly MessageTemplate FailureTemplate = new MessageTemplateParser().Parse("Application operation {EventCode}; failure={failureKind}.");
     private static readonly MessageTemplate HttpFailureTemplate = new MessageTemplateParser().Parse("API request failure {EventCode}; status={statusCode}; failure={failureKind}.");
+    private static readonly MessageTemplate HttpFailureWithRequestTemplate = new MessageTemplateParser().Parse("API request failure {EventCode}; status={statusCode}; failure={failureKind}; request={requestId}.");
     private static readonly MessageTemplate ConfigurationTemplate = new MessageTemplateParser().Parse("Application operation {EventCode}; state={rateLimitState}.");
     private static readonly MessageTemplate CleanupTemplate = new MessageTemplateParser().Parse("Upload accounting {EventCode}; operation={cleanupOperation}; failure={failureKind}.");
 
@@ -20,7 +23,7 @@ public sealed class ApplicationOperationLogSink(ILogEventSink next, bool diagnos
         { next.Emit(value); return; }
         var owner = category switch
         {
-            "Radish.Api.ErrorHandling.ApiExceptionHandler" => "http.handler",
+            HttpHandlerSource => "http.handler",
             "Radish.Api.Controllers.UserController" => "user.current",
             "Radish.Api.Controllers.ClientController" => "client.management",
             "Radish.Service.BootstrapService" => "bootstrap",
@@ -116,8 +119,17 @@ public sealed class ApplicationOperationLogSink(ILogEventSink next, bool diagnos
         if (code == "http.failed")
         {
             template = HttpFailureTemplate;
-            if (value.Properties.TryGetValue("statusCode", out var status) && status is ScalarValue { Value: int number } && number is >= 500 and <= 599)
+            if (value.Properties.TryGetValue("statusCode", out var status) && status is ScalarValue { Value: int and >= 500 and <= 599 })
+            {
                 properties.Add(new("statusCode", status));
+                if (owner == "http.handler" && value.Level == LogEventLevel.Error &&
+                    value.Properties.TryGetValue("requestId", out var request) && request is ScalarValue { Value: string id } &&
+                    RuntimeLogPolicy.IsValidRequestId(id))
+                {
+                    properties.Add(new("requestId", request));
+                    template = HttpFailureWithRequestTemplate;
+                }
+            }
         }
         if (code == "upload.cleanup.failed")
         {

@@ -9,7 +9,7 @@ namespace Radish.Extension.Log;
 internal sealed class OutboxLogSink(ILogEventSink next) : ILogEventSink
 {
     private const string Dispatcher = "Radish.Api.Services.ReliableOutboxDispatcherJob";
-    private const string Repository = "Radish.Repository.ReliableOutboxRepository";
+    internal const string RepositorySource = "Radish.Repository.ReliableOutboxRepository";
     private const string Dispatched = "outbox.dispatched";
     private const string Retrying = "outbox.retrying";
     private const string DeadLetter = "outbox.dead_letter";
@@ -25,7 +25,7 @@ internal sealed class OutboxLogSink(ILogEventSink next) : ILogEventSink
 
     public void Emit(LogEvent value)
     {
-        if (Scalar(value, "SourceContext") is not { Value: string source } || source is not (Dispatcher or Repository))
+        if (Scalar(value, "SourceContext") is not { Value: string source } || source is not (Dispatcher or RepositorySource))
         {
             next.Emit(value);
             return;
@@ -34,8 +34,8 @@ internal sealed class OutboxLogSink(ILogEventSink next) : ILogEventSink
         var code = (source, Scalar(value, "EventCode")?.Value, value.Level) switch
         {
             (Dispatcher, Dispatched, LogEventLevel.Information) => Dispatched,
-            (Repository, Retrying, LogEventLevel.Warning) => Retrying,
-            (Repository, DeadLetter, LogEventLevel.Error) => DeadLetter,
+            (RepositorySource, Retrying, LogEventLevel.Warning) => Retrying,
+            (RepositorySource, DeadLetter, LogEventLevel.Error) => DeadLetter,
             _ => Unknown
         };
         var properties = new List<LogEventProperty>

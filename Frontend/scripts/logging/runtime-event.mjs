@@ -6,7 +6,7 @@ const contract = JSON.parse(readFileSync(new URL('../../../Radish.Common/LogTool
 const rank = { Info: 0, Warning: 1, Error: 2 };
 const sourceToken = /^[a-zA-Z0-9][a-zA-Z0-9._-]{0,63}$/u;
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
-const allowedInput = new Set(['level', 'diagnostic', 'eventCode', 'sourceCategory', 'properties', 'traceId', 'spanId', 'operationId']);
+const allowedInput = new Set(['level', 'diagnostic', 'eventCode', 'sourceCategory', 'properties', 'traceId', 'spanId', 'requestId', 'operationId']);
 const correlations = {
   traceId: /^[0-9a-f]{32}$/u,
   spanId: /^[0-9a-f]{16}$/u,
@@ -62,6 +62,14 @@ export function createRuntimeLogPolicy(source, { mode = 'Production', minimumLev
       const value = input[key];
       if (typeof value === 'string' && value.length <= 36 && pattern.test(value) && !/[\r\n]/u.test(value) && /[1-9a-f]/u.test(value)) correlation[key] = value;
       else redacted = true;
+    }
+    if (Object.hasOwn(input, 'requestId')) {
+      const value = input.requestId;
+      if (origin.service === 'api' && eventCode === 'http.failed' && sourceCategory === 'http' && mapping.level === 'Error' &&
+          !diagnostic && !mapping.isFatal && properties.statusCode >= 500 &&
+          typeof value === 'string' && value.length >= 1 && value.length <= 64 && !/[^A-Za-z0-9:_-]/u.test(value)) {
+        correlation.requestId = value;
+      } else redacted = true;
     }
     const timestamp = now().toISOString();
     return Object.freeze({

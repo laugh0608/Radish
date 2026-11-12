@@ -26,6 +26,7 @@ public sealed record RuntimeLogEvent
     public required IReadOnlyDictionary<string, object> Properties { get; init; }
     public string? TraceId { get; init; }
     public string? SpanId { get; init; }
+    public string? RequestId { get; init; }
     public string? OperationId { get; init; }
     public required string NormalizationStatus { get; init; }
     public bool Redacted { get; init; }

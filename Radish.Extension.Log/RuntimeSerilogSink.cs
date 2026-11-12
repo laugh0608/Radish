@@ -28,15 +28,22 @@ public sealed class RuntimeSerilogSink(RuntimeLogOutput output) : ILogEventSink
             foreach (var (key, value) in logEvent.Properties)
             {
                 if (key is "EventCode" or "SourceCategory" or "Diagnostic") continue;
-                if (key is "traceId" or "spanId" or "operationId")
-                {
-                    input[key] = value is ScalarValue { Value: string text } && text.Length <= 36 ? text : null;
-                    continue;
-                }
+                if (key is "traceId" or "spanId" or "operationId" or "requestId") continue;
                 // 只传内建标量，由公共策略再次执行键名、枚举和数值范围校验。
                 properties[key] = value is ScalarValue scalar ? Primitive(scalar.Value) : null;
             }
             input["properties"] = properties;
+            var source = Scalar(logEvent, "SourceContext") as string;
+            if ((source, code, logEvent.Level) is
+                (HangfireLogSink.StateSource, "job.retrying", LogEventLevel.Warning) or
+                (HangfireLogSink.StateSource, "job.failed", LogEventLevel.Error) or
+                (OutboxLogSink.RepositorySource, "outbox.retrying", LogEventLevel.Warning) or
+                (OutboxLogSink.RepositorySource, "outbox.dead_letter", LogEventLevel.Error) &&
+                Scalar(logEvent, "operationId") is string { Length: 36 } operationId)
+                input["operationId"] = operationId;
+            if (source == ApplicationOperationLogSink.HttpHandlerSource && code == "http.failed" &&
+                logEvent.Level == LogEventLevel.Error && Scalar(logEvent, "requestId") is string { Length: <= 64 } requestId)
+                input["requestId"] = requestId;
             if (logEvent.TraceId is { } trace) input["traceId"] = trace.ToHexString();
             else if (Activity.Current is { IdFormat: ActivityIdFormat.W3C } activity) input["traceId"] = activity.TraceId.ToHexString();
             if (logEvent.SpanId is { } span) input["spanId"] = span.ToHexString();
