@@ -1,6 +1,6 @@
 # 设计源文件目录
 
-本目录保存旧设计源及其索引。2026-11-14 起停用 Pencil，现行 R1 / R2 / R3 流程见[代表页设计协作流程](../pencil-representative-page-workflow.md)。
+本目录保存历史设计源及按产品面和版本组织的新 Penpot 评审包。2026-11-14 起停用 Pencil，现行 R1 / R2 / R3 流程见[代表页设计协作流程](../pencil-representative-page-workflow.md)。
 
 ## Web / Console 与 Flutter 基准留档
 
@@ -27,7 +27,7 @@
 
 ## 新设计证据
 
-新任务按代表页分级记录可编辑的 Penpot 稿或代码原型、评审图与代码锚点。R3 沿用已确认的结构和组件，在真实 PC / mobile 页面上复核。已有 `.pen` 及其预览保持归档状态。
+新任务按代表页分级记录可编辑的 Penpot 稿或代码原型、评审图与代码锚点。采用 Penpot 时在本目录的 `reviews/` 按产品面、代表页或交互及版本保存源稿、预览和恢复记录。R3 沿用已确认的结构和组件，在真实 PC / mobile 页面上复核。已有 `.pen` 及其预览保持归档状态。[Penpot 评审留档与恢复](../pencil-representative-page-workflow.md#56-penpot-评审留档与恢复)
 
 ## 配套说明
 
