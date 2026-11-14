@@ -95,7 +95,7 @@ Flutter 后续可评估把底部栏整理为 `发现 / 消息 / 更多 / 我的`
 
 必须保留：
 
-- 大页面重设计、端点级视觉治理和跨页面视觉体系变更原则上先更新 Pencil。
+- 大页面重设计、端点级视觉治理和跨页面视觉体系变更按[现行代表页设计流程](/frontend/pencil-representative-page-workflow)评审。
 - 外部 LongId、PublicId、登录回流和 Console returnTo 契约必须继续强守护。
 - 后续若重新决定真实发布 / 部署，必须按 [验证基线说明](/guide/validation-baseline) 与 [M15 最小交付与部署基线](/guide/m15-delivery-baseline) 补必要验证和留痕。
 

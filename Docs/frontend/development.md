@@ -80,12 +80,7 @@ npm run dev
 
 ## 5. UI 设计源协作
 
-正式 Web 的跨页面视觉改造先看设计源，再进代码：
-
-- 唯一活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`；共享 header、按钮、pill、卡片、状态槽和移动 tab 以其中 `R1-F01` 与[Web UI 共享基座设计说明](./web-ui-foundation-design.md)为准。
-- Public、Private / Author 与 Console 的 R1 / R2 均在同一活动设计源内维护；页面功能和实现边界分别以[公开 Web 统一体验设计说明](./public-web-unified-experience-design.md)、[私域与作者态 Web 工作流设计说明](./private-web-workflows-design.md)、[Console 样式与 Token 使用说明](./console-style-guide.md)和[Console 治理工作台设计端点](./console-governance-workbench-design.md)为准。
-- 上述“唯一”限定于 Web / Console 产品线；Flutter Native 使用独立 `Docs/frontend/design-sources/radish-flutter-native-ui-v1.pen`，以[Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design)约束原生组件、窗口等级与输入模型。
-- `web-ui-foundation.pen`、`public-web-unified-experience.pen`、`private-web-workflows.pen` 与 `console-governance-workbench.pen` 只读留档，不再作为当前设计修改入口。
+正式 Web 的跨页面视觉改造按[代表页设计流程](./pencil-representative-page-workflow.md)进行。共享 header、按钮、pill、卡片、状态槽和移动 tab 见[Web UI 共享基座设计说明](./web-ui-foundation-design.md)。Public、Private / Author 和 Console 的业务范围由各自专题维护。Flutter 的响应式和原生组件见[原生重构专题](/features/flutter-native-product-ui-design)，旧稿索引见[设计源目录](./design-sources/README.md)。
 
 当前 `radish.client` 已落地的共享 Web shell 代码入口：
 
@@ -102,13 +97,6 @@ Frontend/radish.client/src/components/web-shell/
 - 公开页、私域页和作者态页需要 header、移动底栏、加载 / 空态 / 错误 / 权限状态时，先复用 `WebShellHeader` / `WebStateSlot`。
 - `@radish/ui` 继续承载跨 client / console 的基础组件；不要因为 client 需要壳层组件就把 Console 也强行迁入这套 shell。
 - 公开内容宽度优先使用 `--rx-content-max-width`、`--rx-content-reading-width`、`--rx-content-narrow-width`；移动单列底部留白优先使用 `--rx-mobile-shell-offset`。
-
-Pencil 操作注意：
-
-- `.pen` 只能通过 Pencil 修改，不用普通文本工具编辑。
-- Pencil 写入依赖当前活动窗口；修改前确认目标 `.pen` 已在 Pencil 当前窗口打开。
-- 切换 `.pen` 前必须在 Pencil 内手动保存；否则可能丢失更改或把后续写入落到上一活动文件。
-- MCP `filePath` 只能辅助读取、截图和布局检查，不能替代活动窗口确认和手动保存。
 
 ## 6. 常用验证命令
 

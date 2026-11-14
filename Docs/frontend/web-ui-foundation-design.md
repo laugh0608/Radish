@@ -22,7 +22,7 @@
 >
 > 状态：Web `R1-F01`、六个 R1、四个 R2、六组 R3 继承与四主题退出门禁均已关闭；本页继续作为 Web 共享基座说明，不承载 Flutter 原生组件。
 
-## 设计源
+## 历史设计源
 
 ```text
 Docs/frontend/design-sources/radish-web-family-ui-v1.pen
@@ -40,15 +40,15 @@ Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 
 ## 目标
 
-- 在单一活动 `.pen` 中固定 header、按钮、卡片和状态槽的共享契约，消除跨文件同步。
-- 让 Public、Private / Author 与 Console 代表画板复用同文件组件，而不是各自重新发明基础组件。
+- 通过本说明、共享组件和代表设计维护 header、按钮、卡片和状态槽的契约。
+- 让 Public、Private / Author 与 Console 代表设计复用同一套基础组件。
 - 在进入视觉代码实现前，先固定跨端点的视觉契约。
 
 ## 分层方案
 
 ### 共享基座
 
-`radish-web-family-ui-v1.pen` 的 `R1-F01` 与可复用组件区承载共享样板和合法变体；业务 R1 / R2 在同一文件的独立代表区组合这些契约。
+`R1-F01` 留档记录已确认的共享样板与合法变体。后续 R1 / R2 依据本说明和共享实现复用这些契约。
 
 当前包含：
 
@@ -60,9 +60,9 @@ Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 - Client 公共壳层组件契约：PublicShell、PrivateShell、MobileShell、StateSlot、RouteSource、PC header 解剖、移动端底部 tab 和 public / private / commerce / author 路由族覆盖。
 - 同文件继承与停止线规则。
 
-### 同文件代表页
+### 代表页索引
 
-业务代表设计不再按端点拆分成多个活动 `.pen`：
+既有业务代表设计包括：
 
 - Public：`R1-P01 / R1-P02` 与 `R2-P03`；
 - Private / Author：`R1-W01 / R1-A01` 与 `R2-W02 / R2-A02`；
@@ -72,7 +72,7 @@ Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 
 ### 评审看板
 
-阶段级横向审阅在同一活动文件内新增轻量 review frame，或使用目标节点导出截图；不再创建独立评审 `.pen`。
+阶段级横向审阅使用轻量评审板或相应预览。
 
 ## 必须一致
 
@@ -111,10 +111,10 @@ Docs/frontend/design-sources/radish-web-family-ui-v1.pen
 
 ## 同步规则
 
-1. 改共享视觉契约时，先修改 `radish-web-family-ui-v1.pen` 的 `R1-F01` 或对应可复用组件。
-2. 在同一文件内只更新受影响的 R1 / R2 代表画板；R3 派生页面从代码共享层继承，不复制画板。
+1. 改共享视觉契约时，先更新本说明与受影响的共享组件设计。
+2. 只更新受影响的 R1 / R2 代表设计；R3 派生页面从代码共享层继承，不复制画板。
 3. 再更新对应设计说明、继承关系和必要记录。
-4. 不允许在历史业务 `.pen` 或某个业务代表页内临时分叉 header、按钮、卡片或状态槽样式。
+4. 各业务代表页统一使用共享的 header、按钮、卡片或状态槽样式。
 5. 如果业务端点确实需要新变体，先按[代表页流程](/frontend/pencil-representative-page-workflow)完成升级判断，再把合法变体加入共享基座并说明适用范围。
 
 ## 代码对齐状态
@@ -213,18 +213,8 @@ loading / empty / error / notFound / permission / auth / info
 
 页面级 CSS 应优先使用这些语义 token。确实需要新增宽度或壳层 token 时，先补本说明，再进入代码。
 
-## Pencil 工作流限制
-
-- Pencil 当前活动窗口一次只打开一个 `.pen`；写入操作必须以当前活动窗口中已打开的目标文件为准。
-- MCP 工具可以通过 `filePath` 指定读取、检查和截图不同文件，但不要假设写入会可靠落到非活动窗口文件。
-- 切换 `.pen` 前必须在 Pencil 内手动保存当前文件；未保存时切换文件可能丢失更改，或让后续写入误落到上一活动文件。
-- 由于 Pencil 组件不能跨文件实时引用，当前方案不是实时组件库，而是“共享样板 + 文档约束 + 按需同步”。
-- `.pen` 文件只通过 Pencil 创建、读取和修改；新设计源可从 `empty-design-source-template.pen` 复制后再用 Pencil 写入内容。
-
 ## 当前不做
 
-- 不把所有页面合并进一个巨型 `.pen`。
-- 不创建跨文件实时组件库。
 - 不把 D8 首批实现扩大为 Console 或全量页面重写。
 - 不把 Console 语义组件反向套到公开 / 私域 Web；Console 仍按治理和表格密度独立承接。
 - 不借共享基座重做 public / private / console 全量画板。

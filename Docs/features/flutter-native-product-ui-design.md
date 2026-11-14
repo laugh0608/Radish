@@ -317,7 +317,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 ### P3：Flutter 代表设计（已确认，2026-08-23）
 
-- 新建并维护独立活动设计源 `Docs/frontend/design-sources/radish-flutter-native-ui-v1.pen`，不把 Flutter 画板追加进 Web / Console 活动源。
+- Flutter 独立维护原生代表设计，旧基准见[设计源目录](/frontend/design-sources/)，后续依[代表页设计流程](/frontend/pencil-representative-page-workflow)记录新稿。
 - 按 R1 / R2 维护 Flutter 专用 compact / expanded 代表设计；medium 只补真实结构差异。
 - 以正式 Web 的品牌栏、导航语法、主题和信息层级为视觉基准，不复制 Web DOM；再按 Flutter 安全区、返回、触控、键鼠、焦点和窗口等级做原生适配。
 - 确认 typography、四主题、圆角、阴影、状态、导航、宽屏布局和 motion。

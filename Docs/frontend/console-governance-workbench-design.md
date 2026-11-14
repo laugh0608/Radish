@@ -84,7 +84,7 @@
 
 ## 设计源文件
 
-当前活动设计源：
+该批次的设计源留档：
 
 ```text
 Docs/frontend/design-sources/radish-web-family-ui-v1.pen
@@ -94,8 +94,7 @@ Console 代表设计使用 `R1-C01 / R1-C02` 与 `R2-C03`。旧 `console-governa
 
 规则：
 
-- `.pen` 文件必须通过 Pencil 工具创建和修改，不能用普通文本工具读写。
-- Markdown 只承载可检索的设计约束、页面结构和实现拆分，不替代 `.pen` 视觉源文件。
+- 现行评审按[代表页协作流程](/frontend/pencil-representative-page-workflow)记录结构、实现拆分和视觉证据。旧画板与下列编号保留为历史。
 
 当前画板编号：
 

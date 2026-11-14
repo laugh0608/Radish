@@ -46,7 +46,7 @@
 | 环境、启动、端口与排障 | [快速开始](Docs/guide/getting-started.md)、[运行与排障](Docs/guide/operations-runbook.md) |
 | 配置与数据库 | [配置管理](Docs/guide/configuration.md)、[数据库总览](Docs/guide/database-overview.md) |
 | Web / Flutter / WebOS / Tauri 边界 | [前端设计](Docs/frontend/design.md)、[前端多壳层策略](Docs/frontend/shell-strategy.md)、相关功能专题 |
-| UI、主题与 Pencil | [UI 差异附录](Docs/frontend/ui-addendum.md)、[视觉主题](Docs/frontend/visual-theme-spec.md)、[颜色参考](Docs/frontend/visual-color-reference.md)、[Pencil 流程](Docs/frontend/pencil-representative-page-workflow.md) |
+| UI、主题与代表页设计 | [UI 差异附录](Docs/frontend/ui-addendum.md)、[视觉主题](Docs/frontend/visual-theme-spec.md)、[颜色参考](Docs/frontend/visual-color-reference.md)、[代表页流程](Docs/frontend/pencil-representative-page-workflow.md) |
 | 分支、PR 与回灌 | [分支与 PR 治理 ADR](Docs/adr/0001-branch-and-pr-governance.md) |
 | 文档拆分、索引和篇幅 | [文档篇幅治理](Docs/guide/document-governance.md) |
 
