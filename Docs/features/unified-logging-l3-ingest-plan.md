@@ -33,8 +33,8 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 | 门禁 | 已有证据 | 仍需交付 / 通过条件 | 所属批次 |
 | --- | --- | --- | --- |
 | 传输正式上界 | Docker Message mode 候选上界完成[推导](#l1-l3-transport-budget)及 [OrbStack 实测](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。合法流量全部交付，实际请求在候选预算内，接收端门限和进程内存已取证 | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
-| 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 磁盘 / 队列组合故障和留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
-| 磁盘与支路隔离 | 路径不可写时 HTTP 可交付；队列满有 dropped_records | 实际 ENOSPC、权限错误、buffer 与 file 共享磁盘争用、恢复、应急通道有界；分别报告文件缺口与入库缺口，不承诺补回已丢弃事件 | L1 接续 |
+| 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
+| 磁盘与支路隔离 | [OrbStack 联验](#l1-l3-disk-queue-runtime)实测共享卷 ENOSPC、两支路缺口与恢复。HTTP 队列溢出的 7,200 条缺口与丢弃计数一致 | 文件支路 ENOSPC 的丢弃计数、截断尾恢复及入队前失败的可观测性待收口。权限错误与有界应急通道保留原退出条件 | L1 接续 |
 | 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
 
@@ -46,7 +46,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 1. 对照第 10 节调用清单、事件契约和各批回归，列出尚会阻断真实联验的已登记来源。随后确认单一隔离环境的架构、镜像 digest、Docker daemon 到 collector 的路径、服务与流标识、独立内网端口、专用凭据、测试存储、故障注入和清理。此清单用于确认本次运行范围。
 2. 先以三个边界对账。API 5xx 的响应反馈 ID 与文件及真实 API 接收后 SQLite 的 canonical JSON 一致，旧事件缺省兼容，提交后响应丢失重投只保留一个事件。用受信的服务与流元数据识别 DbMigrate stdout 报告，使其在 JSON parser 前退出事件链。对独立启动 / 入库应急 stderr 验证有界证据和失败通道隔离，入库应急避开同一失败链。
-3. PostgreSQL 的提交、重投与 Log 库断连恢复，以及 Docker Message mode 候选传输上界与坏批隔离均已通过。下一批按第 2 节验证磁盘 / 队列故障与恢复。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
+3. PostgreSQL 的提交、重投与 Log 库断连恢复，以及 Docker Message mode 候选传输上界与坏批隔离均已通过。OrbStack 磁盘与队列联验复现了文件丢弃计数缺口、截断尾及入队前失败，按第 2 节推进收口。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
 
 #### OrbStack / Linux arm64 隔离联验入口
 
@@ -110,6 +110,38 @@ docker --context orbstack network ls --filter "label=radish.logging.probe=$probe
 ```
 
 本入口已通过该隔离环境的全部用例，实测数据见[传输联验记录](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。正式部署配置按目标部署批次冻结，改变上述预算前提时重新核对。
+
+<a id="l1-l3-disk-queue-runtime"></a>
+
+### 2.3 OrbStack 磁盘与队列故障联验
+
+在仓库根目录预览配置，获本批启动授权后执行第二条。复用本机缓存的 Fluent Bit 5.1.2、ASP.NET Core 10.0.14、Node.js 24.16.0 及现有 Linux arm64 Debug 产物。运行使用 `--pull never`，由 DbMigrate apply 初始化临时 SQLite，镜像 digest 随预览和报告保留。
+
+```bash
+node Scripts/logging/collector-ingest-probe.mjs --plan --database=sqlite --suite=disk-queue
+node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=disk-queue
+```
+
+**容量与网络。** 一个带任务标签的 24 MiB Docker `local` / tmpfs 命名卷同时挂入 Fluent Bit 和中转容器的 `/probe-disk`。脚本核对挂载身份、容量和设备号后，才允许在 `files/probe-fill.bin` 写入占位数据并捕获真实 `write` 的 `ENOSPC`。`files` 与 `buffer` 同盘可争用，SQLite、配置和凭据位于各自的临时挂载。文件轮转阈值设为 16M，flush 间隔设为 10 秒以便核对落盘后、flush 前的窗口。两支路仍分别使用 4M 队列。Forward 只发布回环动态端口，经中转 24224 到 collector 24224。API 5100、内网入库 15199、中转 8080、指标 2020 留在专用 Docker 网络。该容量探针覆盖 Linux tmpfs 的写入空间争用，块设备性能与持久化另行验证。[Docker local 卷选项](https://docs.docker.com/reference/cli/docker/volume/create/#driver-specific-options--o---opt)
+
+| 场景 | 判据 |
+| --- | --- |
+| 已写入缓冲后填满共享卷 | 先确认 128 条合成记录存在于缓冲且尚未 flush，再从文件侧占满卷。记录 `ENOSPC`、两边实际占用、HTTP 入库结果及文件缺口。释放占位文件，核对新事件恢复两路交付。 |
+| 卷满后追加 | 卷在新记录到来前已为零可用空间。用 Forward 计数和 collector 存储诊断或退出状态定位故障发生阶段，记录两支路缺口。释放空间，若 collector 已退出则启动本次同一容器，再核对新事件和残留缓冲。 |
+| HTTP 队列溢出 | 卷有余量时，在临时 SQLite 使特定合成事件返回真实 503。分五波发送共 12,000 条，每波先核对文件支路，再观察 HTTP 队列丢弃。撤销故障，核对存活积压重投、新事件两路交付、缺口及缓冲排空。 |
+
+以合成事件 ID 对账文件和 SQLite，逐阶段列出文件缺口、HTTP 缺口与两边都缺的重叠项，并记录 collector 的 `errors` / `dropped_records` 增量、差额及不完整文件尾。固定版 Fluent Bit 的 plain 文件输出路径在写入与关闭后仍可能返回成功，因此计数与事件对账都保留，实际差额留作故障证据。[固定版文件输出实现](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/out_file/file.c#L1365-L1416)
+
+**清理范围。** 启动时打印完整的 `radish-logging-disk-queue-…` 任务 ID 和临时目录。退出时删除该任务标签下的启动、API、collector、中转和合成生产者容器、专用网络及精确命名卷 `<本次 id>-shared-disk`。删除打印的 `/private/tmp` 目录及其中的 SQLite、配置、凭据、指标中转记录和合成负载。保留本机镜像缓存与 `artifacts/logging-disk-queue-probe/<本次 id>.json`。强制终止后用打印的完整 ID 核对资源，再按对象 ID 和精确目录清理。
+
+```bash
+probe_id='radish-logging-disk-queue-实际运行ID'
+docker --context orbstack ps -a --filter "label=radish.logging.probe=$probe_id"
+docker --context orbstack network ls --filter "label=radish.logging.probe=$probe_id"
+docker --context orbstack volume ls --filter "label=radish.logging.probe=$probe_id"
+```
+
+2026-11-17 复验四项通过。共享卷写满时文件支路实际缺 123 条，文件丢弃计数增量为 0。满卷后的单条事件在创建 chunk 前丢失，两个输出计数均无增量。HTTP 队列溢出实际缺 7,200 条，与丢弃计数一致。释放共享卷和撤销 503 后，两条支路均恢复交付。探针用活跃 chunk 和非空 chunk 文件共同判断排空，另行记录空文件残留。[联验记录](../records/unified-logging-l1-l3-disk-queue-runtime-2026-11-17.md)
 
 ## 3. L2 剩余来源与退出条件
 

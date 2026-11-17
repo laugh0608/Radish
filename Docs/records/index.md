@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-17 统一日志磁盘与队列故障联验](./unified-logging-l1-l3-disk-queue-runtime-2026-11-17.md) · 真实 ENOSPC、共享卷争用、文件与入库缺口及恢复
+
 - [2026-11-17 统一日志传输上界与坏批隔离联验](./unified-logging-l1-l3-transport-runtime-2026-11-17.md) · 逐条追加、HTTP 负载、进程峰值、门限与 4xx / 503 恢复行为
 
 - [2026-11-17 统一日志 L1 / L3 PostgreSQL 隔离联验](./unified-logging-l1-l3-postgres-runtime-2026-11-17.md) · 正式迁移、真实提交与重投、Log 库断连及同批恢复

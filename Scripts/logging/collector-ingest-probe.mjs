@@ -7,6 +7,8 @@ import { fileURLToPath } from 'node:url';
 import { createRuntimeLogPolicy, serializeRuntimeLogEvent } from '../../Frontend/scripts/logging/runtime-event.mjs';
 import { renderCollectorPolicy } from '../../Deploy/logging/render-policy.mjs';
 import { boundaryConfig } from './boundary-config.mjs';
+import { diskCapacityBytes, diskMount } from './ingest-probe-disk-control.mjs';
+import { diskCollectorConfig, diskDeployment, diskRelease, diskWorkload, verifyDiskQueue } from './ingest-probe-disk.mjs';
 import { createPostgresProbe, postgresImage } from './ingest-probe-postgres.mjs';
 import { transportDeployment, transportRelease, transportWorkload, verifyTransport } from './ingest-probe-transport.mjs';
 import { collectorImage, readLines, until } from './probe-runtime.mjs';
@@ -19,12 +21,15 @@ const [action, databaseOption = '--database=sqlite', suite = '--suite=ingest', .
 assert.equal(unexpected.length, 0);
 assert.match(databaseOption, /^--database=(sqlite|postgresql)$/u);
 const database = databaseOption.split('=')[1];
-assert.match(suite, /^--suite=(ingest|transport)$/u);
-const transport = suite === '--suite=transport';
-assert.ok(!transport || database === 'sqlite', 'The transport suite uses disposable SQLite');
-const profile = transport ? 'transport' : database;
-const deploymentId = transport ? transportDeployment : 'logging-' + database + '-probe';
-const release = transport ? transportRelease : 'probe';
+assert.match(suite, /^--suite=(ingest|transport|disk-queue)$/u);
+const suiteName = suite.split('=')[1];
+const transport = suiteName === 'transport';
+const disk = suiteName === 'disk-queue';
+const observeForward = transport || disk;
+assert.ok(!observeForward || database === 'sqlite', 'The transport and disk-queue suites use disposable SQLite');
+const profile = observeForward ? suiteName : database;
+const deploymentId = disk ? diskDeployment : transport ? transportDeployment : 'logging-' + database + '-probe';
+const release = disk ? diskRelease : transport ? transportRelease : 'probe';
 let interruptedExit = 0;
 let cleaning = false;
 const runDocker = (args, input) => execFileSync('docker', ['--context', 'orbstack', ...args], {
@@ -36,10 +41,13 @@ const docker = (...args) => {
   return runDocker(args);
 };
 const images = [collectorImage, runtimeImage, relayImage, ...(database === 'postgresql' ? [postgresImage] : [])];
+const diskVolumeOptions = { type: 'tmpfs', device: 'tmpfs', o: 'size=24m,noexec,nosuid,nodev' };
 
 function collectorConfig() {
-  const base = boundaryConfig('relay');
-  return (transport ? base.replace('rotate_max_size 1M', 'rotate_max_size 16M') : base).replace('[FILTER]\n', [
+  let base = boundaryConfig('relay');
+  if (transport) base = base.replace('rotate_max_size 1M', 'rotate_max_size 16M');
+  if (disk) base = diskCollectorConfig(base);
+  return base.replace('[FILTER]\n', [
     '[FILTER]', '    Name lua', '    Match *', '    script /probe/streams.lua',
     '    call route_probe_stream', '    protected_mode true', '[FILTER]', '',
   ].join('\n')).replace('    Format json_lines\n', [
@@ -50,7 +58,7 @@ function collectorConfig() {
 if (action === '--plan') {
   const budget = transport ? (await import('./check-transport-budget.mjs')).transportBudget : undefined;
   process.stdout.write(JSON.stringify({
-    context: 'orbstack', platform: 'linux/arm64', database, suite: transport ? 'transport' : 'ingest', images,
+    context: 'orbstack', platform: 'linux/arm64', database, suite: suiteName, images,
     listeners: {
       forward: '127.0.0.1:<assigned> → 24224', api: 5100, ingest: 15199, relay: 8080, metrics: 2020,
       ...(database === 'postgresql' ? { postgres: 5432 } : {}),
@@ -59,6 +67,11 @@ if (action === '--plan') {
     ...(transport ? {
       budget, workload: transportWorkload, forwardMapping: 'loopback → relay:24224 → collector:24224',
       cleanup: 'Remove only labelled transport containers, network and temporary directory. Keep the JSON report and local image cache.',
+    } : {}),
+    ...(disk ? {
+      workload: diskWorkload, forwardMapping: 'loopback → relay:24224 → collector:24224',
+      sharedVolume: { driver: 'local', options: diskVolumeOptions, mount: diskMount, capacityBytes: diskCapacityBytes },
+      cleanup: 'Remove only labelled disk-queue containers, network, named shared volume and temporary directory. Keep the JSON report and local image cache.',
     } : {}),
   }, null, 2) + '\n');
   process.exit(0);
@@ -78,8 +91,11 @@ let network = false;
 const report = { prefix, database, checks: {}, images, cleanup: false };
 const key = randomBytes(32).toString('hex');
 const name = (role) => prefix + '-' + role;
+const diskVolume = disk ? name('shared-disk') : null;
+const diskMountArgs = diskVolume ? ['--mount', 'type=volume,source=' + diskVolume + ',target=' + diskMount + ',volume-nocopy'] : [];
+const diskControl = (...args) => JSON.parse(docker('exec', name('relay'), 'node', '/probe/disk-control.mjs', ...args));
 const postgres = database === 'postgresql' ? createPostgresProbe(runDocker, name('postgres'), directory, root) : null;
-if (transport) process.stderr.write('Running isolated probe ' + prefix + ' in ' + directory + '\n');
+if (observeForward) process.stderr.write('Running isolated probe ' + prefix + ' in ' + directory + '\n');
 
 function launch(role, ...args) {
   containers.push(name(role));
@@ -145,7 +161,7 @@ const emitFixture = (role, event) => {
     'process.stdout.write(process.argv[1]+"\\n");setTimeout(()=>{},1000);', serializeRuntimeLogEvent(event));
   assert.equal(docker('wait', name(role)), '0');
 };
-const launchTransportFixture = (role, lines) => {
+const launchFixture = (role, lines) => {
   const fixture = join(directory, role + '.ndjson');
   writeFileSync(fixture, lines.join('\n') + '\n');
   launch(role, ...forwardLogs('api'), '-v', fixture + ':/fixture:ro', relayImage, 'node', '-e',
@@ -171,6 +187,7 @@ try {
   cpSync(join(here, 'ingest-probe-streams.lua'), join(directory, 'collector/streams.lua'));
   cpSync(join(here, 'ingest-probe-relay.mjs'), join(directory, 'relay/relay.mjs'));
   cpSync(join(here, 'ingest-probe-forward.mjs'), join(directory, 'relay/ingest-probe-forward.mjs'));
+  if (disk) cpSync(join(here, 'ingest-probe-disk-control.mjs'), join(directory, 'relay/disk-control.mjs'));
   writeFileSync(join(directory, 'collector/policy.lua'), renderCollectorPolicy());
   writeFileSync(join(directory, 'collector/parsers.conf'), '[PARSER]\n    Name event\n    Format json\n');
   writeFileSync(join(directory, 'collector/fluent-bit.conf'), collectorConfig());
@@ -214,24 +231,47 @@ try {
     report.checks.postgresMigration = true;
   }
   phase = 'start and connect listeners';
+  if (diskVolume) {
+    const options = Object.entries(diskVolumeOptions).flatMap(([key, value]) => ['--opt', key + '=' + value]);
+    assert.equal(docker('volume', 'create', '--driver', 'local', '--label', 'radish.logging.probe=' + prefix, ...options, diskVolume), diskVolume);
+    const [volume] = JSON.parse(docker('volume', 'inspect', diskVolume));
+    assert.equal(volume.Labels['radish.logging.probe'], prefix);
+    assert.deepEqual(volume.Options, diskVolumeOptions);
+  }
   const publishForward = ['-p', '127.0.0.1::24224'];
-  launch('relay', ...localLogs, ...(transport ? [...publishForward, '-e', 'RADISH_TRANSPORT_PROBE=1'] : []),
+  launch('relay', ...localLogs, ...(observeForward ? [...publishForward, '-e', 'RADISH_TRANSPORT_PROBE=1'] : []),
+    ...diskMountArgs,
     '-v', join(directory, 'relay') + ':/probe',
     '-v', join(directory, 'db') + ':/probe/db', relayImage, 'node', '/probe/relay.mjs');
+  if (diskVolume) {
+    const initial = diskControl('prepare');
+    assert.equal(initial.freeBytes, diskCapacityBytes);
+  }
   launch('collector', ...localLogs, '--env-file', join(directory, 'collector.env'),
-    '-v', join(directory, 'collector') + ':/probe', ...(transport ? ['--pid=container:' + name('relay')] : publishForward),
+    '-v', join(directory, 'collector') + ':/probe', ...diskMountArgs,
+    ...(transport ? ['--pid=container:' + name('relay')] : disk ? [] : publishForward),
     collectorImage, '-c', '/probe/fluent-bit.conf');
-  report.forwardPort = Number(docker('port', name(transport ? 'relay' : 'collector'), '24224/tcp').split(':').at(-1));
+  if (diskVolume) for (const role of ['relay', 'collector']) {
+    const mounts = JSON.parse(docker('inspect', '-f', '{{json .Mounts}}', name(role)));
+    const mount = mounts.find((entry) => entry.Destination === diskMount);
+    assert.equal(mount?.Type, 'volume');
+    assert.equal(mount?.Name, diskVolume);
+    assert.equal(mount?.RW, true);
+  }
+  report.forwardPort = Number(docker('port', name(observeForward ? 'relay' : 'collector'), '24224/tcp').split(':').at(-1));
   assert.ok(report.forwardPort > 0);
   await until(() => fetchInProbe('http://collector:2020/api/v1/metrics').status === 200, 'collector ready');
-  if (transport) await until(() => fetchInProbe('http://relay:8080/probe-forward-stats').status === 200, 'Forward observer ready');
+  if (observeForward) await until(() => fetchInProbe('http://relay:8080/probe-forward-stats').status === 200, 'Forward observer ready');
   launch('api', ...forwardLogs('api'), ...app('api', 'api.env'));
   await until(() => fetchInProbe('http://api:5100/api/health').status === 200, 'API ready');
   assert.equal(fetchInProbe('http://api:5100/internal/logs/ingest').status, 404);
   assert.equal(fetchInProbe('http://api:15199/api/health').status, 404);
   report.checks.listenerIsolation = true;
-  if (transport) {
-    await verifyTransport({ docker, name, launchFixture: launchTransportFixture, node, directory, sql, fetchInProbe,
+  if (disk) {
+    await verifyDiskQueue({ docker, name, launchFixture, directory, sql, fetchInProbe, relayEvents, logs, diskControl, report,
+      setPhase: (value) => { phase = value; } });
+  } else if (transport) {
+    await verifyTransport({ docker, name, launchFixture, node, directory, sql, fetchInProbe,
       fileEvents, relayEvents, key, report, setPhase: (value) => { phase = value; } });
   } else {
     await verifyIngestChecks();
@@ -255,6 +295,12 @@ try {
   if (network) {
     try { docker('network', 'rm', network); }
     catch { remaining.push(prefix); }
+  }
+  if (diskVolume) {
+    try {
+      const owned = docker('volume', 'ls', '--filter', 'label=radish.logging.probe=' + prefix, '--format', '{{.Name}}').split('\n');
+      if (owned.includes(diskVolume)) docker('volume', 'rm', diskVolume);
+    } catch { remaining.push(diskVolume); }
   }
   report.cleanup = remaining.length === 0;
   if (report.cleanup) rmSync(directory, { recursive: true, force: true });
