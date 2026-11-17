@@ -1,6 +1,6 @@
 # 日志 L1 / L2 剩余门禁与 L3-A 接收入库方案
 
-> 更新于 2026-11-12（Asia/Shanghai）。L3-A、第 8 节自有来源、第 9 节 Controller 与第 10 节已登记切片均有本地实现和回归。L3-A 的内存 HTTP / 临时 SQLite 证据见[接收实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)，真实采集与持久化接续见[联验顺序](#l1-l3-first-runtime-verification)。
+> 更新于 2026-11-17（Asia/Shanghai）。L3-A、第 8 节自有来源、第 9 节 Controller 与第 10 节已登记切片均有本地实现和回归。OrbStack / Linux arm64 的 SQLite 和 PostgreSQL 16.15 链路已通过。真实运行范围见[SQLite 记录](../records/unified-logging-l1-l3-sqlite-runtime-2026-11-17.md)和[PostgreSQL 记录](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md)，剩余门禁见下方第 2 节。
 >
 > 本页属于[统一日志专题](./unified-logging-governance-design.md)，承接[事件契约](./unified-logging-contract.md)。已完成来源仍以事件契约为准；本页维护剩余门禁及下一批实施边界，不另建主线。
 
@@ -26,12 +26,14 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 第二批将下表 L1 剩余项与 L3 实际 collector、接收器及 SQLite / PostgreSQL 组合验证：先明确目标架构、镜像、隔离存储、端口、故障方式和恢复 / 清理边界；每个尚缺条件对应一次可验结果，不追加多平台矩阵。真实运行另获授权，替身、合成格式或模块通过不能关闭真实链路。传输、磁盘、持久化与留存出口未齐时不提前进入生产切换。
 
+<a id="l1-l3-exit-checklist"></a>
+
 ## 2. L1 剩余退出清单
 
 | 门禁 | 已有证据 | 仍需交付 / 通过条件 | 所属批次 |
 | --- | --- | --- | --- |
 | 传输正式上界 | 8 KiB 应用输出限制；最大字段代表样本通过；16 MiB / 32768 条为实验候选 | 从实际 Forward 输入、规范化扩张、chunk 聚合与 HTTP 编码推导字节 / 条数 / 内存上界；覆盖边界前后及最坏组合；合法批次不因 413 丢失 | L1 接续，与 L3-B 联验 |
-| 坏批隔离与真实确认 | 413 会丢弃 HTTP 支路 chunk；503 可重试 | 语义拒收与语法坏批分开；证明前置校验 / 有界隔离能处理坏批且不留原文，不靠假 200 或永久 503；真实提交后确认、响应丢失重放 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
+| 坏批隔离与真实确认 | 413 会丢弃 HTTP 支路 chunk。SQLite 和 PostgreSQL 已通过真实提交确认、响应丢失和同批重放。PostgreSQL Log 库断连的 503 经重投恢复 | 区分语义拒收与语法坏批，验证前置校验 / 有界隔离及原文裁剪 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
 | 磁盘与支路隔离 | 路径不可写时 HTTP 可交付；队列满有 dropped_records | 实际 ENOSPC、权限错误、buffer 与 file 共享磁盘争用、恢复、应急通道有界；分别报告文件缺口与入库缺口，不承诺补回已丢弃事件 | L1 接续 |
 | 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
@@ -40,11 +42,34 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 <a id="l1-l3-first-runtime-verification"></a>
 
-### 2.1 首轮联验建议（2026-11-12）
+### 2.1 首轮联验判据与接续
 
 1. 对照第 10 节调用清单、事件契约和各批回归，列出尚会阻断真实联验的已登记来源。随后确认单一隔离环境的架构、镜像 digest、Docker daemon 到 collector 的路径、服务与流标识、独立内网端口、专用凭据、测试存储、故障注入和清理。此清单用于确认本次运行范围。
 2. 先以三个边界对账。API 5xx 的响应反馈 ID 与文件及真实 API 接收后 SQLite 的 canonical JSON 一致，旧事件缺省兼容，提交后响应丢失重投只保留一个事件。用受信的服务与流元数据识别 DbMigrate stdout 报告，使其在 JSON parser 前退出事件链。对独立启动 / 入库应急 stderr 验证有界证据和失败通道隔离，入库应急避开同一失败链。
-3. 再验 PostgreSQL、传输正式上界与坏批、磁盘 / 队列故障及恢复，按第 2 节逐项记录实际证据。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
+3. PostgreSQL 已接续通过提交、重投与 Log 库断连恢复。下一批按第 2 节验证传输正式上界、坏批及磁盘 / 队列故障与恢复。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
+
+#### OrbStack / Linux arm64 隔离联验入口
+
+从仓库根目录运行 `node Scripts/logging/collector-sqlite-probe.mjs --plan` 可预览镜像、端口和生成的采集配置。首轮复用 Fluent Bit 5.1.2 的 arm64 固定镜像，API / DbMigrate 使用同一工作树的 Debug 构建和本地 ASP.NET Core 10.0.14 容器镜像，故障注入中转使用 Node.js 24.16.0。API 另外需要通过 `node Scripts/build-native-images.mjs --debug --verify --rid=linux-arm64` 校验的 Linux 原生产物。
+
+获当批启动授权后执行 `node Scripts/logging/collector-sqlite-probe.mjs --run`。Fluent Bit 的 Forward 只发布到 daemon 回环动态端口。API 5100、内网入库 15199、故障注入中转 8080、collector metrics 2020 都留在专用 Docker 网络。DbMigrate apply 从空白 SQLite 初始化。API 的 5xx 来自临时分类表更名，入库失败来自临时 SQLite 触发器，两种注入均在用例结束时撤销。中转在接收 API 确认提交后断开 HTTP 响应，用同批次摘要核对 Fluent Bit 重投。
+
+隔离配置在 parser 前仅凭 Docker tag 和标准流元数据分流 DbMigrate stdout 与 API stderr，用容器的有界本地日志保留命令报告和应急证据。结束时按本次标签清理容器、网络、临时 SQLite、日志文件和凭据，保留 `artifacts/logging-sqlite-probe/` 下的断言结果与清理状态。清理失败时报告残留资源的位置和名称。该脚本的运行结果用于本轮 SQLite 联验，后续门禁仍按第 2 节执行。
+
+<a id="l1-l3-postgres-runtime"></a>
+
+#### PostgreSQL 隔离联验入口
+
+`node Scripts/logging/collector-ingest-probe.mjs --plan --database=postgresql` 渲染镜像、端口和采集配置。复用 SQLite 联验的三个运行镜像及 Linux arm64 原生产物，并采用[先前固定的 PostgreSQL 16.15 镜像](postgres-regression-execution-plan.md)的 arm64 变体。镜像缺失时在当批范围内按 digest 拉取，运行脚本始终使用 `--pull never`。
+
+```bash
+docker --context orbstack pull --platform linux/arm64 postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690
+node Scripts/logging/collector-ingest-probe.mjs --run --database=postgresql
+```
+
+PostgreSQL 5432 与原有 API、入库、中转及指标端口只供当批专用 Docker 网络访问。数据库使用该容器的临时内存挂载，由现有初始化脚本创建六个临时库，DbMigrate apply 执行正式迁移及严格校验。核对 `bigint` 列、UTC 列、端口隔离、5xx 反馈 ID 及提交后丢响应的重投去重。
+
+故障注入仅对临时 `radish_log` 禁止新连接并终止现有会话。等待真实 API 返回 503 且采集文件收到测试事件，同时验证业务库查询正常。恢复连接后，对照同一批次摘要核对 Fluent Bit 重投成功、数据库一行及独立 stderr 分流。退出时按任务标签清理容器、网络、临时数据和凭据，保留 `artifacts/logging-postgresql-probe/` 下的断言结果。[首次运行结果](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md)
 
 ## 3. L2 剩余来源与退出条件
 

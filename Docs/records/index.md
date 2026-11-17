@@ -5,6 +5,10 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-17 统一日志 L1 / L3 PostgreSQL 隔离联验](./unified-logging-l1-l3-postgres-runtime-2026-11-17.md) · 正式迁移、真实提交与重投、Log 库断连及同批恢复
+
+- [2026-11-17 统一日志 L1 / L3 SQLite 首轮联验](./unified-logging-l1-l3-sqlite-runtime-2026-11-17.md) · 真实采集、文件与入库对账、去重、标准流和应急隔离
+
 - [2026-11-14 停用 Pencil](./pencil-retirement-2026-11-14.md) · 代表页流程变更与设计源归档
 
 - [2026-11-12 日终文档回顾](./day-end-doc-review-2026-11-12.md) · 近期 19 个提交的代码与文档对照，以及真实采集联验的恢复顺序

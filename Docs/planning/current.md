@@ -11,9 +11,9 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
-- **下一完整交付**是在指定隔离部署环境完成统一日志查询、管道故障识别、站内告警和升级 / 恢复 / 回滚。当前从 L2 本地输出收口接续到 L1 / L3 真实采集与持久化。
+- **下一完整交付**是在指定隔离部署环境完成统一日志查询、管道故障识别、站内告警和升级 / 恢复 / 回滚。当前推进 L1 / L3 真实采集与持久化。
 - **规划复核日期**为 2026-11-10，所有者确认日志、Native、客户端连接的收口顺序。该次规划以 `8d6cc63a` 集成的成果为基线。[规划复核记录](../records/planning-closeout-2026-11-10.md)
-- **当前日志切片（2026-11-12）**。已登记的后台任务、清理、Outbox、奖励 / 商城、公开查询、通知、Hub 断开及内容 / 表情输出完成本地修复。API 5xx 反馈 ID、Flutter 应用本地报告和 CLI / 应急边界也已通过本地回归。范围与运行限制见[事件契约第 78–89 节](../features/unified-logging-contract.md)及[日终回顾](../records/day-end-doc-review-2026-11-12.md)。
+- **当前日志切片（2026-11-17）**。OrbStack / Linux arm64 上的 SQLite 和 PostgreSQL 16.15 联验通过。已验证真实 collector、文件和内网 API 的对账、提交后重投去重、标准流分流，以及 PostgreSQL Log 库断连后的同批重投恢复。[SQLite 记录](../records/unified-logging-l1-l3-sqlite-runtime-2026-11-17.md) · [PostgreSQL 记录](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md)
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **下次先准备 L2 → L1 / L3 联验**。对照已登记来源与证据，仅列出阻断联验的可复现缺口，再确认一个隔离部署目标和运行范围。首轮用 API 5xx 反馈 ID、DbMigrate stdout 报告和独立应急 stderr，验证真实 collector、文件、内网 API 和 SQLite。随后接续 PostgreSQL、传输上界、磁盘 / 队列故障与恢复，再按既定批次推进查询、告警和迁移验收。[联验顺序](../features/unified-logging-l3-ingest-plan.md#l1-l3-first-runtime-verification) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
+1. **继续 L1 / L3 真实采集与持久化**。下一步从 Forward 输入、规范化扩张、chunk 聚合与 HTTP 编码推导正式传输上界，准备边界前后和最坏组合的坏批隔离联验。随后验证磁盘 / 队列故障、留存与备份恢复，再按既定批次推进查询、告警和迁移验收。[剩余退出清单](../features/unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
 2. **日志退出后接续 Native**：按 P8-C Windows、P8-D Linux、P8-E 成组验收完成已确认平台范围。必要阻塞为工具链、真实认证 / 安全存储、窗口 / 输入和持续状态的目标平台证据；签名、真机与分发继续按平台单列。平台资源不可达时形成具名等待项，再评审是否在已有可用平台提前推进连接能力，不自动扩建环境或取消平台目标。
 3. **完成客户端连接能力**：先冻结实例身份、兼容发现、地址 / TLS、OIDC 和旧单实例状态迁移，再实现同包选择、会话 / 缓存 / 实时连接隔离与切换恢复。两个测试实例只证明机制，官方与自部署的正式交付各需对应证据，见[连接规划](../frontend/client-server-connection-plan.md)。
 4. **按范围验收后转入维护为主**：日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审；不等待全部 backlog、商店分发或所有外部设备条件清零。批次集成与正式发行 / 生产部署分开，后置来源材料不等于发行放行。
@@ -77,7 +77,7 @@
 
 后续新实现范围仍先确认方案。依赖安装、项目服务 / 容器启动、访问生产和系统证书库不因本批完成而取得授权。
 
-生产候选开关继续关闭；L3-A 仅完成本地接收 / 入库切片，L1 传输上界 / 磁盘故障、L2 整体治理、L3 成组持久化验收、L4 查询、L5 Console 告警及 L6 切换尚未完成。Native P8-C readiness 保留后续顺位。
+生产候选开关继续关闭。L1 传输上界 / 磁盘故障、L2 整体治理、L3 成组持久化验收、L4 查询、L5 Console 告警及 L6 切换尚未完成。Native P8-C readiness 保留后续顺位。
 
 ## 后续平台事项：P8-C Windows readiness
 
