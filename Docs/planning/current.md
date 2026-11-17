@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **继续 L1 / L3 真实采集与持久化**。下一步从 Forward 输入、规范化扩张、chunk 聚合与 HTTP 编码推导正式传输上界，准备边界前后和最坏组合的坏批隔离联验。随后验证磁盘 / 队列故障、留存与备份恢复，再按既定批次推进查询、告警和迁移验收。[剩余退出清单](../features/unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
+1. **继续 L1 / L3 真实采集与持久化**。Docker Message mode 的候选传输预算已完成静态推导。下一步准备并验证目标 daemon 的追加形状、HTTP 字节和条数上界、坏批隔离及内存峰值。随后验证磁盘 / 队列故障、留存与备份恢复，再推进查询、告警和迁移验收。[传输联验判据](../features/unified-logging-l3-ingest-plan.md#l1-l3-transport-budget) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
 2. **日志退出后接续 Native**：按 P8-C Windows、P8-D Linux、P8-E 成组验收完成已确认平台范围。必要阻塞为工具链、真实认证 / 安全存储、窗口 / 输入和持续状态的目标平台证据；签名、真机与分发继续按平台单列。平台资源不可达时形成具名等待项，再评审是否在已有可用平台提前推进连接能力，不自动扩建环境或取消平台目标。
 3. **完成客户端连接能力**：先冻结实例身份、兼容发现、地址 / TLS、OIDC 和旧单实例状态迁移，再实现同包选择、会话 / 缓存 / 实时连接隔离与切换恢复。两个测试实例只证明机制，官方与自部署的正式交付各需对应证据，见[连接规划](../frontend/client-server-connection-plan.md)。
 4. **按范围验收后转入维护为主**：日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审；不等待全部 backlog、商店分发或所有外部设备条件清零。批次集成与正式发行 / 生产部署分开，后置来源材料不等于发行放行。

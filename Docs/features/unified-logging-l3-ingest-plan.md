@@ -32,7 +32,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 | 门禁 | 已有证据 | 仍需交付 / 通过条件 | 所属批次 |
 | --- | --- | --- | --- |
-| 传输正式上界 | 8 KiB 应用输出限制；最大字段代表样本通过；16 MiB / 32768 条为实验候选 | 从实际 Forward 输入、规范化扩张、chunk 聚合与 HTTP 编码推导字节 / 条数 / 内存上界；覆盖边界前后及最坏组合；合法批次不因 413 丢失 | L1 接续，与 L3-B 联验 |
+| 传输正式上界 | 8 KiB 应用输出限制；最大字段代表样本通过；Docker Message-mode 候选上界见[推导](#l1-l3-transport-budget) | 核对 daemon 实际追加形状、HTTP 字节 / 条数和进程内存峰值；覆盖边界前后及最坏组合；合法批次不因 413 丢失 | L1 接续，与 L3-B 联验 |
 | 坏批隔离与真实确认 | 413 会丢弃 HTTP 支路 chunk。SQLite 和 PostgreSQL 已通过真实提交确认、响应丢失和同批重放。PostgreSQL Log 库断连的 503 经重投恢复 | 区分语义拒收与语法坏批，验证前置校验 / 有界隔离及原文裁剪 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
 | 磁盘与支路隔离 | 路径不可写时 HTTP 可交付；队列满有 dropped_records | 实际 ENOSPC、权限错误、buffer 与 file 共享磁盘争用、恢复、应急通道有界；分别报告文件缺口与入库缺口，不承诺补回已丢弃事件 | L1 接续 |
 | 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
@@ -70,6 +70,24 @@ node Scripts/logging/collector-ingest-probe.mjs --run --database=postgresql
 PostgreSQL 5432 与原有 API、入库、中转及指标端口只供当批专用 Docker 网络访问。数据库使用该容器的临时内存挂载，由现有初始化脚本创建六个临时库，DbMigrate apply 执行正式迁移及严格校验。核对 `bigint` 列、UTC 列、端口隔离、5xx 反馈 ID 及提交后丢响应的重投去重。
 
 故障注入仅对临时 `radish_log` 禁止新连接并终止现有会话。等待真实 API 返回 503 且采集文件收到测试事件，同时验证业务库查询正常。恢复连接后，对照同一批次摘要核对 Fluent Bit 重投成功、数据库一行及独立 stderr 分流。退出时按任务标签清理容器、网络、临时数据和凭据，保留 `artifacts/logging-postgresql-probe/` 下的断言结果。[首次运行结果](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md)
+
+<a id="l1-l3-transport-budget"></a>
+
+### 2.2 候选传输预算与坏批联验
+
+**适用范围**是现有回环 Forward 入口、固定 Fluent Bit 5.1.2、登记的 Docker `fluentd` Message mode 生产者及当前规范化链。预算以一次 append 最多一条普通日志记录、无独立 MessagePack metadata / group 标记为前提。Moby 驱动及其 logger 逐条生成 Message，固定版 Fluent Bit 的 Message 解码和入口队列也逐条追加。目标 OrbStack daemon 仍需用合成记录核对这一形状。PackedForward、外部 Forward 客户端和新 metadata 需要单独推导预算。[Docker 日志驱动](https://docs.docker.com/engine/logging/drivers/fluentd/) · [Moby 驱动参考](https://github.com/moby/moby/blob/master/daemon/logger/fluentd/fluentd.go) · [Message-mode 解码](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/in_forward/fw_prot.c#L1130-L1197) · [入口队列追加](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_input_ingest.c#L370-L397)
+
+1. **Forward 与 chunk。** `Buffer_Max_Size 64K` 将连接接收缓冲限制为 `64,000` 字节。核心先筛选本次追加记录，再把规范化后的 MessagePack 写入 chunk，写后超过 `2,048,000` 字节才锁定，锁定后下一次追加另开 chunk。最后追加前最多已有 `2,048,000` 字节，另加一条最大规范记录（含普通事件封装）`3,260` 字节，合计 `2,051,260` 字节。最小规范消息体按 `396` 字节计，丢弃项为零条，拒收摘要仍为一条。每个 chunk 至多 `floor(2,048,000 / 396) + 1 = 5,172` 条。[Forward 配置](https://docs.fluentbit.io/manual/data-pipeline/inputs/forward) · [大小单位解析](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_utils.c#L527-L587) · [chunk 切分与写后锁定](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_input_chunk.c)
+2. **HTTP 编码。** 当前 `json_lines` 无额外时间键，编码普通记录体并每条追加一个 LF。在受控 ASCII 文本、数字、布尔和对象的字段集合内，将 JSON 序列化含 LF 预算取为 MessagePack 的 6 倍。文本按每字节最多两个 JSON 字符计，键值分隔符计入键开销，布尔最多 5 字节，当前有限数值最多 24 字节。单行按全部白名单字段的保守组合得到 `4,212` 字节，整请求按 chunk 得到 `12,307,560` 字节，均低于接收器 `8 KiB / 16 MiB / 32,768 条` 门禁。运行 `node Scripts/logging/check-transport-budget.mjs` 可以按现有事件策略重算。[MessagePack 到 JSONL](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_pack.c) · [HTTP 插件](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/out_http/http.c)
+3. **内存口径。** 输入的连接缓冲、处理中间对象、常驻 chunk、同时 flush 的序列化缓冲和重试积压均占内存。服务端每个激活请求用 `4 KiB` 读取缓冲、`8 KiB` 行缓冲及最多 `200` 条待提交记录。HTTP 请求体字节数与进程 RSS 分别度量。运行时记录并发连接、输出 worker、up chunk 和缓冲队列配置，并在正常负载及单支路短暂不可用时记录峰值和恢复后水位。
+
+| 联验组 | 判据 |
+| --- | --- |
+| 合法流量与上界 | 在同一 Docker tag 上分别连续输出最短规范事件、全长标识及最大字段组合、混合事件。记录实际 HTTP 请求字节数、行数、最大行及 SQLite 的事件 ID 对账，确认跨 chunk 轮转仍全部交付且无 413。显式采样目标 daemon 的 Message 类型和每次追加条数。 |
+| 来源坏记录与语义拒收 | 将格式无效的合成日志与有效事件混发，验证 collector 输出固定 `pipeline.rejected` 摘要、相邻有效 ID 到达两条支路、原文不进入缓冲持久化与最终输出。直接接收时的语义无效 JSON 另外核对有限拒收桶与有效记录提交。 |
+| 坏信封与后续批次 | 在隔离接收端复核 400 / 413 和已提交前缀计数。采集器分支对确认不可重试的坏 chunk 应暴露丢弃，后续正常批次继续到达。用安全摘要记录故障与损失范围。收到 408、429 或 503 时按重试语义对账。 |
+
+第一轮复用已核验镜像和专用网络，以临时 SQLite 对账。准备可审阅的运行入口后，按实际命令、端口、负载量与清理范围另行确认启动。候选静态计算通过后仍需取得表中运行态证据，再冻结传输配置。
 
 ## 3. L2 剩余来源与退出条件
 

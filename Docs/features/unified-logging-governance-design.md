@@ -206,12 +206,12 @@ Fluent Bit 的镜像版本、digest、目标架构、插件列表和许可证在
 
 ### 7.1 内网批量入口
 
-L3-A 已实现默认关闭的 API 专用内网监听与 `POST /internal/logs/ingest`，只服务 collector；它不是公开 Console API。本地 SQLite / 内存管道已验证，真实监听、PostgreSQL 与 collector 联验仍未执行。当前配置和接入条件见[衔接方案第 7 节](./unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)，下面的 Compose / 跨主机部署要求仍为后续目标。
+L3-A 已实现默认关闭的 API 专用内网监听与 `POST /internal/logs/ingest`，只服务 collector。真实监听、collector 到 SQLite 和 PostgreSQL 的隔离联验已通过。配置和接入条件见[衔接方案第 7 节](./unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)，下面的 Compose / 跨主机部署要求仍为后续目标。
 
 - Compose 内部专用端口，不映射宿主；Gateway 不转发 `/internal`。服务端同时校验实际监听端口与采集凭据，不能只靠 Host / 路径 / 来源 IP。
 - 当前内网监听只允许日志接收路径，未新增探活接口；普通业务端口拒绝 `/internal` 路径。跨主机接入需要 TLS / mTLS，不能把本机 Forward 接口直接公开。
 - 采集凭据独立于用户 JWT，来自不提交的配置，可轮换，不写日志；collector 没有业务库访问凭据。
-- 使用有界 JSONL 流式读取。L1 已否决原建议的 200 条 / 2 MiB HTTP 硬上限：插件以 chunk 发送且 413 会丢弃该支路的 chunk。当前实现将 HTTP 有界流式信封与内部最多 200 条的事务分离；16 MiB / 32768 条为候选信封预算。SQLite 事务、重放与语义拒收已有本地回归；正式传输上界、PostgreSQL 与 collector 坏批隔离仍待联验。
+- 使用有界 JSONL 流式读取。HTTP 插件按 chunk 发送，413 会丢弃该支路的 chunk。接收信封暂用 16 MiB / 32768 条，内部事务最多处理 200 条。正式传输上界与 collector 坏批隔离见[候选传输预算](./unified-logging-l3-ingest-plan.md#l1-l3-transport-budget)。
 - 正常批次只在事务提交后返回成功；提交成功但响应丢失时，重放由事件唯一键吸收。
 - 语义无效的单条事件计入有限拒收日桶（受信部署 / 服务、固定原因、UTC 日期和计数），不保存 eventId 或载荷原文；其余有效记录提交后整体确认。未验证来源归到固定接收器桶，拒收计数表示尝试次数，不是唯一坏事件数。认证失败拒绝整批；数据库故障返回可重试状态。
 - 语法损坏 / 超限批次由 collector 前置校验与隔离处理；需验证具体 HTTP 插件重试语义。不能返回假成功，也不能让坏批次无限占队列。
