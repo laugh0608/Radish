@@ -143,6 +143,54 @@ docker --context orbstack volume ls --filter "label=radish.logging.probe=$probe_
 
 2026-11-17 复验四项通过。共享卷写满时文件支路实际缺 123 条，文件丢弃计数增量为 0。满卷后的单条事件在创建 chunk 前丢失，两个输出计数均无增量。HTTP 队列溢出实际缺 7,200 条，与丢弃计数一致。释放共享卷和撤销 503 后，两条支路均恢复交付。探针用活跃 chunk 和非空 chunk 文件共同判断排空，另行记录空文件残留。[联验记录](../records/unified-logging-l1-l3-disk-queue-runtime-2026-11-17.md)
 
+<a id="l1-l3-disk-queue-followup"></a>
+
+### 2.4 文件写入与入队故障收口（候选待联验）
+
+#### 固定版根因
+
+- 静态路径的 `plain` 文件输出忽略 `fprintf` 的结果，轮转更新在 `fflush` 失败时只打印诊断，关闭过程也未向 flush 回调返回失败。回调仍返回 `FLB_OK`，引擎因而按整个 chunk 记成功。系统写到半条 JSONL 后遇到空间耗尽，后续追加沿用该文件，首条新事件可能与残尾拼成坏行。路径打开失败是另一条返回 `FLB_ERROR` 的路径。[plain 输出](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/out_file/file.c#L882-L893) · [flush 返回](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/out_file/file.c#L1408-L1425) · [轮转刷新](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/out_file/file_rotate.c#L757-L774) · [引擎计数](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_engine.c#L624-L647)
+- 创建 chunk 失败时，`input_chunk_get` 提前返回空值，记录还未进入输出队列。普通 `input_records_total` 在部分后续写失败路径上已先增加，不能用输入和输出累加值相减推算这一阶段的丢失。延迟 worker 路径还会为同一次失败打印后续诊断，错误行数也无法当作记录数。[输入创建与写入顺序](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_input_chunk.c#L3300-L3430) · [延迟写入路径](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_input_ingest.c#L375-L431)
+
+#### 已批准的实施范围
+
+1. 在 Fluent Bit 5.1.2 候选源码上验证可独立审阅的补丁。文件支路沿用静态 JSONL 路径、现有轮转和有限队列。在同一文件的写入锁内记录本批开始偏移，检查编码、追加及刷新结果。写失败且确认已回滚到该偏移时，以整个 chunk 进入文件支路重试。轮转并发、异常关闭或无法确认回滚时，先将文件支路标为故障，暂停往该文件追加并报告结果未知。恢复只处理活动文件末端可确认的不完整记录，修复或确认边界后再追加。整块重试耗尽或被队列淘汰时，由引擎记录文件支路丢弃量。已确认成功指本次文件写入完成，断电持久性沿原验证边界。
+2. 在 Forward 的输入存储追加失败点增加计数，首版覆盖 chunk 创建失败和存储写入失败。用输入实例及固定阶段区分，按本次失败追加的记录数累计一次，输出淘汰仍由各支路计数。单条上游事件在分流前失败时只记一次，计数范围限于采集器已收到并可确认的记录。诊断只带阶段、固定原因及数量，走 collector 自身的有界通道，由内网指标独立读取。进程不可读或写入结果不确定时标为未知。
+3. 静态核对补丁的来源、构建输入与许可。后续候选镜像单独固定 digest，以 SQLite 和现有联验负载比较原版与候选的行为。实施边界为 collector、离线回归及其联验探针；现有 HTTP 接收、合成事件契约和生产部署沿各自批次推进。
+
+| 验收场景 | 需取得的证据 |
+| --- | --- |
+| 已有 chunk 后文件卷 ENOSPC 及文件路径权限故障 | HTTP 在故障期仍能入库。对文件支路分别核对已交付、待重试和最终丢弃，终态丢失量与输出计数一致。 |
+| 短写、刷新或关闭失败，含轮转前后 | 旧的完整记录保留。可回滚的 chunk 在恢复后只完整写入一次，前后两条探针都完整落盘。无法核对的写入结果明确进入未知，避免继续污染 JSONL。 |
+| 写满缓冲卷后追加及后续写入失败 | 分流前失败的合成记录数与新增输入计数一致，两个输出不重复加记。释放空间后两条支路恢复，诊断可在故障期间独立读取。 |
+| 共享卷恢复、HTTP 503 和队列溢出回归 | HTTP 仍交付存活积压，终态缺口与其丢弃量一致。磁盘占用、诊断存储与排空可核验。 |
+
+候选实现在 [5.1.2 补丁](../../Deploy/logging/fluent-bit/5.1.2-storage-errors.patch)。`radish_jsonl` 只在候选探针启用。使用无 stdio 写缓冲的 POSIX 追加，检查短写和关闭结果，回滚后核对原文件大小。进入轮转前先验证活动文件尾，尾部扫描上限 8 KiB。关闭或回滚结果不确定时，疑似已写入的批次终止重放，对该 inode 暂停追加并增加未知批次计数。探针或运维在确认故障文件后以替换活动文件恢复；候选验证要求单写者，文件长度和完整行的证明只覆盖当前故障运行区间。
+
+内网 `/api/v2/metrics/prometheus` 提供 `fluentbit_input_storage_append_failed_records_total{stage="chunk_create|chunk_write"}`、`fluentbit_output_radish_file_blocked` 和 `fluentbit_output_radish_file_unknown_batches_total`。未知批次与引擎丢弃计数需要合读，未知批次可能已有一部分成功保留。collector 诊断由 Docker `local` 驱动保留，每个容器设 `max-size=1m`、`max-file=2`，采集故障事件不回流到当前 Forward。
+
+#### 构建与 OrbStack 联验入口
+
+上游 Apache-2.0 源码固定为 `66910c10a4d7eafa810b84229cf2dcf7b0f26f97`，归档 SHA-256 及补丁适用性由准备脚本核验。六种文件故障与恢复检查已通过，macOS arm64 已编译文件插件和 Fluent Bit 核心静态目标。候选镜像编译使用 [Dockerfile](../../Deploy/logging/fluent-bit/Dockerfile) 固定的 Debian arm64 基础镜像和 APT 快照，运行层沿用原 Fluent Bit 5.1.2 固定镜像。候选镜像构建和服务启动各按下面的精确范围取得授权。
+
+```bash
+probe_root=$(mktemp -d /private/tmp/radish-fluent-bit-build-XXXXXX)
+curl --fail --location --output "$probe_root/upstream.tar.gz" \
+  https://codeload.github.com/fluent/fluent-bit/tar.gz/66910c10a4d7eafa810b84229cf2dcf7b0f26f97
+node Scripts/logging/collector-candidate.mjs --verify "$probe_root/upstream.tar.gz"
+node Scripts/logging/collector-candidate.mjs --stage "$probe_root/upstream.tar.gz" "$probe_root/context"
+
+probe_image="radish/fluent-bit-storage-probe:${probe_root##*/}"
+docker --context orbstack buildx build --builder orbstack --platform linux/arm64 --load \
+  --tag "$probe_image" "$probe_root/context"
+probe_image_id=$(docker --context orbstack image inspect --format '{{.Id}}' "$probe_image")
+
+node Scripts/logging/collector-ingest-probe.mjs --plan --database=sqlite --suite=disk-queue --collector-image="$probe_image_id"
+node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=disk-queue --collector-image="$probe_image_id"
+```
+
+联验按 §2.3 复用 SQLite、24 MiB 共享卷、回环动态 Forward 端口和两条 4M 队列。用 UID 10001 的 collector 测试文件拒写。输入侧先在满卷上创建 chunk，再用同一个 Docker tag 的两波输入测试已有 chunk 的扩容失败。文件轮转阈值设为 4M，以便在五波队列用例中穿过轮转并对账。运行保留原版和候选的独立 JSON 报告，按 §2.3 回收容器、网络、卷和临时数据库。构建目录 `$probe_root` 可按本次精确路径移除，候选镜像及本机构建缓存用于复验。OrbStack 构建和故障联验仍待执行，完成后接续留存与备份恢复。
+
 ## 3. L2 剩余来源与退出条件
 
 本节列出的八个入口已完成本地切片：PRAGMA 随 L3-A 交付，其余七个来源按第 8 节批准后完成。结果见[本批记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。这不是全仓运行覆盖证明，下面的其他退出工作仍保留。

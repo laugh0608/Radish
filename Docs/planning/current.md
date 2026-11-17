@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **继续 L1 / L3 真实采集与持久化**。先核对 ENOSPC 下文件支路的丢弃计数与截断尾，以及创建 chunk 前的损失如何进入诊断，再验证留存和备份恢复，随后推进查询、告警和迁移验收。当前联验证据按已验证的 daemon、镜像和配置使用。[磁盘与队列记录](../records/unified-logging-l1-l3-disk-queue-runtime-2026-11-17.md) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
+1. **继续 L1 / L3 真实采集与持久化**。Fluent Bit 5.1.2 候选补丁已接入隔离探针，离线文件故障回归通过。下一步在 OrbStack 构建候选镜像，复验空间耗尽、权限、重试、输入计数与恢复，再验证留存和备份恢复，随后推进查询、告警和迁移验收。当前联验证据按已验证的 daemon、镜像和配置使用。[候选构建与联验入口](../features/unified-logging-l3-ingest-plan.md#l1-l3-disk-queue-followup) · [磁盘与队列记录](../records/unified-logging-l1-l3-disk-queue-runtime-2026-11-17.md) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
 2. **日志退出后接续 Native**：按 P8-C Windows、P8-D Linux、P8-E 成组验收完成已确认平台范围。必要阻塞为工具链、真实认证 / 安全存储、窗口 / 输入和持续状态的目标平台证据；签名、真机与分发继续按平台单列。平台资源不可达时形成具名等待项，再评审是否在已有可用平台提前推进连接能力，不自动扩建环境或取消平台目标。
 3. **完成客户端连接能力**：先冻结实例身份、兼容发现、地址 / TLS、OIDC 和旧单实例状态迁移，再实现同包选择、会话 / 缓存 / 实时连接隔离与切换恢复。两个测试实例只证明机制，官方与自部署的正式交付各需对应证据，见[连接规划](../frontend/client-server-connection-plan.md)。
 4. **按范围验收后转入维护为主**：日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审；不等待全部 backlog、商店分发或所有外部设备条件清零。批次集成与正式发行 / 生产部署分开，后置来源材料不等于发行放行。

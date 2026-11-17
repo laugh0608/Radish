@@ -5,16 +5,18 @@ import { createRuntimeLogPolicy, serializeRuntimeLogEvent } from '../../Frontend
 import { diskCapacityBytes, diskMount } from './ingest-probe-disk-control.mjs';
 import { until } from './probe-runtime.mjs';
 
-export const diskWorkload = { filePressure: 128, bufferPressure: 1, queueWaves: 5, eventsPerWave: 2400, flushSeconds: 10 };
+export const diskWorkload = { filePressure: 128, bufferPressure: 1, bufferGrowthPressure: 512,
+  queueWaves: 5, eventsPerWave: 2400, flushSeconds: 10 };
 export const diskDeployment = 'logging-disk-queue-probe';
 export const diskRelease = 'probe';
 
-export function diskCollectorConfig(config) {
-  return config
+export function diskCollectorConfig(config, candidate = false) {
+  const diskConfig = config
     .replace('Flush 1\n', 'Flush ' + diskWorkload.flushSeconds + '\n')
     .replace('storage.path /probe/buffer', 'storage.path ' + diskMount + '/buffer')
     .replace('Path /probe/files', 'Path ' + diskMount + '/files')
-    .replace('rotate_max_size 1M', 'rotate_max_size 16M');
+    .replace('rotate_max_size 1M', 'rotate_max_size ' + (candidate ? '4M' : '16M'));
+  return candidate ? diskConfig.replace('Format plain\n', 'Format plain\n    radish_jsonl true\n') : diskConfig;
 }
 
 export function summarizeDelivery(expected, fileIds, httpIds) {
@@ -43,16 +45,35 @@ export function isDrained(activeChunks, chunksWithData) {
     && activeChunks === 0 && chunksWithData === 0;
 }
 
+export function storageFailureCounters(prometheus) {
+  const failures = {};
+  for (const line of prometheus.split('\n')) {
+    const series = /^fluentbit_input_storage_append_failed_records_total\{([^}]+)\}\s+(\d+)(?:\s+\d+)?$/u.exec(line.trim());
+    if (!series) continue;
+    const labels = series[1].split(',');
+    if (!labels.includes('name="guarded_input"')) continue;
+    const stage = labels.map((label) => /^stage="(chunk_create|chunk_write)"$/u.exec(label)?.[1]).find(Boolean);
+    assert.ok(stage && !Object.hasOwn(failures, stage), 'Invalid storage failure series');
+    failures[stage] = Number(series[2]);
+    assert.ok(Number.isSafeInteger(failures[stage]));
+  }
+  assert.ok(Object.hasOwn(failures, 'chunk_create') && Object.hasOwn(failures, 'chunk_write'), 'Missing storage failure metrics');
+  return failures;
+}
+
 export async function verifyDiskQueue(context) {
-  const { docker, name, launchFixture, directory, sql, fetchInProbe, relayEvents, logs, diskControl, report, setPhase } = context;
+  const { docker, name, launchFixture, launchStagedFixture, directory, sql, fetchInProbe, relayEvents, logs, diskControl, report, setPhase } = context;
   const control = diskControl;
   const makeEvent = createRuntimeLogPolicy({ deploymentId: diskDeployment, service: 'api', instanceId: 'fixture', release: diskRelease });
   const make = (count, eventCode = 'runtime.started') => Array.from({ length: count }, () => makeEvent({ eventCode }));
-  const emit = (role, events) => {
-    launchFixture(role, events.map(serializeRuntimeLogEvent));
+  const fixtureGroup = (role, events) => {
     const id = docker('inspect', '-f', '{{.Id}}', name(role));
     assert.match(id, /^[a-f0-9]{64}$/u);
     return { id, expected: events.map((event) => event.eventId) };
+  };
+  const emit = (role, events) => {
+    launchFixture(role, events.map(serializeRuntimeLogEvent));
+    return fixtureGroup(role, events);
   };
   const observedFile = (group) => control('file-ids', group.id);
   const httpIds = (group) => sql('log.db', "SELECT event_id FROM runtime_log_event WHERE json_extract(canonical_json,'$.containerId')=?", group.id)
@@ -79,10 +100,15 @@ export async function verifyDiskQueue(context) {
     assert.equal(response.status, 200);
     const { output } = JSON.parse(response.body);
     return Object.fromEntries(['runtime_file', 'runtime_http'].map((branch) => {
-      const { dropped_records: dropped, errors } = output[branch];
-      assert.ok(Number.isSafeInteger(dropped) && Number.isSafeInteger(errors), 'Expected branch loss counters');
-      return [branch, { dropped, errors }];
+      const { dropped_records: dropped, errors, retries } = output[branch];
+      assert.ok([dropped, errors, retries].every(Number.isSafeInteger), 'Expected branch loss counters');
+      return [branch, { dropped, errors, retries }];
     }));
+  };
+  const storageFailures = () => {
+    const response = fetchInProbe('http://collector:2020/api/v2/metrics/prometheus');
+    assert.equal(response.status, 200);
+    return storageFailureCounters(response.body);
   };
   const delta = (before, after) => Object.fromEntries(Object.entries(before).map(([branch, values]) => [
     branch, Object.fromEntries(Object.entries(values).map(([field, value]) => {
@@ -111,6 +137,10 @@ export async function verifyDiskQueue(context) {
     return until(() => httpIds(group).length === 2 && observedFile(group).ids.includes(group.expected.at(-1)),
       'post-recovery event delivered to both branches', 60000).then(() => ledger(group));
   };
+  const assertCleanDelivery = (outcome) => {
+    assert.equal(outcome.fileMissing + outcome.httpMissing + outcome.duplicateFileLines, 0);
+    assert.equal(outcome.badFileLines + outcome.incompleteFileTails, 0);
+  };
 
   report.diskQueue = { capacityBytes: diskCapacityBytes, flushSeconds: diskWorkload.flushSeconds, initial: control('snapshot') };
   setPhase('establish shared disk baseline and stage a file flush');
@@ -129,22 +159,61 @@ export async function verifyDiskQueue(context) {
     assert.ok(full.atFailure.bufferBytesAllocated > 0 && full.atFailure.fileBytesAllocated > 0);
     report.diskQueue.fileFlush = { full };
     await until(() => httpIds(fileGroup).length === fileGroup.expected.length, 'HTTP delivery from buffer while shared volume is full', 60000);
-    await waitDrain();
+    if (report.candidate) {
+      await until(() => counters().runtime_file.retries > beforeFile.runtime_file.retries,
+        'file branch requested retry after rollback', 60000);
+    } else {
+      await waitDrain();
+    }
     const outcome = ledger(fileGroup);
     const metrics = delta(beforeFile, counters());
     assert.equal(frames(fileGroup), fileGroup.expected.length);
     assert.ok(outcome.fileOnlyMissing > 0 && outcome.httpMissing === 0, 'Expected an independent file gap at ENOSPC');
+    if (report.candidate) {
+      assert.equal(outcome.fileDelivered + outcome.badFileLines + outcome.incompleteFileTails, 0);
+      assert.equal(metrics.runtime_file.dropped, 0);
+    }
     Object.assign(report.diskQueue.fileFlush, {
       outcome, metrics, fileMetricGap: outcome.fileMissing - metrics.runtime_file.dropped, diagnostics: diagnostics(),
     });
   } finally { control('release'); }
   report.diskQueue.fileFlush.recovery = await deliver('file-recovered');
   report.diskQueue.fileFlush.drained = await waitDrain();
+  if (report.candidate) {
+    const afterRecovery = ledger(fileGroup);
+    assertCleanDelivery(afterRecovery);
+    assertCleanDelivery(report.diskQueue.fileFlush.recovery);
+    assert.equal(delta(beforeFile, counters()).runtime_file.dropped, 0);
+    report.diskQueue.fileFlush.finalOutcome = afterRecovery;
+
+    setPhase('deny writes to the file branch under an unprivileged collector');
+    const beforePermission = counters();
+    let denied;
+    try {
+      control('deny-file-write');
+      denied = emit('file-permission-denied', make(2));
+      await until(() => httpIds(denied).length === denied.expected.length &&
+        counters().runtime_file.dropped >= beforePermission.runtime_file.dropped + denied.expected.length,
+      'HTTP succeeds and file permission failure is counted', 60000);
+      await waitDrain();
+      const outcome = ledger(denied);
+      const metrics = delta(beforePermission, counters());
+      assert.equal(outcome.fileOnlyMissing, denied.expected.length);
+      assert.equal(metrics.runtime_file.dropped, outcome.fileMissing);
+      assert.equal(metrics.runtime_http.dropped, 0);
+      report.diskQueue.filePermission = { outcome, metrics };
+    } finally { control('allow-file-write'); }
+    report.diskQueue.filePermission.recovery = await deliver('file-permission-recovered');
+    assertCleanDelivery(report.diskQueue.filePermission.recovery);
+    report.diskQueue.filePermission.drained = await waitDrain();
+    report.checks.filePermissionAndRecovery = true;
+  }
   report.checks.fileEnospcAndRecovery = true;
 
   setPhase('observe new buffer appends under shared-volume ENOSPC');
   let bufferGroup;
   const beforeBuffer = counters();
+  const beforeStorageFailures = report.candidate ? storageFailures() : null;
   const beforeStorageError = diagnostics();
   try {
     const full = control('fill');
@@ -159,13 +228,64 @@ export async function verifyDiskQueue(context) {
       whileFull: ledger(bufferGroup), diagnostics: diagnostics(), collectorRunningAtFault: stillRunning,
       metrics: stillRunning ? delta(beforeBuffer, counters()) : null,
     });
+    if (report.candidate) {
+      assert.ok(stillRunning, 'Storage failure must leave the collector running');
+      await until(() => storageFailures().chunk_create > beforeStorageFailures.chunk_create,
+        'failed storage append exported at the input', 30000);
+      const after = storageFailures();
+      report.diskQueue.bufferAppend.storageFailures = {
+        chunk_create: after.chunk_create - beforeStorageFailures.chunk_create,
+        chunk_write: after.chunk_write - beforeStorageFailures.chunk_write,
+      };
+    }
   } finally { control('release'); }
   if (!running()) docker('start', name('collector'));
   await waitCollector();
   report.diskQueue.bufferAppend.recovery = await deliver('buffer-recovered');
   report.diskQueue.bufferAppend.drained = await waitDrain();
   report.diskQueue.bufferAppend.finalOutcome = ledger(bufferGroup);
+  if (report.candidate) {
+    const { finalOutcome, storageFailures: failures, recovery } = report.diskQueue.bufferAppend;
+    assert.equal(finalOutcome.missingBoth, bufferGroup.expected.length);
+    assert.equal(failures.chunk_create, finalOutcome.missingBoth);
+    assert.equal(failures.chunk_write, 0);
+    const metrics = delta(beforeBuffer, counters());
+    assert.equal(metrics.runtime_file.dropped + metrics.runtime_http.dropped, 0);
+    assertCleanDelivery(recovery);
+  }
   report.checks.bufferEnospcAndRecovery = true;
+
+  if (report.candidate) {
+    setPhase('grow a pending chunk on a full shared volume');
+    const beforeGrowth = storageFailures();
+    const beforeBranches = counters();
+    const role = 'pending-buffer-growth';
+    const first = make(diskWorkload.filePressure);
+    const next = make(diskWorkload.bufferGrowthPressure);
+    const release = launchStagedFixture(role, first.map(serializeRuntimeLogEvent), next.map(serializeRuntimeLogEvent));
+    const growth = fixtureGroup(role, [...first, ...next]);
+    try {
+      await until(() => control('pending', first[0].eventId, first.at(-1).eventId), 'existing fixture chunk is awaiting flush', 3500);
+      const full = control('fill');
+      assert.equal(full.failure.code, 'ENOSPC');
+      assert.ok(full.atFailure.chunksWithData > 0);
+      report.diskQueue.bufferGrowth = { full };
+      release();
+      await until(() => frames(growth) === growth.expected.length &&
+        storageFailures().chunk_write > beforeGrowth.chunk_write, 'existing chunk growth failed at storage', 15000);
+    } finally { control('release'); }
+    const drained = await waitDrain();
+    const outcome = ledger(growth);
+    const current = storageFailures();
+    const failures = Object.fromEntries(Object.entries(current).map(([stage, count]) => [stage, count - beforeGrowth[stage]]));
+    const metrics = delta(beforeBranches, counters());
+    Object.assign(report.diskQueue.bufferGrowth, { outcome, storageFailures: failures, metrics, drained });
+    assert.equal(outcome.missingBoth, failures.chunk_write + failures.chunk_create);
+    assert.equal(outcome.fileOnlyMissing + outcome.httpOnlyMissing + outcome.duplicateFileLines, 0);
+    assert.equal(metrics.runtime_file.dropped + metrics.runtime_http.dropped, 0);
+    assert.equal(outcome.badFileLines + outcome.incompleteFileTails, 0);
+    report.checks.bufferGrowthEnospc = true;
+  }
 
   setPhase('overflow the HTTP retry queue while file output is healthy');
   const beforeQueue = counters();
@@ -205,6 +325,13 @@ export async function verifyDiskQueue(context) {
   const queueDelta = delta(beforeQueue, counters());
   assert.equal(fileMissing, 0);
   assert.ok(httpMissing > 0 && queueDelta.runtime_http.dropped > 0);
+  if (report.candidate) {
+    assert.equal(httpMissing, queueDelta.runtime_http.dropped);
+    assert.equal(queueDelta.runtime_file.dropped, 0);
+    assert.ok(drained.rotatedFiles > 0, 'Candidate delivery must include rotation');
+    assert.equal(outcomes.reduce((sum, outcome) => sum + outcome.duplicateFileLines, 0), 0);
+    assertCleanDelivery(report.diskQueue.httpQueue.recovery);
+  }
   Object.assign(report.diskQueue.httpQueue, {
     outcomes, fileMissing, httpMissing, metrics: queueDelta, httpMetricGap: httpMissing - queueDelta.runtime_http.dropped,
     drained,

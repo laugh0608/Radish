@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { constants, closeSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statfsSync, statSync, writeSync } from 'node:fs';
+import { chmodSync, chownSync, constants, closeSync, mkdirSync, openSync, readFileSync, readdirSync, rmSync, statfsSync, statSync, writeSync } from 'node:fs';
 import { join } from 'node:path';
 
 export const diskMount = '/probe-disk';
@@ -38,12 +38,14 @@ function existing(path, read) {
 function snapshot() {
   const filesystem = checkMount();
   const chunks = chunkFiles().map((path) => existing(path, statSync)).filter(Boolean);
+  const outputs = outputFiles();
   const device = statSync(diskMount).dev;
   assert.equal(statSync(files).dev, device);
   assert.equal(statSync(buffer).dev, device);
   return {
     device, freeBytes: filesystem.bavail * filesystem.bsize,
-    fileBytesAllocated: outputFiles().reduce((sum, path) => sum + (existing(path, allocated) ?? 0), 0),
+    fileBytesAllocated: outputs.reduce((sum, path) => sum + (existing(path, allocated) ?? 0), 0),
+    rotatedFiles: outputs.filter((path) => path !== join(files, 'runtime.jsonl')).length,
     bufferBytesAllocated: chunks.reduce((sum, file) => sum + file.blocks * 512, 0),
     ballastBytesAllocated: existing(ballast, allocated) ?? 0, chunks: chunks.length,
     zeroLengthChunks: chunks.filter((file) => file.size === 0).length,
@@ -100,8 +102,18 @@ if (import.meta.main) {
   let result;
   switch (action) {
     case 'prepare':
+      assert.ok(args.length === 0 || (args.length === 1 && args[0] === 'unprivileged'));
       mkdirSync(files, { mode: 0o700 });
       mkdirSync(buffer, { mode: 0o700 });
+      if (args[0] === 'unprivileged') {
+        chownSync(files, 10001, 10001);
+        chownSync(buffer, 10001, 10001);
+      }
+      result = snapshot();
+      break;
+    case 'deny-file-write':
+    case 'allow-file-write':
+      chmodSync(join(files, 'runtime.jsonl'), action === 'deny-file-write' ? 0o400 : 0o600);
       result = snapshot();
       break;
     case 'snapshot':

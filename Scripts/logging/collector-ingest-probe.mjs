@@ -11,13 +11,13 @@ import { diskCapacityBytes, diskMount } from './ingest-probe-disk-control.mjs';
 import { diskCollectorConfig, diskDeployment, diskRelease, diskWorkload, verifyDiskQueue } from './ingest-probe-disk.mjs';
 import { createPostgresProbe, postgresImage } from './ingest-probe-postgres.mjs';
 import { transportDeployment, transportRelease, transportWorkload, verifyTransport } from './ingest-probe-transport.mjs';
-import { collectorImage, readLines, until } from './probe-runtime.mjs';
+import { collectorImage as upstreamCollectorImage, readLines, until } from './probe-runtime.mjs';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const runtimeImage = 'mcr.microsoft.com/dotnet/aspnet@sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c';
 const relayImage = 'node@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14';
-const [action, databaseOption = '--database=sqlite', suite = '--suite=ingest', ...unexpected] = process.argv.slice(2);
+const [action, databaseOption = '--database=sqlite', suite = '--suite=ingest', candidateOption, ...unexpected] = process.argv.slice(2);
 assert.equal(unexpected.length, 0);
 assert.match(databaseOption, /^--database=(sqlite|postgresql)$/u);
 const database = databaseOption.split('=')[1];
@@ -25,6 +25,12 @@ assert.match(suite, /^--suite=(ingest|transport|disk-queue)$/u);
 const suiteName = suite.split('=')[1];
 const transport = suiteName === 'transport';
 const disk = suiteName === 'disk-queue';
+const candidate = candidateOption !== undefined;
+if (candidate) {
+  assert.ok(disk, 'A local candidate image is supported only by the disk-queue suite');
+  assert.match(candidateOption, /^--collector-image=sha256:[a-f0-9]{64}$/u);
+}
+const collectorImage = candidate ? candidateOption.split('=')[1] : upstreamCollectorImage;
 const observeForward = transport || disk;
 assert.ok(!observeForward || database === 'sqlite', 'The transport and disk-queue suites use disposable SQLite');
 const profile = observeForward ? suiteName : database;
@@ -46,7 +52,7 @@ const diskVolumeOptions = { type: 'tmpfs', device: 'tmpfs', o: 'size=24m,noexec,
 function collectorConfig() {
   let base = boundaryConfig('relay');
   if (transport) base = base.replace('rotate_max_size 1M', 'rotate_max_size 16M');
-  if (disk) base = diskCollectorConfig(base);
+  if (disk) base = diskCollectorConfig(base, candidate);
   return base.replace('[FILTER]\n', [
     '[FILTER]', '    Name lua', '    Match *', '    script /probe/streams.lua',
     '    call route_probe_stream', '    protected_mode true', '[FILTER]', '',
@@ -58,7 +64,7 @@ function collectorConfig() {
 if (action === '--plan') {
   const budget = transport ? (await import('./check-transport-budget.mjs')).transportBudget : undefined;
   process.stdout.write(JSON.stringify({
-    context: 'orbstack', platform: 'linux/arm64', database, suite: suiteName, images,
+    context: 'orbstack', platform: 'linux/arm64', database, suite: suiteName, images, candidate,
     listeners: {
       forward: '127.0.0.1:<assigned> → 24224', api: 5100, ingest: 15199, relay: 8080, metrics: 2020,
       ...(database === 'postgresql' ? { postgres: 5432 } : {}),
@@ -70,6 +76,7 @@ if (action === '--plan') {
     } : {}),
     ...(disk ? {
       workload: diskWorkload, forwardMapping: 'loopback → relay:24224 → collector:24224',
+      ...(candidate ? { collectorUser: '10001:10001' } : {}),
       sharedVolume: { driver: 'local', options: diskVolumeOptions, mount: diskMount, capacityBytes: diskCapacityBytes },
       cleanup: 'Remove only labelled disk-queue containers, network, named shared volume and temporary directory. Keep the JSON report and local image cache.',
     } : {}),
@@ -81,6 +88,10 @@ assert.match(docker('info', '--format', '{{.OSType}}/{{.Architecture}}'), /^linu
 for (const image of images) {
   assert.equal(docker('image', 'inspect', image, '--format', '{{.Os}}/{{.Architecture}}'), 'linux/arm64');
 }
+if (candidate) {
+  assert.equal(docker('image', 'inspect', collectorImage, '--format', '{{index .Config.Labels "radish.logging.candidate"}}'),
+    'storage-errors', 'Expected the local storage error candidate image');
+}
 execFileSync(process.execPath, [join(root, 'Scripts/build-native-images.mjs'), '--debug', '--verify', '--rid=linux-arm64']);
 
 const prefix = 'radish-logging-' + profile + '-' + randomUUID().slice(0, 8);
@@ -88,7 +99,7 @@ const directory = mkdtempSync('/private/tmp/' + prefix + '-');
 const output = join(root, 'artifacts', 'logging-' + profile + '-probe');
 const containers = [];
 let network = false;
-const report = { prefix, database, checks: {}, images, cleanup: false };
+const report = { prefix, database, checks: {}, images, candidate, cleanup: false };
 const key = randomBytes(32).toString('hex');
 const name = (role) => prefix + '-' + role;
 const diskVolume = disk ? name('shared-disk') : null;
@@ -171,6 +182,23 @@ const launchFixture = (role, lines) => {
     'await delay(1500);})();');
   assert.equal(docker('wait', name(role)), '0');
 };
+const launchStagedFixture = (role, first, next) => {
+  const fixture = join(directory, role);
+  mkdirSync(fixture);
+  writeFileSync(join(fixture, 'first'), first.join('\n') + '\n');
+  writeFileSync(join(fixture, 'next'), next.join('\n') + '\n');
+  launch(role, ...forwardLogs('api'), '-v', fixture + ':/fixture:ro', relayImage, 'node', '-e',
+    'const fs=require("node:fs"),{once}=require("node:events"),{setTimeout:delay}=require("node:timers/promises");' +
+    'async function emit(path){for await(const chunk of fs.createReadStream(path)){' +
+    'if(!process.stdout.write(chunk))await once(process.stdout,"drain");}}' +
+    '(async()=>{await emit("/fixture/first");const deadline=Date.now()+15000;' +
+    'while(!fs.existsSync("/fixture/release")){if(Date.now()>deadline)throw Error("fixture release timeout");await delay(50);}' +
+    'await emit("/fixture/next");await delay(1500);})().catch(()=>{process.exitCode=1;});');
+  return () => {
+    writeFileSync(join(fixture, 'release'), '');
+    assert.equal(docker('wait', name(role)), '0');
+  };
+};
 let phase = 'stage inputs';
 const interrupt = () => { interruptedExit = 130; };
 const terminate = () => { interruptedExit = 143; };
@@ -244,11 +272,12 @@ try {
     '-v', join(directory, 'relay') + ':/probe',
     '-v', join(directory, 'db') + ':/probe/db', relayImage, 'node', '/probe/relay.mjs');
   if (diskVolume) {
-    const initial = diskControl('prepare');
+    const initial = diskControl('prepare', ...(candidate ? ['unprivileged'] : []));
     assert.equal(initial.freeBytes, diskCapacityBytes);
   }
   launch('collector', ...localLogs, '--env-file', join(directory, 'collector.env'),
     '-v', join(directory, 'collector') + ':/probe', ...diskMountArgs,
+    ...(candidate ? ['--user', '10001:10001'] : []),
     ...(transport ? ['--pid=container:' + name('relay')] : disk ? [] : publishForward),
     collectorImage, '-c', '/probe/fluent-bit.conf');
   if (diskVolume) for (const role of ['relay', 'collector']) {
@@ -268,7 +297,7 @@ try {
   assert.equal(fetchInProbe('http://api:15199/api/health').status, 404);
   report.checks.listenerIsolation = true;
   if (disk) {
-    await verifyDiskQueue({ docker, name, launchFixture, directory, sql, fetchInProbe, relayEvents, logs, diskControl, report,
+    await verifyDiskQueue({ docker, name, launchFixture, launchStagedFixture, directory, sql, fetchInProbe, relayEvents, logs, diskControl, report,
       setPhase: (value) => { phase = value; } });
   } else if (transport) {
     await verifyTransport({ docker, name, launchFixture, node, directory, sql, fetchInProbe,
