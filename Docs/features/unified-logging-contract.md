@@ -722,7 +722,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Log 库增加 `runtime_log_event` 与 `runtime_log_rejection_bucket`，migration 为 `20261105_023_runtime_log_ingest`。唯一键 `(deployment_id,event_id)` 处理重放；同键异内容拒收、不覆盖；保留原 eventId / UTC 毫秒时间，存储主键和入库时间独立。新表不继承旧分表或软删除模型。
 - Repository 选择既有 Log 配置，用独立参数化事务避开 ORM 日志 / 业务事务；API 不建表。拒收桶保留当前 UTC 日及此前 6 日，每次事务最多清理 200 个过期桶，旧运行 / 审计表不变。
 - 接收分支不进入通用 body audit，主日志链抑制接收作用域及 Hosting 的正常 `/internal` 请求事件；失败走独立限频 stderr。SQLite PRAGMA catch 改为固定操作 / failureKind 摘要，仍返回 false，不改变初始化重试或事务行为。
-- 内存 HTTP 与临时 SQLite 的认证 / 端口分流、预算、取消、并发、幂等、回滚、迁移和最终输出回归见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。PostgreSQL 16、真实监听 / collector、ENOSPC、部署恢复和旧版回滚尚未验收；L1 / L2 / L3 整体未关闭。
+- 内存 HTTP 与临时 SQLite 的认证 / 端口分流、预算、取消、并发、幂等、回滚、迁移和最终输出回归见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。后续 OrbStack / Linux arm64 验证真实监听、SQLite 与 PostgreSQL 16.15 提交重放，以及原版 collector 的磁盘和队列故障。候选补丁、本地留存部署、备份恢复和旧版回滚分别按衔接方案验收。[运行证据索引](../records/day-end-doc-review-2026-11-17.md)
 - 完整配置、响应与下一顺位见[衔接方案](./unified-logging-l3-ingest-plan.md)。生产链路、浏览器 / Native 回传、Console 查询和告警未开启。
 
 

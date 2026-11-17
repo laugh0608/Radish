@@ -1,6 +1,6 @@
 # 全项目统一日志、跨容器汇聚与 Console 运维中心
 
-> 状态：项目所有者已于 2026-09-19 确认方案；作为重构基线。L1 契约及采集安全 / 故障可见性子项已实施；L2 入口、生成端与所列来源的最终输出切片已实施，准确范围见[事件契约第 7–82 节](./unified-logging-contract.md)。L1 剩余门禁、L2 整体治理及 L3–L6 尚未完成，生产默认链路未切换。
+> 状态：项目所有者已于 2026-09-19 确认方案。L1 采集与 L3-A 内网入库已取得本机隔离证据，L2 入口及所列来源的最终输出已实施，准确范围见[事件契约](./unified-logging-contract.md)。本机证据与剩余候选门禁见[衔接方案](./unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist)，生产开关仍为关闭状态。
 >
 > 规划更新：2026-11-10（Asia/Shanghai；无新增运行证据）。范围沿用所有者已确认需求：统一文件、终端和日志库，开发 / 生产两种模式，Info / Warning / Error 三级，跨服务容器集中查询，Console 内告警与提醒。
 
@@ -12,7 +12,7 @@
 
 浏览器 L2 接续范围见[浏览器最终输出收口方案](./unified-logging-l2-browser-output-plan.md)：2026-11-05 已获批完成公共实现、调用迁移和本地自动化验收，见[实施记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。本批不包含真实浏览器 Smoke 或遥测回传。
 
-L1 / L2 剩余门禁、自有来源切片与 L3-A 接收 / 幂等入库方案见[衔接实施方案](./unified-logging-l3-ingest-plan.md)。L3-A 已获批完成默认关闭的接收、表与本地回归。真实监听、PostgreSQL 与 collector 接入仍待授权验收。见[L3-A 实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。
+L1 / L2 剩余门禁、自有来源切片与 L3-A 接收 / 幂等入库方案见[衔接实施方案](./unified-logging-l3-ingest-plan.md)。L3-A 接收与入库表默认关闭。OrbStack / Linux arm64 隔离联验已核对真实监听、collector 到 SQLite / PostgreSQL 16.15 的提交与重投，以及故障恢复。[本地实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md) · [运行证据索引](../records/day-end-doc-review-2026-11-17.md)
 
 七个自有来源与直接 API 异常消费者、14 个 Controller 和共用 `BusinessJobSummary` 的五个入口已完成各自的本地最终输出收口。其他已登记 Service / Job / Hub 沿来源清单核验。见[自有来源实施记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)、[Controller 实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)及[来源清单](./unified-logging-l3-ingest-plan.md#l2-final-output-first-slice)。
 
@@ -103,7 +103,7 @@ flowchart TD
 
 Docker 提供 `fluentd` 日志驱动，Fluent Bit 提供相应 Forward 输入和 HTTP / 文件输出。这支持上述拓扑，但不等同于 Radish 已验证端到端可靠性。[Docker 驱动](https://docs.docker.com/engine/logging/drivers/fluentd/)、[Forward 输入](https://docs.fluentbit.io/manual/data-pipeline/inputs/forward)、[HTTP 输出](https://docs.fluentbit.io/manual/data-pipeline/outputs/http)。
 
-Fluent Bit 的镜像版本、digest、目标架构、插件列表和许可证在 L1 验证后冻结，不使用浮动 `latest`。L1 已授权拉取并隔离验证 `5.1.2` 的 Linux arm64 候选；镜像身份与实验限制见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)，尚未冻结生产配置。
+Fluent Bit 的镜像版本、digest、目标架构、插件列表和许可证在 L1 验证后冻结，部署引用使用固定 digest。原版 `5.1.2` 已用于 Linux arm64 隔离联验。文件与输入故障修正以同版本源码补丁构建候选，镜像身份与运行证据须独立复核。[原版实测](../records/unified-logging-l1-l3-disk-queue-runtime-2026-11-17.md) · [候选构建与联验入口](./unified-logging-l3-ingest-plan.md#l1-l3-disk-queue-followup)
 
 ### 4.2 容器接入与启动顺序
 
@@ -284,6 +284,7 @@ L3-A 已实现默认关闭的 API 专用内网监听与 `POST /internal/logs/ing
 | 库已提交、响应丢失 | 重试保持 eventId，唯一约束防重复；告警不重复计数 |
 | collector 重启 | 已持久化缓冲可恢复；验证所选版本持久化时点，不承诺内存中事件无损 |
 | 缓冲耗尽 | 显示丢弃 / 积压；尽可能隔离低价值 Info 与高等级队列，不声称 Error 永不丢 |
+| 分流前存储追加失败 | 采集器能确认的失败记录计入输入侧，分别记录 chunk 创建与写入失败。两个输出的丢弃计数各自表示该支路的处置 |
 | 文件满 / 权限错误 | 暴露文件支路故障；验证独立支路仍能入库，不无限递归输出失败 |
 | 输入坏记录 / 未知 schema | 有限拒收摘要，不展示原始敏感载荷；不阻塞健康批次 |
 | 整站或宿主宕机 | 离线文件 / 宿主诊断排障，站内告警无可用性承诺 |
@@ -378,7 +379,7 @@ L2–L6 是一个完整重构目标的交付切片，不能把“只降低 SQL �
 ## 13. 当前交付与后续执行
 
 - 已完成方案确认、现状审计、统一事件策略及 .NET / Node 生成契约；实现入口见[事件契约](./unified-logging-contract.md)。
-- L1 已取得本机 Linux arm64 的传输、安全裁剪及故障可见性证据；固定版本 / digest、HTTP 候选上限、队列与轮转限制见[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)及[采集边界记录](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。这不代表全部平台或磁盘故障门禁关闭。
+- L1 已取得原版镜像的传输上界、进程峰值、坏批隔离以及共享卷 ENOSPC / 队列故障证据。已验证配置外的目标部署参数及补丁候选仍按[退出清单](./unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist)核对。
 - L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配；`RadishLogging.Enabled` 默认 false。基础生成端、后台任务与已列明业务调用链的准确边界统一见[事件契约第 7–82 节](./unified-logging-contract.md)，批次证据见 [9 月 23 日日终回顾](../records/day-end-doc-review-2026-09-23.md)、[9 月 28 日日终回顾](../records/day-end-doc-review-2026-09-28.md)、[10 月 2 日日终回顾](../records/day-end-doc-review-2026-10-02.md)及 [10 月 7 日日终回顾](../records/day-end-doc-review-2026-10-07.md)。[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)汇总早期消费点、证书 / 传输、YARP、认证授权 / 路由、宿主健康及 OpenIddict Server / Core 的全部批次。[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)汇总自有 Auth、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断及 API 启动业务 / Gateway 停止通知的六个开发提交与验证边界；[11 月 4 日回顾](../records/day-end-doc-review-2026-11-04.md)补充两个自有 Hangfire 来源的最终输出修正。浏览器本地公共出口已按[11 月 5 日记录](../records/unified-logging-l2-browser-output-2026-11-05.md)完成本批，第三方独立输出与其他非 Serilog 通道保持各自边界。日志安全重建不改变结果 / 协议 / 存储语义；健康服务、OpenIddict 与 DataProtection 的列明来源增加桥接前保护，其他来源不自动继承。生成器、内存处理器与存储替身证据不替代真实网络、登录或存储验收；其余业务入口、异常安全栈帧、框架来源与非 Serilog 通道继续独立治理。
-- L3-A 内网接收与新日志表已有默认关闭的本地实现；PostgreSQL / 实际监听 / collector 端到端验收、L3-B 留存部署、Console 查询与告警、旧链路退出尚未完成。没有切换 production Compose、发布镜像、改写线上数据或发送告警。
+- L3-A 已完成本机真实监听、SQLite 与 PostgreSQL 的隔离联验。L3-B 留存、备份恢复与目标部署仍待验收，Console 查询、告警和旧链路退出沿 L4–L6 推进。[当前执行顺位](../planning/current.md#接下来的事项)
 - 已确认的架构仍为独立 collector、统一标准流出口、文件与内网 API 两条持久化支路、Console 查询 / 提醒及独立审计权威性；下一步顺位由[当前规划](../planning/current.md)维护。

@@ -34,7 +34,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 | --- | --- | --- | --- |
 | 传输正式上界 | Docker Message mode 候选上界完成[推导](#l1-l3-transport-budget)及 [OrbStack 实测](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。合法流量全部交付，实际请求在候选预算内，接收端门限和进程内存已取证 | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
 | 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
-| 磁盘与支路隔离 | [OrbStack 联验](#l1-l3-disk-queue-runtime)实测共享卷 ENOSPC、两支路缺口与恢复。HTTP 队列溢出的 7,200 条缺口与丢弃计数一致 | 文件支路 ENOSPC 的丢弃计数、截断尾恢复及入队前失败的可观测性待收口。权限错误与有界应急通道保留原退出条件 | L1 接续 |
+| 磁盘与支路隔离 | [原版镜像联验](#l1-l3-disk-queue-runtime)实测共享卷 ENOSPC、两支路缺口与恢复。HTTP 队列溢出的 7,200 条缺口与计数一致。[候选补丁](#l1-l3-disk-queue-followup)已通过离线回归 | 在候选镜像核对文件回滚、截断尾、权限错误、输入失败计数与有界应急通道，分别对账文件与入库缺口 | L1 接续 |
 | 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
 
@@ -46,7 +46,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 1. 对照第 10 节调用清单、事件契约和各批回归，列出尚会阻断真实联验的已登记来源。随后确认单一隔离环境的架构、镜像 digest、Docker daemon 到 collector 的路径、服务与流标识、独立内网端口、专用凭据、测试存储、故障注入和清理。此清单用于确认本次运行范围。
 2. 先以三个边界对账。API 5xx 的响应反馈 ID 与文件及真实 API 接收后 SQLite 的 canonical JSON 一致，旧事件缺省兼容，提交后响应丢失重投只保留一个事件。用受信的服务与流元数据识别 DbMigrate stdout 报告，使其在 JSON parser 前退出事件链。对独立启动 / 入库应急 stderr 验证有界证据和失败通道隔离，入库应急避开同一失败链。
-3. PostgreSQL 的提交、重投与 Log 库断连恢复，以及 Docker Message mode 候选传输上界与坏批隔离均已通过。OrbStack 磁盘与队列联验复现了文件丢弃计数缺口、截断尾及入队前失败，按第 2 节推进收口。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
+3. SQLite 和 PostgreSQL 16.15 的提交、重投与写入故障恢复，以及 Docker Message mode 候选传输上界与坏批隔离均已通过。原版镜像的磁盘故障实测已用于实现候选补丁，接续按[第 2.4 节](#l1-l3-disk-queue-followup)验证。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
 
 #### OrbStack / Linux arm64 隔离联验入口
 
@@ -291,7 +291,7 @@ L3-A 本地实施可使用已安装依赖、内存管道和测试创建的临时
 
 接收开关为 `RadishLogging:Ingest:Enabled`（默认 false），与生成端 `RadishLogging:Enabled` 分开。接收模式继承受信的 `RadishLogging:Mode`；载荷模式必须一致，Development 仅在 Development 宿主允许，不能由事件自行开启诊断。
 
-启用候选时必须显式提供 `Kestrel:Endpoints:<name>:Url` 公共监听、独立 `Ingest:Port`（1024–65535）、`DeploymentId`、允许的 `Services` 与 `Credential`。缺失或公共端口冲突均失败；不能只设置 URLs 再让专用 Listen 覆盖原公共监听。实际绑定与网络可达性仍待运行验收。凭据只通过未提交的本地配置或 `RadishLogging__Ingest__Credential` 注入，不放入共享文件；HTTP 使用 `X-Radish-Collector-Key`，允许 `application/x-ndjson` / `application/json`，不支持压缩。
+启用候选时必须显式提供 `Kestrel:Endpoints:<name>:Url` 公共监听、独立 `Ingest:Port`（1024–65535）、`DeploymentId`、允许的 `Services` 与 `Credential`。缺失或公共端口冲突均失败；不能只设置 URLs 再让专用 Listen 覆盖原公共监听。OrbStack 隔离网络中的端口双向分流已验证，目标部署的绑定与可达性按 L3-B 核对。凭据只通过未提交的本地配置或 `RadishLogging__Ingest__Credential` 注入，不放入共享文件；HTTP 使用 `X-Radish-Collector-Key`，允许 `application/x-ndjson` / `application/json`，不支持压缩。
 
 并发默认 2（允许 1–8）、请求时限默认 30 秒（1–120）、数据库命令时限默认 5 秒（1–30）；字段分别为 `MaxConcurrentRequests`、`RequestTimeoutSeconds`、`DatabaseTimeoutSeconds`。请求时限到达返回 408，调用方取消为 499；真实断连可能无法收到响应。返回计数只包含服务已确认完成的内部事务；数据库提交结果不确定时不能据此推定未写入，必须沿原事件 ID 重放。
 
@@ -304,7 +304,7 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter 'Full
 npm run check:logging-contract
 ```
 
-新增 PostgreSQL 集成测试带 `Database=PostgreSQL` trait，只有另行授权隔离连接后才能执行；本批未执行。现有 Log baseline 升级走 `20261105_023_runtime_log_ingest`；尚无 baseline 的旧库仍须满足当前结构接管规则，不借新迁移自动放宽接管或修补已有漂移。
+带 `Database=PostgreSQL` trait 的 .NET 集成测试须在另行授权的隔离连接中执行。11 月 17 日的真实宿主、空库迁移和 PostgreSQL 断连恢复证据来自第 2.1 节脚本。现有 Log baseline 升级走 `20261105_023_runtime_log_ingest`；尚无 baseline 的旧库仍须满足当前结构接管规则，不借新迁移自动放宽接管或修补已有漂移。
 
 `20261105_023_runtime_log_ingest` 对拒收计数 `attempt_count` 按数据库验证 64 位存储。PostgreSQL 接受 `bigint` 和 SqlSugar 元数据返回的 `int8`，拒绝 32 位 `integer` / `int4`。SQLite 继续接受 `INTEGER`，迁移 ID 和账本校验和保持原值。
 

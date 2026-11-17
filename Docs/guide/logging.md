@@ -2,7 +2,7 @@
 
 Radish 项目采用 Serilog 结构化日志。当前默认使用本文描述的旧链路。统一日志的 `RadishLogging.Enabled` 候选入口启用后使用独立配置和输出。已治理生成端、最终输出范围和迁移限制见[统一事件契约第 7–89 节](../features/unified-logging-contract.md)。
 
-L3-A 已增加默认关闭的内网接收与 Log 库统一事件表，本地回归已完成；配置、幂等 / 拒收、迁移和未关闭运行门禁见[接收入库方案](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)。这不改变本文描述的默认旧链路，也不代表 production Compose 已接入。
+L3-A 的专用内网接收与 Log 库统一事件表已通过 OrbStack 隔离联验，覆盖 SQLite、PostgreSQL 16.15、提交重投与故障恢复。默认仍使用本文的旧链路。候选配置、幂等和迁移见[接收入库方案](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)，采集器补丁及部署门禁见[衔接方案](../features/unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist)。
 
 已治理框架及自有来源在上下文合并后重建安全事件，覆盖旧链代码 / 配置 WriteTo / AuditTo 与候选输出。精确来源和事件身份以契约为准，不按类别前缀扩大：
 

@@ -66,7 +66,7 @@ API / Auth / Gateway 在 `RadishLogging.Enabled=false` 的旧 `AddSerilogSetup` 
 - 当前用户 / 客户端、Bootstrap、通知去重、限流及直接 API 异常消费者按[第 76 节](../features/unified-logging-contract.md#76-l2-剩余自有操作及直接异常消费者2026-11-05)治理；另有 14 个 Controller 按[第 77 节](../features/unified-logging-contract.md#77-api-controller-最终输出边界2026-11-05)绑定精确来源。最终输出只保留逐事件字段，不因共享 http.failed 拦截所有 Service；旧链也清理 scope，诊断门禁不信任载荷标志。
 - 第 78–88 节列明的 Service / Job / Hub 使用精确来源、事件身份和逐事件字段重建最终输出。候选 Serilog 只取类型化 W3C trace / span，任务 `operationId` 仅来自登记状态路径。API 5xx 的 `requestId` 取已写入响应的服务端 ID，排除入站 header 与普通 scope。[最终输出及关联字段契约](../features/unified-logging-contract.md)
 - 浏览器本地公共出口已按[前端日志契约](./frontend-logging.md)收口：固定目录、逐事件字段与有界 JSON 快照，生产不放开 diagnostic；不自动上传，不覆盖浏览器网络面板、第三方独立日志或调用前的实参求值。
-- L3-A 接收作用域与内部 Hosting 请求事件不进入普通 Serilog 持久化；PRAGMA / 接收故障使用独立限频 stderr。拒收只存受信来源、固定原因、UTC 日桶及计数，不存原文或 eventId；这是默认关闭的本地接收切片，真实介质 / collector 故障仍待验证。
+- L3-A 接收作用域与内部 Hosting 请求事件不进入普通 Serilog 持久化；PRAGMA / 接收故障使用独立限频 stderr。拒收字段限于受信来源、固定原因、UTC 日桶及计数，原文与 eventId 均排除。OrbStack 隔离联验核对了 DbMigrate stdout 分流和应急 stderr 的路径隔离，并在文件、缓冲、HTTP 与入库结果中检查合成原文。证据适用于实测镜像、环境及样本。[运行证据索引](../records/day-end-doc-review-2026-11-17.md)
 - SelfLog 按第 68 节统一写入独立安全 stderr，只输出固定 Warning 事件和受控计数，限频并覆盖 logger 初始化 / 释放边界；不转回 Serilog，不读取原诊断文本，原文文件停止新增，历史文件保留。
 - Common 两处程序集加载 / 类型枚举 catch 按第 71 节写入独立安全 stderr，只输出固定 Error 事件与受控 failureKind，并隔离诊断二次失败；不扩展其他裸输出、扫描容错或反射行为。
 - Flutter 应用框架报告只打印固定摘要，显式引导失败只传播固定错误和空原始栈。DbMigrate 人读 stdout 的标签有界，阶段诊断和应急走 stderr。设备与真实采集证据按对应批次验收。[本地输出契约](../features/unified-logging-contract.md#l2-diagnostic-output-boundaries)
