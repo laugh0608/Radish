@@ -8,27 +8,38 @@ import { createRuntimeLogPolicy, serializeRuntimeLogEvent } from '../../Frontend
 import { renderCollectorPolicy } from '../../Deploy/logging/render-policy.mjs';
 import { boundaryConfig } from './boundary-config.mjs';
 import { createPostgresProbe, postgresImage } from './ingest-probe-postgres.mjs';
+import { transportDeployment, transportRelease, transportWorkload, verifyTransport } from './ingest-probe-transport.mjs';
 import { collectorImage, readLines, until } from './probe-runtime.mjs';
 
 const here = fileURLToPath(new URL('.', import.meta.url));
 const root = fileURLToPath(new URL('../../', import.meta.url));
 const runtimeImage = 'mcr.microsoft.com/dotnet/aspnet@sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c';
 const relayImage = 'node@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14';
-const [action, databaseOption = '--database=sqlite', ...unexpected] = process.argv.slice(2);
+const [action, databaseOption = '--database=sqlite', suite = '--suite=ingest', ...unexpected] = process.argv.slice(2);
 assert.equal(unexpected.length, 0);
 assert.match(databaseOption, /^--database=(sqlite|postgresql)$/u);
 const database = databaseOption.split('=')[1];
-const deploymentId = 'logging-' + database + '-probe';
-const release = 'probe';
+assert.match(suite, /^--suite=(ingest|transport)$/u);
+const transport = suite === '--suite=transport';
+assert.ok(!transport || database === 'sqlite', 'The transport suite uses disposable SQLite');
+const profile = transport ? 'transport' : database;
+const deploymentId = transport ? transportDeployment : 'logging-' + database + '-probe';
+const release = transport ? transportRelease : 'probe';
+let interruptedExit = 0;
+let cleaning = false;
 const runDocker = (args, input) => execFileSync('docker', ['--context', 'orbstack', ...args], {
   input, encoding: 'utf8', stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'],
   timeout: 45000, maxBuffer: 4 * 1024 * 1024,
 }).trim();
-const docker = (...args) => runDocker(args);
+const docker = (...args) => {
+  if (interruptedExit && !cleaning) throw new Error('Probe interrupted');
+  return runDocker(args);
+};
 const images = [collectorImage, runtimeImage, relayImage, ...(database === 'postgresql' ? [postgresImage] : [])];
 
 function collectorConfig() {
-  return boundaryConfig('relay').replace('[FILTER]\n', [
+  const base = boundaryConfig('relay');
+  return (transport ? base.replace('rotate_max_size 1M', 'rotate_max_size 16M') : base).replace('[FILTER]\n', [
     '[FILTER]', '    Name lua', '    Match *', '    script /probe/streams.lua',
     '    call route_probe_stream', '    protected_mode true', '[FILTER]', '',
   ].join('\n')).replace('    Format json_lines\n', [
@@ -37,13 +48,18 @@ function collectorConfig() {
 }
 
 if (action === '--plan') {
+  const budget = transport ? (await import('./check-transport-budget.mjs')).transportBudget : undefined;
   process.stdout.write(JSON.stringify({
-    context: 'orbstack', platform: 'linux/arm64', database, images,
+    context: 'orbstack', platform: 'linux/arm64', database, suite: transport ? 'transport' : 'ingest', images,
     listeners: {
       forward: '127.0.0.1:<assigned> → 24224', api: 5100, ingest: 15199, relay: 8080, metrics: 2020,
       ...(database === 'postgresql' ? { postgres: 5432 } : {}),
     },
     collector: collectorConfig(),
+    ...(transport ? {
+      budget, workload: transportWorkload, forwardMapping: 'loopback → relay:24224 → collector:24224',
+      cleanup: 'Remove only labelled transport containers, network and temporary directory. Keep the JSON report and local image cache.',
+    } : {}),
   }, null, 2) + '\n');
   process.exit(0);
 }
@@ -54,15 +70,16 @@ for (const image of images) {
 }
 execFileSync(process.execPath, [join(root, 'Scripts/build-native-images.mjs'), '--debug', '--verify', '--rid=linux-arm64']);
 
-const prefix = 'radish-logging-' + database + '-' + randomUUID().slice(0, 8);
+const prefix = 'radish-logging-' + profile + '-' + randomUUID().slice(0, 8);
 const directory = mkdtempSync('/private/tmp/' + prefix + '-');
-const output = join(root, 'artifacts', deploymentId);
+const output = join(root, 'artifacts', 'logging-' + profile + '-probe');
 const containers = [];
 let network = false;
 const report = { prefix, database, checks: {}, images, cleanup: false };
 const key = randomBytes(32).toString('hex');
 const name = (role) => prefix + '-' + role;
 const postgres = database === 'postgresql' ? createPostgresProbe(runDocker, name('postgres'), directory, root) : null;
+if (transport) process.stderr.write('Running isolated probe ' + prefix + ' in ' + directory + '\n');
 
 function launch(role, ...args) {
   containers.push(name(role));
@@ -128,7 +145,21 @@ const emitFixture = (role, event) => {
     'process.stdout.write(process.argv[1]+"\\n");setTimeout(()=>{},1000);', serializeRuntimeLogEvent(event));
   assert.equal(docker('wait', name(role)), '0');
 };
+const launchTransportFixture = (role, lines) => {
+  const fixture = join(directory, role + '.ndjson');
+  writeFileSync(fixture, lines.join('\n') + '\n');
+  launch(role, ...forwardLogs('api'), '-v', fixture + ':/fixture:ro', relayImage, 'node', '-e',
+    'const fs=require("node:fs"),{once}=require("node:events"),{setTimeout:delay}=require("node:timers/promises");' +
+    '(async()=>{for await(const chunk of fs.createReadStream("/fixture")){' +
+    'if(!process.stdout.write(chunk))await once(process.stdout,"drain"); await delay(10);}' +
+    'await delay(1500);})();');
+  assert.equal(docker('wait', name(role)), '0');
+};
 let phase = 'stage inputs';
+const interrupt = () => { interruptedExit = 130; };
+const terminate = () => { interruptedExit = 143; };
+process.on('SIGINT', interrupt);
+process.on('SIGTERM', terminate);
 
 try {
   for (const path of ['collector/files', 'collector/buffer', 'relay', 'db']) mkdirSync(join(directory, path), { recursive: true });
@@ -139,6 +170,7 @@ try {
   cpSync(join(root, 'Deploy/logging/normalize.lua'), join(directory, 'collector/normalize.lua'));
   cpSync(join(here, 'ingest-probe-streams.lua'), join(directory, 'collector/streams.lua'));
   cpSync(join(here, 'ingest-probe-relay.mjs'), join(directory, 'relay/relay.mjs'));
+  cpSync(join(here, 'ingest-probe-forward.mjs'), join(directory, 'relay/ingest-probe-forward.mjs'));
   writeFileSync(join(directory, 'collector/policy.lua'), renderCollectorPolicy());
   writeFileSync(join(directory, 'collector/parsers.conf'), '[PARSER]\n    Name event\n    Format json\n');
   writeFileSync(join(directory, 'collector/fluent-bit.conf'), collectorConfig());
@@ -182,18 +214,64 @@ try {
     report.checks.postgresMigration = true;
   }
   phase = 'start and connect listeners';
-  launch('relay', ...localLogs, '-v', join(directory, 'relay') + ':/probe',
+  const publishForward = ['-p', '127.0.0.1::24224'];
+  launch('relay', ...localLogs, ...(transport ? [...publishForward, '-e', 'RADISH_TRANSPORT_PROBE=1'] : []),
+    '-v', join(directory, 'relay') + ':/probe',
     '-v', join(directory, 'db') + ':/probe/db', relayImage, 'node', '/probe/relay.mjs');
   launch('collector', ...localLogs, '--env-file', join(directory, 'collector.env'),
-    '-v', join(directory, 'collector') + ':/probe', '-p', '127.0.0.1::24224', collectorImage, '-c', '/probe/fluent-bit.conf');
-  report.forwardPort = Number(docker('port', name('collector'), '24224/tcp').split(':').at(-1));
+    '-v', join(directory, 'collector') + ':/probe', ...(transport ? ['--pid=container:' + name('relay')] : publishForward),
+    collectorImage, '-c', '/probe/fluent-bit.conf');
+  report.forwardPort = Number(docker('port', name(transport ? 'relay' : 'collector'), '24224/tcp').split(':').at(-1));
   assert.ok(report.forwardPort > 0);
   await until(() => fetchInProbe('http://collector:2020/api/v1/metrics').status === 200, 'collector ready');
+  if (transport) await until(() => fetchInProbe('http://relay:8080/probe-forward-stats').status === 200, 'Forward observer ready');
   launch('api', ...forwardLogs('api'), ...app('api', 'api.env'));
   await until(() => fetchInProbe('http://api:5100/api/health').status === 200, 'API ready');
   assert.equal(fetchInProbe('http://api:5100/internal/logs/ingest').status, 404);
   assert.equal(fetchInProbe('http://api:15199/api/health').status, 404);
   report.checks.listenerIsolation = true;
+  if (transport) {
+    await verifyTransport({ docker, name, launchFixture: launchTransportFixture, node, directory, sql, fetchInProbe,
+      fileEvents, relayEvents, key, report, setPhase: (value) => { phase = value; } });
+  } else {
+    await verifyIngestChecks();
+  }
+  report.result = 'passed';
+} catch (error) {
+  report.result = 'failed';
+  report.phase = phase;
+  report.error = error.message.split('\n')[0];
+  process.exitCode = interruptedExit || 1;
+} finally {
+  cleaning = true;
+  const remaining = [];
+  for (const container of containers.reverse()) {
+    try {
+      const owned = docker('ps', '-a', '--filter', 'label=radish.logging.probe=' + prefix, '--format', '{{.Names}}').split('\n');
+      if (owned.includes(container)) docker('rm', '-f', '-v', container);
+    }
+    catch { remaining.push(container); }
+  }
+  if (network) {
+    try { docker('network', 'rm', network); }
+    catch { remaining.push(prefix); }
+  }
+  report.cleanup = remaining.length === 0;
+  if (report.cleanup) rmSync(directory, { recursive: true, force: true });
+  else {
+    report.cleanupRemaining = remaining;
+    report.temporaryDirectory = directory;
+    process.exitCode = 1;
+  }
+  mkdirSync(output, { recursive: true });
+  const reportPath = join(output, prefix + '.json');
+  writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n');
+  process.stdout.write(JSON.stringify({ ...report, reportPath }, null, 2) + '\n');
+  process.off('SIGINT', interrupt);
+  process.off('SIGTERM', terminate);
+}
+
+async function verifyIngestChecks() {
   phase = 'compare API feedback IDs and replay';
   const categoryUrl = 'http://api:5100/api/v1/Category/GetChildCategories?parentId=0';
   assert.equal(fetchInProbe(categoryUrl).status, 200);
@@ -306,36 +384,6 @@ try {
   assert.equal(rejectionCount(), baselineRejections, 'The ingest stderr line must not become a collector rejection');
   assert.equal(eventRows(startup.eventId).length + eventRows(ingest.eventId).length, 0);
   report.checks.independentStderrAndRecovery = true;
-  report.result = 'passed';
-} catch (error) {
-  report.result = 'failed';
-  report.phase = phase;
-  report.error = error.message.split('\n')[0];
-  process.exitCode = 1;
-} finally {
-  const remaining = [];
-  for (const container of containers.reverse()) {
-    try {
-      const owned = docker('ps', '-a', '--filter', 'label=radish.logging.probe=' + prefix, '--format', '{{.Names}}').split('\n');
-      if (owned.includes(container)) docker('rm', '-f', '-v', container);
-    }
-    catch { remaining.push(container); }
-  }
-  if (network) {
-    try { docker('network', 'rm', network); }
-    catch { remaining.push(prefix); }
-  }
-  report.cleanup = remaining.length === 0;
-  if (report.cleanup) rmSync(directory, { recursive: true, force: true });
-  else {
-    report.cleanupRemaining = remaining;
-    report.temporaryDirectory = directory;
-    process.exitCode = 1;
-  }
-  mkdirSync(output, { recursive: true });
-  const reportPath = join(output, prefix + '.json');
-  writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n');
-  process.stdout.write(JSON.stringify({ ...report, reportPath }, null, 2) + '\n');
 }
 
 function isolatedDiagnostic(stderr, eventCode) {

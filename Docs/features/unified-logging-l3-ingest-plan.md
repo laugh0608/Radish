@@ -32,8 +32,8 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 | 门禁 | 已有证据 | 仍需交付 / 通过条件 | 所属批次 |
 | --- | --- | --- | --- |
-| 传输正式上界 | 8 KiB 应用输出限制；最大字段代表样本通过；Docker Message-mode 候选上界见[推导](#l1-l3-transport-budget) | 核对 daemon 实际追加形状、HTTP 字节 / 条数和进程内存峰值；覆盖边界前后及最坏组合；合法批次不因 413 丢失 | L1 接续，与 L3-B 联验 |
-| 坏批隔离与真实确认 | 413 会丢弃 HTTP 支路 chunk。SQLite 和 PostgreSQL 已通过真实提交确认、响应丢失和同批重放。PostgreSQL Log 库断连的 503 经重投恢复 | 区分语义拒收与语法坏批，验证前置校验 / 有界隔离及原文裁剪 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
+| 传输正式上界 | Docker Message mode 候选上界完成[推导](#l1-l3-transport-budget)及 [OrbStack 实测](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。合法流量全部交付，实际请求在候选预算内，接收端门限和进程内存已取证 | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
+| 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 磁盘 / 队列组合故障和留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
 | 磁盘与支路隔离 | 路径不可写时 HTTP 可交付；队列满有 dropped_records | 实际 ENOSPC、权限错误、buffer 与 file 共享磁盘争用、恢复、应急通道有界；分别报告文件缺口与入库缺口，不承诺补回已丢弃事件 | L1 接续 |
 | 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
@@ -46,7 +46,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 1. 对照第 10 节调用清单、事件契约和各批回归，列出尚会阻断真实联验的已登记来源。随后确认单一隔离环境的架构、镜像 digest、Docker daemon 到 collector 的路径、服务与流标识、独立内网端口、专用凭据、测试存储、故障注入和清理。此清单用于确认本次运行范围。
 2. 先以三个边界对账。API 5xx 的响应反馈 ID 与文件及真实 API 接收后 SQLite 的 canonical JSON 一致，旧事件缺省兼容，提交后响应丢失重投只保留一个事件。用受信的服务与流元数据识别 DbMigrate stdout 报告，使其在 JSON parser 前退出事件链。对独立启动 / 入库应急 stderr 验证有界证据和失败通道隔离，入库应急避开同一失败链。
-3. PostgreSQL 已接续通过提交、重投与 Log 库断连恢复。下一批按第 2 节验证传输正式上界、坏批及磁盘 / 队列故障与恢复。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
+3. PostgreSQL 的提交、重投与 Log 库断连恢复，以及 Docker Message mode 候选传输上界与坏批隔离均已通过。下一批按第 2 节验证磁盘 / 队列故障与恢复。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
 
 #### OrbStack / Linux arm64 隔离联验入口
 
@@ -75,7 +75,7 @@ PostgreSQL 5432 与原有 API、入库、中转及指标端口只供当批专用
 
 ### 2.2 候选传输预算与坏批联验
 
-**适用范围**是现有回环 Forward 入口、固定 Fluent Bit 5.1.2、登记的 Docker `fluentd` Message mode 生产者及当前规范化链。预算以一次 append 最多一条普通日志记录、无独立 MessagePack metadata / group 标记为前提。Moby 驱动及其 logger 逐条生成 Message，固定版 Fluent Bit 的 Message 解码和入口队列也逐条追加。目标 OrbStack daemon 仍需用合成记录核对这一形状。PackedForward、外部 Forward 客户端和新 metadata 需要单独推导预算。[Docker 日志驱动](https://docs.docker.com/engine/logging/drivers/fluentd/) · [Moby 驱动参考](https://github.com/moby/moby/blob/master/daemon/logger/fluentd/fluentd.go) · [Message-mode 解码](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/in_forward/fw_prot.c#L1130-L1197) · [入口队列追加](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_input_ingest.c#L370-L397)
+**适用范围**是现有回环 Forward 入口、固定 Fluent Bit 5.1.2、登记的 Docker `fluentd` Message mode 生产者及当前规范化链。预算以一次 append 最多一条普通日志记录、无独立 MessagePack metadata / group 标记为前提。Moby 驱动及其 logger 逐条生成 Message，固定版 Fluent Bit 的 Message 解码和入口队列也逐条追加。OrbStack daemon 已用合成记录核对这一形状。PackedForward、外部 Forward 客户端和新 metadata 需要单独推导预算。[Docker 日志驱动](https://docs.docker.com/engine/logging/drivers/fluentd/) · [Moby 驱动参考](https://github.com/moby/moby/blob/master/daemon/logger/fluentd/fluentd.go) · [Message-mode 解码](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/in_forward/fw_prot.c#L1130-L1197) · [入口队列追加](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_input_ingest.c#L370-L397)
 
 1. **Forward 与 chunk。** `Buffer_Max_Size 64K` 将连接接收缓冲限制为 `64,000` 字节。核心先筛选本次追加记录，再把规范化后的 MessagePack 写入 chunk，写后超过 `2,048,000` 字节才锁定，锁定后下一次追加另开 chunk。最后追加前最多已有 `2,048,000` 字节，另加一条最大规范记录（含普通事件封装）`3,260` 字节，合计 `2,051,260` 字节。最小规范消息体按 `396` 字节计，丢弃项为零条，拒收摘要仍为一条。每个 chunk 至多 `floor(2,048,000 / 396) + 1 = 5,172` 条。[Forward 配置](https://docs.fluentbit.io/manual/data-pipeline/inputs/forward) · [大小单位解析](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_utils.c#L527-L587) · [chunk 切分与写后锁定](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_input_chunk.c)
 2. **HTTP 编码。** 当前 `json_lines` 无额外时间键，编码普通记录体并每条追加一个 LF。在受控 ASCII 文本、数字、布尔和对象的字段集合内，将 JSON 序列化含 LF 预算取为 MessagePack 的 6 倍。文本按每字节最多两个 JSON 字符计，键值分隔符计入键开销，布尔最多 5 字节，当前有限数值最多 24 字节。单行按全部白名单字段的保守组合得到 `4,212` 字节，整请求按 chunk 得到 `12,307,560` 字节，均低于接收器 `8 KiB / 16 MiB / 32,768 条` 门禁。运行 `node Scripts/logging/check-transport-budget.mjs` 可以按现有事件策略重算。[MessagePack 到 JSONL](https://github.com/fluent/fluent-bit/blob/v5.1.2/src/flb_pack.c) · [HTTP 插件](https://github.com/fluent/fluent-bit/blob/v5.1.2/plugins/out_http/http.c)
@@ -87,7 +87,29 @@ PostgreSQL 5432 与原有 API、入库、中转及指标端口只供当批专用
 | 来源坏记录与语义拒收 | 将格式无效的合成日志与有效事件混发，验证 collector 输出固定 `pipeline.rejected` 摘要、相邻有效 ID 到达两条支路、原文不进入缓冲持久化与最终输出。直接接收时的语义无效 JSON 另外核对有限拒收桶与有效记录提交。 |
 | 坏信封与后续批次 | 在隔离接收端复核 400 / 413 和已提交前缀计数。采集器分支对确认不可重试的坏 chunk 应暴露丢弃，后续正常批次继续到达。用安全摘要记录故障与损失范围。收到 408、429 或 503 时按重试语义对账。 |
 
-第一轮复用已核验镜像和专用网络，以临时 SQLite 对账。准备可审阅的运行入口后，按实际命令、端口、负载量与清理范围另行确认启动。候选静态计算通过后仍需取得表中运行态证据，再冻结传输配置。
+#### OrbStack 传输联验的运行范围
+
+在仓库根目录预览配置，获得本批启动授权后执行第二条命令。运行入口使用本机缓存的 Fluent Bit 5.1.2、ASP.NET Core 10.0.14、Node.js 24.16.0 镜像和现有 Linux arm64 Debug 产物。完整 digest 随预览与报告保留。运行脚本使用 `--pull never`，由 DbMigrate apply 创建临时 SQLite。
+
+```bash
+node Scripts/logging/collector-ingest-probe.mjs --plan --database=sqlite --suite=transport
+node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=transport
+```
+
+- **端口与负载。** Forward 仅发布到 daemon 回环动态端口，经中转 24224 原样进入 Fluent Bit 24224。HTTP 中转 8080、collector metrics 2020、API 5100、专用接收端 15199 留在本次专用 Docker 网络。两组合法负载分别为 5,200 条精简事件与 1,200 条最大字段组合。另有 3 条混合记录、2 条终止错误用例和 1 条恢复探针，专用接收端再测试字节、条数与单行门限。临时文件轮转单文件预算使用 16M，方便对账整个用例，采集 flush 和队列预算沿用已验证的配置。
+- **证据。** 中转只记帧类型对应的条数、大小与合成生产者标识。观察到每行对应一个 Message frame 后，结合固定版入口源码核对逐条追加。HTTP 中转记录原始 JSONL 请求字节、条数、单行最大值与接收状态。进程内存用 Linux `VmRSS` 和 `VmHWM` 报告，Fluent Bit 通过联验中转的共享 PID namespace 读取，API 读取其容器 PID 1。采样点包括就绪、正常负载后、503 重试积压、恢复和接收端门限验证后。`VmHWM` 是截至采样点的进程累计 RSS 峰值。
+- **故障与恢复。** 只对临时库目标事件注入一次可撤销的写入阻断。合成混合记录对账文件、SQLite 和同批重投。两组终止 HTTP 错误由中转仅对指定测试事件变更请求，确认 API 返回 400 / 413、collector 计数丢弃、文件分支保留事件及后续正常批次入库。报告保留断言、各阶段内存读数和最大请求尺寸。
+- **清理。** 脚本启动时打印本次 `radish-logging-transport-<id>` 和临时目录。退出时按精确 `radish.logging.probe=<本次 id>` 标签删除本次 API、DbMigrate、collector、中转和合成生产者容器及其临时卷，再删除专用网络和打印的单一 `/private/tmp/radish-logging-transport-…` 目录。目录包括 SQLite、日志／缓冲、合成输入和凭据。保留本机镜像缓存与 `artifacts/logging-transport-probe/<本次 id>.json`。清理失败时报告具体资源及目录。
+
+强制终止后，可用本次输出的完整 ID 核对资源，再按资源 ID 和打印的目录精确清理。
+
+```bash
+probe_id='radish-logging-transport-实际运行ID'
+docker --context orbstack ps -a --filter "label=radish.logging.probe=$probe_id"
+docker --context orbstack network ls --filter "label=radish.logging.probe=$probe_id"
+```
+
+本入口已通过该隔离环境的全部用例，实测数据见[传输联验记录](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。正式部署配置按目标部署批次冻结，改变上述预算前提时重新核对。
 
 ## 3. L2 剩余来源与退出条件
 

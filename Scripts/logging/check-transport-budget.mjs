@@ -107,7 +107,7 @@ assert.ok(event.maxJson <= policy.maxEventBytes, 'Canonical JSON line exceeds th
 assert.ok(candidateEnvelopeBytes <= maxEnvelopeBytes, 'Collector request exceeds the API byte limit.');
 assert.ok(candidateEnvelopeRecords <= maxEnvelopeRecords, 'Collector request exceeds the API record limit.');
 
-process.stdout.write(JSON.stringify({
+export const transportBudget = {
   scope: 'Fluent Bit 5.1.2, one metadata-free Docker Message-mode record per append',
   forwardBufferBytes, chunkLockBytes, minNormalizedPackBodyBytes: event.minPack,
   maxNormalizedPackRecordBytes: event.maxPack + upperLogWrapperBytes,
@@ -115,4 +115,6 @@ process.stdout.write(JSON.stringify({
   candidateChunkBytes, candidateEnvelopeBytes, candidateEnvelopeRecords,
   receiver: { maxLineBytes: policy.maxEventBytes, maxEnvelopeBytes, maxEnvelopeRecords },
   pending: ['Confirm append shape and HTTP body bounds in the pinned runtime', 'Measure process memory under retry load'],
-}, null, 2) + '\n');
+};
+
+if (import.meta.main) process.stdout.write(JSON.stringify(transportBudget, null, 2) + '\n');
