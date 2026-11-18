@@ -135,10 +135,13 @@ export async function verifyDiskQueue(context) {
     assert.ok(observed <= group.expected.length, 'Unexpected Forward replay for a fixture producer');
     return observed;
   };
-  const deliver = (role) => {
+  const deliver = async (role, recordIds = false) => {
     const group = emit(role, make(2));
-    return until(() => httpIds(group).length === 2 && observedFile(group).ids.includes(group.expected.at(-1)),
-      'post-recovery event delivered to both branches', 60000).then(() => ledger(group));
+    await until(() => httpIds(group).length === 2 && observedFile(group).ids.includes(group.expected.at(-1)),
+      'post-recovery event delivered to both branches', 60000);
+    const result = ledger(group);
+    if (recordIds) result.eventIds = { sent: group.expected, file: observedFile(group).ids, sqlite: httpIds(group) };
+    return result;
   };
   const assertCleanDelivery = (outcome) => {
     assert.equal(outcome.fileMissing + outcome.httpMissing + outcome.duplicateFileLines, 0);
@@ -315,6 +318,32 @@ export async function verifyDiskQueue(context) {
   if (report.candidate) {
     setPhase('grow a pending chunk on a full shared volume');
     const { growthSeries } = context;
+    const windowStart = new Date().toISOString();
+    const adminSnapshot = () => {
+      const response = fetchInProbe('http://collector:2020/api/v2/metrics/prometheus');
+      assert.equal(response.status, 200);
+      const storage = fetchInProbe('http://collector:2020/api/v1/storage');
+      assert.equal(storage.status, 200);
+      const stderr = logs('collector', windowStart).stderr;
+      const inputSamples = response.body.split('\n').filter((line) =>
+        /^fluentbit_input_\w+\{[^}]*\bname="guarded_input"[,}]/u.test(line));
+      return {
+        observedAt: new Date().toISOString(), inputStorageFailures: storageFailureCounters(response.body),
+        activeChunks: JSON.parse(storage.body).storage_layer.chunks.total_chunks,
+        inputMetricFamilies: [...new Set(inputSamples.map((line) => line.split('{')[0]))].sort(),
+        connectionSamples: inputSamples.filter((line) => /connect|disconnect/u.test(line.split('{')[0])),
+        stderrSinceStart: {
+          chunkWriteErrors: (stderr.match(/error writing data from guarded_input instance/gu) ?? []).length,
+          chunkCreationErrors: (stderr.match(/could not create chunk file/gu) ?? []).length,
+          forwardIngestWarnings: (stderr.match(/could not ingest Forward message/gu) ?? []).length,
+          forwardCloseMessages: stderr.split('\n').filter((line) =>
+            line.includes('[input:forward:guarded_input]') && /closed connection|drop connection|hangup|connection reset/iu.test(line)).length,
+        },
+      };
+    };
+    const logConfig = JSON.parse(docker('inspect', '-f', '{{json .HostConfig.LogConfig}}', name('collector')));
+    const admin = { windowStart, logConfig, forwardLogLevel: growthSeries ? 'warn' : 'error', before: adminSnapshot() };
+    report.diskQueue.adminDiagnostics = admin;
     const beforeGrowth = storageFailures();
     const beforeBranches = counters();
     const beforeForward = forwardStats();
@@ -338,6 +367,7 @@ export async function verifyDiskQueue(context) {
       };
       release();
       await until(() => storageFailures().chunk_write > beforeGrowth.chunk_write, 'existing chunk growth failed at storage', 15000);
+      admin.whileFull = adminSnapshot();
       report.diskQueue.bufferGrowth.framesAtFault = frames(growth);
       if (growthSeries) {
         const trace = report.diskQueue.bufferGrowth.sequenceTrace;
@@ -393,9 +423,10 @@ export async function verifyDiskQueue(context) {
       incompleteForwardConnections: afterForward.incompleteConnections - beforeForward.incompleteConnections,
       unexpectedFrames: afterForward.unexpected - beforeForward.unexpected,
     });
-    report.diskQueue.bufferGrowth.recovery = await deliver('buffer-growth-recovered');
+    report.diskQueue.bufferGrowth.recovery = await deliver('buffer-growth-recovered', true);
     report.diskQueue.bufferGrowth.recoveryDrained = await waitDrain();
     assertCleanDelivery(report.diskQueue.bufferGrowth.recovery);
+    admin.afterRecovery = adminSnapshot();
     assert.equal(afterForward.unexpected, 0);
     assert.equal(forwardFrames, outcome.sent, 'Forward observer must see every staged fixture record');
     assert.equal(outcome.missingBoth, failures.chunk_write + failures.chunk_create);

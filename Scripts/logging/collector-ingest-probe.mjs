@@ -121,8 +121,8 @@ function launch(role, ...args) {
     '--pull', 'never', '--network', prefix, '--network-alias', role, ...args);
 }
 
-function logs(role) {
-  const result = spawnSync('docker', ['--context', 'orbstack', 'logs', name(role)], {
+function logs(role, since) {
+  const result = spawnSync('docker', ['--context', 'orbstack', 'logs', ...(since ? ['--since', since] : []), name(role)], {
     encoding: 'utf8', timeout: 10000, maxBuffer: 2 * 1024 * 1024,
   });
   assert.equal(result.status, 0, 'Read isolated container logs');

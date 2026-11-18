@@ -34,7 +34,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 | --- | --- | --- | --- |
 | 传输正式上界 | Docker Message mode 候选上界完成[推导](#l1-l3-transport-budget)及 [OrbStack 实测](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。合法流量全部交付，实际请求在候选预算内，接收端门限和进程内存已取证 | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
 | 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
-| 磁盘与支路隔离 | [原版镜像联验](#l1-l3-disk-queue-runtime)实测共享卷 ENOSPC、两支路缺口与恢复。[候选联验](#l1-l3-disk-queue-followup)已核对文件回滚重投、拒写、满卷创建 chunk、轮转和 HTTP 队列丢弃 | 已定位扩容失败后的 Forward 断连，接续验证独立诊断能区分已知追加失败与未知尾段 | L1 接续 |
+| 磁盘与支路隔离 | [原版联验](#l1-l3-disk-queue-runtime)与[候选联验](#l1-l3-disk-queue-followup)已核对 ENOSPC、文件回滚、拒写、轮转、HTTP 队列丢弃及恢复。独立诊断能确认输入追加失败数，断连依固定版本推断，尾段数量未知 | 评审断连的处置依据和来源级验收口径，候选扩容用例仍失败 | L1 接续 |
 | 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
 
@@ -191,7 +191,9 @@ node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=
 
 联验按 §2.3 复用 SQLite、24 MiB 共享卷、回环动态 Forward 端口和两条 4M 队列。用 UID 10001 的 collector 测试文件拒写。输入侧先在满卷上创建 chunk，再用同一个 Docker tag 的两波输入测试已有 chunk 的扩容失败。文件轮转阈值设为 4M，以便在五波队列用例中穿过轮转并对账。运行保留原版和候选的独立 JSON 报告，按 §2.3 回收容器、网络、卷和临时数据库。构建目录 `$probe_root` 可按本次精确路径移除，候选镜像及本机构建缓存用于复验。
 
-2026-11-18 候选构建成功。文件与 HTTP 队列用例均能对账，满卷创建 chunk 的共同缺口也只在输入侧记一次。同镜像可在上述运行命令末尾追加 `--trace-growth`，按序号观察 Docker 本地缓存、各 Forward 连接、写入前过滤点、缓冲文件及两路终态。三次均在第 172 条扩容写失败后断连，其后 468 条未到达写入前过滤点。按同一输入实例求差会混入其他来源的失败。接续先验证断连和未知尾段的独立诊断，再复核候选传输与内存，随后进入留存与备份恢复。[逐条故障定位](../records/unified-logging-l1-forward-gap-2026-11-18.md) · [首轮候选实测](../records/unified-logging-l1-l3-collector-candidate-2026-11-18.md)
+2026-11-18 候选构建成功。文件与 HTTP 队列用例均能对账，满卷创建 chunk 的共同缺口只在输入侧记一次。同镜像可在上述命令末尾追加 `--trace-growth`，按合成序号交叉核实 Docker 本地缓存、中转连接、写入前过滤点、缓冲文件及两路终态。第 172 条扩容写失败触发断连，其后 468 条未到达写入前过滤点。同一输入实例的失败增量可能包含其他来源。[逐条故障定位](../records/unified-logging-l1-forward-gap-2026-11-18.md) · [首轮候选实测](../records/unified-logging-l1-l3-collector-candidate-2026-11-18.md)
+
+管理员独立联验已复核默认 `error` 和 Forward `warn` 两种配置。满卷时内网指标可确认追加失败数，`warn` 还给出协议处理失败。关闭当前连接由固定版单 worker 的错误路径推断。无 ACK 的尾段数量只能记为未知，恢复后仍需核对新增事件的两路 ID 和实际积压。现行扩容断言仍失败，下一步评审上述推断是否足以支持处置，并明确来源级缺口与实例级追加计数的验收边界。候选通过后复核传输与内存，再进入留存与备份恢复。[管理员独立诊断与恢复对账](../records/unified-logging-l1-forward-admin-diagnostics-2026-11-18.md)
 
 ## 3. L2 剩余来源与退出条件
 
