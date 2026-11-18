@@ -8,7 +8,8 @@ const reportPath = '/probe/relay.jsonl';
 const outagePath = '/probe/outage-event-id';
 const faultPath = '/probe/transport-fault.json';
 const sentinel = 'RADISH_TRANSPORT_PROBE_FIXTURE_46e8';
-const forward = process.env.RADISH_TRANSPORT_PROBE === '1' ? startForwardObserver() : null;
+const forward = process.env.RADISH_TRANSPORT_PROBE === '1'
+  ? startForwardObserver({ growthSeries: process.env.RADISH_PROBE_GROWTH_SERIES }) : null;
 const record = (entry) => appendFileSync(reportPath, JSON.stringify(entry) + '\n');
 
 function measure(body) {

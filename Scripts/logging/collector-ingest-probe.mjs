@@ -18,7 +18,8 @@ const root = fileURLToPath(new URL('../../', import.meta.url));
 const runtimeImage = 'mcr.microsoft.com/dotnet/aspnet@sha256:bfdb8a0389d3f274f8f5fe95b9b8fc2249084047a07e7d927b91fbcc6e46b68c';
 const relayImage = 'node@sha256:2bdb65ed1dab192432bc31c95f94155ca5ad7fc1392fb7eb7526ab682fa5bf14';
 const [action, databaseOption = '--database=sqlite', suite = '--suite=ingest', candidateOption, ...unexpected] = process.argv.slice(2);
-assert.equal(unexpected.length, 0);
+const traceGrowth = unexpected.length === 1 && unexpected[0] === '--trace-growth';
+assert.ok(unexpected.length === 0 || traceGrowth);
 assert.match(databaseOption, /^--database=(sqlite|postgresql)$/u);
 const database = databaseOption.split('=')[1];
 assert.match(suite, /^--suite=(ingest|transport|disk-queue)$/u);
@@ -26,6 +27,8 @@ const suiteName = suite.split('=')[1];
 const transport = suiteName === 'transport';
 const disk = suiteName === 'disk-queue';
 const candidate = candidateOption !== undefined;
+assert.ok(!traceGrowth || candidate, 'Growth tracing requires a candidate image');
+const growthSeries = traceGrowth ? randomUUID().slice(0, 24) : null;
 if (candidate) {
   assert.ok(disk, 'A local candidate image is supported only by the disk-queue suite');
   assert.match(candidateOption, /^--collector-image=sha256:[a-f0-9]{64}$/u);
@@ -53,6 +56,10 @@ function collectorConfig() {
   let base = boundaryConfig('relay');
   if (transport) base = base.replace('rotate_max_size 1M', 'rotate_max_size 16M');
   if (disk) base = diskCollectorConfig(base, candidate);
+  if (traceGrowth) {
+    base = base.replace('Alias guarded_input\n', 'Alias guarded_input\n    Log_Level warn\n')
+      .replace('[OUTPUT]\n', '[FILTER]\n    Name lua\n    Match *\n    script /probe/streams.lua\n    call trace_growth_append\n[OUTPUT]\n');
+  }
   return base.replace('[FILTER]\n', [
     '[FILTER]', '    Name lua', '    Match *', '    script /probe/streams.lua',
     '    call route_probe_stream', '    protected_mode true', '[FILTER]', '',
@@ -75,7 +82,7 @@ if (action === '--plan') {
       cleanup: 'Remove only labelled transport containers, network and temporary directory. Keep the JSON report and local image cache.',
     } : {}),
     ...(disk ? {
-      workload: diskWorkload, forwardMapping: 'loopback → relay:24224 → collector:24224',
+      workload: diskWorkload, forwardMapping: 'loopback → relay:24224 → collector:24224', traceGrowth,
       ...(candidate ? { collectorUser: '10001:10001' } : {}),
       sharedVolume: { driver: 'local', options: diskVolumeOptions, mount: diskMount, capacityBytes: diskCapacityBytes },
       cleanup: 'Remove only labelled disk-queue containers, network, named shared volume and temporary directory. Keep the JSON report and local image cache.',
@@ -220,6 +227,7 @@ try {
   writeFileSync(join(directory, 'collector/parsers.conf'), '[PARSER]\n    Name event\n    Format json\n');
   writeFileSync(join(directory, 'collector/fluent-bit.conf'), collectorConfig());
   writeFileSync(join(directory, 'collector.env'), [
+    ...(traceGrowth ? ['RADISH_PROBE_GROWTH_SERIES=' + growthSeries] : []),
     'RADISH_LOG_DEPLOYMENT=' + deploymentId, 'RADISH_LOG_RELEASE=' + release, 'RADISH_LOG_POLICY_PATH=/probe/policy.lua',
     'RADISH_LOG_COLLECTOR_KEY=' + key, '',
   ].join('\n'), { mode: 0o600 });
@@ -268,6 +276,7 @@ try {
   }
   const publishForward = ['-p', '127.0.0.1::24224'];
   launch('relay', ...localLogs, ...(observeForward ? [...publishForward, '-e', 'RADISH_TRANSPORT_PROBE=1'] : []),
+    ...(traceGrowth ? ['-e', 'RADISH_PROBE_GROWTH_SERIES=' + growthSeries] : []),
     ...diskMountArgs,
     '-v', join(directory, 'relay') + ':/probe',
     '-v', join(directory, 'db') + ':/probe/db', relayImage, 'node', '/probe/relay.mjs');
@@ -297,7 +306,7 @@ try {
   assert.equal(fetchInProbe('http://api:15199/api/health').status, 404);
   report.checks.listenerIsolation = true;
   if (disk) {
-    await verifyDiskQueue({ docker, name, launchFixture, launchStagedFixture, directory, sql, fetchInProbe, relayEvents, logs, diskControl, report,
+    await verifyDiskQueue({ docker, name, launchFixture, launchStagedFixture, directory, sql, fetchInProbe, relayEvents, logs, diskControl, report, growthSeries,
       setPhase: (value) => { phase = value; } });
   } else if (transport) {
     await verifyTransport({ docker, name, launchFixture, node, directory, sql, fetchInProbe,

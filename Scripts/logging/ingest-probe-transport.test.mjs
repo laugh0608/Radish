@@ -9,11 +9,11 @@ const string = (text) => {
   const prefix = data.length < 32 ? [0xa0 + data.length] : [0xd9, data.length];
   return Buffer.concat([Buffer.from(prefix), data]);
 };
-const fields = Object.entries({
-  container_id: 'a'.repeat(64), container_name: '/fixture', source: 'stdout', log: '{"sample":"中"}',
+const fields = (log) => Object.entries({
+  container_id: 'a'.repeat(64), container_name: '/fixture', source: 'stdout', log,
 }).flatMap(([key, value]) => [string(key), string(value)]);
-const message = (header, timestamp, options = []) => Buffer.concat([
-  Buffer.from([header]), string(tag), Buffer.from(timestamp), Buffer.from([0x84]), ...fields, ...options,
+const message = (header, timestamp, options = [], log = '{"sample":"中"}') => Buffer.concat([
+  Buffer.from([header]), string(tag), Buffer.from(timestamp), Buffer.from([0x84]), ...fields(log), ...options,
 ]);
 
 test('reads Docker Message mode with signed or unsigned seconds and with EventTime', () => {
@@ -21,6 +21,20 @@ test('reads Docker Message mode with signed or unsigned seconds and with EventTi
   const signed = message(0x93, [0xd2, 0x69, 0, 0, 0]);
   const extension = message(0x94, [0xd7, 0, 0, 0, 0, 0, 0, 0, 0, 0], [Buffer.from([0xc0])]);
   for (const frame of [unix, signed, extension]) assert.deepEqual(readForwardMessage(frame), { tag, bytes: frame.length });
+});
+
+test('attributes only complete frames carrying the selected synthetic event ID', () => {
+  const series = '11111111-2222-4333-8444-';
+  const marker = Buffer.from('"eventId":"' + series);
+  const log = JSON.stringify({ eventId: series + '0000000000ac' });
+  const frame = message(0x94, [1], [Buffer.from([0xc0])], log);
+  assert.equal(readForwardMessage(frame, marker).sequence, 172);
+  assert.equal(readForwardMessage(frame, marker).requestsAck, false);
+  const withAck = message(0x94, [1], [Buffer.from([0x81]), string('chunk'), string('fixture')], log);
+  assert.equal(readForwardMessage(withAck, marker).requestsAck, true);
+  assert.equal(readForwardMessage(frame.subarray(0, -1), marker), null);
+  assert.equal(readForwardMessage(frame).sequence, undefined);
+  assert.equal(readForwardMessage(message(0x93, [1]), marker).sequence, undefined);
 });
 
 test('recognizes every partial TCP read and consumes only one frame from a coalesced read', () => {

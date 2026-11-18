@@ -129,6 +129,14 @@ if (import.meta.main) {
     case 'file-ids':
       result = observedFileIds(args[0]);
       break;
+    case 'growth-chunk-sequences': {
+      const [series] = args;
+      assert.match(series, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-$/u);
+      const ids = new RegExp(series + '([0-9a-f]{12})', 'gu');
+      result = chunkFiles().flatMap((path) => existing(path, (file) =>
+        Array.from(readFileSync(file).toString('latin1').matchAll(ids), (match) => Number.parseInt(match[1], 16))) ?? []);
+      break;
+    }
     case 'pending':
       assert.ok(args.length > 0 && args.every((id) => /^[a-f0-9-]{36}$/u.test(id)));
       result = args.every((id) => chunkFiles().some((path) => existing(path, (file) => readFileSync(file).includes(id))));

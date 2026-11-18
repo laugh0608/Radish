@@ -314,12 +314,17 @@ export async function verifyDiskQueue(context) {
 
   if (report.candidate) {
     setPhase('grow a pending chunk on a full shared volume');
+    const { growthSeries } = context;
     const beforeGrowth = storageFailures();
     const beforeBranches = counters();
     const beforeForward = forwardStats();
+    const ingestWarnings = () => (logs('collector').stderr.match(/could not ingest Forward message/gu) ?? []).length;
+    const warningsBeforeGrowth = growthSeries ? ingestWarnings() : 0;
     const role = 'pending-buffer-growth';
-    const first = make(diskWorkload.filePressure);
-    const next = make(diskWorkload.bufferGrowthPressure);
+    const events = make(diskWorkload.filePressure + diskWorkload.bufferGrowthPressure).map((event, index) =>
+      growthSeries ? { ...event, eventId: growthSeries + (index + 1).toString(16).padStart(12, '0') } : event);
+    const first = events.slice(0, diskWorkload.filePressure);
+    const next = events.slice(diskWorkload.filePressure);
     const release = launchStagedFixture(role, first.map(serializeRuntimeLogEvent), next.map(serializeRuntimeLogEvent));
     const growth = fixtureGroup(role, [...first, ...next]);
     try {
@@ -328,9 +333,30 @@ export async function verifyDiskQueue(context) {
       assert.equal(full.failure.code, 'ENOSPC');
       assert.ok(full.atFailure.chunksWithData > 0);
       report.diskQueue.bufferGrowth = { full };
+      if (growthSeries) report.diskQueue.bufferGrowth.sequenceTrace = {
+        chunkBeforeSecondWave: control('growth-chunk-sequences', growthSeries),
+      };
       release();
       await until(() => storageFailures().chunk_write > beforeGrowth.chunk_write, 'existing chunk growth failed at storage', 15000);
       report.diskQueue.bufferGrowth.framesAtFault = frames(growth);
+      if (growthSeries) {
+        const trace = report.diskQueue.bufferGrowth.sequenceTrace;
+        trace.chunkAtFault = control('growth-chunk-sequences', growthSeries);
+        const apiTag = 'radish.api.' + docker('inspect', '-f', '{{.Id}}', name('api'));
+        trace.connectionsAtFault = forwardStats().growthConnections.flatMap((conn, index) => {
+          const baseline = beforeForward.growthConnections[index];
+          const frames = conn.frames - (baseline?.frames ?? 0);
+          const peerEvents = conn.peerEvents.slice(baseline?.peerEvents.length ?? 0);
+          if (frames === 0 && peerEvents.length === 0) return [];
+          const peer = conn.tag === apiTag ? 'api' : conn.tag === 'radish.api.' + growth.id ? role : conn.tag;
+          return [{ peer, frames, peerEvents }];
+        });
+        const atFault = storageFailures();
+        trace.storageFailuresAtFault = {
+          chunk_create: atFault.chunk_create - beforeGrowth.chunk_create,
+          chunk_write: atFault.chunk_write - beforeGrowth.chunk_write,
+        };
+      }
     } finally { control('release'); }
     const drained = await waitDrain();
     const outcome = ledger(growth);
@@ -339,6 +365,28 @@ export async function verifyDiskQueue(context) {
     const metrics = delta(beforeBranches, counters());
     const forwardFrames = frames(growth);
     const afterForward = forwardStats();
+    if (growthSeries) {
+      const ordinals = new Map(growth.expected.map((id, i) => [id, i + 1]));
+      const ordinal = (id) => {
+        assert.ok(ordinals.has(id), 'Unexpected growth fixture ID');
+        return ordinals.get(id);
+      };
+      const collector = logs('collector').stderr;
+      const producer = logs(role).stdout.trimEnd().split('\n').map((line) => ordinal(JSON.parse(line).eventId));
+      const growthTag = 'radish.api.' + growth.id;
+      const connections = afterForward.growthConnections.filter((connection) => connection.tag === growthTag);
+      const otherForwardFrames = Object.entries(afterForward.tags).reduce((total, [tag, stats]) =>
+        tag === growthTag ? total : total + stats.frames - (beforeForward.tags[tag]?.frames ?? 0), 0);
+      const beforeWrite = Array.from(collector.matchAll(/^probe-growth-append=(\d+)$/gmu), (match) => Number(match[1]));
+      Object.assign(report.diskQueue.bufferGrowth.sequenceTrace, {
+        producer, connections, beforeWrite, otherForwardFrames,
+        file: observedFile(growth).ids.map(ordinal), sqlite: httpIds(growth).map(ordinal),
+        ingestWarnings: ingestWarnings() - warningsBeforeGrowth,
+      });
+      assert.deepEqual(producer, events.map((_, index) => index + 1), 'Docker log cache must confirm the producer sequence');
+      assert.equal(connections.reduce((total, connection) => total + connection.sequences.length, 0), forwardFrames);
+      assert.ok(beforeWrite.length >= first.length, 'Collector trace must cover the staged first wave');
+    }
     report.diskQueue.incompleteForwardConnections = afterForward.incompleteConnections;
     Object.assign(report.diskQueue.bufferGrowth, {
       outcome, forwardFrames, storageFailures: failures, metrics, drained,
