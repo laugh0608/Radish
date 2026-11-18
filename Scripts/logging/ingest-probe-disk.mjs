@@ -125,10 +125,13 @@ export async function verifyDiskQueue(context) {
       chunkFailures: lines.filter((line) => /could not create chunk file|no available chunk|error writing data|could not (?:ingest|append) log/iu.test(line)).length,
     };
   };
-  const frames = (group) => {
+  const forwardStats = () => {
     const response = fetchInProbe('http://relay:8080/probe-forward-stats');
     assert.equal(response.status, 200);
-    const observed = JSON.parse(response.body).tags['radish.api.' + group.id]?.frames ?? 0;
+    return JSON.parse(response.body);
+  };
+  const frames = (group) => {
+    const observed = forwardStats().tags['radish.api.' + group.id]?.frames ?? 0;
     assert.ok(observed <= group.expected.length, 'Unexpected Forward replay for a fixture producer');
     return observed;
   };
@@ -255,38 +258,6 @@ export async function verifyDiskQueue(context) {
   }
   report.checks.bufferEnospcAndRecovery = true;
 
-  if (report.candidate) {
-    setPhase('grow a pending chunk on a full shared volume');
-    const beforeGrowth = storageFailures();
-    const beforeBranches = counters();
-    const role = 'pending-buffer-growth';
-    const first = make(diskWorkload.filePressure);
-    const next = make(diskWorkload.bufferGrowthPressure);
-    const release = launchStagedFixture(role, first.map(serializeRuntimeLogEvent), next.map(serializeRuntimeLogEvent));
-    const growth = fixtureGroup(role, [...first, ...next]);
-    try {
-      await until(() => control('pending', first[0].eventId, first.at(-1).eventId), 'existing fixture chunk is awaiting flush', 3500);
-      const full = control('fill');
-      assert.equal(full.failure.code, 'ENOSPC');
-      assert.ok(full.atFailure.chunksWithData > 0);
-      report.diskQueue.bufferGrowth = { full };
-      release();
-      await until(() => frames(growth) === growth.expected.length &&
-        storageFailures().chunk_write > beforeGrowth.chunk_write, 'existing chunk growth failed at storage', 15000);
-    } finally { control('release'); }
-    const drained = await waitDrain();
-    const outcome = ledger(growth);
-    const current = storageFailures();
-    const failures = Object.fromEntries(Object.entries(current).map(([stage, count]) => [stage, count - beforeGrowth[stage]]));
-    const metrics = delta(beforeBranches, counters());
-    Object.assign(report.diskQueue.bufferGrowth, { outcome, storageFailures: failures, metrics, drained });
-    assert.equal(outcome.missingBoth, failures.chunk_write + failures.chunk_create);
-    assert.equal(outcome.fileOnlyMissing + outcome.httpOnlyMissing + outcome.duplicateFileLines, 0);
-    assert.equal(metrics.runtime_file.dropped + metrics.runtime_http.dropped, 0);
-    assert.equal(outcome.badFileLines + outcome.incompleteFileTails, 0);
-    report.checks.bufferGrowthEnospc = true;
-  }
-
   setPhase('overflow the HTTP retry queue while file output is healthy');
   const beforeQueue = counters();
   const queue = [];
@@ -336,10 +307,53 @@ export async function verifyDiskQueue(context) {
     outcomes, fileMissing, httpMissing, metrics: queueDelta, httpMetricGap: httpMissing - queueDelta.runtime_http.dropped,
     drained,
   });
-  const observer = fetchInProbe('http://relay:8080/probe-forward-stats');
-  assert.equal(observer.status, 200);
-  const { unexpected, incompleteConnections } = JSON.parse(observer.body);
+  const { unexpected, incompleteConnections } = forwardStats();
   assert.equal(unexpected, 0);
   report.diskQueue.incompleteForwardConnections = incompleteConnections;
   report.checks.httpQueueIsolationAndRecovery = true;
+
+  if (report.candidate) {
+    setPhase('grow a pending chunk on a full shared volume');
+    const beforeGrowth = storageFailures();
+    const beforeBranches = counters();
+    const beforeForward = forwardStats();
+    const role = 'pending-buffer-growth';
+    const first = make(diskWorkload.filePressure);
+    const next = make(diskWorkload.bufferGrowthPressure);
+    const release = launchStagedFixture(role, first.map(serializeRuntimeLogEvent), next.map(serializeRuntimeLogEvent));
+    const growth = fixtureGroup(role, [...first, ...next]);
+    try {
+      await until(() => control('pending', first[0].eventId, first.at(-1).eventId), 'existing fixture chunk is awaiting flush', 3500);
+      const full = control('fill');
+      assert.equal(full.failure.code, 'ENOSPC');
+      assert.ok(full.atFailure.chunksWithData > 0);
+      report.diskQueue.bufferGrowth = { full };
+      release();
+      await until(() => storageFailures().chunk_write > beforeGrowth.chunk_write, 'existing chunk growth failed at storage', 15000);
+      report.diskQueue.bufferGrowth.framesAtFault = frames(growth);
+    } finally { control('release'); }
+    const drained = await waitDrain();
+    const outcome = ledger(growth);
+    const current = storageFailures();
+    const failures = Object.fromEntries(Object.entries(current).map(([stage, count]) => [stage, count - beforeGrowth[stage]]));
+    const metrics = delta(beforeBranches, counters());
+    const forwardFrames = frames(growth);
+    const afterForward = forwardStats();
+    report.diskQueue.incompleteForwardConnections = afterForward.incompleteConnections;
+    Object.assign(report.diskQueue.bufferGrowth, {
+      outcome, forwardFrames, storageFailures: failures, metrics, drained,
+      incompleteForwardConnections: afterForward.incompleteConnections - beforeForward.incompleteConnections,
+      unexpectedFrames: afterForward.unexpected - beforeForward.unexpected,
+    });
+    report.diskQueue.bufferGrowth.recovery = await deliver('buffer-growth-recovered');
+    report.diskQueue.bufferGrowth.recoveryDrained = await waitDrain();
+    assertCleanDelivery(report.diskQueue.bufferGrowth.recovery);
+    assert.equal(afterForward.unexpected, 0);
+    assert.equal(forwardFrames, outcome.sent, 'Forward observer must see every staged fixture record');
+    assert.equal(outcome.missingBoth, failures.chunk_write + failures.chunk_create);
+    assert.equal(outcome.fileOnlyMissing + outcome.httpOnlyMissing + outcome.duplicateFileLines, 0);
+    assert.equal(metrics.runtime_file.dropped + metrics.runtime_http.dropped, 0);
+    assert.equal(outcome.badFileLines + outcome.incompleteFileTails, 0);
+    report.checks.bufferGrowthEnospc = true;
+  }
 }

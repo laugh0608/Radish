@@ -1,6 +1,6 @@
 # 日志 L1 / L2 剩余门禁与 L3-A 接收入库方案
 
-> 更新于 2026-11-17（Asia/Shanghai）。L3-A、第 8 节自有来源、第 9 节 Controller 与第 10 节已登记切片均有本地实现和回归。OrbStack / Linux arm64 的 SQLite 和 PostgreSQL 16.15 链路已通过。真实运行范围见[SQLite 记录](../records/unified-logging-l1-l3-sqlite-runtime-2026-11-17.md)和[PostgreSQL 记录](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md)，剩余门禁见下方第 2 节。
+> 更新于 2026-11-18（Asia/Shanghai）。L3-A、第 8 节自有来源、第 9 节 Controller 与第 10 节已登记切片均有本地实现和回归。OrbStack / Linux arm64 的 SQLite 和 PostgreSQL 16.15 链路已通过。真实运行范围见[SQLite 记录](../records/unified-logging-l1-l3-sqlite-runtime-2026-11-17.md)和[PostgreSQL 记录](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md)，剩余门禁见下方第 2 节。
 >
 > 本页属于[统一日志专题](./unified-logging-governance-design.md)，承接[事件契约](./unified-logging-contract.md)。已完成来源仍以事件契约为准；本页维护剩余门禁及下一批实施边界，不另建主线。
 
@@ -34,7 +34,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 | --- | --- | --- | --- |
 | 传输正式上界 | Docker Message mode 候选上界完成[推导](#l1-l3-transport-budget)及 [OrbStack 实测](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。合法流量全部交付，实际请求在候选预算内，接收端门限和进程内存已取证 | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
 | 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
-| 磁盘与支路隔离 | [原版镜像联验](#l1-l3-disk-queue-runtime)实测共享卷 ENOSPC、两支路缺口与恢复。HTTP 队列溢出的 7,200 条缺口与计数一致。[候选补丁](#l1-l3-disk-queue-followup)已通过离线回归 | 在候选镜像核对文件回滚、截断尾、权限错误、输入失败计数与有界应急通道，分别对账文件与入库缺口 | L1 接续 |
+| 磁盘与支路隔离 | [原版镜像联验](#l1-l3-disk-queue-runtime)实测共享卷 ENOSPC、两支路缺口与恢复。[候选联验](#l1-l3-disk-queue-followup)已核对文件回滚重投、拒写、满卷创建 chunk、轮转和 HTTP 队列丢弃 | 已有 chunk 扩容失败时核对生产者、Forward 及采集器之间的缺口，区分可确认丢失与未知区间 | L1 接续 |
 | 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
 
@@ -46,7 +46,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 1. 对照第 10 节调用清单、事件契约和各批回归，列出尚会阻断真实联验的已登记来源。随后确认单一隔离环境的架构、镜像 digest、Docker daemon 到 collector 的路径、服务与流标识、独立内网端口、专用凭据、测试存储、故障注入和清理。此清单用于确认本次运行范围。
 2. 先以三个边界对账。API 5xx 的响应反馈 ID 与文件及真实 API 接收后 SQLite 的 canonical JSON 一致，旧事件缺省兼容，提交后响应丢失重投只保留一个事件。用受信的服务与流元数据识别 DbMigrate stdout 报告，使其在 JSON parser 前退出事件链。对独立启动 / 入库应急 stderr 验证有界证据和失败通道隔离，入库应急避开同一失败链。
-3. SQLite 和 PostgreSQL 16.15 的提交、重投与写入故障恢复，以及 Docker Message mode 候选传输上界与坏批隔离均已通过。原版镜像的磁盘故障实测已用于实现候选补丁，接续按[第 2.4 节](#l1-l3-disk-queue-followup)验证。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
+3. SQLite 和 PostgreSQL 16.15 的提交、重投与写入故障恢复，以及 Docker Message mode 候选传输上界与坏批隔离均已通过。候选补丁已取得磁盘故障实测，输入扩容的剩余缺口见[第 2.4 节](#l1-l3-disk-queue-followup)。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
 
 #### OrbStack / Linux arm64 隔离联验入口
 
@@ -145,7 +145,7 @@ docker --context orbstack volume ls --filter "label=radish.logging.probe=$probe_
 
 <a id="l1-l3-disk-queue-followup"></a>
 
-### 2.4 文件写入与入队故障收口（候选待联验）
+### 2.4 文件写入与入队故障收口（候选扩容故障待收口）
 
 #### 固定版根因
 
@@ -189,7 +189,9 @@ node Scripts/logging/collector-ingest-probe.mjs --plan --database=sqlite --suite
 node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=disk-queue --collector-image="$probe_image_id"
 ```
 
-联验按 §2.3 复用 SQLite、24 MiB 共享卷、回环动态 Forward 端口和两条 4M 队列。用 UID 10001 的 collector 测试文件拒写。输入侧先在满卷上创建 chunk，再用同一个 Docker tag 的两波输入测试已有 chunk 的扩容失败。文件轮转阈值设为 4M，以便在五波队列用例中穿过轮转并对账。运行保留原版和候选的独立 JSON 报告，按 §2.3 回收容器、网络、卷和临时数据库。构建目录 `$probe_root` 可按本次精确路径移除，候选镜像及本机构建缓存用于复验。OrbStack 构建和故障联验仍待执行，完成后接续留存与备份恢复。
+联验按 §2.3 复用 SQLite、24 MiB 共享卷、回环动态 Forward 端口和两条 4M 队列。用 UID 10001 的 collector 测试文件拒写。输入侧先在满卷上创建 chunk，再用同一个 Docker tag 的两波输入测试已有 chunk 的扩容失败。文件轮转阈值设为 4M，以便在五波队列用例中穿过轮转并对账。运行保留原版和候选的独立 JSON 报告，按 §2.3 回收容器、网络、卷和临时数据库。构建目录 `$probe_root` 可按本次精确路径移除，候选镜像及本机构建缓存用于复验。
+
+2026-11-18 候选构建成功。文件与 HTTP 队列用例均能对账，满卷创建 chunk 的共同缺口也只在输入侧记一次。已有 chunk 扩容失败时，生产者输出数、Forward 中转观察到的帧数、最终交付数和输入失败计数仍有差额。接续先定位这些观察点之间的未知区间，再复核候选传输与内存，随后进入留存与备份恢复。[候选实测与剩余问题](../records/unified-logging-l1-l3-collector-candidate-2026-11-18.md)
 
 ## 3. L2 剩余来源与退出条件
 

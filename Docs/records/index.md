@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-18 统一日志采集器候选 SQLite 联验](./unified-logging-l1-l3-collector-candidate-2026-11-18.md) · 文件回滚与拒写、轮转、HTTP 队列及输入扩容故障的两路对账
+
 - [2026-11-17 日终文档回顾](./day-end-doc-review-2026-11-17.md) · 五个开发提交、原版采集器运行证据与候选联验顺位
 
 - [2026-11-17 统一日志磁盘与队列故障联验](./unified-logging-l1-l3-disk-queue-runtime-2026-11-17.md) · 真实 ENOSPC、共享卷争用、文件与入库缺口及恢复
