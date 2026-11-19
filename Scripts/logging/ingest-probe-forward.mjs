@@ -70,13 +70,23 @@ export function readForwardMessage(buffer, growthIdMarker) {
   }
 }
 
-export function startForwardObserver({ listenPort = 24224, collectorPort = 24224, collectorHost = 'collector', growthSeries } = {}) {
+export function startForwardObserver({ listenPort = 24224, collectorPort = 24224, collectorHost = 'collector', growthSeries, cutoffControl = false } = {}) {
   const tags = new Map();
+  const clients = new Set();
+  let accepting = true;
+  let closedAtCutoff = 0;
+  let refusedAfterCutoff = 0;
   const growthIdMarker = growthSeries && Buffer.from('"eventId":"' + growthSeries);
   const growthConnections = [];
   let unexpected = 0;
   let incompleteConnections = 0;
   const server = createServer({ allowHalfOpen: true }, (client) => {
+    if (!accepting) {
+      refusedAfterCutoff++;
+      client.destroy();
+      return;
+    }
+    if (cutoffControl) clients.add(client);
     const upstream = createConnection({ port: collectorPort, host: collectorHost, allowHalfOpen: true });
     let pending = Buffer.alloc(0);
     let invalid = false;
@@ -110,6 +120,7 @@ export function startForwardObserver({ listenPort = 24224, collectorPort = 24224
       }
     });
     client.on('close', () => {
+      clients.delete(client);
       if (trace) {
         trace.peerEvents.push('producer-close');
         trace.partialBytesAtClose = pending.length;
@@ -130,6 +141,18 @@ export function startForwardObserver({ listenPort = 24224, collectorPort = 24224
     client.pipe(upstream).pipe(client);
   });
   server.listen(listenPort, '0.0.0.0');
-  return { server, snapshot: () => ({ tags: Object.fromEntries(tags), unexpected, incompleteConnections,
-    ...(growthSeries ? { growthConnections } : {}) }) };
+  return {
+    server,
+    setAccepting(value) {
+      if (!cutoffControl) throw new Error('Forward cutoff control is disabled');
+      accepting = value;
+      if (!accepting) {
+        closedAtCutoff += clients.size;
+        for (const client of clients) client.destroy();
+      }
+    },
+    snapshot: () => ({ tags: Object.fromEntries(tags), unexpected, incompleteConnections,
+      ...(cutoffControl ? { accepting, closedAtCutoff, refusedAfterCutoff } : {}),
+      ...(growthSeries ? { growthConnections } : {}) }),
+  };
 }

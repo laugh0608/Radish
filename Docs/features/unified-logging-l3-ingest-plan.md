@@ -35,8 +35,8 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 | 传输正式上界 | Docker Message mode 上界已[推导](#l1-l3-transport-budget)，[原版](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)和[固定候选](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)均已实测合法流量、请求大小、接收端门限与进程峰值 RSS | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
 | 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
 | 磁盘与支路隔离 | [原版联验](#l1-l3-disk-queue-runtime)与[候选联验](#l1-l3-disk-queue-followup)已核对 ENOSPC、文件回滚、拒写、轮转、HTTP 队列丢弃及恢复。[满卷扩容两轮复验](../records/unified-logging-l1-forward-growth-acceptance-2026-11-18.md)已区分实例失败与未知尾段，并核实两路 ID 和排空 | 本机固定候选的磁盘用例已通过。输入模式、worker 或存储边界变化时复核对应结论 | L1 接续 |
-| 容量与恢复 | SQLite / PostgreSQL [停写备份恢复](../records/unified-logging-l3-retention-recovery-2026-11-19.md)已核对快照和 503 重放。[双挂载联验](../records/unified-logging-l1-l3-storage-recovery-2026-11-19.md)确认首次 flush 前强杀的未最终写定 CRC，验证优雅停写及 JSONL 重放对账 | 在目标部署冻结停写、可备份和坏块处置边界，确认如何处理首次 flush 前崩溃窗口，计入单片超出量、索引及缓冲开销；真实断电另验 | L1 / L3-B |
-| 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
+| 容量与恢复 | SQLite / PostgreSQL [停写备份恢复](../records/unified-logging-l3-retention-recovery-2026-11-19.md)已核对快照和 503 重放。[独立 Compose 项目](../records/unified-logging-l1-l3-compose-recovery-2026-11-19.md)已验证维护排空、503 快照及默认级别坏块处置 | 目标部署复核停写与快照顺序，并核定实际容量，计入单片超出量、索引及缓冲开销。真实断电另验 | L1 / L3-B |
+| 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 [独立 Compose 项目](#l1-l3-compose-preflight)已核对七类真实来源、镜像 ID、文件系统和 daemon 回环路径 | 在实际部署复核对应字段、原生日志配置和诊断入口 | L3-B 接入前 |
 
 依据：[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)、[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。已有通过项不机械重做；只有配置 / 策略变化或组合故障新增时补回归。目标平台未确定前，不把本机 arm64 digest 当作多平台放行。
 
@@ -259,6 +259,40 @@ node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=
 - **停写边界。** 先停止新输入并登记截止点，保留接收端以排空。健康窗口需同时核实活跃队列与非空缓冲为空。503 窗口可保留经校验的待投递块，采集器停写后才生成 Log 一致性快照、JSONL、缓冲及配置清单。不可读块单独保全并标记影响范围。恢复时校验清单，沿用可识别的输入和输出身份，验证重投与新事件。
 
 实测两种挂载在首次 flush 前强杀后均保留未最终写定的 CRC，重启拒读并各缺 1 个已知合成 ID。两种优雅停写均完成两路交付。503 后重放只在已识别窗口产生同内容 JSONL 重复，按键对账成功。[实测与保全证据](../records/unified-logging-l1-l3-storage-recovery-2026-11-19.md)
+
+**项目所有者已确认普通运行日志接受首次同步前的崩溃丢失。** 已知缺口用两路交付和可归属的 ID 记录，生产者及 in-flight 尾段缺少依据时数量为未知。联验使用的 flush 间隔不能用作实际部署的损失上限。独立审计和业务流水仍沿各自持久化契约。
+
+<a id="l1-l3-compose-preflight"></a>
+
+### 2.7 独立 Compose 项目接入与维护接收
+
+项目所有者选择本机 OrbStack / Linux arm64 的独立 Compose 项目。五个 Radish 容器以当前源码及缓存依赖打包，并冻结实际本地镜像 ID。collector 5.1.2、PostgreSQL 16.15 与 Redis 7.4.12 固定到下列 arm64 镜像。
+
+| 服务 / 依赖 | 隔离项目镜像或固定输入 |
+| --- | --- |
+| log-collector | 本地 `sha256:c548922a71a15b99503d43b57df28eedf8fcf263b18122f0d27fa6e218b6218c` |
+| postgres | `postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690` |
+| redis | `docker.io/library/redis@sha256:dbd05155efb852010d576fc1f09b6ade858944f84d333bb7a2efb1c1c8074a22` |
+| api / auth / gateway / dbmigrate | 当前源码与已缓存的 ASP.NET Core 10.0.14 arm64 基础镜像 |
+| frontend / 联验中转 | 当前源码的前端产物、现有中转脚本与已缓存的 Node.js 24.16.0 arm64 镜像 |
+
+使用本地缓存重建工作区产物后，通过以下入口预览或运行。运行入口先校验独立 Compose，随后给本轮镜像和容器分配唯一项目标识，生成临时凭据。先启动 collector 与中转，再启动 PostgreSQL、Redis，执行一次 DbMigrate apply，随后启动 API、Auth、Frontend 和 Gateway。七类服务使用各自的 `radish.<service>.{{.FullID}}`，通过 daemon 回环 `127.0.0.1:32424` 进入 Forward。其他监听留在项目网络。collector 使用默认 `error` 级别，诊断单独使用有界 Docker `local` 日志。
+
+```bash
+dotnet build Radish.slnx --no-restore -c Debug
+npm run build --workspace=radish.client
+npm run build --workspace=radish.console
+node Scripts/logging/collector-compose-probe.mjs --plan
+node Scripts/logging/collector-compose-probe.mjs --run
+```
+
+- 普通 API 与 Hangfire 同进程。健康排空前停止业务入口与正常 API，用同镜像执行 `dotnet Radish.Api.dll --runtime-log-ingest-only`。入口须同时显式启用 `RadishLogging:Ingest:Enabled`，仅绑定配置的内网接收端口，沿用凭据、批量入库和 Log 库配置，跳过普通 API 的业务和后台作业启动。中转截止时关闭既有 Forward 会话并拒绝后续连接，HTTP 路径继续可用。以两路确认记录可对账的部分，daemon 缓冲与网络在途尾段数量另记为未知。
+- 健康轮核对两路交付、活跃 chunk 与非空缓冲归零。503 轮以合成事件制造单次入库故障，确认 JSONL 已写且 Log 未提交；停写后保全有效缓冲和一致性 Log 备份，恢复到新逻辑库与独立目录，按请求摘要和事件键核对重放、去重及新事件。
+- 坏块轮使用已保全的合成副本。在默认级别独立读到重启拒读摘要、保全坏块及校验和、登记两路已知缺口和未知范围，后续新事件仍须两路交付。退出按本次 Compose 项目标签清理，保留脱敏 JSON 报告及合成证据。
+
+本机独立 Compose 实测通过。健康排空后两路各 195 个唯一键，活跃及非空缓冲均归零。503 快照恢复后按原请求摘要重投，待投递键在 JSONL 有 2 份同内容，Log 库为 1 条。默认 `error` 级别保留坏块拒读摘要，块文件取证确认 CRC 不符，后续新事件两路交付。[镜像、断言与证据](../records/unified-logging-l1-l3-compose-recovery-2026-11-19.md)
+
+实际部署待核项包括宿主架构与 daemon 路径、七类服务的运行镜像与 collector digest、数据库及采集的挂载与容量、逐容器日志配置、原生日志安全参数、停写备份及恢复顺序。保留生产者在途尾段数量未知的记录，并单独复核真实断电边界。
 
 ## 3. L2 剩余来源与退出条件
 

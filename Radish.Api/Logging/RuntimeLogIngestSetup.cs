@@ -1,8 +1,10 @@
+using Asp.Versioning;
 using Microsoft.Net.Http.Headers;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
+using Radish.Extension.SqlSugarExtension;
 using Radish.IRepository;
 using Radish.IService;
 using Radish.Model;
@@ -18,21 +20,41 @@ public static class RuntimeLogIngestSetup
     public const string CredentialHeader = "X-Radish-Collector-Key";
     public const string IngestPath = "/internal/logs/ingest";
     public const string PruneCommand = "--prune-runtime-logs";
+    public const string ReceiveOnlyCommand = "--runtime-log-ingest-only";
 
-    public static void AddRuntimeLogIngest(this WebApplicationBuilder builder)
+    public static async Task RunRuntimeLogReceiverAsync(this WebApplicationBuilder builder)
+    {
+        builder.AddRuntimeLogIngest(receiveOnly: true);
+        builder.Services.AddSqlSugarSetup();
+        builder.Services.AddAuthorization();
+        builder.Services.AddApiVersioning().AddMvc();
+        builder.Services.AddControllers();
+        builder.Logging.ClearProviders();
+        await using var app = builder.Build();
+        app.UseRuntimeLogIngest(app.Services.GetRequiredService<RuntimeLogIngestOptions>());
+        await app.RunAsync();
+    }
+
+    public static void AddRuntimeLogIngest(this WebApplicationBuilder builder, bool receiveOnly = false)
     {
         var options = builder.Configuration.GetSection("RadishLogging:Ingest").Get<RuntimeLogIngestOptions>() ?? new();
         options.Mode = builder.Configuration["RadishLogging:Mode"] ?? "Production";
         options.Validate();
+        if (receiveOnly && !options.Enabled)
+            throw new InvalidOperationException("Enable runtime log ingestion explicitly before starting the maintenance receiver.");
         if (options.Enabled && options.Mode == "Development" && !builder.Environment.IsDevelopment())
             throw new InvalidOperationException("Development ingestion requires a Development host.");
         if (options.Enabled)
         {
-            ValidateListeners(builder.Configuration, options.Port);
+            if (!receiveOnly)
+                ValidateListeners(builder.Configuration, options.Port);
             builder.WebHost.ConfigureKestrel(server =>
             {
-                // 显式公共 endpoints 与专用端口共存；不让新增 Listen 静默覆盖原 URL 绑定。
-                server.Configure(builder.Configuration.GetSection("Kestrel"), reloadOnChange: false);
+                // 覆盖默认 Kestrel 配置加载器，维护接收器只绑定显式内部端口。
+                IConfiguration listenerConfiguration = receiveOnly
+                    ? new ConfigurationBuilder().Build()
+                    : builder.Configuration.GetSection("Kestrel");
+                server.Configure(listenerConfiguration, reloadOnChange: false);
                 server.ListenAnyIP(options.Port);
             });
         }

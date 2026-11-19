@@ -8,8 +8,9 @@ const reportPath = '/probe/relay.jsonl';
 const outagePath = '/probe/outage-event-id';
 const faultPath = '/probe/transport-fault.json';
 const sentinel = 'RADISH_TRANSPORT_PROBE_FIXTURE_46e8';
+const cutoffControl = process.env.RADISH_COMPOSE_PROBE === '1';
 const forward = process.env.RADISH_TRANSPORT_PROBE === '1'
-  ? startForwardObserver({ growthSeries: process.env.RADISH_PROBE_GROWTH_SERIES }) : null;
+  ? startForwardObserver({ growthSeries: process.env.RADISH_PROBE_GROWTH_SERIES, cutoffControl }) : null;
 const record = (entry) => appendFileSync(reportPath, JSON.stringify(entry) + '\n');
 
 function measure(body) {
@@ -32,6 +33,11 @@ function measure(body) {
 }
 
 createServer(async (request, reply) => {
+  if (cutoffControl && forward && request.method === 'POST' && /^\/probe-forward\/(open|cutoff)$/u.test(request.url)) {
+    forward.setAccepting(request.url.endsWith('/open'));
+    reply.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(forward.snapshot()));
+    return;
+  }
   if (forward && request.method === 'GET' && request.url === '/probe-forward-stats') {
     reply.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(forward.snapshot()));
     return;

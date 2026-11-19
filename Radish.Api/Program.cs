@@ -78,9 +78,11 @@ return await RuntimeProcess.RunAsync("api", async () =>
     }
 
     var pruneRuntimeLogs = args.Contains(RuntimeLogIngestSetup.PruneCommand, StringComparer.Ordinal);
-    if (pruneRuntimeLogs && args.Length != 1)
-        throw new ArgumentException("Runtime log retention accepts no additional command arguments.");
-    var builder = WebApplication.CreateBuilder(pruneRuntimeLogs ? [] : args);
+    var receiveRuntimeLogsOnly = args.Contains(RuntimeLogIngestSetup.ReceiveOnlyCommand, StringComparer.Ordinal);
+    var runtimeLogMaintenance = pruneRuntimeLogs || receiveRuntimeLogsOnly;
+    if (runtimeLogMaintenance && args.Length != 1)
+        throw new ArgumentException("Runtime log maintenance accepts no additional command arguments.");
+    var builder = WebApplication.CreateBuilder(runtimeLogMaintenance ? [] : args);
     builder.Services.AddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<BusinessCalendar>();
     // -------------- 容器构建阶段 ---------------
@@ -166,6 +168,11 @@ return await RuntimeProcess.RunAsync("api", async () =>
     // 2. 绑定 InternalApp 扩展中的环境变量
     builder.ConfigureApplication();
     builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
+    if (receiveRuntimeLogsOnly)
+    {
+        await builder.RunRuntimeLogReceiverAsync();
+        return;
+    }
     if (pruneRuntimeLogs)
     {
         if (!builder.Configuration.GetValue<bool>("RadishLogging:Ingest:RetentionEnabled"))

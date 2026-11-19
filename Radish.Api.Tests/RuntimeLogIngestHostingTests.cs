@@ -104,6 +104,23 @@ public sealed class RuntimeLogIngestHostingTests
     }
 
     [Fact]
+    public void MaintenanceReceiver_ShouldRequireExplicitIngestAndIgnorePublicListenerConfiguration()
+    {
+        var builder = WebApplication.CreateBuilder(new WebApplicationOptions { EnvironmentName = "Production" });
+        builder.Configuration["RadishLogging:Ingest:Enabled"] = "false";
+        Assert.Throws<InvalidOperationException>(() => builder.AddRuntimeLogIngest(receiveOnly: true));
+
+        builder.Configuration["RadishLogging:Ingest:Enabled"] = "true";
+        builder.Configuration["RadishLogging:Ingest:Port"] = "15199";
+        builder.Configuration["RadishLogging:Ingest:Credential"] = Options().Credential;
+        builder.Configuration["RadishLogging:Ingest:DeploymentId"] = "local";
+        builder.Configuration["RadishLogging:Ingest:Services:0"] = "api";
+        builder.Configuration["Kestrel:Endpoints:Public:Url"] = "invalid";
+        Assert.Throws<InvalidOperationException>(() => builder.AddRuntimeLogIngest());
+        builder.AddRuntimeLogIngest(receiveOnly: true);
+    }
+
+    [Fact]
     public void IngestionScope_ShouldSuppressMainChainAndRestoreOutsideEvents()
     {
         var sink = new CaptureSink();
