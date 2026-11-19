@@ -11,6 +11,8 @@ import { diskCapacityBytes, diskMount } from './ingest-probe-disk-control.mjs';
 import { diskCollectorConfig, diskDeployment, diskRelease, diskWorkload, verifyDiskQueue } from './ingest-probe-disk.mjs';
 import { createPostgresProbe, postgresImage } from './ingest-probe-postgres.mjs';
 import { verifyRetentionRecovery } from './ingest-probe-retention.mjs';
+import { prepareRecoveryMounts, recoveryFlushSeconds, recoveryMounts, recoveryScenarios,
+  verifyStorageRecovery } from './ingest-probe-storage-recovery.mjs';
 import { transportDeployment, transportRelease, transportWorkload, verifyTransport } from './ingest-probe-transport.mjs';
 import { collectorImage as upstreamCollectorImage, readLines, until } from './probe-runtime.mjs';
 
@@ -23,21 +25,24 @@ const traceGrowth = unexpected.length === 1 && unexpected[0] === '--trace-growth
 assert.ok(unexpected.length === 0 || traceGrowth);
 assert.match(databaseOption, /^--database=(sqlite|postgresql)$/u);
 const database = databaseOption.split('=')[1];
-assert.match(suite, /^--suite=(ingest|transport|disk-queue|retention-recovery)$/u);
+assert.match(suite, /^--suite=(ingest|transport|disk-queue|retention-recovery|storage-recovery)$/u);
 const suiteName = suite.split('=')[1];
 const transport = suiteName === 'transport';
 const disk = suiteName === 'disk-queue';
 const retention = suiteName === 'retention-recovery';
+const recovery = suiteName === 'storage-recovery';
 const candidate = candidateOption !== undefined;
 assert.ok(!retention || candidate, 'Retention recovery requires a local candidate image');
+assert.ok(!recovery || (candidate && database === 'sqlite'), 'Storage recovery requires disposable SQLite and a local candidate image');
 assert.ok(!traceGrowth || (disk && candidate), 'Growth tracing requires the disk-queue suite and a candidate image');
 const growthSeries = traceGrowth ? randomUUID().slice(0, 24) : null;
 if (candidate) {
-  assert.ok(disk || transport || retention, 'A local candidate image requires the transport, disk-queue or retention-recovery suite');
+  assert.ok(disk || transport || retention || recovery,
+    'A local candidate image requires the transport, disk-queue, retention-recovery or storage-recovery suite');
   assert.match(candidateOption, /^--collector-image=sha256:[a-f0-9]{64}$/u);
 }
 const collectorImage = candidate ? candidateOption.split('=')[1] : upstreamCollectorImage;
-const observeForward = transport || disk || retention;
+const observeForward = transport || disk || retention || recovery;
 assert.ok(!(transport || disk) || database === 'sqlite', 'The transport and disk-queue suites use disposable SQLite');
 const profile = observeForward ? suiteName : database;
 const deploymentId = disk ? diskDeployment : transport ? transportDeployment : 'logging-' + database + '-probe';
@@ -63,6 +68,10 @@ function collectorConfig() {
   }
   if (disk) base = diskCollectorConfig(base, candidate);
   if (retention) base = enableCheckedJsonl(base.replace('Flush 1\n', 'Flush 10\n'));
+  if (recovery) base = enableCheckedJsonl(base
+    .replace('Flush 1\n', 'Flush ' + recoveryFlushSeconds + '\n')
+    .replace('Log_Level error\n', 'Log_Level debug\n')
+    .replace('storage.checksum on\n', 'storage.checksum on\n    storage.delete_irrecoverable_chunks off\n'));
   if (traceGrowth) {
     base = base.replace('Alias guarded_input\n', 'Alias guarded_input\n    Log_Level warn\n')
       .replace('[OUTPUT]\n', '[FILTER]\n    Name lua\n    Match *\n    script /probe/streams.lua\n    call trace_growth_append\n[OUTPUT]\n');
@@ -99,6 +108,13 @@ if (action === '--plan') {
       storage: 'Separate source, backup and restore directories. Collector JSONL, filesystem chunks and configuration are archived.',
       cleanup: 'Remove the labelled containers and network, temporary backup, restore and credentials. Keep the JSON report.',
     } : {}),
+    ...(recovery ? {
+      mounts: recoveryMounts.map((type) => ({ type, root: '/probe/buffer', inspector: 'read-only',
+        ...(type === 'volume' ? { driver: 'local', options: {} } : {}) })),
+      scenarios: recoveryScenarios,
+      files: '/probe/files is a separate bind mount for each scenario',
+      cleanup: 'Remove labelled containers, network, volumes and the temporary directory. Keep the JSON report and synthetic rejected chunks.',
+    } : {}),
   }, null, 2) + '\n');
   process.exit(0);
 }
@@ -122,6 +138,7 @@ const report = { prefix, database, checks: {}, images, candidate, cleanup: false
 const key = randomBytes(32).toString('hex');
 const name = (role) => prefix + '-' + role;
 const diskVolume = disk ? name('shared-disk') : null;
+const ownedVolumes = diskVolume ? [diskVolume] : [];
 const diskMountArgs = diskVolume ? ['--mount', 'type=volume,source=' + diskVolume + ',target=' + diskMount + ',volume-nocopy'] : [];
 const diskControl = (...args) => JSON.parse(docker('exec', name('relay'), 'node', '/probe/disk-control.mjs', ...args));
 const postgres = database === 'postgresql' ? createPostgresProbe(runDocker, name('postgres'), directory, root) : null;
@@ -293,10 +310,21 @@ try {
     assert.deepEqual(volume.Options, diskVolumeOptions);
   }
   const publishForward = ['-p', '127.0.0.1::24224'];
+  const recoveryCases = recovery ? prepareRecoveryMounts(directory, (role) => {
+    const volume = name(role);
+    ownedVolumes.push(volume);
+    assert.equal(docker('volume', 'create', '--driver', 'local', '--label', 'radish.logging.probe=' + prefix, volume), volume);
+    const [details] = JSON.parse(docker('volume', 'inspect', volume));
+    assert.equal(details.Labels['radish.logging.probe'], prefix);
+    assert.equal(details.Driver, 'local');
+    assert.deepEqual(details.Options ?? {}, {});
+    return volume;
+  }) : [];
   launch('relay', ...localLogs, ...(observeForward ? [...publishForward, '-e', 'RADISH_TRANSPORT_PROBE=1'] : []),
     ...(traceGrowth ? ['-e', 'RADISH_PROBE_GROWTH_SERIES=' + growthSeries] : []),
     ...diskMountArgs,
     '-v', join(directory, 'relay') + ':/probe',
+    ...recoveryCases.flatMap((item) => item.observerMount),
     ...(retention ? ['-v', join(directory, 'backup') + ':/probe/backup',
       '-v', join(directory, 'restored-db') + ':/probe/restored-db',
       '-v', join(directory, 'collector/buffer') + ':/probe/source-buffer:ro'] : []),
@@ -305,7 +333,7 @@ try {
     const initial = diskControl('prepare', ...(candidate ? ['unprivileged'] : []));
     assert.equal(initial.freeBytes, diskCapacityBytes);
   }
-  launch('collector', ...collectorArgs(),
+  if (!recovery) launch('collector', ...collectorArgs(),
     ...(disk && candidate ? ['--user', '10001:10001'] : []),
     ...(transport ? ['--pid=container:' + name('relay')] : observeForward ? [] : publishForward),
     collectorImage, '-c', '/probe/fluent-bit.conf');
@@ -318,17 +346,18 @@ try {
   }
   report.forwardPort = Number(docker('port', name(observeForward ? 'relay' : 'collector'), '24224/tcp').split(':').at(-1));
   assert.ok(report.forwardPort > 0);
-  if (retention) {
+  if (retention || recovery) {
     const bindings = (role) => JSON.parse(docker('inspect', '-f', '{{json .HostConfig.PortBindings}}', name(role))) ?? {};
     const exposed = bindings('relay');
     assert.deepEqual(Object.keys(exposed), ['24224/tcp']);
     assert.equal(exposed['24224/tcp'].length, 1);
     assert.equal(exposed['24224/tcp'][0].HostIp, '127.0.0.1');
-    assert.deepEqual(bindings('collector'), {});
+    if (retention) assert.deepEqual(bindings('collector'), {});
   }
-  await until(() => fetchInProbe('http://collector:2020/api/v1/metrics').status === 200, 'collector ready');
+  if (!recovery) await until(() => fetchInProbe('http://collector:2020/api/v1/metrics').status === 200, 'collector ready');
   if (observeForward) await until(() => fetchInProbe('http://relay:8080/probe-forward-stats').status === 200, 'Forward observer ready');
-  launch('api', ...forwardLogs('api'), ...app('api', 'api.env'));
+  launch('api', ...(recovery ? localLogs : forwardLogs('api')), ...app('api', 'api.env'));
+  if (recovery) assert.deepEqual(JSON.parse(docker('inspect', '-f', '{{json .HostConfig.PortBindings}}', name('api'))) ?? {}, {});
   await until(() => fetchInProbe('http://api:5100/api/health').status === 200, 'API ready');
   assert.equal(fetchInProbe('http://api:5100/internal/logs/ingest').status, 404);
   assert.equal(fetchInProbe('http://api:15199/api/health').status, 404);
@@ -342,6 +371,10 @@ try {
   } else if (retention) {
     await verifyRetentionRecovery({ docker, name, launch, app, collectorArgs, collectorImage, localLogs,
       emitFixture, createEvent, node, fetchInProbe, postgres, logs, directory, key, report, forwardLogs,
+      setPhase: (value) => { phase = value; } });
+  } else if (recovery) {
+    await verifyStorageRecovery({ cases: recoveryCases, docker, name, launch, collectorArgs, collectorImage,
+      node, logs, emitFixture, createEvent, sql, fetchInProbe, relayEvents, directory, key, report, output,
       setPhase: (value) => { phase = value; } });
   } else {
     await verifyIngestChecks();
@@ -366,11 +399,11 @@ try {
     try { docker('network', 'rm', network); }
     catch { remaining.push(prefix); }
   }
-  if (diskVolume) {
+  for (const volume of ownedVolumes) {
     try {
       const owned = docker('volume', 'ls', '--filter', 'label=radish.logging.probe=' + prefix, '--format', '{{.Name}}').split('\n');
-      if (owned.includes(diskVolume)) docker('volume', 'rm', diskVolume);
-    } catch { remaining.push(diskVolume); }
+      if (owned.includes(volume)) docker('volume', 'rm', volume);
+    } catch { remaining.push(volume); }
   }
   report.cleanup = remaining.length === 0;
   if (report.cleanup) rmSync(directory, { recursive: true, force: true });

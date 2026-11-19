@@ -13,7 +13,7 @@
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
 - **下一完整交付**是在指定隔离部署环境完成统一日志查询、管道故障识别、站内告警和升级 / 恢复 / 回滚。当前推进 L1 / L3 真实采集与持久化。
 - **规划复核日期**为 2026-11-10，所有者确认日志、Native、客户端连接的收口顺序。该次规划以 `8d6cc63a` 集成的成果为基线。[规划复核记录](../records/planning-closeout-2026-11-10.md)
-- **当前日志切片（2026-11-19）**。同一固定候选已通过 SQLite 和 PostgreSQL 16.15 的停写留存、备份恢复及 503 待投递重放。Log 库重投保持唯一，JSONL 可出现同内容副本。首次 flush 前强制终止曾出现 chunk 格式检查失败。[留存与恢复](../records/unified-logging-l3-retention-recovery-2026-11-19.md) · [传输联验](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md) · [扩容验收](../records/unified-logging-l1-forward-growth-acceptance-2026-11-18.md)
+- **当前日志切片（2026-11-19）**。固定候选已通过 SQLite 和 PostgreSQL 16.15 的停写留存与备份恢复。OrbStack 双挂载实测确认首次 flush 前强杀留下未最终写定 CRC，两种优雅停写均可交付。503 后的 JSONL 同内容副本只在已识别重放窗口出现，离线对账与 Log 库按键唯一。[双挂载联验](../records/unified-logging-l1-l3-storage-recovery-2026-11-19.md) · [留存与恢复](../records/unified-logging-l3-retention-recovery-2026-11-19.md) · [传输联验](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **继续 L1 / L3 真实采集与持久化**。冻结目标部署条件与停写备份边界，核对首次 flush 前强制终止、JSONL 重投重复和容量预算的处置。随后用同一满卷故障接续查询、站内告警和升级恢复验收。[剩余门禁](../features/unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
+1. **继续 L1 / L3 真实采集与持久化**。在已确认的目标部署冻结镜像、daemon 路径、来源、容量与停写备份顺序，裁决首次 flush 前崩溃窗口及坏块诊断。随后用同一满卷故障接续查询、站内告警和升级恢复验收。[剩余门禁](../features/unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
 2. **日志退出后接续 Native**：按 P8-C Windows、P8-D Linux、P8-E 成组验收完成已确认平台范围。必要阻塞为工具链、真实认证 / 安全存储、窗口 / 输入和持续状态的目标平台证据；签名、真机与分发继续按平台单列。平台资源不可达时形成具名等待项，再评审是否在已有可用平台提前推进连接能力，不自动扩建环境或取消平台目标。
 3. **完成客户端连接能力**：先冻结实例身份、兼容发现、地址 / TLS、OIDC 和旧单实例状态迁移，再实现同包选择、会话 / 缓存 / 实时连接隔离与切换恢复。两个测试实例只证明机制，官方与自部署的正式交付各需对应证据，见[连接规划](../frontend/client-server-connection-plan.md)。
 4. **按范围验收后转入维护为主**：日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审；不等待全部 backlog、商店分发或所有外部设备条件清零。批次集成与正式发行 / 生产部署分开，后置来源材料不等于发行放行。

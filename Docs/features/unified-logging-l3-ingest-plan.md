@@ -35,7 +35,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 | 传输正式上界 | Docker Message mode 上界已[推导](#l1-l3-transport-budget)，[原版](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)和[固定候选](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)均已实测合法流量、请求大小、接收端门限与进程峰值 RSS | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
 | 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
 | 磁盘与支路隔离 | [原版联验](#l1-l3-disk-queue-runtime)与[候选联验](#l1-l3-disk-queue-followup)已核对 ENOSPC、文件回滚、拒写、轮转、HTTP 队列丢弃及恢复。[满卷扩容两轮复验](../records/unified-logging-l1-forward-growth-acceptance-2026-11-18.md)已区分实例失败与未知尾段，并核实两路 ID 和排空 | 本机固定候选的磁盘用例已通过。输入模式、worker 或存储边界变化时复核对应结论 | L1 接续 |
-| 容量与恢复 | 原有轮转与有限队列证据，SQLite / PostgreSQL [停写留存与备份恢复](../records/unified-logging-l3-retention-recovery-2026-11-19.md)现已核对 503 待投递重放和快照后已知缺口 | 冻结目标部署的停写和可备份状态，明确首次 flush 前强制终止边界及 JSONL 重投重复的处置；计入单片超出量、索引及缓冲开销；真实断电另验 | L1 / L3-B |
+| 容量与恢复 | SQLite / PostgreSQL [停写备份恢复](../records/unified-logging-l3-retention-recovery-2026-11-19.md)已核对快照和 503 重放。[双挂载联验](../records/unified-logging-l1-l3-storage-recovery-2026-11-19.md)确认首次 flush 前强杀的未最终写定 CRC，验证优雅停写及 JSONL 重放对账 | 在目标部署冻结停写、可备份和坏块处置边界，确认如何处理首次 flush 前崩溃窗口，计入单片超出量、索引及缓冲开销；真实断电另验 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
 
 依据：[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)、[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。已有通过项不机械重做；只有配置 / 策略变化或组合故障新增时补回归。目标平台未确定前，不把本机 arm64 digest 当作多平台放行。
@@ -241,6 +241,24 @@ node Scripts/logging/collector-ingest-probe.mjs --run --database=postgresql --su
 ```
 
 两种库均已取得实测。停写快照中的 503 重试批次在恢复后正常交付，Log 库按 ID 保留一行，已落盘的 JSONL 记录出现同内容副本。首次 flush 前强制终止的一轮，重启报告 chunk 格式检查失败。停写流程和上述两类故障仍需在目标部署确认处置边界。[两轮结果与失败证据](../records/unified-logging-l3-retention-recovery-2026-11-19.md)
+
+<a id="l1-l3-storage-recovery"></a>
+
+### 2.6 首次 flush 前的 chunk 与 JSONL 重放
+
+OrbStack / Linux arm64 上复用同一候选和隔离 SQLite。仅改变 `/probe/buffer` 的挂载类型，分别使用宿主 bind mount 和 Linux VM 的 `local` Docker 卷，每种挂载独立执行首次定时 flush 前 `SIGKILL`、首次定时 flush 前 `SIGTERM`、HTTP 503 后 `SIGTERM`。JSONL 每例单独挂载。仅中转发布回环动态 Forward 端口，采集器和 API 均留在本轮网络。
+
+```bash
+image_id=sha256:c548922a71a15b99503d43b57df28eedf8fcf263b18122f0d27fa6e218b6218c
+node Scripts/logging/collector-ingest-probe.mjs --plan --database=sqlite --suite=storage-recovery --collector-image="$image_id"
+node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=storage-recovery --collector-image="$image_id"
+```
+
+- **chunk 证据。** 保持 `storage.sync full` 和 CRC 校验，在隔离环境保留不可读 chunk。只读挂载取证，按固定版 ChunkIO 检查标记、元数据和载荷声明长度、最终 CRC32 与中间 CRC 的编码。实际重启结果须与字节判定相符，后续健康事件须两路交付。合成坏块和 JSON 报告留在 `artifacts/logging-storage-recovery-probe/`，其余按运行标签清理。[固定版格式](https://github.com/fluent/fluent-bit/blob/66910c10a4d7eafa810b84229cf2dcf7b0f26f97/lib/chunkio/include/chunkio/cio_file_st.h)
+- **JSONL 重放。** 保留原始文件，离线按 `(deploymentId,eventId)` 核对事件内容与 Log 库 canonical JSON 摘要。只在已证实的重放窗口接受同内容副本，报告物理行数和唯一事件数。离线结果和 Log 库各键必须唯一。同键异内容、其他窗口重复、额外缺行及截断均判失败。已有坏块导致的已知合成缺口须逐个列出，生产者侧不可观测范围保持未知。
+- **停写边界。** 先停止新输入并登记截止点，保留接收端以排空。健康窗口需同时核实活跃队列与非空缓冲为空。503 窗口可保留经校验的待投递块，采集器停写后才生成 Log 一致性快照、JSONL、缓冲及配置清单。不可读块单独保全并标记影响范围。恢复时校验清单，沿用可识别的输入和输出身份，验证重投与新事件。
+
+实测两种挂载在首次 flush 前强杀后均保留未最终写定的 CRC，重启拒读并各缺 1 个已知合成 ID。两种优雅停写均完成两路交付。503 后重放只在已识别窗口产生同内容 JSONL 重复，按键对账成功。[实测与保全证据](../records/unified-logging-l1-l3-storage-recovery-2026-11-19.md)
 
 ## 3. L2 剩余来源与退出条件
 
