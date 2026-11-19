@@ -6,6 +6,7 @@ export const postgresImage = 'postgres@sha256:a902560563d3a5661228585f53474c5065
 const user = 'radish_probe';
 const main = 'radish';
 const log = 'radish_log';
+const restoredLog = 'radish_log_restored';
 
 export function createPostgresProbe(runDocker, container, directory, root) {
   const password = randomBytes(32).toString('hex');
@@ -15,7 +16,8 @@ export function createPostgresProbe(runDocker, container, directory, root) {
     '--username', user, '--dbname', database, '--set', 'ON_ERROR_STOP=1',
     ...(value === undefined ? [] : ['--set', 'probe_value=' + value]),
   ], sql + ';\n');
-  const rows = (query, value) => JSON.parse(command(log, "SELECT COALESCE(json_agg(result), '[]') FROM (" + query + ') AS result', value));
+  const rows = (query, value, database = log) =>
+    JSON.parse(command(database, "SELECT COALESCE(json_agg(result), '[]') FROM (" + query + ') AS result', value));
 
   return {
     appEnv: [
@@ -42,6 +44,18 @@ export function createPostgresProbe(runDocker, container, directory, root) {
       ];
     },
     version: () => command('postgres', 'SHOW server_version'),
+    restoredLogConnection: connection(restoredLog),
+    logRows: (query, restored) => rows(query, undefined, restored ? restoredLog : log),
+    backupLog() {
+      runDocker(['exec', container, 'pg_dump', '--username', user, '--dbname', log, '--format=custom',
+        '--no-owner', '--no-privileges', '--file=/probe/backup/log.dump']);
+      runDocker(['exec', container, 'pg_restore', '--list', '/probe/backup/log.dump']);
+    },
+    restoreLog() {
+      command('postgres', 'CREATE DATABASE ' + restoredLog);
+      runDocker(['exec', container, 'pg_restore', '--username', user, '--dbname', restoredLog,
+        '--single-transaction', '--exit-on-error', '--no-owner', '--no-privileges', '/probe/backup/log.dump']);
+    },
     countColumnType: () => command(log, "SELECT format_type(atttypid, atttypmod) FROM pg_attribute WHERE attrelid='runtime_log_rejection_bucket'::regclass AND attname='attempt_count'"),
     eventRows: (eventId) => rows("SELECT canonical_json::json AS event FROM runtime_log_event WHERE event_id=:'probe_value'", eventId).map(({ event }) => event),
     eventTimes: (eventId) => rows(

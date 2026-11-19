@@ -8,6 +8,7 @@ namespace Radish.Common.OptionTool;
 public sealed class RuntimeLogIngestOptions
 {
     public bool Enabled { get; set; }
+    public bool RetentionEnabled { get; set; }
     public string Mode { get; set; } = "Production";
     public int Port { get; set; }
     public string Credential { get; set; } = string.Empty;

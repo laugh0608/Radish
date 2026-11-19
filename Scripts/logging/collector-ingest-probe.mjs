@@ -10,6 +10,7 @@ import { boundaryConfig, enableCheckedJsonl } from './boundary-config.mjs';
 import { diskCapacityBytes, diskMount } from './ingest-probe-disk-control.mjs';
 import { diskCollectorConfig, diskDeployment, diskRelease, diskWorkload, verifyDiskQueue } from './ingest-probe-disk.mjs';
 import { createPostgresProbe, postgresImage } from './ingest-probe-postgres.mjs';
+import { verifyRetentionRecovery } from './ingest-probe-retention.mjs';
 import { transportDeployment, transportRelease, transportWorkload, verifyTransport } from './ingest-probe-transport.mjs';
 import { collectorImage as upstreamCollectorImage, readLines, until } from './probe-runtime.mjs';
 
@@ -22,20 +23,22 @@ const traceGrowth = unexpected.length === 1 && unexpected[0] === '--trace-growth
 assert.ok(unexpected.length === 0 || traceGrowth);
 assert.match(databaseOption, /^--database=(sqlite|postgresql)$/u);
 const database = databaseOption.split('=')[1];
-assert.match(suite, /^--suite=(ingest|transport|disk-queue)$/u);
+assert.match(suite, /^--suite=(ingest|transport|disk-queue|retention-recovery)$/u);
 const suiteName = suite.split('=')[1];
 const transport = suiteName === 'transport';
 const disk = suiteName === 'disk-queue';
+const retention = suiteName === 'retention-recovery';
 const candidate = candidateOption !== undefined;
+assert.ok(!retention || candidate, 'Retention recovery requires a local candidate image');
 assert.ok(!traceGrowth || (disk && candidate), 'Growth tracing requires the disk-queue suite and a candidate image');
 const growthSeries = traceGrowth ? randomUUID().slice(0, 24) : null;
 if (candidate) {
-  assert.ok(disk || transport, 'A local candidate image requires the transport or disk-queue suite');
+  assert.ok(disk || transport || retention, 'A local candidate image requires the transport, disk-queue or retention-recovery suite');
   assert.match(candidateOption, /^--collector-image=sha256:[a-f0-9]{64}$/u);
 }
 const collectorImage = candidate ? candidateOption.split('=')[1] : upstreamCollectorImage;
-const observeForward = transport || disk;
-assert.ok(!observeForward || database === 'sqlite', 'The transport and disk-queue suites use disposable SQLite');
+const observeForward = transport || disk || retention;
+assert.ok(!(transport || disk) || database === 'sqlite', 'The transport and disk-queue suites use disposable SQLite');
 const profile = observeForward ? suiteName : database;
 const deploymentId = disk ? diskDeployment : transport ? transportDeployment : 'logging-' + database + '-probe';
 const release = disk ? diskRelease : transport ? transportRelease : 'probe';
@@ -59,6 +62,7 @@ function collectorConfig() {
     if (candidate) base = enableCheckedJsonl(base);
   }
   if (disk) base = diskCollectorConfig(base, candidate);
+  if (retention) base = enableCheckedJsonl(base.replace('Flush 1\n', 'Flush 10\n'));
   if (traceGrowth) {
     base = base.replace('Alias guarded_input\n', 'Alias guarded_input\n    Log_Level warn\n')
       .replace('[OUTPUT]\n', '[FILTER]\n    Name lua\n    Match *\n    script /probe/streams.lua\n    call trace_growth_append\n[OUTPUT]\n');
@@ -89,6 +93,11 @@ if (action === '--plan') {
       ...(candidate ? { collectorUser: '10001:10001' } : {}),
       sharedVolume: { driver: 'local', options: diskVolumeOptions, mount: diskMount, capacityBytes: diskCapacityBytes },
       cleanup: 'Remove only labelled disk-queue containers, network, named shared volume and temporary directory. Keep the JSON report and local image cache.',
+    } : {}),
+    ...(retention ? {
+      backup: database === 'sqlite' ? 'SQLite backup API to a new database file' : 'pg_dump custom archive to a new Log database',
+      storage: 'Separate source, backup and restore directories. Collector JSONL, filesystem chunks and configuration are archived.',
+      cleanup: 'Remove the labelled containers and network, temporary backup, restore and credentials. Keep the JSON report.',
     } : {}),
   }, null, 2) + '\n');
   process.exit(0);
@@ -149,6 +158,10 @@ const app = (role, config, overrides = []) => [
   '--env-file', join(directory, config), '-v', join(directory, role) + ':/app:ro',
   '-v', join(directory, 'db') + ':/probe/db', '-w', '/probe/db', ...overrides,
   runtimeImage, 'dotnet', '/app/' + (role === 'api' ? 'Radish.Api.dll' : 'Radish.DbMigrate.dll'),
+];
+const collectorArgs = (storage = 'collector', env = 'collector.env') => [
+  ...localLogs, '--env-file', join(directory, env),
+  '-v', join(directory, storage) + ':/probe', ...diskMountArgs,
 ];
 const fileEvents = () => readdirSync(join(directory, 'collector/files')).flatMap((file) => readLines(join(directory, 'collector/files', file)));
 const relayEvents = () => readLines(join(directory, 'relay/relay.jsonl'));
@@ -216,7 +229,9 @@ process.on('SIGINT', interrupt);
 process.on('SIGTERM', terminate);
 
 try {
-  for (const path of ['collector/files', 'collector/buffer', 'relay', 'db']) mkdirSync(join(directory, path), { recursive: true });
+  const paths = ['collector/files', 'collector/buffer', 'relay', 'db'];
+  if (retention) paths.push('backup', 'restored-db');
+  for (const path of paths) mkdirSync(join(directory, path), { recursive: true });
   stage('Radish.Api', join(directory, 'api'));
   stage('Radish.DbMigrate', join(directory, 'migrate'));
   cpSync(join(root, 'artifacts/native/linux-arm64/Debug'), join(directory, 'api/native'), { recursive: true });
@@ -257,7 +272,7 @@ try {
   phase = 'initialize ' + database;
   network = docker('network', 'create', '--label', 'radish.logging.probe=' + prefix, prefix);
   if (postgres) {
-    launch('postgres', ...localLogs, ...postgres.launchArgs());
+    launch('postgres', ...localLogs, ...(retention ? ['-v', join(directory, 'backup') + ':/probe/backup'] : []), ...postgres.launchArgs());
     await until(() => docker('inspect', '-f', '{{.State.Health.Status}}', name('postgres')) === 'healthy', 'PostgreSQL TCP ready', 60000);
     report.postgresVersion = postgres.version();
     assert.match(report.postgresVersion, /^16\.15\b/u);
@@ -282,15 +297,17 @@ try {
     ...(traceGrowth ? ['-e', 'RADISH_PROBE_GROWTH_SERIES=' + growthSeries] : []),
     ...diskMountArgs,
     '-v', join(directory, 'relay') + ':/probe',
+    ...(retention ? ['-v', join(directory, 'backup') + ':/probe/backup',
+      '-v', join(directory, 'restored-db') + ':/probe/restored-db',
+      '-v', join(directory, 'collector/buffer') + ':/probe/source-buffer:ro'] : []),
     '-v', join(directory, 'db') + ':/probe/db', relayImage, 'node', '/probe/relay.mjs');
   if (diskVolume) {
     const initial = diskControl('prepare', ...(candidate ? ['unprivileged'] : []));
     assert.equal(initial.freeBytes, diskCapacityBytes);
   }
-  launch('collector', ...localLogs, '--env-file', join(directory, 'collector.env'),
-    '-v', join(directory, 'collector') + ':/probe', ...diskMountArgs,
+  launch('collector', ...collectorArgs(),
     ...(disk && candidate ? ['--user', '10001:10001'] : []),
-    ...(transport ? ['--pid=container:' + name('relay')] : disk ? [] : publishForward),
+    ...(transport ? ['--pid=container:' + name('relay')] : observeForward ? [] : publishForward),
     collectorImage, '-c', '/probe/fluent-bit.conf');
   if (diskVolume) for (const role of ['relay', 'collector']) {
     const mounts = JSON.parse(docker('inspect', '-f', '{{json .Mounts}}', name(role)));
@@ -301,6 +318,14 @@ try {
   }
   report.forwardPort = Number(docker('port', name(observeForward ? 'relay' : 'collector'), '24224/tcp').split(':').at(-1));
   assert.ok(report.forwardPort > 0);
+  if (retention) {
+    const bindings = (role) => JSON.parse(docker('inspect', '-f', '{{json .HostConfig.PortBindings}}', name(role))) ?? {};
+    const exposed = bindings('relay');
+    assert.deepEqual(Object.keys(exposed), ['24224/tcp']);
+    assert.equal(exposed['24224/tcp'].length, 1);
+    assert.equal(exposed['24224/tcp'][0].HostIp, '127.0.0.1');
+    assert.deepEqual(bindings('collector'), {});
+  }
   await until(() => fetchInProbe('http://collector:2020/api/v1/metrics').status === 200, 'collector ready');
   if (observeForward) await until(() => fetchInProbe('http://relay:8080/probe-forward-stats').status === 200, 'Forward observer ready');
   launch('api', ...forwardLogs('api'), ...app('api', 'api.env'));
@@ -314,6 +339,10 @@ try {
   } else if (transport) {
     await verifyTransport({ docker, name, launchFixture, node, directory, sql, fetchInProbe,
       fileEvents, relayEvents, key, report, setPhase: (value) => { phase = value; } });
+  } else if (retention) {
+    await verifyRetentionRecovery({ docker, name, launch, app, collectorArgs, collectorImage, localLogs,
+      emitFixture, createEvent, node, fetchInProbe, postgres, logs, directory, key, report, forwardLogs,
+      setPhase: (value) => { phase = value; } });
   } else {
     await verifyIngestChecks();
   }

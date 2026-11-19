@@ -11,16 +11,14 @@ namespace Radish.Repository;
 
 /// <summary>Log 专用批次事务；原生参数命令避免 ORM 日志 / AOP 重入，不共享业务事务。</summary>
 public sealed class RuntimeLogIngestRepository(ISqlSugarClient database, RuntimeLogIngestOptions options,
-    TimeProvider clock) : IRuntimeLogIngestRepository
+    TimeProvider clock) : IRuntimeLogIngestRepository, IRuntimeLogRetentionRepository
 {
     public async Task<IReadOnlyList<RuntimeLogEventRecord?>> CommitAsync(IReadOnlyList<RuntimeLogEventRecord> events,
         IReadOnlyList<RuntimeLogRejectionBucket> rejections, CancellationToken cancellationToken)
     {
         if (events.Count + rejections.Count is < 1 or > RuntimeLogIngestOptions.BatchSize)
             throw new ArgumentOutOfRangeException(nameof(events));
-        if (database is not SqlSugarScope scope) throw new InvalidOperationException("Ingestion requires the Log connection scope.");
-        var config = scope.GetConnectionScope("log").CurrentConnectionConfig;
-        await using var connection = CreateConnection(config);
+        await using var connection = CreateLogConnection();
         await connection.OpenAsync(cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
         await using var transaction = connection is SqliteConnection sqlite
@@ -72,7 +70,7 @@ public sealed class RuntimeLogIngestRepository(ISqlSugarClient database, Runtime
                     ("reason", bucket.Value.Reason), ("day", bucket.Value.DayUtc), ("count", bucket.Count));
                 await command.ExecuteNonQueryAsync(cancellationToken);
             }
-            // 保留当前 UTC 日及之前 6 日；每次提交最多清除 200 个过期日桶；运行事件保留 / 重放时窗由 L3-B 单独接入。
+            // 保留当前 UTC 日及之前 6 日；每次提交最多清除 200 个过期日桶。
             await using var cleanup = Command(connection, transaction, """
                 DELETE FROM runtime_log_rejection_bucket WHERE id IN
                   (SELECT id FROM runtime_log_rejection_bucket WHERE day_utc < @before ORDER BY day_utc, id LIMIT 200)
@@ -93,6 +91,30 @@ public sealed class RuntimeLogIngestRepository(ISqlSugarClient database, Runtime
         }
     }
 
+    public async Task<int> DeleteExpiredBatchAsync(string deploymentId, string level, DateTime cutoffUtc,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await using var connection = CreateLogConnection();
+        await connection.OpenAsync(cancellationToken);
+        await using var command = Command(connection, null, """
+            DELETE FROM runtime_log_event WHERE id IN (
+                SELECT id FROM runtime_log_event
+                WHERE deployment_id=@deployment AND level=@level AND occurred_at_utc < @cutoff
+                ORDER BY occurred_at_utc, id LIMIT @batch
+            )
+            """, ("deployment", deploymentId), ("level", level), ("cutoff", cutoffUtc),
+            ("batch", RuntimeLogIngestOptions.BatchSize));
+        return await command.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    private DbConnection CreateLogConnection()
+    {
+        if (database is not SqlSugarScope scope)
+            throw new InvalidOperationException("Runtime logging requires the Log connection scope.");
+        return CreateConnection(scope.GetConnectionScope("log").CurrentConnectionConfig);
+    }
+
     private DbConnection CreateConnection(ConnectionConfig config) => config.DbType switch
     {
         SqlSugar.DbType.Sqlite => new SqliteConnection(new SqliteConnectionStringBuilder(config.ConnectionString)
@@ -106,7 +128,7 @@ public sealed class RuntimeLogIngestRepository(ISqlSugarClient database, Runtime
         _ => throw new NotSupportedException("Runtime log ingestion supports SQLite and PostgreSQL only.")
     };
 
-    private DbCommand Command(DbConnection connection, DbTransaction transaction, string sql,
+    private DbCommand Command(DbConnection connection, DbTransaction? transaction, string sql,
         params (string Name, object? Value)[] parameters)
     {
         var command = connection.CreateCommand();

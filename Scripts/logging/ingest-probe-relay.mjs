@@ -55,6 +55,7 @@ createServer(async (request, reply) => {
     }
     const body = Buffer.concat(chunks);
     const observed = forward ? measure(body) : null;
+    const forwardedRequest = observed && { ...observed.result, hash: createHash('sha256').update(body).digest('hex') };
     const fault = forward && existsSync(faultPath) ? JSON.parse(readFileSync(faultPath, 'utf8')) : null;
     const inject = (fault?.kind === 'malformed' || fault?.kind === 'oversize-line') &&
       observed?.events.some((event) => event?.eventId === fault.eventId);
@@ -67,11 +68,13 @@ createServer(async (request, reply) => {
         'content-type': request.headers['content-type'],
         'x-radish-collector-key': request.headers['x-radish-collector-key'],
       },
+    }).catch((error) => {
+      if (forwardedRequest) record({ ...forwardedRequest, status: 503, upstreamUnavailable: true });
+      throw error;
     });
     const responseText = await response.text();
     if (observed) {
-      const hash = createHash('sha256').update(body).digest('hex');
-      record({ ...observed.result, status: response.status, hash,
+      record({ ...forwardedRequest, status: response.status,
         ...(inject ? { injected: fault.kind, accepted: JSON.parse(responseText).responseData?.voAccepted ?? 0 } : {}),
       });
     }

@@ -77,7 +77,10 @@ return await RuntimeProcess.RunAsync("api", async () =>
         return;
     }
 
-    var builder = WebApplication.CreateBuilder(args);
+    var pruneRuntimeLogs = args.Contains(RuntimeLogIngestSetup.PruneCommand, StringComparer.Ordinal);
+    if (pruneRuntimeLogs && args.Length != 1)
+        throw new ArgumentException("Runtime log retention accepts no additional command arguments.");
+    var builder = WebApplication.CreateBuilder(pruneRuntimeLogs ? [] : args);
     builder.Services.AddSingleton(TimeProvider.System);
     builder.Services.AddSingleton<BusinessCalendar>();
     // -------------- 容器构建阶段 ---------------
@@ -151,31 +154,40 @@ return await RuntimeProcess.RunAsync("api", async () =>
     // 这样避免 "sub" 被映射为 "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"
     JsonWebTokenHandler.DefaultInboundClaimTypeMap.Clear();
 
+    // 配置文件统一从输出目录读取，避免受工作目录影响。
+    var configurationBasePath = AppContext.BaseDirectory;
+    var sharedConfigPath = ResolveSharedConfigPath(configurationBasePath, builder.Environment.ContentRootPath);
+    builder.Configuration.Sources.Clear();
+    builder.Configuration.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
+    builder.Configuration.AddJsonFile(Path.Combine(configurationBasePath, "appsettings.json"), optional: true, reloadOnChange: false);
+    builder.Configuration.AddJsonFile(Path.Combine(configurationBasePath, "appsettings.Local.json"), optional: true, reloadOnChange: false);
+    builder.Configuration.AddEnvironmentVariables();
+    builder.Configuration.ConfigureApplication();
+    // 2. 绑定 InternalApp 扩展中的环境变量
+    builder.ConfigureApplication();
+    builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
+    if (pruneRuntimeLogs)
+    {
+        if (!builder.Configuration.GetValue<bool>("RadishLogging:Ingest:RetentionEnabled"))
+            throw new InvalidOperationException("Enable runtime log retention explicitly before pruning.");
+        builder.AddRuntimeLogIngest();
+        builder.Services.AddSqlSugarSetup();
+        await using var maintenance = builder.Build();
+        await using var scope = maintenance.Services.CreateAsyncScope();
+        var utcNow = scope.ServiceProvider.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
+        var deleted = await scope.ServiceProvider.GetRequiredService<IRuntimeLogRetentionService>()
+            .PruneAsync(utcNow, CancellationToken.None);
+        Console.WriteLine(JsonSerializer.Serialize(new { asOfUtc = utcNow, deleted }));
+        return;
+    }
     // 使用 Autofac 配置 Host 与容器
-    builder.Host
-        .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+    builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory())
         .ConfigureContainer<ContainerBuilder>(containerBuilder =>
         {
             containerBuilder.RegisterModule(new AutofacModuleRegister());
             // 使用 Assembly.GetExecutingAssembly() 避免与 Radish.Auth 的 Program 类冲突
             containerBuilder.RegisterModule(new AutofacPropertyModuleReg(System.Reflection.Assembly.GetExecutingAssembly()));
-        }).ConfigureAppConfiguration((hostingContext, config) =>
-        {
-            hostingContext.Configuration.ConfigureApplication(); // 1. 绑定 InternalApp 扩展中的配置
-
-            // 配置文件统一从输出目录（AppContext.BaseDirectory）读取，避免受工作目录影响
-            var basePath = AppContext.BaseDirectory;
-            var sharedConfigPath = ResolveSharedConfigPath(basePath, hostingContext.HostingEnvironment.ContentRootPath);
-
-            config.Sources.Clear();
-            config.AddJsonFile(sharedConfigPath, optional: true, reloadOnChange: false);
-            config.AddJsonFile(Path.Combine(basePath, "appsettings.json"), optional: true, reloadOnChange: false);
-            config.AddJsonFile(Path.Combine(basePath, "appsettings.Local.json"), optional: true, reloadOnChange: false);
-            config.AddEnvironmentVariables();
-            // config.AddConfigurationApollo("appsettings.apollo.json");
         });
-    // 2. 绑定 InternalApp 扩展中的环境变量
-    builder.ConfigureApplication();
     using var runtimeLogging = new RuntimeLoggingSession(builder.Configuration, builder.Environment.EnvironmentName, "api");
     builder.AddRuntimeLogIngest();
     // 激活 Autofac 影响的 IControllerActivator 控制器激活器，这一行的意义就是把 Controller 类也就是控制器注册为 Service 服务
@@ -289,8 +301,6 @@ return await RuntimeProcess.RunAsync("api", async () =>
     builder.Services.AddScalarSetup();
     // 注册 Service 映射委托
     builder.Services.AddServiceMappings();
-    // 注册 AppSetting 自定义扩展服务
-    builder.Services.AddSingleton(new AppSettingsTool(builder.Configuration));
     // 注册 AppSetting 自定义扩展的扩展 ConfigurableOptions 服务
     builder.Services.AddAllOptionRegister();
     // 注册文件存储和图片处理服务

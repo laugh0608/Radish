@@ -17,6 +17,7 @@ public static class RuntimeLogIngestSetup
 {
     public const string CredentialHeader = "X-Radish-Collector-Key";
     public const string IngestPath = "/internal/logs/ingest";
+    public const string PruneCommand = "--prune-runtime-logs";
 
     public static void AddRuntimeLogIngest(this WebApplicationBuilder builder)
     {
@@ -39,7 +40,9 @@ public static class RuntimeLogIngestSetup
         builder.Services.AddSingleton(new RuntimeLogIngestState(options.Enabled ? options.MaxConcurrentRequests : 2));
         builder.Services.AddSingleton(new RuntimeLogIngestDiagnostics());
         builder.Services.AddScoped<IRuntimeLogIngestRepository, RuntimeLogIngestRepository>();
+        builder.Services.AddScoped<IRuntimeLogRetentionRepository, RuntimeLogIngestRepository>();
         builder.Services.AddScoped<IRuntimeLogIngestService, RuntimeLogIngestService>();
+        builder.Services.AddScoped<IRuntimeLogRetentionService, RuntimeLogRetentionService>();
     }
 
     public static void ValidateListeners(IConfiguration configuration, int ingestPort)

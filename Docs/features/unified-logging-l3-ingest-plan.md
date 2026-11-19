@@ -35,7 +35,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 | 传输正式上界 | Docker Message mode 上界已[推导](#l1-l3-transport-budget)，[原版](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)和[固定候选](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)均已实测合法流量、请求大小、接收端门限与进程峰值 RSS | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
 | 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
 | 磁盘与支路隔离 | [原版联验](#l1-l3-disk-queue-runtime)与[候选联验](#l1-l3-disk-queue-followup)已核对 ENOSPC、文件回滚、拒写、轮转、HTTP 队列丢弃及恢复。[满卷扩容两轮复验](../records/unified-logging-l1-forward-growth-acceptance-2026-11-18.md)已区分实例失败与未知尾段，并核实两路 ID 和排空 | 本机固定候选的磁盘用例已通过。输入模式、worker 或存储边界变化时复核对应结论 | L1 接续 |
-| 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
+| 容量与恢复 | 原有轮转与有限队列证据，SQLite / PostgreSQL [停写留存与备份恢复](../records/unified-logging-l3-retention-recovery-2026-11-19.md)现已核对 503 待投递重放和快照后已知缺口 | 冻结目标部署的停写和可备份状态，明确首次 flush 前强制终止边界及 JSONL 重投重复的处置；计入单片超出量、索引及缓冲开销；真实断电另验 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
 
 依据：[首轮传输](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)、[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。已有通过项不机械重做；只有配置 / 策略变化或组合故障新增时补回归。目标平台未确定前，不把本机 arm64 digest 当作多平台放行。
@@ -221,6 +221,27 @@ node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=
 
 新探针在 OrbStack SQLite 的默认级别与 `--trace-growth` 两轮均已通过。默认轮的输入实例新增创建、写入失败各 1 条，同窗有其他来源。逐条轮只有 1 条写入失败，同源 640 条中两路交付 171 条，第 172 条写失败，余下 468 条未到写入前过滤点。两轮管理员结论均保留尾段数量未知。两轮恢复后新发 ID 全部匹配，积压排空。定向测试覆盖漏计、错归来源、断点前缺号和单路漏交。该镜像的传输与内存结果见[第 2.2 节](#l1-l3-transport-budget)。[两轮验收记录](../records/unified-logging-l1-forward-growth-acceptance-2026-11-18.md) · [现行探针](../../Scripts/logging/ingest-probe-disk.mjs)
 
+<a id="l3-retention-recovery"></a>
+
+### 2.5 一次性留存与隔离备份恢复
+
+- **Log 库维护。** 停止本部署的日志写入后，在与 API 相同的配置和数据库连接下运行 `dotnet /app/Radish.Api.dll --prune-runtime-logs`。须显式启用 `RadishLogging:Ingest:Enabled` 和 `RadishLogging:Ingest:RetentionEnabled`，并配置本部署标识。命令使用单次 UTC 时刻和 `occurred_at_utc`，按 Info 7 天、Warning 30 天、Error 90 天的截止点严格比较。每条删除语句最多 200 行，只处理本部署的 `runtime_log_event`，stdout 报告参考时间及各级删除数。
+- **重投。** 留存启用时，接收器用同一截止规则，把已过期记录计入有界的 `retention-expired` 拒收日桶。仍在保留期内的事件按 `(deployment_id,event_id)` 去重。拒收日桶、历史分级日志和领域审计沿用独立规则。
+- **JSONL 维护。** 在 collector 已停止并且目录由维护进程独占时，执行 `RADISH_LOG_RETENTION_ENABLED=1 node Deploy/logging/retain-jsonl.mjs --collector-stopped "$runtime_jsonl_dir"`。候选的活动文件和已轮转文件封存到当前目录的 `sealed/`。发现不完整行尾时保留待封存的文件。已封存片按 UTC 封存时间保留 14 天，超出 2 GiB 时按最旧片优先淘汰，分别报告到期与容量移除的文件数和字节数。这是一轮停写维护，片大小仍由 collector 的轮转配置控制。
+- **恢复边界。** 停止源写入后生成 Log 库、规范 JSONL、文件系统 chunk 及采集配置的 SHA-256 清单。SQLite 使用一致性备份 API，PostgreSQL 使用 `pg_dump --format=custom` 和 `pg_restore`。恢复到独立库和目录，先校验字节、Log 库内容和运行事件 schema，再启动接收器和 collector。记录快照前已交付、快照内待投递、快照后原实例独有的合成 ID。按两路交付、数据库去重、重复 / 坏行和 UTC 区间报告，生产者侧不可观测的缺口数量保留为未知。
+
+获准启动后使用 `--suite=retention-recovery`。先预览 SQLite，再执行其 `--run`，通过后对 PostgreSQL 16.15 重复。同一候选镜像由本地 ID 指定，只有中转发布回环动态 Forward 端口。脚本只清理本轮标签对应的容器、网络和临时目录。备份与恢复副本跟随临时目录清理，报告保存在 `artifacts/logging-retention-recovery-probe/`。
+
+```bash
+image_id=sha256:c548922a71a15b99503d43b57df28eedf8fcf263b18122f0d27fa6e218b6218c
+node Scripts/logging/collector-ingest-probe.mjs --plan --database=sqlite --suite=retention-recovery --collector-image="$image_id"
+node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=retention-recovery --collector-image="$image_id"
+node Scripts/logging/collector-ingest-probe.mjs --plan --database=postgresql --suite=retention-recovery --collector-image="$image_id"
+node Scripts/logging/collector-ingest-probe.mjs --run --database=postgresql --suite=retention-recovery --collector-image="$image_id"
+```
+
+两种库均已取得实测。停写快照中的 503 重试批次在恢复后正常交付，Log 库按 ID 保留一行，已落盘的 JSONL 记录出现同内容副本。首次 flush 前强制终止的一轮，重启报告 chunk 格式检查失败。停写流程和上述两类故障仍需在目标部署确认处置边界。[两轮结果与失败证据](../records/unified-logging-l3-retention-recovery-2026-11-19.md)
+
 ## 3. L2 剩余来源与退出条件
 
 本节列出的八个入口已完成本地切片：PRAGMA 随 L3-A 交付，其余七个来源按第 8 节批准后完成。结果见[本批记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)。这不是全仓运行覆盖证明，下面的其他退出工作仍保留。
@@ -283,7 +304,7 @@ L2 整体退出要求：上述实际接线来源完成分类，正常生产不�
 - 原 `OccurredAtUtc / ObservedAtUtc` 保留毫秒精度与 UTC；错误时间进入拒收，不用当前时间冒充；不得把旧 `DateTime.Now` 语义带入新表。
 - 索引覆盖发生时间 + EventId、服务 + 时间、等级 + 时间、TraceId / OperationId；不在本批增加查询 API、任意全文检索或物理分区。
 - 拒收摘要按受信部署 / 服务、固定原因和 UTC 时间桶有界聚合，不保存原文、任意来源字符串或坏 eventId。事务内更新并设置计数上界；重放可能重复计入无有效 ID 的拒收次数，明确这是拒收尝试数，不宣称唯一坏事件数。物理表为 `runtime_log_rejection_bucket`，保留当前 UTC 日及此前 6 日，每次成功事务最多清理 200 个过期桶；停收时不额外启动后台清理。
-- 幂等保证限于事件键仍保留期间；L3-B 必须协调保留期、最大重放时窗与去重记录寿命，过期旧文件不能因键已清理被自动重导并触发新告警。本批无自动历史补录。
+- 幂等保证限于事件键仍保留期间。[一次性留存](#l3-retention-recovery)启用时，由接收器拒收超出保留期的重投并记录有限日桶。文件恢复独立保全，历史补录须显式有界执行。
 
 ### 4.4 migration 与故障通道
 

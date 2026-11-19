@@ -33,7 +33,7 @@ test('candidate transport requires a local image ID and SQLite and keeps growth 
   for (const [database, suite, options, reason] of [
     ['sqlite', 'transport', ['--collector-image=fluent-bit:latest'], /--collector-image/u],
     ['postgresql', 'transport', [candidateOption], /use disposable SQLite/u],
-    ['sqlite', 'ingest', [candidateOption], /requires the transport or disk-queue suite/u],
+    ['sqlite', 'ingest', [candidateOption], /requires the transport, disk-queue or retention-recovery suite/u],
     ['sqlite', 'transport', [candidateOption, '--trace-growth'], /Growth tracing requires the disk-queue suite/u],
   ]) {
     const rejected = plan(database, suite, ...options);
