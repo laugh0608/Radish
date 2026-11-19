@@ -91,6 +91,7 @@ export async function verifyTransport(context) {
     assert.equal(rows.length, expected.length + rejected);
     assert.equal(files.length, expected.length + rejected);
     assert.ok(files.every((event) => storedIds.has(event.eventId)), 'File and SQLite disagree on the collector event ID');
+    return { jsonl: files.length, sqlite: rows.length };
   };
 
   report.transport = { memory: [snapshot('ready')], workloads: {}, requestLimits: reportLimits };
@@ -98,12 +99,14 @@ export async function verifyTransport(context) {
   for (const [role, count, create] of [['compact', transportWorkload.compact, simple], ['maximal', transportWorkload.maximal, maximal]]) {
     const events = Array.from({ length: count }, (_, index) => create(index));
     const id = emit(role, events.map(serializeRuntimeLogEvent));
-    await proveDelivery(id, events);
+    const delivery = await proveDelivery(id, events);
     const batches = batchesFor(id);
     assert.ok(batches.length > 1, 'Expected multiple HTTP requests for one Docker tag');
     assert.ok(batches.every((batch) => batch.status === 200 && batch.containers.length === 1));
     assert.equal(batches.reduce((count, batch) => count + batch.records, 0), events.length);
-    report.transport.workloads[role] = { events: count, requests: batches.length, maxBytes: Math.max(...batches.map((batch) => batch.bytes)) };
+    report.transport.workloads[role] = {
+      events: count, delivery, requests: batches.length, maxBytes: Math.max(...batches.map((batch) => batch.bytes)),
+    };
     report.transport.memory.push(snapshot(role + '-delivered'));
   }
   report.checks.multiChunkDelivery = true;
@@ -140,13 +143,22 @@ export async function verifyTransport(context) {
     assert.ok(inspected > 0, 'Expected to inspect a pending collector chunk');
     report.transport.memory.push(snapshot('http-retry-pending'));
   } finally { sql('log.db', 'DROP TRIGGER probe_retry_one'); }
-  await until(() => relayEvents().some((entry) => entry.action === 'outage-attempt' && entry.eventId === before.eventId
-    && entry.hash === failed.hash && entry.status === 200 && entry.accepted > 0), 'same chunk accepted after SQLite recovered');
-  await proveDelivery(mixedId, [before, after], 1);
+  let replay;
+  await until(() => {
+    replay = relayEvents().find((entry) => entry.action === 'outage-attempt' && entry.eventId === before.eventId
+      && entry.hash === failed.hash && entry.status === 200 && entry.accepted > 0);
+    return replay;
+  }, 'same chunk accepted after SQLite recovered');
+  const retryDelivery = await proveDelivery(mixedId, [before, after], 1);
   assert.ok(fileEvents().some((event) => event.containerId === mixedId && event.eventCode === 'pipeline.rejected'
     && event.properties.rejectionReason === 'invalid-schema'));
   assert.ok(!JSON.stringify(fileEvents()).includes(sentinel));
   rmSync(relayFile('outage-event-id'), { force: true });
+  report.transport.retry = {
+    requestSha256: replay.hash,
+    attempts: [failed, replay].map(({ status, accepted }) => ({ status, accepted })),
+    delivery: retryDelivery,
+  };
   report.transport.memory.push(snapshot('http-recovered'));
   report.checks.sourceIsolationAndRetry = true;
 

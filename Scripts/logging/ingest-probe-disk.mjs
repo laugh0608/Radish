@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { createRuntimeLogPolicy, serializeRuntimeLogEvent } from '../../Frontend/scripts/logging/runtime-event.mjs';
+import { enableCheckedJsonl } from './boundary-config.mjs';
 import { diskCapacityBytes, diskMount } from './ingest-probe-disk-control.mjs';
 import { until } from './probe-runtime.mjs';
 
@@ -16,7 +17,7 @@ export function diskCollectorConfig(config, candidate = false) {
     .replace('storage.path /probe/buffer', 'storage.path ' + diskMount + '/buffer')
     .replace('Path /probe/files', 'Path ' + diskMount + '/files')
     .replace('rotate_max_size 1M', 'rotate_max_size ' + (candidate ? '4M' : '16M'));
-  return candidate ? diskConfig.replace('Format plain\n', 'Format plain\n    radish_jsonl true\n') : diskConfig;
+  return candidate ? enableCheckedJsonl(diskConfig) : diskConfig;
 }
 
 export function summarizeDelivery(expected, fileIds, httpIds) {
@@ -61,6 +62,83 @@ export function storageFailureCounters(prometheus) {
   return failures;
 }
 
+export function assessGrowthDiagnostics({ before, whileFull, afterRecovery }) {
+  assert.ok(before.collectorStartedAt, 'Missing collector process baseline');
+  assert.equal(whileFull.collectorStartedAt, before.collectorStartedAt, 'Collector restarted during fault');
+  assert.equal(afterRecovery.collectorStartedAt, before.collectorStartedAt, 'Collector restarted during recovery');
+  const knownAppendFailures = {};
+  for (const stage of ['chunk_create', 'chunk_write']) {
+    const count = whileFull.inputStorageFailures[stage] - before.inputStorageFailures[stage];
+    assert.ok(Number.isSafeInteger(count) && count >= 0, 'Missing or reset input failure counter');
+    knownAppendFailures[stage] = count;
+  }
+  assert.ok(knownAppendFailures.chunk_write > 0, 'Missing input write failure count');
+  assert.ok(whileFull.stderrSinceStart.chunkWriteErrors > before.stderrSinceStart.chunkWriteErrors,
+    'Missing independent input write error while full');
+  assert.deepEqual(afterRecovery.inputStorageFailures, whileFull.inputStorageFailures, 'Input failures continued after fault');
+  return { knownAppendFailures, disconnect: 'inferred-from-append-error', tailCount: null };
+}
+
+export function verifyGrowthPrefix(producer, file, sqlite) {
+  const prefix = producer.slice(0, file.length);
+  assert.equal(new Set(file).size, file.length, 'Duplicate growth file ID');
+  assert.deepEqual(new Set(file), new Set(prefix), 'Growth file has a gap before the breakpoint');
+  assert.equal(sqlite.length, prefix.length, 'SQLite delivery count differs from file');
+  assert.deepEqual(new Set(sqlite), new Set(prefix), 'SQLite delivery differs from file prefix');
+  return prefix.length;
+}
+
+function collectorEndedConnection(events) {
+  const upstream = events.findIndex((event) => event === 'collector-error:ECONNRESET' || event === 'collector-end');
+  const producer = events.indexOf('producer-close');
+  return upstream >= 0 && (producer < 0 || upstream < producer);
+}
+
+export function verifyGrowthTrace(growth, firstWaveSize) {
+  const { sequenceTrace: trace, outcome, forwardFrames, storageFailures } = growth;
+  const producer = Array.from({ length: outcome.sent }, (_, i) => i + 1);
+  assert.deepEqual(trace.producer, producer, 'Docker cache must contain every fixture ordinal once');
+  assert.deepEqual(trace.chunkBeforeSecondWave, producer.slice(0, firstWaveSize), 'Missing staged first wave');
+  const delivered = verifyGrowthPrefix(producer, trace.file, trace.sqlite);
+  const failedOrdinal = delivered + 1;
+  assert.ok(delivered >= firstWaveSize && failedOrdinal < producer.length, 'Expected a staged prefix, failed append and tail');
+  assert.equal(delivered, outcome.fileDelivered, 'Trace disagrees with fixture ledger');
+  assert.deepEqual(trace.chunkAtFault, producer.slice(0, delivered), 'Buffered prefix differs from delivery');
+  assert.deepEqual(trace.beforeWrite, producer.slice(0, failedOrdinal), 'Write trace has a gap or unexpected failure ordinal');
+
+  assert.equal(trace.connections.length, 1, 'Source attribution requires a single staged connection');
+  const [connection] = trace.connections;
+  assert.equal(connection.tag, trace.fixtureTag, 'Unexpected fixture connection source');
+  assert.equal(connection.ackRequests, 0, 'Expected unacknowledged Message mode');
+  assert.ok(collectorEndedConnection(connection.peerEvents), 'Missing collector-side disconnect on fixture connection');
+  assert.equal(connection.frames, forwardFrames, 'Complete frame count differs from fixture ledger');
+  assert.ok(forwardFrames >= failedOrdinal && forwardFrames <= producer.length, 'Incomplete evidence for failed fixture ID');
+  assert.deepEqual(connection.sequences, producer.slice(0, forwardFrames), 'Missing or foreign ordinal in complete frames');
+  assert.ok(Number.isSafeInteger(connection.partialBytesAtClose) && connection.partialBytesAtClose >= 0,
+    'Missing final partial-frame boundary');
+  if (connection.partialBytesAtClose > 0) {
+    assert.ok(forwardFrames < producer.length && growth.incompleteForwardConnections > 0, 'Unexpected partial fixture frame');
+  }
+
+  // The last decoded fixture record held an existing chunk. A synchronous write error closes that connection.
+  assert.deepEqual(trace.storageFailuresAtFault, storageFailures, 'Stage counts changed after fault');
+  assert.equal(storageFailures.chunk_write, 1, 'Expected one attributable fixture write failure');
+  const otherCreates = storageFailures.chunk_create;
+  assert.equal(trace.ingestWarnings, 1 + otherCreates, 'Forward failures disagree with confirmed stage counts');
+  if (otherCreates > 0) {
+    const fixtures = trace.connectionsAtFault.filter(({ peer }) => peer === 'pending-buffer-growth');
+    assert.ok(fixtures.length === 1 && collectorEndedConnection(fixtures[0].peerEvents),
+      'Mixed-source attribution requires a fixture disconnect during the fault');
+    const others = trace.connectionsAtFault.filter(({ peer }) => peer !== 'pending-buffer-growth');
+    assert.ok(others.every(({ peer, frames, peerEvents }) => peer === 'api' && frames === 1 && collectorEndedConnection(peerEvents)),
+      'Cannot attribute extra create failures to other API connections');
+    assert.equal(others.length, otherCreates, 'Missing source evidence for extra create failures');
+    assert.equal(trace.otherForwardFrames, otherCreates, 'Ambiguous frames from other sources');
+  }
+  return { delivered, failedOrdinal, fixtureWriteFailures: 1, fixtureTailCount: outcome.sent - failedOrdinal,
+    otherApiCreateFailures: otherCreates };
+}
+
 export async function verifyDiskQueue(context) {
   const { docker, name, launchFixture, launchStagedFixture, directory, sql, fetchInProbe, relayEvents, logs, diskControl, report, setPhase } = context;
   const control = diskControl;
@@ -78,9 +156,11 @@ export async function verifyDiskQueue(context) {
   const observedFile = (group) => control('file-ids', group.id);
   const httpIds = (group) => sql('log.db', "SELECT event_id FROM runtime_log_event WHERE json_extract(canonical_json,'$.containerId')=?", group.id)
     .map(({ event_id: id }) => id);
-  const ledger = (group) => {
+  const ledger = (group, recordIds = false) => {
     const file = observedFile(group);
-    return { ...summarizeDelivery(group.expected, file.ids, httpIds(group)), badFileLines: file.badLines, incompleteFileTails: file.incompleteTails };
+    const sqlite = httpIds(group);
+    return { ...summarizeDelivery(group.expected, file.ids, sqlite), badFileLines: file.badLines, incompleteFileTails: file.incompleteTails,
+      ...(recordIds ? { eventIds: { sent: group.expected, file: file.ids, sqlite } } : {}) };
   };
   const running = () => docker('inspect', '-f', '{{.State.Running}}', name('collector')) === 'true';
   const waitCollector = () => until(() => fetchInProbe('http://collector:2020/api/v1/metrics').status === 200, 'collector ready after recovery', 45000);
@@ -139,9 +219,7 @@ export async function verifyDiskQueue(context) {
     const group = emit(role, make(2));
     await until(() => httpIds(group).length === 2 && observedFile(group).ids.includes(group.expected.at(-1)),
       'post-recovery event delivered to both branches', 60000);
-    const result = ledger(group);
-    if (recordIds) result.eventIds = { sent: group.expected, file: observedFile(group).ids, sqlite: httpIds(group) };
-    return result;
+    return ledger(group, recordIds);
   };
   const assertCleanDelivery = (outcome) => {
     assert.equal(outcome.fileMissing + outcome.httpMissing + outcome.duplicateFileLines, 0);
@@ -293,7 +371,7 @@ export async function verifyDiskQueue(context) {
   await until(() => queue.some((group) => httpIds(group).length > 0), 'surviving HTTP backlog replayed', 90000);
   report.diskQueue.httpQueue.recovery = await deliver('queue-recovered');
   const drained = await waitDrain();
-  const outcomes = queue.map(ledger);
+  const outcomes = queue.map((group) => ledger(group));
   const fileMissing = outcomes.reduce((sum, outcome) => sum + outcome.fileMissing, 0);
   const httpMissing = outcomes.reduce((sum, outcome) => sum + outcome.httpMissing, 0);
   const queueDelta = delta(beforeQueue, counters());
@@ -329,6 +407,7 @@ export async function verifyDiskQueue(context) {
         /^fluentbit_input_\w+\{[^}]*\bname="guarded_input"[,}]/u.test(line));
       return {
         observedAt: new Date().toISOString(), inputStorageFailures: storageFailureCounters(response.body),
+        collectorStartedAt: docker('inspect', '-f', '{{.State.StartedAt}}', name('collector')),
         activeChunks: JSON.parse(storage.body).storage_layer.chunks.total_chunks,
         inputMetricFamilies: [...new Set(inputSamples.map((line) => line.split('{')[0]))].sort(),
         connectionSamples: inputSamples.filter((line) => /connect|disconnect/u.test(line.split('{')[0])),
@@ -344,7 +423,7 @@ export async function verifyDiskQueue(context) {
     const logConfig = JSON.parse(docker('inspect', '-f', '{{json .HostConfig.LogConfig}}', name('collector')));
     const admin = { windowStart, logConfig, forwardLogLevel: growthSeries ? 'warn' : 'error', before: adminSnapshot() };
     report.diskQueue.adminDiagnostics = admin;
-    const beforeGrowth = storageFailures();
+    const beforeGrowth = admin.before.inputStorageFailures;
     const beforeBranches = counters();
     const beforeForward = forwardStats();
     const ingestWarnings = () => (logs('collector').stderr.match(/could not ingest Forward message/gu) ?? []).length;
@@ -389,12 +468,15 @@ export async function verifyDiskQueue(context) {
       }
     } finally { control('release'); }
     const drained = await waitDrain();
-    const outcome = ledger(growth);
+    const outcome = ledger(growth, true);
     const current = storageFailures();
     const failures = Object.fromEntries(Object.entries(current).map(([stage, count]) => [stage, count - beforeGrowth[stage]]));
     const metrics = delta(beforeBranches, counters());
     const forwardFrames = frames(growth);
     const afterForward = forwardStats();
+    const growthTag = 'radish.api.' + growth.id;
+    const otherForwardFrames = Object.entries(afterForward.tags).reduce((total, [tag, stats]) =>
+      tag === growthTag ? total : total + stats.frames - (beforeForward.tags[tag]?.frames ?? 0), 0);
     if (growthSeries) {
       const ordinals = new Map(growth.expected.map((id, i) => [id, i + 1]));
       const ordinal = (id) => {
@@ -403,23 +485,17 @@ export async function verifyDiskQueue(context) {
       };
       const collector = logs('collector').stderr;
       const producer = logs(role).stdout.trimEnd().split('\n').map((line) => ordinal(JSON.parse(line).eventId));
-      const growthTag = 'radish.api.' + growth.id;
       const connections = afterForward.growthConnections.filter((connection) => connection.tag === growthTag);
-      const otherForwardFrames = Object.entries(afterForward.tags).reduce((total, [tag, stats]) =>
-        tag === growthTag ? total : total + stats.frames - (beforeForward.tags[tag]?.frames ?? 0), 0);
       const beforeWrite = Array.from(collector.matchAll(/^probe-growth-append=(\d+)$/gmu), (match) => Number(match[1]));
       Object.assign(report.diskQueue.bufferGrowth.sequenceTrace, {
-        producer, connections, beforeWrite, otherForwardFrames,
-        file: observedFile(growth).ids.map(ordinal), sqlite: httpIds(growth).map(ordinal),
+        producer, connections, beforeWrite, otherForwardFrames, fixtureTag: growthTag,
+        file: outcome.eventIds.file.map(ordinal), sqlite: outcome.eventIds.sqlite.map(ordinal),
         ingestWarnings: ingestWarnings() - warningsBeforeGrowth,
       });
-      assert.deepEqual(producer, events.map((_, index) => index + 1), 'Docker log cache must confirm the producer sequence');
-      assert.equal(connections.reduce((total, connection) => total + connection.sequences.length, 0), forwardFrames);
-      assert.ok(beforeWrite.length >= first.length, 'Collector trace must cover the staged first wave');
     }
     report.diskQueue.incompleteForwardConnections = afterForward.incompleteConnections;
     Object.assign(report.diskQueue.bufferGrowth, {
-      outcome, forwardFrames, storageFailures: failures, metrics, drained,
+      outcome, forwardFrames, otherForwardFrames, storageFailures: failures, metrics, drained,
       incompleteForwardConnections: afterForward.incompleteConnections - beforeForward.incompleteConnections,
       unexpectedFrames: afterForward.unexpected - beforeForward.unexpected,
     });
@@ -427,12 +503,23 @@ export async function verifyDiskQueue(context) {
     report.diskQueue.bufferGrowth.recoveryDrained = await waitDrain();
     assertCleanDelivery(report.diskQueue.bufferGrowth.recovery);
     admin.afterRecovery = adminSnapshot();
+    admin.assessment = assessGrowthDiagnostics(admin);
+    assert.deepEqual(failures, admin.assessment.knownAppendFailures, 'Growth ledger and independent diagnostics disagree');
+    if (otherForwardFrames === 0) {
+      assert.deepEqual(failures, { chunk_create: 0, chunk_write: 1 }, 'Expected one failed append in the fixture-only window');
+    }
     assert.equal(afterForward.unexpected, 0);
-    assert.equal(forwardFrames, outcome.sent, 'Forward observer must see every staged fixture record');
-    assert.equal(outcome.missingBoth, failures.chunk_write + failures.chunk_create);
+    const prefix = verifyGrowthPrefix(growth.expected, outcome.eventIds.file, outcome.eventIds.sqlite);
+    assert.ok(prefix >= first.length && prefix < forwardFrames && prefix + 1 < outcome.sent,
+      'Expected delivered first wave, an observed failed frame and a tail');
     assert.equal(outcome.fileOnlyMissing + outcome.httpOnlyMissing + outcome.duplicateFileLines, 0);
     assert.equal(metrics.runtime_file.dropped + metrics.runtime_http.dropped, 0);
     assert.equal(outcome.badFileLines + outcome.incompleteFileTails, 0);
+    const recoveryIds = report.diskQueue.bufferGrowth.recovery.eventIds;
+    assert.equal(verifyGrowthPrefix(recoveryIds.sent, recoveryIds.file, recoveryIds.sqlite), recoveryIds.sent.length);
+    if (growthSeries) {
+      report.diskQueue.bufferGrowth.sourceAssessment = verifyGrowthTrace(report.diskQueue.bufferGrowth, first.length);
+    }
     report.checks.bufferGrowthEnospc = true;
   }
 }

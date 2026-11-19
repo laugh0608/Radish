@@ -6,7 +6,7 @@ import { basename, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRuntimeLogPolicy, serializeRuntimeLogEvent } from '../../Frontend/scripts/logging/runtime-event.mjs';
 import { renderCollectorPolicy } from '../../Deploy/logging/render-policy.mjs';
-import { boundaryConfig } from './boundary-config.mjs';
+import { boundaryConfig, enableCheckedJsonl } from './boundary-config.mjs';
 import { diskCapacityBytes, diskMount } from './ingest-probe-disk-control.mjs';
 import { diskCollectorConfig, diskDeployment, diskRelease, diskWorkload, verifyDiskQueue } from './ingest-probe-disk.mjs';
 import { createPostgresProbe, postgresImage } from './ingest-probe-postgres.mjs';
@@ -27,10 +27,10 @@ const suiteName = suite.split('=')[1];
 const transport = suiteName === 'transport';
 const disk = suiteName === 'disk-queue';
 const candidate = candidateOption !== undefined;
-assert.ok(!traceGrowth || candidate, 'Growth tracing requires a candidate image');
+assert.ok(!traceGrowth || (disk && candidate), 'Growth tracing requires the disk-queue suite and a candidate image');
 const growthSeries = traceGrowth ? randomUUID().slice(0, 24) : null;
 if (candidate) {
-  assert.ok(disk, 'A local candidate image is supported only by the disk-queue suite');
+  assert.ok(disk || transport, 'A local candidate image requires the transport or disk-queue suite');
   assert.match(candidateOption, /^--collector-image=sha256:[a-f0-9]{64}$/u);
 }
 const collectorImage = candidate ? candidateOption.split('=')[1] : upstreamCollectorImage;
@@ -54,7 +54,10 @@ const diskVolumeOptions = { type: 'tmpfs', device: 'tmpfs', o: 'size=24m,noexec,
 
 function collectorConfig() {
   let base = boundaryConfig('relay');
-  if (transport) base = base.replace('rotate_max_size 1M', 'rotate_max_size 16M');
+  if (transport) {
+    base = base.replace('rotate_max_size 1M', 'rotate_max_size 16M');
+    if (candidate) base = enableCheckedJsonl(base);
+  }
   if (disk) base = diskCollectorConfig(base, candidate);
   if (traceGrowth) {
     base = base.replace('Alias guarded_input\n', 'Alias guarded_input\n    Log_Level warn\n')
@@ -286,7 +289,7 @@ try {
   }
   launch('collector', ...localLogs, '--env-file', join(directory, 'collector.env'),
     '-v', join(directory, 'collector') + ':/probe', ...diskMountArgs,
-    ...(candidate ? ['--user', '10001:10001'] : []),
+    ...(disk && candidate ? ['--user', '10001:10001'] : []),
     ...(transport ? ['--pid=container:' + name('relay')] : disk ? [] : publishForward),
     collectorImage, '-c', '/probe/fluent-bit.conf');
   if (diskVolume) for (const role of ['relay', 'collector']) {

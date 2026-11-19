@@ -5,7 +5,9 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
-- [2026-11-18 统一日志采集器候选 SQLite 联验](./unified-logging-l1-l3-collector-candidate-2026-11-18.md) · [Forward 缺口逐条定位](./unified-logging-l1-forward-gap-2026-11-18.md) · [管理员独立诊断与恢复对账](./unified-logging-l1-forward-admin-diagnostics-2026-11-18.md)
+- [2026-11-19 统一日志候选镜像的 SQLite 传输联验](./unified-logging-l1-l3-transport-candidate-2026-11-19.md) · 请求尺寸、接收端门限、503 同批重投、两路交付与峰值 RSS
+
+- [2026-11-18 统一日志采集器候选 SQLite 联验](./unified-logging-l1-l3-collector-candidate-2026-11-18.md) · [Forward 缺口定位](./unified-logging-l1-forward-gap-2026-11-18.md) · [管理员诊断](./unified-logging-l1-forward-admin-diagnostics-2026-11-18.md) · [满卷扩容验收](./unified-logging-l1-forward-growth-acceptance-2026-11-18.md)
 
 - [2026-11-17 日终文档回顾](./day-end-doc-review-2026-11-17.md) · 五个开发提交、原版采集器运行证据与候选联验顺位
 

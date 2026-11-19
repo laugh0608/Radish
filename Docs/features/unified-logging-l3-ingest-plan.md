@@ -1,6 +1,6 @@
 # 日志 L1 / L2 剩余门禁与 L3-A 接收入库方案
 
-> 更新于 2026-11-18（Asia/Shanghai）。L3-A、第 8 节自有来源、第 9 节 Controller 与第 10 节已登记切片均有本地实现和回归。OrbStack / Linux arm64 的 SQLite 和 PostgreSQL 16.15 链路已通过。真实运行范围见[SQLite 记录](../records/unified-logging-l1-l3-sqlite-runtime-2026-11-17.md)和[PostgreSQL 记录](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md)，剩余门禁见下方第 2 节。
+> 更新于 2026-11-19（Asia/Shanghai）。L3-A、第 8 节自有来源、第 9 节 Controller 与第 10 节已登记切片均有本地实现和回归。OrbStack / Linux arm64 的 SQLite 和 PostgreSQL 16.15 链路已通过。固定候选的 SQLite 磁盘与传输联验已通过，剩余门禁见下方第 2 节。[SQLite 记录](../records/unified-logging-l1-l3-sqlite-runtime-2026-11-17.md) · [PostgreSQL 记录](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md) · [候选传输记录](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)
 >
 > 本页属于[统一日志专题](./unified-logging-governance-design.md)，承接[事件契约](./unified-logging-contract.md)。已完成来源仍以事件契约为准；本页维护剩余门禁及下一批实施边界，不另建主线。
 
@@ -32,9 +32,9 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 | 门禁 | 已有证据 | 仍需交付 / 通过条件 | 所属批次 |
 | --- | --- | --- | --- |
-| 传输正式上界 | Docker Message mode 候选上界完成[推导](#l1-l3-transport-budget)及 [OrbStack 实测](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。合法流量全部交付，实际请求在候选预算内，接收端门限和进程内存已取证 | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
+| 传输正式上界 | Docker Message mode 上界已[推导](#l1-l3-transport-budget)，[原版](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)和[固定候选](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)均已实测合法流量、请求大小、接收端门限与进程峰值 RSS | 部署接入时冻结目标 daemon、镜像和传输参数。扩展生产者、平台或并发条件时复核对应上界和内存 | L1 接续，与 L3-B 联验 |
 | 坏批隔离与真实确认 | 前置拒收摘要、同批有效事件交付、无原文留存及 400 / 413 的丢弃计数已通过隔离联验。SQLite 和 PostgreSQL 均通过 503 重投恢复 | 留存仍按下列门禁验证 | L3-A 实现接收语义，L1 / L3-B 验证插件链 |
-| 磁盘与支路隔离 | [原版联验](#l1-l3-disk-queue-runtime)与[候选联验](#l1-l3-disk-queue-followup)已核对 ENOSPC、文件回滚、拒写、轮转、HTTP 队列丢弃及恢复。固定候选的独立诊断足以支持满卷处置 | [扩容验收方案](#forward-disconnect-acceptance)待确认后落实到探针并复验，现行用例仍失败 | L1 接续 |
+| 磁盘与支路隔离 | [原版联验](#l1-l3-disk-queue-runtime)与[候选联验](#l1-l3-disk-queue-followup)已核对 ENOSPC、文件回滚、拒写、轮转、HTTP 队列丢弃及恢复。[满卷扩容两轮复验](../records/unified-logging-l1-forward-growth-acceptance-2026-11-18.md)已区分实例失败与未知尾段，并核实两路 ID 和排空 | 本机固定候选的磁盘用例已通过。输入模式、worker 或存储边界变化时复核对应结论 | L1 接续 |
 | 容量与恢复 | chunk 轮转、有限队列和 SIGKILL 后持久 chunk 恢复已有本机证据 | 计入单片超出量与索引 / 缓冲开销；验证重启、提交中断、备份恢复与丢失区间；SIGKILL 不等于真实断电持久性保证 | L1 / L3-B |
 | 部署平台与原生来源 | Fluent Bit 5.1.2 的 OrbStack / Linux arm64 隔离实验；PG / Redis 合成格式 | 核定实际目标架构、digest、daemon 回环路径与七类服务标签；真实镜像来源关闭敏感 DETAIL / STATEMENT 等；未支持的平台显式保留 | L3-B 接入前 |
 
@@ -46,7 +46,7 @@ L2 未整体关闭不阻止用合成安全事件实现和验证 L3-A；但它阻
 
 1. 对照第 10 节调用清单、事件契约和各批回归，列出尚会阻断真实联验的已登记来源。随后确认单一隔离环境的架构、镜像 digest、Docker daemon 到 collector 的路径、服务与流标识、独立内网端口、专用凭据、测试存储、故障注入和清理。此清单用于确认本次运行范围。
 2. 先以三个边界对账。API 5xx 的响应反馈 ID 与文件及真实 API 接收后 SQLite 的 canonical JSON 一致，旧事件缺省兼容，提交后响应丢失重投只保留一个事件。用受信的服务与流元数据识别 DbMigrate stdout 报告，使其在 JSON parser 前退出事件链。对独立启动 / 入库应急 stderr 验证有界证据和失败通道隔离，入库应急避开同一失败链。
-3. SQLite 和 PostgreSQL 16.15 的提交、重投与写入故障恢复，以及 Docker Message mode 候选传输上界与坏批隔离均已通过。候选补丁已取得磁盘故障实测，输入扩容的剩余缺口见[第 2.4 节](#l1-l3-disk-queue-followup)。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
+3. SQLite 和 PostgreSQL 16.15 的提交、重投与写入故障恢复已通过。原版和固定候选的 Docker Message mode 传输与坏批隔离见[第 2.2 节](#l1-l3-transport-budget)，同一候选的磁盘故障和扩容验收见[第 2.4 节](#l1-l3-disk-queue-followup)。API 反馈 ID 的独立可空列与索引归 L3，精确受权筛选归 L4。Flutter 目标设备输出沿 Native 验收。
 
 #### OrbStack / Linux arm64 隔离联验入口
 
@@ -89,16 +89,24 @@ PostgreSQL 5432 与原有 API、入库、中转及指标端口只供当批专用
 
 #### OrbStack 传输联验的运行范围
 
-在仓库根目录预览配置，获得本批启动授权后执行第二条命令。运行入口使用本机缓存的 Fluent Bit 5.1.2、ASP.NET Core 10.0.14、Node.js 24.16.0 镜像和现有 Linux arm64 Debug 产物。完整 digest 随预览与报告保留。运行脚本使用 `--pull never`，由 DbMigrate apply 创建临时 SQLite。
+在仓库根目录预览配置，获得本批启动授权后执行 `--run`。运行入口使用本机缓存的 Fluent Bit 5.1.2、ASP.NET Core 10.0.14、Node.js 24.16.0 镜像和现有 Linux arm64 Debug 产物。完整镜像标识随预览与报告保留。运行脚本使用 `--pull never`，由 DbMigrate apply 创建临时 SQLite。
 
 ```bash
 node Scripts/logging/collector-ingest-probe.mjs --plan --database=sqlite --suite=transport
 node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=transport
 ```
 
+复用已完成磁盘联验的候选时，传入其本地镜像 ID。探针核验镜像的候选标签，并在生成的文件输出配置中启用 `radish_jsonl`。传输轮使用镜像默认用户及探针目录挂载，保持同一传输负载和内存采样点。
+
+```bash
+image_id=sha256:c548922a71a15b99503d43b57df28eedf8fcf263b18122f0d27fa6e218b6218c
+node Scripts/logging/collector-ingest-probe.mjs --plan --database=sqlite --suite=transport --collector-image="$image_id"
+node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=transport --collector-image="$image_id"
+```
+
 - **端口与负载。** Forward 仅发布到 daemon 回环动态端口，经中转 24224 原样进入 Fluent Bit 24224。HTTP 中转 8080、collector metrics 2020、API 5100、专用接收端 15199 留在本次专用 Docker 网络。两组合法负载分别为 5,200 条精简事件与 1,200 条最大字段组合。另有 3 条混合记录、2 条终止错误用例和 1 条恢复探针，专用接收端再测试字节、条数与单行门限。临时文件轮转单文件预算使用 16M，方便对账整个用例，采集 flush 和队列预算沿用已验证的配置。
 - **证据。** 中转只记帧类型对应的条数、大小与合成生产者标识。观察到每行对应一个 Message frame 后，结合固定版入口源码核对逐条追加。HTTP 中转记录原始 JSONL 请求字节、条数、单行最大值与接收状态。进程内存用 Linux `VmRSS` 和 `VmHWM` 报告，Fluent Bit 通过联验中转的共享 PID namespace 读取，API 读取其容器 PID 1。采样点包括就绪、正常负载后、503 重试积压、恢复和接收端门限验证后。`VmHWM` 是截至采样点的进程累计 RSS 峰值。
-- **故障与恢复。** 只对临时库目标事件注入一次可撤销的写入阻断。合成混合记录对账文件、SQLite 和同批重投。两组终止 HTTP 错误由中转仅对指定测试事件变更请求，确认 API 返回 400 / 413、collector 计数丢弃、文件分支保留事件及后续正常批次入库。报告保留断言、各阶段内存读数和最大请求尺寸。
+- **故障与恢复。** 只对临时库目标事件注入一次可撤销的写入阻断。合成混合记录对账文件、SQLite 和同批重投。两组终止 HTTP 错误由中转仅对指定测试事件变更请求，确认 API 返回 400 / 413、collector 计数丢弃、文件分支保留事件及后续正常批次入库。报告保留同批 503 / 200 的请求体 SHA-256、两路实收、各阶段内存读数和最大请求尺寸。
 - **清理。** 脚本启动时打印本次 `radish-logging-transport-<id>` 和临时目录。退出时按精确 `radish.logging.probe=<本次 id>` 标签删除本次 API、DbMigrate、collector、中转和合成生产者容器及其临时卷，再删除专用网络和打印的单一 `/private/tmp/radish-logging-transport-…` 目录。目录包括 SQLite、日志／缓冲、合成输入和凭据。保留本机镜像缓存与 `artifacts/logging-transport-probe/<本次 id>.json`。清理失败时报告具体资源及目录。
 
 强制终止后，可用本次输出的完整 ID 核对资源，再按资源 ID 和打印的目录精确清理。
@@ -108,6 +116,8 @@ probe_id='radish-logging-transport-实际运行ID'
 docker --context orbstack ps -a --filter "label=radish.logging.probe=$probe_id"
 docker --context orbstack network ls --filter "label=radish.logging.probe=$probe_id"
 ```
+
+固定候选于 2026-11-19 通过传输联验。请求尺寸在推导上界内，真实接收端门限、503 同批重投、文件与 SQLite 对账及采样峰值均已留证。接续验证留存、备份恢复和目标部署条件。[实测报告与清理记录](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)
 
 本入口已通过该隔离环境的全部用例，实测数据见[传输联验记录](../records/unified-logging-l1-l3-transport-runtime-2026-11-17.md)。正式部署配置按目标部署批次冻结，改变上述预算前提时重新核对。
 
@@ -145,7 +155,7 @@ docker --context orbstack volume ls --filter "label=radish.logging.probe=$probe_
 
 <a id="l1-l3-disk-queue-followup"></a>
 
-### 2.4 文件写入与入队故障收口（候选扩容故障待收口）
+### 2.4 文件写入与入队故障收口
 
 #### 固定版根因
 
@@ -162,7 +172,7 @@ docker --context orbstack volume ls --filter "label=radish.logging.probe=$probe_
 | --- | --- |
 | 已有 chunk 后文件卷 ENOSPC 及文件路径权限故障 | HTTP 在故障期仍能入库。对文件支路分别核对已交付、待重试和最终丢弃，终态丢失量与输出计数一致。 |
 | 短写、刷新或关闭失败，含轮转前后 | 旧的完整记录保留。可回滚的 chunk 在恢复后只完整写入一次，前后两条探针都完整落盘。无法核对的写入结果明确进入未知，避免继续污染 JSONL。 |
-| 写满缓冲卷后追加及后续写入失败 | 分流前失败的合成记录数与新增输入计数一致，两个输出不重复加记。释放空间后两条支路恢复，诊断可在故障期间独立读取。 |
+| 写满缓冲卷后追加及后续写入失败 | 采集器可确认的失败按实例和阶段计数。扩容断连后的未知尾段、来源级对账和两支路恢复按[断连验收口径](#forward-disconnect-acceptance)验证。 |
 | 共享卷恢复、HTTP 503 和队列溢出回归 | HTTP 仍交付存活积压，终态缺口与其丢弃量一致。磁盘占用、诊断存储与排空可核验。 |
 
 候选实现在 [5.1.2 补丁](../../Deploy/logging/fluent-bit/5.1.2-storage-errors.patch)。`radish_jsonl` 只在候选探针启用。使用无 stdio 写缓冲的 POSIX 追加，检查短写和关闭结果，回滚后核对原文件大小。进入轮转前先验证活动文件尾，尾部扫描上限 8 KiB。关闭或回滚结果不确定时，疑似已写入的批次终止重放，对该 inode 暂停追加并增加未知批次计数。探针或运维在确认故障文件后以替换活动文件恢复；候选验证要求单写者，文件长度和完整行的证明只覆盖当前故障运行区间。
@@ -199,7 +209,7 @@ node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=
 
 **现有独立诊断足以支持本候选的满卷处置。** 适用范围为上面的 5.1.2 候选镜像、单 worker 同步追加和 Docker 无 ACK 的 Message mode。保持满卷时，默认 `error` 已能从 collector 的有界 stderr 读到写错，并从内网指标确认同一输入的 `chunk_write` 增量。管理员可登记受影响的实例和时段，注明“当前连接按固定版错误路径关闭，尾段数量未知”，保全已有文件与缓冲，恢复可写空间，再核对两路交付与排空。警告级别多出的消息处理失败提示和测试中转观察到的 `ECONNRESET` 均不改变这些处置动作。当前无需为此新增连接指标或切换 ACK。镜像、worker 或投递方式变化时需重核推断依据。[管理员独立联验](../records/unified-logging-l1-forward-admin-diagnostics-2026-11-18.md) · [固定版关闭路径](../records/unified-logging-l1-forward-gap-2026-11-18.md#失败如何传导)
 
-**建议按下表修订扩容用例，待确认后实施。** 管理员结论只依赖独立诊断。合成证据用于验证该结论的边界，并检查断点前还有没有其他丢失。
+扩容探针按下表验收。管理员结论只依赖独立诊断。合成证据用于验证该结论的边界，并检查断点前还有没有其他丢失。
 
 | 验收对象 | 通过条件 |
 | --- | --- |
@@ -209,7 +219,7 @@ node Scripts/logging/collector-ingest-probe.mjs --run --database=sqlite --suite=
 
 离线复核给出了两条旧断言的反例。默认轮 `0b16c4dc` 中转看到 640 帧，两路共同缺口 469，输入仅计 1 条写失败。对照轮 `943fb48d` 中转只看到 623 个完整帧，同源序号仍能完整对账为 171 条交付、1 条写失败和 468 条未到追加点。`f11bdc5b` 中转看全 640 帧，另一 API 来源的 `chunk_create +1` 也进入实例计数。这些数字是各轮观测值，断点和中转帧数允许随时序变化。[两轮报告与校验值](../records/unified-logging-l1-forward-admin-diagnostics-2026-11-18.md#原始报告与清理) · [混合来源反例](../records/unified-logging-l1-forward-gap-2026-11-18.md#467-的来源)
 
-下一步只调整磁盘联验探针与定向测试。在扩容断连场景，将“中转必须收全”和“共同缺口等于实例失败总数”替换为上表的断点与恢复核对。离线用例应覆盖完整帧、截断帧和混合来源，并验证漏计、错归来源、前缀缺号或单路缺失会导致失败。随后复用同一镜像按默认级别和 `--trace-growth` 在 OrbStack SQLite 成组复验，默认轮确认管理员视角，对照轮验证同源断点。两轮及既有回归通过后再复核候选传输上界与内存，接续留存和备份恢复。当前两份原始报告仍为 `failed`。[现行探针](../../Scripts/logging/ingest-probe-disk.mjs)
+新探针在 OrbStack SQLite 的默认级别与 `--trace-growth` 两轮均已通过。默认轮的输入实例新增创建、写入失败各 1 条，同窗有其他来源。逐条轮只有 1 条写入失败，同源 640 条中两路交付 171 条，第 172 条写失败，余下 468 条未到写入前过滤点。两轮管理员结论均保留尾段数量未知。两轮恢复后新发 ID 全部匹配，积压排空。定向测试覆盖漏计、错归来源、断点前缺号和单路漏交。该镜像的传输与内存结果见[第 2.2 节](#l1-l3-transport-budget)。[两轮验收记录](../records/unified-logging-l1-forward-growth-acceptance-2026-11-18.md) · [现行探针](../../Scripts/logging/ingest-probe-disk.mjs)
 
 ## 3. L2 剩余来源与退出条件
 

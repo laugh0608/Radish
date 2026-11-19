@@ -1,7 +1,52 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import { readForwardMessage } from './ingest-probe-forward.mjs';
 import { readProcessMemory } from './ingest-probe-transport.mjs';
+
+const probe = fileURLToPath(new URL('./collector-ingest-probe.mjs', import.meta.url));
+const candidateImage = 'sha256:' + 'a'.repeat(64);
+const candidateOption = '--collector-image=' + candidateImage;
+const plan = (database, suite, ...options) => spawnSync(process.execPath,
+  [probe, '--plan', '--database=' + database, '--suite=' + suite, ...options], { encoding: 'utf8', timeout: 5000 });
+
+test('transport can use an explicit candidate with checked JSONL and the same test workload', () => {
+  const upstream = plan('sqlite', 'transport');
+  const candidate = plan('sqlite', 'transport', candidateOption);
+  assert.equal(upstream.status, 0, upstream.stderr);
+  assert.equal(candidate.status, 0, candidate.stderr);
+  const upstreamPlan = JSON.parse(upstream.stdout);
+  const candidatePlan = JSON.parse(candidate.stdout);
+  assert.equal(upstreamPlan.candidate, false);
+  assert.doesNotMatch(upstreamPlan.collector, /radish_jsonl/u);
+  assert.deepEqual(candidatePlan, {
+    ...upstreamPlan,
+    candidate: true,
+    images: [candidateImage, ...upstreamPlan.images.slice(1)],
+    collector: upstreamPlan.collector.replace('    Format plain\n', '    Format plain\n    radish_jsonl true\n'),
+  });
+  assert.match(candidatePlan.collector, /Format plain\n    radish_jsonl true\n/u);
+});
+
+test('candidate transport requires a local image ID and SQLite and keeps growth tracing disk-only', () => {
+  for (const [database, suite, options, reason] of [
+    ['sqlite', 'transport', ['--collector-image=fluent-bit:latest'], /--collector-image/u],
+    ['postgresql', 'transport', [candidateOption], /use disposable SQLite/u],
+    ['sqlite', 'ingest', [candidateOption], /requires the transport or disk-queue suite/u],
+    ['sqlite', 'transport', [candidateOption, '--trace-growth'], /Growth tracing requires the disk-queue suite/u],
+  ]) {
+    const rejected = plan(database, suite, ...options);
+    assert.equal(rejected.status, 1, rejected.stderr);
+    assert.match(rejected.stderr, reason);
+  }
+  const disk = plan('sqlite', 'disk-queue', candidateOption, '--trace-growth');
+  assert.equal(disk.status, 0, disk.stderr);
+  const diskPlan = JSON.parse(disk.stdout);
+  assert.equal(diskPlan.traceGrowth, true);
+  assert.equal(diskPlan.collectorUser, '10001:10001');
+  assert.match(diskPlan.collector, /Format plain\n    radish_jsonl true\n/u);
+});
 
 const tag = 'radish.api.' + 'a'.repeat(64);
 const string = (text) => {
