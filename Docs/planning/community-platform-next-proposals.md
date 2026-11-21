@@ -1,6 +1,6 @@
 # 社区功能与平台治理六项提案
 
-2026-11-21 · 方案草案，待项目所有者选题及确认边界。现状依据为 `dev@7232ef65` 的源码和既有记录。客户端平台建设及客户端连接继续暂停。下文涉及 Web 或 Console 的使用面用于定义完整用户路径，页面和服务端实施在对应专题获批后进入。[当前进行中](./current.md) · [能力专题地图](./topics.md)
+2026-11-21 · 方案草案，第 2 项已完成只读排查和默认期限隔离对照。初始盘点依据为 `dev@7232ef65` 的源码和既有记录。客户端平台建设及客户端连接继续暂停。下文涉及 Web 或 Console 的使用面用于定义完整用户路径，页面和服务端实施在对应专题获批后进入。[当前进行中](./current.md) · [能力专题地图](./topics.md)
 
 ## 推进顺位
 
@@ -35,7 +35,9 @@
 
 ## 2. Token 过期与隔夜恢复
 
-**已知事实。** 提交的 [Auth 配置](../../Radish.Auth/appsettings.json) 显式设置 access token **5 分钟**、refresh token **25 分钟**、不活跃窗口 **7 天**。仅当配置键缺失时，[宿主代码](../../Radish.Auth/Program.cs) 才使用 60 分钟和 30 天的回退值。认证站点 Cookie 另有两小时滑动期限。由此推断，若部署实际采用 25 分钟且关页后无刷新，即使仍在 7 天窗口内，隔天也可能没有可用的 refresh token。线上生效配置和本次掉线入口尚未核实。[Token 不活跃规则](../guide/auth-idle-session.md)
+已完成配置核对及正式镜像 7 分钟和 27 分钟的关页重开对照。修复边界与验收矩阵见[隔夜会话排查与验收方案](../features/auth-session-overnight-recovery-plan.md)。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
+
+**已知事实。** 提交的 [Auth 配置](../../Radish.Auth/appsettings.json) 显式设置 access token **5 分钟**、refresh token **25 分钟**、不活跃窗口 **7 天**。仅当配置键缺失时，[宿主代码](../../Radish.Auth/Program.cs) 才使用 60 分钟和 30 天的回退值。认证站点 Cookie 另有两小时滑动期限。隔离环境中的 27 分钟组在触及不活跃窗口前即因 refresh token 到期退出。实际掉线实例的生效配置和入口尚未核实。[Token 不活跃规则](../guide/auth-idle-session.md)
 
 | 切片 | 设计与验收 |
 | --- | --- |

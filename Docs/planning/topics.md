@@ -42,7 +42,7 @@
 | 子专题入口 | 阶段与任务 / 验收来源 | 协同 |
 | --- | --- | --- |
 | [身份语义](../architecture/user-identity-semantics.md)、[认证](../guide/authentication.md)、[会话过期](../guide/auth-idle-session.md) | 既有身份治理切片，协议与测试入口沿原文 | 平台、多端 |
-| [隔夜会话恢复](./community-platform-next-proposals.md#session)、[第三方 API Key](./community-platform-next-proposals.md#api-keys) | 待确认提案，分别衔接既有会话及[应用治理](../features/open-platform.md) | 平台、多端 |
+| [隔夜会话恢复](../features/auth-session-overnight-recovery-plan.md)、[第三方 API Key](./community-platform-next-proposals.md#api-keys) | 隔夜会话已完成默认期限隔离对照，修复待评审。第三方 API Key 待确认提案，衔接[应用治理](../features/open-platform.md) | 平台、多端 |
 | [Console 权限](../guide/console-permission-governance.md) | 原权限专题与覆盖矩阵；不新增部署架构 | 多端体验 |
 | [案件与证据](../features/content-moderation-case-evidence-action-design.md)、[申诉纠正](../features/content-moderation-appeal-relief-design.md)、[用户屏蔽](../features/user-block-relationship-isolation-design.md) | F4-I / J / K，原任务和验收 | 内容、关系 |
 
