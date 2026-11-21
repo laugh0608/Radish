@@ -11,13 +11,13 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
-- **当前主线**为 Flutter Native P8-C Windows readiness。日常来宾已完成只读盘点并关机，Windows CleanBase 保持停止。下一步确认 VS layout 和安装容量，再按[盘点记录](../records/f4-flutter-native-p8c-windows-readiness-2026-11-21.md#待授权命令)分批授权补齐工具。
+- **客户端开发暂停（2026-11-21）**。Flutter Native 平台建设与客户端连接保留原方案和顺位。非客户端功能已盘点，新增六项草案待项目所有者选题。[社区功能与平台治理六项提案](./community-platform-next-proposals.md)
 - **规划复核日期**为 2026-11-10，所有者确认日志、Native、客户端连接的收口顺序。该次规划以 `8d6cc63a` 集成的成果为基线。[规划复核记录](../records/planning-closeout-2026-11-10.md)
 - **日志出口评审（2026-11-21）**。OrbStack 隔离候选通过登记来源、诊断及数据保全评审。继续接受普通运行日志首次同步前的崩溃窗口，满卷未观测尾段数量保持未知。实际部署预检与慢 SQL 安全指纹单列。[出口评审](../records/unified-logging-exit-review-2026-11-21.md) · [最终联验](../records/unified-logging-exit-console-2026-11-21.md)
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
-## 已确认待实施的客户端方向
+## 已确认且暂停的客户端方向
 
 2026-10-12 已确认[客户端连接规划](../frontend/client-server-connection-plan.md)：同一个官方安装包运行时选择官方端点或用户自部署后端，无需重新编译。服务器选择、认证 / 缓存隔离及官方端点交付尚未验收；该能力明确保留在功能完成队列，不以已有单实例平台验收代替。
 
@@ -31,8 +31,8 @@
 
 ## 接下来的事项
 
-1. **完成 Native 已确认平台范围**。按 P8-C Windows、P8-D Linux、P8-E 成组验收推进。目标平台需取得工具链、真实认证 / 安全存储、窗口 / 输入和重启状态证据。签名、真机与分发按平台单列。资源不可达时登记具名等待条件，再评审是否在可用平台提前推进连接能力。
-2. **完成客户端连接能力**。先冻结实例身份、兼容发现、地址 / TLS、OIDC 和旧单实例状态迁移，再实现同包选择、会话 / 缓存 / 实时连接隔离与切换恢复。两个测试实例只证明机制，官方与自部署的正式交付各需对应证据。[连接规划](../frontend/client-server-connection-plan.md)
+1. **评审非客户端提案**。已起草社区徽章、会话过期、农场 / 牧场、第三方 API Key、插件和软删除性能规划。建议先定位隔夜掉线，再验证软删除热点。选定接续实施项后确认范围。[六项提案](./community-platform-next-proposals.md)
+2. **客户端恢复后按原顺位推进**。P8-C Windows、P8-D Linux、P8-E 成组验收完成后接续客户端连接。各平台须取得目标工具链、认证 / 安全存储、窗口 / 输入与重启证据，签名、真机与分发按平台单列。客户端连接按[已确认规划](../frontend/client-server-connection-plan.md)完成同包实例选择、隔离与恢复。
 3. **按范围验收后转入维护为主**。日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审。批次集成与正式发行 / 生产部署分开，商店分发和外部设备条件继续按各平台门禁。
 
 日志生产候选开关维持关闭。实际部署另核目标架构、七类来源、镜像、daemon 路径、容量及停写备份顺序。慢 SQL 同语句聚合等待安全指纹。[部署预检](../features/unified-logging-l3-ingest-plan.md#l1-l3-compose-preflight) · [告警契约](../features/unified-logging-governance-design.md#首轮查询和告警入口)
@@ -65,7 +65,7 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 当前主线：P8-C Windows readiness
+## 客户端暂停点：P8-C Windows readiness
 
 日常 VM 实测 Windows 11 25H2 ARM64 build `26200.9711`，C: 可用 13.29 GiB。现有 Git、ARM64 MSVC 与 Windows SDK 可复用，实际缺项为 Flutter / Dart、VS 的 x86/x64 C++、ARM64 ATL、CMake / Ninja。先核算安装空间，并从目标用户会话确认 Flutter 引导使用原生 ARM64 PowerShell。Windows CleanBase 的来宾核对安排在获准的候选副本。[只读盘点](../records/f4-flutter-native-p8c-windows-readiness-2026-11-21.md)
 
