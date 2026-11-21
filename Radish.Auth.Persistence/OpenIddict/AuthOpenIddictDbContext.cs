@@ -5,7 +5,7 @@ using OpenIddict.EntityFrameworkCore.Models;
 namespace Radish.Auth.OpenIddict;
 
 /// <summary>
-/// EF Core DbContext 专门用于承载 OpenIddict 的实体（客户端、授权、作用域、令牌等）。
+/// EF Core DbContext 承载 OpenIddict 数据与普通 Web 的服务端会话。
 /// 仅负责身份/授权相关数据，业务数据仍由 SqlSugar 负责。
 /// </summary>
 public class AuthOpenIddictDbContext : DbContext
@@ -15,12 +15,23 @@ public class AuthOpenIddictDbContext : DbContext
     {
     }
 
+    public DbSet<WebAuthSession> WebAuthSessions => Set<WebAuthSession>();
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
         // 注册 OpenIddict 默认实体模型（使用内置实体类型和映射）
         builder.UseOpenIddict();
+
+        builder.Entity<WebAuthSession>(session =>
+        {
+            session.Property(item => item.Subject).HasMaxLength(400);
+            session.Property(item => item.TenantId).HasMaxLength(64);
+            session.Property(item => item.AuthorizationId).HasMaxLength(100);
+            session.Property(item => item.Version).IsConcurrencyToken();
+            session.HasIndex(item => item.AuthorizationId).IsUnique();
+        });
 
         if (Database.IsNpgsql())
         {

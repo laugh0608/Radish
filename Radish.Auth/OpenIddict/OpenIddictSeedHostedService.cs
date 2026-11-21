@@ -11,6 +11,7 @@ namespace Radish.Auth.OpenIddict;
 /// <summary>
 /// 初始化 OpenIddict 所需的基础数据：
 /// - radish-client：官方客户端（Web / Flutter，共享授权码 + refresh_token）
+/// - radish-web：普通 Web 会话服务端（显式启用时登记 confidential 客户端）
 /// - radish-console：后台管理控制台（授权码 + refresh_token）
 /// - radish-scalar：API 文档和调试工具（授权码）
 /// - radish-api Scope：资源服务器标识
@@ -48,6 +49,7 @@ public class OpenIddictSeedHostedService : IHostedService
         var removedCount = 0;
 
         var publicBaseUri = GetPublicBaseUri();
+        var webClient = WebAuthClient.CreateRegistration(_configuration);
 
         // 初始化 radish-api Scope
         if (await _scopeManager.FindByNameAsync(UserScopes.RadishApi, cancellationToken) is null)
@@ -262,6 +264,13 @@ public class OpenIddictSeedHostedService : IHostedService
             removedCount++;
         }
 
+        if (webClient is not null)
+        {
+            var (created, updated) = await EnsureWebClientAsync(webClient, cancellationToken);
+            createdCount += created;
+            updatedCount += updated;
+        }
+
         using var scope = _logger.BeginScope(new Dictionary<string, object>
         {
             ["EventCode"] = "auth.seed.completed", ["SourceCategory"] = "database"
@@ -269,6 +278,37 @@ public class OpenIddictSeedHostedService : IHostedService
         _logger.LogInformation(
             "OpenIddict seed completed; created={createdCount}; updated={updatedCount}; removed={removedCount}; duration={durationMs} ms",
             createdCount, updatedCount, removedCount, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+    }
+
+    private async Task<(int Created, int Updated)> EnsureWebClientAsync(
+        OpenIddictApplicationDescriptor descriptor, CancellationToken cancellationToken)
+    {
+        ApplyOfficialMetadata(descriptor, "Radish 社区 Web 服务端会话客户端。");
+        var existing = await _applicationManager.FindByClientIdAsync(WebAuthClient.ClientId, cancellationToken);
+        if (existing is null)
+        {
+            await _applicationManager.CreateAsync(descriptor, cancellationToken);
+            return (1, 0);
+        }
+
+        var current = new OpenIddictApplicationDescriptor();
+        await _applicationManager.PopulateAsync(current, existing, cancellationToken);
+        if (await _applicationManager.ValidateClientSecretAsync(existing, descriptor.ClientSecret!, cancellationToken))
+        {
+            descriptor.ClientSecret = current.ClientSecret;
+            if (current.ClientType == descriptor.ClientType && current.ConsentType == descriptor.ConsentType &&
+                current.DisplayName == descriptor.DisplayName && current.RedirectUris.SetEquals(descriptor.RedirectUris) &&
+                current.PostLogoutRedirectUris.SetEquals(descriptor.PostLogoutRedirectUris) &&
+                current.Permissions.SetEquals(descriptor.Permissions) && current.Requirements.SetEquals(descriptor.Requirements) &&
+                current.Properties.Count == descriptor.Properties.Count && descriptor.Properties.All(property =>
+                    current.Properties.TryGetValue(property.Key, out var value) && JsonElement.DeepEquals(value, property.Value)))
+            {
+                return (0, 0);
+            }
+        }
+
+        await _applicationManager.UpdateAsync(existing, descriptor, cancellationToken);
+        return (0, 1);
     }
 
     private Uri GetPublicBaseUri()

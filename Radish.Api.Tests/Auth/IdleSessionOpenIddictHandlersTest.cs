@@ -15,8 +15,11 @@ namespace Radish.Api.Tests.Auth;
 
 public class IdleSessionOpenIddictHandlersTest
 {
-    [Fact]
-    public async Task ValidateHandler_ShouldRejectExpiredRefreshToken()
+    [Theory]
+    [InlineData("radish-client", true)]
+    [InlineData("radish-console", true)]
+    [InlineData("radish-web", false)]
+    public async Task ValidateHandler_ShouldApplyLegacyIdlePolicyOnlyToLegacyClients(string clientId, bool rejected)
     {
         var options = new IdleSessionOptions { Enable = true, IdleTimeoutDays = 7 };
         var handler = new ValidateIdleSessionTokenRequestHandler(
@@ -24,7 +27,8 @@ public class IdleSessionOpenIddictHandlersTest
             NullLogger<ValidateIdleSessionTokenRequestHandler>.Instance);
         var transaction = CreateTransaction(new OpenIddictRequest
         {
-            GrantType = OpenIddictConstants.GrantTypes.RefreshToken
+            GrantType = OpenIddictConstants.GrantTypes.RefreshToken,
+            ClientId = clientId
         });
         var context = new OpenIddictServerEvents.ValidateTokenRequestContext(transaction)
         {
@@ -33,9 +37,9 @@ public class IdleSessionOpenIddictHandlersTest
 
         await handler.HandleAsync(context);
 
-        Assert.True(context.IsRejected);
-        Assert.Equal(OpenIddictConstants.Errors.InvalidGrant, context.Error);
-        Assert.Equal(IdleSessionPolicy.ExpiredErrorDescription, context.ErrorDescription);
+        Assert.Equal(rejected, context.IsRejected);
+        Assert.Equal(rejected ? OpenIddictConstants.Errors.InvalidGrant : null, context.Error);
+        Assert.Equal(rejected ? IdleSessionPolicy.ExpiredErrorDescription : null, context.ErrorDescription);
     }
 
     [Fact]

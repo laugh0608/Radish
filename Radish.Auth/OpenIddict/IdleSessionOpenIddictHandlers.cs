@@ -22,7 +22,7 @@ public sealed class ValidateIdleSessionTokenRequestHandler
 
     public ValueTask HandleAsync(OpenIddictServerEvents.ValidateTokenRequestContext context)
     {
-        if (context.Request is null || !context.Request.IsRefreshTokenGrantType())
+        if (context.Request is null || context.ClientId == WebAuthClient.ClientId || !context.Request.IsRefreshTokenGrantType())
         {
             return default;
         }
@@ -68,7 +68,7 @@ public sealed class AttachIdleSessionRefreshTokenHandler
 
     public ValueTask HandleAsync(OpenIddictServerEvents.ProcessSignInContext context)
     {
-        if (context.RefreshTokenPrincipal is null)
+        if (context.RefreshTokenPrincipal is null || context.Request?.ClientId == WebAuthClient.ClientId)
         {
             return default;
         }

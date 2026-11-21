@@ -7,7 +7,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql;
+using OpenIddict.EntityFrameworkCore.Models;
 using Radish.Auth.OpenIddict;
 using Radish.Common.DbTool;
 using Radish.Api.Tests.TestCollections;
@@ -34,9 +37,9 @@ public sealed class AuthOpenIddictMigrationTest
             var firstApplied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database, cancellationToken);
             var secondApplied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database, cancellationToken);
 
-            Assert.Single(firstApplied);
+            Assert.Equal(db.Database.GetMigrations(), firstApplied);
             Assert.Empty(secondApplied);
-            Assert.Single(await db.Database.GetAppliedMigrationsAsync(cancellationToken));
+            Assert.Equal(firstApplied, await db.Database.GetAppliedMigrationsAsync(cancellationToken));
             AuthOpenIddictPersistence.EnsureReady(db, database);
             AssertModelIsCurrent(db, database);
         }
@@ -46,8 +49,10 @@ public sealed class AuthOpenIddictMigrationTest
         }
     }
 
-    [Fact]
-    public async Task ApplyMigrationsAsync_ShouldAdoptCompleteEnsureCreatedSchema()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ApplyMigrationsAsync_ShouldPreserveRegistrationsInBaselineDatabase(bool hasHistory)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var path = CreateTemporaryDatabasePath();
@@ -57,15 +62,26 @@ public sealed class AuthOpenIddictMigrationTest
         {
             await using (var legacyDb = CreateDbContext(database.ConnectionString))
             {
-                Assert.True(await legacyDb.Database.EnsureCreatedAsync(cancellationToken));
-                Assert.Empty(await legacyDb.Database.GetAppliedMigrationsAsync(cancellationToken));
+                if (hasHistory)
+                {
+                    await legacyDb.GetService<IMigrator>().MigrateAsync(legacyDb.Database.GetMigrations().First(), cancellationToken);
+                }
+                else
+                {
+                    await CreateUnversionedBaselineAsync(legacyDb, cancellationToken);
+                }
+                legacyDb.Add(new OpenIddictEntityFrameworkCoreApplication { ClientId = "radish-client" });
+                await legacyDb.SaveChangesAsync(cancellationToken);
             }
 
             await using var db = CreateDbContext(database.ConnectionString);
             var applied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database, cancellationToken);
 
-            Assert.Empty(applied);
-            Assert.Single(await db.Database.GetAppliedMigrationsAsync(cancellationToken));
+            Assert.Equal(db.Database.GetMigrations().Skip(1), applied);
+            Assert.Equal(db.Database.GetMigrations(), await db.Database.GetAppliedMigrationsAsync(cancellationToken));
+            Assert.True(await db.Set<OpenIddictEntityFrameworkCoreApplication>()
+                .AnyAsync(application => application.ClientId == "radish-client", cancellationToken));
+            Assert.Empty(await db.WebAuthSessions.ToListAsync(cancellationToken));
             AuthOpenIddictPersistence.EnsureReady(db, database);
             AssertModelIsCurrent(db, database);
         }
@@ -85,7 +101,7 @@ public sealed class AuthOpenIddictMigrationTest
         try
         {
             await using var db = CreateDbContext(database.ConnectionString);
-            Assert.True(await db.Database.EnsureCreatedAsync(cancellationToken));
+            await CreateUnversionedBaselineAsync(db, cancellationToken);
             await db.Database.ExecuteSqlRawAsync(
                 "DROP INDEX \"IX_OpenIddictTokens_ReferenceId\"",
                 cancellationToken);
@@ -100,6 +116,42 @@ public sealed class AuthOpenIddictMigrationTest
         {
             DeleteTemporaryDatabase(path);
         }
+    }
+
+    [Fact]
+    public async Task ApplyMigrationsAsync_ShouldRejectLaterSchemaWithoutHistory()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var path = CreateTemporaryDatabasePath();
+        var database = CreateTemporarySqliteDatabaseConfig(path);
+
+        try
+        {
+            await using var db = CreateDbContext(database.ConnectionString);
+            Assert.True(await db.Database.EnsureCreatedAsync(cancellationToken));
+
+            var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database, cancellationToken));
+
+            Assert.Contains("WebAuthSessions", exception.Message, StringComparison.Ordinal);
+            Assert.Empty(await db.Database.GetAppliedMigrationsAsync(cancellationToken));
+        }
+        finally
+        {
+            DeleteTemporaryDatabase(path);
+        }
+    }
+
+    [Fact]
+    public void PostgreSqlModel_ShouldMatchSnapshotAndCreateAnAdditiveWebSessionTable()
+    {
+        using var db = CreatePostgreSqlDbContext("Host=localhost;Database=radish_openiddict_design");
+
+        Assert.False(db.Database.HasPendingModelChanges());
+        var sql = db.GetService<IMigrator>().GenerateScript(db.Database.GetMigrations().First());
+        Assert.Contains("CREATE TABLE \"WebAuthSessions\"", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("ALTER TABLE \"OpenIddict", sql, StringComparison.Ordinal);
+        Assert.DoesNotContain("DROP TABLE", sql, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -146,7 +198,7 @@ public sealed class AuthOpenIddictMigrationTest
             var database = new RuntimeDatabaseConfig(DataBaseType.PostgreSql, openIddictConnectionString);
             await using var db = CreatePostgreSqlDbContext(openIddictConnectionString);
             var firstApplied = (await db.Database.GetAppliedMigrationsAsync(cancellationToken)).ToArray();
-            Assert.Single(firstApplied);
+            Assert.Equal(db.Database.GetMigrations(), firstApplied);
             AuthOpenIddictPersistence.EnsureReady(db, database);
             AssertModelIsCurrent(db, database);
 
@@ -206,9 +258,9 @@ public sealed class AuthOpenIddictMigrationTest
             var firstApplied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database, cancellationToken);
             var secondApplied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database, cancellationToken);
 
-            Assert.Single(firstApplied);
+            Assert.Equal(db.Database.GetMigrations(), firstApplied);
             Assert.Empty(secondApplied);
-            Assert.Single(await db.Database.GetAppliedMigrationsAsync(cancellationToken));
+            Assert.Equal(firstApplied, await db.Database.GetAppliedMigrationsAsync(cancellationToken));
             AuthOpenIddictPersistence.EnsureReady(db, database);
             AssertModelIsCurrent(db, database);
         }
@@ -256,15 +308,14 @@ public sealed class AuthOpenIddictMigrationTest
             var database = new RuntimeDatabaseConfig(DataBaseType.PostgreSql, connectionString);
             await using (var legacyDb = CreatePostgreSqlDbContext(connectionString))
             {
-                Assert.True(await legacyDb.Database.EnsureCreatedAsync(cancellationToken));
-                Assert.Empty(await legacyDb.Database.GetAppliedMigrationsAsync(cancellationToken));
+                await CreateUnversionedBaselineAsync(legacyDb, cancellationToken);
             }
 
             await using var db = CreatePostgreSqlDbContext(connectionString);
             var applied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database, cancellationToken);
 
-            Assert.Empty(applied);
-            Assert.Single(await db.Database.GetAppliedMigrationsAsync(cancellationToken));
+            Assert.Equal(db.Database.GetMigrations().Skip(1), applied);
+            Assert.Equal(db.Database.GetMigrations(), await db.Database.GetAppliedMigrationsAsync(cancellationToken));
             AuthOpenIddictPersistence.EnsureReady(db, database);
             AssertModelIsCurrent(db, database);
         }
@@ -276,6 +327,12 @@ public sealed class AuthOpenIddictMigrationTest
                 $"DROP DATABASE IF EXISTS {QuoteIdentifier(databaseName)} WITH (FORCE)",
                 cancellationToken);
         }
+    }
+
+    private static async Task CreateUnversionedBaselineAsync(AuthOpenIddictDbContext db, CancellationToken cancellationToken)
+    {
+        await db.GetService<IMigrator>().MigrateAsync(db.Database.GetMigrations().First(), cancellationToken);
+        await db.Database.ExecuteSqlRawAsync("DROP TABLE \"__EFMigrationsHistory\"", cancellationToken);
     }
 
     private static AuthOpenIddictDbContext CreateDbContext(string connectionString)

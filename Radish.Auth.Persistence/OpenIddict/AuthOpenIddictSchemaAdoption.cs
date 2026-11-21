@@ -28,12 +28,23 @@ internal static class AuthOpenIddictSchemaAdoption
             throw new InvalidOperationException("OpenIddict 未发现可用 EF migrations，禁止继续。");
         }
 
-        var expectedSchema = BuildExpectedSchema(db);
+        var migrationsAssembly = db.GetService<IMigrationsAssembly>();
+        var baseline = migrationsAssembly.CreateMigration(
+            migrationsAssembly.Migrations[knownMigrations[0]], db.Database.ProviderName!);
+
+        // 既有 EnsureCreated 数据库只补记初始版本，后续 schema 仍由对应迁移创建。
+        var expectedSchema = BuildExpectedSchema(baseline.TargetModel);
         var actualSchema = await ReadActualSchemaAsync(db, database, cancellationToken);
-        var existingDomainTables = expectedSchema.Keys
-            .Where(actualSchema.Tables.Contains)
+        var untrackedTables = BuildExpectedSchema(db.Model).Keys
+            .Where(table => !expectedSchema.ContainsKey(table) && actualSchema.Tables.Contains(table))
             .ToList();
-        if (existingDomainTables.Count == 0)
+        if (untrackedTables.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"OpenIddict baseline adoption 发现无迁移历史的后续表：{string.Join(", ", untrackedTables)}。");
+        }
+
+        if (!expectedSchema.Keys.Any(actualSchema.Tables.Contains))
         {
             return;
         }
@@ -61,12 +72,6 @@ internal static class AuthOpenIddictSchemaAdoption
                 $"OpenIddict 既有 EnsureCreated schema 不满足 baseline adoption：{string.Join(", ", problems.Take(30))}。");
         }
 
-        if (knownMigrations.Count != 1)
-        {
-            throw new InvalidOperationException(
-                $"OpenIddict 既有 schema 无迁移历史，但当前包含 {knownMigrations.Count} 个 migrations；禁止自动推断 baseline。");
-        }
-
         var historyRepository = db.GetService<IHistoryRepository>();
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.Database.ExecuteSqlRawAsync(
@@ -82,9 +87,9 @@ internal static class AuthOpenIddictSchemaAdoption
             .Information("OpenIddict schema baseline adopted");
     }
 
-    private static IReadOnlyDictionary<string, ExpectedTable> BuildExpectedSchema(AuthOpenIddictDbContext db)
+    private static IReadOnlyDictionary<string, ExpectedTable> BuildExpectedSchema(IModel model)
     {
-        return db.Model.GetEntityTypes()
+        return model.GetEntityTypes()
             .Where(entityType => !string.IsNullOrWhiteSpace(entityType.GetTableName()))
             .GroupBy(entityType => entityType.GetTableName()!, StringComparer.OrdinalIgnoreCase)
             .ToDictionary(

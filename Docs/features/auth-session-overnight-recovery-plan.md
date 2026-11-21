@@ -95,6 +95,12 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 
 实施顺序拟为会话模型与两道期限、独立客户端及同源 Cookie、普通 Web 和 Hub 接入、旧会话迁移与候选回退。确认范围后先验证 OpenIddict 会话绑定、令牌截止和 Auth HTTPS 回连能在现有技术栈落地，再接入界面和部署。服务启动、配置变更、新依赖及生产启用按实际命令单独授权。
 
+### Auth 首期交付边界
+
+- 已实现 `WebAuthSessions` 会话表、授权绑定、激活、活动更新、撤销及带版本条件的写入。会话截止在 Auth 的授权码 / refresh grant 路径检查，签发时对准备好的令牌主体写入确切过期点。Flutter 与 Console 仍由原客户端登记和既有刷新校验处理。[会话服务](../../Radish.Auth/OpenIddict/WebAuthSessionService.cs) · [签发处理](../../Radish.Auth/OpenIddict/WebAuthSessionTokenHandler.cs)
+- 首期新增独立的 `radish-web` 登记能力，开关默认关闭。后续获准开启时，提供现有站点的 HTTPS `OpenIddict:Server:Issuer`，并通过部署密钥注入 `OpenIddict__WebSession__ClientSecret`，设置 `OpenIddict__WebSession__Enabled=true`。登记和刷新策略均以该开关为限。持有普通 Auth Cookie 的授权请求须有服务端建立的会话绑定才能签发。浏览器登录、`prompt=login` 交互、Cookie、凭据加密存储和回连路径留待下一阶段。[客户端登记](../../Radish.Auth/OpenIddict/WebAuthClient.cs)
+- 已生成 SQLite、PostgreSQL 的增量迁移。实际环境升级前需经授权执行 `Radish.DbMigrate apply`，其中 Auth schema 使用启动只读自检。验证范围为临时 SQLite 数据库、PostgreSQL schema 与生成 SQL、令牌处理器及登记测试，实际 PostgreSQL 和浏览器联验仍需单独授权。[数据库边界](../guide/database-overview.md#结构真相源)
+
 ## 修复验收
 
 | 场景 | 通过标准 |
