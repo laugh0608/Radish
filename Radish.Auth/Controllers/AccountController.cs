@@ -10,6 +10,8 @@ using OpenIddict.Abstractions;
 using Radish.Auth.Resources;
 using Radish.Auth.Logging;
 using Radish.Auth.ViewModels.Account;
+using Radish.Auth.OpenIddict;
+using Radish.Auth.WebSessions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.HelpTool;
 using Radish.IService;
@@ -111,7 +113,8 @@ public class AccountController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [EnableRateLimiting("login")]
-    public async Task<IActionResult> Login([FromForm] string email, [FromForm] string password, [FromForm] string? returnUrl = null)
+    public async Task<IActionResult> Login([FromForm] string email, [FromForm] string password, [FromForm] string? returnUrl = null,
+        [FromServices] IWebSessionLoginService? webLogin = null)
     {
         var totalStopwatch = Stopwatch.StartNew();
         var normalizedEmail = NormalizeEmail(email);
@@ -153,11 +156,17 @@ public class AccountController : Controller
             return rejected;
         }
 
-        await _coinService.GrantRegistrationRewardAsync(user.UserId);
-
         // 3. 密码验证成功，生成会话
         var userId = user.UserId.ToString();
         var tenantId = user.TenantId.ToString();
+        if (TryGetWebAuthorizationState(returnUrl, out var webState) &&
+            (webLogin is null || !await webLogin.CompleteInteractiveAsync(webState,
+                Request.Cookies[WebSessionCookieNames.Login], userId, tenantId, HttpContext.RequestAborted)))
+        {
+            return BadRequest();
+        }
+
+        await _coinService.GrantRegistrationRewardAsync(user.UserId);
 
         var roleNames = await _userService.GetUserRoleNamesAsync(user.UserId);
 
@@ -205,6 +214,23 @@ public class AccountController : Controller
         var success = Ok(successMessage);
         AuthAccountLog.LoginResultPrepared(_logger, totalStopwatch.ElapsedMilliseconds);
         return success;
+    }
+
+    private static bool TryGetWebAuthorizationState(string? returnUrl, out string? state)
+    {
+        state = null;
+        var split = returnUrl?.IndexOf('?') ?? -1;
+        if (returnUrl is null || split < 0 || !returnUrl[..split].Equals("/connect/authorize", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var parameters = QueryHelpers.ParseQuery(returnUrl[split..]);
+        if (parameters["client_id"] != WebAuthClient.ClientId) return false;
+
+        var parsed = parameters["state"];
+        state = parsed.Count == 1 ? parsed[0] : null;
+        return true;
     }
 
     /// <summary>

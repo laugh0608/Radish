@@ -11,6 +11,7 @@ using Radish.Common.CoreTool;
 using Radish.Common.DbTool;
 using Radish.Common.HealthTool;
 using Radish.Auth.OpenIddict;
+using Radish.Auth.WebSessions;
 using Radish.Auth.HealthChecks;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
@@ -242,6 +243,20 @@ return await RuntimeProcess.RunAsync("auth", async () =>
         builder.Configuration);
     builder.Services.AddScoped<IWebAuthSessionRepository, WebAuthSessionRepository>();
     builder.Services.AddScoped<IWebAuthSessionService, WebAuthSessionService>();
+    builder.Services.AddScoped<IWebSessionStore, WebSessionStore>();
+    builder.Services.AddScoped<IWebSessionLoginService, WebSessionLoginService>();
+    builder.Services.AddScoped<IWebSessionAccessService, WebSessionAccessService>();
+    builder.Services.AddSingleton(WebSessionProtection.FromKeyRing(builder.Configuration, builder.Environment.ContentRootPath));
+    builder.Services.AddHttpClient<IWebTokenBackchannel, WebTokenBackchannel>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(8);
+        client.MaxResponseContentBufferSize = 128 * 1024;
+    }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+    {
+        AllowAutoRedirect = false,
+        UseCookies = false,
+        ConnectTimeout = TimeSpan.FromSeconds(3)
+    });
 
     var openIddictCertificateSection = builder.Configuration.GetSection("OpenIddict:Encryption");
 

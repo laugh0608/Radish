@@ -99,7 +99,18 @@ public sealed class WebAuthSessionTokenHandler(
             return Task.FromResult(new WebAuthSessionGrant(WebAuthSessionGrantStatus.Invalid));
         }
 
-        return sessions.EvaluateGrantAsync(binding, isRefresh, cancellationToken);
+        Guid? requiredLease = null;
+        if (isRefresh)
+        {
+            if (!Guid.TryParseExact((string?)request.GetParameter(WebAuthClient.RefreshLeaseParameter), "N", out var lease))
+            {
+                return Task.FromResult(new WebAuthSessionGrant(WebAuthSessionGrantStatus.Invalid));
+            }
+
+            requiredLease = lease;
+        }
+
+        return sessions.EvaluateGrantAsync(binding, isRefresh, cancellationToken, requiredLease);
     }
 
     private Task<bool> IsAccountEnabledAsync(WebAuthSessionBinding binding)

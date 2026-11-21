@@ -152,6 +152,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 | `/console/**` | radish.console (:3100) | 管理控制台 | 保留 `/console` 前缀，WebSocket |
 | `/Account/**` | Radish.Auth (:5200) | OIDC 登录页面 | X-Forwarded-* 头 |
 | `/connect/**` | Radish.Auth (:5200) | OIDC 协议端点 | X-Forwarded-* 头 |
+| `/web/session/**` | Radish.Auth (:5200) | 普通 Web 同源会话 | X-Forwarded-* 头，由代码声明并复用 authCluster |
 | `/**` | radish.client (:3000) | 前端应用（最低优先级） | WebSocket, Order: 1000 |
 
 补充说明：
@@ -163,6 +164,8 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 - `/_assets/attachments/**` 是受控附件路由：Gateway 只负责转发，API 统一检查启用 / 删除状态和业务域授权。普通私有附件允许上传者或 `System / Admin` 读取；Chat 附件默认私有并按频道 / 消息访问权判定，管理员角色不自动穿透私聊；Wiki 附件默认私有并按当前正文、草稿、Revision 和实时文档 ACL 判定，`System / Admin` 角色本身不构成穿透权限。临时 token 使用独立的 `DownloadByToken` 入口，但消费前仍复用当前附件访问判定。`/uploads/DefaultIco/**` 只从 `${FileStorage:Local:BasePath}/DefaultIco`（默认 `DataBases/Uploads/DefaultIco`）提供版本内置图标。
 
 #### 配置真相源
+
+普通 Web 会话 Cookie 只随 `/web/session/**` 发往 Auth。短效登录关联 Cookie 还随 `/Account/Login` 和 `/connect/authorize` 发往 Auth，供交互登录绑定。其他上游只接收原有 Cookie。[同源会话方案](../features/auth-session-overnight-recovery-plan.md#web-session-repair)
 
 - 完整路由、顺序、变换与集群地址只以 `Radish.Gateway/appsettings.json` 为准；本页的路由表用于解释职责，不复制整段易漂移配置。
 - 当前主线不维护独立 Docs 前端或旧 Docs 下游服务；固定项目文档由 `Radish.Api` 同步给 WebOS“文档”应用，Gateway 只保留 `/scalar` 等 API 文档入口。

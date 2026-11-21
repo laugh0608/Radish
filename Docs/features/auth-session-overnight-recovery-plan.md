@@ -98,8 +98,17 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 ### Auth 首期交付边界
 
 - 已实现 `WebAuthSessions` 会话表、授权绑定、激活、活动更新、撤销及带版本条件的写入。会话截止在 Auth 的授权码 / refresh grant 路径检查，签发时对准备好的令牌主体写入确切过期点。Flutter 与 Console 仍由原客户端登记和既有刷新校验处理。[会话服务](../../Radish.Auth/OpenIddict/WebAuthSessionService.cs) · [签发处理](../../Radish.Auth/OpenIddict/WebAuthSessionTokenHandler.cs)
-- 首期新增独立的 `radish-web` 登记能力，开关默认关闭。后续获准开启时，提供现有站点的 HTTPS `OpenIddict:Server:Issuer`，并通过部署密钥注入 `OpenIddict__WebSession__ClientSecret`，设置 `OpenIddict__WebSession__Enabled=true`。登记和刷新策略均以该开关为限。持有普通 Auth Cookie 的授权请求须有服务端建立的会话绑定才能签发。浏览器登录、`prompt=login` 交互、Cookie、凭据加密存储和回连路径留待下一阶段。[客户端登记](../../Radish.Auth/OpenIddict/WebAuthClient.cs)
+- 首期新增独立的 `radish-web` 登记能力，开关默认关闭。登记和刷新策略均以该开关为限。持有普通 Auth Cookie 的授权请求须有服务端建立的会话绑定才能签发。[客户端登记](../../Radish.Auth/OpenIddict/WebAuthClient.cs)
 - 已生成 SQLite、PostgreSQL 的增量迁移。实际环境升级前需经授权执行 `Radish.DbMigrate apply`，其中 Auth schema 使用启动只读自检。验证范围为临时 SQLite 数据库、PostgreSQL schema 与生成 SQL、令牌处理器及登记测试，实际 PostgreSQL 和浏览器联验仍需单独授权。[数据库边界](../guide/database-overview.md#结构真相源)
+
+### 同源会话和凭据首版
+
+- Gateway 将 `/web/session/*` 转发给 Auth。`POST /login` 返回 OIDC 授权地址和短效关联 Cookie，`GET /callback` 在当前浏览器完成交互认证、服务端 PKCE 兑换和 ID token 校验后签发 `__Host-Radish-Web-Session`，随后回跳站内路径。登录事务限时 10 分钟且只能消费一次。先前 Auth SSO Cookie 无法替代这次交互认证。Auth 持久化浏览器随机凭据的摘要，两个 Cookie 均设为 `HttpOnly`、`Secure`、`SameSite=Lax`、`Path=/`。[会话控制器](../../Radish.Auth/Controllers/WebSessionController.cs) · [登录事务](../../Radish.Auth/WebSessions/WebSessionLoginService.cs)
+- `GET /status` 返回 `VoCsrfToken`。`POST /token`、`POST /activity`、`POST /logout` 要求同源 `Origin` 和 `X-Radish-Web-Session` 防伪头。`/token` 只给出 `VoAccessToken` 与 `VoExpiresAt`。`503` 保留 Cookie 并带 `Retry-After`，`401` 表示会话已失效并清除 Cookie。`/logout` 先撤销本地会话，再撤销对应的 OpenIddict 授权并返回站内 OIDC 登出地址。Auth 将短 access token 和 refresh token 一起加密入库，密文用途绑定会话 ID。[凭据服务](../../Radish.Auth/WebSessions/WebSessionAccessService.cs) · [Cookie 转发边界](../../Radish.Gateway/WebSessionProxy.cs)
+- 刷新租约为 20 秒，进入 OpenIddict 刷新时验证租约仍属于当前会话。租约成功后以限时 HTTPS 回连兑换，完成的轮换先落库再交付，即使浏览器已断开，服务端仍可完成写回。临时故障期间保留原凭据并退避，写入中断可在租约到期后读库再尝试。明确的 `invalid_grant` 仅由当前租约持有者终止会话。登出清空长期凭据与租约，迟到的结果无法写回。若旧 refresh token 已永久失效且没有可读的新版本，要求用户重新登录。[持久化租约](../../Radish.Auth.Persistence/OpenIddict/WebSessionStore.cs)
+- 以后获准开启时，需配置 HTTPS 公开 `OpenIddict:Server:Issuer`、`OpenIddict__WebSession__Enabled`、`OpenIddict__WebSession__ClientSecret`、独立持久化的 `OpenIddict__WebSession__KeysPath`，以及用于保护密钥环的 `OpenIddict__WebSession__KeyCertificate__Path` 和 `Password`。轮换证书需要保留现有密钥的解密材料，可配置 `PreviousKeyCertificates`。在隔离环境通过 `Radish.DbMigrate apply` 后，须验证 Auth 容器可用目标站点的受信 HTTPS 地址访问 Gateway 的 `/connect/token`、持久化密钥环在重启后可读、实际 PostgreSQL 迁移和真实浏览器登录。该范围涉及服务启动、运行配置和数据库迁移，按实际环境单独授权。[密钥环配置](../../Radish.Auth/WebSessions/WebSessionKeyRing.cs)
+
+普通 Web 前端及专用 Hub 的接入是后续切片。此阶段验证 Auth、Gateway 与存储契约，运行配置和已有客户端策略沿用原值。
 
 ## 修复验收
 

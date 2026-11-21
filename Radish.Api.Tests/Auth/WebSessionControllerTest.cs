@@ -1,0 +1,140 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Moq;
+using Radish.Auth.Controllers;
+using Radish.Auth.WebSessions;
+using Radish.Common.HttpContextTool;
+using Radish.Gateway;
+using Xunit;
+using Yarp.ReverseProxy.Configuration;
+
+namespace Radish.Api.Tests.Auth;
+
+public sealed class WebSessionControllerTest
+{
+    [Fact]
+    public async Task CallbackSetsOpaqueHostCookieAndReturnsOnlyTheLocalRedirect()
+    {
+        var fixture = new Fixture();
+        var request = fixture.Controller.Request;
+        request.Headers.Cookie = $"{WebSessionCookieNames.Login}={fixture.Cookie}";
+        var newCookie = WebSessionSecrets.NewSecret();
+        var expiry = new DateTimeOffset(2026, 12, 21, 12, 0, 0, TimeSpan.Zero);
+        fixture.Login.Setup(login => login.CompleteAsync("state", fixture.Cookie, "code", CancellationToken.None))
+            .ReturnsAsync(new WebLoginResult(WebTokenBackchannelStatus.Success, newCookie, expiry, "/forum"));
+
+        var result = Assert.IsType<LocalRedirectResult>(await fixture.Controller.Callback("state", "code", CancellationToken.None));
+        Assert.Equal("/forum", result.Url);
+        var cookies = fixture.Controller.Response.Headers.SetCookie;
+        var session = Assert.Single(cookies, value => value?.StartsWith(WebSessionCookieNames.Session + "=", StringComparison.Ordinal) == true)!;
+        Assert.StartsWith(WebSessionCookieNames.Session + "=" + newCookie, session, StringComparison.Ordinal);
+        Assert.Contains("secure", session, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("httponly", session, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("samesite=lax", session, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("path=/", session, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("domain=", session, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("no-store", fixture.Controller.Response.Headers.CacheControl.ToString());
+        Assert.Equal("no-referrer", fixture.Controller.Response.Headers["Referrer-Policy"].ToString());
+    }
+
+    [Theory]
+    [InlineData("https://sibling.radish.test:35443", true)]
+    [InlineData("https://radish.test:35443", false)]
+    [InlineData(null, true)]
+    public async Task WritesRejectCrossOriginAndUnboundCsrfProof(string? origin, bool validProof)
+    {
+        var fixture = new Fixture();
+        fixture.CarrySession(origin, validProof ? WebSessionSecrets.Proof(fixture.Cookie) : WebSessionSecrets.NewSecret());
+
+        var result = Assert.IsType<StatusCodeResult>(await fixture.Controller.Token(CancellationToken.None));
+        Assert.Equal(StatusCodes.Status403Forbidden, result.StatusCode);
+        fixture.Access.VerifyNoOtherCalls();
+    }
+
+    [Fact]
+    public async Task TemporaryRefreshFailureDoesNotDeleteTheCookie()
+    {
+        var fixture = new Fixture();
+        fixture.CarrySession("https://radish.test:35443", WebSessionSecrets.Proof(fixture.Cookie));
+        fixture.Access.Setup(service => service.GetTokenAsync(fixture.Cookie, CancellationToken.None))
+            .ReturnsAsync(new WebAccessTokenResult(WebSessionResultStatus.Retry));
+
+        var response = Assert.IsType<StatusCodeResult>(await fixture.Controller.Token(CancellationToken.None));
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, response.StatusCode);
+        Assert.Equal(0, fixture.Controller.Response.Headers.SetCookie.Count);
+        Assert.Equal("2", fixture.Controller.Response.Headers.RetryAfter.ToString());
+    }
+
+    [Fact]
+    public async Task CrossOriginStatusCannotReadTheCsrfProof()
+    {
+        var fixture = new Fixture();
+        fixture.CarrySession(null, null);
+        fixture.Controller.Request.Headers["Sec-Fetch-Site"] = "same-site";
+
+        var response = Assert.IsType<StatusCodeResult>(await fixture.Controller.Status(CancellationToken.None));
+        Assert.Equal(StatusCodes.Status403Forbidden, response.StatusCode);
+        fixture.Access.VerifyNoOtherCalls();
+    }
+
+    [Theory]
+    [InlineData(true, "/connect/authorize", "__Host-Radish-Web-Login=login; .Radish.Auth.Session=legacy")]
+    [InlineData(true, "/Account/Login", "__Host-Radish-Web-Login=login; .Radish.Auth.Session=legacy")]
+    [InlineData(true, "/connect/token", ".Radish.Auth.Session=legacy")]
+    [InlineData(false, "/connect/authorize", ".Radish.Auth.Session=legacy")]
+    [InlineData(false, "/console/", ".Radish.Auth.Session=legacy")]
+    public void ProxyKeepsSessionCookieFromOtherUpstreams(bool toAuth, string path, string expected)
+    {
+        const string sent = "__Host-Radish-Web-Session=web; __Host-Radish-Web-Login=login; .Radish.Auth.Session=legacy";
+        Assert.Equal(expected, WebSessionProxy.FilterCookies([sent], toAuth, new PathString(path)));
+    }
+
+    [Fact]
+    public void GatewayLoadsWebSessionRouteAlongsideTheExistingAuthCluster()
+    {
+        var services = new ServiceCollection().AddLogging();
+        services.AddReverseProxy().LoadFromMemory([], [new ClusterConfig { ClusterId = "authCluster" }]).AddWebSessionRouting();
+        using var provider = services.BuildServiceProvider();
+        var sources = provider.GetServices<IProxyConfigProvider>();
+        Assert.Contains(sources, source =>
+            source.GetConfig().Routes is [{ ClusterId: "authCluster", Match.Path: "/web/session/{**catch-all}" }]);
+    }
+
+    private sealed class Fixture
+    {
+        public readonly Mock<IWebSessionLoginService> Login = new(MockBehavior.Strict);
+        public readonly Mock<IWebSessionAccessService> Access = new(MockBehavior.Strict);
+        public readonly string Cookie = WebSessionSecrets.NewSecret();
+        public WebSessionController Controller { get; }
+
+        public Fixture()
+        {
+            var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["OpenIddict:WebSession:Enabled"] = "true",
+                ["OpenIddict:Server:Issuer"] = "https://radish.test:35443/"
+            }).Build();
+            var context = new DefaultHttpContext();
+            context.Request.Scheme = "https";
+            context.Request.Host = new HostString("radish.test", 35443);
+            Controller = new(Login.Object, Access.Object, config) { ControllerContext = new() { HttpContext = context } };
+            var url = new Mock<IUrlHelper>();
+            url.Setup(helper => helper.IsLocalUrl("/forum")).Returns(true);
+            Controller.Url = url.Object;
+        }
+
+        public void CarrySession(string? origin, string? proof)
+        {
+            var request = Controller.Request;
+            request.Headers.Cookie = $"{WebSessionCookieNames.Session}={Cookie}";
+            if (origin is not null) request.Headers.Origin = origin;
+            if (proof is not null) request.Headers["X-Radish-Web-Session"] = proof;
+        }
+    }
+}

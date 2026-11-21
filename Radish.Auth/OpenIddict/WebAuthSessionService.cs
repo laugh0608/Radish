@@ -2,8 +2,6 @@ namespace Radish.Auth.OpenIddict;
 
 public sealed class WebAuthSessionService(IWebAuthSessionRepository repository, TimeProvider clock) : IWebAuthSessionService
 {
-    private static readonly TimeSpan IdleTimeout = TimeSpan.FromDays(7);
-    private static readonly TimeSpan AbsoluteLifetime = TimeSpan.FromDays(30);
     private static readonly TimeSpan AccessTokenLifetime = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan ActivityWriteInterval = TimeSpan.FromMinutes(1);
     private const int MaxUpdateAttempts = 3;
@@ -100,7 +98,7 @@ public sealed class WebAuthSessionService(IWebAuthSessionRepository repository, 
     }
 
     public async Task<WebAuthSessionGrant> EvaluateGrantAsync(
-        WebAuthSessionBinding binding, bool isRefresh, CancellationToken cancellationToken)
+        WebAuthSessionBinding binding, bool isRefresh, CancellationToken cancellationToken, Guid? requiredLease = null)
     {
         var session = await repository.FindAsync(binding.SessionId, cancellationToken);
         if (session is null || !MatchesIdentity(session, binding) || !MatchesAuthorization(session, binding) ||
@@ -110,14 +108,20 @@ public sealed class WebAuthSessionService(IWebAuthSessionRepository repository, 
         }
 
         var now = clock.GetUtcNow().UtcDateTime;
+        if (requiredLease.HasValue && (session.RefreshLeaseId != requiredLease || session.RefreshLeaseUntilUtc <= now ||
+                                       session.RefreshLeaseUntilUtc is null))
+        {
+            return new(WebAuthSessionGrantStatus.Invalid);
+        }
+
         var status = GetStatus(session, now);
         if (status != WebAuthSessionGrantStatus.Allowed)
         {
             return new(status);
         }
 
-        var absoluteDeadline = session.CreatedAtUtc + AbsoluteLifetime;
-        var idleDeadline = session.LastActiveAtUtc + IdleTimeout;
+        var absoluteDeadline = session.CreatedAtUtc + WebAuthSessionLimits.AbsoluteLifetime;
+        var idleDeadline = session.LastActiveAtUtc + WebAuthSessionLimits.IdleTimeout;
         var sessionDeadline = idleDeadline < absoluteDeadline ? idleDeadline : absoluteDeadline;
         var accessDeadline = now + AccessTokenLifetime;
         if (accessDeadline > sessionDeadline)
@@ -161,12 +165,12 @@ public sealed class WebAuthSessionService(IWebAuthSessionRepository repository, 
             return WebAuthSessionGrantStatus.Invalid;
         }
 
-        if (now >= session.CreatedAtUtc + AbsoluteLifetime)
+        if (now >= session.CreatedAtUtc + WebAuthSessionLimits.AbsoluteLifetime)
         {
             return WebAuthSessionGrantStatus.AbsoluteExpired;
         }
 
-        return now >= session.LastActiveAtUtc + IdleTimeout
+        return now >= session.LastActiveAtUtc + WebAuthSessionLimits.IdleTimeout
             ? WebAuthSessionGrantStatus.IdleExpired
             : WebAuthSessionGrantStatus.Allowed;
     }

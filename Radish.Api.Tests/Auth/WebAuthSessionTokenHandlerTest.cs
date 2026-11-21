@@ -19,6 +19,8 @@ namespace Radish.Api.Tests.Auth;
 
 public sealed class WebAuthSessionTokenHandlerTest
 {
+    private static readonly Guid RefreshLease = Guid.NewGuid();
+
     [Theory]
     [InlineData("radish-client")]
     [InlineData("radish-console")]
@@ -91,7 +93,7 @@ public sealed class WebAuthSessionTokenHandlerTest
     {
         var sessions = new Mock<IWebAuthSessionService>();
         sessions.Setup(service => service.EvaluateGrantAsync(
-                It.IsAny<WebAuthSessionBinding>(), true, It.IsAny<CancellationToken>()))
+                It.IsAny<WebAuthSessionBinding>(), true, It.IsAny<CancellationToken>(), RefreshLease))
             .ReturnsAsync(new WebAuthSessionGrant(status));
         var handler = new WebAuthSessionTokenHandler(CreateConfiguration(), sessions.Object, Mock.Of<IUserService>());
         var context = new OpenIddictServerEvents.ValidateTokenRequestContext(
@@ -119,7 +121,7 @@ public sealed class WebAuthSessionTokenHandlerTest
         var users = new Mock<IUserService>();
         users.Setup(service => service.QueryExistsAsync(It.IsAny<Expression<Func<User, bool>>>())).ReturnsAsync(accountEnabled);
         var sessions = new Mock<IWebAuthSessionService>(MockBehavior.Strict);
-        sessions.Setup(service => service.EvaluateGrantAsync(binding, isRefresh, It.IsAny<CancellationToken>()))
+        sessions.Setup(service => service.EvaluateGrantAsync(binding, isRefresh, It.IsAny<CancellationToken>(), isRefresh ? RefreshLease : null))
             .ReturnsAsync(new WebAuthSessionGrant(WebAuthSessionGrantStatus.Allowed, expiry, expiry.AddDays(10)));
         var handler = new WebAuthSessionTokenHandler(CreateConfiguration(), sessions.Object, users.Object);
         var context = new OpenIddictServerEvents.ProcessSignInContext(CreateTransaction(WebAuthClient.ClientId, grantType))
@@ -134,7 +136,7 @@ public sealed class WebAuthSessionTokenHandlerTest
         Assert.Equal(!accountEnabled, context.IsRejected);
         Assert.Equal(accountEnabled ? expiry : null, context.AccessTokenPrincipal.GetExpirationDate());
         Assert.Equal(accountEnabled ? expiry.AddDays(10) : null, context.RefreshTokenPrincipal.GetExpirationDate());
-        sessions.Verify(service => service.EvaluateGrantAsync(binding, isRefresh, It.IsAny<CancellationToken>()),
+        sessions.Verify(service => service.EvaluateGrantAsync(binding, isRefresh, It.IsAny<CancellationToken>(), isRefresh ? RefreshLease : null),
             accountEnabled ? Times.Once() : Times.Never());
     }
 
@@ -148,12 +150,18 @@ public sealed class WebAuthSessionTokenHandlerTest
 
     private static OpenIddictServerTransaction CreateTransaction(string clientId, string grantType)
     {
+        var request = new OpenIddictRequest { ClientId = clientId, GrantType = grantType };
+        if (clientId == WebAuthClient.ClientId && request.IsRefreshTokenGrantType())
+        {
+            request.SetParameter(WebAuthClient.RefreshLeaseParameter, RefreshLease.ToString("N"));
+        }
+
         return new OpenIddictServerTransaction
         {
             EndpointType = OpenIddictServerEndpointType.Token,
             Options = new OpenIddictServerOptions(),
             Logger = NullLogger.Instance,
-            Request = new OpenIddictRequest { ClientId = clientId, GrantType = grantType }
+            Request = request
         };
     }
 

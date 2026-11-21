@@ -22,5 +22,6 @@ public interface IWebAuthSessionService
     Task<bool> ActivateAsync(WebAuthSessionBinding binding, CancellationToken cancellationToken);
     Task<bool> RecordActivityAsync(Guid sessionId, CancellationToken cancellationToken);
     Task<bool> RevokeAsync(Guid sessionId, CancellationToken cancellationToken);
-    Task<WebAuthSessionGrant> EvaluateGrantAsync(WebAuthSessionBinding binding, bool isRefresh, CancellationToken cancellationToken);
+    Task<WebAuthSessionGrant> EvaluateGrantAsync(WebAuthSessionBinding binding, bool isRefresh, CancellationToken cancellationToken,
+        Guid? requiredLease = null);
 }

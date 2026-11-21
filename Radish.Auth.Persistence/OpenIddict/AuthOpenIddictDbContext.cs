@@ -16,6 +16,7 @@ public class AuthOpenIddictDbContext : DbContext
     }
 
     public DbSet<WebAuthSession> WebAuthSessions => Set<WebAuthSession>();
+    public DbSet<WebAuthLogin> WebAuthLogins => Set<WebAuthLogin>();
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -29,8 +30,18 @@ public class AuthOpenIddictDbContext : DbContext
             session.Property(item => item.Subject).HasMaxLength(400);
             session.Property(item => item.TenantId).HasMaxLength(64);
             session.Property(item => item.AuthorizationId).HasMaxLength(100);
+            session.Property(item => item.CookieDigest).HasMaxLength(64);
             session.Property(item => item.Version).IsConcurrencyToken();
             session.HasIndex(item => item.AuthorizationId).IsUnique();
+            session.HasIndex(item => item.CookieDigest).IsUnique();
+        });
+
+        builder.Entity<WebAuthLogin>(login =>
+        {
+            login.HasKey(item => item.StateDigest);
+            login.Property(item => item.StateDigest).HasMaxLength(64);
+            login.Property(item => item.BrowserDigest).HasMaxLength(64);
+            login.HasIndex(item => item.ExpiresAtUtc);
         });
 
         if (Database.IsNpgsql())

@@ -225,10 +225,41 @@ namespace Radish.Auth.Migrations.Sqlite.Migrations
                     b.ToTable("OpenIddictTokens", (string)null);
                 });
 
+            modelBuilder.Entity("Radish.Auth.OpenIddict.WebAuthLogin", b =>
+                {
+                    b.Property<string>("StateDigest")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BrowserDigest")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProtectedRequest")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("SessionId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("StateDigest");
+
+                    b.HasIndex("ExpiresAtUtc");
+
+                    b.ToTable("WebAuthLogins");
+                });
+
             modelBuilder.Entity("Radish.Auth.OpenIddict.WebAuthSession", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("AccessTokenExpiresAtUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("ActivatedAtUtc")
@@ -238,10 +269,26 @@ namespace Radish.Auth.Migrations.Sqlite.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("CookieDigest")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("LastActiveAtUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ProtectedTokens")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("RefreshLeaseId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RefreshLeaseUntilUtc")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RefreshRetryAtUtc")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("RevokedAtUtc")
@@ -264,6 +311,9 @@ namespace Radish.Auth.Migrations.Sqlite.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("AuthorizationId")
+                        .IsUnique();
+
+                    b.HasIndex("CookieDigest")
                         .IsUnique();
 
                     b.ToTable("WebAuthSessions");

@@ -31,6 +31,11 @@ public sealed class WebAuthSessionRepository(AuthOpenIddictDbContext db) : IWebA
                 .SetProperty(current => current.LastActiveAtUtc, session.LastActiveAtUtc)
                 .SetProperty(current => current.ActivatedAtUtc, session.ActivatedAtUtc)
                 .SetProperty(current => current.RevokedAtUtc, session.RevokedAtUtc)
+                .SetProperty(current => current.ProtectedTokens, current => session.RevokedAtUtc.HasValue ? null : current.ProtectedTokens)
+                .SetProperty(current => current.AccessTokenExpiresAtUtc, current => session.RevokedAtUtc.HasValue ? null : current.AccessTokenExpiresAtUtc)
+                .SetProperty(current => current.RefreshLeaseId, current => session.RevokedAtUtc.HasValue ? null : current.RefreshLeaseId)
+                .SetProperty(current => current.RefreshLeaseUntilUtc, current => session.RevokedAtUtc.HasValue ? null : current.RefreshLeaseUntilUtc)
+                .SetProperty(current => current.RefreshRetryAtUtc, current => session.RevokedAtUtc.HasValue ? null : current.RefreshRetryAtUtc)
                 .SetProperty(current => current.Version, current => current.Version + 1), cancellationToken);
 
         return affected == 1;

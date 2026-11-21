@@ -143,6 +143,40 @@ public sealed class AuthOpenIddictMigrationTest
     }
 
     [Fact]
+    public async Task ApplyMigrationsAsync_ShouldKeepFirstStageSessionsAndAddCredentialColumns()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var path = CreateTemporaryDatabasePath();
+        var database = CreateTemporarySqliteDatabaseConfig(path);
+
+        try
+        {
+            await using var db = CreateDbContext(database.ConnectionString);
+            var stageOne = db.Database.GetMigrations().Single(migration => migration.EndsWith("_AddWebAuthSessions", StringComparison.Ordinal));
+            await db.GetService<IMigrator>().MigrateAsync(stageOne, cancellationToken);
+            var id = Guid.NewGuid();
+            var now = new DateTime(2026, 11, 21, 12, 0, 0, DateTimeKind.Utc);
+            await db.Database.ExecuteSqlInterpolatedAsync($"""
+                INSERT INTO "WebAuthSessions" ("Id", "Subject", "TenantId", "CreatedAtUtc", "LastActiveAtUtc", "Version")
+                VALUES ({id}, '10001', '0', {now}, {now}, 0)
+                """, cancellationToken);
+
+            var applied = await AuthOpenIddictPersistence.ApplyMigrationsAsync(db, database, cancellationToken);
+
+            Assert.EndsWith("_StoreWebSessionCredentials", Assert.Single(applied), StringComparison.Ordinal);
+            var previous = await db.WebAuthSessions.SingleAsync(session => session.Id == id, cancellationToken);
+            Assert.Equal("10001", previous.Subject);
+            Assert.Null(previous.CookieDigest);
+            Assert.Null(previous.ProtectedTokens);
+            Assert.Empty(await db.WebAuthLogins.ToListAsync(cancellationToken));
+        }
+        finally
+        {
+            DeleteTemporaryDatabase(path);
+        }
+    }
+
+    [Fact]
     public void PostgreSqlModel_ShouldMatchSnapshotAndCreateAnAdditiveWebSessionTable()
     {
         using var db = CreatePostgreSqlDbContext("Host=localhost;Database=radish_openiddict_design");
@@ -150,6 +184,7 @@ public sealed class AuthOpenIddictMigrationTest
         Assert.False(db.Database.HasPendingModelChanges());
         var sql = db.GetService<IMigrator>().GenerateScript(db.Database.GetMigrations().First());
         Assert.Contains("CREATE TABLE \"WebAuthSessions\"", sql, StringComparison.Ordinal);
+        Assert.Contains("CREATE TABLE \"WebAuthLogins\"", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("ALTER TABLE \"OpenIddict", sql, StringComparison.Ordinal);
         Assert.DoesNotContain("DROP TABLE", sql, StringComparison.Ordinal);
     }
