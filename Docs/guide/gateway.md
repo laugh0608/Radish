@@ -153,6 +153,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 | `/Account/**` | Radish.Auth (:5200) | OIDC 登录页面 | X-Forwarded-* 头 |
 | `/connect/**` | Radish.Auth (:5200) | OIDC 协议端点 | X-Forwarded-* 头 |
 | `/web/session/**` | Radish.Auth (:5200) | 普通 Web 同源会话 | X-Forwarded-* 头，由代码声明并复用 authCluster |
+| `/hub/web/**` | Radish.Api (:5100) | 普通 Web 认证 Hub | WebSocket，由代码声明并复用 apiCluster |
 | `/**` | radish.client (:3000) | 前端应用（最低优先级） | WebSocket, Order: 1000 |
 
 补充说明：

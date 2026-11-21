@@ -37,6 +37,7 @@ export const MessagesApp = () => {
   const [searchHideRevision, setSearchHideRevision] = useState(0);
   const [searchVisible, setSearchVisible] = useState(false);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const sessionRecovering = useAuthStore(state => state.isSessionRecovering);
   const userId = useUserStore(state => state.userId);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
@@ -140,14 +141,14 @@ export const MessagesApp = () => {
   }, [route]);
 
   useEffect(() => {
-    if (!authReady || loggedIn || redirecting) {
+    if (!authReady || loggedIn || redirecting || sessionRecovering) {
       return;
     }
 
     const returnPath = buildMessagesReturnPath(route) ?? buildMessagesPath();
     setRedirecting(true);
-    redirectToLogin({ returnPath });
-  }, [authReady, loggedIn, redirecting, route]);
+    redirectToLogin({ onUnavailable: () => setRedirecting(false), returnPath });
+  }, [authReady, loggedIn, redirecting, sessionRecovering, route]);
 
   useEffect(() => {
     const owner = chatHubOwnerRef.current;

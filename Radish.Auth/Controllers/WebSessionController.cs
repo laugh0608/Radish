@@ -143,13 +143,19 @@ public sealed class WebSessionController(IWebSessionLoginService login, IWebSess
     {
         Response.Headers.CacheControl = "no-store";
         Response.Headers["Referrer-Policy"] = "no-referrer";
-        if (!WebAuthClient.IsEnabled(configuration)) return NotFound();
+        if (!WebAuthClient.IsEnabled(configuration))
+        {
+            Response.Headers["X-Radish-Web-Session-Mode"] = "legacy";
+            return NotFound();
+        }
 
         var origin = WebAuthClient.GetOrigin(WebAuthClient.GetIssuer(configuration));
         if (!Request.IsHttps || !string.Equals(Request.Host.ToUriComponent(), origin.Authority, StringComparison.OrdinalIgnoreCase))
         {
             return StatusCode(403);
         }
+
+        Response.Headers["X-Radish-Web-Session-Mode"] = "cookie";
 
         if (isCallback) return null;
 

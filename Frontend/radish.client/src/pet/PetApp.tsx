@@ -131,6 +131,7 @@ export const PetApp = () => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const sessionRecovering = useAuthStore(state => state.isSessionRecovering);
   const userId = useUserStore(state => state.userId);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [authReady, setAuthReady] = useState(false);
@@ -212,15 +213,16 @@ export const PetApp = () => {
   }, []);
 
   useEffect(() => {
-    if (!authReady || loggedIn || redirecting) {
+    if (!authReady || loggedIn || redirecting || sessionRecovering) {
       return;
     }
 
     setRedirecting(true);
     redirectToLogin({
+      onUnavailable: () => setRedirecting(false),
       returnPath: buildPetReturnPath()
     });
-  }, [authReady, loggedIn, redirecting]);
+  }, [authReady, loggedIn, redirecting, sessionRecovering]);
 
   const loadPetData = useCallback(async (options: LoadPetDataOptions = {}): Promise<PetPageData | null> => {
     if (!loggedIn) {

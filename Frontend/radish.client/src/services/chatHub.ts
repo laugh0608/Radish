@@ -9,7 +9,8 @@ import { useAuthStore } from '@/stores/authStore';
 import { useChatStore } from '@/stores/chatStore';
 import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
-import { getSignalrHubUrl } from '@/config/env';
+import { resolveHubSession } from './hubSession';
+import { WebHubReconnect } from './webHubPolicy';
 import { handleRealtimeUserInteractionChanged } from './userInteractionSync';
 import type {
   ChannelMessageVo,
@@ -21,16 +22,13 @@ import type {
 } from '@/types/chat';
 import { isPersistedEntityId, normalizeEntityId } from '@/types/chat';
 
-function getHubUrl(): string {
-  return `${getSignalrHubUrl()}/hub/chat`;
-}
-
 class ChatHubService {
   private connection: signalR.HubConnection | null = null;
   private connectionOwners = new Set<symbol>();
   private isConnectionDesired = false;
   private isStarting = false;
   private shouldRestartAfterStart = false;
+  private readonly webReconnect = new WebHubReconnect();
   private startRequestId = 0;
   private typingTimers = new Map<string, number>();
 
@@ -70,7 +68,7 @@ class ChatHubService {
   async start(): Promise<void> {
     this.isConnectionDesired = true;
 
-    if (this.connection?.state === signalR.HubConnectionState.Connected) {
+    if (this.connection && this.connection.state !== signalR.HubConnectionState.Disconnected) {
       return;
     }
 
@@ -93,9 +91,15 @@ class ChatHubService {
 
     try {
       const token = await tokenService.getValidAccessToken();
-      if (!token || requestId !== this.startRequestId || !this.isConnectionDesired) {
+      if (requestId !== this.startRequestId || !this.isConnectionDesired) return;
+      if (!token) {
+        useChatStore.getState().setConnectionState('disconnected');
+        this.scheduleWebReconnect();
         return;
       }
+
+      const session = await resolveHubSession('chat', true);
+      if (!session || requestId !== this.startRequestId || !this.isConnectionDesired) return;
 
       if (this.connection) {
         try {
@@ -104,10 +108,11 @@ class ChatHubService {
           // 忽略旧连接 stop 失败
         }
       }
+      if (requestId !== this.startRequestId || !this.isConnectionDesired) return;
 
       startingConnection = new signalR.HubConnectionBuilder()
-        .withUrl(getHubUrl(), {
-          accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
+        .withUrl(session.url, {
+          accessTokenFactory: session.accessTokenFactory,
         })
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Warning)
@@ -117,7 +122,7 @@ class ChatHubService {
       startingConnection.serverTimeoutInMilliseconds = 60_000;
       startingConnection.keepAliveIntervalInMilliseconds = 15_000;
 
-      this.registerEventHandlers();
+      this.registerEventHandlers(startingConnection, session.credential === 'web');
       await startingConnection.start();
 
       if (requestId !== this.startRequestId || !this.isConnectionDesired) {
@@ -130,6 +135,7 @@ class ChatHubService {
       }
 
       useChatStore.getState().setConnectionState('connected');
+      this.webReconnect.reset();
       await this.joinActiveChannelIfNeeded();
       log.debug('ChatHub', '连接成功');
     } catch (error) {
@@ -151,6 +157,7 @@ class ChatHubService {
 
       useChatStore.getState().setConnectionState('disconnected');
       log.error('ChatHub', '连接失败:', error);
+      this.scheduleWebReconnect();
     } finally {
       this.isStarting = false;
       const shouldRestart = this.isConnectionDesired &&
@@ -171,8 +178,9 @@ class ChatHubService {
 
   private async stopConnection(): Promise<void> {
     this.isConnectionDesired = false;
+    this.webReconnect.reset();
     this.shouldRestartAfterStart = false;
-    this.startRequestId++;
+    const requestId = ++this.startRequestId;
 
     for (const timer of this.typingTimers.values()) {
       window.clearTimeout(timer);
@@ -189,7 +197,7 @@ class ChatHubService {
       }
     }
 
-    useChatStore.getState().setConnectionState('disconnected');
+    if (requestId === this.startRequestId) useChatStore.getState().setConnectionState('disconnected');
   }
 
   async joinChannel(channelId: EntityIdValue): Promise<void> {
@@ -240,58 +248,73 @@ class ChatHubService {
     }
   }
 
-  private registerEventHandlers(): void {
-    if (!this.connection) {
-      return;
-    }
+  private scheduleWebReconnect(): void {
+    this.webReconnect.schedule(() => this.isConnectionDesired && tokenService.sessionMode === 'cookie' &&
+      useAuthStore.getState().isAuthenticated, () => void this.start());
+  }
 
-    this.connection.onreconnecting(() => {
+  private registerEventHandlers(connection: signalR.HubConnection, web: boolean): void {
+    connection.onreconnecting(() => {
+      if (connection !== this.connection) return;
       useChatStore.getState().setConnectionState('reconnecting');
     });
 
-    this.connection.onreconnected(async () => {
+    connection.onreconnected(async () => {
+      if (connection !== this.connection) return;
+      this.webReconnect.reset();
       useChatStore.getState().setConnectionState('connected');
       await this.joinActiveChannelIfNeeded();
     });
 
-    this.connection.onclose(() => {
+    connection.onclose(() => {
+      if (connection !== this.connection) return;
       useChatStore.getState().setConnectionState('disconnected');
+      if (web) this.scheduleWebReconnect();
     });
 
-    this.connection.on('MessageReceived', (message: ChannelMessageVo) => {
+    connection.on('MessageReceived', (message: ChannelMessageVo) => {
+      if (connection !== this.connection) return;
       useChatStore.getState().addMessage(message);
     });
 
-    this.connection.on('MessageRecalled', (payload: MessageRecalledPayload) => {
+    connection.on('MessageRecalled', (payload: MessageRecalledPayload) => {
+      if (connection !== this.connection) return;
       useChatStore.getState().recallMessage(payload.channelId, payload.messageId);
     });
 
-    this.connection.on('MessageReactionsChanged', (state: ChatMessageReactionStateVo) => {
+    connection.on('MessageReactionsChanged', (state: ChatMessageReactionStateVo) => {
+      if (connection !== this.connection) return;
       useChatStore.getState().applyReactionBroadcast(state);
     });
 
-    this.connection.on('MessagePinsChanged', (state: ChatMessagePinStateVo) => {
+    connection.on('MessagePinsChanged', (state: ChatMessagePinStateVo) => {
+      if (connection !== this.connection) return;
       useChatStore.getState().applyPinBroadcast(state);
     });
 
-    this.connection.on('ReadReceiptsChanged', (payload: ReadReceiptsChangedVo) => {
+    connection.on('ReadReceiptsChanged', (payload: ReadReceiptsChangedVo) => {
+      if (connection !== this.connection) return;
       useChatStore.getState().invalidateReadReceipts(payload.channelId);
     });
 
-    this.connection.on('ChannelUnreadChanged', (payload: ChannelUnreadChangedPayload) => {
+    connection.on('ChannelUnreadChanged', (payload: ChannelUnreadChangedPayload) => {
+      if (connection !== this.connection) return;
       useChatStore.getState().updateUnread(payload);
     });
 
-    this.connection.on('ConversationStateChanged', (payload: ConversationStateChangedPayload) => {
+    connection.on('ConversationStateChanged', (payload: ConversationStateChangedPayload) => {
+      if (connection !== this.connection) return;
       useChatStore.getState().notifyConversationStateChanged();
       useChatStore.getState().invalidateReadReceipts(payload.channelId);
     });
 
-    this.connection.on('UserInteractionChanged', (payload: UserInteractionChangedVo) => {
+    connection.on('UserInteractionChanged', (payload: UserInteractionChangedVo) => {
+      if (connection !== this.connection) return;
       handleRealtimeUserInteractionChanged(payload);
     });
 
-    this.connection.on('UserTyping', (payload: UserTypingPayload) => {
+    connection.on('UserTyping', (payload: UserTypingPayload) => {
+      if (connection !== this.connection) return;
       useChatStore.getState().setTypingUser(payload.channelId, payload.userId, payload.userName);
 
       const channelKey = normalizeEntityId(payload.channelId) ?? 'unknown-channel';

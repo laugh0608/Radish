@@ -327,3 +327,6 @@ export type {
   RuntimeLogQuery, RuntimeLogPage, RuntimeLogDetail, RuntimeLogPipeline, RuntimeLogAlert,
   RuntimeLogAlerts, RuntimeLogHistory,
 } from './runtime-log-console';
+
+export { createWebSessionApi } from './web-session';
+export type { WebSessionApi, WebSessionResponse } from './web-session';

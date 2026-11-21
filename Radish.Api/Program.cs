@@ -436,6 +436,8 @@ return await RuntimeProcess.RunAsync("api", async () =>
                {
                    return UserClaimReader.HasScope(ctx.User, UserScopes.RadishApi);
                }).Build())
+               .AddPolicy(WebSessionHubBoundary.AuthorizationPolicy, policy => policy.RequireAuthenticatedUser()
+                   .RequireAssertion(context => WebSessionHubBoundary.HasWebClientIdentity(context.User)))
                // System 授权方案，RequireRole 方式
                .AddPolicy(AuthorizationPolicies.System, policy => policy.RequireRole(UserRoles.System).Build())
                // SystemOrAdmin 授权方案，RequireRole 方式
@@ -596,6 +598,7 @@ return await RuntimeProcess.RunAsync("api", async () =>
     app.MapGet("/", () => Results.Redirect("/scalar")).ExcludeFromDescription();
     // 先认证，再授权
     app.UseAuthentication();
+    app.Use(WebSessionHubBoundary.EnforceLegacyBoundaryAsync);
     app.UseAuthorization();
     // 启用速率限制中间件（在授权之后，路由之前）
     app.UseRateLimitSetup();
@@ -606,6 +609,9 @@ return await RuntimeProcess.RunAsync("api", async () =>
     app.MapHub<NotificationHub>("/hub/notification");
     app.MapHub<ChatHub>("/hub/chat");
     app.MapHub<CommentHub>("/hub/comment");
+    app.MapWebSessionHub<NotificationHub>("notification");
+    app.MapWebSessionHub<ChatHub>("chat");
+    app.MapWebSessionHub<CommentHub>("comment");
 
     app.MapControllers();
     // 映射健康检查端点

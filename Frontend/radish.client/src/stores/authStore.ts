@@ -11,20 +11,23 @@ interface AuthStore {
 
   /** 是否正在检查认证状态 */
   isCheckingAuth: boolean;
+  isSessionRecovering: boolean;
 
   /** 检查认证状态（从 Token 和用户信息判断） */
   checkAuthStatus: () => Promise<void>;
 
   /** 登出（清除所有状态） */
-  logout: () => Promise<void>;
+  logout: (options?: { sessionAlreadyCleared?: boolean }) => Promise<void>;
 
   /** 设置认证状态 */
   setAuthenticated: (value: boolean) => void;
+  setSessionRecovering: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
   isAuthenticated: false,
   isCheckingAuth: false,
+  isSessionRecovering: false,
 
   checkAuthStatus: async () => {
     set({ isCheckingAuth: true });
@@ -47,7 +50,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
         isAuthenticated
       });
 
-      set({ isAuthenticated });
+      if (!tokenService.isSessionRecovering()) set({ isAuthenticated });
     } catch (error) {
       log.error('AuthStore', '检查认证状态失败:', error);
       set({ isAuthenticated: false });
@@ -56,11 +59,11 @@ export const useAuthStore = create<AuthStore>((set) => ({
     }
   },
 
-  logout: async () => {
+  logout: async (options) => {
     log.debug('AuthStore', '执行登出');
 
     // 1. 清除 Token
-    tokenService.clearTokens();
+    if (!options?.sessionAlreadyCleared) tokenService.clearTokens();
 
     // 2. 清除用户信息
     const userStore = useUserStore.getState();
@@ -74,7 +77,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
     useChatStore.getState().reset();
 
     // 5. 更新认证状态
-    set({ isAuthenticated: false });
+    set({ isAuthenticated: false, isSessionRecovering: false });
 
     log.info('AuthStore', '登出完成');
   },
@@ -82,5 +85,7 @@ export const useAuthStore = create<AuthStore>((set) => ({
   setAuthenticated: (value: boolean) => {
     log.debug('AuthStore', '设置认证状态:', value);
     set({ isAuthenticated: value });
-  }
+  },
+
+  setSessionRecovering: (value: boolean) => set({ isSessionRecovering: value }),
 }));

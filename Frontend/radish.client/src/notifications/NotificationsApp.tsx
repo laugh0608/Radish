@@ -35,6 +35,7 @@ export const NotificationsApp = () => {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+  const sessionRecovering = useAuthStore(state => state.isSessionRecovering);
   const userId = useUserStore((state) => state.userId);
   const summary = useNotificationStore((state) => state.summary);
   const unreadCount = useNotificationStore((state) => state.unreadCount);
@@ -80,13 +81,13 @@ export const NotificationsApp = () => {
   }, [t]);
 
   useEffect(() => {
-    if (!authReady || loggedIn || redirecting) {
+    if (!authReady || loggedIn || redirecting || sessionRecovering) {
       return;
     }
 
     setRedirecting(true);
-    redirectToLogin({ returnPath: buildNotificationsReturnPath() });
-  }, [authReady, loggedIn, redirecting]);
+    redirectToLogin({ onUnavailable: () => setRedirecting(false), returnPath: buildNotificationsReturnPath() });
+  }, [authReady, loggedIn, redirecting, sessionRecovering]);
 
   const loadPreferences = useCallback(async () => {
     setPreferenceError(null);

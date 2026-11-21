@@ -5,7 +5,7 @@ namespace Radish.Auth.OpenIddict;
 
 public static class WebAuthClient
 {
-    public const string ClientId = "radish-web";
+    public const string ClientId = WebSessionProtocol.ClientId;
     public const string SettingsSection = "OpenIddict:WebSession:";
     public const string SessionIdClaim = OpenIddictConstants.Claims.Prefixes.Private + "radish_web_session_id";
     public const string RefreshLeaseParameter = "radish_web_refresh_lease";

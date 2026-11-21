@@ -40,6 +40,7 @@ interface IsAuthSessionIdleExpiredOptions {
 
 interface StartAuthSessionActivityTrackingOptions {
   onIdleExpired?: () => void;
+  shouldTrack?: () => boolean;
 }
 
 export function hasAuthenticatedSession(authenticated: boolean, userId: string | null | undefined): boolean {
@@ -171,7 +172,7 @@ export function startAuthSessionActivityTracking(
   }
 
   const handleActivity = () => {
-    if (document.visibilityState === 'hidden') {
+    if (document.visibilityState === 'hidden' || options.shouldTrack?.() === false) {
       return;
     }
 

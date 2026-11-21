@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -84,6 +85,18 @@ public sealed class WebSessionControllerTest
     }
 
     [Theory]
+    [InlineData(false, 404, "legacy")]
+    [InlineData(true, 401, "cookie")]
+    public async Task AnonymousStatusDistinguishesOptOutFromMissingCookie(bool enabled, int status, string mode)
+    {
+        var fixture = new Fixture(enabled);
+        var response = Assert.IsAssignableFrom<StatusCodeResult>(await fixture.Controller.Status(CancellationToken.None));
+        Assert.Equal(status, response.StatusCode);
+        Assert.Equal(mode, fixture.Controller.Response.Headers["X-Radish-Web-Session-Mode"].ToString());
+        fixture.Access.VerifyNoOtherCalls();
+    }
+
+    [Theory]
     [InlineData(true, "/connect/authorize", "__Host-Radish-Web-Login=login; .Radish.Auth.Session=legacy")]
     [InlineData(true, "/Account/Login", "__Host-Radish-Web-Login=login; .Radish.Auth.Session=legacy")]
     [InlineData(true, "/connect/token", ".Radish.Auth.Session=legacy")]
@@ -102,8 +115,10 @@ public sealed class WebSessionControllerTest
         services.AddReverseProxy().LoadFromMemory([], [new ClusterConfig { ClusterId = "authCluster" }]).AddWebSessionRouting();
         using var provider = services.BuildServiceProvider();
         var sources = provider.GetServices<IProxyConfigProvider>();
-        Assert.Contains(sources, source =>
-            source.GetConfig().Routes is [{ ClusterId: "authCluster", Match.Path: "/web/session/{**catch-all}" }]);
+        Assert.Contains(sources, source => source.GetConfig().Routes.Any(route =>
+            route is { ClusterId: "authCluster", Match.Path: "/web/session/{**catch-all}" }));
+        Assert.Contains(sources, source => source.GetConfig().Routes.Any(route =>
+            route is { ClusterId: "apiCluster", Match.Path: "/hub/web/{**catch-all}" }));
     }
 
     private sealed class Fixture
@@ -113,11 +128,11 @@ public sealed class WebSessionControllerTest
         public readonly string Cookie = WebSessionSecrets.NewSecret();
         public WebSessionController Controller { get; }
 
-        public Fixture()
+        public Fixture(bool enabled = true)
         {
             var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["OpenIddict:WebSession:Enabled"] = "true",
+                ["OpenIddict:WebSession:Enabled"] = enabled.ToString(),
                 ["OpenIddict:Server:Issuer"] = "https://radish.test:35443/"
             }).Build();
             var context = new DefaultHttpContext();

@@ -11,13 +11,11 @@ public sealed class ApiJwtBearerEvents : JwtBearerEvents
 {
     public override Task MessageReceived(MessageReceivedContext context)
     {
-        // 浏览器 SignalR 的凭据仅允许从三个既有 Hub 路径的 query string 读取。
+        // 浏览器 SignalR 的 query bearer 仅用于显式登记的 Hub 路径。
         var accessToken = context.Request.Query["access_token"].ToString();
         var path = context.HttpContext.Request.Path;
         if (!string.IsNullOrWhiteSpace(accessToken)
-            && (path.StartsWithSegments("/hub/notification") ||
-                path.StartsWithSegments("/hub/chat") ||
-                path.StartsWithSegments("/hub/comment")))
+            && (WebSessionHubBoundary.IsLegacyHubPath(path) || WebSessionHubBoundary.IsWebHubPath(path)))
         {
             context.Token = accessToken;
         }

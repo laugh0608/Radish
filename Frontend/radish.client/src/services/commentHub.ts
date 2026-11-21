@@ -1,5 +1,7 @@
 import * as signalR from '@microsoft/signalr';
-import { getSignalrHubUrl } from '@/config/env';
+import { useAuthStore } from '@/stores/authStore';
+import { resolveHubSession } from './hubSession';
+import { WebHubReconnect, type HubCredential } from './webHubPolicy';
 import { tokenService } from './tokenService';
 import { log } from '@/utils/logger';
 import type { CommentNode } from '@/api/forum';
@@ -44,13 +46,11 @@ type CommentRealtimeEventMap = {
 type CommentRealtimeEventName = keyof CommentRealtimeEventMap;
 type Listener<TEventName extends CommentRealtimeEventName> = (payload: CommentRealtimeEventMap[TEventName]) => void;
 
-function getHubUrl(): string {
-  return `${getSignalrHubUrl()}/hub/comment`;
-}
-
 class CommentHubService {
   private connection: signalR.HubConnection | null = null;
+  private credential: HubCredential | null = null;
   private isStarting = false;
+  private readonly webReconnect = new WebHubReconnect();
   private startRequestId = 0;
   private joinedPosts = new Map<string, LongId>();
   private listeners: {
@@ -65,7 +65,7 @@ class CommentHubService {
   };
 
   async start(): Promise<void> {
-    if (this.connection?.state === signalR.HubConnectionState.Connected || this.isStarting) {
+    if ((this.connection && this.connection.state !== signalR.HubConnectionState.Disconnected) || this.isStarting) {
       return;
     }
 
@@ -73,63 +73,85 @@ class CommentHubService {
     this.isStarting = true;
 
     try {
-      if (this.connection) {
+      const session = await resolveHubSession('comment', useAuthStore.getState().isAuthenticated);
+      if (!session || requestId !== this.startRequestId) return;
+
+      const previous = this.connection;
+      this.connection = null;
+      if (previous) {
         try {
-          await this.connection.stop();
+          await previous.stop();
         } catch {
           // ignore stale connection stop failure
         }
       }
+      if (requestId !== this.startRequestId) return;
 
-      this.connection = new signalR.HubConnectionBuilder()
-        .withUrl(getHubUrl(), {
-          accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
+      const connection = new signalR.HubConnectionBuilder()
+        .withUrl(session.url, {
+          accessTokenFactory: session.accessTokenFactory,
         })
         .withAutomaticReconnect([0, 2000, 5000, 10000, 30000])
         .configureLogging(signalR.LogLevel.Warning)
         .build();
+      this.connection = connection;
+      this.credential = session.credential;
 
       this.connection.serverTimeoutInMilliseconds = 60_000;
       this.connection.keepAliveIntervalInMilliseconds = 15_000;
 
-      this.registerEventHandlers();
-      await this.connection.start();
+      this.registerEventHandlers(connection, session.credential === 'web');
+      await connection.start();
 
       if (requestId !== this.startRequestId) {
-        await this.connection.stop();
+        await connection.stop();
         return;
       }
 
       log.debug('CommentHub', '连接成功');
+      this.webReconnect.reset();
     } catch (error) {
+      if (requestId !== this.startRequestId) return;
       const message = error instanceof Error ? error.message : String(error);
       if (!message.includes('Failed to start the HttpConnection before stop() was called')) {
         log.warn('CommentHub', '连接失败，评论区将保留 REST 刷新:', error);
       }
+      if (this.credential === 'web') this.scheduleWebReconnect();
     } finally {
-      this.isStarting = false;
+      if (requestId === this.startRequestId) {
+        this.isStarting = false;
+        if (this.credential === 'anonymous') void this.syncSessionRoute();
+      }
     }
   }
 
   async stop(): Promise<void> {
     this.startRequestId++;
+    this.webReconnect.reset();
+    this.isStarting = false;
+    this.credential = null;
 
-    if (!this.connection) {
+    const connection = this.connection;
+    this.connection = null;
+    if (!connection) {
       return;
     }
 
     try {
-      await this.connection.stop();
+      await connection.stop();
       log.debug('CommentHub', '连接已断开');
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       if (!message.includes('Failed to start the HttpConnection before stop() was called')) {
         log.warn('CommentHub', '关闭连接失败:', error);
       }
-    } finally {
-      this.connection = null;
-      this.isStarting = false;
     }
+  }
+
+  async syncSessionRoute(): Promise<void> {
+    if (this.isStarting || this.credential === 'web' || this.joinedPosts.size === 0 ||
+        tokenService.sessionMode !== 'cookie' || !tokenService.getAccessToken()) return;
+    await this.restart();
   }
 
   async restart(): Promise<void> {
@@ -203,28 +225,33 @@ class CommentHubService {
     await this.start();
   }
 
-  private registerEventHandlers(): void {
-    if (!this.connection) {
-      return;
-    }
+  private scheduleWebReconnect(): void {
+    this.webReconnect.schedule(() => this.joinedPosts.size > 0 && tokenService.sessionMode === 'cookie' &&
+      useAuthStore.getState().isAuthenticated, () => void this.start().then(() => this.rejoinPosts()));
+  }
 
-    this.connection.onreconnected(() => {
+  private registerEventHandlers(connection: signalR.HubConnection, web: boolean): void {
+    connection.onreconnected(() => {
+      if (connection !== this.connection) return;
+      this.webReconnect.reset();
       log.debug('CommentHub', '重连成功');
       void this.rejoinPosts();
     });
 
-    this.connection.onclose((error) => {
+    connection.onclose((error) => {
+      if (connection !== this.connection) return;
       if (error) {
         log.debug('CommentHub', '连接关闭:', error);
       }
+      if (web) this.scheduleWebReconnect();
     });
 
-    this.connection.on('CommentCreated', (payload: CommentRealtimeEvent) => this.emit('CommentCreated', payload));
-    this.connection.on('CommentUpdated', (payload: CommentRealtimeEvent) => this.emit('CommentUpdated', payload));
-    this.connection.on('CommentDeleted', (payload: CommentRealtimeEvent) => this.emit('CommentDeleted', payload));
-    this.connection.on('CommentLikeChanged', (payload: CommentRealtimeEvent) => this.emit('CommentLikeChanged', payload));
-    this.connection.on('CommentHighlightsChanged', (payload: CommentHighlightRealtimeEvent) => this.emit('CommentHighlightsChanged', payload));
-    this.connection.on('CommentTyping', (payload: CommentTypingRealtimeEvent) => this.emit('CommentTyping', payload));
+    connection.on('CommentCreated', (payload: CommentRealtimeEvent) => this.emit('CommentCreated', payload));
+    connection.on('CommentUpdated', (payload: CommentRealtimeEvent) => this.emit('CommentUpdated', payload));
+    connection.on('CommentDeleted', (payload: CommentRealtimeEvent) => this.emit('CommentDeleted', payload));
+    connection.on('CommentLikeChanged', (payload: CommentRealtimeEvent) => this.emit('CommentLikeChanged', payload));
+    connection.on('CommentHighlightsChanged', (payload: CommentHighlightRealtimeEvent) => this.emit('CommentHighlightsChanged', payload));
+    connection.on('CommentTyping', (payload: CommentTypingRealtimeEvent) => this.emit('CommentTyping', payload));
   }
 
   private async rejoinPosts(): Promise<void> {

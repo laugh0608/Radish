@@ -11,7 +11,8 @@ public static class WebSessionProxy
 
     public static IReverseProxyBuilder AddWebSessionRouting(this IReverseProxyBuilder proxy)
     {
-        return proxy.LoadFromMemory([new RouteConfig
+        return proxy.LoadFromMemory([
+        new RouteConfig
         {
             RouteId = RouteId,
             ClusterId = "authCluster",
@@ -20,6 +21,13 @@ public static class WebSessionProxy
             [
                 new Dictionary<string, string> { ["X-Forwarded"] = "Set" }
             ]
+        },
+        new RouteConfig
+        {
+            RouteId = "web-session-hubs",
+            ClusterId = "apiCluster",
+            Match = new RouteMatch { Path = WebSessionProtocol.HubPrefix + "/{**catch-all}" },
+            Transforms = [new Dictionary<string, string> { ["RequestHeaderOriginalHost"] = "true" }]
         }], []).AddTransforms(builder =>
         {
             if (builder.Route.RouteId == RouteId) return;

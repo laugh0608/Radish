@@ -85,6 +85,7 @@ export function ShopWebApp() {
   const { t } = useTranslation();
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const sessionRecovering = useAuthStore(state => state.isSessionRecovering);
   const userId = useUserStore(state => state.userId);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [route, setRoute] = useState<ShopRoute>(() => resolveInitialShopRoute());
@@ -202,15 +203,16 @@ export function ShopWebApp() {
   }, [t]);
 
   useEffect(() => {
-    if (!authReady || loggedIn || redirecting) {
+    if (!authReady || loggedIn || redirecting || sessionRecovering) {
       return;
     }
 
     setRedirecting(true);
     redirectToLogin({
+      onUnavailable: () => setRedirecting(false),
       returnPath: buildShopRouteReturnPath(route)
     });
-  }, [authReady, loggedIn, redirecting, route]);
+  }, [authReady, loggedIn, redirecting, sessionRecovering, route]);
 
   useEffect(() => {
     if (!authReady || !loggedIn) {

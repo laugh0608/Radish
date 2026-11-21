@@ -108,7 +108,13 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 - 刷新租约为 20 秒，进入 OpenIddict 刷新时验证租约仍属于当前会话。租约成功后以限时 HTTPS 回连兑换，完成的轮换先落库再交付，即使浏览器已断开，服务端仍可完成写回。临时故障期间保留原凭据并退避，写入中断可在租约到期后读库再尝试。明确的 `invalid_grant` 仅由当前租约持有者终止会话。登出清空长期凭据与租约，迟到的结果无法写回。若旧 refresh token 已永久失效且没有可读的新版本，要求用户重新登录。[持久化租约](../../Radish.Auth.Persistence/OpenIddict/WebSessionStore.cs)
 - 以后获准开启时，需配置 HTTPS 公开 `OpenIddict:Server:Issuer`、`OpenIddict__WebSession__Enabled`、`OpenIddict__WebSession__ClientSecret`、独立持久化的 `OpenIddict__WebSession__KeysPath`，以及用于保护密钥环的 `OpenIddict__WebSession__KeyCertificate__Path` 和 `Password`。轮换证书需要保留现有密钥的解密材料，可配置 `PreviousKeyCertificates`。在隔离环境通过 `Radish.DbMigrate apply` 后，须验证 Auth 容器可用目标站点的受信 HTTPS 地址访问 Gateway 的 `/connect/token`、持久化密钥环在重启后可读、实际 PostgreSQL 迁移和真实浏览器登录。该范围涉及服务启动、运行配置和数据库迁移，按实际环境单独授权。[密钥环配置](../../Radish.Auth/WebSessions/WebSessionKeyRing.cs)
 
-普通 Web 前端及专用 Hub 的接入是后续切片。此阶段验证 Auth、Gateway 与存储契约，运行配置和已有客户端策略沿用原值。
+### 普通 Web 前端与实时连接
+
+- 普通 Web 页面在 HTTPS 同源 Gateway 读取 `/web/session/status`，按 `X-Radish-Web-Session-Mode` 选择会话。Auth 明确关闭新会话时，该端点返回 `404` 和 `legacy`；返回 `cookie` 的 `401` 表示访客。网络失败、代理错误和缺失模式的响应保留待恢复状态。Flutter、Console、历史 WebOS 和旧 OIDC 回调沿用各自入口。[会话 API](../../Frontend/radish.http/src/web-session.ts) · [浏览器入口策略](../../Frontend/radish.client/src/services/browserWebSession.ts)
+- 启动、前台恢复、普通 Web API 的 401 和 Hub 使用同一内存凭据提供者。Cookie 会话恢复后清除旧普通 Web 的浏览器凭据缓存。自动恢复和定时刷新不计活动，前台真实输入通过 `/activity` 节流上报。服务端确认失效后清理当前和其他标签页，只广播退出事件。显式退出先执行同源 `/logout`，收到成功后再进入既有 OIDC 回流。Web 授权读请求可使用已轮换的令牌重试一次，授权写请求发生 401 时只更新凭据，原操作由调用方决定是否重试。[凭据状态机](../../Frontend/radish.client/src/services/webSession.ts) · [统一 HTTP 客户端](../../Frontend/radish.http/src/client.ts)
+- `/hub/web/notification`、`/hub/web/chat` 和 `/hub/web/comment` 只接受已验签的 `radish-web` bearer，并让 SignalR 在认证到期时断开。Web 通过同一提供者取新令牌重连，对账通知，恢复当前聊天频道和帖子评论订阅。退出或会话明确失效时取消重连。旧 Hub 路径仍服务 Flutter、Console 和历史入口，评论游客继续使用 `/hub/comment`。[Hub 鉴权边界](../../Radish.Api/Security/WebSessionHubBoundary.cs) · [前端 Hub 选择](../../Frontend/radish.client/src/services/hubSession.ts)
+
+本轮完成接口、前端状态和 Hub 路由的离线验证。服务、运行配置及依赖保持现有状态。正式开启前仍须获准在隔离 HTTPS Gateway 上联验 Cookie、实际 PostgreSQL 迁移及真实浏览器的 Hub 到期重连，再执行隔夜与回退验收。
 
 ## 修复验收
 
@@ -120,4 +126,4 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 | 撤销与迁移 | 主动退出、账号停用或撤销后拒绝继续刷新。已有 access token 和连接受原截止约束。旧 Web 会话重登一次，公开页仍可读，受保护页登录后正确回流。覆盖旧缓存页面、回退、密钥轮换和备份恢复。 |
 | 隔离与凭据 | 旧 Flutter 的 `radish-client` 无法换取新 Cookie 或进入 Web 专属期限。Console、Scalar、WebOS 历史登录路径及旧原生回调维持各自契约。验证 Cookie 属性、跨站请求、回调重放、客户端机密和长期凭据从浏览器存储及日志中缺失。 |
 
-只读排查执行的 19 个后端与 26 个前端定向用例全部通过。默认期限对照已完成，修复验收待实施后执行。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
+默认期限对照已完成。普通 Web 前端与 Hub 接入本轮通过 92 个前端与共享 HTTP 用例、121 个后端定向用例。上表的实际环境验收待获得运行授权后执行。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)

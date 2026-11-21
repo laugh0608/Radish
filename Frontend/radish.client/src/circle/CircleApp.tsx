@@ -113,6 +113,7 @@ export const CircleApp = () => {
   const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
   const displayTimeZone = useMemo(() => getBrowserTimeZoneId(DEFAULT_TIME_ZONE), []);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const sessionRecovering = useAuthStore(state => state.isSessionRecovering);
   const userId = useUserStore(state => state.userId);
   const loggedIn = isAuthenticated && userId.trim().length > 0;
   const [route, setRoute] = useState<CircleRoute>(() => resolveInitialCircleRoute());
@@ -173,15 +174,16 @@ export const CircleApp = () => {
   }, [route]);
 
   useEffect(() => {
-    if (!authReady || loggedIn || redirecting) {
+    if (!authReady || loggedIn || redirecting || sessionRecovering) {
       return;
     }
 
     setRedirecting(true);
     redirectToLogin({
+      onUnavailable: () => setRedirecting(false),
       returnPath: buildCircleReturnPath({ tab: route.tab, page: route.page })
     });
-  }, [authReady, loggedIn, redirecting, route.page, route.tab]);
+  }, [authReady, loggedIn, redirecting, sessionRecovering, route.page, route.tab]);
 
   const navigateToRoute = useCallback((nextRoute: CircleRoute) => {
     const nextPath = buildCirclePath(nextRoute);
