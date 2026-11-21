@@ -1,6 +1,6 @@
 # 隔夜会话排查与验收方案
 
-2026-11-21 · `dev@f6f9f008` · 六项提案第 2 项。只读排查及默认期限隔离对照已完成，修复待评审。[当前进行中](../planning/current.md) · [既有不活跃规则](../guide/auth-idle-session.md) · [隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
+2026-11-21 · 六项提案第 2 项。默认期限隔离对照已完成，普通 Web 修复方案已确认。首期获准实施 Auth 会话模型、两道期限、独立客户端和定向测试。[当前进行中](../planning/current.md) · [既有不活跃规则](../guide/auth-idle-session.md) · [隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
 
 ## 已核对的生效值
 
@@ -51,20 +51,58 @@ auth_probe_compose up -d --no-build --pull never api auth frontend gateway
 
 报告只保留版本与摘要、客户端 ID、时间、配置键有效值、请求状态、归类后的错误、刷新次数及凭据存在布尔值。浏览器网络记录过滤查询串、请求体、Cookie 和响应中的凭据；不保留 HAR、浏览器资料或原始数据库。退出时关闭测试浏览器，执行 `auth_probe_compose down --volumes --remove-orphans`，按项目标签核对容器、网络和卷均已清除，再确认端口释放。校验临时目录前缀后清除测试证书、凭据、浏览器资料和临时配置，仅留脱敏报告。缺少镜像或浏览器、端口占用、预检不通过时停止该轮并登记缺口。
 
-## 修复方案（待评审）
+<a id="web-session-repair"></a>
 
-1. **限定社区 Web 的会话策略。** 保留 5 分钟 access token，建议将普通 Web 的不活跃上限设为 7 天，绝对上限设为初次授权后的 30 天，由服务端执行。每次签发的 refresh token 截止不晚于两者中较早的一项。服务端在确认有效会话后记录可认可的交互时间，后台定时刷新与心跳不续长不活跃窗口。首次恢复先核对旧窗口，再记录新的交互。绝对起点随轮换保留。现有活动请求参数可作为提示，服务端应限制可采信的范围。
-2. **按登记的回调来源绑定策略。** `radish-client` 同时承载 Web 和 Flutter，直接按客户端 ID 改期限会一起作用于两者。优先评审用服务端已验证的 Web 回调在初次授权时确定策略，将可信标记通过授权码与轮换保留到 refresh token。若现有授权链不能可靠保留来源，再评审独立 Web 客户端 ID 的迁移。Console、Scalar 与原生策略分别适用既有登记。[OIDC 客户端登记](../../Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs)
-3. **长期凭据和恢复路径一并评审。** 现有 refresh token 可被页面脚本读取，延长后的暴露时间也会增长。建议由同源服务端持有长期刷新凭据，浏览器仅持有 `HttpOnly`、`Secure` 的会话 Cookie，并落实 CSRF 防护与服务端撤销。启动恢复、定时任务和受保护请求共享刷新协调，轮换后多标签使用最新结果。网络错误和临时 `5xx` 保留恢复能力，明确过期、撤销或持久凭据缺失再进入重登。策略变化后，已经过期的旧凭据需要重新登录。对退出和停用，明确验证 refresh 拒绝及已签发 access token 的剩余有效期。
+## 已确认的修复方案
+
+建议普通 Web 使用独立 confidential 客户端 `radish-web`。`Radish.Auth` 持有会话和长期凭据，Gateway 转发同源会话路由，Web 继续通过现有 API 客户端和 SignalR 使用内存中的短效 access token。方案覆盖社区 Web 的 PC / mobile 浏览器。Flutter、Console、Scalar 与 WebOS 历史入口按各自现有契约回归。
+
+### 两道期限
+
+会话记录拟存入 Auth 的 OpenIddict 数据库。每条记录绑定环境、会话 ID、浏览器凭据摘要、客户端、账号与租户、对应的 OpenIddict 授权记录。另存 `CreatedAtUtc`、`LastActiveAtUtc`、状态、撤销时间、并发版本及加密后的令牌。PostgreSQL 和 SQLite 都通过 `Radish.DbMigrate` 交付增量迁移。运行时由 Auth 使用统一 UTC 时钟，数据库更新按会话版本与状态原子裁决。[Auth 持久化](../../Radish.Auth.Persistence/OpenIddict/AuthOpenIddictDbContext.cs)
+
+| 期限 | 初值与更新 | 服务端裁决 |
+| --- | --- | --- |
+| 7 天不活跃 | `LastActiveAtUtc` 初始等于 `CreatedAtUtc`。已登录的前台页面在实际点击、触控、键盘操作或显式导航后，经同源活动接口上报，Auth 以收到该信号的 UTC 时间更新。建议每个会话最多每 60 秒写入一次，服务端同时限流。 | `now >= LastActiveAtUtc + 7d` 时结束会话。状态查询、关页重开自动恢复、定时刷新、focus / visibility 事件、WebSocket 心跳或自动重连均不更新活动时间。活动信号只表达前台交互，客户端时间戳不参与计算。 |
+| 30 天绝对上限 | `CreatedAtUtc` 取本次 Web 新登录通过身份验证的服务端时间。刷新、回访、活动更新、应用重启和多端部署均沿用该值。 | `now >= CreatedAtUtc + 30d` 时结束会话，要求用户重新认证。当前 `AuthorizationController` 按 Auth Cookie 判断是否已登录，实施时须补齐 `radish-web` 的 `prompt=login` 处理及一次性再认证关联，验证旧 Auth SSO Cookie 无法跳过。 |
+
+每次状态读取、活动写入、access token 获取和 refresh grant 先按已有记录判断是否仍有效。令 `deadline = min(LastActiveAtUtc + 7d, CreatedAtUtc + 30d)`。当 `now >= deadline` 时拒绝，迟到的活动请求无法恢复会话。刷新后重算并保持绝对起点，签出的 access token 为 `min(now + 5m, deadline)`。被动恢复可以取得短效 token，直到真正活动发生才推进不活跃截止。会话 Cookie 与服务器保管的 Web refresh token 的期限最晚到绝对截止，两个截止都由 Auth 对 refresh grant 执行。这样真实活动延后不活跃截止时，先前签出的 refresh token 仍能用于后续兑换。现有 7 天参数和 60 秒容差继续用于旧客户端独立流程。[OIDC 再认证](https://openid.net/specs/openid-connect-core-1_0.html#AuthRequest) · [既有不活跃规则](../guide/auth-idle-session.md)
+
+Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 API 仍按 JWT 的 `exp` 校验。已有 SignalR 握手连接也要执行截止，初步选用仅供 `radish-web` 的 `/hub/web/notification`、`/hub/web/chat`、`/hub/web/comment`，复用各自 Hub 实现，开启 `CloseOnAuthenticationExpiration`。Web 以新 JWT 重连并恢复订阅，重连不计活动。API 明确列出允许 query bearer 的 Web Hub 路径，带正式 Web 签发标记的 JWT 不进入旧认证 Hub 路径，匿名评论仍可走既有入口。主动退出、账号停用或撤销使 Auth 停止签发，现有 JWT 或连接最晚在各自 `exp` 到期，最长剩余 5 分钟。[API JWT 校验](../../Radish.Api/Security/ApiJwtValidationPolicy.cs) · [现有 Hub JWT 入口](../../Radish.Api/Security/ApiJwtBearerEvents.cs) · [SignalR 到期断开](https://learn.microsoft.com/en-us/dotnet/api/microsoft.aspnetcore.http.connections.httpconnectiondispatcheroptions.closeonauthenticationexpiration?view=aspnetcore-10.0)
+
+### 与 Flutter 隔离
+
+1. 为 `radish-web` 登记 authorization code 与 refresh grant、PKCE S256、现有 Web 所需 scopes 和唯一的正式同源服务端回调 `/web/session/callback`。客户端凭据只注入 Auth 的受保护部署配置。继续使用现有 issuer 和 `radish-api` audience。新登记与 `radish-client`、`radish-console`、`radish-scalar` 并存，旧浏览器、Flutter 和历史 WebOS 各自的回调与令牌设置继续有效。[既有客户端登记](../../Radish.Auth/OpenIddict/OpenIddictSeedHostedService.cs)
+2. 普通 Web 的登录入口调用同源会话服务。服务生成一次性、短时的 OIDC `state`、`nonce` 和 PKCE verifier，并绑定发起登录的浏览器。Auth 在验证客户端、登记回调及此次交互认证后建立待激活会话，将服务端生成的会话 ID 绑定到授权码。回调消费一次性登录事务，经固定可信 HTTPS Gateway / Auth 路径由服务器兑换授权码，验证 issuer、audience、nonce 和身份匹配后激活。授权码、refresh token 和客户端凭据不作为页面 JavaScript 的输入。部署预检须验证容器内回连地址、TLS 证书与外部 issuer 一致性，开发与隔离验证沿用 HTTPS Gateway。[Gateway 路由](../guide/gateway.md) · [OAuth 授权码安全实践](https://www.rfc-editor.org/rfc/rfc9700.html#section-2.1)
+3. 只有 OpenIddict 已认证的 `radish-web` 客户端及绑定到同账号、租户和授权记录的有效服务端会话，可以走新期限。refresh grant 从已验证的令牌主体取服务端会话 ID，再检查持久状态和当前账号可用性。新客户端缺失绑定或会话已失效时拒绝续期。Flutter 继续使用 `radish-client` 的 `radish://` 回调、原有设置和安全存储。应用类型、回调、grant 等来自服务器端验证，旧 `radish-client` 令牌无法兑换新会话。[Flutter 环境配置](../../Clients/radish.flutter/lib/core/config/app_environment.dart)
+
+### 凭据存储与恢复
+
+| 边界 | 拟定设计 |
+| --- | --- |
+| 浏览器 | `__Host-Radish-Web-Session` 存放 CSPRNG 生成的 256 位不透明凭据，设置 `HttpOnly`、`Secure`、`SameSite=Lax`、`Path=/`，无 `Domain`，最晚在绝对截止失效。浏览器只在内存保存 5 分钟以内的 API bearer 和会话防伪值，重开时由 Cookie 恢复。公开页可匿名启动。 |
+| Auth 与存储 | Auth 保存 Cookie 值的摘要，服务端 refresh token 和可复用的短 access token 用独立用途的 Data Protection 加密。密钥环持久化、独立受访问控制并有静态加密，轮换后保留解密现存会话所需的旧密钥，多实例共用该 Web 用途的密钥环与数据库。避免改动已有 Auth Cookie 的密钥用途。备份恢复时撤销回档的 Web 会话后再开放续期，避免恢复已经退出或撤销的会话。 |
+| 同源请求 | Gateway 定向转发 `/web/session/*` 至 Auth，从其他上游请求中移除 Web 会话及登录关联 Cookie。拟用 `GET /status` 返回会话状态与防伪值，`POST /token` 取得短 bearer，`POST /activity` 更新活动，`POST /logout` 撤销会话。三条会话写入路由校验精确 `Origin` 和会话绑定的防伪值。匿名 `POST /login` 也验证同源，`GET /callback` 校验 `state`、`nonce` 和 PKCE。会话端点使用 `Cache-Control: no-store`，日志与前端存储不保留 Cookie、令牌、登录参数或防伪值。 |
+| Web 恢复 | 认证 bootstrap、定时刷新、`@radish/http` 的 401 恢复和三个 Hub 统一调用同一个 Web token provider。同一标签页共享请求，多标签页从服务端获得同一批仍有效的短 token。断网、`429` 或临时 `5xx` 进入可恢复状态，保留服务端会话并限速重试。明确缺失、到期、撤销或凭据永久无效时清理内存状态，按原返回路径引导用户登录。重复发送受保护写请求须有明确的鉴权拒绝或幂等性保证。 |
+
+刷新保持 OpenIddict 轮换。Auth 以持久会话版本和短租约合并跨实例请求，其他请求等待或退避后读取已写入的新凭据。租约期间释放数据库事务，再发请求到 OpenIddict。结果通过版本校验写回，写入完成后才回应浏览器。写回前重新核对截止、撤销和版本，退出和停用先禁用会话及后续 refresh grant，再回收授权。显式登出在撤销 Web 会话后继续既有 OIDC 登出回流，自动到期只结束当前 Web 会话。若刷新服务已消费旧凭据但结果未能持久写回，先辨认是否已有新版本，确认当前凭据永久无效后要求重新登录。验证响应中断、进程重启、租约失效和与登出交错的结果，避免重试争抢已消费的旧 token。[OAuth 刷新与撤销安全实践](https://www.rfc-editor.org/rfc/rfc9700.html#section-4.14) · [同源与 CSRF 防护](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html)
+
+### 旧会话迁移与回退
+
+1. **先兼容发布。** 交付数据库增量迁移、独立 OIDC 登记、后端会话接口、Gateway 路由及普通 Web 适配，功能默认关闭。先证明升级前的 `radish-client`、Flutter、Console、Scalar 与 `/desktop` 登录路径仍可使用。登记和迁移应可重跑。正式开启前单独核对密钥持久化、备份恢复、HTTPS、回调、浏览器旧静态资源缓存及所有节点版本。
+2. **由用户完成一次重新认证。** 开启普通 Web 后，旧浏览器 access / refresh 凭据按既有期限处理，无论当时是否到期均不升级或导入新会话。有旧登录迹象但无新会话时，公开页照常可读，受保护操作提示登录一次并保留回流路径。新 Cookie 生效后，普通 Web 丢弃自己先前的持久 token、用户缓存与活动状态，使用同标签和跨标签更新让旧 Web 状态退出。若同一浏览器共用正式 Web 与 `/desktop` 的旧存储，历史入口可能需要再次登录，列入切换验收。缓存的旧页面可在旧协议下短期运行，刷新页面后切换。服务端不会凭旧客户端 ID 批量撤销共享授权。
+3. **回退需要重新登录一次。** 先关闭新 Web 会话的创建与续期并撤销已建立的 Web 会话，关闭已有连接以其短 JWT 到期为上限。再回退 Web 入口和 Gateway 路由，保持增量表与客户端登记以供审计和重试。该关闭与撤销步骤须在旧 Auth 镜像接管前执行。浏览器下次按旧正式 Web 登录链路建立会话，旧 Flutter 和 Console 通过原发放方式继续工作。重新开启前重验迁移结果和会话撤销状态。
+
+实施顺序拟为会话模型与两道期限、独立客户端及同源 Cookie、普通 Web 和 Hub 接入、旧会话迁移与候选回退。确认范围后先验证 OpenIddict 会话绑定、令牌截止和 Auth HTTPS 回连能在现有技术栈落地，再接入界面和部署。服务启动、配置变更、新依赖及生产启用按实际命令单独授权。
 
 ## 修复验收
 
 | 场景 | 通过标准 |
 | --- | --- |
 | 隔夜恢复 | 社区 Web 在 PC 与 mobile 视图分别执行真实关页隔夜重开，间隔超过旧 25 分钟，以 12–24 小时为代表区间。access token 已过期，重开成功恢复同一账号，并通过一个受保护接口确认身份。另覆盖前台恢复和首个受保护请求触发刷新。 |
-| 两层时限 | 用可控服务端时钟在边界前后验证 7 天不活跃和 30 天硬上限。验证 refresh 签发截止、轮换后初次授权时间与有效活动时间，以及定时刷新、心跳、恢复事件和超范围活动时间上报。 |
-| 故障与轮换 | 临时断网或 `5xx` 恢复后可继续有效会话，多标签与同标签并发恢复收敛到最新轮换结果。验证明确失效的凭据，以及失败重试时受保护写操作不会重复提交。 |
-| 撤销与迁移 | 主动退出、账号停用或撤销后拒绝继续刷新，验证旧 access token 是否可用至原期限。已有过期凭据重登一次后按新策略签发。撤销后可匿名浏览公开页，受保护页仍要求登录。 |
-| 范围回归 | Console、Scalar 与原生登记的令牌期限和回调契约符合既有口径。若引入 Cookie，覆盖其属性、跨站请求防护、登出与服务端撤销。 |
+| 两层时限 | 用可控服务端时钟验证 7 天和 30 天截止前、到点与越界。覆盖临界活动与刷新竞争、活跃后的旧 refresh token、短 JWT 和 Web Hub 在截止时断开。定时刷新、心跳、自动恢复和客户端时间均不能延期，旧 Auth SSO Cookie 不能静默创建下一段 Web 会话。 |
+| 故障与轮换 | 临时断网或 `5xx` 恢复后可继续有效会话。多标签、同标签和多 Auth 实例并发收敛。验证轮换结果已落库后响应丢失、持久化失败、进程重启和登出竞争，以及受保护写操作安全重试。 |
+| 撤销与迁移 | 主动退出、账号停用或撤销后拒绝继续刷新。已有 access token 和连接受原截止约束。旧 Web 会话重登一次，公开页仍可读，受保护页登录后正确回流。覆盖旧缓存页面、回退、密钥轮换和备份恢复。 |
+| 隔离与凭据 | 旧 Flutter 的 `radish-client` 无法换取新 Cookie 或进入 Web 专属期限。Console、Scalar、WebOS 历史登录路径及旧原生回调维持各自契约。验证 Cookie 属性、跨站请求、回调重放、客户端机密和长期凭据从浏览器存储及日志中缺失。 |
 
 只读排查执行的 19 个后端与 26 个前端定向用例全部通过。默认期限对照已完成，修复验收待实施后执行。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
