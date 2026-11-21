@@ -321,3 +321,9 @@ export type {
   RedeemOidcAuthorizationCodeOptions,
   OidcCallbackErrorCode,
 } from './oidc-callback';
+
+export { runtimeLogConsole } from './runtime-log-console';
+export type {
+  RuntimeLogQuery, RuntimeLogPage, RuntimeLogDetail, RuntimeLogPipeline, RuntimeLogAlert,
+  RuntimeLogAlerts, RuntimeLogHistory,
+} from './runtime-log-console';

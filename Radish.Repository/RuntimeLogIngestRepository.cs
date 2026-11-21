@@ -10,8 +10,9 @@ using SqlSugar;
 namespace Radish.Repository;
 
 /// <summary>Log 专用批次事务；原生参数命令避免 ORM 日志 / AOP 重入，不共享业务事务。</summary>
-public sealed class RuntimeLogIngestRepository(ISqlSugarClient database, RuntimeLogIngestOptions options,
-    TimeProvider clock) : IRuntimeLogIngestRepository, IRuntimeLogRetentionRepository
+public sealed partial class RuntimeLogIngestRepository(ISqlSugarClient database, RuntimeLogIngestOptions options,
+    TimeProvider clock, RuntimeLogConsoleOptions? console = null)
+    : IRuntimeLogIngestRepository, IRuntimeLogRetentionRepository, IRuntimeLogConsoleRepository
 {
     public async Task<IReadOnlyList<RuntimeLogEventRecord?>> CommitAsync(IReadOnlyList<RuntimeLogEventRecord> events,
         IReadOnlyList<RuntimeLogRejectionBucket> rejections, CancellationToken cancellationToken)
@@ -44,7 +45,13 @@ public sealed class RuntimeLogIngestRepository(ISqlSugarClient database, Runtime
                     ("service", item.Service), ("level", item.Level), ("occurred", item.OccurredAtUtc),
                     ("observed", item.ObservedAtUtc), ("ingested", item.IngestedAtUtc), ("trace", item.TraceId),
                     ("operation", item.OperationId), ("hash", item.ContentHash), ("json", item.CanonicalJson));
-                if (await insert.ExecuteNonQueryAsync(cancellationToken) == 1) { results.Add(item); continue; }
+                if (await insert.ExecuteNonQueryAsync(cancellationToken) == 1)
+                {
+                    if (console?.Enabled == true)
+                        await RegisterTerminalAlertAsync(connection, transaction, item, cancellationToken);
+                    results.Add(item);
+                    continue;
+                }
                 await using var select = Command(connection, transaction,
                     "SELECT * FROM runtime_log_event WHERE deployment_id=@deployment AND event_id=@event",
                     ("deployment", item.DeploymentId), ("event", item.EventId));

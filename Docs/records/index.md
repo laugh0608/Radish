@@ -5,6 +5,8 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-21 统一日志 Console 与退出联验](./unified-logging-exit-console-2026-11-21.md) · 查询与告警实现、满卷、旧版升级恢复与浏览器门禁
+
 - [2026-11-19 统一日志独立 Compose 停写与恢复联验](./unified-logging-l1-l3-compose-recovery-2026-11-19.md) · 七类真实来源、维护接收、503 快照恢复和默认级别坏块诊断
 
 - [2026-11-19 统一日志双挂载的停写与重放联验](./unified-logging-l1-l3-storage-recovery-2026-11-19.md) · 首次 flush 前中间 CRC、停写恢复及 JSONL 重放去重

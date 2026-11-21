@@ -2,6 +2,8 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Threading.Tasks;
+using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using Radish.Api.Security;
 using Radish.Common.HttpContextTool;
@@ -21,6 +23,20 @@ public class ApiJwtValidationPolicyTests
     {
         var principal = ValidateToken(CreateToken(UserScopes.RadishApi, UserScopes.RadishApi));
 
+        UserClaimReader.HasScope(principal, UserScopes.RadishApi).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task JsonWebTokenHandler_ShouldValidateTheBearerToken()
+    {
+        // JwtBearer uses this handler by default to read tokens issued through OpenIddict.
+        var handler = new JsonWebTokenHandler();
+        var result = await handler.ValidateTokenAsync(
+            CreateToken(UserScopes.RadishApi, UserScopes.RadishApi),
+            ApiJwtValidationPolicy.Create(Issuer, SigningKey));
+
+        result.IsValid.ShouldBeTrue(result.Exception?.GetType().Name);
+        var principal = new ClaimsPrincipal(result.ClaimsIdentity);
         UserClaimReader.HasScope(principal, UserScopes.RadishApi).ShouldBeTrue();
     }
 

@@ -1,4 +1,5 @@
 using Asp.Versioning;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Net.Http.Headers;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
@@ -59,6 +60,25 @@ public static class RuntimeLogIngestSetup
             });
         }
         builder.Services.AddSingleton(options);
+        var console = builder.Configuration.GetSection("RadishLogging:Console").Get<RuntimeLogConsoleOptions>() ?? new();
+        if (console.Enabled && !options.Enabled)
+            throw new InvalidOperationException("Runtime log Console requires an enabled log deployment.");
+        builder.Services.AddSingleton(console);
+        if (!receiveOnly)
+        {
+            builder.Services.AddDataProtection();
+            builder.Services.AddScoped<IRuntimeLogConsoleRepository, RuntimeLogIngestRepository>();
+            builder.Services.AddScoped<IRuntimeLogConsoleService, RuntimeLogConsoleService>();
+            if (console is { Enabled: true, CollectorMetricsUrl: not null })
+            {
+                if (!Uri.TryCreate(console.CollectorMetricsUrl, UriKind.Absolute, out var endpoint) ||
+                    endpoint.Scheme is not ("http" or "https") || endpoint.UserInfo != "" ||
+                    endpoint.PathAndQuery != "/" || endpoint.Fragment != "")
+                    throw new InvalidOperationException("Invalid private collector metrics origin.");
+                builder.Services.AddHostedService(services => new RuntimeLogCollectorMonitor(endpoint, options,
+                    services.GetRequiredService<IServiceScopeFactory>(), services.GetRequiredService<TimeProvider>()));
+            }
+        }
         builder.Services.AddSingleton(new RuntimeLogIngestState(options.Enabled ? options.MaxConcurrentRequests : 2));
         builder.Services.AddSingleton(new RuntimeLogIngestDiagnostics());
         builder.Services.AddScoped<IRuntimeLogIngestRepository, RuntimeLogIngestRepository>();

@@ -75,10 +75,23 @@ public static class ConsolePermissions
     public const string SystemConfigDelete = "console.system-config.delete";
     public const string HangfireView = "console.hangfire.view";
     public const string HangfireReplay = "console.hangfire.replay";
+    public const string LogsView = "console.logs.view";
+    public const string LogsExport = "console.logs.export";
+    public const string LogsAudit = "console.logs.audit";
+    public const string AlertsView = "console.alerts.view";
+    public const string AlertsManage = "console.alerts.manage";
 
     private static readonly IReadOnlyDictionary<string, string[]> ApiPermissionMappings =
         new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
         {
+            ["/api/v1/RuntimeLogConsole/Query"] = new[] { LogsView },
+            ["/api/v1/RuntimeLogConsole/Detail"] = new[] { LogsView },
+            ["/api/v1/RuntimeLogConsole/History"] = new[] { LogsView },
+            ["/api/v1/RuntimeLogConsole/Pipeline"] = new[] { LogsView, AlertsView },
+            ["/api/v1/RuntimeLogConsole/Audit"] = new[] { LogsAudit },
+            ["/api/v1/RuntimeLogConsole/Export"] = new[] { LogsExport },
+            ["/api/v1/RuntimeLogConsole/Alerts"] = new[] { AlertsView },
+            ["/api/v1/RuntimeLogConsole/Transition"] = new[] { AlertsManage },
             ["/api/v1/Role/GetRoleList"] = new[] { RolesView },
             ["/api/v1/Role/GetRoleById"] = new[] { RolesView, RolesEdit },
             ["/api/v1/Role/CreateRole"] = new[] { RolesCreate },
@@ -278,6 +291,11 @@ public static class ConsolePermissions
         SystemConfigDelete,
         HangfireView,
         HangfireReplay,
+        LogsView,
+        LogsExport,
+        LogsAudit,
+        AlertsView,
+        AlertsManage,
     };
 
     public static IReadOnlyCollection<string> GetDefaultPermissions(IReadOnlyCollection<string> roleNames)
