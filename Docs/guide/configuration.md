@@ -39,6 +39,10 @@ Radish.Api/
 
 `RadishLogging:Ingest` 默认为关闭。启用前需指定独立端口、明确公共 Kestrel endpoints、部署 / 服务允许列表及独立 collector 凭据；`Credential` 只放本地未提交配置或环境变量。接收模式继承 `RadishLogging:Mode`，不从载荷决定。完整键、预算、失败行为与运行授权边界见[接收入库方案](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)。配置存在不代表当前任务获得服务启动授权。
 
+## 普通 Web 会话候选
+
+`OpenIddict:WebSession:Enabled` 缺省为 `false`。隔离验收获准后，由 Auth 接收 `OpenIddict__WebSession__Enabled`、`OpenIddict__WebSession__ClientSecret`、`OpenIddict__WebSession__KeysPath`、`OpenIddict__WebSession__KeyCertificate__Path` 和 `OpenIddict__WebSession__KeyCertificate__Password`，并使用 HTTPS `OpenIddict__Server__Issuer`。Web 会话密钥环使用独立的持久卷，由带 RSA 私钥的证书保护。证书轮换时保留所需的旧解密材料。现有 Compose 模板尚未接入这组设置，候选用临时覆盖文件和独立卷验证。[部署与验收边界](../features/auth-session-overnight-recovery-plan.md#同源会话和凭据首版)
+
 ## 配置加载优先级
 
 ASP.NET Core 按以下顺序加载配置（后面的会覆盖前面的）：

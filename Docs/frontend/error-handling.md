@@ -110,8 +110,8 @@ try {
 
 ## 6. 认证与权限
 
-- Token 有效性与续期由宿主认证边界统一治理，不由页面自己竞争刷新；client 配置 `@radish/http` 的 401 刷新，Console 当前在请求前通过 `tokenService` 续期。
-- refresh token 确认失效后由宿主认证边界清理会话并保存安全回流上下文。
+- Token 有效性与续期由宿主认证边界统一治理。普通 Web 同源会话通过 `tokenService` 恢复，临时网络故障保留待恢复状态。只有明确失效才清理会话并按安全回流路径引导登录。
+- 同源会话下，`@radish/http` 可用更新后的 bearer 重试 `GET` / `HEAD` 一次，写请求交由原调用方处理。旧 Web 使用 `configureTokenRefresh`，Console 继续在请求前通过 `tokenService` 续期。[共享 HTTP 客户端](./http-client.md#7-401-与-token-刷新)
 - `401` 不等于所有请求都立即跳登录；先遵循统一刷新结果。
 - `403` 显示权限边界，不伪装成资源不存在，除非服务端安全策略明确如此定义。
 - Console 按权限控制导航和按钮只是体验优化，服务端授权仍是安全边界。

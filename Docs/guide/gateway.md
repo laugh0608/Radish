@@ -154,6 +154,7 @@ Gateway 使用 YARP 进行路由转发，配置在 `appsettings.json` 的 `Rever
 | `/connect/**` | Radish.Auth (:5200) | OIDC 协议端点 | X-Forwarded-* 头 |
 | `/web/session/**` | Radish.Auth (:5200) | 普通 Web 同源会话 | X-Forwarded-* 头，由代码声明并复用 authCluster |
 | `/hub/web/**` | Radish.Api (:5100) | 普通 Web 认证 Hub | WebSocket，由代码声明并复用 apiCluster |
+| `/hub/notification`、`/hub/chat`、`/hub/comment` | Radish.Api (:5100) | 既有实时连接、游客评论 | WebSocket，保留旧客户端入口 |
 | `/**` | radish.client (:3000) | 前端应用（最低优先级） | WebSocket, Order: 1000 |
 
 补充说明：
@@ -781,22 +782,7 @@ builder.Services.ConfigureApplicationCookie(options =>
 
 **2. 检查认证状态**
 
-SignalR 连接需要有效的 JWT Token：
-
-```typescript
-// 前端代码
-import { hasAccessToken } from '@/services/auth';
-import { tokenService } from '@/services/tokenService';
-
-// 仅在已登录时建立连接
-if (hasAccessToken()) {
-  const connection = new HubConnectionBuilder()
-    .withUrl('/hub/notification', {
-      accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
-    })
-    .build();
-}
-```
+同源 Web 已登录时使用 `/hub/web/{notification,chat,comment}` 和 `radish-web` bearer。令牌到期会触发断开，客户端取得新令牌后重连。旧客户端继续使用 `/hub/{notification,chat,comment}`，游客评论使用 `/hub/comment`。排障时核对当前会话模式、协商请求路径、响应状态及重连结果。[普通 Web Hub](../features/auth-session-overnight-recovery-plan.md#普通-web-前端与实时连接)
 
 **3. 检查 CORS 配置**
 

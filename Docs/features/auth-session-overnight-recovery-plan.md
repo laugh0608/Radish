@@ -1,6 +1,6 @@
 # 隔夜会话排查与验收方案
 
-2026-11-21 · 六项提案第 2 项。默认期限隔离对照已完成，普通 Web 修复方案已确认。首期获准实施 Auth 会话模型、两道期限、独立客户端和定向测试。[当前进行中](../planning/current.md) · [既有不活跃规则](../guide/auth-idle-session.md) · [隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
+2026-11-21 · 六项提案第 2 项。默认期限隔离对照已完成。Auth 会话模型、同源 Cookie 与服务端凭据、普通 Web 前端及 Hub 已提交并通过定向测试。部署开关保持关闭，实际环境联验待授权。[当前进行中](../planning/current.md) · [会话不活跃规则](../guide/auth-idle-session.md) · [隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
 
 ## 已核对的生效值
 
@@ -114,7 +114,7 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 - 启动、前台恢复、普通 Web API 的 401 和 Hub 使用同一内存凭据提供者。Cookie 会话恢复后清除旧普通 Web 的浏览器凭据缓存。自动恢复和定时刷新不计活动，前台真实输入通过 `/activity` 节流上报。服务端确认失效后清理当前和其他标签页，只广播退出事件。显式退出先执行同源 `/logout`，收到成功后再进入既有 OIDC 回流。Web 授权读请求可使用已轮换的令牌重试一次，授权写请求发生 401 时只更新凭据，原操作由调用方决定是否重试。[凭据状态机](../../Frontend/radish.client/src/services/webSession.ts) · [统一 HTTP 客户端](../../Frontend/radish.http/src/client.ts)
 - `/hub/web/notification`、`/hub/web/chat` 和 `/hub/web/comment` 只接受已验签的 `radish-web` bearer，并让 SignalR 在认证到期时断开。Web 通过同一提供者取新令牌重连，对账通知，恢复当前聊天频道和帖子评论订阅。退出或会话明确失效时取消重连。旧 Hub 路径仍服务 Flutter、Console 和历史入口，评论游客继续使用 `/hub/comment`。[Hub 鉴权边界](../../Radish.Api/Security/WebSessionHubBoundary.cs) · [前端 Hub 选择](../../Frontend/radish.client/src/services/hubSession.ts)
 
-本轮完成接口、前端状态和 Hub 路由的离线验证。服务、运行配置及依赖保持现有状态。正式开启前仍须获准在隔离 HTTPS Gateway 上联验 Cookie、实际 PostgreSQL 迁移及真实浏览器的 Hub 到期重连，再执行隔夜与回退验收。
+本轮完成接口、前端状态和 Hub 路由的离线验证。候选 Compose 须通过临时覆盖为 Auth 接入 Web 会话专用配置、持久密钥卷和证书材料，现有 Compose 模板尚未接入这些设置。获准后先验证一次性 PostgreSQL 迁移、Auth 到 Gateway 的受信 HTTPS 回连、密钥环重启后可读，再验 PC / mobile 的 Cookie 和 Hub。回退演练须先验证如何停用并撤销该环境内的 Web 会话，再让旧版接管。[配置入口](../guide/configuration.md#普通-web-会话候选) · [接下来的事项](../planning/current.md#接下来的事项)
 
 ## 修复验收
 

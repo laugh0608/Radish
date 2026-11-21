@@ -46,7 +46,7 @@ Radish.Auth 提供以下标准 OIDC 端点：
 | 授权 | `/connect/authorize` | 用户授权入口（浏览器重定向） |
 | Token | `/connect/token` | 获取/刷新 Access Token |
 | 用户信息 | `/connect/userinfo` | 获取当前用户信息 |
-| 登出 | `/connect/logout` | 结束会话 |
+| 登出 | `/connect/endsession` | 结束 OIDC 会话 |
 | 撤销 | `/connect/revoke` | 撤销 Token |
 | 内省 | `/connect/introspect` | Token 验证（资源服务器使用） |
 
@@ -111,10 +111,10 @@ grant_type=refresh_token
 
 ## 4. 客户端注册
 
-所有客户端需在 Auth Server 中注册。通过 DbSeed 初始化：
+客户端在 Auth 中登记。内置登记由 `OpenIddictSeedHostedService` 在 Auth 启动时维护。
 
 > 当前官方客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址会跟随 `OpenIddict:Server:Issuer` 动态生成。
-> 其中 `radish-client` 当前同时承载 Web 主站 / WebOS 与 Flutter 原生客户端，因此除 Gateway / `localhost:3000` 回调外，也已补入原生自定义 scheme 回调。
+> `radish-client` 继续承载旧 Web 登录路径、WebOS 与 Flutter 原生客户端。普通 Web 同源会话启用后使用独立机密客户端 `radish-web`，其回调为 `/web/session/callback`，由 Auth 完成 PKCE 授权码兑换。[客户端登记](../../Radish.Auth/OpenIddict/WebAuthClient.cs)
 > 本地默认会落到 `https://localhost:5000/...`，生产环境则必须把 `Issuer` 覆盖为真实外部 HTTPS 域名。
 > 下文中的 `BuildPublicBaseUri(...)` 表示“读取 `Issuer`、补齐尾部 `/`、并在缺失时回落到 `https://localhost:5000/`”的当前种子逻辑。
 
@@ -151,7 +151,7 @@ new OpenIddictApplicationDescriptor
 4. 使用当前环境有效账号登录；仅当本地或受控测试环境显式开启开发默认用户种子时，才可使用开发演示账号 `admin / admin123456` 或 `test / test123456`
 5. 确认授权后，所有 API 请求将自动携带 Bearer Token
 
-### 4.2 官方客户端（Web / Flutter 共享 `radish-client`）
+### 4.2 官方公开客户端（旧 Web / Flutter 共享 `radish-client`）
 
 ```csharp
 var publicBaseUri = BuildPublicBaseUri(configuration["OpenIddict:Server:Issuer"]);
@@ -371,17 +371,9 @@ builder.Services.AddAuthorizationBuilder()
 
 ## 6. 前端集成
 
-> 当前 `radish.client` 已移除早期 `?demo` 认证测试页，普通浏览器根路径 `/` 进入 `/discover` 纯 Web 公开分发页，公共头部“工作台”进入 `/workbench` 功能地图，WebOS 仅保留 `/desktop` 历史入口。
->
-> Web 侧 OIDC 回调由 `Frontend/radish.client/src/auth/OidcCallbackPage.tsx` 独立承载：
->
-> - 前端统一通过 Gateway 访问：`https://localhost:5000`；
-> - 登录入口由正式 UI 触发 `redirectToLogin()`，回调地址为 `${window.location.origin}/oidc/callback`；
-> - 回调页 `/oidc/callback` 调用 `${apiBaseUrl}/connect/token` 换取 Token，并将 `access_token/refresh_token` 持久化到浏览器；
-> - 回调成功后会预热当前用户资料，再回到根路径，由入口分流进入 `/discover` 或 Tauri `/desktop`。
->
-> 这套实现仍是 Web 侧当前阶段的轻量口径；与此同时，`Clients/radish.flutter` 当前已落地 Android 起步的原生浏览器登录 / 登出与 `radish://oidc/callback` 回调闭环。
-> 后续若 Web 侧继续深化，仍计划按本节 6.1–6.3 所述方式，引入 `oidc-client-ts` 或 `react-oidc-context` 等专用库接管 Token 生命周期与自动续期。
+普通 Web 登录入口统一调用 `redirectToLogin()`。开启同源会话后，浏览器通过 HTTPS Gateway 的 `/web/session/*` 登录、恢复和退出。Auth 保管长期凭据，页面在内存中使用短 access token。默认关闭时，旧 Web 仍通过 `/oidc/callback` 与 `/connect/token` 使用 `radish-client`。历史 `/desktop` 与 Flutter 各自沿用原回调。[认证服务接线](./authentication-service.md) · [普通 Web 配置与验收](../features/auth-session-overnight-recovery-plan.md#web-session-repair)
+
+6.1–6.3 为公开 OIDC 客户端集成示例。项目实际会话接线以 [认证服务统一指南](./authentication-service.md) 为准。
 
 ### 6.1 配置
 
@@ -458,6 +450,18 @@ export const useApiClient = () => {
   };
 };
 ```
+
+### 6.4 Flutter 原生客户端（当前 Android / iOS 口径）
+
+- Flutter 继续复用同一个官方客户端 `radish-client`，不额外分叉新的 OIDC `client_id`
+- Android 与 iOS 都使用系统浏览器发起 `/connect/authorize`，授权回调固定为 `radish://oidc/callback`；原生壳层只负责接收 callback 并透传给 Flutter，由 Flutter 调用 `/connect/token` 换取 `access_token / refresh_token`
+- 原生显式登出统一走 `/connect/endsession`，登出回调为 `radish://oidc/logout-complete`
+- session token 与 OIDC authorization attempt 使用 Android Keystore / iOS Keychain 支撑的安全存储；authorization attempt 自打开系统浏览器起有效 `15` 分钟，state、PKCE、redirect、TTL 与 replay 校验均 fail closed，并保持一次性消费
+- Android Activity 与 iOS UIScene 都覆盖运行中和冷启动 callback；App 启动与回到前台时消费唯一 pending callback。浏览器未完成回调就返回 App 时，Flutter 壳层显式进入 `Sign-in needs attention`，不伪造登录成功
+- `profile` 与 forum detail 来源下的登录会先记录原始 tab / handoff 目标，换取 Token 成功后自动续接原上下文；这些非敏感 follow-up 与 Forum / Docs recent 使用 Dart `shared_preferences`
+- compact 壳层的认证状态位于页面顶部可换行状态条，避免登录相关状态和动作在窄屏下横向溢出
+- iOS 仅在显式 opt-in 且 Gateway 仍为 loopback host 时允许 App 内请求接受本地开发证书；系统 Safari 仍必须建立独立的本地 HTTPS 信任，不能用关闭 TLS 校验替代
+- 这条链路已进入 Flutter Native Android / iOS 平台基线，但不等于完整账户治理、完整通知中心、真机签名或分发门禁已经完成
 
 ## 7. Scalar OAuth 配置
 
@@ -552,30 +556,20 @@ builder.Services.AddOpenIddict()
 
 ### 7.5 Token 生命周期配置
 
-Radish.Auth 支持通过配置统一控制 Token 有效期（单位：分钟），并在启动时自动应用到 OpenIddict：
+`Radish.Auth/appsettings.json` 为既有客户端设置以下分钟值。实际环境以宿主启动时的配置覆盖为准。
 
 ```json
 // Radish.Auth/appsettings.json
 "OpenIddict": {
   "Server": {
-    "AccessTokenLifetime": 60,
-    "RefreshTokenLifetime": 43200,
+    "AccessTokenLifetime": 5,
+    "RefreshTokenLifetime": 25,
     "AuthorizationCodeLifetime": 5
   }
 }
 ```
 
-### 6.4 Flutter 原生客户端（当前 Android / iOS 口径）
-
-- Flutter 继续复用同一个官方客户端 `radish-client`，不额外分叉新的 OIDC `client_id`
-- Android 与 iOS 都使用系统浏览器发起 `/connect/authorize`，授权回调固定为 `radish://oidc/callback`；原生壳层只负责接收 callback 并透传给 Flutter，由 Flutter 调用 `/connect/token` 换取 `access_token / refresh_token`
-- 原生显式登出统一走 `/connect/endsession`，登出回调为 `radish://oidc/logout-complete`
-- session token 与 OIDC authorization attempt 使用 Android Keystore / iOS Keychain 支撑的安全存储；authorization attempt 自打开系统浏览器起有效 `15` 分钟，state、PKCE、redirect、TTL 与 replay 校验均 fail closed，并保持一次性消费
-- Android Activity 与 iOS UIScene 都覆盖运行中和冷启动 callback；App 启动与回到前台时消费唯一 pending callback。浏览器未完成回调就返回 App 时，Flutter 壳层显式进入 `Sign-in needs attention`，不伪造登录成功
-- `profile` 与 forum detail 来源下的登录会先记录原始 tab / handoff 目标，换取 Token 成功后自动续接原上下文；这些非敏感 follow-up 与 Forum / Docs recent 使用 Dart `shared_preferences`
-- compact 壳层的认证状态位于页面顶部可换行状态条，避免登录相关状态和动作在窄屏下横向溢出
-- iOS 仅在显式 opt-in 且 Gateway 仍为 loopback host 时允许 App 内请求接受本地开发证书；系统 Safari 仍必须建立独立的本地 HTTPS 信任，不能用关闭 TLS 校验替代
-- 这条链路已进入 Flutter Native Android / iOS 平台基线，但不等于完整账户治理、完整通知中心、真机签名或分发门禁已经完成
+配置键缺失时，宿主回退为 60 分钟 access token、30 天 refresh token 和 5 分钟授权码。启用同源会话后，`radish-web` 由 Auth 的会话服务另行计算令牌截止。
 
 对应的配置在 `Program.cs` 中会被读取并映射到：
 
@@ -909,10 +903,8 @@ var hasPermission = PermissionItems
 
 ### 11.1 Token 安全
 
-- Access Token 有效期：15-60 分钟
-- Refresh Token 有效期：7-30 天
-- 启用 Token 轮换：每次刷新生成新的 Refresh Token
-- 支持 Token 撤销：用户登出时撤销所有 Token
+- 既有客户端的提交配置为 5 分钟 access token 和 25 分钟 refresh token。60 分钟和 30 天是配置键缺失时的代码回退值。
+- 普通 Web 开启同源会话后使用 7 天不活跃窗口、30 天绝对上限和最长 5 分钟的 access token。Auth 轮换服务端凭据，显式退出撤销当前 Web 会话与对应授权。已发出的 access token 仍受原过期点约束。[期限与撤销](../features/auth-session-overnight-recovery-plan.md#web-session-repair)
 
 ### 11.2 客户端安全
 
@@ -924,7 +916,7 @@ var hasPermission = PermissionItems
 
 - 全程 HTTPS
 - 启用 HSTS
-- Cookie 设置 `Secure`、`HttpOnly`、`SameSite=Strict`
+- 普通 Web 的 `__Host-Radish-Web-Session` 使用 `Secure`、`HttpOnly`、`SameSite=Lax` 和 `Path=/`。Auth 站点登录 Cookie 由该宿主单独管理。
 - `OpenIddict:Server:AllowInsecureHttp=true` 仅允许在 `Development` 环境显式使用；`Production` / `Staging` 配置为 `true` 时 Auth 将拒绝启动。
 - 正式代理链中 TLS 由 Gateway 或外层反代终止，Gateway 必须向 Auth 写入 `X-Forwarded-Proto=https`；Auth 只处理最近一跳 Forwarded Headers，并必须保持不对宿主机直接暴露。
 

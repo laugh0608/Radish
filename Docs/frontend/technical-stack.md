@@ -110,23 +110,7 @@ const handleLogout = () => {
 };
 ```
 
-**WebSocket 认证集成**：
-
-```typescript
-import { hasAccessToken } from '@/services/auth';
-import { tokenService } from '@/services/tokenService';
-
-// 仅在已登录时建立 WebSocket 连接
-if (hasAccessToken()) {
-  const connection = new HubConnectionBuilder()
-    .withUrl('/hub/notification', {
-      accessTokenFactory: async () => await tokenService.getValidAccessToken() || '',
-    })
-    .build();
-}
-```
-
-**详细文档**：参见 [认证服务统一指南](../guide/authentication-service.md)
+SignalR 连接由现有 Hub 服务选择登录态、令牌提供者及路由。开启普通 Web 同源会话后使用 `/hub/web/`，旧客户端和游客评论各自使用旧端点。[认证服务统一指南](../guide/authentication-service.md#4-websocket-认证集成)
 
 #### 7.3 附件与媒体协议
 

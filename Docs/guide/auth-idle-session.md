@@ -1,8 +1,14 @@
 # Token 不活跃过期治理
 
-本文记录 `P3-10-B6` 的会话不活跃过期口径。完整认证架构仍以 [认证与权限](./authentication.md) 为准。
+普通 Web 开启同源会话后使用 `radish-web` 的服务端期限。以下 `P3-10-B6` 规则继续用于旧 Web 和 Console，Flutter 的客户端策略沿用现状。[认证与权限](./authentication.md)
 
-## 目标
+## 普通 Web 同源会话
+
+- Auth 按服务端时间执行 7 天不活跃窗口和自会话创建起 30 天的绝对上限。前台真实指针或键盘操作可节流上报活动。页面恢复、定时刷新和 Hub 心跳不延长会话。
+- 短 access token 最长 5 分钟，并截断在两道会话期限中较早的截止点。到期由 `/web/session/status` 或 `/web/session/token` 确认，浏览器清理内存状态并停止认证 Hub。显式退出再执行 OIDC 登出。
+- 普通 Web 的开关、旧会话迁移、隔夜与到期验收统一见[同源会话专题](../features/auth-session-overnight-recovery-plan.md#web-session-repair)。
+
+## 旧 Web 与 Console 目标
 
 - 连续多天不访问页面后，本地会话应自动退出，refresh token 也不能继续无感续期。
 - 退出只代表当前客户端长期不活跃，不等同于用户主动全局登出，因此不调用 `endsession`。
