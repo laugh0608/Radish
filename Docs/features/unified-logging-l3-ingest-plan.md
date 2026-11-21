@@ -3,6 +3,8 @@
 > 更新于 2026-11-19（Asia/Shanghai）。L3-A、第 8 节自有来源、第 9 节 Controller 与第 10 节已登记切片均有本地实现和回归。OrbStack / Linux arm64 的 SQLite 和 PostgreSQL 16.15 链路已通过。固定候选的 SQLite 磁盘与传输联验已通过，剩余门禁见下方第 2 节。[SQLite 记录](../records/unified-logging-l1-l3-sqlite-runtime-2026-11-17.md) · [PostgreSQL 记录](../records/unified-logging-l1-l3-postgres-runtime-2026-11-17.md) · [候选传输记录](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)
 >
 > 本页属于[统一日志专题](./unified-logging-governance-design.md)，承接[事件契约](./unified-logging-contract.md)。已完成来源仍以事件契约为准；本页维护剩余门禁及下一批实施边界，不另建主线。
+>
+> 2026-11-21 指定隔离候选已通过[出口评审](../records/unified-logging-exit-review-2026-11-21.md)。本页保留各阶段的实施与验证依据，实际部署沿[第 2.7 节](#l1-l3-compose-preflight)预检。
 
 ## 1. 推荐顺位与交付结论
 
@@ -312,7 +314,7 @@ node Scripts/logging/collector-compose-probe.mjs --run
 其他必须保留的退出工作：
 
 1. **已登记业务来源最终出口核验**：生成端安全不代表旧 sink 上继承的任意 scope 已受控。第 9 节的 14 个 Controller 已完成精确来源与最终输出收口，见[实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)。其余 Service / Job / Hub 按现有注册来源建立“生成点 → 消费边界 → 旧 / 候选输出 → 证据”的清单；已有完整证据直接引用，只补缺口，不重新调查任意外部订阅器。
-2. **诊断信息完整性**。API 5xx 的反馈 `requestId` 已绑定并可随 canonical JSON 接收。L3 的精确索引与 L4 的受权筛选待对应批次。jobId、tenantId、异常类型及安全栈帧按第 10.14 节后置。
+2. **诊断信息完整性**。API 5xx 的反馈 `requestId` 已在真实联验中随 canonical JSON 入库，Console 详情展示该字段。独立列、精确索引与受权筛选仍待交付。jobId、tenantId、异常类型及安全栈帧按第 10.14 节后置。
 3. **裸输出例外**。DbMigrate 命令报告走 stdout，阶段诊断与有界应急走 stderr。报告标签已转义并限长，无调用的 `ConsoleHelper` 已移除。受信流识别及独立应急证据路线待 L1 / L3 联验。
 4. **客户端与原生边界**。浏览器本地公共出口已完成，Flutter 应用框架报告和显式引导失败已收口。root isolate、原生引擎 / 插件及子 isolate 的输出随目标平台验收。
 5. **成组运行验收**：真实登录、业务读取 / 写入、后台空轮询、网络 / 存储故障须在后续授权环境按已登记链验证安静性、安全及异常所有权；模块替身与内存管道不替代它们。

@@ -392,6 +392,8 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 ### 2026-11-10 平台收口与连接衔接
 
+2026-11-21 日志隔离候选已通过出口评审，当前转入 P8-C Windows。日常 VM 的宿主与来宾只读盘点已完成，工具准备及工程实施待授权。[盘点记录](../records/f4-flutter-native-p8c-windows-readiness-2026-11-21.md) · [实施与验收方案](./flutter-native-p8c-windows-plan.md)
+
 日志完整候选退出后，按 P8-C Windows、P8-D Linux、P8-E 成组验收接续。每个平台先固定工具链 / runner、身份 / OIDC、安全存储 / preferences、窗口 / 输入及退出 / 重启的剩余清单；已有共享层与其他平台结果只按适用域复用，不重做整套 UI，也不代替目标平台运行。
 
 平台资源或工具链不可达时，输出具名阻塞与恢复条件，不自动建立新的 VM / 管理框架、安装工具或改变 CleanBase。可以评审在已有可用平台提前实现[客户端连接](../frontend/client-server-connection-plan.md)，但必须明确顺位调整及未完成平台，不自动取消 P8-C / D / E。

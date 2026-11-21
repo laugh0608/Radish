@@ -1,6 +1,6 @@
 # 全项目统一日志、跨容器汇聚与 Console 运维中心
 
-> 状态：项目所有者已于 2026-09-19 确认方案。L1 采集与 L3-A 内网入库已取得本机隔离证据，L2 入口及所列来源的最终输出已实施，准确范围见[事件契约](./unified-logging-contract.md)。本机证据与剩余候选门禁见[衔接方案](./unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist)，生产开关仍为关闭状态。
+> 状态：2026-11-21，OrbStack / Linux arm64 隔离候选通过统一日志出口评审。L2 登记范围见[事件契约](./unified-logging-contract.md)，实际部署预检和慢 SQL 安全指纹单列，生产候选开关维持关闭。[出口评审](../records/unified-logging-exit-review-2026-11-21.md)
 >
 > 规划更新：2026-11-10（Asia/Shanghai；无新增运行证据）。范围沿用所有者已确认需求：统一文件、终端和日志库，开发 / 生产两种模式，Info / Warning / Error 三级，跨服务容器集中查询，Console 内告警与提醒。
 
@@ -246,6 +246,8 @@ Console 提供 `/system/logs` 和 `/system/alerts`。启用 `RadishLogging:Conso
 
 单个查询固定到当前部署。默认时间窗为最近一小时，最长 31 天，单页最多 100 条。续页使用服务端保护的快照游标，绑定操作者和首屏筛选。关键词只匹配事件码。CSV 最多导出 100 条安全摘要，导出前记录操作者的审计。运行事件详情只返回入库时已归一化的文案和允许字段。
 
+获准的日志详情在 canonical JSON 中有 `requestId` 时展示该反馈 ID。反馈 ID 独立列、索引及精确筛选仍待交付。
+
 首轮告警覆盖采集输入存储失败、Fatal、已登记的 `job.failed` 和 `outbox.dead_letter`。终态事件按部署、来源、事件码及操作键去重，缺少操作键时按事件键去重。发生时间早于当前十分钟的回放仍可查询。确认、解决和采集恢复写入独立处理轨迹，并通过版本字段防止并发覆盖。慢 SQL 同语句聚合等待稳定的安全指纹。
 
 采集状态使用可信配置中的 `RadishLogging:Console:CollectorMetricsUrl` 读取内网指标。输入失败窗口的累计差值按输入实例解释，未观测尾段数量为未知。没有有效新采样时显示未知。满卷告警的自动恢复要求新输入、文件与 HTTP 两路计数推进且活动缓冲归零。隔离验收另按磁盘非空块和实际事件键核对。
@@ -391,5 +393,5 @@ L2–L6 是一个完整重构目标的交付切片，不能把“只降低 SQL �
 - 已完成方案确认、现状审计、统一事件策略及 .NET / Node 生成契约；实现入口见[事件契约](./unified-logging-contract.md)。
 - L1 已取得原版镜像的传输上界、进程峰值、坏批隔离以及共享卷 ENOSPC / 队列故障证据。已验证配置外的目标部署参数及补丁候选仍按[退出清单](./unified-logging-l3-ingest-plan.md#l1-l3-exit-checklist)核对。
 - L2 已完成 API / Auth / Gateway 配置加载后的共享引导与运行入口，以及 Node 静态服务适配；`RadishLogging.Enabled` 默认 false。基础生成端、后台任务与已列明业务调用链的准确边界统一见[事件契约第 7–82 节](./unified-logging-contract.md)，批次证据见 [9 月 23 日日终回顾](../records/day-end-doc-review-2026-09-23.md)、[9 月 28 日日终回顾](../records/day-end-doc-review-2026-09-28.md)、[10 月 2 日日终回顾](../records/day-end-doc-review-2026-10-02.md)及 [10 月 7 日日终回顾](../records/day-end-doc-review-2026-10-07.md)。[10 月 11 日日终回顾](../records/day-end-doc-review-2026-10-11.md)汇总早期消费点、证书 / 传输、YARP、认证授权 / 路由、宿主健康及 OpenIddict Server / Core 的全部批次。[10 月 15 日日终回顾](../records/day-end-doc-review-2026-10-15.md)汇总自有 Auth、SelfLog、ASP.NET Core DataProtection、三宿主启动摘要、Common 程序集诊断及 API 启动业务 / Gateway 停止通知的六个开发提交与验证边界；[11 月 4 日回顾](../records/day-end-doc-review-2026-11-04.md)补充两个自有 Hangfire 来源的最终输出修正。浏览器本地公共出口已按[11 月 5 日记录](../records/unified-logging-l2-browser-output-2026-11-05.md)完成本批，第三方独立输出与其他非 Serilog 通道保持各自边界。日志安全重建不改变结果 / 协议 / 存储语义；健康服务、OpenIddict 与 DataProtection 的列明来源增加桥接前保护，其他来源不自动继承。生成器、内存处理器与存储替身证据不替代真实网络、登录或存储验收；其余业务入口、异常安全栈帧、框架来源与非 Serilog 通道继续独立治理。
-- L3-A 已完成本机真实监听、SQLite 与 PostgreSQL 的隔离联验。L3-B 留存、备份恢复与目标部署仍待验收，Console 查询、告警和旧链路退出沿 L4–L6 推进。[当前执行顺位](../planning/current.md#接下来的事项)
+- L3-A 已完成本机真实监听、SQLite 与 PostgreSQL 的隔离联验。L3-B 留存与备份恢复、L4 / L5 查询与告警、L6 升级与回滚已通过指定隔离环境的成组验收。实际部署沿[目标预检](./unified-logging-l3-ingest-plan.md#l1-l3-compose-preflight)另行确认。[出口评审](../records/unified-logging-exit-review-2026-11-21.md)
 - 已确认的架构仍为独立 collector、统一标准流出口、文件与内网 API 两条持久化支路、Console 查询 / 提醒及独立审计权威性；下一步顺位由[当前规划](../planning/current.md)维护。

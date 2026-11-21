@@ -11,10 +11,9 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
-- **下一完整交付**是统一日志退出评审。指定隔离环境已取得日志查询、管道故障识别、站内告警和升级 / 恢复 / 回滚证据。
+- **当前主线**为 Flutter Native P8-C Windows readiness。日常来宾已完成只读盘点并关机，Windows CleanBase 保持停止。下一步确认 VS layout 和安装容量，再按[盘点记录](../records/f4-flutter-native-p8c-windows-readiness-2026-11-21.md#待授权命令)分批授权补齐工具。
 - **规划复核日期**为 2026-11-10，所有者确认日志、Native、客户端连接的收口顺序。该次规划以 `8d6cc63a` 集成的成果为基线。[规划复核记录](../records/planning-closeout-2026-11-10.md)
-- **采集与持久化（2026-11-19）**。OrbStack 独立 Compose 已核对七类服务的镜像、挂载、daemon 路径和两路交付，实测维护停写排空、503 同批恢复和默认级别坏块处置。[独立 Compose 联验](../records/unified-logging-l1-l3-compose-recovery-2026-11-19.md) · [双挂载与 CRC](../records/unified-logging-l1-l3-storage-recovery-2026-11-19.md) · [留存与恢复](../records/unified-logging-l3-retention-recovery-2026-11-19.md) · [传输联验](../records/unified-logging-l1-l3-transport-candidate-2026-11-19.md)
-- **日志退出联验（2026-11-21）**。OrbStack 隔离候选通过真实登录和跨升级旧令牌复用、PC / mobile 查询、满卷告警确认、去重及自动恢复、旧版升级、备份恢复和回滚。慢 SQL 聚合仍待安全指纹，实际部署仍需单独预检。[本轮记录](../records/unified-logging-exit-console-2026-11-21.md)
+- **日志出口评审（2026-11-21）**。OrbStack 隔离候选通过登记来源、诊断及数据保全评审。继续接受普通运行日志首次同步前的崩溃窗口，满卷未观测尾段数量保持未知。实际部署预检与慢 SQL 安全指纹单列。[出口评审](../records/unified-logging-exit-review-2026-11-21.md) · [最终联验](../records/unified-logging-exit-console-2026-11-21.md)
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
 - **最近正式发布**：`v26.8.1-release`（2026-08-15，正式 tag 与五镜像已发布）。生产部署与长期运维由项目所有者独立负责，不作为当前开发顺位或功能验收前置。
 
@@ -32,12 +31,11 @@
 
 ## 接下来的事项
 
-1. **评审日志出口**。依据隔离联验确认现有来源、诊断和数据保全范围。普通运行日志首次同步前的崩溃窗口已裁决为接受并留证。实际部署另核七类来源、镜像、daemon 路径、容量和停写顺序。[实际部署待核项](../features/unified-logging-l3-ingest-plan.md#l1-l3-compose-preflight) · [日志收口范围](../features/unified-logging-governance-design.md#closeout-batches)
-2. **日志退出后接续 Native**：按 P8-C Windows、P8-D Linux、P8-E 成组验收完成已确认平台范围。必要阻塞为工具链、真实认证 / 安全存储、窗口 / 输入和持续状态的目标平台证据；签名、真机与分发继续按平台单列。平台资源不可达时形成具名等待项，再评审是否在已有可用平台提前推进连接能力，不自动扩建环境或取消平台目标。
-3. **完成客户端连接能力**：先冻结实例身份、兼容发现、地址 / TLS、OIDC 和旧单实例状态迁移，再实现同包选择、会话 / 缓存 / 实时连接隔离与切换恢复。两个测试实例只证明机制，官方与自部署的正式交付各需对应证据，见[连接规划](../frontend/client-server-connection-plan.md)。
-4. **按范围验收后转入维护为主**：日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审；不等待全部 backlog、商店分发或所有外部设备条件清零。批次集成与正式发行 / 生产部署分开，后置来源材料不等于发行放行。
+1. **完成 Native 已确认平台范围**。按 P8-C Windows、P8-D Linux、P8-E 成组验收推进。目标平台需取得工具链、真实认证 / 安全存储、窗口 / 输入和重启状态证据。签名、真机与分发按平台单列。资源不可达时登记具名等待条件，再评审是否在可用平台提前推进连接能力。
+2. **完成客户端连接能力**。先冻结实例身份、兼容发现、地址 / TLS、OIDC 和旧单实例状态迁移，再实现同包选择、会话 / 缓存 / 实时连接隔离与切换恢复。两个测试实例只证明机制，官方与自部署的正式交付各需对应证据。[连接规划](../frontend/client-server-connection-plan.md)
+3. **按范围验收后转入维护为主**。日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审。批次集成与正式发行 / 生产部署分开，商店分发和外部设备条件继续按各平台门禁。
 
-隔离候选的 L1 / L3 故障处置及查询 / 告警 / 迁移已有运行证据。出口评审仍需核对来源、诊断边界、首次同步前的已知缺口和满卷尾段未知范围。新增来源或诊断细节须指明会改变哪一步的处置结果。业务事务 / 响应 / 缓存缺陷仅在直接阻断本次验收或属 P0/P1 时进入当前批次，其余回到原专题。
+日志生产候选开关维持关闭。实际部署另核目标架构、七类来源、镜像、daemon 路径、容量及停写备份顺序。慢 SQL 同语句聚合等待安全指纹。[部署预检](../features/unified-logging-l3-ingest-plan.md#l1-l3-compose-preflight) · [告警契约](../features/unified-logging-governance-design.md#首轮查询和告警入口)
 
 个人开发继续只保持一个主要功能专题；上述是已有缺口与推进队列，不授权同时实施多个专题。依赖安装、服务 / 容器启动、外部通信、平台操作和发布部署仍按当前任务具体范围确认。
 
@@ -67,37 +65,22 @@
 - iOS 近期 Internal TestFlight 临时复用生产 Gateway 的裁决继续有效，但 D2 / D3 尚未执行；该裁决不授权访问生产数据或执行 Apple 外部操作。
 - 以上具体契约以[Flutter Native 专题](/features/flutter-native-product-ui-design)和对应记录为准。
 
-## 当前主线：统一日志出口评审
+## 当前主线：P8-C Windows readiness
 
-2026-11-04 恢复统一日志专题。当前本地覆盖范围以[事件契约第 7–89 节](../features/unified-logging-contract.md)为准，此前批次与证据限制见[11 月 5 日日终回顾](../records/day-end-doc-review-2026-11-05.md)。
+日常 VM 实测 Windows 11 25H2 ARM64 build `26200.9711`，C: 可用 13.29 GiB。现有 Git、ARM64 MSVC 与 Windows SDK 可复用，实际缺项为 Flutter / Dart、VS 的 x86/x64 C++、ARM64 ATL、CMake / Ninja。先核算安装空间，并从目标用户会话确认 Flutter 引导使用原生 ARM64 PowerShell。Windows CleanBase 的来宾核对安排在获准的候选副本。[只读盘点](../records/f4-flutter-native-p8c-windows-readiness-2026-11-21.md)
 
-1. **浏览器输出本批已完成**：共享 HTTP 五处错误出口和两套应用 logger 已接入公共实现，固定文本 / 字段、三级 / diagnostic、兼容调用与最终 console 有成组自动化回归，见[本批记录](../records/unified-logging-l2-browser-output-2026-11-05.md)。不自动增加遥测回传，也不将模块替身证据视为真实浏览器 Smoke；后续不重复该切片，按“接下来的事项”推进剩余来源。
-2. **保留自有来源的准确边界**：Common 两处 catch、API 周期注册 / 固定文档同步、Gateway 停止及两个 Hangfire 来源保持已完成结论。User / Client / Bootstrap / 通知去重 / 搜索 / 限流 / 经验七个来源与直接异常消费者、14 个 Controller、共享后台 Job、抽奖 Job、文件和记录清理、服务内清理、Outbox、奖励 / 币 / 经验、商城 / 库存 / 支付口令、公开查询与报表、通知与实时推送、两条 Hub 自有断开事件及内容与表情已完成对应的本地输出切片。见[自有来源记录](../records/unified-logging-l2-owned-operations-2026-11-05.md)、[Controller 记录](../records/unified-logging-l2-controller-output-2026-11-05.md)及[调用链清单](../features/unified-logging-l3-ingest-plan.md#l2-final-output-first-slice)。
-3. **保留未使用 / 外部通道边界**：DataProtection 列明来源已治理，OpenIddict Client / Validation / DataProtection 集成未注册；外部 EventPipe / DiagnosticListener / Activity / metrics 不自动受控，详见 [DataProtection 记录](../records/unified-logging-l2-dataprotection-2026-10-15.md)。Socket `.Client` 与 HttpSys delegation 后置，不将这些已知限制重新放到功能收口之前进行无限调查。
-4. **独立问题保留**：Reaction 已删除行恢复返回 409、自动抽奖 SQLite → Outbox 时间偏移、关注入队与关系提交不同事务、评论高亮部分写入、轻回应回滚后的缓存保留，以及标签 / 分类非事务写入与 0 行成功语义，统一见[日终回顾的未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界)。表情管理的既有错误映射、文件副作用和存储 false / null 故障折叠见[本批记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)；可靠性与响应契约改造均需独立确认。Rust `.tmp` 水印回退已由图片替代移除，改用内容识别与显式输出格式，交付验收及 PR 集成已完成。
-
-后续新实现范围仍先确认方案。依赖安装、项目服务 / 容器启动、访问生产和系统证书库不因本批完成而取得授权。
-
-生产候选开关继续关闭。L1 传输和磁盘故障、L3 留存与停写恢复、L4 查询、L5 告警及 L6 升级恢复和回滚已有隔离运行证据。出口评审聚焦 L2 已登记来源、诊断边界和数据保全结论。实际部署另做预检，日志退出确认后接续 Native P8-C Windows readiness。
-
-## 后续平台事项：P8-C Windows readiness
-
-1. 只读确认日常开发 VM 与 CleanBase VM 的系统版本、架构、磁盘 / 快照状态与角色，不修改干净基线。
-2. 审计 Flutter `3.44.x`、Visual Studio C++ Desktop workload / ATL、CMake / Ninja、Git 与 Windows SDK 的现状和缺口。
-3. 核对 Windows runner 输入、产品身份、OIDC callback、Credential Manager / preferences、窗口与退出边界。
-4. 冻结日常 VM 实施、CleanBase 候选验收、服务连接、数据影响、证据与精确清理方案。
-5. readiness 不提前安装工具或生成平台工程；后续安装、依赖变更、服务启动与 VM 基线修改须按明确范围单独授权。
+候选按原生 ARM64 Flutter、Win32 runner、系统浏览器 OIDC、用户级 DPAPI、非敏感 preferences、窗口输入与关闭重启验收。工具安装、runner 生成、隔离服务启动和候选验收按说明范围分别确认。[命令、影响、证据与清理](../features/flutter-native-p8c-windows-plan.md)
 
 ## 审阅改进候选
 
 - 候选排序、影响面与完成标准统一维护在[工程改进候选清单](/planning/engineering-improvement-candidates)。
 - 上述工程改进候选仍仅完成审阅；类型检查、Outbox、管理端安全边界、Web 加载、Flutter CI 与结构治理均未因本次文档更新取得实施授权。
-- 候选不自动替代当前日志专题或后续 P8-C。选定批次后再确认方案与顺位；不以本次审阅启动全仓重构或主动生产数据采集。
+- 候选仍列于工程改进清单。选定批次后再确认方案与顺位。
 - 类型检查的已知覆盖限制和补充命令见[验证基线说明](/guide/validation-baseline)。
 
 ## 并行维护线
 
-- 统一日志沿[专题总纲](/features/unified-logging-governance-design)与“接下来的事项”执行。L2 已治理来源见[事件契约](../features/unified-logging-contract.md)。
+- 日志已登记来源见[事件契约](../features/unified-logging-contract.md)，诊断和后续项见[出口评审](../records/unified-logging-exit-review-2026-11-21.md)。既有事务、响应、缓存与表情存储问题按各自专题处理。[未关闭边界](../records/day-end-doc-review-2026-10-02.md#独立问题与未关闭边界) · [表情管理记录](../records/unified-logging-l2-sticker-controller-2026-10-07.md)
 - 接收明确的 `P0/P1` 生产故障、用户反馈、安全、依赖、迁移和部署问题；P2/P3 按同类问题成组处理。
 - 公开 head、动态 sitemap、生产域名、镜像漏洞门禁和多实例附件基础设施按真实触达范围维护。
 - WebOS 只处理阻断级兼容；Flutter 承接高价值原生路径，不机械追平 Web。
