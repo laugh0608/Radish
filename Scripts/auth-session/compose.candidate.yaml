@@ -1,0 +1,81 @@
+# Apply only with Deploy/docker-compose.yaml in a private temporary project directory.
+x-probe: &probe
+  platform: linux/arm64
+  pull_policy: never
+  restart: "no"
+  logging:
+    driver: local
+    options: { max-size: "2m", max-file: "2" }
+
+services:
+  postgres:
+    <<: *probe
+    image: postgres@sha256:a902560563d3a5661228585f53474c5065e7f273b21ffd77e555a8b5682c5690
+    command: ["-c", "log_statement=none", "-c", "log_min_error_statement=panic", "-c", "log_error_verbosity=terse"]
+    volumes: !override
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+  redis:
+    <<: *probe
+    image: redis@sha256:dbd05155efb852010d576fc1f09b6ade858944f84d333bb7a2efb1c1c8074a22
+    volumes: !override
+      - redis-data:/data
+  dbmigrate:
+    <<: *probe
+    image: ${PROBE_DBMIGRATE_IMAGE:?select the migration image}
+    environment:
+      RadishDeployment__Stage: local
+      Seed__DeveloperDefaultsEnabled: "true"
+    volumes: !override
+      - app-data:/app/DataBases
+  api:
+    <<: *probe
+    image: ${PROBE_API_IMAGE:?select the candidate API image}
+    environment:
+      Kestrel__Endpoints__Public__Url: http://+:5100
+      OpenIddict__Server__Issuer: ${RADISH_PUBLIC_URL}
+      Serilog__Console__EnableSqlLog: "false"
+    volumes: !override
+      - app-data:/app/DataBases
+      - ./certs/api:/app/certs:ro
+  auth:
+    <<: *probe
+    image: ${PROBE_AUTH_IMAGE:?select the candidate Auth image}
+    environment:
+      RADISH_AUTH_CERT_AUTO_GENERATE: "false"
+      SSL_CERT_FILE: /probe-trust/ca.crt
+      Serilog__Console__EnableSqlLog: "false"
+      OpenIddict__WebSession__Enabled: ${PROBE_WEB_SESSION_ENABLED:-false}
+      OpenIddict__WebSession__ClientSecret: ${PROBE_WEB_CLIENT_SECRET:?set a disposable client secret}
+      OpenIddict__WebSession__KeysPath: /web-session-keys
+      OpenIddict__WebSession__KeyCertificate__Path: /app/certs/web-session.pfx
+      OpenIddict__WebSession__KeyCertificate__Password: ${PROBE_WEB_KEY_PASSWORD:?set the key certificate password}
+    volumes: !override
+      - app-data:/app/DataBases
+      - web-session-keys:/web-session-keys
+      - ./certs/auth:/app/certs:ro
+      - ./certs/trust:/probe-trust:ro
+  frontend:
+    <<: *probe
+    image: ${PROBE_FRONTEND_IMAGE:?select the frontend image}
+  gateway:
+    <<: *probe
+    image: ${PROBE_GATEWAY_IMAGE:?select the candidate Gateway image}
+    environment:
+      ASPNETCORE_URLS: https://+:35443
+      Kestrel__Endpoints__Public__Url: https://+:35443
+      Kestrel__Certificates__Default__Path: /app/certs/gateway.pfx
+      Kestrel__Certificates__Default__Password: ${PROBE_TLS_PASSWORD:?set the TLS certificate password}
+    ports: !override
+      - 127.0.0.1:35443:35443
+    networks:
+      default:
+        aliases: [web-session.test]
+    volumes: !override
+      - ./certs/gateway:/app/certs:ro
+
+volumes:
+  postgres-data:
+  redis-data:
+  app-data:
+  web-session-keys:

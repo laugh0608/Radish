@@ -1,6 +1,6 @@
 # 隔夜会话排查与验收方案
 
-2026-11-21 · 六项提案第 2 项。默认期限隔离对照已完成。Auth 会话模型、同源 Cookie 与服务端凭据、普通 Web 前端及 Hub 已提交并通过定向测试。部署开关保持关闭，实际环境联验待授权。[当前进行中](../planning/current.md) · [会话不活跃规则](../guide/auth-idle-session.md) · [隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
+2026-11-25 · 六项提案第 2 项。候选已集成，部署开关保持关闭。实际运行进度见[本轮隔离联验](../records/auth-session-candidate-2026-11-25.md)。[当前进行中](../planning/current.md) · [会话不活跃规则](../guide/auth-idle-session.md) · [隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
 
 ## 已核对的生效值
 
@@ -117,6 +117,31 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 
 本轮完成接口、前端状态和 Hub 路由的离线验证。候选 Compose 须通过临时覆盖为 Auth 接入 Web 会话专用配置、持久密钥卷和证书材料，现有 Compose 模板尚未接入这些设置。获准后先验证一次性 PostgreSQL 迁移、Auth 到 Gateway 的受信 HTTPS 回连、密钥环重启后可读，再验 PC / mobile 的 Cookie 和 Hub。回退演练须先验证如何停用并撤销该环境内的 Web 会话，再让旧版接管。[配置入口](../guide/configuration.md#普通-web-会话候选) · [接下来的事项](../planning/current.md#接下来的事项)
 
+<a id="web-session-compose-candidate"></a>
+
+## 候选 Compose 运行方案
+
+本轮使用 `520c8bbf` 的普通 Web 会话实现。在 OrbStack 单独创建 `radish-auth-session-<随机后缀>` 项目。临时目录权限为 `0700`，其中存放项目自己的 env 文件、初始化脚本、测试证书及两份浏览器资料。基础配置与[验收覆盖文件](../../Scripts/auth-session/compose.candidate.yaml)合并使用。
+
+| 项目 | 本轮配置 |
+| --- | --- |
+| 入口 | `https://web-session.test:35443`。Chromium 仅在测试进程内将该域名映射到 `127.0.0.1`，Compose 网络内同名别名指向 Gateway。Gateway 内外端口均为 `35443`，宿主只发布 TCP `127.0.0.1:35443`。 |
+| HTTPS 与密钥 | 生成一次性 CA，签发含该域名 SAN 的 Gateway 证书。Auth 通过 `SSL_CERT_FILE` 信任 CA 公钥，浏览器测试进程限定信任本次 Gateway 证书的公钥指纹。OIDC 签名、加密与 Web 密钥环保护各用独立证书。API 只挂载验签所需证书，Web 专用卷只挂载给 Auth。 |
+| 存储 | PostgreSQL 16.15、Redis 7.4.12 使用固定摘要。四个项目卷分别用于 PostgreSQL、Redis、应用数据、Web 专用密钥。复制仓库的 PostgreSQL 初始化脚本到临时目录，迁移与种子数据只写入项目库。 |
+| 镜像 | 五个候选角色为 `dbmigrate / api / auth / frontend / gateway`。从候选源码用已有依赖重建四个 .NET 宿主和两套前端静态资源，校验 linux-arm64 native 产物。复用[本地打包方式](../../Scripts/logging/collector-compose-exit-probe.mjs)，执行 `docker buildx build --builder orbstack --platform linux/arm64 --network none --pull=false --build-context probe-base=<缓存 OCI 布局> --load --tag <本项目角色标签> <临时构建目录>`。ASP.NET 与 Node 基础镜像[按摘要选择](../../Scripts/logging/compose-probe-config.mjs)。记录五个本地镜像 ID，旧库与旧页面对照使用[已固定摘要的正式镜像](../../Scripts/logging/compose-exit-config.mjs)中的 DbMigrate 与 Frontend。 |
+
+下表中 `c` 代表 `docker --context orbstack compose --env-file "$probe_root/probe.env" --project-directory "$probe_root" -p "$probe_project" -f "$repo/Deploy/docker-compose.yaml" -f "$repo/Scripts/auth-session/compose.candidate.yaml"`。env 文件权限为 `0600`，使用本轮生成的随机凭据。两种开关分别执行 `c config --quiet`，检查合并结果的镜像、卷、只读挂载、网络与发布端口。启动前复查端口和项目名可用。
+
+| 顺序 | 命令及通过条件 |
+| --- | --- |
+| 1. 从旧库升级 | `c up -d --no-build --pull never --wait postgres redis`。用旧 DbMigrate 执行一次 `c run --rm --no-deps --pull never dbmigrate apply` 建立旧结构。切回候选镜像，对同一数据库按 `doctor → apply → verify → apply → verify` 分别执行相同形式的单次命令。核对 Auth 迁移历史无重复、无待应用项，并查验两张 Web 表的 UTC 时间列为 `timestamp with time zone`。 |
+| 2. 留存旧会话 | Auth 开关为 `false`，Frontend 选择旧正式镜像。执行 `c up -d --no-build --no-deps --pull never api auth frontend gateway`，等待 HTTPS 就绪。PC 和 mobile 分别通过真实登录取得旧会话，记录各自的受保护返回路径。 |
+| 3. 验回连与密钥 | 仅本项目切为候选 Frontend 并开启 Auth 开关，执行 `c up -d --no-build --no-deps --pull never --force-recreate auth frontend`。先用独立测试资料完成真实登录与授权码回调，取得受保护接口响应。随后以相同参数只重建 Auth，等待原短令牌到期，原 Cookie 应能恢复同一账号并完成轮换。 |
+| 4. 验两端并关页 | PC 用 `1920×1080`，移动 Chromium 用 `390×844 @ DPR 3`。两份旧资料均应只重登一次并回到原页面；再验刷新、通知／聊天／评论 Hub 到期重连和订阅恢复，以及登出后无法续期。完成后重新登录，分别关闭整个测试浏览器，保存签发与关闭时间。 |
+| 5. 隔夜重开及清理 | 六个常驻容器、四个卷和两份已关闭的浏览器资料保留 12–24 小时。在时间窗内分别重开，以 `GET /api/v1/User/GetUserByHttpContext` 返回 `200` 且账号一致为准。记录实际间隔、是否出现额外登录及各项结果。随后关闭浏览器并执行 `c down --volumes --remove-orphans`，按本项目标签确认容器、网络、卷为零，并复核端口释放。删除本次五个镜像标签和核对过前缀的临时目录，仅保留脱敏结果。若启动后无法形成隔夜样本，登记失败步骤并当轮清理。 |
+
+留存证据只含镜像标识、时刻、状态码、错误分类、计数和身份一致性等判断。7 天／30 天临界点、完整回退及故障并发矩阵在后续验收。正式开关保持关闭。
+
 ## 修复验收
 
 | 场景 | 通过标准 |
@@ -127,4 +152,4 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 | 撤销与迁移 | 主动退出、账号停用或撤销后拒绝继续刷新。已有 access token 和连接受原截止约束。旧 Web 会话重登一次，公开页仍可读，受保护页登录后正确回流。覆盖旧缓存页面、回退、密钥轮换和备份恢复。 |
 | 隔离与凭据 | 旧 Flutter 的 `radish-client` 无法换取新 Cookie 或进入 Web 专属期限。Console、Scalar、WebOS 历史登录路径及旧原生回调维持各自契约。验证 Cookie 属性、跨站请求、回调重放、客户端机密和长期凭据从浏览器存储及日志中缺失。 |
 
-默认期限对照已完成。普通 Web 前端与 Hub 接入本轮通过 92 个前端与共享 HTTP 用例、121 个后端定向用例。上表的实际环境验收待获得运行授权后执行。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
+默认期限对照已完成。普通 Web 前端与 Hub 接入本轮通过 92 个前端与共享 HTTP 用例、121 个后端定向用例。本轮实际环境结果按场景登记于[候选隔离联验](../records/auth-session-candidate-2026-11-25.md)。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)

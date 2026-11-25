@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **验收普通 Web 会话**。三段实现已提交，部署开关保持关闭。下次先提交隔离 Compose 方案供授权，列明临时 HTTPS 入口、镜像、一次性 PostgreSQL、Auth 专用密钥卷和证书、迁移命令与清理方式。获准后先验迁移、Auth 回连和重启后的密钥可读性，再以 PC / mobile 验证登录恢复、旧会话重登、刷新轮换、退出和 Hub 到期重连。完成 7 天 / 30 天边界、隔夜重开和回退验收，再评估是否开启。实际掉线实例与入口仍待核实，其余非客户端提案保留原顺位。[验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收) · [隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
+1. **验收普通 Web 会话**。候选 `520c8bbf` 已在隔离 Compose 通过 PostgreSQL 升级与重跑、Auth 重建后轮换、PC / mobile 旧会话重登和三类 Hub 到期重连。原候选的主动退出已撤销会话并拒绝续期，退出回流未通过。修复提交 `0cf4e7f1` 已通过定向测试，修复版待 PC / mobile 实测。两组隔夜样本已于 11 月 25 日 21:16 关页，等待 12–24 小时后重开。保持正式开关关闭，后续还需复验退出回流、7 天 / 30 天边界和回退。实际掉线实例与入口仍待核实。[本轮证据](../records/auth-session-candidate-2026-11-25.md) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
 2. **客户端恢复后按原顺位推进**。P8-C Windows、P8-D Linux、P8-E 成组验收完成后接续客户端连接。各平台须取得目标工具链、认证 / 安全存储、窗口 / 输入与重启证据，签名、真机与分发按平台单列。客户端连接按[已确认规划](../frontend/client-server-connection-plan.md)完成同包实例选择、隔离与恢复。
 3. **按范围验收后转入维护为主**。日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审。批次集成与正式发行 / 生产部署分开，商店分发和外部设备条件继续按各平台门禁。
 
