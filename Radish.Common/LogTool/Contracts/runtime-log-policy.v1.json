@@ -1219,7 +1219,8 @@
         "20260809_020_product_review",
         "20260813_021_wiki_document_governance",
         "20260813_022_experience_authoritative_governance",
-        "20261105_023_runtime_log_ingest"
+        "20261105_023_runtime_log_ingest",
+        "20261121_024_runtime_log_console"
       ]
     },
     "createdCount": {

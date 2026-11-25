@@ -44,6 +44,7 @@ public sealed partial class ReactionControllerLoggingTests
 {
     private const string Secret = "REACTION_PRIVATE_SENTINEL";
     private const string StickerValue = "private_group/private_sticker";
+    private const string RequestId = "reaction-test-request";
     private const long TargetId = 912345678;
     private const long UserId = 623456789;
     private const long AttachmentId = 823456789;
@@ -91,7 +92,7 @@ public sealed partial class ReactionControllerLoggingTests
             var service = new ProxyGenerator().CreateInterfaceProxyWithoutTarget<IReactionService>(new ThrowingInterceptor(failure));
             var controller = CreateController(service);
             Assert.Null(await InvokeApiAsync(() => CallControllerAsync(controller, operation), 500, environment));
-            capture.AssertEvents(("http.failed", "Error", kind, 500));
+            capture.AssertEvents(includesRequestId: true, ("http.failed", "Error", kind, 500));
             capture.Clear();
         }
     }
@@ -255,7 +256,8 @@ public sealed partial class ReactionControllerLoggingTests
             else Assert.Null(response);
             Assert.Equal(before, f.Snapshot());
             Assert.Equal(0, f.Unit.TranCount);
-            capture.AssertEvents(("http.failed", "Error", failure is BusinessException ? "other" : "io", status));
+            capture.AssertEvents(includesRequestId: failure is not BusinessException,
+                ("http.failed", "Error", failure is BusinessException ? "other" : "io", status));
             capture.Clear();
         }
         foreach (var stage in new[] { "reactions.UpdateColumnsAsync", "updated", "reactions.QueryAsync" })
@@ -266,7 +268,7 @@ public sealed partial class ReactionControllerLoggingTests
             await InvokeApiAsync(f.CallAsync, 500, environment);
             Assert.Equal(before, f.Snapshot());
             Assert.Equal(0, f.Unit.TranCount);
-            capture.AssertEvents(("http.failed", "Error", "io", 500));
+            capture.AssertEvents(includesRequestId: true, ("http.failed", "Error", "io", 500));
             capture.Clear();
         }
         using var rejectedRefresh = new Fixture("toggle")
@@ -324,6 +326,7 @@ public sealed partial class ReactionControllerLoggingTests
             Assert.Equal(outcome == "success" ? 1 : 0, f.Db.Queryable<Reaction>().Count());
             Assert.Equal(0, f.Unit.TranCount);
             if (status >= 500) capture.AssertEvents(
+                includesRequestId: outcome != "business",
                 ("reaction.retrying", "Warning", "other", null),
                 ("http.failed", "Error", outcome == "business" ? "other" : "io", status));
             else capture.AssertEvents(("reaction.retrying", "Warning", "other", null));
@@ -362,7 +365,7 @@ public sealed partial class ReactionControllerLoggingTests
             else
             {
                 Assert.Equal(before, f.Snapshot());
-                capture.AssertEvents(("http.failed", "Error", "io", 500));
+                capture.AssertEvents(includesRequestId: true, ("http.failed", "Error", "io", 500));
                 capture.Clear();
             }
             Assert.Equal(0, f.Unit.TranCount);
@@ -527,7 +530,7 @@ public sealed partial class ReactionControllerLoggingTests
         app.UseApiExceptionHandler();
         MessageModel? result = null;
         app.Run(async context => { result = await action(); await ApplyResultAsync(context, result); });
-        var context = new DefaultHttpContext();
+        var context = new DefaultHttpContext { TraceIdentifier = RequestId };
         context.Request.Path = "/api/v1/Reaction/Toggle";
         context.Request.QueryString = new QueryString("?query=" + Secret);
         using var output = new MemoryStream();
@@ -558,7 +561,10 @@ public sealed partial class ReactionControllerLoggingTests
 
         public Capture(bool candidate, string environment) => _capture = new FinalOutputCapture(candidate, environment);
         public void AssertQuiet() => Assert.Equal("", _capture.Text);
-        public void AssertEvents(params (string Code, string Level, string Kind, int? Status)[] expected)
+        public void AssertEvents(params (string Code, string Level, string Kind, int? Status)[] expected) =>
+            AssertEvents(false, expected);
+
+        public void AssertEvents(bool includesRequestId, params (string Code, string Level, string Kind, int? Status)[] expected)
         {
             var text = _capture.Text;
             var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
@@ -569,6 +575,7 @@ public sealed partial class ReactionControllerLoggingTests
             for (var i = 0; i < expected.Length; i++)
             {
                 var e = expected[i];
+                var expectRequestId = includesRequestId && e.Status.HasValue;
                 if (_capture.Output.Candidate)
                 {
                     using var json = JsonDocument.Parse(lines[i]);
@@ -577,6 +584,8 @@ public sealed partial class ReactionControllerLoggingTests
                     Assert.Equal(e.Code, root.GetProperty("eventCode").GetString());
                     Assert.Equal(e.Level, root.GetProperty("level").GetString());
                     Assert.False(root.GetProperty("diagnostic").GetBoolean());
+                    Assert.Equal(expectRequestId, root.TryGetProperty("requestId", out var requestId));
+                    if (expectRequestId) Assert.Equal(RequestId, requestId.GetString());
                     var properties = root.GetProperty("properties");
                     Assert.Equal(e.Status.HasValue ? 2 : 1, properties.EnumerateObject().Count());
                     Assert.Equal(e.Kind, properties.GetProperty("failureKind").GetString());
@@ -590,8 +599,14 @@ public sealed partial class ReactionControllerLoggingTests
                     Assert.Equal(e.Code, Assert.IsType<ScalarValue>(logged.Properties["EventCode"]).Value);
                     Assert.Equal(e.Kind, Assert.IsType<ScalarValue>(logged.Properties["failureKind"]).Value);
                     if (e.Status.HasValue) Assert.Equal(e.Status.Value, Assert.IsType<ScalarValue>(logged.Properties["statusCode"]).Value);
-                    var allowed = new[] { "EventCode", "SourceCategory", "SourceContext", "Diagnostic", "failureKind" };
-                    Assert.Equal((e.Status.HasValue ? allowed.Append("statusCode") : allowed).Order(), logged.Properties.Keys.Order());
+                    var allowed = new List<string> { "EventCode", "SourceCategory", "SourceContext", "Diagnostic", "failureKind" };
+                    if (e.Status.HasValue) allowed.Add("statusCode");
+                    if (expectRequestId)
+                    {
+                        allowed.Add("requestId");
+                        Assert.Equal(RequestId, Assert.IsType<ScalarValue>(logged.Properties["requestId"]).Value);
+                    }
+                    Assert.Equal(allowed.Order(), logged.Properties.Keys.Order());
                 }
             }
         }

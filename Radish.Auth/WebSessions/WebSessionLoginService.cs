@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
+using OpenIddict.Abstractions;
 using Radish.Auth.OpenIddict;
 using Radish.Common.HttpContextTool;
 
@@ -36,7 +37,7 @@ public sealed class WebSessionLoginService(IWebSessionStore store, IWebAuthSessi
                 ["client_id"] = WebAuthClient.ClientId,
                 ["redirect_uri"] = WebAuthClient.GetCallback(issuer).AbsoluteUri,
                 ["response_type"] = "code",
-                ["scope"] = $"{UserScopes.OpenId} {UserScopes.Profile} {UserScopes.OfflineAccess} {UserScopes.RadishApi}",
+                [OpenIddictConstants.Parameters.Scope] = $"{UserScopes.OpenId} {UserScopes.Profile} {UserScopes.OfflineAccess} {UserScopes.RadishApi}",
                 ["state"] = state,
                 ["nonce"] = nonce,
                 ["prompt"] = "login",

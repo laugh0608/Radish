@@ -251,6 +251,7 @@ public sealed partial class PublicMetadataLoggingTests
         Assert.Equal(output.Candidate && level == LogEventLevel.Debug ? "Info" : level.ToString(), summary.Level);
         Assert.Equal("", output.Emergency.ToString());
         var activity = Activity.Current;
+        var expectedRequestId = source == typeof(ApiExceptionHandler) ? RequestId : null;
         if (output.Candidate)
         {
             using var document = JsonDocument.Parse(output.Output.ToString());
@@ -259,6 +260,7 @@ public sealed partial class PublicMetadataLoggingTests
             Assert.Equal(category, entry.GetProperty("sourceCategory").GetString());
             Assert.Equal(activity?.TraceId.ToHexString(), OptionalString(entry, "traceId"));
             Assert.Equal(activity?.SpanId.ToHexString(), OptionalString(entry, "spanId"));
+            Assert.Equal(expectedRequestId, OptionalString(entry, "requestId"));
             Assert.Null(OptionalString(entry, "operationId"));
             Assert.Equal(fields.Select(f => f.Key).Order(), props.EnumerateObject().Select(p => p.Name).Order());
             foreach (var (key, value) in fields)
@@ -272,7 +274,13 @@ public sealed partial class PublicMetadataLoggingTests
             Assert.Equal(category, Scalar(entry, "SourceCategory"));
             Assert.Equal(activity?.TraceId, entry.TraceId);
             Assert.Equal(activity?.SpanId, entry.SpanId);
-            Assert.Equal(IdentityFields.Concat(fields.Select(f => f.Key)).Order(), entry.Properties.Keys.Order());
+            var allowed = IdentityFields.Concat(fields.Select(f => f.Key));
+            if (expectedRequestId is not null)
+            {
+                allowed = allowed.Append("requestId");
+                Assert.Equal(expectedRequestId, Scalar(entry, "requestId"));
+            }
+            Assert.Equal(allowed.Order(), entry.Properties.Keys.Order());
             foreach (var (key, value) in fields) Assert.Equal(value, Scalar(entry, key));
             Assert.Null(entry.Exception);
             Assert.DoesNotContain(Secret, entry.RenderMessage() + string.Join(" ", entry.Properties.Values));

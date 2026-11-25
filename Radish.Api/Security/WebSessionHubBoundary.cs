@@ -19,7 +19,8 @@ public static class WebSessionHubBoundary
         IsHubRequest(path, WebSessionProtocol.HubPrefix + "/comment");
 
     public static bool HasWebClientIdentity(ClaimsPrincipal principal) =>
-        principal.Identity?.IsAuthenticated == true && principal.FindFirst("client_id")?.Value == WebSessionProtocol.ClientId;
+        principal.Identity?.IsAuthenticated == true &&
+        UserClaimReader.GetFirstClaimValue(principal, UserClaimTypes.ClientId) == WebSessionProtocol.ClientId;
 
     public static HubEndpointConventionBuilder MapWebSessionHub<THub>(this IEndpointRouteBuilder endpoints, string hub)
         where THub : Hub => endpoints.MapHub<THub>($"{WebSessionProtocol.HubPrefix}/{hub}",

@@ -6,6 +6,7 @@ namespace Radish.Common.HttpContextTool;
 public static class UserClaimTypes
 {
     public const string Expiration = JwtRegisteredClaimNames.Exp;
+    public const string ClientId = "client_id";
     public const string Sub = "sub";
     public const string Name = "name";
     public const string PreferredUsername = "preferred_username";

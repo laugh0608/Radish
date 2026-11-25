@@ -49,6 +49,7 @@ namespace Radish.Api.Tests;
 public sealed partial class StickerControllerLoggingTests
 {
     private const string Secret = "STICKER_PRIVATE_SENTINEL";
+    private const string RequestId = "sticker-test-request";
     private const long GroupId = 912345678;
     private const long AttachmentId = 823456789;
     private const long UserId = 623456789;
@@ -625,7 +626,7 @@ public sealed partial class StickerControllerLoggingTests
         app.UseApiExceptionHandler();
         MessageModel? result = null;
         app.Run(async context => { result = await action(); await ApplyResultAsync(context, result); });
-        var context = new DefaultHttpContext();
+        var context = new DefaultHttpContext { TraceIdentifier = RequestId };
         context.Request.Path = "/api/v1/Sticker/BatchAddStickers";
         context.Request.QueryString = new QueryString("?query=" + Secret);
         using var output = new MemoryStream();
@@ -667,6 +668,7 @@ public sealed partial class StickerControllerLoggingTests
             for (var i = 0; i < expected.Length; i++)
             {
                 var e = expected[i];
+                var expectRequestId = e.Code == "http.failed";
                 if (_capture.Output.Candidate)
                 {
                     using var json = JsonDocument.Parse(lines[i]);
@@ -675,6 +677,8 @@ public sealed partial class StickerControllerLoggingTests
                     Assert.Equal(e.Code, root.GetProperty("eventCode").GetString());
                     Assert.Equal(e.Level, root.GetProperty("level").GetString());
                     Assert.False(root.GetProperty("diagnostic").GetBoolean());
+                    Assert.Equal(expectRequestId, root.TryGetProperty("requestId", out var requestId));
+                    if (expectRequestId) Assert.Equal(RequestId, requestId.GetString());
                     var properties = root.GetProperty("properties");
                     Assert.Equal(e.Status.HasValue ? 2 : 1, properties.EnumerateObject().Count());
                     Assert.Equal(e.Kind, properties.GetProperty("failureKind").GetString());
@@ -688,8 +692,14 @@ public sealed partial class StickerControllerLoggingTests
                     Assert.Equal(e.Code, Assert.IsType<ScalarValue>(logged.Properties["EventCode"]).Value);
                     Assert.Equal(e.Kind, Assert.IsType<ScalarValue>(logged.Properties["failureKind"]).Value);
                     if (e.Status.HasValue) Assert.Equal(e.Status.Value, Assert.IsType<ScalarValue>(logged.Properties["statusCode"]).Value);
-                    var allowed = new[] { "EventCode", "SourceCategory", "SourceContext", "Diagnostic", "failureKind" };
-                    Assert.Equal((e.Status.HasValue ? allowed.Append("statusCode") : allowed).Order(), logged.Properties.Keys.Order());
+                    var allowed = new List<string> { "EventCode", "SourceCategory", "SourceContext", "Diagnostic", "failureKind" };
+                    if (e.Status.HasValue) allowed.Add("statusCode");
+                    if (expectRequestId)
+                    {
+                        allowed.Add("requestId");
+                        Assert.Equal(RequestId, Assert.IsType<ScalarValue>(logged.Properties["requestId"]).Value);
+                    }
+                    Assert.Equal(allowed.Order(), logged.Properties.Keys.Order());
                 }
             }
         }

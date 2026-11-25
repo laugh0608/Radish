@@ -96,19 +96,20 @@ public sealed class WebTokenBackchannel(
     {
         var principal = ValidateToken(token, issuer, WebAuthClient.ClientId, OpenIddictConstants.JsonWebTokenTypes.GenericJsonWebToken,
             out var parsedToken);
-        var authorizedParty = principal.FindFirst("azp")?.Value;
+        var authorizedParty = UserClaimReader.GetFirstClaimValue(principal, JwtRegisteredClaimNames.Azp);
         return parsedToken.Audiences.SequenceEqual([WebAuthClient.ClientId]) &&
                (authorizedParty is null || authorizedParty == WebAuthClient.ClientId) &&
-               principal.FindFirst("sub")?.Value == subject && principal.FindFirst("nonce")?.Value == nonce;
+               UserClaimReader.GetFirstClaimValue(principal, UserClaimTypes.Sub) == subject &&
+               UserClaimReader.GetFirstClaimValue(principal, JwtRegisteredClaimNames.Nonce) == nonce;
     }
 
     private DateTimeOffset? ValidateAccessToken(string token, Uri issuer, WebAuthSession session)
     {
         var principal = ValidateToken(token, issuer, UserScopes.RadishApi, OpenIddictConstants.JsonWebTokenTypes.AccessToken,
             out var parsedToken);
-        return principal.FindFirst("sub")?.Value == session.Subject &&
-               principal.FindFirst(UserClaimTypes.TenantId)?.Value == session.TenantId &&
-               principal.FindFirst("client_id")?.Value == WebAuthClient.ClientId
+        return UserClaimReader.GetFirstClaimValue(principal, UserClaimTypes.Sub) == session.Subject &&
+               UserClaimReader.GetFirstClaimValue(principal, UserClaimTypes.TenantId) == session.TenantId &&
+               UserClaimReader.GetFirstClaimValue(principal, UserClaimTypes.ClientId) == WebAuthClient.ClientId
             ? new DateTimeOffset(parsedToken.ValidTo, TimeSpan.Zero)
             : null;
     }

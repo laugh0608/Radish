@@ -28,9 +28,14 @@ public sealed class WebTokenBackchannelTest
     private static readonly WebAuthSession Session = new() { Subject = "10001", TenantId = "0" };
 
     [Theory]
-    [InlineData("expected-nonce", WebTokenBackchannelStatus.Success)]
-    [InlineData("wrong-nonce", WebTokenBackchannelStatus.Rejected)]
-    public async Task CodeExchangeValidatesIdentityAndUsesFixedHttpsBackchannel(string nonce, WebTokenBackchannelStatus expected)
+    [InlineData("expected-nonce", null, "radish-web", "0", WebTokenBackchannelStatus.Success)]
+    [InlineData("expected-nonce", "radish-web", "radish-web", "0", WebTokenBackchannelStatus.Success)]
+    [InlineData("wrong-nonce", null, "radish-web", "0", WebTokenBackchannelStatus.Rejected)]
+    [InlineData("expected-nonce", "radish-client", "radish-web", "0", WebTokenBackchannelStatus.Rejected)]
+    [InlineData("expected-nonce", null, "radish-client", "0", WebTokenBackchannelStatus.Unavailable)]
+    [InlineData("expected-nonce", null, "radish-web", "00", WebTokenBackchannelStatus.Unavailable)]
+    public async Task CodeExchangeValidatesIdentityAndUsesFixedHttpsBackchannel(
+        string nonce, string? authorizedParty, string clientId, string tenantId, WebTokenBackchannelStatus expected)
     {
         using var rsa = RSA.Create(2048);
         var credentials = new SigningCredentials(new RsaSecurityKey(rsa), SecurityAlgorithms.RsaSha256);
@@ -42,11 +47,16 @@ public sealed class WebTokenBackchannelTest
             Assert.Equal("test-server-secret", form["client_secret"].ToString());
             Assert.Equal("verifier", form["code_verifier"].ToString());
             Assert.Equal(Issuer + "web/session/callback", form["redirect_uri"].ToString());
+            var identityClaims = new List<Claim> { new("nonce", nonce) };
+            if (authorizedParty is not null)
+            {
+                identityClaims.Add(new("azp", authorizedParty));
+            }
             return Json(HttpStatusCode.OK, new
             {
                 token_type = "Bearer",
-                access_token = Sign("radish-api", credentials, new Claim("client_id", "radish-web"), new Claim("tenant_id", "0")),
-                id_token = Sign("radish-web", credentials, new Claim("nonce", nonce)),
+                access_token = Sign("radish-api", credentials, new Claim("client_id", clientId), new Claim("tenant_id", tenantId)),
+                id_token = Sign("radish-web", credentials, identityClaims.ToArray()),
                 refresh_token = "issued-refresh"
             });
         }));

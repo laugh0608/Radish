@@ -34,6 +34,7 @@ namespace Radish.Api.Tests;
 public sealed partial class PublicMetadataLoggingTests
 {
     private const string Secret = "PUBLIC_METADATA_PRIVATE_SENTINEL";
+    private const string RequestId = "public-metadata-test-request";
     [Theory]
     [MemberData(nameof(OutputModes))]
     public async Task CacheHitsAndMissingRoutes_ShouldStayQuiet(bool candidate, string environment, bool audit, bool mel, bool activity)
@@ -294,7 +295,7 @@ public sealed partial class PublicMetadataLoggingTests
         await using var app = builder.Build();
         app.UseApiExceptionHandler();
         app.Run(async _ => await action());
-        var context = new DefaultHttpContext();
+        var context = new DefaultHttpContext { TraceIdentifier = RequestId };
         context.Request.Path = "/api/public-head/forum/post/" + Secret;
         context.Response.Body = new MemoryStream();
         context.RequestServices = app.Services;
