@@ -67,5 +67,18 @@ public class AuthOpenIddictDbContext : DbContext
         builder.Entity<OpenIddictEntityFrameworkCoreToken>()
             .Property(token => token.RedemptionDate)
             .HasColumnType(timestampWithTimeZone);
+
+        var session = builder.Entity<WebAuthSession>();
+        session.Property(item => item.CreatedAtUtc).HasColumnType(timestampWithTimeZone);
+        session.Property(item => item.LastActiveAtUtc).HasColumnType(timestampWithTimeZone);
+        session.Property(item => item.ActivatedAtUtc).HasColumnType(timestampWithTimeZone);
+        session.Property(item => item.RevokedAtUtc).HasColumnType(timestampWithTimeZone);
+        session.Property(item => item.AccessTokenExpiresAtUtc).HasColumnType(timestampWithTimeZone);
+        session.Property(item => item.RefreshLeaseUntilUtc).HasColumnType(timestampWithTimeZone);
+        session.Property(item => item.RefreshRetryAtUtc).HasColumnType(timestampWithTimeZone);
+
+        builder.Entity<WebAuthLogin>()
+            .Property(login => login.ExpiresAtUtc)
+            .HasColumnType(timestampWithTimeZone);
     }
 }

@@ -25,7 +25,7 @@ DataBases/
 
 部署态默认使用独立 PostgreSQL 数据库 `radish_openiddict`。DbMigrate、API 与 Auth 必须收到相同的 `OpenIddict:Database` 配置，不能让任一宿主回退到 SQLite。
 
-PostgreSQL 模型中的授权和 Token 时间列显式固定为 `timestamp with time zone`。运行态模型必须与 PostgreSQL snapshot 一致，不得通过 `ConfigureWarnings`、`NoWarn` 或 legacy timestamp 全局开关压制差异。
+PostgreSQL 模型中的授权、Token、`WebAuthSessions` 和 `WebAuthLogins` UTC 时间列显式固定为 `timestamp with time zone`，默认模式和旧时间戳模式使用同一套列类型。运行态模型必须与 PostgreSQL snapshot 一致，不得通过 `ConfigureWarnings`、`NoWarn` 或 legacy timestamp 全局开关压制差异。
 
 ## 配置
 
