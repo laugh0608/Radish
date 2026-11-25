@@ -229,7 +229,7 @@ public class ExperienceCalculator : IExperienceCalculator
     }
 
     private static void LogCacheFallback(string operation, Exception exception) =>
-        Log.ForContext("EventCode", "experience.calculator_cache_fallback")
+        Log.ForContext(typeof(ExperienceCalculator)).ForContext("EventCode", "experience.calculator_cache_fallback")
             .ForContext("SourceCategory", "application")
             .ForContext("rewardOperation", operation)
             .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(exception))

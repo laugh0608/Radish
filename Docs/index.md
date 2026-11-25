@@ -41,9 +41,9 @@ features:
 - [用户身份语义与公开索引](/architecture/user-identity-semantics) - 登录名、邮箱、展示名、PublicId 与公开索引的长期契约
 - [前端设计](/frontend/design) - Web、Flutter、WebOS 保留入口与应用集成方式
 - [Radish UI 差异附录](/frontend/ui-addendum) - family-ui 版本、Profile、四主题与多端差异
-- [Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow) - 主要页面定义、R1 / R2 / R3 分级、派生页继承与真实页面复核
+- [代表页设计协作流程](/frontend/pencil-representative-page-workflow) - 主要页面定义、R1 / R2 / R3 分级、派生页继承与真实页面复核
 - [F4-R C-1 代表页代码事实审计](/frontend/f4-r-representative-page-audit) - 正式路由与页面结构盘点、代表类型评分和继承表
-- [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和 Pencil 协作约束
+- [Web UI 共享基座设计](/frontend/web-ui-foundation-design) - public / private 共享 header、按钮、卡片、状态槽和评审规则
 - [前端多壳层策略](/frontend/shell-strategy) - 多端壳层职责分工
 - [Flutter Native 产品化与 UI 重构](/features/flutter-native-product-ui-design) - 原生 PC / mobile 产品边界、主题技术方向、页面族与分阶段门禁
 - [Client 与 Console 跨应用导航契约](/frontend/client-console-navigation-contract) - 产品端、治理端与原生壳层的跳转、返回和认证边界
@@ -56,7 +56,7 @@ features:
 
 - [开发路线图总览](/development-plan) - 当前主线、下一顺位与维护线
 - [第三开发阶段：真实使用增长与长期契约治理](/planning/phase-three-real-usage-contract-governance) - 当前阶段边界与 P3-12 主线口径
-- [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) - PC / mobile Web 正式版主路径、WebOS 收束与 Pencil 先行 UI 约束
+- [P3-12 Web 完全化与 WebOS 收束](/planning/p3-12-web-completion-webos-retirement) - PC / mobile Web 正式版主路径、WebOS 收束与当时的 UI 流程
 - [P3-12-E 正式产品成熟度与质量硬化](/planning/p3-12-product-maturity-quality-hardening) - E8-B 有限产品矩阵、客观退出条件与接受后置边界
 - [P3-12-E8 发布工程成熟度与安全收口](/planning/p3-12-e8-release-engineering-maturity-security-closure) - Q0 工程硬门禁、F 内 Release Go 与 Q4 持续维护的分层口径
 - [当前进行中](/planning/current) - 现在真正要做的正式主线

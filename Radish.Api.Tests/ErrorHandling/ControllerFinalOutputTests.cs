@@ -65,6 +65,7 @@ public sealed class ControllerFinalOutputTests
                 using var json = JsonDocument.Parse(capture.Output.ToString());
                 Assert.Equal(activity.TraceId.ToHexString(), json.RootElement.GetProperty("traceId").GetString());
                 Assert.Equal(category, json.RootElement.GetProperty("sourceCategory").GetString());
+                Assert.False(json.RootElement.TryGetProperty("requestId", out _));
             }
             else
             {
@@ -204,7 +205,8 @@ public sealed class ControllerFinalOutputTests
     {
         ["Authorization"] = HttpBoundaryCapture.Secret, ["payload"] = new { Nested = new { Secret = HttpBoundaryCapture.Secret } },
         ["SourceContext"] = HttpBoundaryCapture.Secret, ["EventCode"] = "runtime.failed", ["Diagnostic"] = true,
-        ["SourceCategory"] = "database", ["rateLimitState"] = "enabled", ["operationId"] = "01234567-89ab-4cde-8f01-23456789abcd"
+        ["SourceCategory"] = "database", ["rateLimitState"] = "enabled", ["operationId"] = "01234567-89ab-4cde-8f01-23456789abcd",
+        ["requestId"] = "controller-scope-request"
     });
 
     private static void Emit(HttpBoundaryCapture capture, Type source, string code, object kind, object status, object operation)

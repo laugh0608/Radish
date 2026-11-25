@@ -6,6 +6,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Radish.Common;
 using Radish.Common.CoreTool;
 using Radish.Common.HealthTool;
+using Radish.Gateway;
 using Radish.Gateway.PublicHead;
 using Radish.Gateway.HealthChecks;
 using Radish.Extension.Log;
@@ -126,7 +127,8 @@ return await RuntimeProcess.RunAsync("gateway", async () =>
 
     // ===== YARP 反向代理配置 =====
     builder.Services.AddReverseProxy()
-        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"));
+        .LoadFromConfig(builder.Configuration.GetSection("ReverseProxy"))
+        .AddWebSessionRouting();
 
     var delegationRemoved = !OperatingSystem.IsWindows();
     if (delegationRemoved)

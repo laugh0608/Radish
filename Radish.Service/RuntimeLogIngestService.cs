@@ -48,11 +48,17 @@ public sealed class RuntimeLogIngestService(IRuntimeLogIngestRepository reposito
                     {
                         RuntimeLogPolicy.TryReadUtc(value.OccurredAtUtc, out var occurred);
                         RuntimeLogPolicy.TryReadUtc(value.ObservedAtUtc, out var observed);
-                        events.Add(new RuntimeLogEventRecord
+                        var utcNow = clock.GetUtcNow().UtcDateTime;
+                        if (options.RetentionEnabled && occurred < RuntimeLogRetention.Cutoff(value.Level, utcNow))
+                        {
+                            rejected.Add(RuntimeLogRejectionBucket.Create(options.DeploymentId, value.Service,
+                                RuntimeLogRetention.ExpiredReason, utcNow));
+                        }
+                        else events.Add(new RuntimeLogEventRecord
                         {
                             Id = Guid.NewGuid().ToString("D"), DeploymentId = value.DeploymentId, EventId = value.EventId,
                             EventCode = value.EventCode, Service = value.Service, Level = value.Level, OccurredAtUtc = occurred,
-                            ObservedAtUtc = observed, IngestedAtUtc = clock.GetUtcNow().UtcDateTime,
+                            ObservedAtUtc = observed, IngestedAtUtc = utcNow,
                             TraceId = value.TraceId, OperationId = value.OperationId, CanonicalJson = canonical!,
                             ContentHash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(canonical!)))
                         });

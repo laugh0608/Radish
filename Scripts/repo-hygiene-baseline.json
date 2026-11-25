@@ -174,10 +174,6 @@
       "issue": "文件末尾缺少换行。"
     },
     {
-      "file": "Radish.Common/HelpTool/ConsoleHelper.cs",
-      "issue": "文件末尾缺少换行。"
-    },
-    {
       "file": "Radish.Common/HelpTool/LogContextHelper.cs",
       "issue": "文件末尾缺少换行。"
     },

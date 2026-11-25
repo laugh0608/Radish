@@ -37,6 +37,6 @@ internal static class RewardRuntimeLog
         else logger.Information("Reward batch returned results");
     }
 
-    private static ILogger Logger(string domain, string code) => Log.ForContext("SourceCategory", "application")
+    private static ILogger Logger(string domain, string code) => Log.ForContext(typeof(RewardRuntimeLog)).ForContext("SourceCategory", "application")
         .ForContext("EventCode", code).ForContext("rewardDomain", domain);
 }

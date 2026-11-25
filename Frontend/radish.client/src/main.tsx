@@ -65,6 +65,8 @@ void applySiteBranding(getApiBaseUrl());
 
 configureApiClient({
   getToken: () => tokenService.getAccessToken(),
+  acquireSessionToken: (url) => tokenService.acquireSessionTokenForApi(url),
+  recoverSessionToken: (url, rejected) => tokenService.recoverSessionTokenForApi(url, rejected),
   getLanguage: () => getIntlLocale(i18n.resolvedLanguage ?? i18n.language),
   translateMessage: (key, messageArguments) => i18n.exists(key)
     ? i18n.t(key, Object.fromEntries((messageArguments ?? []).map((value, index) => [index, value])))

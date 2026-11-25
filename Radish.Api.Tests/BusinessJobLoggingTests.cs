@@ -24,7 +24,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class BusinessJobLoggingTests
+public sealed partial class BusinessJobLoggingTests
 {
     private const string Secret = "BUSINESS_JOB_PRIVATE_SENTINEL";
     private static readonly DateTime Now = new(2026, 9, 23, 0, 0, 0, DateTimeKind.Utc);

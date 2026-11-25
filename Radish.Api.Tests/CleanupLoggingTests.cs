@@ -28,7 +28,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class CleanupLoggingTests
+public sealed partial class CleanupLoggingTests
 {
     private const string Secret = "CLEANUP_PRIVATE_SENTINEL";
 
@@ -255,9 +255,9 @@ public sealed class CleanupLoggingTests
     }
     private static string[] Lines(StringWriter output) => output.ToString().Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-    private sealed class FixedTimeProvider : TimeProvider
+    private sealed class FixedTimeProvider(DateTimeOffset? now = null) : TimeProvider
     {
-        public override DateTimeOffset GetUtcNow() => new(2026, 9, 23, 0, 0, 0, TimeSpan.Zero);
+        public override DateTimeOffset GetUtcNow() => now ?? new(2026, 9, 23, 0, 0, 0, TimeSpan.Zero);
     }
 
     private sealed class Files : IDisposable
@@ -265,11 +265,12 @@ public sealed class CleanupLoggingTests
         public string Root { get; } = Path.Combine(Path.GetTempPath(), $"radish-cleanup-log-{Guid.NewGuid():N}");
         public Mock<IBaseRepository<Attachment>> Repository { get; } = new();
         public Mock<IFileStorage> Storage { get; } = new();
+        public Mock<IAttachmentReferenceInspector> References { get; } = new();
         public FileCleanupJob Job { get; }
-        public Files()
+        public Files(DateTimeOffset? now = null)
         {
-            var clock = new FixedTimeProvider();
-            Job = new FileCleanupJob(Repository.Object, Mock.Of<IAttachmentReferenceInspector>(), Storage.Object,
+            var clock = new FixedTimeProvider(now);
+            Job = new FileCleanupJob(Repository.Object, References.Object, Storage.Object,
                 clock, new BusinessCalendar(clock, Options.Create(new TimeOptions { DefaultTimeZoneId = "Asia/Shanghai" })),
                 Options.Create(new ChunkedUploadOptions { TempChunkPath = Path.Combine(Root, "Temp", "Chunks") }), Root);
         }

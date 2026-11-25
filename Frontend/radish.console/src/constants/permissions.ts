@@ -70,6 +70,11 @@ export const CONSOLE_PERMISSIONS = {
   systemConfigEdit: 'console.system-config.edit',
   systemConfigDelete: 'console.system-config.delete',
   hangfireView: 'console.hangfire.view',
+  logsView: 'console.logs.view',
+  logsExport: 'console.logs.export',
+  logsAudit: 'console.logs.audit',
+  alertsView: 'console.alerts.view',
+  alertsManage: 'console.alerts.manage',
   hangfireReplay: 'console.hangfire.replay',
 } as const;
 

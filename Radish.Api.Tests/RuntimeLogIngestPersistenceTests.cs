@@ -3,9 +3,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Radish.Common.LogTool;
 using Radish.DbMigrate;
 using Radish.IRepository;
 using Radish.Model.LogModels;
@@ -16,6 +19,35 @@ namespace Radish.Api.Tests;
 
 public sealed class RuntimeLogIngestPersistenceTests
 {
+    [Fact]
+    public async Task OptionalRequestId_ShouldPersistInCanonicalJsonAndRejectInvalidTransport()
+    {
+        using var test = new RuntimeLogIngestTestSupport();
+        var policy = new RuntimeLogPolicy(new RuntimeLogSource("local", "api", "test", "test"), clock: test.Clock);
+        var requestId = new string('R', 64);
+        var http = policy.Create(JsonSerializer.SerializeToElement(new
+        {
+            eventCode = "http.failed", sourceCategory = "http", level = "Error",
+            requestId, properties = new { statusCode = 500 }
+        }))!;
+        var noRequest = (http with { EventId = Guid.NewGuid().ToString("D"), RequestId = null }).ToJsonLine();
+        var malformed = http with { EventId = Guid.NewGuid().ToString("D"), RequestId = requestId + "x" };
+        var otherSource = http with { EventId = Guid.NewGuid().ToString("D"), Service = "log-collector" };
+        var fatal = http with { EventId = Guid.NewGuid().ToString("D"), IsFatal = true };
+        var nullRequest = JsonNode.Parse(noRequest)!.AsObject();
+        nullRequest["requestId"] = null;
+        var batch = string.Join('\n', http.ToJsonLine(), noRequest, malformed.ToJsonLine(), otherSource.ToJsonLine(), fatal.ToJsonLine(), nullRequest.ToJsonString());
+        var result = await test.Service().IngestAsync(RuntimeLogIngestTestSupport.Body(batch), CancellationToken.None);
+        Assert.Equal(200, result.StatusCode);
+        Assert.Equal(2, result.Summary.VoAccepted);
+        Assert.Equal(4, result.Summary.VoRejected);
+        var rows = test.Db.GetConnectionScope("log").Queryable<RuntimeLogEventRecord>().ToList();
+        using var stored = JsonDocument.Parse(Assert.Single(rows, row => row.EventId == http.EventId).CanonicalJson);
+        Assert.Equal(requestId, stored.RootElement.GetProperty("requestId").GetString());
+        using var previous = JsonDocument.Parse(Assert.Single(rows, row => row.EventId != http.EventId).CanonicalJson);
+        Assert.False(previous.RootElement.TryGetProperty("requestId", out _));
+    }
+
     [Fact]
     public async Task ReplayAndConflict_ShouldKeepOriginalIdTimeContentAndSafeRejections()
     {

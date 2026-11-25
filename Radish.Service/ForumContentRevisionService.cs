@@ -492,7 +492,7 @@ public sealed class ForumContentRevisionService : IForumContentRevisionService
             var rejection = CreateException(exception.Message, 409, ForumContentRevisionErrorCodes.ContentRejected);
             if (exception is not PostContentValidationException)
             {
-                Log.ForContext("EventCode", "post.restore_failed")
+                Log.ForContext<ForumContentRevisionService>().ForContext("EventCode", "post.restore_failed")
                     .Error("Post restore consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
             }
             throw rejection;
@@ -505,7 +505,7 @@ public sealed class ForumContentRevisionService : IForumContentRevisionService
             var rejection = CreateException(exception.Message, 409, errorCode);
             if (exception is not PostOperationRejectedException)
             {
-                Log.ForContext("EventCode", "post.restore_failed")
+                Log.ForContext<ForumContentRevisionService>().ForContext("EventCode", "post.restore_failed")
                     .Error("Post restore consumed a failure ({failureKind})", RuntimeFailureSummary.Classify(exception));
             }
             throw rejection;

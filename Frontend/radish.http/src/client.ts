@@ -19,6 +19,8 @@ export interface ApiClientConfig {
   timeout: number;
   /** 获取 token 的函数 */
   getToken?: () => string | null;
+  acquireSessionToken?: (url: string) => Promise<string | null> | undefined;
+  recoverSessionToken?: (url: string, rejectedToken: string) => Promise<string | null> | undefined;
   /** 获取当前请求语言；宿主负责返回服务端可识别的语言标签 */
   getLanguage?: () => string | null | undefined;
   /** 根据服务端 messageKey 解析用户可见消息 */
@@ -92,9 +94,12 @@ export async function apiFetch(
 
   // 添加认证信息
   if (withAuth) {
-    const token = currentConfig.getToken?.();
+    const acquisition = currentConfig.acquireSessionToken?.(url.toString());
+    const token = acquisition ? await acquisition : currentConfig.getToken?.();
     if (token) {
       finalHeaders.set('Authorization', `Bearer ${token}`);
+    } else if (acquisition) {
+      finalHeaders.delete('Authorization');
     }
   }
   const hasAuthorizationHeader = finalHeaders.has('Authorization');
@@ -133,8 +138,13 @@ export async function apiFetch(
     // 检查是否需要刷新 token
     if (withAuth && hasAuthorizationHeader && shouldRefreshToken(response)) {
       try {
-        // 刷新 token
-        const newToken = await tryRefreshToken();
+        const rejected = finalHeaders.get('Authorization')?.replace(/^Bearer\s+/i, '') ?? '';
+        const recovery = currentConfig.recoverSessionToken?.(url.toString(), rejected);
+        const newToken = recovery ? await recovery : await tryRefreshToken();
+        const method = (fetchOptions.method ?? (input instanceof Request ? input.method : 'GET')).toUpperCase();
+        if (!newToken || (recovery && (newToken === rejected || !['GET', 'HEAD'].includes(method)))) {
+          return response;
+        }
 
         // 使用新 token 重试请求
         const retryHeaders = new Headers(finalHeaders);

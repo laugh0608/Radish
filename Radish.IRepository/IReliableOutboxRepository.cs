@@ -20,7 +20,8 @@ public interface IReliableOutboxRepository
         string errorCode,
         string errorSummary,
         DateTime failedAtUtc,
-        DateTime? retryAtUtc);
+        DateTime? retryAtUtc,
+        string? failureKind = null);
     Task<bool> ReplayAsync(
         string sourceDatabase,
         long outboxId,

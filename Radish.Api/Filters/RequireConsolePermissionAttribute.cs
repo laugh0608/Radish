@@ -14,6 +14,7 @@ namespace Radish.Api.Filters;
 public sealed class RequireConsolePermissionAttribute : Attribute, IAsyncAuthorizationFilter
 {
     private readonly string[] _permissions;
+    public bool PlatformOnly { get; set; }
 
     public RequireConsolePermissionAttribute(params string[] permissions)
     {
@@ -37,6 +38,13 @@ public sealed class RequireConsolePermissionAttribute : Attribute, IAsyncAuthori
                 "请先登录后再继续操作",
                 ApiErrorCodes.Unauthorized,
                 "error.auth.unauthorized");
+            return;
+        }
+
+        if (PlatformOnly && currentUser.TenantId != 0)
+        {
+            context.Result = ApiErrorResultFactory.Create(context.HttpContext, StatusCodes.Status403Forbidden,
+                "当前账号无权执行此操作", ApiErrorCodes.Forbidden, "error.auth.forbidden");
             return;
         }
 

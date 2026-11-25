@@ -317,7 +317,7 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 
 ### P3：Flutter 代表设计（已确认，2026-08-23）
 
-- 新建并维护独立活动设计源 `Docs/frontend/design-sources/radish-flutter-native-ui-v1.pen`，不把 Flutter 画板追加进 Web / Console 活动源。
+- Flutter 独立维护原生代表设计，旧基准见[设计源目录](/frontend/design-sources/)，后续依[代表页设计流程](/frontend/pencil-representative-page-workflow)记录新稿。
 - 按 R1 / R2 维护 Flutter 专用 compact / expanded 代表设计；medium 只补真实结构差异。
 - 以正式 Web 的品牌栏、导航语法、主题和信息层级为视觉基准，不复制 Web DOM；再按 Flutter 安全区、返回、触控、键鼠、焦点和窗口等级做原生适配。
 - 确认 typography、四主题、圆角、阴影、状态、导航、宽屏布局和 motion。
@@ -389,6 +389,16 @@ Radish 薄组件层：Button、Card、Field、Chip、State、Section、Navigatio
 - iOS 已完成 P7-A readiness、P7-B platform foundation、P7-C Simulator runtime acceptance 与 P7-D1 Internal TestFlight minimal readiness；项目所有者批准近期 Internal TestFlight 临时复用生产 `https://radishx.com` 并接受数据隔离风险，但当前没有付费会员或可测试真机，因此 D2 development-signed 真机与 D3 TestFlight Internal Only 暂缓，D4 External TestFlight / App Store 继续无限期后置。
 - P8-A、P8-B readiness、P8-B1 与 P8-B2 已关闭：macOS runner、真实 runtime owner 与本地 Gateway 运行矩阵均已落地并给出 `macOS local runtime acceptance Go`。Windows 与 Linux 的日常 / CleanBase VM 分工已冻结，工具链与平台工程分别进入 P8-C / D，最终由 P8-E 成组关闭输入、窗口、认证、持久化与构建门禁。
 - 平台工程与分发要求独立授权和记录，不因 Dart UI 可运行自动宣称产品完成。
+
+### 2026-11-10 平台收口与连接衔接
+
+2026-11-21 日志隔离候选已通过出口评审，当前转入 P8-C Windows。日常 VM 的宿主与来宾只读盘点已完成，工具准备及工程实施待授权。[盘点记录](../records/f4-flutter-native-p8c-windows-readiness-2026-11-21.md) · [实施与验收方案](./flutter-native-p8c-windows-plan.md)
+
+日志完整候选退出后，按 P8-C Windows、P8-D Linux、P8-E 成组验收接续。每个平台先固定工具链 / runner、身份 / OIDC、安全存储 / preferences、窗口 / 输入及退出 / 重启的剩余清单；已有共享层与其他平台结果只按适用域复用，不重做整套 UI，也不代替目标平台运行。
+
+平台资源或工具链不可达时，输出具名阻塞与恢复条件，不自动建立新的 VM / 管理框架、安装工具或改变 CleanBase。可以评审在已有可用平台提前实现[客户端连接](../frontend/client-server-connection-plan.md)，但必须明确顺位调整及未完成平台，不自动取消 P8-C / D / E。
+
+已声明范围的运行与成组门禁关闭才记对应平台退出；真机、签名、公证、安装包及商店分发继续按原平台分别验收。阶段性功能收口不要求所有外部条件同时清零，也不把模拟器 / 本地 Go 升级为正式分发。当前仅改规划，无新平台实现或验收。
 
 ## 12. P2 技术基座结果
 

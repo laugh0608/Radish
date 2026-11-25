@@ -42,6 +42,7 @@
 | 子专题入口 | 阶段与任务 / 验收来源 | 协同 |
 | --- | --- | --- |
 | [身份语义](../architecture/user-identity-semantics.md)、[认证](../guide/authentication.md)、[会话过期](../guide/auth-idle-session.md) | 既有身份治理切片，协议与测试入口沿原文 | 平台、多端 |
+| [隔夜会话恢复](../features/auth-session-overnight-recovery-plan.md)、[第三方 API Key](./community-platform-next-proposals.md#api-keys) | 隔夜会话已完成默认期限隔离对照，修复待评审。第三方 API Key 待确认提案，衔接[应用治理](../features/open-platform.md) | 平台、多端 |
 | [Console 权限](../guide/console-permission-governance.md) | 原权限专题与覆盖矩阵；不新增部署架构 | 多端体验 |
 | [案件与证据](../features/content-moderation-case-evidence-action-design.md)、[申诉纠正](../features/content-moderation-appeal-relief-design.md)、[用户屏蔽](../features/user-block-relationship-isolation-design.md) | F4-I / J / K，原任务和验收 | 内容、关系 |
 
@@ -71,6 +72,7 @@
 | [商城履约](../features/shop-product-effect-entitlement-fulfillment.md) | F1，原权益与履约验收 | 身份与治理、平台 |
 | [宠物路线](../features/radish-pet-roadmap.md)、[宠物说明](../guide/radish-pet-system.md) | F4-H 及原已纳入范围 | 关系、公开主页 |
 | [内容赞赏](../features/forum-content-reward.md)、[排行榜](../features/leaderboard.md) | F4-N / S，原范围与验收 | 内容互动、身份治理 |
+| [社区徽章](./community-platform-next-proposals.md#badges)、[农场 / 牧场](./community-platform-next-proposals.md#farm) | 待确认提案，分别验证社区贡献识别和独立休闲循环 | 内容互动、知识与创作、多端 |
 
 已有资产变更、权益生效和公开展示在同一批次有一致验证；后置经济扩展不因归组成为当前待办。
 
@@ -101,6 +103,7 @@ Web 优先覆盖 PC / mobile，Flutter Native 按平台阶段交付；拥有壳�
 | [统一日志](../features/unified-logging-governance-design.md) | L1–L6 阶段及退出条件在总纲；L2 细项在[事件契约](../features/unified-logging-contract.md)，不重复任务 | 所有宿主、Console |
 | [上传与文件](../features/file-upload-design.md)、[配额修正切片](../features/upload-quota-boundary-fix-plan.md) | 已有文件契约及指定修复范围 | 内容、知识、依赖治理 |
 | [运行配置](../guide/runtime-configuration-boundaries.md)、[系统设置](../guide/system-settings-governance.md) | 原配置 / 设置契约及实施范围 | 身份与治理 |
+| [插件系统](./community-platform-next-proposals.md#plugins)、[软删除查询效率](./community-platform-next-proposals.md#soft-delete) | 待确认提案，分别由实际扩展点和查询计划确定首批范围 | 身份与治理、各业务域 |
 | [验证基线](../guide/validation-baseline.md)、[发布工程](p3-12-e8-release-engineering-maturity-security-closure.md)、[部署](../deployment/guide.md) | 验证 / 交付规则与历史阶段证据；当前候选独立验收 | 全部能力主线 |
 
 依赖替换需覆盖精确产物、行为与对应分发材料；日志需按 L 批次验收，发布另按授权执行。工程候选仅从[候选清单](engineering-improvement-candidates.md)选取，不自动中断 current 顺位。

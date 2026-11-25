@@ -579,11 +579,8 @@ public class UserFollowService : BaseService<UserFollow, UserFollowVo>, IUserFol
         {
             // 直接消费者 UserFollowController 会将这两类异常转换为业务响应，无法到达 API 最终日志边界。
             // 仅在通知阶段记录安全失败；其他异常继续交由 API 最终边界处理。
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "user_follow.notification_enqueue_failed", ["SourceCategory"] = "business"
-            });
-            _logger.LogError("Follow notification enqueue failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            _logger.LogError(new EventId(1, "FollowNotificationEnqueueFailed"),
+                "Follow notification enqueue failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             throw;
         }
     }

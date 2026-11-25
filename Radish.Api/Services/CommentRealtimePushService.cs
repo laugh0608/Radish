@@ -90,11 +90,8 @@ public class CommentRealtimePushService
         }
         catch (Exception ex)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "comment.push_failed", ["SourceCategory"] = "business"
-            });
-            _logger.LogWarning("Comment realtime push is unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
+            _logger.LogWarning(new EventId(1, "CommentPushFailed"),
+                "Comment realtime push is unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
         }
     }
 }

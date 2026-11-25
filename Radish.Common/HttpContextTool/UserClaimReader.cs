@@ -78,7 +78,8 @@ public static class UserClaimReader
                && GetScopes(principal, token).Contains(scope, StringComparer.OrdinalIgnoreCase);
     }
 
-    private static string? GetFirstClaimValue(ClaimsPrincipal? principal, string claimType)
+    /// <summary>读取主体中第一个指定类型的 Claim 原值，不尝试兼容键或解析原始 Token。</summary>
+    public static string? GetFirstClaimValue(ClaimsPrincipal? principal, string claimType)
     {
         return principal?.FindFirst(claimType)?.Value;
     }

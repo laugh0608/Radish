@@ -12,6 +12,7 @@ for (const fixture of fixtures) {
     const event = create(fixture.input);
     if (fixture.expected === null) { assert.equal(event, null); return; }
     for (const [key, expected] of Object.entries(fixture.expected)) assert.deepEqual(event[key], expected, key);
+    for (const key of fixture.absent ?? []) assert.equal(Object.hasOwn(event, key), false, key);
     assert.match(event.eventId, /^[0-9a-f-]{36}$/u);
     assert.equal(event.occurredAtUtc, timestamp);
     assert.equal(event.observedAtUtc, timestamp);

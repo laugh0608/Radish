@@ -1,5 +1,46 @@
 [
   {
+    "name": "api-5xx-request-id-preserved-with-separate-trace",
+    "input": {
+      "eventCode": "http.failed",
+      "level": "Error",
+      "sourceCategory": "http",
+      "properties": { "statusCode": 503 },
+      "traceId": "11111111111111111111111111111111",
+      "requestId": "0HN8G2TRC7F0N:00000001_ok-id"
+    },
+    "expected": {
+      "eventCode": "http.failed",
+      "traceId": "11111111111111111111111111111111",
+      "requestId": "0HN8G2TRC7F0N:00000001_ok-id",
+      "redacted": false
+    }
+  },
+  {
+    "name": "api-5xx-request-id-with-trailing-line-feed-omitted",
+    "input": {
+      "eventCode": "http.failed",
+      "level": "Error",
+      "sourceCategory": "http",
+      "properties": { "statusCode": 500 },
+      "requestId": "invalid-id\n"
+    },
+    "expected": { "redacted": true },
+    "absent": ["requestId"]
+  },
+  {
+    "name": "request-id-on-http-4xx-omitted",
+    "input": {
+      "eventCode": "http.failed",
+      "level": "Error",
+      "sourceCategory": "http",
+      "properties": { "statusCode": 404 },
+      "requestId": "valid-shape"
+    },
+    "expected": { "redacted": true },
+    "absent": ["requestId"]
+  },
+  {
     "name": "production-debug-dropped-before-level-mapping",
     "input": {
       "level": "Debug"

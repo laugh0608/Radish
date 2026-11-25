@@ -15,7 +15,6 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -30,7 +29,6 @@ using Radish.Common.HttpContextTool;
 using Radish.Common.LogTool;
 using Radish.Common.OptionTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.Log;
 using Radish.IRepository;
 using Radish.IRepository.Base;
 using Radish.IService;
@@ -46,7 +44,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class CommentControllerLoggingTests
+public sealed partial class CommentControllerLoggingTests
 {
     private const string Secret = "COMMENT_WRITE_PRIVATE_SENTINEL";
     private const long CommentId = 812345679;
@@ -537,42 +535,24 @@ public sealed class CommentControllerLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        private readonly StringWriter _output = new();
-        private readonly Serilog.Core.Logger _logger;
-        private readonly string? _mode;
-        public Capture(bool candidate, string environment)
-        {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate)
-            {
-                _mode = environment;
-                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["RadishLogging:Mode"] = environment,
-                    ["RadishLogging:Diagnostics"] = (environment == "Development").ToString()
-                }).Build();
-                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
-            }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output));
-            _logger = config.CreateLogger();
-            Log.Logger = _logger;
-        }
-        public void AssertQuiet() => Assert.Equal("", _output.ToString());
+        private readonly FinalOutputCapture _capture;
+
+        public Capture(bool candidate, string environment) => _capture = new FinalOutputCapture(candidate, environment);
+        public void AssertQuiet() => Assert.Equal("", _capture.Text);
         public void AssertSingle(string code, string kind, int? status = null)
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             Assert.Single(text.Split('\n', StringSplitOptions.RemoveEmptyEntries));
             Assert.Contains(code, text);
             Assert.Contains("Error", text);
             Assert.Contains(kind, text);
             foreach (var forbidden in new[] { Secret, CommentId.ToString(), PostId.ToString(), UserId.ToString(), TenantId.ToString(), "runtime.unclassified", "System.IO.IOException", "System.ArgumentException", "System.InvalidOperationException", "post-comments:", "task:comment-published", "RequestDigest", "RequestSummary" })
                 Assert.DoesNotContain(forbidden, text);
-            if (_mode != null)
+            if (_capture.Output.Candidate)
             {
                 using var json = JsonDocument.Parse(text);
                 var root = json.RootElement;
-                Assert.Equal(_mode, root.GetProperty("mode").GetString());
+                Assert.Equal(_capture.Output.Environment, root.GetProperty("mode").GetString());
                 Assert.Equal(code, root.GetProperty("eventCode").GetString());
                 var properties = root.GetProperty("properties");
                 Assert.Equal(status.HasValue ? 2 : 1, properties.EnumerateObject().Count());
@@ -580,13 +560,7 @@ public sealed class CommentControllerLoggingTests
                 if (status.HasValue) Assert.Equal(status.Value, properties.GetProperty("statusCode").GetInt32());
             }
         }
-        public void Clear() => _output.GetStringBuilder().Clear();
-        public void Dispose() { Log.Logger = _previous; _logger.Dispose(); _output.Dispose(); }
-    }
-
-    private sealed class LegacySink(TextWriter output) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(Serilog.Events.LogEvent value) => _formatter.Format(value, output);
+        public void Clear() => _capture.Output.Clear();
+        public void Dispose() => _capture.Dispose();
     }
 }

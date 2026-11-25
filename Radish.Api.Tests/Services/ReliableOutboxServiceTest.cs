@@ -60,7 +60,8 @@ public class ReliableOutboxServiceTest
                 nameof(TimeoutException),
                 "任务执行失败，请结合错误码和运行日志安全摘要排查",
                 failedAtUtc,
-                failedAtUtc.AddMinutes(1).AddSeconds(10)))
+                failedAtUtc.AddMinutes(1).AddSeconds(10),
+                "timeout"))
             .Returns(Task.CompletedTask);
         var service = new ReliableOutboxService(repository.Object);
 
@@ -88,7 +89,8 @@ public class ReliableOutboxServiceTest
                 "PermanentFailure",
                 "invalid payload",
                 failedAtUtc,
-                null))
+                null,
+                "other"))
             .Returns(Task.CompletedTask);
         var service = new ReliableOutboxService(repository.Object);
 

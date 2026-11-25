@@ -11,6 +11,7 @@ using Radish.Common.CoreTool;
 using Radish.Common.DbTool;
 using Radish.Common.HealthTool;
 using Radish.Auth.OpenIddict;
+using Radish.Auth.WebSessions;
 using Radish.Auth.HealthChecks;
 using Radish.Extension;
 using Radish.Extension.AutofacExtension;
@@ -236,10 +237,26 @@ return await RuntimeProcess.RunAsync("auth", async () =>
             options.SlidingExpiration = true;
         });
 
-    // OpenIddict 所用 EF Core DbContext（仅承载 OpenIddict 实体）
+    // OpenIddict 授权数据与普通 Web 服务端会话共用 Auth 数据库。
     var openIddictDatabase = AuthOpenIddictPersistence.AddAuthOpenIddictDbContext(
         builder.Services,
         builder.Configuration);
+    builder.Services.AddScoped<IWebAuthSessionRepository, WebAuthSessionRepository>();
+    builder.Services.AddScoped<IWebAuthSessionService, WebAuthSessionService>();
+    builder.Services.AddScoped<IWebSessionStore, WebSessionStore>();
+    builder.Services.AddScoped<IWebSessionLoginService, WebSessionLoginService>();
+    builder.Services.AddScoped<IWebSessionAccessService, WebSessionAccessService>();
+    builder.Services.AddSingleton(WebSessionProtection.FromKeyRing(builder.Configuration, builder.Environment.ContentRootPath));
+    builder.Services.AddHttpClient<IWebTokenBackchannel, WebTokenBackchannel>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(8);
+        client.MaxResponseContentBufferSize = 128 * 1024;
+    }).ConfigurePrimaryHttpMessageHandler(() => new SocketsHttpHandler
+    {
+        AllowAutoRedirect = false,
+        UseCookies = false,
+        ConnectTimeout = TimeSpan.FromSeconds(3)
+    });
 
     var openIddictCertificateSection = builder.Configuration.GetSection("OpenIddict:Encryption");
 
@@ -334,6 +351,18 @@ return await RuntimeProcess.RunAsync("auth", async () =>
             options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
                 handler.SetOrder(OpenIddictServerHandlers.PrepareRefreshTokenPrincipal.Descriptor.Order + 1_000)
                     .UseScopedHandler<AttachIdleSessionRefreshTokenHandler>());
+
+            options.AddEventHandler<OpenIddictServerEvents.ValidateTokenRequestContext>(handler =>
+                handler.SetOrder(OpenIddictServerHandlers.Exchange.ValidateGrantedScopes.Descriptor.Order + 1_000)
+                    .UseScopedHandler<WebAuthSessionTokenHandler>());
+
+            options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
+                handler.SetOrder(OpenIddictServerHandlers.AttachAuthorization.Descriptor.Order - 500)
+                    .UseScopedHandler<RequireWebAuthSessionAuthorizationHandler>());
+
+            options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
+                handler.SetOrder(OpenIddictServerHandlers.PrepareRefreshTokenPrincipal.Descriptor.Order + 500)
+                    .UseScopedHandler<WebAuthSessionTokenHandler>());
 
             // 配置加密和签名证书（默认使用 certs/dev-auth-cert.pfx）
             var useDevelopmentKeys = openIddictCertificateSection.GetValue<bool?>("UseDevelopmentKeys") ?? false;

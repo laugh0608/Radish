@@ -144,9 +144,18 @@ local function normalize_impl(tag, timestamp, record)
             and value:match('^[0-9a-f]+$') and value:find('[1-9a-f]') end
         if value ~= nil then if valid then output[key] = value else output.redacted = true end end
     end
+    if record.requestId ~= nil then
+        local value = record.requestId
+        if output.service == 'api' and output.eventCode == 'http.failed' and output.sourceCategory == 'http'
+            and output.level == 'Error' and not output.diagnostic and not output.isFatal
+            and (output.properties.statusCode or 0) >= 500
+            and type(value) == 'string' and #value >= 1 and #value <= 64 and not value:find('[^A-Za-z0-9:_%-]') then
+            output.requestId = value
+        else output.redacted = true end
+    end
     local allowed = { schemaVersion=true,eventId=true,eventCode=true,occurredAtUtc=true,observedAtUtc=true,deploymentId=true,service=true,
         instanceId=true,release=true,mode=true,sourceCategory=true,level=true,diagnostic=true,isFatal=true,message=true,messageTemplate=true,
-        properties=true,traceId=true,spanId=true,operationId=true,normalizationStatus=true,redacted=true,truncated=true,log=true }
+        properties=true,traceId=true,spanId=true,requestId=true,operationId=true,normalizationStatus=true,redacted=true,truncated=true,log=true }
     for key, _ in pairs(record) do if not allowed[key] then output.redacted = true end end
     output.normalizationStatus = record.eventCode == 'runtime.unclassified' and 'unclassified' or 'normalized'
     return output

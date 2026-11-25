@@ -19,7 +19,7 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
 
         if (exception is BusinessException businessException)
         {
-            await ApiErrorResultFactory.WriteAsync(
+            var businessRequestId = await ApiErrorResultFactory.WriteAsync(
                 httpContext,
                 businessException.StatusCode,
                 businessException.Message,
@@ -29,12 +29,12 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
                 cancellationToken: cancellationToken);
             if (businessException.StatusCode >= StatusCodes.Status500InternalServerError)
             {
-                WriteFailure(businessException, businessException.StatusCode);
+                WriteFailure(businessException, businessException.StatusCode, businessRequestId);
             }
             return true;
         }
 
-        await ApiErrorResultFactory.WriteAsync(
+        var requestId = await ApiErrorResultFactory.WriteAsync(
             httpContext,
             StatusCodes.Status500InternalServerError,
             "服务器处理请求时发生错误，请稍后重试",
@@ -42,17 +42,18 @@ public sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : I
             "error.system.unexpected_error",
             cancellationToken: cancellationToken);
         // 构造或写入失败交回框架边界，不能提前声明已完成本层处理。
-        WriteFailure(exception, StatusCodes.Status500InternalServerError);
+        WriteFailure(exception, StatusCodes.Status500InternalServerError, requestId);
         return true;
     }
 
-    private void WriteFailure(Exception exception, int statusCode)
+    private void WriteFailure(Exception exception, int statusCode, string? requestId)
     {
         using var scope = logger.BeginScope(new Dictionary<string, object>
         {
             ["EventCode"] = "http.failed", ["SourceCategory"] = "http"
         });
         // 不把 Exception、URL、业务错误文案交给旧 sink；候选与旧路径同样安全。
-        logger.LogError(new EventId(1, "ApiRequestFailed"), "Request failed with {statusCode}; kind={failureKind}", statusCode, RuntimeFailureSummary.Classify(exception));
+        logger.LogError(new EventId(1, "ApiRequestFailed"), "Request failed with {statusCode}; kind={failureKind}; request={requestId}",
+            statusCode, RuntimeFailureSummary.Classify(exception), RuntimeLogPolicy.IsValidRequestId(requestId) ? requestId : null);
     }
 }

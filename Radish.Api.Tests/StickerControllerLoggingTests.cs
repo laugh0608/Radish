@@ -13,7 +13,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -31,7 +30,6 @@ using Radish.Common.Exceptions;
 using Radish.Common.HttpContextTool;
 using Radish.Common.LogTool;
 using Radish.Extension.AopExtension;
-using Radish.Extension.Log;
 using Radish.IRepository.Base;
 using Radish.IService;
 using Radish.Model;
@@ -48,9 +46,10 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class StickerControllerLoggingTests
+public sealed partial class StickerControllerLoggingTests
 {
     private const string Secret = "STICKER_PRIVATE_SENTINEL";
+    private const string RequestId = "sticker-test-request";
     private const long GroupId = 912345678;
     private const long AttachmentId = 823456789;
     private const long UserId = 623456789;
@@ -627,7 +626,7 @@ public sealed class StickerControllerLoggingTests
         app.UseApiExceptionHandler();
         MessageModel? result = null;
         app.Run(async context => { result = await action(); await ApplyResultAsync(context, result); });
-        var context = new DefaultHttpContext();
+        var context = new DefaultHttpContext { TraceIdentifier = RequestId };
         context.Request.Path = "/api/v1/Sticker/BatchAddStickers";
         context.Request.QueryString = new QueryString("?query=" + Secret);
         using var output = new MemoryStream();
@@ -654,32 +653,13 @@ public sealed class StickerControllerLoggingTests
 
     private sealed class Capture : IDisposable
     {
-        private readonly Serilog.ILogger _previous = Log.Logger;
-        private readonly StringWriter _output = new();
-        private readonly Serilog.Core.Logger _logger;
-        private readonly List<LogEvent> _events = [];
-        private readonly string? _mode;
-        public Capture(bool candidate, string environment)
-        {
-            var config = new LoggerConfiguration().MinimumLevel.Verbose();
-            if (candidate)
-            {
-                _mode = environment;
-                var settings = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["RadishLogging:Mode"] = environment,
-                    ["RadishLogging:Diagnostics"] = (environment == "Development").ToString()
-                }).Build();
-                RuntimeLoggingConfiguration.Configure(config, settings, environment, "api", _output, _output);
-            }
-            else config.Enrich.FromLogContext().WriteTo.Sink(new LegacySink(_output, _events));
-            _logger = config.CreateLogger();
-            Log.Logger = _logger;
-        }
-        public void AssertQuiet() => Assert.Equal("", _output.ToString());
+        private readonly FinalOutputCapture _capture;
+
+        public Capture(bool candidate, string environment) => _capture = new FinalOutputCapture(candidate, environment);
+        public void AssertQuiet() => Assert.Equal("", _capture.Text);
         public void AssertEvents(params (string Code, string Level, string Kind, int? Status)[] expected)
         {
-            var text = _output.ToString();
+            var text = _capture.Text;
             var lines = text.Split('\n', StringSplitOptions.RemoveEmptyEntries);
             Assert.Equal(expected.Length, lines.Length);
             foreach (var forbidden in new[] { Secret, "private_group", "private_sticker", GroupId.ToString(), UserId.ToString(), AttachmentId.ToString(),
@@ -688,14 +668,17 @@ public sealed class StickerControllerLoggingTests
             for (var i = 0; i < expected.Length; i++)
             {
                 var e = expected[i];
-                if (_mode != null)
+                var expectRequestId = e.Code == "http.failed";
+                if (_capture.Output.Candidate)
                 {
                     using var json = JsonDocument.Parse(lines[i]);
                     var root = json.RootElement;
-                    Assert.Equal(_mode, root.GetProperty("mode").GetString());
+                    Assert.Equal(_capture.Output.Environment, root.GetProperty("mode").GetString());
                     Assert.Equal(e.Code, root.GetProperty("eventCode").GetString());
                     Assert.Equal(e.Level, root.GetProperty("level").GetString());
                     Assert.False(root.GetProperty("diagnostic").GetBoolean());
+                    Assert.Equal(expectRequestId, root.TryGetProperty("requestId", out var requestId));
+                    if (expectRequestId) Assert.Equal(RequestId, requestId.GetString());
                     var properties = root.GetProperty("properties");
                     Assert.Equal(e.Status.HasValue ? 2 : 1, properties.EnumerateObject().Count());
                     Assert.Equal(e.Kind, properties.GetProperty("failureKind").GetString());
@@ -703,32 +686,24 @@ public sealed class StickerControllerLoggingTests
                 }
                 else
                 {
-                    var logged = _events[i];
+                    var logged = _capture.Output.Sink.Events.ToArray()[i];
                     Assert.Equal(e.Level, logged.Level.ToString());
                     Assert.Null(logged.Exception);
                     Assert.Equal(e.Code, Assert.IsType<ScalarValue>(logged.Properties["EventCode"]).Value);
                     Assert.Equal(e.Kind, Assert.IsType<ScalarValue>(logged.Properties["failureKind"]).Value);
                     if (e.Status.HasValue) Assert.Equal(e.Status.Value, Assert.IsType<ScalarValue>(logged.Properties["statusCode"]).Value);
-                    var isApiHandler = logged.Properties.TryGetValue("SourceContext", out var source) &&
-                        source is ScalarValue { Value: "Radish.Api.ErrorHandling.ApiExceptionHandler" };
-                    var allowed = new[] { "EventCode", "SourceCategory", "SourceContext", "failureKind", "statusCode" };
-                    Assert.All(logged.Properties.Keys, k => Assert.Contains(k, isApiHandler ? allowed.Append("EventId") : allowed));
-                    if (isApiHandler)
+                    var allowed = new List<string> { "EventCode", "SourceCategory", "SourceContext", "Diagnostic", "failureKind" };
+                    if (e.Status.HasValue) allowed.Add("statusCode");
+                    if (expectRequestId)
                     {
-                        var identity = Assert.IsType<StructureValue>(logged.Properties["EventId"]);
-                        Assert.Equal(2, identity.Properties.Count);
-                        Assert.Equal(1, Assert.IsType<ScalarValue>(identity.Properties.Single(p => p.Name == "Id").Value).Value);
-                        Assert.Equal("ApiRequestFailed", Assert.IsType<ScalarValue>(identity.Properties.Single(p => p.Name == "Name").Value).Value);
+                        allowed.Add("requestId");
+                        Assert.Equal(RequestId, Assert.IsType<ScalarValue>(logged.Properties["requestId"]).Value);
                     }
+                    Assert.Equal(allowed.Order(), logged.Properties.Keys.Order());
                 }
             }
         }
-        public void Clear() { _output.GetStringBuilder().Clear(); _events.Clear(); }
-        public void Dispose() { Log.Logger = _previous; _logger.Dispose(); _output.Dispose(); }
-    }
-    private sealed class LegacySink(TextWriter output, List<LogEvent> events) : Serilog.Core.ILogEventSink
-    {
-        private readonly Serilog.Formatting.Display.MessageTemplateTextFormatter _formatter = new("{Level} {Message:lj} {Properties:j} {Exception}{NewLine}");
-        public void Emit(LogEvent value) { events.Add(value); _formatter.Format(value, output); }
+        public void Clear() => _capture.Output.Clear();
+        public void Dispose() => _capture.Dispose();
     }
 }

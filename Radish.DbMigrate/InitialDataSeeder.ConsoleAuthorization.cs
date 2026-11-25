@@ -97,7 +97,12 @@ internal static partial class InitialDataSeeder
         new(61082, 61080, ConsolePermissions.SystemConfigEdit, "编辑配置", "Button", "system-config", null, 92, false, false),
         new(61083, 61080, ConsolePermissions.SystemConfigDelete, "删除配置", "Button", "system-config", null, 93, false, false),
         new(61090, 0, ConsolePermissions.HangfireView, "定时任务", "Entry", "hangfire", "/hangfire", 100, true, true, "Hangfire Dashboard"),
-        new(61091, 61090, ConsolePermissions.HangfireReplay, "重放可靠任务", "Button", "hangfire", null, 101, false, false)
+        new(61091, 61090, ConsolePermissions.HangfireReplay, "重放可靠任务", "Button", "hangfire", null, 101, false, false),
+        new(61170, 0, ConsolePermissions.LogsView, "运行日志", "Page", "system-logs", "/system/logs", 110, true, true),
+        new(61171, 61170, ConsolePermissions.LogsExport, "导出运行日志", "Button", "system-logs", null, 111, false, false),
+        new(61172, 61170, ConsolePermissions.LogsAudit, "查看审计摘要", "Button", "system-logs", null, 112, false, false),
+        new(61173, 0, ConsolePermissions.AlertsView, "运维告警", "Page", "system-alerts", "/system/alerts", 120, true, true),
+        new(61174, 61173, ConsolePermissions.AlertsManage, "处理运维告警", "Button", "system-alerts", null, 121, false, false)
     ];
 
     private static readonly ConsoleResourceApiSeed[] ConsoleResourceApiSeeds =
@@ -231,7 +236,16 @@ internal static partial class InitialDataSeeder
         new(61090, "/hangfire(/.*)?", "View"),
         new(61090, "/api/v1/HangfireSession/Create", "View"),
         new(61090, "/api/v1/ReliableOutbox/GetDeadLetters", "View"),
-        new(61091, "/api/v1/ReliableOutbox/Replay", "Action")
+        new(61091, "/api/v1/ReliableOutbox/Replay", "Action"),
+        new(61170, "/api/v1/RuntimeLogConsole/Query", "View"),
+        new(61170, "/api/v1/RuntimeLogConsole/Detail", "View"),
+        new(61170, "/api/v1/RuntimeLogConsole/History", "View"),
+        new(61170, "/api/v1/RuntimeLogConsole/Pipeline", "View"),
+        new(61171, "/api/v1/RuntimeLogConsole/Export", "Action"),
+        new(61172, "/api/v1/RuntimeLogConsole/Audit", "View"),
+        new(61173, "/api/v1/RuntimeLogConsole/Alerts", "View"),
+        new(61173, "/api/v1/RuntimeLogConsole/Pipeline", "View"),
+        new(61174, "/api/v1/RuntimeLogConsole/Transition", "Action")
     ];
 
     private static async Task SeedConsoleAuthorizationAsync(ISqlSugarClient db)

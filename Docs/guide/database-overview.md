@@ -81,7 +81,7 @@
 ### 结构真相源
 
 - Main / Log / Message / Chat：实体当前模型 + 有序 Radish migration + 每库 `RadishSchemaVersion` ledger。
-- OpenIddict：`AuthOpenIddictDbContext` + SQLite / PostgreSQL 独立 migration assembly 与 snapshot。
+- OpenIddict：`AuthOpenIddictDbContext` + SQLite / PostgreSQL 独立 migration assembly 与 snapshot，承载 OIDC 数据、`WebAuthSessions` 加密凭据和 `WebAuthLogins` 短效登录事务。旧 `EnsureCreated` 库按初始迁移模型检查并补记基线，后续表由增量迁移创建。[普通 Web 会话](../features/auth-session-overnight-recovery-plan.md#web-session-repair)
 - Hangfire：Hangfire provider 自有 schema。
 - 已发布 migration 不得原地修改；已有正式库不再依赖 Code First、宿主启动或删除数据库修复结构。
 

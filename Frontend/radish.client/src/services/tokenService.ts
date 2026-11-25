@@ -4,6 +4,8 @@
  */
 import { log } from '@/utils/logger';
 import { getAuthBaseUrl } from '@/config/env';
+import { browserWebSession, canUseCookieSession, isSameOriginUrl, listenForWebSessionSignOut } from './browserWebSession';
+import type { WebSessionMode } from './webSession';
 import {
   classifyTokenRefreshFailure,
   clearAuthSessionActivity,
@@ -32,6 +34,7 @@ interface TokenInfo {
 
 type ParsedJwtPayload = JwtPayload & {
   exp?: number;
+  client_id?: string;
 };
 
 class TokenRefreshError extends Error {
@@ -50,6 +53,8 @@ class TokenService {
   private static instance: TokenService;
   private refreshPromise: Promise<string> | null = null;
   private refreshTimer: ReturnType<typeof setTimeout> | null = null;
+  private removedLegacyWebCredentials = false;
+  private migratedLegacyStorage = false;
   private readonly TOKEN_KEY = 'radish_client_access_token';
   private readonly REFRESH_TOKEN_KEY = 'radish_client_refresh_token';
   private readonly TOKEN_EXPIRES_KEY = 'radish_client_token_expires_at';
@@ -65,7 +70,7 @@ class TokenService {
   private readonly MAX_CHECK_INTERVAL_MS = 2 * 60 * 1000;
 
   private constructor() {
-    this.migrateLegacyTokenStorage();
+    if (this.sessionMode === 'legacy') this.migrateLegacyTokenStorage();
   }
 
   static getInstance(): TokenService {
@@ -76,11 +81,69 @@ class TokenService {
   }
 
   getAccessToken(): string | null {
+    if (this.sessionMode !== 'legacy') return browserWebSession.getAccessToken();
+    this.migrateLegacyTokenStorage();
     return localStorage.getItem(this.TOKEN_KEY);
   }
 
+  get sessionMode(): WebSessionMode {
+    return canUseCookieSession() ? browserWebSession.mode : 'legacy';
+  }
+
+  async resolveSessionMode(): Promise<WebSessionMode> {
+    if (!canUseCookieSession()) return 'legacy';
+    listenForWebSessionSignOut();
+    return browserWebSession.resolveMode();
+  }
+
+  isSessionRecovering(): boolean {
+    return this.sessionMode !== 'legacy' && !browserWebSession.signedOut && !browserWebSession.getAccessToken();
+  }
+
+  acquireSessionTokenForApi(url: string): Promise<string | null> | undefined {
+    if (this.sessionMode === 'legacy') return undefined;
+    return this.resolveSessionMode().then((mode) => {
+      if (mode === 'legacy') return this.getAccessToken();
+      return mode === 'cookie' && isSameOriginUrl(url) ? this.getWebToken() : null;
+    });
+  }
+
+  recoverSessionTokenForApi(url: string, rejectedToken: string): Promise<string | null> | undefined {
+    if (this.sessionMode === 'legacy') return undefined;
+    return this.sessionMode === 'cookie' && isSameOriginUrl(url)
+      ? this.getWebToken({ rejectedToken })
+      : Promise.resolve(null);
+  }
+
+  async getWebToken(options?: { rejectedToken?: string; recheck?: boolean }): Promise<string | null> {
+    if (this.sessionMode !== 'cookie') return null;
+    const token = await browserWebSession.getToken(options);
+    if (token && !this.removedLegacyWebCredentials) {
+      this.removedLegacyWebCredentials = true;
+      this.removeLegacyWebCredentials();
+    }
+    return this.sessionMode === 'cookie' ? token : null;
+  }
+
+  private removeLegacyWebCredentials(): void {
+    try {
+      const generic = localStorage.getItem(this.LEGACY_TOKEN_KEY);
+      if (generic && this.parseJwt(generic)?.client_id === CLIENT_ID) {
+        for (const key of [this.LEGACY_TOKEN_KEY, this.LEGACY_REFRESH_TOKEN_KEY, this.LEGACY_TOKEN_EXPIRES_KEY, this.LEGACY_TOKEN_REFRESH_AT_KEY]) {
+          localStorage.removeItem(key);
+        }
+      }
+      for (const key of [this.TOKEN_KEY, this.REFRESH_TOKEN_KEY, this.TOKEN_EXPIRES_KEY, this.TOKEN_REFRESH_AT_KEY, this.CURRENT_USER_CACHE_KEY]) {
+        localStorage.removeItem(key);
+      }
+      clearAuthSessionActivity();
+    } catch {
+      // Restricted storage does not prevent a cookie session from being used.
+    }
+  }
+
   getRefreshToken(): string | null {
-    return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+    return this.sessionMode === 'legacy' ? localStorage.getItem(this.REFRESH_TOKEN_KEY) : null;
   }
 
   getTokenExpiresAt(): number | null {
@@ -171,6 +234,11 @@ class TokenService {
   }
 
   clearTokens(): void {
+    if (this.sessionMode !== 'legacy') {
+      browserWebSession.forget();
+      return;
+    }
+
     localStorage.removeItem(this.TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
@@ -403,7 +471,10 @@ class TokenService {
   /**
    * 获取有效的访问令牌（自动刷新）
    */
-  async getValidAccessToken(): Promise<string | null> {
+  async getValidAccessToken(recheckWebSession = false): Promise<string | null> {
+    const mode = await this.resolveSessionMode();
+    if (mode !== 'legacy') return mode === 'cookie' ? this.getWebToken({ recheck: recheckWebSession }) : null;
+
     const currentToken = this.getAccessToken();
 
     if (!currentToken) {
@@ -441,6 +512,7 @@ class TokenService {
    * 启动自动刷新定时器
    */
   startAutoRefresh(): void {
+    if (this.sessionMode !== 'legacy') return;
     // 如果已经有定时器在运行，先停止
     if (this.refreshTimer) {
       this.stopAutoRefresh();
@@ -449,6 +521,7 @@ class TokenService {
     log.debug('TokenService', '启动自动刷新定时器');
 
     const runCheck = async () => {
+      if (this.sessionMode !== 'legacy') return;
       const token = this.getAccessToken();
       if (!token) {
         log.debug('TokenService', '没有 Token，停止自动刷新');
@@ -531,7 +604,7 @@ class TokenService {
   }
 
   isIdleSessionExpired(): boolean {
-    return Boolean(this.getAccessToken()) && isAuthSessionIdleExpired();
+    return this.sessionMode === 'legacy' && Boolean(this.getAccessToken()) && isAuthSessionIdleExpired();
   }
 
   getRefreshRequestParameters(): Record<string, string> {
@@ -557,9 +630,11 @@ class TokenService {
   }
 
   private migrateLegacyTokenStorage(): void {
-    if (typeof window === 'undefined') {
+    if (typeof window === 'undefined' || this.migratedLegacyStorage) {
       return;
     }
+
+    this.migratedLegacyStorage = true;
 
     this.migrateLegacyKey(this.LEGACY_TOKEN_KEY, this.TOKEN_KEY);
     this.migrateLegacyKey(this.LEGACY_REFRESH_TOKEN_KEY, this.REFRESH_TOKEN_KEY);

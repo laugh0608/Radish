@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SqlSugar;
@@ -24,7 +26,7 @@ internal static class DbMigrateDoctor
         bool strict,
         bool failOnErrors = false)
     {
-        Console.WriteLine($"[Radish.DbMigrate] [Doctor] Environment: {environment}");
+        Console.WriteLine($"[Radish.DbMigrate] [Doctor] Environment: {ReportLabel(environment)}");
 
         var configuredDatabases = AppSettingsTool.RadishApp<MutiDbOperate>("Databases") ?? new List<MutiDbOperate>();
         var enabledDatabases = configuredDatabases.Where(database => database.Enabled).ToList();
@@ -33,7 +35,8 @@ internal static class DbMigrateDoctor
         var errors = new List<string>();
         var warnings = new List<string>();
 
-        Console.WriteLine($"[Radish.DbMigrate] [Doctor] MainDb: {mainDbConnId ?? "<null>"}");
+        var mainDbLabel = ReportLabel(mainDbConnId ?? "<null>");
+        Console.WriteLine($"[Radish.DbMigrate] [Doctor] MainDb: {mainDbLabel}");
         Console.WriteLine($"[Radish.DbMigrate] [Doctor] Databases: 配置 {configuredDatabases.Count} 个，启用 {enabledDatabases.Count} 个");
 
         if (configuredDatabases.Count == 0)
@@ -61,13 +64,13 @@ internal static class DbMigrateDoctor
 
         if (!string.IsNullOrWhiteSpace(mainDbConnId) && !enabledConnIdSet.Contains(mainDbConnId))
         {
-            errors.Add($"MainDb={mainDbConnId} 未在 Enabled=true 的 Databases 中找到。");
+            errors.Add($"MainDb={mainDbLabel} 未在 Enabled=true 的 Databases 中找到。");
         }
 
         foreach (var database in configuredDatabases)
         {
             var dbType = Enum.GetName(typeof(DataBaseType), database.DbType) ?? database.DbType.ToString();
-            var connId = string.IsNullOrWhiteSpace(database.ConnId) ? "<empty>" : database.ConnId;
+            var connId = string.IsNullOrWhiteSpace(database.ConnId) ? "<empty>" : ReportLabel(database.ConnId);
             Console.WriteLine($"[Radish.DbMigrate] [Doctor] ConnId={connId}, Enabled={database.Enabled}, DbType={dbType}, Target={DescribeTarget(database)}");
 
             if (database.Enabled && string.IsNullOrWhiteSpace(database.ConnectionString))
@@ -232,6 +235,23 @@ internal static class DbMigrateDoctor
         {
             errors.Add("核心表探测失败；请检查连接与迁移状态。");
         }
+    }
+
+    private static string ReportLabel(string value)
+    {
+        const int maxLength = 80;
+        var label = new StringBuilder(maxLength);
+        foreach (var rune in value.EnumerateRunes())
+        {
+            var text = Rune.GetUnicodeCategory(rune) is UnicodeCategory.Control or UnicodeCategory.Format
+                or UnicodeCategory.LineSeparator or UnicodeCategory.ParagraphSeparator
+                ? rune.IsBmp ? $"\\u{rune.Value:X4}" : $"\\U{rune.Value:X8}"
+                : rune.ToString();
+            if (label.Length + text.Length >= maxLength)
+                return label.Append('…').ToString();
+            label.Append(text);
+        }
+        return label.ToString();
     }
 
     private static string DescribeTarget(MutiDbOperate database)

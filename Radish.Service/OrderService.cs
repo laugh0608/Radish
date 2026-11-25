@@ -205,7 +205,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
             catch (Exception ex)
             {
-                Log.ForContext("EventCode", "order.purchase_failed")
+                Log.ForContext(typeof(OrderService)).ForContext("EventCode", "order.purchase_failed")
                     .ForContext("SourceCategory", "application").ForContext("purchaseStage", "payment")
                     .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
                     .Error("Purchase payment failure consumed");
@@ -249,7 +249,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
             }
             catch (Exception ex)
             {
-                Log.ForContext("EventCode", "order.purchase_failed")
+                Log.ForContext(typeof(OrderService)).ForContext("EventCode", "order.purchase_failed")
                     .ForContext("SourceCategory", "application").ForContext("purchaseStage", "fulfillment")
                     .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
                     .Error("Purchase fulfillment failure consumed");
@@ -326,7 +326,7 @@ public class OrderService : BaseService<Order, OrderVo>, IOrderService
         {
             // 包装后的业务异常默认返回 400，API 边界不会为其记录 Error。
             // 此处负责未被支付 / 履约分支消费的失败，也包括独立的补偿或后续写入失败。
-            Log.ForContext("EventCode", "order.purchase_interrupted")
+            Log.ForContext(typeof(OrderService)).ForContext("EventCode", "order.purchase_interrupted")
                 .ForContext("SourceCategory", "application")
                 .ForContext("failureKind", Radish.Common.LogTool.RuntimeFailureSummary.Classify(ex))
                 .Error("Purchase interrupted before returning a result");

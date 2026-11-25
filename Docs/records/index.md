@@ -5,6 +5,53 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-21 日终文档回顾](./day-end-doc-review-2026-11-21.md) · 日志出口、Windows 盘点、普通 Web 会话与隔离验收顺位
+- [2026-11-21 社区 Web 默认 Token 期限隔离复现](./auth-session-overnight-default-lifetime-2026-11-21.md) · 7 分钟恢复、27 分钟到期及清理验证
+- [2026-11-21 统一日志出口评审](./unified-logging-exit-review-2026-11-21.md) · 登记来源、诊断、数据保全及隔离候选退出
+- [2026-11-21 统一日志 Console 与退出联验](./unified-logging-exit-console-2026-11-21.md) · 查询与告警实现、满卷、旧版升级恢复与浏览器门禁
+
+- [2026-11-19 统一日志独立 Compose 停写与恢复联验](./unified-logging-l1-l3-compose-recovery-2026-11-19.md) · 七类真实来源、维护接收、503 快照恢复和默认级别坏块诊断
+
+- [2026-11-19 统一日志双挂载的停写与重放联验](./unified-logging-l1-l3-storage-recovery-2026-11-19.md) · 首次 flush 前中间 CRC、停写恢复及 JSONL 重放去重
+
+- [2026-11-19 统一日志留存与备份恢复隔离联验](./unified-logging-l3-retention-recovery-2026-11-19.md) · SQLite 和 PostgreSQL 的到期清理、快照对账、待投递重放及强制终止边界
+
+- [2026-11-19 统一日志候选镜像的 SQLite 传输联验](./unified-logging-l1-l3-transport-candidate-2026-11-19.md) · 请求尺寸、接收端门限、503 同批重投、两路交付与峰值 RSS
+
+- [2026-11-18 统一日志采集器候选 SQLite 联验](./unified-logging-l1-l3-collector-candidate-2026-11-18.md) · [Forward 缺口定位](./unified-logging-l1-forward-gap-2026-11-18.md) · [管理员诊断](./unified-logging-l1-forward-admin-diagnostics-2026-11-18.md) · [满卷扩容验收](./unified-logging-l1-forward-growth-acceptance-2026-11-18.md)
+
+- [2026-11-17 日终文档回顾](./day-end-doc-review-2026-11-17.md) · 五个开发提交、原版采集器运行证据与候选联验顺位
+
+- [2026-11-17 统一日志磁盘与队列故障联验](./unified-logging-l1-l3-disk-queue-runtime-2026-11-17.md) · 真实 ENOSPC、共享卷争用、文件与入库缺口及恢复
+
+- [2026-11-17 统一日志传输上界与坏批隔离联验](./unified-logging-l1-l3-transport-runtime-2026-11-17.md) · 逐条追加、HTTP 负载、进程峰值、门限与 4xx / 503 恢复行为
+
+- [2026-11-17 统一日志 L1 / L3 PostgreSQL 隔离联验](./unified-logging-l1-l3-postgres-runtime-2026-11-17.md) · 正式迁移、真实提交与重投、Log 库断连及同批恢复
+
+- [2026-11-17 统一日志 L1 / L3 SQLite 首轮联验](./unified-logging-l1-l3-sqlite-runtime-2026-11-17.md) · 真实采集、文件与入库对账、去重、标准流和应急隔离
+
+- [2026-11-14 停用 Pencil](./pencil-retirement-2026-11-14.md) · 代表页流程变更与设计源归档
+
+- [2026-11-12 日终文档回顾](./day-end-doc-review-2026-11-12.md) · 近期 19 个提交的代码与文档对照，以及真实采集联验的恢复顺序
+
+- [2026-11-12 首版诊断字段与本地输出边界](./unified-logging-l2-diagnostic-output-boundary-audit-2026-11-12.md)：API 反馈关联、Flutter 框架输出、DbMigrate 命令报告及有界应急的核验与实施
+
+- [2026-11-12 内容及表情最终输出核验与实施](./unified-logging-l2-content-sticker-output-audit-2026-11-12.md)：五个来源、13 个事件的正式出口证据、字段隔离及本地回归
+
+- [2026-11-12 Hub 自有生命周期最终输出核验与实施](./unified-logging-l2-hub-lifecycle-output-audit-2026-11-12.md)：两个异常断开事件的正式旧链和候选 JSONL 修复及本地回归
+
+- [2026-11-12 通知与实时推送最终输出核验与实施](./unified-logging-l2-notification-realtime-output-audit-2026-11-12.md)：四个来源、五个事件的正式旧链和候选 JSONL 修复及本地回归
+
+- [2026-11-12 公开查询与报表最终输出核验与实施](./unified-logging-l2-public-query-output-audit-2026-11-12.md)：四个来源、11 个事件的正式旧链和候选 JSONL 修复及本地回归
+
+- [2026-11-11 商城、库存与支付口令最终输出核验与实施](./unified-logging-l2-shop-output-audit-2026-11-11.md)：四个生成来源、七个事件码的缺口证据、命名身份 / 字段隔离修复与本地回归；真实链路门禁保留
+
+- [2026-11-11 奖励、币与经验最终输出核验与实施](./unified-logging-l2-reward-output-audit-2026-11-11.md)：六个生成来源、13 个事件码的缺口复现、字段隔离修复与本地回归；真实链路门禁保留
+
+- [2026-11-11 Outbox 最终输出本地收口](./unified-logging-l2-outbox-output-2026-11-11.md)：分派 / 重试 / 死信字段隔离、显式失败分类与 main / chat SQLite 回归；真实采集链路和 PostgreSQL 验收保留
+
+- [2026-11-10 功能完成主线收口](./planning-closeout-2026-11-10.md)：日志四批、Native 与连接衔接、阶段出口和后置；仅文档调整
+
 - [2026-11-05 日终代码与文档回顾](./day-end-doc-review-2026-11-05.md)：六个提交、浏览器与后端日志 / L3-A 本地成果、指南修正及下一有限批次建议
 
 - [2026-11-05 Controller 最终输出本地收口](./unified-logging-l2-controller-output-2026-11-05.md)：14 个精确来源、逐事件白名单、scope 污染与原业务回归；其他来源及真实运行门禁保留
@@ -96,6 +143,8 @@
 - [public-shell-change-regression-record-2026-04-16](/records/public-shell-change-regression-record-2026-04-16)
 
 ## 三、Flutter Native 记录
+
+- [2026-11-21 Flutter Native P8-C Windows 只读盘点](./f4-flutter-native-p8c-windows-readiness-2026-11-21.md) · 日常 VM 来宾证据、工具缺口及待授权命令
 
 - [Flutter Native P8-B2 macOS local runtime acceptance 关闭](/records/f4-flutter-native-p8b2-macos-local-runtime-acceptance-closure-2026-09-05) · [Flutter Native P8-B1 macOS platform foundation 实施](/records/f4-flutter-native-p8b1-macos-platform-foundation-implementation-2026-09-05) · [Flutter Native P8-B macOS local platform foundation readiness](/records/f4-flutter-native-p8b-macos-platform-foundation-readiness-2026-09-05) · [Flutter Native P8-A desktop platform readiness](/records/f4-flutter-native-p8a-desktop-platform-readiness-2026-09-05) · [Flutter Native P7-D2 / D3 外部前置条件暂缓](/records/f4-flutter-native-p7d2-d3-external-prerequisite-deferral-2026-09-01) · [Flutter Native P7-D1 minimal readiness 实施](/records/f4-flutter-native-p7d1-internal-testflight-minimal-readiness-implementation-2026-09-01) · [Flutter Native P7-D Internal TestFlight-only 项目所有者裁决](/records/f4-flutter-native-p7d-internal-testflight-owner-scope-2026-09-01) · [Flutter Native P7-D iOS 真机、签名与分发 readiness](/records/f4-flutter-native-p7d-ios-device-signing-distribution-readiness-2026-09-01) · [Flutter Native P7-C iOS Simulator 运行态验收关闭](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-closure-2026-08-31) · [Flutter Native P7-C iOS Simulator 运行态验收 readiness](/records/f4-flutter-native-p7c-ios-simulator-runtime-acceptance-readiness-2026-08-31) · [2026-08-30 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-30) · [Flutter Native P7-B iOS platform foundation 实施记录](/records/f4-flutter-native-p7b-ios-platform-foundation-implementation-2026-08-30) · [Flutter Native P7-A iOS 平台 readiness](/records/f4-flutter-native-p7a-ios-platform-readiness-2026-08-30) · [Flutter Native P6 Android AVD 门禁项目所有者关闭](/records/f4-flutter-native-p6-android-avd-gate-owner-closure-2026-08-30) · [Flutter Native P6-B Android AVD 运行态验收关闭](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-closure-2026-08-30) · [2026-08-29 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-29) · [Flutter Native P6-B Android AVD 第一轮运行态验收](/records/f4-flutter-native-p6b-android-avd-runtime-acceptance-2026-08-29)
 - [2026-08-27 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-27) · [Flutter Native P6-A Android 本地 RC 候选装配](/records/f4-flutter-native-p6a-android-local-rc-candidate-assembly-2026-08-27) · [Flutter Native P6 Android UI RC readiness](/records/f4-flutter-native-p6-android-ui-rc-readiness-2026-08-27) · [Flutter Native P5-E 成组静态门禁实现](/records/f4-flutter-native-p5e-grouped-static-gate-implementation-2026-08-27) · [P5-E readiness](/records/f4-flutter-native-p5e-grouped-static-gate-readiness-2026-08-27) · [Flutter Native P5-D3 Browse History 实现](/records/f4-flutter-native-p5d3-browse-history-implementation-2026-08-27) · [2026-08-24 日终提交回顾与文档审阅](/records/f4-day-end-doc-review-2026-08-24) · [Flutter Native P5-D3 Browse History readiness](/records/f4-flutter-native-p5d3-browse-history-readiness-2026-08-24) · [P5-D2 Leaderboard 实现](/records/f4-flutter-native-p5d2-leaderboard-implementation-2026-08-24) · [P5-D2 readiness](/records/f4-flutter-native-p5d2-leaderboard-readiness-2026-08-24) · [P5-D1 Wallet / Experience 实现](/records/f4-flutter-native-p5d1-wallet-experience-implementation-2026-08-24) · [P5-D1 readiness](/records/f4-flutter-native-p5d1-wallet-experience-readiness-2026-08-24) · [P5-C3 Commerce Private 实现](/records/f4-flutter-native-p5c3-commerce-private-implementation-2026-08-24) · [P5-C3 readiness](/records/f4-flutter-native-p5c3-commerce-private-readiness-2026-08-24) · [P5-C2 Commerce Browse / Transaction 实现](/records/f4-flutter-native-p5c2-commerce-browse-transaction-implementation-2026-08-24) · [P5-C2 readiness](/records/f4-flutter-native-p5c2-commerce-browse-transaction-readiness-2026-08-24) · [P5-C1 Docs Reader 实现](/records/f4-flutter-native-p5c1-docs-reader-implementation-2026-08-23) · [P5-C1 readiness](/records/f4-flutter-native-p5c1-docs-reader-readiness-2026-08-23) · [P5-B2 Identity / Revisit 实现](/records/f4-flutter-native-p5b2-identity-revisit-implementation-2026-08-23) · [P5-B2 readiness](/records/f4-flutter-native-p5b2-identity-revisit-readiness-2026-08-23) · [P5-B1 Forum Feed / Compose 实现](/records/f4-flutter-native-p5b1-forum-feed-compose-implementation-2026-08-23) · [P5-A 页面族拆批就绪审计](/records/f4-flutter-native-p5a-page-family-readiness-2026-08-23) · [P4-B5 成组静态门禁](/records/f4-flutter-native-p4b5-grouped-static-gate-2026-08-23) · [P4-B4 Forum Detail 实现](/records/f4-flutter-native-p4b4-forum-detail-implementation-2026-08-23) · [P4-B3 Discover 实现](/records/f4-flutter-native-p4b3-discover-implementation-2026-08-23) · [P4-B2 Adaptive Shell 实现](/records/f4-flutter-native-p4b2-adaptive-shell-implementation-2026-08-23) · [P4-B1 Theme / Shared 实现](/records/f4-flutter-native-p4b1-theme-shared-implementation-2026-08-23) · [P4-A 实施就绪审计](/records/f4-flutter-native-p4a-readiness-2026-08-23) · [P3 代表设计](/records/f4-flutter-native-p3-representative-design-2026-08-19) · [P2 主题与自适应技术基座](/records/f4-flutter-native-p2-theme-adaptive-foundation-2026-08-19) · [P1 全页面事实审计](/records/f4-flutter-native-p1-full-page-fact-audit-2026-08-19) · [MVP 回归记录](/records/flutter-android-mvp-regression-record-2026-05-01)

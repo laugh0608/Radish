@@ -60,7 +60,7 @@ public sealed partial class RuntimeLogPolicy
             message = Contract.GetProperty("events").GetProperty(eventCode);
         }
         var redacted = !known || input.EnumerateObject().Any(p => p.Name is not
-            ("level" or "diagnostic" or "eventCode" or "sourceCategory" or "properties" or "traceId" or "spanId" or "operationId"));
+            ("level" or "diagnostic" or "eventCode" or "sourceCategory" or "properties" or "traceId" or "spanId" or "requestId" or "operationId"));
         foreach (var key in new[] { "eventCode", "sourceCategory" })
             if (input.TryGetProperty(key, out var suppliedText) && suppliedText.ValueKind != JsonValueKind.String) redacted = true;
         var category = Text(input, "sourceCategory") ?? "application";
@@ -87,6 +87,18 @@ public sealed partial class RuntimeLogPolicy
         var traceId = Correlation(input, "traceId", "^[0-9a-f]{32}$", ref redacted);
         var spanId = Correlation(input, "spanId", "^[0-9a-f]{16}$", ref redacted);
         var operationId = Correlation(input, "operationId", "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", ref redacted);
+        var fatal = mapping.GetProperty("isFatal").GetBoolean();
+        string? requestId = null;
+        if (input.TryGetProperty("requestId", out var request))
+        {
+            var id = request.ValueKind == JsonValueKind.String ? request.GetString() : null;
+            if (_source.Service == "api" && eventCode == "http.failed" && category == "http" && level == "Error" &&
+                !diagnostic && !fatal && properties.TryGetValue("statusCode", out var status) && status is double and >= 500 &&
+                IsValidRequestId(id))
+                requestId = id;
+            else
+                redacted = true;
+        }
         var now = _clock.GetUtcNow().ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture);
         return new RuntimeLogEvent
         {
@@ -94,12 +106,15 @@ public sealed partial class RuntimeLogPolicy
             OccurredAtUtc = now, ObservedAtUtc = now,
             DeploymentId = _source.DeploymentId, Service = _source.Service, InstanceId = _source.InstanceId,
             Release = _source.Release, Mode = _mode, SourceCategory = category,
-            Level = level, Diagnostic = diagnostic, IsFatal = mapping.GetProperty("isFatal").GetBoolean(),
+            Level = level, Diagnostic = diagnostic, IsFatal = fatal,
             MessageTemplate = message.GetString()!, Message = message.GetString()!, Properties = new System.Collections.ObjectModel.ReadOnlyDictionary<string, object>(properties),
-            TraceId = traceId, SpanId = spanId, OperationId = operationId,
+            TraceId = traceId, SpanId = spanId, RequestId = requestId, OperationId = operationId,
             NormalizationStatus = known && eventCode != "runtime.unclassified" ? "normalized" : "unclassified", Redacted = redacted, Truncated = false
         };
     }
+
+    public static bool IsValidRequestId(string? value) => value is { Length: >= 1 and <= 64 } &&
+        value.All(c => char.IsAsciiLetterOrDigit(c) || c is ':' or '_' or '-');
 
     private static string? Correlation(JsonElement input, string key, string pattern, ref bool redacted)
     {

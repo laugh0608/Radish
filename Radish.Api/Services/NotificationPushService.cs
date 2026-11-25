@@ -39,11 +39,8 @@ public sealed class NotificationPushService : INotificationPushService
         }
         catch (Exception exception)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "notification.push_failed", ["SourceCategory"] = "business"
-            });
-            _logger.LogWarning("Notification realtime push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
+            _logger.LogWarning(new EventId(1, "NotificationPushFailed"),
+                "Notification realtime push unavailable; kind={failureKind}", RuntimeFailureSummary.Classify(exception));
         }
     }
 

@@ -159,14 +159,8 @@ public class ReactionService : BaseService<Reaction, ReactionSummaryVo>, IReacti
         }
         catch (Exception ex) when (IsUniqueConstraintConflict(ex))
         {
-            using (_logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "reaction.retrying",
-                ["SourceCategory"] = "business"
-            }))
-            {
-                _logger.LogWarning("Reaction retry selected after a conflict; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
-            }
+            _logger.LogWarning(new EventId(1, "ReactionRetrying"),
+                "Reaction retry selected after a conflict; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
 
             try
             {

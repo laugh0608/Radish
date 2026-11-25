@@ -1,6 +1,6 @@
 # 统一日志事件契约与实现进度
 
-> 更新：2026-11-05。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)。新增证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 入口层已接入显式候选开关，见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)；生产默认链路未切换。
+> 更新：2026-11-12。L1 生成契约与采集安全 / 故障可见性子项已实现。主方案见[统一日志专题](./unified-logging-governance-design.md)，首轮实测见[L1 记录](../records/unified-logging-l1-contract-and-transport-2026-09-19.md)，采集证据见[采集安全与故障边界](../records/unified-logging-l1-guarded-collector-2026-09-19.md)。L2 显式候选开关见[生成入口记录](../records/unified-logging-l2-producer-entry-2026-09-19.md)，首版诊断字段与本地输出见第 89 节。生产默认链路未切换。
 
 ## 1. 策略唯一来源
 
@@ -9,7 +9,7 @@
 - .NET：作为 `Radish.Common` 嵌入资源，由 `RuntimeLogPolicy` 读取；不依赖业务层。
 - Node：`Frontend/scripts/logging/runtime-event.mjs` 读取同一文件；静态服务器已接入候选输出，Dockerfile 随运行脚本复制此策略。
 - 两端运行同一组 [`runtime-events.json`](../../Scripts/logging/fixtures/runtime-events.json) 样本，不各写一份脱敏规则。
-- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用；浏览器本地 logger 已完成本批迁移，边界见第 74 节；Flutter logger 仍待确认；数据库接收已完成 L3-A 本地切片，运行接入与迁移验收见第 75 节。旧默认行为见[日志系统](../guide/logging.md)。
+- Serilog 已提供与旧 sinks 互斥的候选路径，默认尚未启用。浏览器本地 logger 见第 74 节，Flutter 应用本地报告见第 89 节。数据库接收已完成 L3-A 本地切片，运行接入与迁移验收见第 75 节。旧默认行为见[日志系统](../guide/logging.md)。
 
 ## 2. 生成契约 v1 首批字段
 
@@ -25,10 +25,11 @@
 | `sourceCategory` | 注册表内的来源分类；未知分类回到 application 并标记裁剪 |
 | `messageTemplate / message` | 首批仅登记的静态安全说明；没有自由文本插值 |
 | `properties` | 有限数值 / 整数范围或固定枚举；尚不接受自由文本、数组及嵌套对象 |
-| `traceId / spanId / operationId` | 可选、格式严格限制；trace / span 拒绝全零值 |
+| `traceId / spanId / operationId` | 可选，格式严格限制。trace / span 拒绝全零值；.NET Serilog 关联来源见第 89 节 |
+| `requestId` | 可选，1–64 个 ASCII 字母、数字、`:`、`_`、`-`。仅用于 API 自有异常处理器成功写入的 5xx `http.failed`，与响应反馈 ID 一致 |
 | `normalizationStatus / redacted / truncated` | 未分类或裁剪行为可辨识；当前是省略未知数据，不把省略伪称字符串截断 |
 
-`containerId` 现由采集规范化层从 Docker FullID 标签补充；instanceId 只保留与 FullID 匹配的完整 / 短 ID，否则使用受信 FullID 并标记裁剪。`requestId / jobId / tenantId` 的权威上下文、异常类型 / 安全栈帧在宿主适配时补齐。当前最终处理边界只提供固定枚举 `failureKind`；未知异常归为 other，不回显 `Exception.Message / StackTrace / Data`。不能把首批字段子集称为最终全部 schema。
+`containerId` 由采集规范化层从 Docker FullID 标签补充。instanceId 只保留与 FullID 匹配的完整 / 短 ID，否则使用受信 FullID 并标记裁剪。异常摘要使用固定枚举 `failureKind`，未知异常归为 other，省略 `Exception.Message / StackTrace / Data`。`jobId / tenantId`、异常类型与安全栈帧列为后续增强。
 
 ## 3. 安全与模式
 
@@ -65,13 +66,13 @@ dotnet test Radish.Api.Tests/Radish.Api.Tests.csproj --no-restore --filter Fully
 
 `node Scripts/logging/collector-probe.mjs` 会启动隔离容器，必须取得当前任务授权；固定镜像、端口及清理边界见脚本与 L1 记录。默认报告输出 `.tmp/logging-l1/boundary-report.json`；原始传输报告仍为 `collector-report.json`。`guarded-boundaries-observed` 仅表示本机采集边界实验通过，不是生产发布成功。
 
-采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已取得本机证据。L2 入口与 SQL / AOP / 事务 / DbMigrate 入口、seed / 具体 migration / Auth seed 子项已落地，Outbox 与 Rust 显式输出见第 9 节，Hangfire / 清理任务见第 10 节，后台业务 Job、奖励发放、服务内清理与币扣除 / 转账见第 11–14 节，后续账户 / 商城 / 附件、支付口令、公开内容、统计报表子项见第 15–29 节，用户关注通知入队、通知创建 / 推送、通知 Hub、用户关系失效推送、ChatHub、评论实时推送、CommentHub、评论高亮链、轻回应通知入队、评论最终消费、内容提交冲突恢复、帖子编辑 / 置顶、版本恢复、问答、投票、抽奖、标签 / 分类创建与更新、表情回应最终消费及冲突重试见第 30–48 节，表情管理消费与降级边界见第 49 节，API 已处理 404 完成边界见第 50 节，其余业务与框架来源继续治理；L1 的正式传输上界、目标部署平台和完整磁盘故障验证仍须关闭。L3 的真实 API / SQLite / PostgreSQL 幂等入库、L4 Console 查询、L5 告警、L6 迁移仍未完成，生产链路保持不变。
+采集输入安全、API 不存在时启动、文件路径故障及队列满时丢弃可见性已有本机证据。L2 生成端、框架及精确来源的本地输出见第 6–74、76–89 节，L3-A 本地接收见第 75 节。真实 API / SQLite / PostgreSQL 入库、正式传输上界、目标部署与磁盘故障随 [L1 / L3 联验](./unified-logging-l3-ingest-plan.md#l1-l3-first-runtime-verification)。L4 查询、L5 告警及 L6 迁移沿[专题收口批次](./unified-logging-governance-design.md#closeout-batches)推进。
 
-2026-10-02 日终静态复核补充：第 38、39、41 节中的早期轻回应 / 评论 / 帖子消费点仍在响应构造或失败结果转换之前记录日志，再读取异常 Message。若该 getter 自身抛错，可能已输出原消费事件，又把新异常交给 API；这类“错误处理再次失败”路径尚未包含在这些批次的单次输出结论中，后续需独立核对。第 42–48 节已在各自已列明的转换 / 响应边界补验先构造成功再记录，不应反推全部早期入口已经具备同样保证。
+2026-10-02 日终复核发现第 38、39、41 节的早期轻回应 / 评论 / 帖子消费点会在错误结果构造前记录。第 57 节已修复并验证列明的消费点，第 77、88 节分别补齐 Controller 和 Service 的最终输出证据。
 
 ## 6. L2 候选生成入口
 
-`RadishLogging.Enabled` 默认 false；这是一项阶段性迁移开关，不是新增日志模式。API / Auth / Gateway 在配置加载完成后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例；启用时不再读取旧 Serilog sink / MinimumLevel 配置。DbMigrate 已将命令报告与诊断分开；seed / 具体 migration 已接入安全事件，其他裸输出旁路尚未收口，禁止据此提前切换生产。
+`RadishLogging.Enabled` 是默认关闭的迁移开关。API / Auth / Gateway 在配置加载后创建 `RuntimeLoggingSession`，引导和运行共用一个 Serilog 实例。启用时使用候选 JSONL 输出和独立的最低等级配置。DbMigrate 命令报告与诊断分流，seed / 具体 migration 使用安全事件。CLI 与应急的真实流识别随第 89 节所列批次验收。
 
 | 配置 | 默认 / 约束 |
 | --- | --- |
@@ -115,7 +116,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 - Outbox 空分派保持安静，实际分派一批后仅生成 `outbox.dispatched`，包含 count / durationMs。分派数量不等同于成功处理数量；逐消息成功仍以 Outbox 状态为准，不增加逐条运行日志。
 - `ReliableOutboxRepository` 在条件更新确实影响行后记录 `outbox.retrying`（Warning）或 `outbox.dead_letter`（Error）；使用本次真正选择的 Pending / DeadLetter 状态，不在 Job 根据旧快照猜测重试是否耗尽。无效状态、重复执行和未影响行的写入不生成状态事件。`ReliableOutboxExecutionJob` 不再追加携带异常及业务标识的 Error。
-- `attempt / databaseScope / outcome` 均为受控属性，Service 通过逻辑上下文补充安全 `failureKind`。`operationId` 由固定前缀、规范库名与 Outbox ID 的 SHA-256 前 16 字节转换为 Guid，同一部署同一库同一任务重试 / 重放可关联；部署之间须同时使用日志 source 区分。它不是凭据，也不替代权威审计键。载荷、任务类型原文、机器名、用户标识和异常文本不进入本批日志。
+- `attempt / databaseScope / outcome` 均为受控属性，Service 通过仓储接口显式传递安全 `failureKind`；最终出口规则见[第 82 节](#l2-outbox-final-output)。`operationId` 由固定前缀、规范库名与 Outbox ID 的 SHA-256 前 16 字节转换为 Guid，同一部署同一库同一任务重试 / 重放可关联；部署之间须同时使用日志 source 区分。它不是凭据，也不替代权威审计键。载荷、任务类型原文、机器名、用户标识和异常文本不进入本批日志。
 - 重试间隔、抖动、MaxAttempts、租约、审计错误码及永久失败摘要和内容治理失败记录保持原义。瞬时失败的固定审计提示改为查看错误码和安全摘要，不再误导读者寻找已禁止输出的完整异常。本批没有修复既有租约归属保护问题；日志不是额外数据库事务，也不保证跨重放全局只记录一次失败。领取 / 写库 / 内容治理记录自身抛出的异常仍传播，其 Hangfire 处理边界见第 10 节。
 - Rust FFI 移除显式 stderr 打印，只返回既有 ABI 错误码：watermark 为 0 / -1，hash 为 0 / -1 / -2。.NET 使用受控 `nativeOperation / nativeReason / failureKind` 生成安全事件，不输出文件路径、水印、哈希、异常文本或原生错误正文。
 - `native.fallback` 与 `native.cleanup_failed` 是 Warning；直接 hash 失败或 native 声称成功却无输出文件使用 `native.failed` Error。图片水印本来就走 C#，无需降级警告；正常工厂创建也不逐次打印 Info。水印 fallback 只调用一次，其结果 / 异常继续交给业务调用方最终处理。
@@ -721,7 +722,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - Log 库增加 `runtime_log_event` 与 `runtime_log_rejection_bucket`，migration 为 `20261105_023_runtime_log_ingest`。唯一键 `(deployment_id,event_id)` 处理重放；同键异内容拒收、不覆盖；保留原 eventId / UTC 毫秒时间，存储主键和入库时间独立。新表不继承旧分表或软删除模型。
 - Repository 选择既有 Log 配置，用独立参数化事务避开 ORM 日志 / 业务事务；API 不建表。拒收桶保留当前 UTC 日及此前 6 日，每次事务最多清理 200 个过期桶，旧运行 / 审计表不变。
 - 接收分支不进入通用 body audit，主日志链抑制接收作用域及 Hosting 的正常 `/internal` 请求事件；失败走独立限频 stderr。SQLite PRAGMA catch 改为固定操作 / failureKind 摘要，仍返回 false，不改变初始化重试或事务行为。
-- 内存 HTTP 与临时 SQLite 的认证 / 端口分流、预算、取消、并发、幂等、回滚、迁移和最终输出回归见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。PostgreSQL 16、真实监听 / collector、ENOSPC、部署恢复和旧版回滚尚未验收；L1 / L2 / L3 整体未关闭。
+- 内存 HTTP 与临时 SQLite 的认证 / 端口分流、预算、取消、并发、幂等、回滚、迁移和最终输出回归见[实施记录](../records/unified-logging-l3-ingest-local-2026-11-05.md)。后续 OrbStack / Linux arm64 验证真实监听、SQLite 与 PostgreSQL 16.15 提交重放，以及原版 collector 的磁盘和队列故障。候选补丁、本地留存部署、备份恢复和旧版回滚分别按衔接方案验收。[运行证据索引](../records/day-end-doc-review-2026-11-17.md)
 - 完整配置、响应与下一顺位见[衔接方案](./unified-logging-l3-ingest-plan.md)。生产链路、浏览器 / Native 回传、Console 查询和告警未开启。
 
 
@@ -747,3 +748,116 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 - 每个 Controller 的未知 / 缺失 / 跨来源身份进入 `controller.{owner}.unknown`；owner 为 coin、payment_password、attachment、shop、reaction、quick_reply、poll、lottery、question、post、comment、tag、category、sticker。共享事件目录同步固定说明。Warning 以上保留安全摘要；更低等级仅 Development 宿主、Development 模式且显式 Diagnostics 时输出，不信任载荷 Diagnostic。
 - 原 catch 类型、结果构造 / 本地化 / Message 求值顺序、状态与业务副作用不变。第 57 节的早期消费边界继续保持；本批不增加重试、回滚或全请求去重。WriteTo 故障仍消费，AuditTo 仍可传播；候选输出故障走既有限频应急通道。
 - 本地最终出口、真实 action 与定向反射消费方法、原业务回归及证据限制见[实施记录](../records/unified-logging-l2-controller-output-2026-11-05.md)。不据此关闭 Service / Job / Hub、真实 File / DB 故障、运行 Smoke 或 L2 整体；生产开关保持关闭。
+
+<a id="l2-business-job-final-output"></a>
+
+## 78. L2 共享后台业务 Job 最终输出（2026-11-10）
+
+- 精确来源为 `Radish.Service.Jobs.BusinessJobSummary`，覆盖商城取消、权益到期、商城日报、评论高亮和保留奖励五个入口。三个既有 `job.batch.completed / warning / failed` 事件保留原等级、时间和类型化 trace / span，固定 `SourceCategory=job` 及 `Diagnostic=false`。抽奖 Job 等同名事件沿各自的来源处理。
+- `BusinessJobLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选输出。只保留该 helper 的五种 `jobKind`、事件允许的 `outcome`、六项非负计数及有界 `durationMs`，只有失败事件保留封闭 `failureKind`。剔除原模板、异常对象、字符串关联键、无关字段和普通 scope。精确来源上未登记的事件使用既有 `runtime.unclassified` 安全摘要，等级低于 Warning 时标为诊断。
+- 原业务计数、返回、锁释放、事务、重试和异常归属保持。WriteTo 输出失败仍由该链消费，AuditTo 仍可传播，候选输出走既有限频应急。五入口回归和商城取消的真实配置输出证据见[实施记录](../records/planning-closeout-2026-11-10.md#l2-job-output-implementation)。真实任务调度、File / DB sink、collector 以及 L2 整体继续沿各自验收条件。
+
+<a id="l2-lottery-job-final-output"></a>
+
+## 79. L2 抽奖 Job 最终输出（2026-11-10）
+
+- 精确来源为 `Radish.Service.Jobs.PostLotteryJob`。`ExecuteAutoDrawAsync` 保留 `job.batch.completed`（Information，`succeeded`）与 `job.batch.failed`（Error，`partial` / `failed`）。`BusinessJobLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选输出。固定 `SourceCategory=job`、`jobKind=post-lottery`、`Diagnostic=false`，保留原事件时间与类型化 trace / span。
+- 摘要只携带原批次的非负 `processedCount` / `failedCount`、有界 `durationMs`、对应的 `outcome`，失败时保留封闭 `failureKind`。适配使用固定模板，剔除外层 scope、字符串关联值和异常对象。该来源的 `job.batch.warning` 等未登记事件按 `runtime.unclassified` 安全摘要处理，等级低于 Warning 时标为诊断。同名异来源沿各自规则处理。
+- 空批次保持安静，原扫描异常交给 Hangfire，单项失败继续处理。保留去重、返回值、开奖事务、审计与 Outbox，以及 WriteTo、AuditTo 和候选输出各自的故障处理。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-lottery-job-output-implementation)。真实调度、生产介质和 collector 依各自条件验收。
+
+<a id="l2-cleanup-job-final-output"></a>
+
+## 80. L2 文件及记录清理 Job 最终输出（2026-11-10）
+
+- `CleanupJobLogSink` 在上下文合并后重建四个精确来源，覆盖旧链代码及配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件使用固定模板、`SourceCategory=job` 和 `Diagnostic=false`，仅保留对应事件的字段及类型化 trace / span。重建的 Serilog 事件保留原等级和时间戳，候选 JSONL 由现行公共策略在规范化时生成时间字段。精确来源上未登记的事件使用 `runtime.unclassified` 安全摘要，等级低于 Warning 时标为诊断。
+- `Radish.Service.Jobs.FileCleanupJob` 的四个入口使用该固定来源。完成、警告和失败保留原 `jobKind`、`outcome`、七项非负计数及有界 `durationMs`。只有失败或目录清理异常警告携带封闭 `failureKind`。缺失文件仍计入原已处理数，实际移动数量仍由 `movedCount` 表示。
+- `Radish.Api.Services` 下的 `NotificationInboxCleanupJob`、`WikiDraftPayloadCleanupJob` 和 `ChatMessageReactionOperationCleanupJob` 各自固定 `jobKind`。收件箱完成保留三种删除计数和时长，容量告警只保留本批告警条数。Wiki 与聊天完成各保留数量和时长。
+- 文件批次和记录清理保持第 10 节的清理行为及异常归属。WriteTo 输出故障由该链消费，AuditTo 保留异常传播，候选输出故障走有限应急。真实目录权限故障、Hangfire 调度、生产介质与 collector 仍有各自验收条件。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-cleanup-job-output-implementation)。
+
+<a id="l2-service-cleanup-final-output"></a>
+
+## 81. L2 服务内清理最终输出（2026-11-10）
+
+- 精确来源为 `Radish.Service.Internal.ServiceCleanupSummary`。`ServiceCleanupLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件固定 `Diagnostic=false`，保留类型化 trace / span 及 Serilog 事件的原等级和时间戳。候选 JSONL 的时间字段由公共策略在规范化时生成。未登记的组合使用 `runtime.unclassified` 安全摘要，等级低于 Warning 时标为诊断。
+- `upload-sessions` 登记完成、中断和失败，`file-tokens` 登记完成和中断。后台事件固定 `SourceCategory=job`，保留原六项非负计数、合法 `jobKind`、对应 `outcome` 及有界 `durationMs`，已消费失败另保留封闭 `failureKind`。中断事件为 Info，只描述此前完成的进度。
+- 前台 `upload.cleanup.failed` 固定 `SourceCategory=application`，只保留 `directory / quota-release / quota-complete` 之一及封闭 `failureKind`。附件 Controller 的同名事件沿自身来源适配。
+- 业务及异常归属依第 13 节。WriteTo 消费输出故障，候选输出故障走有限应急。AuditTo 保留输出异常传播，写入中断摘要失败时可覆盖正在传播的仓储异常。见[本地实施记录](../records/planning-closeout-2026-11-10.md#l2-service-cleanup-output-implementation)。
+
+<a id="l2-outbox-final-output"></a>
+
+## 82. L2 Outbox 最终输出（2026-11-11）
+
+- `OutboxLogSink` 在上下文合并后按精确来源重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件固定 `SourceCategory=job`、`Diagnostic=false`，保留类型化 trace / span 及 Serilog 事件的原等级和时间戳；候选 JSONL 的时间字段沿公共规范化策略生成。未知事件、来源与事件码错配或等级不符使用 `runtime.unclassified` 安全摘要，低于 Warning 时标为诊断；邻接来源不匹配。
+- `Radish.Api.Services.ReliableOutboxDispatcherJob` 仅登记 `outbox.dispatched` Information，保留非负整数 `count` 和有界 `durationMs`。数量表示入队次数，不表示执行成功数；分派摘要不继承外层 `operationId`、失败分类和状态字段。
+- `Radish.Repository.ReliableOutboxRepository` 固定绑定状态来源，登记 `outbox.retrying` Warning 与 `outbox.dead_letter` Error。仅保留 `databaseScope=main / chat`、有界整数 `attempt`、对应 `outcome=retrying / failed`、封闭 `failureKind` 和状态写入方绑定的规范 GUID `operationId`。沿用第 9 节的关联算法及库域，不从自由上下文补齐状态身份。
+- `IReliableOutboxRepository.MarkFailedAsync` 增加缺省为 null 的可选 `failureKind`；Service 使用既有分类器显式传入，Repository 绑定该值（包括 null），最终适配丢弃非法分类。直接调用兼容原参数，缺省时不继承外层分类。保留实际条件更新影响行后才输出、重复执行及零行更新安静、原重试 / 死信 / 审计 / 租约语义。
+- WriteTo 消费输出故障，AuditTo 继续传播原 sink 的聚合异常，候选输出走有限应急；日志失败不回滚已经完成的状态写入或入队。见[本地实施记录](../records/unified-logging-l2-outbox-output-2026-11-11.md)。真实 Hangfire、PostgreSQL 并发和 collector / 介质仍按原门禁验收。
+
+<a id="l2-reward-final-output"></a>
+
+## 83. L2 奖励、币与经验最终输出（2026-11-11）
+
+- 六个生成来源固定绑定自己的 `SourceContext`；`RewardLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 与候选 JSONL。精确来源、13 个事件码及各自领域 / 操作 / 等级目录见[第 10.8 节字段表](./unified-logging-l3-ingest-plan.md#l2-reward-output)。登记事件固定 `SourceCategory=application`、`Diagnostic=false`，生产候选不会再因外层诊断标记丢弃这些事件。
+- `RewardRuntimeLog` 的 retrying 仅保留 coin / experience、整数 attempt 与 delayMs；failed 仅接受 experience 的 grant / grant-once / initialize；conflict 固定 experience / grant-once；cache_fallback 仅接受 experience 的三个缓存操作。batch_completed / batch_failed 保留领域、原 outcome 和三项非负整数计数，不按计数重新推断结果。completed 可表示拒绝或部分结果，仅 failed 保留本批消费异常的封闭 failureKind。
+- `CoinService` 的 transfer_completion_recovered 和 `CoinRewardService` 的 existence_check_failed 仅保留封闭 failureKind；`OperationIdempotencyService` 的 completion_missing 仅保留 success / failure 的 completionKind。`ExperienceService` 的排名查询失败和坏快照事件仅保留 failureKind，排行榜缺失用户仅保留非负整数 skippedCount。`ExperienceCalculator` 的缓存降级仅保留 cache-read / cache-write / cache-invalidate 与 failureKind。
+- attempt 允许 0–1,000,000，delayMs 允许 0–60,000；计数仅接受非负 int。非法数值或 failureKind 丢弃，不转成自由文本。原模板、异常对象、普通 scope 的 operationId、字符串 trace / span 与无关字段剔除；保留类型化 trace / span、Serilog 原时间及等级，JSONL 时间沿公共规范化策略。精确来源上未知 / 缺失 / 跨来源事件身份、错误等级或未登记业务枚举组合生成安全 `runtime.unclassified`，低于 Warning 标为诊断并沿既有出口门禁处理；邻接来源不匹配。
+- 保留币三次及经验六次重试、延迟 / 抖动、发放、幂等、调账、转账、审计、事务及 Outbox。经验单项已消费失败不再次算作批次异常；转账 recovered 仅表示完成记录重试调用返回。查询失败返回 true / 0、坏快照空列表、分页和缓存回退保持原结果。
+- WriteTo 消费输出故障，AuditTo 传播，候选输出走有限应急。AuditTo 可在币批次写入后抛错、使经验失败路径无法返回 false、使缓存错误后的数据库回退不再执行；本批保留这些既有语义。业务真实方法及最终出口回归见[实施记录](../records/unified-logging-l2-reward-output-audit-2026-11-11.md#implementation)。依赖替身不替代真实账本 / Redis / 调度 / collector 验收，生产开关保持关闭。
+
+<a id="l2-shop-final-output"></a>
+
+## 84. L2 商城、库存与支付口令最终输出（2026-11-11）
+
+- `OrderService`、`ProductService` 与 `UserInventoryService` 在现有 Serilog 生成点固定各自 SourceContext；`PaymentPasswordService` 保持类型化来源，使用 `1/PaymentLocksCleared` 与 `2/PaymentSuggestionsFailed` 两个命名 EventId。普通 scope 的 EventCode 不能选择支付口令事件，两个 ID 的数值与名称必须同时匹配。
+- `ShopLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。精确来源、七个事件码及等级见[第 10.9 节](./unified-logging-l3-ingest-plan.md#l2-shop-output)。登记事件固定 application 分类与 `Diagnostic=false`，使用固定模板，保留 Serilog 原时间 / 等级与类型化 trace / span；JSONL 时间沿公共规范化策略。
+- `product.configuration_rejected` 不保留扩展字段；`product.stock_retrying` 仅保留 int attempt / delayMs，分别为 0–1,000,000 / 0–60,000。`order.purchase_failed` 仅保留 payment / fulfillment 的 purchaseStage 与封闭 failureKind；`order.purchase_interrupted`、`inventory.rename_rejected` 仅保留 failureKind。`payment.locks_cleared` 仅保留正 int processedCount，`payment.suggestions_failed` 仅保留 failureKind。无异常的配置拒绝、库存重试与锁定清理不继承外层失败分类。
+- 原模板、异常对象、普通 operationId、字符串 trace / span、任意 scope 和跨事件字段剔除；非法数值 / failureKind 丢弃。未知 / 缺失 / 错配事件身份、错误等级或非法购买阶段使用安全 `runtime.unclassified`，低于 Warning 标为诊断并沿既有出口门禁处理；邻接来源不匹配，不按共享事件码全局拦截。
+- 第 14、16、19–20、25 节业务和异常归属保持：库存最多五次尝试及原退避，支付失败的库存回补，履约失败后的订单 / 已售数调用，独立补偿或后续写入失败的外层包装，改名两类包装差异，权益 / 幂等 / Outbox 与口令算法 / 锁定 / 审计 / 回退文字均不改。无运行日志的 UserBenefitService 不增加事件，Controller 已完成适配仅作防回归。
+- WriteTo 消费输出故障，AuditTo 传播，候选输出走有限应急。AuditTo 仍可中断库存重试、在支付失败回补前抛错、阻止改名 400 包装及安全建议回退、在仓储已返回清理数量后抛错；不将 mock 调用顺序解释为真实事务最终状态。最终出口与真实方法回归见[实施记录](../records/unified-logging-l2-shop-output-audit-2026-11-11.md#implementation)。真实数据库 / 介质 / collector 验收及 L2 整体继续沿原门禁，生产开关保持关闭。
+
+<a id="l2-public-query-final-output"></a>
+
+## 85. L2 公开查询与报表最终输出（2026-11-12）
+
+- `PublicHeadSnapshotService` 和 `PublicSitemapService` 在合计六个 Serilog 生成点绑定各自类型来源及事件码，最终分类为 `application`。Gateway 客户端和注入中间件保留类型化来源，最终分类为 `http`。`PublicMetadataLogSink` 在上下文合并后为旧链代码 / 配置 WriteTo、AuditTo 和候选 JSONL 重建固定摘要。精确来源、等级和字段见[第 10.10 节](./unified-logging-l3-ingest-plan.md#l2-public-query-output)。
+- `PublicHeadSnapshotClient` 使用 `1/PublicHeadSnapshotUnavailable`、`2/PublicHeadSnapshotRequestFailed`、`3/PublicHeadHtmlUnavailable` 和 `4/PublicHeadHtmlRequestFailed`。中间件使用 `1/PublicHeadInjectionFailed`。命名 EventId 必须同时匹配来源、数值和名称，普通 EventCode 不能补齐 Gateway 身份。
+- 九个失败摘要仅接受封闭 `failureKind`。两个不可用摘要仅接受 100–599 内的非 2xx `int` 状态，快照不可用额外排除 404，前端 HTML 不可用允许 404。非法字段丢弃。登记事件固定为非诊断。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断，按各出口的既有门禁处理。
+- 保留原等级、Serilog 时间和类型化 W3C trace / span，优先使用事件自带关联，其次使用当前 W3C Activity。JSONL 时间沿公共规范化策略。重建后仅保留事件身份和该事件登记字段；异常、原始模板及载荷、外层普通关联属性和 `operationId` 均被剔除。
+- 第 26–29 节的缓存、TTL、XML 回退、部分索引、快照 404、Gateway 后续管道与既有 HTTP 响应保持。API 与 Gateway 分别记录各自消费边界；发现流、排行榜及统计报表沿原 API 最终处理器。WriteTo 消费 sink 故障，AuditTo 继续传播，候选 writer 故障使用有界应急摘要。见[实施记录](../records/unified-logging-l2-public-query-output-audit-2026-11-12.md#implementation)。真实介质和 collector 随对应批次验收。
+
+<a id="l2-notification-realtime-final-output"></a>
+
+## 86. L2 通知与实时推送最终输出（2026-11-12）
+
+- `UserFollowService`、`NotificationPushService`、`UserInteractionRealtimeNotifier` 和 `CommentRealtimePushService` 沿用类型化 logger，五个生成点使用命名 EventId。匹配精确来源、数值、名称和原等级，普通 scope 的 EventCode 不能补齐身份。事件表见[第 10.11 节](./unified-logging-l3-ingest-plan.md#l2-notification-realtime-output)。
+- `NotificationRealtimeLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 及候选 JSONL 的固定摘要。登记事件为 `application` 和 `Diagnostic=false`，仅保留封闭 `failureKind`。无效字段丢弃。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断并沿各出口既有门禁处理。
+- 保留 Serilog 原时间、等级与类型化 W3C trace / span，优先用事件关联，缺省取当前 W3C Activity。JSONL 时间沿公共规范化策略。重建剔除外层 `operationId`、字符串关联、任意属性、异常、原模板及载荷。
+- 第 30–31、33、35、38 节的业务与异常归属沿用既有契约，包含关注响应、通知入箱与 Outbox、双 Hub 和接收者顺序、评论成功响应及后续高亮推送。WriteTo 消费输出故障，候选 writer 使用有界应急，AuditTo 继续传播并可中断既有调用。见[实施记录](../records/unified-logging-l2-notification-realtime-output-audit-2026-11-12.md#implementation)。真实 WebSocket、介质与 collector 随各自批次验收。
+
+<a id="l2-hub-lifecycle-final-output"></a>
+
+## 87. L2 Hub 自有生命周期最终输出（2026-11-12）
+
+- `ChatHub` 和 `NotificationHub` 沿用类型化 logger，分别使用 `1/ChatConnectionClosed` 和 `1/NotificationConnectionClosed`。精确来源、数值、名称和 Warning 共同识别 `chat.connection_closed` 与 `notification.connection_closed`。普通 scope 的 EventCode 和 SignalR 框架的 EventId 均不能补齐 Hub 自有事件身份。
+- 两个来源复用 `NotificationRealtimeLogSink` 的字段重建逻辑，覆盖旧链代码 / 配置 WriteTo、配置 AuditTo 和候选 JSONL。登记事件使用固定摘要、`application` 分类及 `Diagnostic=false`，仅保留封闭 `failureKind`。精确来源的缺失或错配身份、错误等级重建为安全 `runtime.unclassified`，低于 Warning 标为诊断并按各出口既有门禁处理。
+- 保留原 Serilog 时间、等级和类型化 W3C trace / span，优先使用事件自带关联，缺省取当前 W3C Activity。JSONL 时间沿公共规范化策略。重建剔除连接 / 用户 / 租户属性、额外字段、普通字符串关联、`operationId`、异常、原模板及载荷。
+- 第 32、34、36 节的清理顺序、凭据与身份规则、正常断开、非正用户 ID 分支和异常传播保持。WriteTo 消费 sink 故障，候选 writer 使用有界应急，AuditTo 仍可在清理完成后中断断开回调。CommentHub 安静性和 SignalR 框架各自沿原事件归属。见[第 10.12 节](./unified-logging-l3-ingest-plan.md#l2-hub-lifecycle-output)及[实施记录](../records/unified-logging-l2-hub-lifecycle-output-audit-2026-11-12.md#implementation)。
+
+<a id="l2-content-sticker-final-output"></a>
+
+## 88. L2 内容及表情最终输出（2026-11-12）
+
+- `CommentService`、`ContentSubmissionService` 和 `ForumContentRevisionService` 固定 Serilog 类型来源及原事件码。`ReactionService` 和 `StickerService` 使用类型化 logger 与固定命名 EventId。13 个事件的精确来源、等级和身份见[第 10.13 节](./unified-logging-l3-ingest-plan.md#l2-content-sticker-output)。`CommentService` 的 `comment.edit_failed` 由服务自身绑定来源，Controller 的同名事件沿原适配器。
+- `ContentStickerLogSink` 在上下文合并后重建旧链代码 / 配置 WriteTo、配置 AuditTo 与候选 JSONL。登记事件固定模板、`application` 分类与 `Diagnostic=false`，扩展字段仅允许封闭 `failureKind`。原等级、Serilog 时间、事件自带或当前 W3C Activity 的类型化关联保留，JSONL 时间沿公共策略。普通 scope 关联、`operationId`、额外属性、原模板、异常及载荷剔除。精确来源的错配或缺失身份、错误等级使用受控 `runtime.unclassified`，低于 Warning 标为诊断。
+- 第 37、39–40、42、48–49 节的业务返回、事务与异常归属保持。WriteTo 消费输出故障，候选 writer 使用有界应急，AuditTo 仍可阻止返回既有恢复结果、打断重试或缓存回源。评论内层日志输出失败仍可进入外层重算 catch。见[实施记录](../records/unified-logging-l2-content-sticker-output-audit-2026-11-12.md#implementation)。真实介质、数据库并发与 collector 随对应批次验收。
+
+<a id="l2-diagnostic-output-boundaries"></a>
+
+## 89. L2 首版诊断字段与本地输出边界（2026-11-12）
+
+- `ApiExceptionHandler` 的 `1/ApiRequestFailed` 在 5xx 响应写入成功后绑定 `requestId`。值来自该响应使用的 `HttpContext.TraceIdentifier`，与原响应体 `traceId`、`X-Correlation-ID` 一致。非法值省略于日志，响应状态、正文及 header 保持原语义。普通 scope、入站 header、Controller 的同名 `http.failed` 及框架异常事件不能补齐该字段。
+- 旧链 WriteTo / AuditTo 的安全消息与结构化属性保留有效 ID；候选 JSONL 放在独立根字段。规范化仅接受 `api / http / http.failed / Error` 的非 Fatal、非诊断事件及整数 500–599。.NET、Node 和 Lua 省略非法值并标记裁剪；接收侧拒绝仍带非法字段的记录，兼容既有缺省记录。L3-A 将有效字段保存在 canonical JSON。独立可空列和精确索引随 L3 迁移，受权精确筛选随 L4。启用该生成输出前，采集和接收版本须支持该字段。
+- .NET 候选 Serilog 路径的 `traceId / spanId` 取类型化事件关联或当前 W3C Activity，缺省时省略。普通关联属性不能填充；`operationId` 仅沿 Hangfire 状态选举及 Outbox 状态写入的两个已登记事件对进入。原始 jobId、tenantId、异常类型与安全栈帧后置。
+- Flutter 在 Dart 引导接管 `FlutterError.onError`，保留 SDK 的静默规则，框架本地报告只输出固定摘要。显式引导异常以固定异常和空原始栈继续失败；认证、会话和 HTTP 继续由既有状态路径消费。root isolate、原生引擎、插件和子 isolate 随目标设备核验。
+- DbMigrate 的 help、doctor、verify 和 apply 内嵌 doctor 将人读报告写 stdout。环境名、主库和连接标识在报告中转义控制、格式和换行字符并限制至 80 个 UTF-16 码元，目标仍用安全占位；诊断 JSONL 与已登记有界应急继续走 stderr，保留原退出码。移除无调用的 `ConsoleHelper`。受信流分类与独立应急证据路线随 L1 / L3 真实采集联验，入库应急避开同一故障链。
+- 本地回归与剩余范围见[实施记录](../records/unified-logging-l2-diagnostic-output-boundary-audit-2026-11-12.md#implementation)及[第 10.14 节](./unified-logging-l3-ingest-plan.md#l2-diagnostic-and-output-boundaries)。

@@ -322,6 +322,78 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 5004700L,
+                ApiModuleName = "Runtime log query",
+                LinkUrl = "/api/v1/RuntimeLogConsole/Query",
+                ControllerName = "RuntimeLogConsole",
+                ActionName = "Query",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 5004701L,
+                ApiModuleName = "Runtime log detail",
+                LinkUrl = "/api/v1/RuntimeLogConsole/Detail",
+                ControllerName = "RuntimeLogConsole",
+                ActionName = "Detail",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 5004702L,
+                ApiModuleName = "Runtime log history",
+                LinkUrl = "/api/v1/RuntimeLogConsole/History",
+                ControllerName = "RuntimeLogConsole",
+                ActionName = "History",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 5004703L,
+                ApiModuleName = "Runtime log pipeline",
+                LinkUrl = "/api/v1/RuntimeLogConsole/Pipeline",
+                ControllerName = "RuntimeLogConsole",
+                ActionName = "Pipeline",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 5004704L,
+                ApiModuleName = "Runtime log audit",
+                LinkUrl = "/api/v1/RuntimeLogConsole/Audit",
+                ControllerName = "RuntimeLogConsole",
+                ActionName = "Audit",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 5004705L,
+                ApiModuleName = "Runtime log export",
+                LinkUrl = "/api/v1/RuntimeLogConsole/Export",
+                ControllerName = "RuntimeLogConsole",
+                ActionName = "Export",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 5004706L,
+                ApiModuleName = "Runtime log alerts",
+                LinkUrl = "/api/v1/RuntimeLogConsole/Alerts",
+                ControllerName = "RuntimeLogConsole",
+                ActionName = "Alerts",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
+                ApiModuleId = 5004707L,
+                ApiModuleName = "Runtime log transition",
+                LinkUrl = "/api/v1/RuntimeLogConsole/Transition",
+                ControllerName = "RuntimeLogConsole",
+                ActionName = "Transition",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50049L,
                 ApiModuleName = "Get product categories",
                 LinkUrl = "/api/v1/Shop/GetCategories",

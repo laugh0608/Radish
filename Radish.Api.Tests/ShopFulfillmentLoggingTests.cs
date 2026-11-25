@@ -32,7 +32,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class ShopFulfillmentLoggingTests
+public sealed partial class ShopFulfillmentLoggingTests
 {
     private const string Secret = "SHOP_PRIVATE_SENTINEL";
     public static TheoryData<bool, string> OutputModes => new()

@@ -69,11 +69,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
         catch (Exception ex)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "sticker.cache_read_failed", ["SourceCategory"] = "business"
-            });
-            _logger.LogWarning("Sticker group cache read failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            _logger.LogWarning(new EventId(1, "StickerCacheReadFailed"),
+                "Sticker group cache read failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
         }
 
         var groups = await _stickerGroupRepository.QueryWithOrderAsync(
@@ -772,13 +769,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
                     VoCode = row.code,
                     VoMessage = ex.Message
                 });
-                using (_logger.BeginScope(new Dictionary<string, object>
-                {
-                    ["EventCode"] = "sticker.batch_item_failed", ["SourceCategory"] = "business"
-                }))
-                {
-                    _logger.LogError("Sticker batch item construction failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
-                }
+                _logger.LogError(new EventId(4, "StickerBatchItemFailed"),
+                    "Sticker batch item construction failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
             }
         }
 
@@ -953,11 +945,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
 
         if (failureKind != null)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "sticker.thumbnail_failed", ["SourceCategory"] = "business"
-            });
-            _logger.LogWarning("Sticker thumbnail generation degraded ({failureKind})", failureKind);
+            _logger.LogWarning(new EventId(5, "StickerThumbnailFailed"),
+                "Sticker thumbnail generation degraded ({failureKind})", failureKind);
         }
     }
 
@@ -981,11 +970,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
         catch (Exception ex)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "sticker.cache_invalidation_failed", ["SourceCategory"] = "business"
-            });
-            _logger.LogWarning("Sticker group cache invalidation failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            _logger.LogWarning(new EventId(3, "StickerCacheInvalidationFailed"),
+                "Sticker group cache invalidation failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
         }
     }
 
@@ -997,11 +983,8 @@ public class StickerService : BaseService<StickerGroup, StickerGroupVo>, ISticke
         }
         catch (Exception ex)
         {
-            using var scope = _logger.BeginScope(new Dictionary<string, object>
-            {
-                ["EventCode"] = "sticker.cache_write_failed", ["SourceCategory"] = "business"
-            });
-            _logger.LogWarning("Sticker group cache write failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
+            _logger.LogWarning(new EventId(2, "StickerCacheWriteFailed"),
+                "Sticker group cache write failed ({failureKind})", RuntimeFailureSummary.Classify(ex));
         }
     }
 

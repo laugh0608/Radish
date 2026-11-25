@@ -5,6 +5,8 @@ export function hasPermission(user: UserInfo | null | undefined, permission?: st
   if (!user || !permission) {
     return false;
   }
+  if ((permission.startsWith('console.logs.') || permission.startsWith('console.alerts.')) &&
+    String(user.voTenantId) !== '0') return false;
 
   const roles = user.roles || [];
   if (roles.includes('System') || roles.includes('Admin')) {

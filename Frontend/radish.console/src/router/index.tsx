@@ -27,6 +27,7 @@ const settingsPage = lazy(() => import('../pages/Settings').then(module => ({ de
 const stickerGroupListPage = lazy(() => import('../pages/Stickers').then(module => ({ default: module.StickerGroupList })));
 const stickerListPage = lazy(() => import('../pages/Stickers').then(module => ({ default: module.StickerList })));
 const systemConfigListPage = lazy(() => import('../pages/SystemConfig').then(module => ({ default: module.SystemConfigList })));
+const runtimeLogsPage = lazy(() => import('../pages/RuntimeLogs/RuntimeLogsPage').then(module => ({ default: module.RuntimeLogsPage })));
 const tagListPage = lazy(() => import('../pages/Tags').then(module => ({ default: module.TagList })));
 const themeTestPage = lazy(() => import('../pages/ThemeTest').then(module => ({ default: module.ThemeTest })));
 const userDetailPage = lazy(() => import('../pages/Users/UserDetail').then(module => ({ default: module.UserDetail })));
@@ -129,6 +130,14 @@ const router = createBrowserRouter(
         {
           path: 'system-config',
           element: withRouteGuard('system-config', createElement(systemConfigListPage)),
+        },
+        {
+          path: 'system/logs',
+          element: withRouteGuard('system-logs', createElement(runtimeLogsPage)),
+        },
+        {
+          path: 'system/alerts',
+          element: withRouteGuard('system-alerts', createElement(runtimeLogsPage)),
         },
         {
           path: 'profile',

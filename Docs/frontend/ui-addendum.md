@@ -121,8 +121,8 @@ family-ui CSS / JSON 副本保持与固定上游版本逐字一致；Radish 的�
 - Public 内容流新页面默认参考 `R1-P01 / 社区发现 / PC 1440` 的现代自然紧凑语法：继承表面、密度、排版、用色、动作和数据表达，但不复制其信息架构；具体继承卡见[视觉主题规范](/frontend/visual-theme-spec#610-r1-p01-现代自然紧凑基准)。
 - 通用语义优先回到 family-ui；Radish 产品差异维护在本页及对应专题。
 - 页面级视觉工作必须先完整阅读 family-ui `references.md`、逐张查看其索引的参考图，并在 [F4-R 专题](/features/family-ui-convergence-design)中维护 Radish 页面类型的吸收 / 排除映射；只复制 token 不能视为完成视觉迁移。
-- 参考图只用于内部原则提炼，不得进入 `.pen`、产品、`public/` 或对外交付物；移动端不得由桌面参考图等比缩放。
-- Pencil 遵循[代表页协作流程](/frontend/pencil-representative-page-workflow)：R1 / R2 先完成必要代表设计，R3 明确继承来源后直接实现，不为每条路由和文案变化复制画板。
-- Web / Console 活动设计源为 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen`，Flutter Native 活动设计源为同目录的 `radish-flutter-native-ui-v1.pen`；两条产品线共享本附录的语义与品牌边界，但独立维护组件、壳层和代表画板。原四个大型 Web `.pen` 只读留档。
-- 功能、按钮、文案、权限与状态机以专题文档和当前代码为准；Pencil 只约束共享视觉契约、代表结构、关键状态和响应式变化。
+- 参考图只用于内部原则提炼，不得进入设计稿、产品、`public/` 或对外交付物；移动端不得由桌面参考图等比缩放。
+- UI 设计遵循[代表页协作流程](/frontend/pencil-representative-page-workflow)：R1 / R2 先完成必要代表设计，R3 明确继承来源后直接实现，不为每条路由和文案变化复制画板。
+- Web / Console 和 Flutter Native 共享本附录的语义与品牌边界，独立维护组件、壳层和代表设计。既有画板见[设计源目录](./design-sources/README.md)。
+- 功能、按钮、文案、权限与状态机以专题文档和当前代码为准；代表设计只约束共享视觉契约、代表结构、关键状态和响应式变化。
 - 页面族验收以代表路径覆盖 PC / mobile、`zh / en`、四主题和 reduced-motion；派生页通过继承检查、代码侧验证和真实截图复核。

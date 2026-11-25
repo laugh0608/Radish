@@ -1,7 +1,7 @@
 # Client 与 Console 跨应用导航契约
 
 > 状态：首批契约已实施
-> 最后更新：2026-07-13（Asia/Shanghai）
+> 最后更新：2026-11-21（Asia/Shanghai）
 > 适用范围：`radish.client`、`radish.console`、Gateway Web 入口，以及 Flutter / Tauri 的条件式外部承接
 
 ## 摘要
@@ -10,7 +10,7 @@ Radish 的产品端与治理端保持两个独立 SPA，通过 Gateway 同一公
 
 - `radish.client` 承担公开内容、登录态私域、作者态和普通用户任务；
 - `radish.console` 承担治理、权限、审计、运营和高风险管理动作；
-- 两端共享 Radish.Auth SSO，但分别使用 `radish-client` 与 `radish-console` OIDC client，不传递或复用对方 Token；
+- 两端使用同一个 Radish.Auth。普通 Web 启用同源会话后使用 `radish-web`，旧 Web 使用 `radish-client`，Console 固定使用 `radish-console`。导航仅传递受控路径与对象标识；
 - 跨应用只传导航意图、对象标识和受控返回路径，不传运行时对象、表单状态、用户快照或认证凭据；
 - 不使用 iframe、微前端容器或 `postMessage` 把 Console 嵌入产品端。
 
@@ -36,6 +36,7 @@ Console 不嵌入 WebOS 窗口，也不把 Console 侧栏、表格密度或高�
 https://<public-origin>/...          -> radish.client
 https://<public-origin>/console/... -> radish.console
 https://<public-origin>/connect/... -> Radish.Auth
+https://<public-origin>/web/session/... -> Radish.Auth
 ```
 
 本地 Vite 直连仅用于前端调试：
@@ -47,10 +48,10 @@ http://localhost:3100/console/     -> radish.console
 
 认证规则：
 
-1. `radish.client` 使用 `radish-client` 完成 Authorization Code + PKCE。
+1. `radish.client` 的普通 Web 在启用同源会话时由 Auth 以 `radish-web` 完成 Authorization Code + PKCE，浏览器用 Cookie 恢复。旧 Web 使用 `radish-client`，继续在浏览器完成授权码兑换。
 2. `radish.console` 使用 `radish-console` 完成独立 Authorization Code + PKCE。
-3. Auth 登录会话提供 SSO；进入 Console 时允许发生一次授权重定向，但不得复制 `radish.client` Token。
-4. 两端 Token 存储键必须保持独立；跨应用 URL、`history.state`、`postMessage` 和日志中禁止携带 Token。
+3. Console 进入时按自身 OIDC 流程处理，Auth 登录会话可作为其 SSO 依据。新建普通 Web 会话要求交互认证。[会话专题](../features/auth-session-overnight-recovery-plan.md#web-session-repair)
+4. 两端认证凭据独立。跨应用 URL、`history.state`、`postMessage` 和日志中禁止携带 Token。
 5. Console 权限仍由 `canEnterConsole` 与页面级权限守卫决定，产品端只控制入口可见性，不能代替服务端和 Console 授权。
 
 ## 三、跨应用 URL 契约

@@ -366,6 +366,7 @@ export const MeApp = () => {
     formatDateTimeByTimeZone(value, displayTimeZone, fallback, getIntlLocale(language))
   );
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
+  const sessionRecovering = useAuthStore(state => state.isSessionRecovering);
   const userId = useUserStore(state => state.userId);
   const storeDisplayName = useUserStore(state => state.displayName);
   const userName = useUserStore(state => state.userName);
@@ -452,15 +453,16 @@ export const MeApp = () => {
   }, [route]);
 
   useEffect(() => {
-    if (!authReady || loggedIn || redirecting) {
+    if (!authReady || loggedIn || redirecting || sessionRecovering) {
       return;
     }
 
     setRedirecting(true);
     redirectToLogin({
+      onUnavailable: () => setRedirecting(false),
       returnPath: buildMeRouteReturnPath(route)
     });
-  }, [authReady, loggedIn, redirecting, route]);
+  }, [authReady, loggedIn, redirecting, sessionRecovering, route]);
 
   const loadDashboardData = useCallback(async () => {
     if (!userId.trim()) {

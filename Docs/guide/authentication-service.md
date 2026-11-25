@@ -2,7 +2,7 @@
 
 ## 概述
 
-Radish 项目采用 OIDC (OpenID Connect) 标准进行身份认证，前端通过统一的认证服务 (`auth.ts`) 管理登录、登出和 Token 验证逻辑。本指南介绍如何使用认证服务，以及如何在前端应用中集成认证功能。
+Radish 使用 OIDC 认证，Web 通过 `auth.ts` 管理登录与退出，通过 `tokenService` 恢复会话并获取短令牌。普通 Web 支持由 Auth 保管凭据的同源会话，部署默认关闭。旧 Web、Console 与 Flutter 沿用各自登录入口。[普通 Web 会话专题](../features/auth-session-overnight-recovery-plan.md#web-session-repair)
 
 当前统一访问口径如下：
 
@@ -32,21 +32,17 @@ Radish 项目采用 OIDC (OpenID Connect) 标准进行身份认证，前端通�
 前端应用 (Client / Console)
     ↓  统一访问公开入口
 Radish.Gateway
-    ├─ /Account/**、/connect/** → Radish.Auth (OIDC)
-    └─ /api/**、/hubs/**        → Radish.Api
-
-典型流程：
-1. 前端跳转 `${getAuthBaseUrl()}/connect/authorize`
-2. Gateway 转发到 Auth 完成登录
-3. Auth 回调 `${window.location.origin}/oidc/callback`
-4. 前端向 `${getAuthBaseUrl()}/connect/token` 交换 token
-5. 前端后续通过 `${getApiBaseUrl()}` 访问 API / SignalR
+    ├─ /Account/**、/connect/**、/web/session/** → Radish.Auth
+    └─ /api/**、/hub/**                           → Radish.Api
 ```
+
+- 普通 Web 在同源 HTTPS Gateway 下读取 `/web/session/status` 选择登录模式。`cookie` 模式使用 `radish-web`，Auth 接收 `/web/session/callback` 并完成授权码兑换。浏览器重开后通过 Cookie 恢复，新的短 bearer 只驻留内存。
+- 明确返回 `legacy` 时，旧 Web 继续走 `/oidc/callback` 与 `/connect/token`。网络故障或缺少会话模式的响应进入待恢复状态。Console 和 Flutter 继续使用各自原有入口。
 
 ### 核心组件
 
 - **Radish.Auth**: OIDC 认证服务器 (基于 OpenIddict)
-- **Radish.Gateway**: 统一公网入口，透传 `/Account`、`/connect`、`/api`、`/hubs`
+- **Radish.Gateway** 提供统一公网入口及同源 Cookie 转发边界。[Gateway 路由](./gateway.md)
 - **Frontend/radish.client/src/services/auth.ts**: 前端认证服务
 - **@radish/http**: HTTP 客户端，自动添加 Token
 
@@ -113,7 +109,8 @@ redirectToLogin({
 });
 ```
 
-**工作流程**:
+同源会话模式向 `/web/session/login` 提交经过约束的返回路径，按 Auth 返回的同源授权地址跳转。以下步骤适用于旧 Web 模式。
+
 1. 由 `@radish/http` 使用 Web Crypto 生成密码学随机 `state` 与 `code_verifier`，派生 PKCE S256 `code_challenge`
 2. 将本次授权尝试按 client id 写入 sessionStorage，绑定回调 URI 与五分钟有效期
 3. 构建 OIDC 授权 URL (`/connect/authorize`)；如传入 `returnPath`，另外写入一次性认证返回路径
@@ -151,7 +148,7 @@ redirectToLogin({
 
 #### logout()
 
-**用途**: 执行 OIDC 登出，清除本地 Token 并跳转到认证服务器
+**用途**是执行用户主动退出。同源会话先调用 `/web/session/logout` 撤销当前会话，成功后继续 OIDC 登出。自动到期只清理当前应用会话。
 
 **方法签名**:
 ```typescript
@@ -160,7 +157,6 @@ function logout(): void
 
 **使用场景**:
 - 用户点击登出按钮
-- 检测到 Token 无效
 - 安全退出
 
 **示例**:
@@ -173,7 +169,8 @@ const handleLogout = () => {
 };
 ```
 
-**工作流程**:
+旧 Web 模式按以下流程退出。
+
 1. 清除本地存储:
    - `radish_client_access_token`
    - `radish_client_refresh_token`
@@ -312,81 +309,17 @@ export async function getUserProfile() {
 
 ### 4. WebSocket 认证集成
 
-```typescript
-import { HubConnectionBuilder, HubConnection } from '@microsoft/signalr';
-import { getApiBaseUrl } from '@/config/env';
-import { hasAccessToken } from '@/services/auth';
-import { tokenService } from '@/services/tokenService';
-
-let connection: HubConnection | null = null;
-
-export async function connectToNotificationHub() {
-  // 检查是否已登录
-  if (!hasAccessToken()) {
-    console.log('未登录，跳过 WebSocket 连接');
-    return;
-  }
-
-  // 获取 Token
-  const token = tokenService.getAccessToken();
-  const apiBaseUrl = getApiBaseUrl();
-
-  // 创建连接
-  connection = new HubConnectionBuilder()
-    .withUrl(`${apiBaseUrl}/hubs/notification`, {
-      accessTokenFactory: () => token || '',
-    })
-    .withAutomaticReconnect()
-    .build();
-
-  try {
-    await connection.start();
-    console.log('WebSocket 连接成功');
-  } catch (error) {
-    console.error('WebSocket 连接失败:', error);
-  }
-}
-```
+三个 Hub 由 `hubSession.ts` 统一选择路由和 bearer 提供者。同源 Web 使用 `/hub/web/{notification,chat,comment}`，认证到期后获取新令牌并恢复订阅。旧客户端继续使用 `/hub/{notification,chat,comment}`，游客评论维持匿名连接。页面接入现有三个 Hub 服务即可。[路由与重连实现](../../Frontend/radish.client/src/services/hubSession.ts) · [Gateway 排障](./gateway.md#q7-signalr-websocket-连接失败)
 
 ### 5. 自动刷新 Token
 
-Radish 使用 **refresh_token** 自动续期 access_token，需要在登录时申请 `offline_access` scope：
-
-```
-scope=openid profile offline_access radish-api
-```
-
-前端通过 `@radish/http` + `tokenService` 统一处理刷新：
-
-```typescript
-import { configureTokenRefresh } from '@radish/http';
-import { tokenService } from '@/services/tokenService';
-
-configureTokenRefresh({
-  refreshEndpoint: `${authServerBaseUrl}/connect/token`,
-  getRefreshToken: () => tokenService.getRefreshToken(),
-  onTokenRefreshed: (accessToken, refreshToken) => {
-    tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
-  },
-  onRefreshFailed: () => {
-    tokenService.clearTokens();
-  }
-});
-
-tokenService.startAutoRefresh();
-```
-
-**说明**：
-
-- `tokenService` 会持久化 `radish_client_token_expires_at` 与 `radish_client_token_refresh_at`，短 Token 使用动态提前量刷新
-- 401 响应会触发刷新并重试（通过 `apiGet/apiPost` 等统一客户端）
-- 没有 `radish_client_refresh_token` 时不会自动续期，需要重新登录
+同源 Web 的启动恢复、认证 API 和 Hub 共用 `tokenService`。浏览器通过 `/web/session/token` 获取短 bearer，Auth 在服务端轮换凭据。旧 Web 通过 `configureTokenRefresh` 调用 `/connect/token`。Console 在请求前续期。读写请求的 401 恢复规则见 [共享 HTTP 客户端](../frontend/http-client.md#7-401-与-token-刷新)。
 
 ## Token 管理最佳实践
 
 ### 1. Token 存储
 
-**推荐方式**: 通过 `tokenService` 管理 localStorage（不要在业务代码直接读写）
+同源模式下浏览器只在内存保留短 access token 和会话防伪值。下列 `tokenService` 存储操作仅用于旧 Web 认证接线。
 
 ```typescript
 import { tokenService } from '@/services/tokenService';
@@ -596,40 +529,15 @@ A: 统一认证服务的好处：
 
 ### Q: 如何处理 Token 过期？
 
-A: 有两种方式：
-1. **被动处理**：API 返回 401 时，清除 Token 并跳转登录
-2. **主动刷新**：定期检查 Token 过期时间，提前刷新
-
-推荐使用被动处理，简单可靠。
-
-### Q: 为什么要使用 Refresh Token？
-
-A: 当前实现已启用 Refresh Token 自动续期，原因：
-- 减少短 Token 场景下的频繁重登
-- 降低页面长驻时的会话中断概率
-- 与 `@radish/http` 的 401 刷新重试机制配合
+调用统一认证服务恢复。当同源会话明确失效时清理本地状态并保留安全的登录回流路径。临时断网或服务错误保留会话待恢复。受保护页面等恢复结果再决定跳转。
 
 ### Q: 多个前端应用如何避免登录态互相污染？
 
-A: 不同前端应用必须同时做两件事：
-- 使用不同的 `client_id`（如 `radish-client`、`radish-console`）
-- 使用不同的本地存储键命名空间（如 `radish_client_*`、`radish_console_*`）
+普通 Web 使用独立 `radish-web` 服务端会话，旧 Web 与 Console 分别使用 `radish_client_*`、`radish_console_*` 存储键。跨应用导航只传递受控路径。[Client 与 Console 导航](../frontend/client-console-navigation-contract.md)
 
-如果直接共用 `access_token/refresh_token`，会出现 A 应用登录覆盖 B 应用刷新令牌的问题。
+### Q: 同源会话能保留多久？
 
-### Q: 如何实现"记住我"功能？
-
-A: OIDC 服务器端实现：
-- 在登录页面添加"记住我"选项
-- 服务器根据选项设置不同的 Session 过期时间
-- 前端无需特殊处理
-
-### Q: 如何处理并发请求的认证？
-
-A: HTTP 客户端自动处理：
-- 每个请求独立添加 Token
-- 如果 Token 过期，所有请求都会返回 401
-- 错误拦截器统一处理，只跳转一次登录页
+Auth 执行 7 天不活跃窗口和 30 天绝对上限。浏览器可在期限内关页后恢复。旧普通 Web 会话切换到同源模式时需要交互认证一次。[会话期限与迁移](../features/auth-session-overnight-recovery-plan.md#web-session-repair)
 
 ## 安全建议
 

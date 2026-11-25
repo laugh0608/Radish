@@ -45,6 +45,7 @@ configureApiClient({
 | `baseUrl` | 相对 API 路径的统一前缀 |
 | `timeout` | 请求超时毫秒数，默认 `30000` |
 | `getToken` | 在 `withAuth=true` 时提供 Bearer Token |
+| `acquireSessionToken / recoverSessionToken` | 宿主的同源会话令牌获取与 401 恢复入口 |
 | `getLanguage` | 提供当前请求语言；客户端在未显式覆盖时写入 `Accept-Language` |
 | `translateMessage` | 根据服务端 `MessageKey` 与可选位置参数获取宿主本地翻译 |
 | `onRequest / onResponse / onError` | 宿主级观测和错误接线；不能在此改写业务成功语义 |
@@ -181,6 +182,10 @@ try {
 
 ## 7. 401 与 Token 刷新
 
+普通 Web 开启同源会话后，`withAuth` 请求、启动恢复与 Hub 使用同一 `tokenService`。`acquireSessionToken` 在发出同源认证请求前获取短 bearer。已带 bearer 的请求收到可刷新的 401 时，`recoverSessionToken` 尝试更新凭据。只有 `GET` / `HEAD` 在取得不同的 bearer 后自动重试一次，其他方法把原响应交回调用方。[普通 Web 会话](../features/auth-session-overnight-recovery-plan.md#普通-web-前端与实时连接)
+
+旧 Web 模式仍通过 `configureTokenRefresh` 配置 `/connect/token`。
+
 ```ts
 import { configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
 
@@ -199,13 +204,11 @@ configureTokenRefresh({
 ```
 
 - 只有带认证 Header 的请求在符合刷新条件时自动尝试刷新。
-- 刷新成功后使用新 Token 重试原请求。
+- 刷新成功后使用新 Token 重试原请求。旧分支沿用既有的重放行为，业务页面不应叠加重试。
 - 确认 refresh token 失效时触发会话过期处理；网络或服务端临时失败保留原响应交给调用方。
 - 业务模块不得各自实现刷新锁或重复请求队列。
 
-上述行为只在宿主调用 `configureTokenRefresh` 后生效。client 当前采用该模式；Console 当前在 `onRequest` 通过 `tokenService.getValidAccessToken()` 预刷新，并在最终 `401` 时清理会话和跳转登录，不启用本模块的 401 重放。
-
-当前重试会原样重放任意收到认证 `401` 的 `withAuth` 请求，尚未按 HTTP 方法区分。业务页面不得再叠加自动重试；关键非幂等写入必须由服务端幂等 / 去重契约保护，或使用不参与该重放的专用传输适配器。
+Console 在 `onRequest` 通过 `tokenService.getValidAccessToken()` 预刷新，并在最终 401 时清理会话和跳转登录。它不启用共享客户端的 401 重放。[Console 拦截器](../../Frontend/radish.console/src/services/apiInterceptor.ts)
 
 ## 8. 原始请求与解析 helper
 

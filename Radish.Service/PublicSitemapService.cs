@@ -126,7 +126,7 @@ public class PublicSitemapService : IPublicSitemapService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "sitemap.generation_failed")
+            Log.ForContext<PublicSitemapService>().ForContext("EventCode", "sitemap.generation_failed")
                 .ForContext("SourceCategory", "business")
                 .Error("Sitemap generation failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return LastSuccessfulXml.TryGetValue(cacheKey, out var lastSuccessfulXml)
@@ -143,7 +143,7 @@ public class PublicSitemapService : IPublicSitemapService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "sitemap.cache_read_failed")
+            Log.ForContext<PublicSitemapService>().ForContext("EventCode", "sitemap.cache_read_failed")
                 .ForContext("SourceCategory", "business")
                 .Warning("Sitemap cache read failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return null;
@@ -158,7 +158,7 @@ public class PublicSitemapService : IPublicSitemapService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "sitemap.cache_write_failed")
+            Log.ForContext<PublicSitemapService>().ForContext("EventCode", "sitemap.cache_write_failed")
                 .ForContext("SourceCategory", "business")
                 .Warning("Sitemap cache write failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
         }
@@ -194,7 +194,7 @@ public class PublicSitemapService : IPublicSitemapService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "sitemap.section_count_failed")
+            Log.ForContext<PublicSitemapService>().ForContext("EventCode", "sitemap.section_count_failed")
                 .ForContext("SourceCategory", "business")
                 .Warning("Sitemap section count failed. kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             return;

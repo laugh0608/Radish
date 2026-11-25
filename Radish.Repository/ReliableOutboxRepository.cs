@@ -98,15 +98,16 @@ public sealed class ReliableOutboxRepository : IReliableOutboxRepository
         string errorCode,
         string errorSummary,
         DateTime failedAtUtc,
-        DateTime? retryAtUtc)
+        DateTime? retryAtUtc,
+        string? failureKind = null)
     {
         if (IsChat(sourceDatabase))
         {
-            await MarkFailedCoreAsync<ChatReliableOutboxMessage>(ReliableOutboxSources.Chat, outboxId, errorCode, errorSummary, failedAtUtc, retryAtUtc);
+            await MarkFailedCoreAsync<ChatReliableOutboxMessage>(ReliableOutboxSources.Chat, outboxId, errorCode, errorSummary, failedAtUtc, retryAtUtc, failureKind);
             return;
         }
 
-        await MarkFailedCoreAsync<ReliableOutboxMessage>(ReliableOutboxSources.Main, outboxId, errorCode, errorSummary, failedAtUtc, retryAtUtc);
+        await MarkFailedCoreAsync<ReliableOutboxMessage>(ReliableOutboxSources.Main, outboxId, errorCode, errorSummary, failedAtUtc, retryAtUtc, failureKind);
     }
 
     public async Task<bool> ReplayAsync(
@@ -188,7 +189,8 @@ public sealed class ReliableOutboxRepository : IReliableOutboxRepository
         string errorCode,
         string errorSummary,
         DateTime failedAtUtc,
-        DateTime? retryAtUtc)
+        DateTime? retryAtUtc,
+        string? failureKind)
         where TEntity : ReliableOutboxMessageBase, new()
     {
         var current = await GetConnection(sourceDatabase).Queryable<TEntity>().InSingleAsync(outboxId);
@@ -221,11 +223,13 @@ public sealed class ReliableOutboxRepository : IReliableOutboxRepository
             var identity = $"radish:outbox:{scope}:{outboxId.ToString(CultureInfo.InvariantCulture)}";
             var digest = SHA256.HashData(Encoding.UTF8.GetBytes(identity));
             var operationId = new Guid(digest.AsSpan(0, 16)).ToString("D");
-            var logger = Log.ForContext("SourceCategory", "job")
+            var logger = Log.ForContext<ReliableOutboxRepository>()
+                .ForContext("SourceCategory", "job")
                 .ForContext("EventCode", canRetry ? "outbox.retrying" : "outbox.dead_letter")
                 .ForContext("operationId", operationId)
                 .ForContext("databaseScope", scope)
                 .ForContext("attempt", attemptCount)
+                .ForContext("failureKind", failureKind)
                 .ForContext("outcome", canRetry ? "retrying" : "failed");
             if (canRetry) logger.Warning("Outbox retry scheduled");
             else logger.Error("Outbox task moved to dead letter");

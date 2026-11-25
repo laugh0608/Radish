@@ -29,7 +29,7 @@ using WatermarkOptions = Radish.Infrastructure.ImageProcessing.WatermarkOptions;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class OutboxNativeLoggingTests
+public sealed partial class OutboxNativeLoggingTests
 {
     private const string Secret = "OUTBOX_NATIVE_PRIVATE_SENTINEL";
 

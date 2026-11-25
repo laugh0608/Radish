@@ -306,7 +306,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "comment.highlight_recheck_failed").ForContext("SourceCategory", "business")
+            Log.ForContext<CommentService>().ForContext("EventCode", "comment.highlight_recheck_failed").ForContext("SourceCategory", "business")
                 .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
                 .Error("Comment highlight recheck failed");
             return CommentHighlightRecheckResultVo.NoChange(postId, parentCommentId, highlightType);
@@ -800,7 +800,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
             // 保留原失败结果契约；系统设置依赖的 ArgumentException 不能冒充正常内容校验。
             if (ex is not CommentContentValidationException)
             {
-                Log.ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
+                Log.ForContext<CommentService>().ForContext("EventCode", "comment.edit_failed").ForContext("SourceCategory", "business")
                     .Error("Comment edit failed; kind={failureKind}", RuntimeFailureSummary.Classify(ex));
             }
             return result;
@@ -1004,7 +1004,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "comment.god_recheck_failed").ForContext("SourceCategory", "business")
+            Log.ForContext<CommentService>().ForContext("EventCode", "comment.god_recheck_failed").ForContext("SourceCategory", "business")
                 .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
                 .Error("God comment recheck failed");
         }
@@ -1091,7 +1091,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "comment.sofa_recheck_failed").ForContext("SourceCategory", "business")
+            Log.ForContext<CommentService>().ForContext("EventCode", "comment.sofa_recheck_failed").ForContext("SourceCategory", "business")
                 .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
                 .Error("Sofa comment recheck failed");
         }
@@ -1365,7 +1365,7 @@ public class CommentService : BaseService<Comment, CommentVo>, ICommentService
         }
         catch (Exception ex)
         {
-            Log.ForContext("EventCode", "comment.highlight_fill_failed").ForContext("SourceCategory", "business")
+            Log.ForContext<CommentService>().ForContext("EventCode", "comment.highlight_fill_failed").ForContext("SourceCategory", "business")
                 .ForContext("failureKind", RuntimeFailureSummary.Classify(ex))
                 .Error("Comment highlight status fill failed");
         }

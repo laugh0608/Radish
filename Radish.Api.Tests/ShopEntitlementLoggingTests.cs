@@ -34,7 +34,7 @@ using Xunit;
 namespace Radish.Api.Tests;
 
 [Collection("Runtime logging global state")]
-public sealed class ShopEntitlementLoggingTests
+public sealed partial class ShopEntitlementLoggingTests
 {
     private const string Secret = "SHOP_ENTITLEMENT_PRIVATE_SENTINEL";
     public static TheoryData<bool, string> OutputModes => new()

@@ -4,6 +4,8 @@ using System.Text.Json;
 using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Radish.Auth.OpenIddict;
+using Radish.Auth.WebSessions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
@@ -35,32 +37,32 @@ public class AuthorizationController : Controller
     [HttpGet("~/connect/authorize")]
     [HttpPost("~/connect/authorize")]
     [IgnoreAntiforgeryToken]
-    public async Task<IActionResult> Authorize()
+    public async Task<IActionResult> Authorize([FromServices] IWebSessionLoginService? webLogin = null)
     {
+        var request = HttpContext.GetOpenIddictServerRequest();
+        Guid? webSession = null;
+        if (request?.ClientId == WebAuthClient.ClientId)
+        {
+            if (webLogin is null || !request.HasPromptValue(OpenIddictConstants.PromptValues.Login)) return BadRequest();
+
+            var browser = Request.Cookies[WebSessionCookieNames.Login];
+            webSession = await webLogin.FindAuthenticatedSessionAsync(request.State, browser,
+                User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value, User.FindFirst(UserClaimTypes.TenantId)?.Value,
+                HttpContext.RequestAborted);
+            if (webSession is null)
+            {
+                if (!await webLogin.IsPendingAsync(request.State, browser, HttpContext.RequestAborted)) return BadRequest();
+                return RedirectToAccountLogin();
+            }
+        }
+
         // 如果用户尚未通过 Cookie 登录，则引导到登录页，登录后自动回跳到当前请求
         if (User.Identity is not { IsAuthenticated: true })
         {
-            // 🌍 提取 culture 参数，在重定向到登录页时保留语言设置
-            var culture = Request.Query["culture"].ToString();
-            var uiCulture = Request.Query["ui-culture"].ToString();
-
-            var loginUrl = "/Account/Login?ReturnUrl=" + Uri.EscapeDataString(Request.PathBase + Request.Path + Request.QueryString);
-
-            // 将 culture 参数添加到登录页 URL（而不是 ReturnUrl 内部）
-            if (!string.IsNullOrEmpty(culture))
-            {
-                loginUrl += "&culture=" + Uri.EscapeDataString(culture);
-            }
-            if (!string.IsNullOrEmpty(uiCulture))
-            {
-                loginUrl += "&ui-culture=" + Uri.EscapeDataString(uiCulture);
-            }
-
-            return Redirect(loginUrl);
+            return RedirectToAccountLogin();
         }
 
         // 从 OpenIddict 管道中获取当前请求（包含 client_id、redirect_uri、scope 等）
-        var request = HttpContext.GetOpenIddictServerRequest();
         if (request is null)
         {
             throw new InvalidOperationException("无法获取 OpenIddict 授权请求。");
@@ -148,6 +150,10 @@ public class AuthorizationController : Controller
         }
 
         var principal = new ClaimsPrincipal(identity);
+        if (webSession is { } id)
+        {
+            principal.SetClaim(WebAuthClient.SessionIdClaim, id.ToString("N"));
+        }
 
         // 关键点：只把「请求中」的 scopes 传给 OpenIddict，避免超出客户端允许范围
         var scopes = request.GetScopes();
@@ -161,6 +167,16 @@ public class AuthorizationController : Controller
 
         // 由 OpenIddict 生成授权码等票据
         return SignIn(principal, OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    }
+
+    private IActionResult RedirectToAccountLogin()
+    {
+        var culture = Request.Query["culture"].ToString();
+        var uiCulture = Request.Query["ui-culture"].ToString();
+        var loginUrl = "/Account/Login?ReturnUrl=" + Uri.EscapeDataString(Request.PathBase + Request.Path + Request.QueryString);
+        if (!string.IsNullOrEmpty(culture)) loginUrl += "&culture=" + Uri.EscapeDataString(culture);
+        if (!string.IsNullOrEmpty(uiCulture)) loginUrl += "&ui-culture=" + Uri.EscapeDataString(uiCulture);
+        return Redirect(loginUrl);
     }
 
     private static IReadOnlyList<ConsentRequestParameter> CreateConsentRequestParameters(

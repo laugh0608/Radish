@@ -1,7 +1,8 @@
-import { configureApiClient, configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
+import { apiFetch, configureApiClient, configureTokenRefresh, TokenRefreshErrorType } from '@radish/http';
 import { parseApiResponse, type ApiResponse } from '@radish/http';
 import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
+import { browserWebSession } from './browserWebSession';
 import { chatHub } from '@/services/chatHub';
 import { commentHub } from '@/services/commentHub';
 import { notificationHub } from '@/services/notificationHub';
@@ -271,7 +272,8 @@ function seedAuthFromToken(token?: string | null): CurrentUser | null {
 
 async function fetchCurrentUser(apiBaseUrl: string, token: string): Promise<CurrentUser> {
   const requestUrl = `${apiBaseUrl}/api/v1/User/GetUserByHttpContext`;
-  const response = await fetch(requestUrl, {
+  const response = await apiFetch(new URL(requestUrl, window.location.origin), {
+    withAuth: tokenService.sessionMode === 'cookie',
     headers: {
       Accept: 'application/json',
       'Accept-Language': i18n.language || 'zh',
@@ -303,8 +305,11 @@ async function hydrateAuthUserCore(
 ): Promise<CurrentUser> {
   const authStore = useAuthStore.getState();
   const userStore = useUserStore.getState();
+  const generation = tokenService.sessionMode === 'cookie' ? browserWebSession.generation : null;
+  const stillCurrent = () => generation === null ||
+    (tokenService.sessionMode === 'cookie' && browserWebSession.generation === generation);
 
-  if (useCache) {
+  if (useCache && generation === null) {
     const cachedUser = consumeCachedCurrentUser(token);
     if (cachedUser) {
       setUserFromCurrentUser(cachedUser, token);
@@ -316,14 +321,17 @@ async function hydrateAuthUserCore(
 
   try {
     const userData = await fetchCurrentUser(apiBaseUrl, token);
-    cacheCurrentUser(token, userData);
+    if (!stillCurrent()) throw new Error('Web session changed during user hydration');
+    if (generation === null) cacheCurrentUser(token, userData);
     setUserFromCurrentUser(userData, token);
     authStore.setAuthenticated(true);
     log.debug('AuthBootstrap', '✅ 用户信息初始化完成');
     return userData;
   } catch (error) {
     const err = error instanceof Error ? error : new Error(String(error));
-    if (error instanceof CurrentUserRequestError && (error.status === 401 || error.status === 403)) {
+    if (!stillCurrent()) throw err;
+    if (error instanceof CurrentUserRequestError && (error.status === 401 || error.status === 403) &&
+        (generation === null || browserWebSession.signedOut)) {
       userStore.clearUser();
       authStore.setAuthenticated(false);
       log.warn('AuthBootstrap', '用户信息初始化失败，访问令牌已失效:', err.message);
@@ -359,12 +367,15 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
   const authStore = useAuthStore.getState();
 
   const token = await tokenService.getValidAccessToken();
+  authStore.setSessionRecovering(!token && tokenService.isSessionRecovering());
   if (!token) {
+    if (tokenService.isSessionRecovering()) return buildCurrentUserFromStore();
     authStore.setAuthenticated(false);
     return null;
   }
 
   seedAuthFromToken(token);
+  if (tokenService.sessionMode === 'cookie') void commentHub.syncSessionRoute();
 
   const hydrationKey = buildHydrationKey(apiBaseUrl, token);
   let hydrationPromise = inFlightAuthHydrations.get(hydrationKey);
@@ -392,16 +403,18 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
   }
 }
 
-export async function revalidateAuthSession(options: AuthBootstrapOptions): Promise<CurrentUser | null> {
+export async function revalidateAuthSession(options: AuthBootstrapOptions, recheckWebSession = false): Promise<CurrentUser | null> {
   if (typeof window === 'undefined') {
     return null;
   }
 
   const authStore = useAuthStore.getState();
   const userStore = useUserStore.getState();
-  const token = await tokenService.getValidAccessToken();
+  const token = await tokenService.getValidAccessToken(recheckWebSession);
+  authStore.setSessionRecovering(!token && tokenService.isSessionRecovering());
 
   if (!token) {
+    if (tokenService.isSessionRecovering()) return buildCurrentUserFromStore();
     if (authStore.isAuthenticated || userStore.isAuthenticated()) {
       await authStore.logout();
     } else {
@@ -434,6 +447,8 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
 
   configureApiClient({
     getToken: () => tokenService.getAccessToken(),
+    acquireSessionToken: (url) => tokenService.acquireSessionTokenForApi(url),
+    recoverSessionToken: (url, rejected) => tokenService.recoverSessionTokenForApi(url, rejected),
   });
 
   configureTokenRefresh({
@@ -441,7 +456,7 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
     getRefreshToken: () => tokenService.getRefreshToken(),
     getRefreshParameters: () => getAuthSessionRefreshParameters(),
     onTokenRefreshed: (accessToken, refreshToken) => {
-      if (typeof window === 'undefined') return;
+      if (typeof window === 'undefined' || tokenService.sessionMode !== 'legacy') return;
       tokenService.setTokenInfoFromJwt(accessToken, refreshToken);
       seedAuthFromToken(accessToken);
       log.info('AuthBootstrap', '✅ Token 自动刷新成功');
@@ -449,7 +464,7 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
     },
     onRefreshFailed: (errorType, error) => {
       log.error('AuthBootstrap', '❌ Token 刷新失败:', errorType, error.message);
-      if (errorType === TokenRefreshErrorType.InvalidRefreshToken) {
+      if (errorType === TokenRefreshErrorType.InvalidRefreshToken && tokenService.sessionMode === 'legacy') {
         authStore.logout();
       }
     }
@@ -469,15 +484,18 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
       : undefined;
     log.warn('AuthBootstrap', '收到 Token 过期事件，执行登出', { reason });
     void (async () => {
+      const cookieSession = tokenService.sessionMode === 'cookie';
+      if (cookieSession) void authStore.logout({ sessionAlreadyCleared: true });
       await Promise.all([
         notificationHub.stop(),
         chatHub.stop(),
       ]);
-      await authStore.logout();
+      if (!cookieSession) await authStore.logout();
       await commentHub.restart();
     })();
   };
   const stopActivityTracking = startAuthSessionActivityTracking({
+    shouldTrack: () => tokenService.sessionMode === 'legacy',
     onIdleExpired: () => {
       if (tokenService.getAccessToken()) {
         dispatchAuthTokenExpired(TokenRefreshFailureReason.IdleSessionExpired);
@@ -489,8 +507,16 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
   });
   let lastForegroundSyncAt = 0;
   let foregroundSyncPromise: Promise<CurrentUser | null> | null = null;
+  let disposed = false;
+  let legacyTimerStarted = false;
+  const startLegacyRefresh = () => {
+    if (!disposed && !legacyTimerStarted && tokenService.sessionMode === 'legacy') {
+      legacyTimerStarted = true;
+      tokenService.startAutoRefresh();
+    }
+  };
 
-  const requestForegroundSessionSync = () => {
+  const requestForegroundSessionSync = (recheckWebSession: boolean) => {
     if (typeof document !== 'undefined' && document.visibilityState === 'hidden') {
       return;
     }
@@ -500,12 +526,13 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
       return;
     }
 
-    foregroundSyncPromise = revalidateAuthSession(options)
+    foregroundSyncPromise = revalidateAuthSession(options, recheckWebSession)
       .catch((error) => {
         log.warn('AuthBootstrap', '前台恢复后登录态重校验失败:', error);
         return null;
       })
       .finally(() => {
+        startLegacyRefresh();
         lastForegroundSyncAt = Date.now();
         foregroundSyncPromise = null;
       });
@@ -513,31 +540,50 @@ export function bootstrapAuth(options: AuthBootstrapOptions): () => void {
 
   const handleVisibilityChange = () => {
     if (document.visibilityState === 'visible') {
-      requestForegroundSessionSync();
+      requestForegroundSessionSync(true);
     }
   };
 
   const handleWindowFocus = () => {
-    requestForegroundSessionSync();
+    requestForegroundSessionSync(true);
   };
 
   const handlePageShow = () => {
-    requestForegroundSessionSync();
+    requestForegroundSessionSync(true);
   };
+  const recordCookieActivity = (event: Event) => {
+    if (event.isTrusted && document.visibilityState === 'visible' && tokenService.sessionMode === 'cookie') {
+      void browserWebSession.recordActivity();
+    }
+  };
+  const webRecoveryTimer = window.setInterval(() => {
+    if (tokenService.sessionMode !== 'legacy' && (!browserWebSession.signedOut || useAuthStore.getState().isSessionRecovering)) {
+      requestForegroundSessionSync(useAuthStore.getState().isSessionRecovering && browserWebSession.signedOut);
+    }
+  }, FOREGROUND_SESSION_REVALIDATE_COOLDOWN_MS);
 
   window.addEventListener(AUTH_TOKEN_EXPIRED_EVENT, handleTokenExpired);
   document.addEventListener('visibilitychange', handleVisibilityChange);
   window.addEventListener('focus', handleWindowFocus);
   window.addEventListener('pageshow', handlePageShow);
+  window.addEventListener('online', handlePageShow);
+  window.addEventListener('pointerdown', recordCookieActivity, { passive: true });
+  window.addEventListener('keydown', recordCookieActivity);
 
-  tokenService.startAutoRefresh();
+  startLegacyRefresh();
+  void tokenService.resolveSessionMode().then(startLegacyRefresh);
   void hydrateAuthUser(options);
 
   return () => {
+    disposed = true;
+    window.clearInterval(webRecoveryTimer);
     window.removeEventListener(AUTH_TOKEN_EXPIRED_EVENT, handleTokenExpired);
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     window.removeEventListener('focus', handleWindowFocus);
     window.removeEventListener('pageshow', handlePageShow);
+    window.removeEventListener('online', handlePageShow);
+    window.removeEventListener('pointerdown', recordCookieActivity);
+    window.removeEventListener('keydown', recordCookieActivity);
     stopActivityTracking();
     tokenService.stopAutoRefresh();
   };

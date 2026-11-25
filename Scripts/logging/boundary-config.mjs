@@ -80,3 +80,7 @@ export function boundaryConfig(host) {
     storage.total_limit_size 4M
 `;
 }
+
+export function enableCheckedJsonl(config) {
+  return config.replace('Format plain\n', 'Format plain\n    radish_jsonl true\n');
+}

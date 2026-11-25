@@ -78,6 +78,8 @@ npm run type-check --workspace=@radish/http
 
 以上文件路径属于默认旧日志链。L3-A 内网接收候选独立受 `RadishLogging:Ingest:Enabled` 控制，默认关闭；Gateway 和普通 API 端口访问 `/internal` 返回 404 是隔离行为。启用条件、专用端口 / 凭据、失败状态与迁移入口见[接收入库方案第 7 节](../features/unified-logging-l3-ingest-plan.md#7-当前配置与验证入口)，本地测试不等于真实监听或 collector 已接入。
 
+停写排空时可用同一 API 镜像显式执行 `dotnet Radish.Api.dll --runtime-log-ingest-only`，保持内网凭据校验与 Log 写入。先停止业务入口及包含 Hangfire 的普通 API，再启动维护接收器。健康排空或保全 503 待投递缓冲后，停 collector 和维护接收器，再备份 Log、JSONL 和缓冲。[隔离顺序及部署待核项](../features/unified-logging-l3-ingest-plan.md#l1-l3-compose-preflight)
+
 如果你怀疑是配置或运行态问题，优先先看：
 
 1. 当前宿主是否读取到了正确的 `appsettings.Local.json`

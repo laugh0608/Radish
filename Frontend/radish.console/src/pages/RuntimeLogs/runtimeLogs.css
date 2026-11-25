@@ -1,0 +1,43 @@
+.runtime-log-page { display: grid; gap: 16px; min-width: 0; color: var(--console-text-primary); }
+.runtime-log-page h1, .runtime-log-detail h2 { margin: 0; }
+.runtime-log-heading, .runtime-log-detail header, .runtime-log-alert header {
+  display: flex; align-items: center; gap: 12px; justify-content: space-between; flex-wrap: wrap;
+}
+.runtime-log-panel, .runtime-log-detail {
+  padding: 16px; background: var(--console-bg-surface); border: 1px solid var(--console-border-subtle);
+  border-radius: var(--console-radius-panel); min-width: 0;
+}
+.runtime-log-actions, .runtime-log-pipeline { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.runtime-log-pipeline strong { display: block; margin-top: 4px; }
+.runtime-log-pipeline strong[data-state="Faulted"] { color: var(--console-text-danger, var(--console-text-primary)); }
+.runtime-log-pipeline > span, .runtime-log-label { color: var(--console-text-secondary); font-size: 0.875rem; }
+.runtime-log-filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.runtime-log-filters label { display: grid; gap: 4px; min-width: 0; font-size: 0.875rem; }
+.runtime-log-filters label.runtime-log-source { display: inline-flex; align-items: center; }
+.runtime-log-filters fieldset { grid-column: 1 / -1; margin: 0; border: 1px solid var(--console-border-subtle); min-width: 0; }
+.runtime-log-filter-actions { grid-column: 1 / -1; }
+.runtime-log-page input, .runtime-log-page select, .runtime-log-page button, .runtime-log-detail button {
+  max-width: 100%; min-width: 0; padding: 7px 10px; color: var(--console-text-primary);
+  border: 1px solid var(--console-border-subtle); background: var(--console-bg-surface);
+  border-radius: var(--console-radius-control); font: inherit;
+}
+.runtime-log-page button, .runtime-log-detail button { cursor: pointer; }
+.runtime-log-page button[aria-pressed="true"] { background: var(--console-bg-muted); font-weight: 650; }
+.runtime-log-page button:disabled { cursor: wait; opacity: .65; }
+.runtime-log-table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+.runtime-log-table th, .runtime-log-table td { text-align: start; padding: 8px; border-bottom: 1px solid var(--console-border-subtle); overflow-wrap: anywhere; }
+.runtime-log-alert { border-bottom: 1px solid var(--console-border-subtle); padding: 12px 0; }
+.runtime-log-alert:last-child { border-bottom: 0; }
+.runtime-log-alert p { margin: 6px 0; }
+.runtime-log-detail { color: var(--console-text-primary); width: min(560px, calc(100vw - 32px)); overflow-wrap: anywhere; }
+.runtime-log-detail dd { margin: 0 0 12px; }
+.runtime-log-detail pre { white-space: pre-wrap; }
+.runtime-log-history { padding-inline-start: 20px; }
+@media (max-width: 700px) {
+  .runtime-log-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .runtime-log-table, .runtime-log-table tbody, .runtime-log-table tr { display: block; }
+  .runtime-log-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .runtime-log-table tr { border: 1px solid var(--console-border-subtle); border-radius: var(--console-radius-control); margin: 8px 0; padding: 8px; }
+  .runtime-log-table td { display: flex; align-items: baseline; gap: 8px; border: 0; padding: 4px; }
+  .runtime-log-table td[data-label]::before { content: attr(data-label); flex: 0 0 4em; color: var(--console-text-secondary); }
+}

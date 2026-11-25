@@ -5,7 +5,7 @@
 
 本文说明 `radish.console` 后续新增或改动页面时的局部样式口径。Console 使用 family-ui Workbench Profile，Radish 差异见 [UI 差异附录](/frontend/ui-addendum)；当前代表设计进入 `Docs/frontend/design-sources/radish-web-family-ui-v1.pen` 的 `R1-C01 / R1-C02` 与 `R2-C03`，布局和功能边界同时服从 [Console 治理工作台设计端点](/frontend/console-governance-workbench-design)。旧 `console-governance-workbench.pen` 只读留档。
 
-`P00-P18` 是既有阶段形成的代表类型与历史资产，不要求后续路由逐页复制画板。新增或改动页面按[Pencil 代表页协作流程](/frontend/pencil-representative-page-workflow)裁决 R1 / R2 / R3；普通表格、设置、详情和治理派生页优先继承已有类型并在真实代码中复核。
+`P00-P18` 是既有阶段形成的代表类型与历史资产，不要求后续路由逐页复制画板。新增或改动页面按[代表页设计协作流程](/frontend/pencil-representative-page-workflow)裁决 R1 / R2 / R3；普通表格、设置、详情和治理派生页优先继承已有类型并在真实代码中复核。
 
 表格、操作列、分页和弹窗 / 抽屉内表格的细化规则见 [Console 表格布局说明](/frontend/console-table-layout-guide)。
 
