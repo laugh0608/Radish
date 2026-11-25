@@ -118,8 +118,9 @@ public sealed class WebSessionController(IWebSessionLoginService login, IWebSess
 
             Response.Cookies.Delete(WebSessionCookieNames.Session, CookieOptions());
             var origin = WebAuthClient.GetOrigin(WebAuthClient.GetIssuer(configuration));
+            // OpenIddict stores the registered URI's OriginalString and compares it verbatim.
             var redirect = QueryHelpers.AddQueryString(new Uri(origin, "/connect/endsession").AbsoluteUri,
-                new Dictionary<string, string?> { ["client_id"] = WebAuthClient.ClientId, ["post_logout_redirect_uri"] = origin.AbsoluteUri });
+                new Dictionary<string, string?> { ["client_id"] = WebAuthClient.ClientId, ["post_logout_redirect_uri"] = origin.OriginalString });
             return Ok(new WebSessionLogoutVo(redirect));
         }
         catch (Exception error) when (IsInfrastructureFailure(error))

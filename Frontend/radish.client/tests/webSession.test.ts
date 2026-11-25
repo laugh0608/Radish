@@ -110,6 +110,7 @@ test('登出临时失败保留凭据，确认登出后迟到的刷新不能恢�
   const normalLogout = api.logout;
   api.logout = async () => ({ status: 503, mode: 'cookie', retryAfterMs: 2_000 });
   assert.equal(await session.logout(), null);
+  assert.equal(session.isLoggingOut, false);
   assert.equal(session.getAccessToken(), 'bearer-1');
   assert.deepEqual(endings, []);
 
@@ -130,6 +131,64 @@ test('登出临时失败保留凭据，确认登出后迟到的刷新不能恢�
   assert.equal(await refresh, null);
   assert.equal(session.getAccessToken(), null);
   assert.deepEqual(endings, [true]);
+});
+
+test('主动退出到页面离开前，受保护页不能重启登录，先前的登录响应也不能接管导航', async () => {
+  const { session, api, endings } = fixture();
+  await session.getToken();
+  const loginStarted = Promise.withResolvers<void>();
+  const loginResponse = Promise.withResolvers<void>();
+  const normalLogin = api.login;
+  let attempts = 0;
+  api.login = async returnPath => {
+    attempts++;
+    loginStarted.resolve();
+    await loginResponse.promise;
+    return normalLogin(returnPath);
+  };
+  const previous = session.login('/me');
+  await loginStarted.promise;
+  const logoutResponse = Promise.withResolvers<void>();
+  const normalLogout = api.logout;
+  api.logout = async proof => {
+    await logoutResponse.promise;
+    return normalLogout(proof);
+  };
+  const logout = session.logout();
+  assert.equal(session.isLoggingOut, true);
+  assert.equal(await session.login('/me'), null);
+  logoutResponse.resolve();
+  assert.equal(await logout, '/connect/endsession');
+  assert.equal(await session.login('/me'), null);
+  assert.deepEqual(endings, [true]);
+  assert.equal(attempts, 1);
+
+  session.finishLogoutNavigation();
+  loginResponse.resolve();
+  assert.equal(await previous, null);
+  assert.equal(await session.login('/me'), '/connect/authorize');
+});
+
+test('退出时忽略迟到的活动 401，其他标签页仍清除会话且不重复广播', async () => {
+  const { session, api, endings } = fixture();
+  await session.getToken();
+  const response = Promise.withResolvers<void>();
+  api.activity = async () => {
+    await response.promise;
+    return { status: 401, mode: 'cookie', retryAfterMs: null };
+  };
+  const activity = session.recordActivity();
+  assert.equal(await session.logout(), '/connect/endsession');
+  response.resolve();
+  await activity;
+  assert.deepEqual(endings, [true]);
+  assert.equal(await session.login('/me'), null);
+
+  const peer = fixture();
+  await peer.session.getToken();
+  peer.session.receivedSignOut();
+  assert.equal(peer.session.getAccessToken(), null);
+  assert.deepEqual(peer.endings, [false]);
 });
 
 test('改用另一标签页的新会话时先丢弃旧 bearer，只取新凭据', async () => {

@@ -5,10 +5,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Radish.Auth.Controllers;
+using Radish.Auth.OpenIddict;
 using Radish.Auth.WebSessions;
 using Radish.Common.HttpContextTool;
 using Radish.Gateway;
@@ -73,6 +75,24 @@ public sealed class WebSessionControllerTest
     }
 
     [Fact]
+    public async Task LogoutEmitsTheExactRegisteredReturnAddress()
+    {
+        var fixture = new Fixture();
+        fixture.CarrySession("https://radish.test:35443", WebSessionSecrets.Proof(fixture.Cookie));
+        fixture.Access.Setup(service => service.LogoutAsync(fixture.Cookie, CancellationToken.None))
+            .ReturnsAsync(WebSessionResultStatus.Success);
+
+        var result = Assert.IsType<OkObjectResult>(await fixture.Controller.Logout(CancellationToken.None));
+        var target = new Uri(Assert.IsType<WebSessionLogoutVo>(result.Value).VoEndSessionUrl);
+        var query = QueryHelpers.ParseQuery(target.Query);
+        var registration = WebAuthClient.CreateRegistration(fixture.Configuration)!;
+        var registered = Assert.Single(registration.PostLogoutRedirectUris).OriginalString;
+        Assert.Equal("/connect/endsession", target.AbsolutePath);
+        Assert.Equal(WebAuthClient.ClientId, Assert.Single(query["client_id"]));
+        Assert.Equal(registered, Assert.Single(query["post_logout_redirect_uri"]));
+    }
+
+    [Fact]
     public async Task CrossOriginStatusCannotReadTheCsrfProof()
     {
         var fixture = new Fixture();
@@ -127,18 +147,20 @@ public sealed class WebSessionControllerTest
         public readonly Mock<IWebSessionAccessService> Access = new(MockBehavior.Strict);
         public readonly string Cookie = WebSessionSecrets.NewSecret();
         public WebSessionController Controller { get; }
+        public IConfiguration Configuration { get; }
 
         public Fixture(bool enabled = true)
         {
-            var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
+            Configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
             {
                 ["OpenIddict:WebSession:Enabled"] = enabled.ToString(),
+                ["OpenIddict:WebSession:ClientSecret"] = "test-only-confidential-client-secret",
                 ["OpenIddict:Server:Issuer"] = "https://radish.test:35443/"
             }).Build();
             var context = new DefaultHttpContext();
             context.Request.Scheme = "https";
             context.Request.Host = new HostString("radish.test", 35443);
-            Controller = new(Login.Object, Access.Object, config) { ControllerContext = new() { HttpContext = context } };
+            Controller = new(Login.Object, Access.Object, Configuration) { ControllerContext = new() { HttpContext = context } };
             var url = new Mock<IUrlHelper>();
             url.Setup(helper => helper.IsLocalUrl("/forum")).Returns(true);
             Controller.Url = url.Object;

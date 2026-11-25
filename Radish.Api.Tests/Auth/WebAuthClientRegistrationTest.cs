@@ -48,6 +48,9 @@ public sealed class WebAuthClientRegistrationTest
         await apps.PopulateAsync(web, current, cancellationToken);
         Assert.Equal(OpenIddictConstants.ClientTypes.Confidential, web.ClientType);
         Assert.Equal(new Uri(issuer + "web/session/callback"), Assert.Single(web.RedirectUris));
+        var registeredLogout = Assert.Single(await apps.GetPostLogoutRedirectUrisAsync(current, cancellationToken));
+        Assert.Equal(WebAuthClient.GetOrigin(new Uri(issuer)).OriginalString, registeredLogout);
+        Assert.True(await apps.ValidatePostLogoutRedirectUriAsync(current, registeredLogout, cancellationToken));
         Assert.Contains(OpenIddictConstants.Requirements.Features.ProofKeyForCodeExchange, web.Requirements);
         Assert.Contains(OpenIddictConstants.Permissions.GrantTypes.RefreshToken, web.Permissions);
         Assert.DoesNotContain(OpenIddictConstants.Permissions.GrantTypes.ClientCredentials, web.Permissions);

@@ -27,13 +27,18 @@ interface RedirectToLoginOptions {
   onUnavailable?: () => void;
 }
 
-function navigateToWebAuthResult(value: string | null, allowedPath: string, allowHome = false): boolean {
+function navigateToWebAuthResult(value: string | null, action: 'login' | 'logout'): boolean {
   if (!value) return false;
   try {
     const url = new URL(value, window.location.origin);
-    if (url.origin !== window.location.origin || (url.pathname !== allowedPath && !(allowHome && url.pathname === '/'))) return false;
-
-    window.location.assign(url.href);
+    if (url.origin !== window.location.origin) return false;
+    if (action === 'logout') {
+      if (url.pathname !== '/connect/endsession' && url.pathname !== '/') return false;
+      window.location.replace(url.href);
+    } else {
+      if (url.pathname !== '/connect/authorize') return false;
+      window.location.assign(url.href);
+    }
     return true;
   } catch {
     return false;
@@ -52,7 +57,8 @@ export function redirectToLogin(options: RedirectToLoginOptions = {}): void {
       const currentPath = window.location.pathname + window.location.search + window.location.hash;
       const returnPath = normalizeAuthReturnPath(options.returnPath ?? currentPath) ?? '/';
       const next = mode === 'cookie' ? await browserWebSession.login(returnPath) : null;
-      if (!navigateToWebAuthResult(next, '/connect/authorize')) {
+      if (browserWebSession.isLoggingOut) return;
+      if (!navigateToWebAuthResult(next, 'login')) {
         useAuthStore.getState().setSessionRecovering(true);
         options.onUnavailable?.();
         toast.error(i18n.t('error.common.internal_error'));
@@ -103,7 +109,10 @@ export function logout(): void {
     const mode = await tokenService.resolveSessionMode();
     if (mode !== 'legacy') {
       const next = mode === 'cookie' ? await browserWebSession.logout() : null;
-      if (!navigateToWebAuthResult(next, '/connect/endsession', true)) {
+      if (navigateToWebAuthResult(next, 'logout')) {
+        window.addEventListener('pagehide', () => browserWebSession.finishLogoutNavigation(), { once: true });
+      } else {
+        if (next) browserWebSession.finishLogoutNavigation();
         toast.error(i18n.t('error.common.internal_error'));
       }
       return;

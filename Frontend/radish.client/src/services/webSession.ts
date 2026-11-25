@@ -32,6 +32,10 @@ export class WebSession {
     return this.state === 'signed-out';
   }
 
+  get isLoggingOut(): boolean {
+    return this.logoutRequest !== null;
+  }
+
   getAccessToken(): string | null {
     return this.bearer && this.bearer.expiresAt > this.now() ? this.bearer.value : null;
   }
@@ -53,10 +57,12 @@ export class WebSession {
   }
 
   async login(returnPath: string): Promise<string | null> {
-    if (await this.resolveMode() !== 'cookie') return null;
+    if (await this.resolveMode() !== 'cookie' || this.isLoggingOut) return null;
 
+    const generation = this.generation;
     try {
       const response = await this.api.login(returnPath);
+      if (generation !== this.generation) return null;
       if (response.mode === 'cookie' && response.status === 200 && typeof response.data?.voAuthorizeUrl === 'string') {
         return response.data.voAuthorizeUrl;
       }
@@ -74,11 +80,19 @@ export class WebSession {
     // A refresh started before logout must not repopulate this document.
     this.generation++;
     this.tokenRequest = null;
-    const request = this.endSession().finally(() => {
-      if (this.logoutRequest === request) this.logoutRequest = null;
+    // On success, keep ownership of navigation until the document leaves the protected page.
+    this.logoutRequest = this.endSession().then(redirect => {
+      if (!redirect) this.logoutRequest = null;
+      return redirect;
+    }, error => {
+      this.logoutRequest = null;
+      throw error;
     });
-    this.logoutRequest = request;
-    return request;
+    return this.logoutRequest;
+  }
+
+  finishLogoutNavigation(): void {
+    this.logoutRequest = null;
   }
 
   async recordActivity(): Promise<void> {
