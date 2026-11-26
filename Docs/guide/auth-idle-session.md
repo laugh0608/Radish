@@ -6,6 +6,7 @@
 
 - Auth 按服务端时间执行 7 天不活跃窗口和自会话创建起 30 天的绝对上限。前台真实指针或键盘操作可节流上报活动。页面恢复、定时刷新和 Hub 心跳不延长会话。
 - 短 access token 最长 5 分钟，并截断在两道会话期限中较早的截止点。到期由 `/web/session/status` 或 `/web/session/token` 确认，浏览器清理内存状态并停止认证 Hub。显式退出成功后，当前页面优先完成 OIDC 登出，受保护页面的自动登录和迟到的登录响应都不能覆盖这次导航。Auth 发出的 `post_logout_redirect_uri` 使用 `radish-web` 登记时的精确字符串。
+- 刷新回连暂时失败或返回的短令牌已经到期时，Auth 重新读取当前会话。确认会话到期后，当次 `/web/session/token` 即返回 `401` 并清除会话 Cookie。会话仍有效时返回 `503` 和 `Retry-After`，浏览器保留 Cookie 稍后重试。
 - 普通 Web 的开关、旧会话迁移、隔夜与到期验收统一见[同源会话专题](../features/auth-session-overnight-recovery-plan.md#web-session-repair)。
 
 ## 旧 Web 与 Console 目标

@@ -130,7 +130,10 @@ public sealed class WebSessionAccessService(IWebSessionStore store, IWebAuthSess
 
         // A missing response may mean the issuer received the grant. Defer retries until the lease would have expired.
         await store.ReleaseRefreshLeaseAsync(session.Id, lease, leaseUntil, CancellationToken.None);
-        return new(WebSessionResultStatus.Retry);
+        // Activity, expiry or logout may have changed the session during the exchange.
+        return await IsAuthenticatedAsync(cookie, CancellationToken.None)
+            ? new(WebSessionResultStatus.Retry)
+            : new(WebSessionResultStatus.SignedOut);
     }
 
     private async Task<WebAccessTokenResult> ReadAfterContendedRefreshAsync(string? cookie, CancellationToken cancellationToken)

@@ -5,19 +5,23 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using OpenIddict.Abstractions;
+using Radish.Auth.Controllers;
 using Radish.Auth.OpenIddict;
 using Radish.Auth.WebSessions;
+using Radish.Common.HttpContextTool;
 using Xunit;
 
 namespace Radish.Api.Tests.Auth;
 
-public sealed class WebSessionPersistenceTest
+public sealed partial class WebSessionPersistenceTest
 {
     private const string InitialRefresh = "initial-test-refresh";
 
@@ -295,6 +299,18 @@ public sealed class WebSessionPersistenceTest
 
         public WebSessionAccessService CreateAccess(WebSessionProtection? protection = null, IWebSessionStore? store = null) =>
             new(store ?? Store, Sessions, Backchannel.Object, protection ?? Protection, Authorizations.Object, _configuration, Clock);
+
+        public WebSessionController CreateController(string cookie)
+        {
+            var http = new DefaultHttpContext();
+            var issuer = WebAuthClient.GetIssuer(_configuration);
+            http.Request.Scheme = issuer.Scheme;
+            http.Request.Host = new HostString(issuer.Host, issuer.Port);
+            http.Request.Headers.Origin = issuer.GetLeftPart(UriPartial.Authority);
+            http.Request.Headers.Cookie = $"{WebSessionCookieNames.Session}={cookie}";
+            http.Request.Headers["X-Radish-Web-Session"] = WebSessionSecrets.Proof(cookie);
+            return new(Login, Access, _configuration) { ControllerContext = new() { HttpContext = http } };
+        }
 
         public WebTokenBackchannelResult Success(string bearer, string refresh) =>
             new(WebTokenBackchannelStatus.Success, new(bearer, refresh, Clock.Now.AddMinutes(5)));
