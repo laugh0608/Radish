@@ -71,7 +71,7 @@
   - 账号：本地开发种子账号 `admin@radishx.com / admin123456`。
   - PC：`1920x1080` 覆盖 `/me/content`、`/me/content?tab=comments`、`/me/content?tab=quick-replies`、`/me/history`、`/me/attachments`、`/me/experience`；确认子导航、指标、主列表 / 空态、右侧 rail、公开详情跳转和浏览器返回均正常，无横向溢出。
   - 移动：`390x844 @ DPR 3` 覆盖 `/me/content`、`/me/history`、`/me/attachments`、`/me/experience`；确认子导航两列堆叠、上下文 rail 单列化、主列表和表单控件无横向溢出。
-  - 截图留存在 `output/playwright/me-content-desktop-1920.png`、`output/playwright/me-content-mobile-390-dpr3.png`、`output/playwright/me-experience-mobile-390-dpr3.png`。
+  - 原始截图 · [我的内容 PC](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/me-content-desktop-1920.png) · [我的内容移动端](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/me-content-mobile-390-dpr3.png) · [我的经验移动端](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/me-experience-mobile-390-dpr3.png)。
 
 ## 未执行
 

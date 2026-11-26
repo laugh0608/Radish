@@ -73,7 +73,16 @@
   - 移动：`390x844 @ DPR 3` 覆盖 `/me/assets`、`/me/assets/transactions`、`/shop/orders`、`/shop/order/931200000001`、`/shop/inventory`；确认主内容与 rail 单列化，无横向溢出。
   - 浏览器 console：无 error / warning。
   - 真实数据复核发现后端 `OrderVo.VoStatus` 以数字枚举进入前端时会让订单分组误判；本批已同步补 `normalizeOrderStatus`，订单分组、状态色、可取消判断和订单详情背包状态统一走规范化状态。
-  - 截图留存在 `output/playwright/d62-assets-orders-assets-overview-desktop-1920.png`、`output/playwright/d62-assets-orders-assets-transactions-desktop-1920.png`、`output/playwright/d62-assets-orders-shop-orders-desktop-1920.png`、`output/playwright/d62-assets-orders-shop-order-detail-desktop-1920.png`、`output/playwright/d62-assets-orders-shop-inventory-desktop-1920.png` 以及对应 `mobile-390-dpr3` 文件。
+
+## 原始截图
+
+| 页面 | PC 1920 × 1080 | Mobile 390 × 844 @ DPR 3 |
+| --- | --- | --- |
+| 资产总览 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-assets-overview-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-assets-overview-mobile-390-dpr3.png) |
+| 资产流水 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-assets-transactions-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-assets-transactions-mobile-390-dpr3.png) |
+| 订单列表 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-shop-orders-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-shop-orders-mobile-390-dpr3.png) |
+| 订单详情 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-shop-order-detail-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-shop-order-detail-mobile-390-dpr3.png) |
+| 背包 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-shop-inventory-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d62-assets-orders-shop-inventory-mobile-390-dpr3.png) |
 
 ## 未执行
 

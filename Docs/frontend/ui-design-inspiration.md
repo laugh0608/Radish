@@ -13,32 +13,32 @@
 
 ## 参考素材
 
-截图已整理到 `Docs/frontend/reference-ui/`：
+原始截图可通过下表链接在 GitHub 的固定提交中查看。
 
-| 来源 | 文件 | 主要参考点 |
+| 来源 | 原始截图 | 主要参考点 |
 |------|------|------------|
-| AFFINE | `affine-docs-list-three-pane.png` | 三栏文档工作台、列表密度、右侧辅助栏克制出现 |
-| AFFINE | `affine-settings-modal-appearance.png` | 大弹窗设置页、侧栏分组、表单控件留白 |
-| AFFINE | `affine-document-editor-properties.png` | 文档编辑器、属性面板、正文宽度和元信息排布 |
-| CodexApp | `codex-settings-general-permissions.png` | 设置页中心内容列、分组表单、卡片式选项 |
-| CodexApp | `codex-browser-permission-settings.png` | 权限矩阵、行级设置、状态标签与危险操作弱隔离 |
-| Cloudflare | `cloudflare-account-analytics-dashboard.png` | 管理后台首页、指标卡片、仪表盘信息组织 |
-| Cloudflare | `cloudflare-access-overview-workflow.png` | 工作流型控制台、快速操作、建议列表和右侧指标 |
-| GitHub | `github-repository-code-list.png` | 仓库文件列表、工具栏和右侧摘要 |
-| GitHub | `github-profile-repository-list.png` | 个人主页与仓库列表、元信息可扫描性 |
-| GitHub | `github-account-settings-content.png` | 设置页面长内容、左侧导航和正文段落节奏 |
-| Discourse | `discourse-topic-list-community.png` | 社区话题列表、标签、头像、回复和活跃度列 |
-| Discourse | `discourse-chat-channel-layout.png` | 频道侧栏、消息流、输入区贴底 |
-| Discourse | `discourse-admin-activity-dashboard.png` | 社区后台指标、排行列表和双栏分析布局 |
-| Discourse | `discourse-admin-traffic-analytics.png` | 图表页密度、坐标信息、分区标题 |
-| 1Panel | `onepanel-file-manager-table.png` | 运维文件表格、工具条、操作列和浅蓝侧栏 |
-| 1Panel | `onepanel-app-store-card-grid.png` | 应用市场卡片栅格、筛选和分页 |
-| 1Panel | `onepanel-monitoring-dashboard-charts.png` | 监控图表大面板、时间筛选和多图表布局 |
-| MiMo Code | `mimo-code-hero-desktop.png` | 淡色东方纹理、极简顶部导航、轻量按钮与命令框视觉 |
-| MiMo Code | `mimo-code-feature-desktop-1.png` | 技术截图与水墨背景融合、浅纸色承托和低对比装饰 |
-| MiMo Code | `mimo-code-feature-desktop-2.png` | 低饱和水墨背景、代码截图承托、标题与正文留白 |
-| MiMo Code | `mimo-code-mobile-hero-feature.png` | 移动端背景细节压缩、轻按钮尺寸和浮动入口避让 |
-| MiMo Code | `mimo-code-mobile-feature-list.png` | 移动端图文层级、浅底内容块和固定浮动操作避让 |
+| AFFINE | [affine-docs-list-three-pane.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/affine-docs-list-three-pane.png) | 三栏文档工作台、列表密度、右侧辅助栏克制出现 |
+| AFFINE | [affine-settings-modal-appearance.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/affine-settings-modal-appearance.png) | 大弹窗设置页、侧栏分组、表单控件留白 |
+| AFFINE | [affine-document-editor-properties.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/affine-document-editor-properties.png) | 文档编辑器、属性面板、正文宽度和元信息排布 |
+| CodexApp | [codex-settings-general-permissions.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/codex-settings-general-permissions.png) | 设置页中心内容列、分组表单、卡片式选项 |
+| CodexApp | [codex-browser-permission-settings.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/codex-browser-permission-settings.png) | 权限矩阵、行级设置、状态标签与危险操作弱隔离 |
+| Cloudflare | [cloudflare-account-analytics-dashboard.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/cloudflare-account-analytics-dashboard.png) | 管理后台首页、指标卡片、仪表盘信息组织 |
+| Cloudflare | [cloudflare-access-overview-workflow.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/cloudflare-access-overview-workflow.png) | 工作流型控制台、快速操作、建议列表和右侧指标 |
+| GitHub | [github-repository-code-list.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/github-repository-code-list.png) | 仓库文件列表、工具栏和右侧摘要 |
+| GitHub | [github-profile-repository-list.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/github-profile-repository-list.png) | 个人主页与仓库列表、元信息可扫描性 |
+| GitHub | [github-account-settings-content.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/github-account-settings-content.png) | 设置页面长内容、左侧导航和正文段落节奏 |
+| Discourse | [discourse-topic-list-community.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/discourse-topic-list-community.png) | 社区话题列表、标签、头像、回复和活跃度列 |
+| Discourse | [discourse-chat-channel-layout.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/discourse-chat-channel-layout.png) | 频道侧栏、消息流、输入区贴底 |
+| Discourse | [discourse-admin-activity-dashboard.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/discourse-admin-activity-dashboard.png) | 社区后台指标、排行列表和双栏分析布局 |
+| Discourse | [discourse-admin-traffic-analytics.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/discourse-admin-traffic-analytics.png) | 图表页密度、坐标信息、分区标题 |
+| 1Panel | [onepanel-file-manager-table.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/onepanel-file-manager-table.png) | 运维文件表格、工具条、操作列和浅蓝侧栏 |
+| 1Panel | [onepanel-app-store-card-grid.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/onepanel-app-store-card-grid.png) | 应用市场卡片栅格、筛选和分页 |
+| 1Panel | [onepanel-monitoring-dashboard-charts.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/onepanel-monitoring-dashboard-charts.png) | 监控图表大面板、时间筛选和多图表布局 |
+| MiMo Code | [mimo-code-hero-desktop.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/mimo-code-hero-desktop.png) | 淡色东方纹理、极简顶部导航、轻量按钮与命令框视觉 |
+| MiMo Code | [mimo-code-feature-desktop-1.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/mimo-code-feature-desktop-1.png) | 技术截图与水墨背景融合、浅纸色承托和低对比装饰 |
+| MiMo Code | [mimo-code-feature-desktop-2.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/mimo-code-feature-desktop-2.png) | 低饱和水墨背景、代码截图承托、标题与正文留白 |
+| MiMo Code | [mimo-code-mobile-hero-feature.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/mimo-code-mobile-hero-feature.png) | 移动端背景细节压缩、轻按钮尺寸和浮动入口避让 |
+| MiMo Code | [mimo-code-mobile-feature-list.png](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/Docs/frontend/reference-ui/mimo-code-mobile-feature-list.png) | 移动端图文层级、浅底内容块和固定浮动操作避让 |
 
 ### 淡雅古风 UI 参考
 

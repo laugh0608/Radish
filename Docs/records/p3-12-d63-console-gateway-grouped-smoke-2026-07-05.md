@@ -43,10 +43,15 @@
 
 ## 证据
 
-截图留存在 `output/playwright/d63-console-*.png`：
-
-- PC：`d63-console-moderation-desktop-1920.png`、`d63-console-experience-desktop-1920.png`、`d63-console-products-desktop-1920.png`、`d63-console-orders-desktop-1920.png`、`d63-console-documents-desktop-1920.png`、`d63-console-users-desktop-1920.png`、`d63-console-role-permissions-desktop-1920.png`。
-- 移动 CSS 视口：`d63-console-moderation-mobile-390-dpr3.png`、`d63-console-experience-mobile-390-dpr3.png`、`d63-console-products-mobile-390-dpr3.png`、`d63-console-orders-mobile-390-dpr3.png`、`d63-console-documents-mobile-390-dpr3.png`、`d63-console-users-mobile-390-dpr3.png`、`d63-console-role-permissions-mobile-390-dpr3.png`。
+| 页面 | PC 1920 × 1080 | Mobile 390 × 844 CSS 视口 |
+| --- | --- | --- |
+| 内容治理 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-moderation-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-moderation-mobile-390-dpr3.png) |
+| 经验治理 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-experience-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-experience-mobile-390-dpr3.png) |
+| 商品运营 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-products-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-products-mobile-390-dpr3.png) |
+| 订单运营 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-orders-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-orders-mobile-390-dpr3.png) |
+| 文档治理 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-documents-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-documents-mobile-390-dpr3.png) |
+| 用户管理 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-users-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-users-mobile-390-dpr3.png) |
+| 角色权限 | [PC 截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-role-permissions-desktop-1920.png) | [移动截图](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/d63-console-role-permissions-mobile-390-dpr3.png) |
 
 文件名保留 `dpr3` 是因为本批按该目标尝试设置；记录结论以实际读取到的 DPR 限制为准。
 

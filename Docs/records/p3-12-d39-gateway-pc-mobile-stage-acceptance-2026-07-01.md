@@ -113,6 +113,14 @@
 
 - 系统设置历史补验前，页面 DOM 中存在一个 0 尺寸隐藏编辑弹窗节点；未造成可见遮挡、横向溢出或保存动作。若后续出现焦点、快捷键或浮层遮挡问题，再作为系统设置弹窗状态治理回拉。
 
+## 原始证据
+
+| 范围 | PC 截图 | 移动截图 | 扫描与交互记录 |
+| --- | --- | --- | --- |
+| Public Web | [发现页](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-pc-discover.png) | [发现页](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-mobile-discover.png) | [公开页面扫描](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-public-scan.json) |
+| Private / Author Web | — | [我的](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-mobile-me.png) | [私域与作者态扫描](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-private-author-scan.json) |
+| Console | [Console](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-pc-console.png) · [仪表盘](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-console-dashboard-pc.png) | [Console](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-mobile-console.png) | [页面扫描](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-console-scan.json) · [只读交互](https://github.com/laugh0608/Radish/blob/520c8bbf81535d09470f3a950ef586b31502eece/output/playwright/p3-12-d39-console-interactions.json) |
+
 ## 工具限制
 
 - Playwright CLI wrapper 本轮 `open` 初始化未稳定返回，改用 Codex in-app Browser 执行真实页面复核。
