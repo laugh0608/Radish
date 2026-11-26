@@ -1,6 +1,6 @@
 # 普通 Web 会话候选隔离联验
 
-11 月 25–26 日在本机 OrbStack 隔离验证普通 Web。候选 `520c8bbf` 用于迁移、登录、重连和隔夜重开，`0cf4e7f1` 用于主动退出复验，`4c7ad3bf` 用于会话截止时的真实连接与重新认证。以下时间均为北京时间。[运行方案](../features/auth-session-overnight-recovery-plan.md#web-session-compose-candidate)
+11 月 25–26 日在本机 OrbStack 隔离验证普通 Web。候选 `520c8bbf` 用于迁移、登录、重连和隔夜重开，`0cf4e7f1` 用于主动退出复验，`4c7ad3bf` 用于会话截止联验及回退到 `v26.8.1-release` 的演练。以下时间均为北京时间。[运行方案](../features/auth-session-overnight-recovery-plan.md#web-session-compose-candidate)
 
 ## 候选与迁移
 
@@ -114,3 +114,22 @@ PC 和移动端均使用 Chromium，PC 视口为 1920×1080，移动视口为 39
 到点后，页面自动取令牌均收到 `401`，复查状态和取令牌接口也均为 `401`。即使旧 Auth SSO Cookie 仍存在，受保护页也自动显示了登录表单。四组经交互认证和 `302` 回调后，均返回原地址 `/messages?channelId=92900`，受保护账号接口返回与截止前相同的用户和租户，聊天 Hub 确认重新加入频道 `92900`。
 
 联验结束后已移除本项目 6 个容器、4 个卷、网络和 5 个候选镜像标签，清除临时证书及浏览器资料，释放宿主端口 `127.0.0.1:35443`。
+
+## 11 月 26 日隔离回退演练
+
+候选 DbMigrate 在一次性 PostgreSQL 上完成 `apply / verify`。PC Chromium（1920×1080）和移动 Chromium（390×844，DPR 3）各自交互登录一次，分别打开消息频道 `/messages?channelId=92900` 和个人页 `/me`。两端均经 `radish-web` 回调取得会话 Cookie，受保护账号接口返回 `200`。切换期间，两份原浏览器资料停在空白页，保留包括 Auth 单点登录 Cookie 在内的原始状态。
+
+关闭开关并重建候选 Auth 后，`GET /web/session/status`、`POST /web/session/login` 和 `POST /web/session/token` 都返回 `404`，响应头标记为 `legacy`。21:19:42，在同一数据库事务内按 `radish-web` 的客户端登记和关联授权定位两条已激活会话，写入撤销时间、清除加密凭据及刷新租约，并撤销两份对应授权。事务前后均保留 3 项 Auth 迁移、1 项 `radish-web` 登记和 2 条会话审计记录。已发出的两枚短令牌分别在 21:23:54 和 21:23:56 自然到期。
+
+21:24:16，已核实 API、Auth、Gateway 和 Frontend 全部运行旧版固定摘要，Gateway 的 HTTPS 健康检查、OIDC 发现和站点首页均返回 `200`。旧版沿用原 PostgreSQL 容器及数据卷，未执行降级迁移。[旧版镜像摘要](../../Scripts/logging/compose-exit-config.mjs)
+
+| 原浏览器资料 | 旧版登录 | 登录后页面 | 受保护账号核对 |
+| --- | --- | --- | --- |
+| PC | 输入凭据 1 次 | `/messages?channelId=92900`，频道参数保留 | `200`，账号及租户均与候选一致 |
+| 移动 | 输入凭据 1 次 | `/me` | 首次返回 `200`。随后用原资料重开个人页，无需再次登录，核实账号及租户均与候选一致 |
+
+两份原资料在旧版登录开始时仍有 Auth 单点登录 Cookie，均出现旧版登录表单。两端各经一次 `radish-client` 授权码流程，`/oidc/callback` 和 `POST /connect/token` 均返回 `200`。旧版写入自身的 access 和 refresh 存储项，登录期间对 `/web/session/*` 的请求均为零。候选会话 Cookie 仍在浏览器中，服务端对应的两条会话和两份授权复查均已撤销。库中新增 2 份有效的 `radish-client` 授权，`radish-web` 的登记、审计行数和迁移历史均保持原数。
+
+移动端首次采集只取得账号接口的状态码。一次补采尝试从浏览器外解析隔离域名失败，随后在浏览器内观察页面自身的同源请求，完成身份比对。
+
+演练结束后，本项目 6 个容器、4 个卷和 1 个网络均已移除，5 个候选镜像标签已删除，旧版摘要镜像仍在本机缓存。已清除临时证书、数据库及浏览器资料，复核 `127.0.0.1:35443` 已释放。

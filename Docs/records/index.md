@@ -5,7 +5,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
-- [2026-11-25 至 26 日普通 Web 会话候选隔离联验](./auth-session-candidate-2026-11-25.md) · PostgreSQL 升级、Auth 重建、PC 与移动浏览器隔夜恢复及退出回流
+- [2026-11-25 至 26 日普通 Web 会话候选隔离联验](./auth-session-candidate-2026-11-25.md) · PostgreSQL 升级、Auth 重建、两端隔夜恢复、退出回流、Hub 截止与回退演练
 - [2026-11-21 日终文档回顾](./day-end-doc-review-2026-11-21.md) · 日志出口、Windows 盘点、普通 Web 会话与隔离验收顺位
 - [2026-11-21 社区 Web 默认 Token 期限隔离复现](./auth-session-overnight-default-lifetime-2026-11-21.md) · 7 分钟恢复、27 分钟到期及清理验证
 - [2026-11-21 统一日志出口评审](./unified-logging-exit-review-2026-11-21.md) · 登记来源、诊断、数据保全及隔离候选退出

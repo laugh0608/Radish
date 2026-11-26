@@ -115,7 +115,7 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 - 启动、前台恢复、普通 Web API 的 401 和 Hub 使用同一内存凭据提供者。Cookie 会话恢复后清除旧普通 Web 的浏览器凭据缓存。自动恢复和定时刷新不计活动，前台真实输入通过 `/activity` 节流上报。服务端确认失效后清理当前和其他标签页，只广播退出事件。显式退出先执行同源 `/logout`，收到成功后再进入既有 OIDC 回流。Web 授权读请求可使用已轮换的令牌重试一次，授权写请求发生 401 时只更新凭据，原操作由调用方决定是否重试。[凭据状态机](../../Frontend/radish.client/src/services/webSession.ts) · [统一 HTTP 客户端](../../Frontend/radish.http/src/client.ts)
 - `/hub/web/notification`、`/hub/web/chat` 和 `/hub/web/comment` 只接受已验签的 `radish-web` bearer，并让 SignalR 在认证到期时断开。Web 通过同一提供者取新令牌重连，对账通知，恢复当前聊天频道和帖子评论订阅。退出或会话明确失效时取消重连。旧 Hub 路径仍服务 Flutter、Console 和历史入口，评论游客继续使用 `/hub/comment`。[Hub 鉴权边界](../../Radish.Api/Security/WebSessionHubBoundary.cs) · [前端 Hub 选择](../../Frontend/radish.client/src/services/hubSession.ts)
 
-候选 Compose 通过专用覆盖为 Auth 接入 Web 会话配置、持久密钥卷和证书。一次性 PostgreSQL 迁移、Auth 到 Gateway 的 HTTPS 回连、Auth 重建后的令牌轮换、两端的 Hub 重连及隔夜会话恢复已有实测记录。修复版已通过 PC 和移动浏览器的主动退出回流及跨标签退出复验。回退演练须先验证如何停用并撤销该环境内的 Web 会话，再让旧版接管。[隔离联验记录](../records/auth-session-candidate-2026-11-25.md) · [配置入口](../guide/configuration.md#普通-web-会话候选) · [接下来的事项](../planning/current.md#接下来的事项)
+候选 Compose 通过专用覆盖为 Auth 接入 Web 会话配置、持久密钥卷和证书。一次性 PostgreSQL 迁移、Auth 到 Gateway 的 HTTPS 回连、Auth 重建后的令牌轮换、两端的 Hub 重连及隔夜会话恢复已有实测记录。修复版已通过 PC 和移动浏览器的主动退出回流及跨标签退出复验。隔离回退中，关闭开关并撤销候选会话和对应授权，等已发出的短令牌到期后，旧版四个服务成功接管原库。两端均按旧版流程重新输入一次凭据，回到原页面。[隔离回退演练](../records/auth-session-candidate-2026-11-25.md#11-月-26-日隔离回退演练) · [配置入口](../guide/configuration.md#普通-web-会话候选) · [接下来的事项](../planning/current.md#接下来的事项)
 
 <a id="web-session-compose-candidate"></a>
 
@@ -140,7 +140,7 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 | 4. 验两端并关页 | PC 用 `1920×1080`，移动 Chromium 用 `390×844 @ DPR 3`。两份旧资料均应只重登一次并回到原页面；再验刷新、通知／聊天／评论 Hub 到期重连和订阅恢复，以及登出后无法续期。完成后重新登录，分别关闭整个测试浏览器，保存签发与关闭时间。 |
 | 5. 隔夜重开及清理 | 六个常驻容器、四个卷和两份已关闭的浏览器资料保留 12–24 小时。在时间窗内分别重开，以 `GET /api/v1/User/GetUserByHttpContext` 返回 `200` 且账号一致为准。记录实际间隔、是否出现额外登录及各项结果。随后关闭浏览器并执行 `c down --volumes --remove-orphans`，按本项目标签确认容器、网络、卷为零，并复核端口释放。删除本次五个镜像标签和核对过前缀的临时目录，仅保留脱敏结果。若启动后无法形成隔夜样本，登记失败步骤并当轮清理。 |
 
-留存证据只含镜像标识、时刻、状态码、错误分类、计数和身份一致性等判断。7 天不活跃与 30 天绝对期限在 Auth 控制器和持久化层的六个时间点已用可控时钟验证。两种期限到点时，PC 与移动浏览器均已验证三类认证 Hub 断线、旧会话无法续连，以及交互认证后返回原频道。完整回退及故障并发矩阵仍待完成。正式开关保持关闭。[服务端边界验证](../records/auth-session-candidate-2026-11-25.md#11-月-26-日服务端时钟边界验证) · [浏览器与 Hub 截止联验](../records/auth-session-candidate-2026-11-25.md#11-月-26-日浏览器与-hub-截止联验)
+留存证据只含镜像标识、时刻、状态码、错误分类、计数和身份一致性等判断。7 天不活跃与 30 天绝对期限在 Auth 控制器和持久化层的六个时间点已用可控时钟验证。两种期限到点时，PC 与移动浏览器均已验证三类认证 Hub 断线、旧会话无法续连，以及交互认证后返回原频道。隔离回退后的登录与页面回流亦已通过，故障与并发矩阵仍待完成。正式开关保持关闭。[服务端边界验证](../records/auth-session-candidate-2026-11-25.md#11-月-26-日服务端时钟边界验证) · [浏览器与 Hub 截止联验](../records/auth-session-candidate-2026-11-25.md#11-月-26-日浏览器与-hub-截止联验)
 
 ## 修复验收
 
