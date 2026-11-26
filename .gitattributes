@@ -42,3 +42,8 @@
 
 # Keep GitHub linguist setting
 **/wwwroot/libs/** linguist-vendored
+
+# Repository asset checks
+/.radish-assets/* text eol=lf
+/.githooks/pre-commit text eol=lf
+/.githooks/pre-push text eol=lf

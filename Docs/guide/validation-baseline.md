@@ -715,3 +715,9 @@ Tauri 历史目录和专属桥接默认不再修改。若因安全或仓库卫�
 2. 或在允许子进程的本机 / 提权环境中执行同一命令
 
 不要把这类失败误判为 `Repo Quality`、`Identity Guard` 或 changed-only 规则本身回归。
+
+## 二进制资产门禁
+
+本仓采用 [Radish 系列资产规则 v1](https://github.com/RadishIntelligence/.github/tree/main/asset-policy/v1)。单个二进制超过 5 MiB 时须登记例外，新增二进制合计超过 10 MiB 时提示复核。本仓的输出路径和例外以 [policy.tsv](../../.radish-assets/policy.tsv) 为准。
+
+新克隆在仓库根目录运行 `git config --local core.hooksPath .githooks` 启用本地钩子。PR 检查会核对新增提交中的资产。可用 `bash .radish-assets/check.sh --staged` 检查暂存区。

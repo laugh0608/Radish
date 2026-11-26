@@ -8,6 +8,7 @@ if [ -z "$repo_root" ]; then
 fi
 
 cd "$repo_root" || exit 1
+bash .radish-assets/check.sh --staged || exit $?
 npm run check:repo-hygiene:staged
 status=$?
 
