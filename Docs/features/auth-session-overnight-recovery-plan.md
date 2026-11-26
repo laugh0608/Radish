@@ -115,7 +115,7 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 - 启动、前台恢复、普通 Web API 的 401 和 Hub 使用同一内存凭据提供者。Cookie 会话恢复后清除旧普通 Web 的浏览器凭据缓存。自动恢复和定时刷新不计活动，前台真实输入通过 `/activity` 节流上报。服务端确认失效后清理当前和其他标签页，只广播退出事件。显式退出先执行同源 `/logout`，收到成功后再进入既有 OIDC 回流。Web 授权读请求可使用已轮换的令牌重试一次，授权写请求发生 401 时只更新凭据，原操作由调用方决定是否重试。[凭据状态机](../../Frontend/radish.client/src/services/webSession.ts) · [统一 HTTP 客户端](../../Frontend/radish.http/src/client.ts)
 - `/hub/web/notification`、`/hub/web/chat` 和 `/hub/web/comment` 只接受已验签的 `radish-web` bearer，并让 SignalR 在认证到期时断开。Web 通过同一提供者取新令牌重连，对账通知，恢复当前聊天频道和帖子评论订阅。退出或会话明确失效时取消重连。旧 Hub 路径仍服务 Flutter、Console 和历史入口，评论游客继续使用 `/hub/comment`。[Hub 鉴权边界](../../Radish.Api/Security/WebSessionHubBoundary.cs) · [前端 Hub 选择](../../Frontend/radish.client/src/services/hubSession.ts)
 
-候选 Compose 通过专用覆盖为 Auth 接入 Web 会话配置、持久密钥卷和证书。一次性 PostgreSQL 迁移、Auth 到 Gateway 的 HTTPS 回连、Auth 重建后的令牌轮换、两端的 Hub 重连及隔夜会话恢复已有实测记录。主动退出回流修复待两端浏览器复验。回退演练须先验证如何停用并撤销该环境内的 Web 会话，再让旧版接管。[隔离联验记录](../records/auth-session-candidate-2026-11-25.md) · [配置入口](../guide/configuration.md#普通-web-会话候选) · [接下来的事项](../planning/current.md#接下来的事项)
+候选 Compose 通过专用覆盖为 Auth 接入 Web 会话配置、持久密钥卷和证书。一次性 PostgreSQL 迁移、Auth 到 Gateway 的 HTTPS 回连、Auth 重建后的令牌轮换、两端的 Hub 重连及隔夜会话恢复已有实测记录。修复版已通过 PC 和移动浏览器的主动退出回流及跨标签退出复验。回退演练须先验证如何停用并撤销该环境内的 Web 会话，再让旧版接管。[隔离联验记录](../records/auth-session-candidate-2026-11-25.md) · [配置入口](../guide/configuration.md#普通-web-会话候选) · [接下来的事项](../planning/current.md#接下来的事项)
 
 <a id="web-session-compose-candidate"></a>
 
