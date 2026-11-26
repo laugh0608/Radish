@@ -102,6 +102,16 @@ Clients/radish.flutter/
 13. `P8-B macOS local platform foundation readiness` 已关闭：冻结 `com.radish.client`、macOS `10.15+` 工程下限、品牌 AppIcon、单窗口、MethodChannel OIDC、Keychain / preferences、App Sandbox entitlement 与 B1 无服务构建 / B2 本地运行边界
 14. `P8-B1 macOS platform foundation` 已关闭：`macos/`、显式平台选择、真实持久化 / auth owner、原生 OIDC callback、品牌身份、窗口和 Debug / Release 构建已落地；当前等待 P8-B2 本地运行启动授权
 
+## 首次构建前准备
+
+首次签出或清理 Serif 字体缓存后，在 `Clients/radish.flutter` 使用 Node.js 24+ 准备字体，再执行 `flutter run`、`flutter test` 或 `flutter build`。
+
+```bash
+node tool/prepare-serif-font.mjs
+```
+
+该命令会复用通过 SHA-256 校验的本地文件。离线环境可导入已备份的同一版本 TTF，再正常构建。[字体来源与离线导入](assets/fonts/noto/README.md#构建前准备)
+
 ## Flutter 环境切换
 
 客户端默认使用本机开发 Gateway：
@@ -121,6 +131,7 @@ https://localhost:5000
 本机 Android 开发态示例：
 
 ```powershell
+node tool/prepare-serif-font.mjs
 flutter run --dart-define=RADISH_ENVIRONMENT=development --dart-define=RADISH_GATEWAY_BASE_URL=https://localhost:5000
 ```
 
@@ -134,6 +145,7 @@ npm run check:flutter-ios-internal-testflight
 
 ```bash
 cd Clients/radish.flutter
+node tool/prepare-serif-font.mjs
 flutter build ios --release --no-codesign \
   --dart-define-from-file=config/internal-testflight.json
 ```
@@ -150,6 +162,7 @@ Android、iOS 与 macOS 平台目录已经生成，Windows / Linux 尚未生成�
 
 ```bash
 cd Clients/radish.flutter
+node tool/prepare-serif-font.mjs
 flutter build macos --debug
 flutter build macos --release
 
@@ -169,6 +182,7 @@ xcodebuild test \
 
 ```bash
 cd Clients/radish.flutter
+node tool/prepare-serif-font.mjs
 flutter build ios --simulator --debug --no-codesign
 
 cd ios
@@ -209,6 +223,7 @@ D:\MyKits\android\platform-tools\adb.exe reverse tcp:5000 tcp:5000
 Android MVP RC 构建当前允许在未配置正式签名时回落到 debug signing，以便本地继续执行：
 
 ```powershell
+node tool/prepare-serif-font.mjs
 flutter build apk --release
 ```
 
@@ -317,9 +332,9 @@ MVP 历史结果（P1–P5 前证据，不直接继承为新版 UI RC）：
 - 第四批“最近公开帖子回看”分页复访已完成代码、自动化验证与 Android 真机复核；最近公开帖子、最近公开评论与我的轻回应三条 profile 复访路线从详情返回后都会回到 profile
 - 第四批 docs 最近阅读与直达复访已完成代码、自动化验证与 Android 真机复核；discover 文档直达、docs 列表详情返回、profile 最近文档复访与重启恢复均确认正常
 - 第四批 docs 正文内链跳转与 docs 关键词搜索复访已完成代码、自动化验证与 Android 真机复核；真机复核发现长 slug 窄屏溢出与搜索详情返回退出问题后，已补代码修复与回归测试并复测通过；调试态根层返回后重新打开卡启动页的问题已收口为 Android 根层 Back 退后台；当前已通过 `flutter test`、`flutter analyze`、`git diff --check` 与定向 docs / smoke 回归
-- 第七批“docs 搜索体验增强”已完成代码、自动化验证与 Android 真机复核：搜索词会 trim 归一化，搜索 / 清除 / 翻页会回到结果顶部，从搜索结果打开内联详情后返回会恢复搜索列表上下文；真机复核发现的 Android Back 退桌面问题已修复并补 `docs_page_test.dart` 与 `smoke_test.dart` 覆盖；批次记录见 [Flutter Android MVP 第七批变更回归记录](../../Docs/guide/flutter-android-mvp-regression-record-2026-05-01.md)
+- 第七批“docs 搜索体验增强”已完成代码、自动化验证与 Android 真机复核：搜索词会 trim 归一化，搜索 / 清除 / 翻页会回到结果顶部，从搜索结果打开内联详情后返回会恢复搜索列表上下文；真机复核发现的 Android Back 退桌面问题已修复并补 `docs_page_test.dart` 与 `smoke_test.dart` 覆盖；批次记录见 [Flutter Android MVP 第七批变更回归记录](../../Docs/records/flutter-android-mvp-regression-record-2026-05-01.md)
 - 第四批 discover 论坛精选直达已完成代码与定向测试补齐：发现页论坛精选帖子可直接打开原生 forum detail，并以 `discover` 来源返回发现页；discover 的“进入论坛 / 进入文档”快捷入口也已补齐 Android Back 返回 discover 的轻量来源上下文；仍不开放发帖、评论提交、点赞、投票或编辑治理
-- 第十五批至第十七批刷新体验一致性已完成代码与自动化验证：`discover / forum / docs / profile` 在已有内容刷新时保留上次可用内容，刷新失败只显示局部提示，刷新成功后清理旧提示；模拟器验证清单见 [Flutter Android MVP 刷新体验开发阶段验证清单](../../Docs/guide/flutter-android-mvp-refresh-experience-checklist-2026-05-02.md)
+- 第十五批至第十七批刷新体验一致性已完成代码与自动化验证：`discover / forum / docs / profile` 在已有内容刷新时保留上次可用内容，刷新失败只显示局部提示，刷新成功后清理旧提示；模拟器验证清单见 [Flutter Android MVP 刷新体验开发阶段验证清单](../../Docs/records/flutter-android-mvp-refresh-experience-checklist-2026-05-02.md)
 - 通知入口只验证站内最近通知读取、单条标记已读、未读 forum 通知打开前已读回流和 forum 来源回流，不代表完整通知中心、批量已读、删除或系统通知栏推送已纳入 Android MVP
 
 暂不作为当前阻断项：

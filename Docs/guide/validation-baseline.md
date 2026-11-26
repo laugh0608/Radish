@@ -635,6 +635,10 @@ npm run check:host-runtime -- --details --report-file .tmp/host-runtime-report.m
 2. 如果这轮只是做必要的编译 / 测试确认，且暂时不方便停宿主，可改用隔离输出目录完成验证，避免覆盖正在运行的宿主产物。
 3. 自动化验证与真实联调尽量拆开执行，不要长时间共用同一个默认输出目录反复覆盖。
 
+## Flutter 构建前字体准备
+
+在干净签出中，先进入 `Clients/radish.flutter` 并运行 `node tool/prepare-serif-font.mjs`，再执行 Flutter 测试或构建。已有字体缓存可用 `--verify` 离线复查。[固定版本与离线导入](../../Clients/radish.flutter/assets/fonts/noto/README.md)
+
 ## Flutter Android 平台测试 JDK 说明
 
 `Clients/radish.flutter` 的 Dart 层回归继续使用：
@@ -661,6 +665,7 @@ $env:JAVA_HOME='D:\Program Files\JetBrains\Android Studio\jbr'
 
 ```bash
 cd Clients/radish.flutter
+node tool/prepare-serif-font.mjs
 flutter build ios --simulator --debug --no-codesign
 
 cd ios

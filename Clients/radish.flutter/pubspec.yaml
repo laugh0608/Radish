@@ -30,4 +30,4 @@ flutter:
         - asset: assets/fonts/noto/NotoSansSC-VF.ttf
     - family: NotoSerifSC
       fonts:
-        - asset: assets/fonts/noto/NotoSerifSC-VF.ttf
+        - asset: assets/fonts/noto/generated/NotoSerifSC-VF.ttf

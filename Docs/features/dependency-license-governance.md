@@ -143,6 +143,7 @@ Radish 正式数据库边界为 PostgreSQL / 本地 SQLite。原通用 `SqlSugar
 
 - Argon2 三包目前的事项是 CC-BY 声明。若更换实现，必须保留历史编码哈希验证、参数、失败语义和渐进迁移；不能顺带改成另一种哈希或要求用户重置密码。
 - Noto 的 Sans / Serif OFL 已纳入 Flutter assets 声明；Rust 图片构建已复制 DejaVu / Noto Sans 原文，并通过 MSBuild 随 native 树进入 API publish。2026-10-26 本机 Debug / Release 四份许可副本哈希与源文件一致，见[分发预检](../records/dependency-distribution-preflight-2026-10-26.md)；后续复核当前平台候选实际交付，不把接线或本机证据替代所有安装包 / 镜像验收。
+- Flutter 的 Noto Serif 在构建前按上游固定提交和 SHA-256 准备，安装包继续携带原 TTF 和 OFL。Noto Sans 仍随源码提供，并供原生图片处理复用。[字体供应链记录](../../Clients/radish.flutter/assets/fonts/noto/README.md)
 - Microsoft 构建工具 EULA 与原生 SNI 条款分别处理，既不统一归为 MIT，也不自动归为付费 key。
 
 ### 6.4 Redis 服务

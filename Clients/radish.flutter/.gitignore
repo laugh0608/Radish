@@ -4,6 +4,7 @@
 .flutter-plugins-dependencies
 .metadata
 build/
+/assets/fonts/noto/generated/
 
 android/.gradle/
 android/.kotlin/

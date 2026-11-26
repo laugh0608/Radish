@@ -63,6 +63,7 @@ flutter devices
 
 Set-Location "$p8cRoot\src\Clients\radish.flutter"
 flutter create --platforms=windows --no-pub .
+node tool/prepare-serif-font.mjs
 flutter pub get --enforce-lockfile
 flutter analyze --no-pub
 flutter test --no-pub
