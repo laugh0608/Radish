@@ -59,7 +59,7 @@ export function redirectToLogin(options: RedirectToLoginOptions = {}): void {
       const next = mode === 'cookie' ? await browserWebSession.login(returnPath) : null;
       if (browserWebSession.isLoggingOut) return;
       if (!navigateToWebAuthResult(next, 'login')) {
-        useAuthStore.getState().setSessionRecovering(true);
+        useAuthStore.getState().beginSessionRecovery();
         options.onUnavailable?.();
         toast.error(i18n.t('error.common.internal_error'));
       }
@@ -93,7 +93,7 @@ export function redirectToLogin(options: RedirectToLoginOptions = {}): void {
 
   void startLogin().catch((error: unknown) => {
     log.error('auth', '启动 OIDC 登录失败', error);
-    if (tokenService.sessionMode !== 'legacy') useAuthStore.getState().setSessionRecovering(true);
+    if (tokenService.sessionMode !== 'legacy') useAuthStore.getState().beginSessionRecovery();
     options.onUnavailable?.();
   });
 }

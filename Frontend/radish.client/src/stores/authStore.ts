@@ -19,9 +19,9 @@ interface AuthStore {
   /** 登出（清除所有状态） */
   logout: (options?: { sessionAlreadyCleared?: boolean }) => Promise<void>;
 
-  /** 设置认证状态 */
+  /** 确认登录态，同时结束本轮恢复 */
   setAuthenticated: (value: boolean) => void;
-  setSessionRecovering: (value: boolean) => void;
+  beginSessionRecovery: () => void;
 }
 
 export const useAuthStore = create<AuthStore>((set) => ({
@@ -84,8 +84,8 @@ export const useAuthStore = create<AuthStore>((set) => ({
 
   setAuthenticated: (value: boolean) => {
     log.debug('AuthStore', '设置认证状态:', value);
-    set({ isAuthenticated: value });
+    set({ isAuthenticated: value, isSessionRecovering: false });
   },
 
-  setSessionRecovering: (value: boolean) => set({ isSessionRecovering: value }),
+  beginSessionRecovery: () => set({ isSessionRecovering: true }),
 }));

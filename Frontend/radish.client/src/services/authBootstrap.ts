@@ -367,9 +367,11 @@ export async function hydrateAuthUser(options: AuthBootstrapOptions): Promise<Cu
   const authStore = useAuthStore.getState();
 
   const token = await tokenService.getValidAccessToken();
-  authStore.setSessionRecovering(!token && tokenService.isSessionRecovering());
   if (!token) {
-    if (tokenService.isSessionRecovering()) return buildCurrentUserFromStore();
+    if (tokenService.isSessionRecovering()) {
+      authStore.beginSessionRecovery();
+      return buildCurrentUserFromStore();
+    }
     authStore.setAuthenticated(false);
     return null;
   }
@@ -411,10 +413,11 @@ export async function revalidateAuthSession(options: AuthBootstrapOptions, reche
   const authStore = useAuthStore.getState();
   const userStore = useUserStore.getState();
   const token = await tokenService.getValidAccessToken(recheckWebSession);
-  authStore.setSessionRecovering(!token && tokenService.isSessionRecovering());
-
   if (!token) {
-    if (tokenService.isSessionRecovering()) return buildCurrentUserFromStore();
+    if (tokenService.isSessionRecovering()) {
+      authStore.beginSessionRecovery();
+      return buildCurrentUserFromStore();
+    }
     if (authStore.isAuthenticated || userStore.isAuthenticated()) {
       await authStore.logout();
     } else {
