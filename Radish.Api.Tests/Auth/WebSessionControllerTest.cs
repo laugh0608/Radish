@@ -21,20 +21,29 @@ namespace Radish.Api.Tests.Auth;
 
 public sealed class WebSessionControllerTest
 {
-    [Fact]
-    public async Task CallbackSetsOpaqueHostCookieAndReturnsOnlyTheLocalRedirect()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CallbackClearsOnlyItsOwnBindingAndReturnsTheLocalRedirect(bool startedBeforeUpgrade)
     {
         var fixture = new Fixture();
         var request = fixture.Controller.Request;
-        request.Headers.Cookie = $"{WebSessionCookieNames.Login}={fixture.Cookie}";
+        var state = WebSessionSecrets.NewSecret();
+        var other = WebSessionCookieNames.LoginPrefix + WebSessionSecrets.Digest(WebSessionSecrets.NewSecret());
+        var name = startedBeforeUpgrade ? WebSessionCookieNames.Login : WebSessionCookieNames.LoginPrefix + WebSessionSecrets.Digest(state);
+        var cookiesIn = $"{other}={WebSessionSecrets.NewSecret()}; {name}={fixture.Cookie}";
+        if (!startedBeforeUpgrade) cookiesIn += $"; {WebSessionCookieNames.Login}={WebSessionSecrets.NewSecret()}";
+        request.Headers.Cookie = cookiesIn;
         var newCookie = WebSessionSecrets.NewSecret();
         var expiry = new DateTimeOffset(2026, 12, 21, 12, 0, 0, TimeSpan.Zero);
-        fixture.Login.Setup(login => login.CompleteAsync("state", fixture.Cookie, "code", CancellationToken.None))
+        fixture.Login.Setup(login => login.CompleteAsync(state, fixture.Cookie, "code", CancellationToken.None))
             .ReturnsAsync(new WebLoginResult(WebTokenBackchannelStatus.Success, newCookie, expiry, "/forum"));
 
-        var result = Assert.IsType<LocalRedirectResult>(await fixture.Controller.Callback("state", "code", CancellationToken.None));
+        var result = Assert.IsType<LocalRedirectResult>(await fixture.Controller.Callback(state, "code", CancellationToken.None));
         Assert.Equal("/forum", result.Url);
         var cookies = fixture.Controller.Response.Headers.SetCookie;
+        Assert.Equal(2, cookies.Count);
+        Assert.Contains(cookies, value => value?.StartsWith(name + "=;", StringComparison.Ordinal) == true);
         var session = Assert.Single(cookies, value => value?.StartsWith(WebSessionCookieNames.Session + "=", StringComparison.Ordinal) == true)!;
         Assert.StartsWith(WebSessionCookieNames.Session + "=" + newCookie, session, StringComparison.Ordinal);
         Assert.Contains("secure", session, StringComparison.OrdinalIgnoreCase);
@@ -117,15 +126,24 @@ public sealed class WebSessionControllerTest
     }
 
     [Theory]
-    [InlineData(true, "/connect/authorize", "__Host-Radish-Web-Login=login; .Radish.Auth.Session=legacy")]
-    [InlineData(true, "/Account/Login", "__Host-Radish-Web-Login=login; .Radish.Auth.Session=legacy")]
-    [InlineData(true, "/connect/token", ".Radish.Auth.Session=legacy")]
-    [InlineData(false, "/connect/authorize", ".Radish.Auth.Session=legacy")]
-    [InlineData(false, "/console/", ".Radish.Auth.Session=legacy")]
-    public void ProxyKeepsSessionCookieFromOtherUpstreams(bool toAuth, string path, string expected)
+    [InlineData(true, "/connect/authorize", false, true)]
+    [InlineData(true, "/Account/Login", false, true)]
+    [InlineData(true, "/web/session/callback", true, true)]
+    [InlineData(true, "/web/session/status", true, false)]
+    [InlineData(false, "/web/session/callback", false, false)]
+    [InlineData(true, "/connect/token", false, false)]
+    [InlineData(false, "/connect/authorize", false, false)]
+    [InlineData(false, "/console/", false, false)]
+    public void ProxyForwardsOnlyCookiesForTheDestination(bool toAuth, string path, bool allowSession, bool allowLogin)
     {
-        const string sent = "__Host-Radish-Web-Session=web; __Host-Radish-Web-Login=login; .Radish.Auth.Session=legacy";
-        Assert.Equal(expected, WebSessionProxy.FilterCookies([sent], toAuth, new PathString(path)));
+        const string session = "__Host-Radish-Web-Session=web";
+        const string bindings = "__Host-Radish-Web-Login=login; __Host-Radish-Web-Login.A=a; __Host-Radish-Web-Login.B=b";
+        const string unrelated = ".Radish.Auth.Session=legacy";
+        var expected = new List<string>();
+        if (allowSession) expected.Add(session);
+        if (allowLogin) expected.Add(bindings);
+        expected.Add(unrelated);
+        Assert.Equal(string.Join("; ", expected), WebSessionProxy.FilterCookies([session, bindings, unrelated], toAuth, new PathString(path)));
     }
 
     [Fact]

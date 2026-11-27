@@ -30,8 +30,6 @@ public static class WebSessionProxy
             Transforms = [new Dictionary<string, string> { ["RequestHeaderOriginalHost"] = "true" }]
         }], []).AddTransforms(builder =>
         {
-            if (builder.Route.RouteId == RouteId) return;
-
             var authCluster = builder.Route.ClusterId == "authCluster";
             builder.AddRequestTransform(context =>
             {
@@ -52,15 +50,19 @@ public static class WebSessionProxy
 
     public static string FilterCookies(IEnumerable<string> headers, bool authCluster, PathString path)
     {
+        var allowSession = authCluster && path.StartsWithSegments("/web/session");
         var allowCorrelation = authCluster && (path.Equals("/Account/Login", StringComparison.OrdinalIgnoreCase) ||
-                                               path.Equals("/connect/authorize", StringComparison.OrdinalIgnoreCase));
+                                               path.Equals("/connect/authorize", StringComparison.OrdinalIgnoreCase) ||
+                                               path.Equals("/web/session/callback", StringComparison.OrdinalIgnoreCase));
         var selected = headers.SelectMany(header => header.Split(';', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
         return string.Join("; ", selected.Where(value =>
         {
             var split = value.IndexOf('=');
             var name = split < 0 ? value : value[..split].TrimEnd();
-            return !name.Equals(WebSessionCookieNames.Session, StringComparison.OrdinalIgnoreCase) &&
-                   (allowCorrelation || !name.Equals(WebSessionCookieNames.Login, StringComparison.OrdinalIgnoreCase));
+            if (name.Equals(WebSessionCookieNames.Session, StringComparison.OrdinalIgnoreCase)) return allowSession;
+            if (name.Equals(WebSessionCookieNames.Login, StringComparison.OrdinalIgnoreCase) ||
+                name.StartsWith(WebSessionCookieNames.LoginPrefix, StringComparison.OrdinalIgnoreCase)) return allowCorrelation;
+            return true;
         }));
     }
 }

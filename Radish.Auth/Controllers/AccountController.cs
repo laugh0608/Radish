@@ -161,7 +161,7 @@ public class AccountController : Controller
         var tenantId = user.TenantId.ToString();
         if (TryGetWebAuthorizationState(returnUrl, out var webState) &&
             (webLogin is null || !await webLogin.CompleteInteractiveAsync(webState,
-                Request.Cookies[WebSessionCookieNames.Login], userId, tenantId, HttpContext.RequestAborted)))
+                WebSessionLoginCookie.Read(Request.Cookies, webState, out _), userId, tenantId, HttpContext.RequestAborted)))
         {
             return BadRequest();
         }

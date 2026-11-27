@@ -26,6 +26,32 @@ public sealed partial class WebSessionPersistenceTest
     private const string InitialRefresh = "initial-test-refresh";
 
     [Fact]
+    public async Task ParallelLoginFlowsUseIndependentBrowserBindings()
+    {
+        var cancellation = TestContext.Current.CancellationToken;
+        await using var fixture = await Fixture.CreateAsync(cancellation);
+        var messages = await fixture.Login.StartAsync("/messages?channelId=92900", cancellation);
+        var profile = await fixture.Login.StartAsync("/me", cancellation);
+        var messagesState = Assert.Single(QueryHelpers.ParseQuery(messages.AuthorizeUri.Query)["state"])!;
+        var profileState = Assert.Single(QueryHelpers.ParseQuery(profile.AuthorizeUri.Query)["state"])!;
+        Assert.NotEqual(messages.CookieName, profile.CookieName);
+        var request = new DefaultHttpContext().Request;
+        request.Headers.Cookie = $"{messages.CookieName}={messages.BrowserSecret}; {profile.CookieName}={profile.BrowserSecret}";
+
+        var first = WebSessionLoginCookie.Read(request.Cookies, messagesState, out _);
+        var second = WebSessionLoginCookie.Read(request.Cookies, profileState, out _);
+        Assert.False(await fixture.Login.CompleteInteractiveAsync(messagesState, second, "10001", "0", cancellation));
+        Assert.True(await fixture.Login.CompleteInteractiveAsync(profileState, second, "10001", "0", cancellation));
+        Assert.True(await fixture.Login.CompleteInteractiveAsync(messagesState, first, "10001", "0", cancellation));
+        Assert.Null(await fixture.Login.FindAuthenticatedSessionAsync(profileState, second, "10001", "1", cancellation));
+        var firstId = await fixture.Login.FindAuthenticatedSessionAsync(messagesState, first, "10001", "0", cancellation);
+        var secondId = await fixture.Login.FindAuthenticatedSessionAsync(profileState, second, "10001", "0", cancellation);
+        Assert.NotNull(firstId);
+        Assert.NotNull(secondId);
+        Assert.NotEqual(firstId, secondId);
+    }
+
+    [Fact]
     public async Task LoginRequiresFreshBoundBrowserAndConsumesTheAuthorizationCallbackOnce()
     {
         var cancellation = TestContext.Current.CancellationToken;

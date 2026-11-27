@@ -1,6 +1,6 @@
 namespace Radish.Auth.WebSessions;
 
-public sealed record WebLoginStart(Uri AuthorizeUri, string BrowserSecret, DateTimeOffset ExpiresAt);
+public sealed record WebLoginStart(Uri AuthorizeUri, string CookieName, string BrowserSecret, DateTimeOffset ExpiresAt);
 
 public sealed record WebLoginResult(WebTokenBackchannelStatus Status, string? Cookie = null, DateTimeOffset? ExpiresAt = null, string? ReturnPath = null);
 

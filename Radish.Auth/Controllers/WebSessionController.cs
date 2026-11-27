@@ -27,7 +27,7 @@ public sealed class WebSessionController(IWebSessionLoginService login, IWebSess
         try
         {
             var started = await login.StartAsync(path, cancellationToken);
-            Response.Cookies.Append(WebSessionCookieNames.Login, started.BrowserSecret, CookieOptions(started.ExpiresAt));
+            Response.Cookies.Append(started.CookieName, started.BrowserSecret, CookieOptions(started.ExpiresAt));
             return Ok(new WebSessionLoginVo(started.AuthorizeUri.AbsoluteUri));
         }
         catch (Exception error) when (IsInfrastructureFailure(error))
@@ -43,11 +43,12 @@ public sealed class WebSessionController(IWebSessionLoginService login, IWebSess
 
         try
         {
-            var result = await login.CompleteAsync(state, Request.Cookies[WebSessionCookieNames.Login], code, cancellationToken);
+            var browser = WebSessionLoginCookie.Read(Request.Cookies, state, out var cookieName);
+            var result = await login.CompleteAsync(state, browser, code, cancellationToken);
             if (result.Status == WebTokenBackchannelStatus.Unavailable) return Retry();
             if (result is not { Status: WebTokenBackchannelStatus.Success, Cookie: { } value, ExpiresAt: { } expiry }) return BadRequest();
 
-            Response.Cookies.Delete(WebSessionCookieNames.Login, CookieOptions());
+            Response.Cookies.Delete(cookieName, CookieOptions());
             Response.Cookies.Append(WebSessionCookieNames.Session, value, CookieOptions(expiry));
             return LocalRedirect(Url.IsLocalUrl(result.ReturnPath) ? result.ReturnPath! : "/");
         }

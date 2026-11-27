@@ -45,7 +45,7 @@ public class AuthorizationController : Controller
         {
             if (webLogin is null || !request.HasPromptValue(OpenIddictConstants.PromptValues.Login)) return BadRequest();
 
-            var browser = Request.Cookies[WebSessionCookieNames.Login];
+            var browser = WebSessionLoginCookie.Read(Request.Cookies, request.State, out _);
             webSession = await webLogin.FindAuthenticatedSessionAsync(request.State, browser,
                 User.FindFirst(OpenIddictConstants.Claims.Subject)?.Value, User.FindFirst(UserClaimTypes.TenantId)?.Value,
                 HttpContext.RequestAborted);

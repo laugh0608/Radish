@@ -44,7 +44,7 @@ public sealed class WebSessionLoginService(IWebSessionStore store, IWebAuthSessi
                 ["code_challenge_method"] = "S256",
                 ["code_challenge"] = WebEncoders.Base64UrlEncode(SHA256.HashData(Encoding.ASCII.GetBytes(verifier)))
             });
-        return new(new Uri(authorize), browser, expires);
+        return new(new Uri(authorize), WebSessionCookieNames.LoginPrefix + stateDigest, browser, expires);
     }
 
     public async Task<bool> CompleteInteractiveAsync(string? state, string? browser, string subject, string tenant,
