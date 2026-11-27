@@ -191,6 +191,33 @@ test('退出时忽略迟到的活动 401，其他标签页仍清除会话且不�
   assert.deepEqual(peer.endings, [false]);
 });
 
+test('另一标签页广播退出后，已在途的成功刷新不能恢复当前页', async () => {
+  const { session, api, calls, endings } = fixture();
+  const bearer = await session.getToken();
+  assert.ok(bearer);
+  const started = Promise.withResolvers<void>();
+  const deliver = Promise.withResolvers<void>();
+  const token = api.token;
+  api.token = async proof => {
+    const result = await token(proof);
+    started.resolve();
+    await deliver.promise;
+    return result;
+  };
+
+  const refresh = session.getToken({ rejectedToken: bearer });
+  await started.promise;
+  session.receivedSignOut();
+  deliver.resolve();
+
+  assert.equal(await refresh, null);
+  assert.equal(session.getAccessToken(), null);
+  assert.equal(await session.getToken(), null);
+  assert.equal(session.signedOut, true);
+  assert.equal(calls.token, 2);
+  assert.deepEqual(endings, [false]);
+});
+
 test('改用另一标签页的新会话时先丢弃旧 bearer，只取新凭据', async () => {
   const { session, api, clock, endings } = fixture();
   await session.getToken();

@@ -215,17 +215,22 @@ public sealed partial class WebSessionPersistenceTest
             It.IsAny<WebAuthSession>(), CancellationToken.None), Times.Once);
     }
 
-    [Fact]
-    public async Task FailedRotationWriteKeepsOldCredentialsAndLetsTheNextOwnerRecover()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task NextOwnerResolvesAnInterruptedRotationAfterLeaseExpiry(bool issuerAcceptsRefresh)
     {
         var cancellation = TestContext.Current.CancellationToken;
         await using var fixture = await Fixture.CreateAsync(cancellation);
         var browser = await fixture.CreateSessionAsync(cancellation);
+        var original = Assert.IsType<WebAuthSession>(await fixture.Repository.FindAsync(browser.Id, cancellation));
         fixture.Clock.Now = fixture.Clock.Now.AddMinutes(10);
         fixture.Backchannel.SetupSequence(client => client.RefreshAsync(InitialRefresh, It.IsAny<Guid>(),
                 It.IsAny<WebAuthSession>(), CancellationToken.None))
             .ReturnsAsync(fixture.Success("not-persisted", "not-persisted-refresh"))
-            .ReturnsAsync(fixture.Success("recovered-access", "recovered-refresh"));
+            .ReturnsAsync(issuerAcceptsRefresh
+                ? fixture.Success("recovered-access", "recovered-refresh")
+                : new WebTokenBackchannelResult(WebTokenBackchannelStatus.Rejected));
         var digest = WebSessionSecrets.Digest(browser.Cookie);
         var failingStore = new Mock<IWebSessionStore>(MockBehavior.Strict);
         failingStore.Setup(store => store.FindByCookieAsync(digest, cancellation))
@@ -242,9 +247,38 @@ public sealed partial class WebSessionPersistenceTest
 
         Assert.Equal(WebSessionResultStatus.Retry, interrupted.Status);
         Assert.Null(interrupted.AccessToken);
-        Assert.Equal(WebSessionResultStatus.Retry, (await fixture.Access.GetTokenAsync(browser.Cookie, cancellation)).Status);
+        var nextOwner = fixture.CreateAccess();
+        var waiting = await nextOwner.GetTokenAsync(browser.Cookie, cancellation);
+        Assert.Equal(WebSessionResultStatus.Retry, waiting.Status);
+        Assert.Null(waiting.AccessToken);
+        var pending = Assert.IsType<WebAuthSession>(await fixture.Repository.FindAsync(browser.Id, cancellation));
+        Assert.Equal(original.ProtectedTokens, pending.ProtectedTokens);
+        Assert.NotNull(pending.RefreshLeaseId);
+        fixture.Backchannel.Verify(client => client.RefreshAsync(InitialRefresh, It.IsAny<Guid>(),
+            It.IsAny<WebAuthSession>(), CancellationToken.None), Times.Once);
+
         fixture.Clock.Now = fixture.Clock.Now.AddSeconds(20);
-        Assert.Equal("recovered-access", (await fixture.Access.GetTokenAsync(browser.Cookie, cancellation)).AccessToken);
+        var result = await nextOwner.GetTokenAsync(browser.Cookie, cancellation);
+        var final = Assert.IsType<WebAuthSession>(await fixture.Repository.FindAsync(browser.Id, cancellation));
+        Assert.Equal(original.AuthorizationId, final.AuthorizationId);
+        Assert.Null(final.RefreshLeaseId);
+        fixture.Backchannel.Verify(client => client.RefreshAsync(InitialRefresh, It.IsAny<Guid>(),
+            It.IsAny<WebAuthSession>(), CancellationToken.None), Times.Exactly(2));
+        if (issuerAcceptsRefresh)
+        {
+            Assert.Equal(WebSessionResultStatus.Success, result.Status);
+            Assert.Equal("recovered-access", result.AccessToken);
+            Assert.Equal("recovered-refresh", fixture.Protection.ReadTokens<WebSessionTokens>(browser.Id, final.ProtectedTokens!).RefreshToken);
+            Assert.Null(final.RevokedAtUtc);
+        }
+        else
+        {
+            Assert.Equal(WebSessionResultStatus.SignedOut, result.Status);
+            Assert.Null(result.AccessToken);
+            Assert.Null(final.ProtectedTokens);
+            Assert.NotNull(final.RevokedAtUtc);
+            fixture.Authorizations.Verify(manager => manager.TryRevokeAsync(fixture.Authorization, CancellationToken.None), Times.Once);
+        }
     }
 
     private sealed class Fixture : IAsyncDisposable
