@@ -12,7 +12,7 @@ const hook = registerHooks({
     return next(specifier, context);
   },
 });
-const { apiFetch, configureApiClient, getApiClientConfig } = await import('../src/client.ts');
+const { apiFetch, apiPost, configureApiClient, getApiClientConfig } = await import('../src/client.ts');
 const { createWebSessionApi } = await import('../src/web-session.ts');
 const { configureTokenRefresh, getTokenRefreshConfig } = await import('../src/token-refresh.ts');
 hook.deregister();
@@ -67,6 +67,31 @@ test('普通 Web 在授权读请求的 401 后只重试一次，写请求只恢�
     { method: 'POST', bearer: 'Bearer initial' },
   ]);
   assert.equal(recoveries, 2);
+});
+
+test('普通 Web 发送消息后连接中断时，原错误交给调用方，只有显式重试才再次发送', async (t) => {
+  const original = { ...getApiClientConfig() };
+  t.after(() => configureApiClient({ acquireSessionToken: undefined, recoverSessionToken: undefined, ...original }));
+  const recover = t.mock.fn(async () => 'renewed');
+  configureApiClient({ acquireSessionToken: async () => 'current', recoverSessionToken: recover });
+
+  const message = { channelId: '92900', type: 1, content: 'test', clientRequestId: 'original-send' };
+  const interrupted = new TypeError('Connection reset');
+  const bodies: string[] = [];
+  t.mock.method(globalThis, 'fetch', async (_url: URL | string, init: RequestInit) => {
+    assert.equal(init.method, 'POST');
+    assert.equal(new Headers(init.headers).get('Authorization'), 'Bearer current');
+    bodies.push(String(init.body));
+    if (bodies.length === 1) throw interrupted;
+    return Response.json({ isSuccess: true, responseData: { voId: '101' } });
+  });
+
+  const send = () => apiPost<{ voId: string }>('https://radish.test/api/v1/ChannelMessage/Send', message, { withAuth: true });
+  await assert.rejects(send, error => error === interrupted);
+  assert.equal(bodies.length, 1);
+  assert.equal((await send()).data?.voId, '101');
+  assert.deepEqual(bodies.map(body => JSON.parse(body)), [message, message]);
+  assert.equal(recover.mock.callCount(), 0);
 });
 
 test('Console 未启用 Web 会话适配器时仍使用原有 client_id 和刷新令牌', async (t) => {

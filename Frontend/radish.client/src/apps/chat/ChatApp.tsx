@@ -100,6 +100,7 @@ export const ChatApp = ({
     prependChannelMessages,
     appendChannelMessages,
     addMessage,
+    markSendFailed,
     removeMessage,
     recallMessage,
   } = useChatStore();
@@ -757,25 +758,23 @@ export const ChatApp = ({
         voLocalStatus: 'sent',
         voLocalError: null,
       });
-
-      if (options?.refreshConversationAfterSuccess) {
-        await reloadConversations();
-      }
-
-      if (options?.successToastMessage) {
-        toast.success(options.successToastMessage);
-      }
     } catch (error) {
       const errorMessage = getErrorMessage(error, options?.failureFallbackMessage || t('chat.sendFailed'));
-      log.error('ChatApp', '发送消息失败:', error);
-      addMessage({
-        ...optimisticMessage,
-        voLocalStatus: 'failed',
-        voLocalError: errorMessage,
-      });
-      toast.error(errorMessage);
+      if (markSendFailed(optimisticMessage, errorMessage)) {
+        log.error('ChatApp', '发送消息失败:', error);
+        toast.error(errorMessage);
+      }
+      return;
     }
-  }, [addMessage, reloadConversations, scrollToBottom, t]);
+
+    if (options?.refreshConversationAfterSuccess) {
+      await reloadConversations();
+    }
+
+    if (options?.successToastMessage) {
+      toast.success(options.successToastMessage);
+    }
+  }, [addMessage, markSendFailed, reloadConversations, scrollToBottom, t]);
 
   const handleSendMessage = useCallback(() => {
     if (!activeChannelId || !activeChannel?.voCanSend || uploadingImage) {

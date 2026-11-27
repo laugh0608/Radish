@@ -197,6 +197,24 @@ public class ChannelMessageControllerTest
     }
 
     [Fact]
+    public async Task Send_ShouldReturnOriginalMessageWithoutNotifyingClientsAgainOnReplay()
+    {
+        var request = new SendChannelMessageDto { ChannelId = 1, Content = "hello", ClientRequestId = "original-send" };
+        var saved = new ChannelMessageVo { VoId = 101, VoChannelId = 1, VoClientRequestId = request.ClientRequestId };
+        var service = CreateChatServiceMock();
+        service.Setup(chat => chat.SendMessageAsync(0, 10001, "Tester", request, It.IsAny<bool>()))
+            .ReturnsAsync(new ChatMessageSendResult(saved, WasCreated: false));
+        var hub = new Mock<IHubContext<ChatHub>>(MockBehavior.Strict);
+        var controller = CreateController(service.Object, hubContext: hub.Object);
+
+        var result = await controller.Send(request);
+
+        Assert.True(result.IsSuccess);
+        Assert.Same(saved, result.ResponseData);
+        hub.VerifyNoOtherCalls();
+    }
+
+    [Fact]
     public async Task Recall_ShouldBroadcastLatestPinStateWhenPinnedMessageIsRemoved()
     {
         var chatService = CreateChatServiceMock();

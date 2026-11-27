@@ -9,18 +9,18 @@ import type {
   ChannelUnreadChangedPayload,
   ChannelVo,
   EntityIdValue,
-} from '@/types/chat';
-import { mergeChatReactionState } from '@/utils/chatMessageReactions';
-import { mergeChatPinState } from '@/utils/chatMessagePins';
+} from '../types/chat.ts';
+import { mergeChatReactionState } from '../utils/chatMessageReactions.ts';
+import { mergeChatPinState } from '../utils/chatMessagePins.ts';
 import {
   areEntityIdsEqual,
   compareEntityIds,
   isPersistedEntityId,
   isTemporaryEntityId,
   normalizeEntityId,
-} from '@/types/chat';
-import { mergeChannelLastMessage } from '@/utils/chatChannelProjection';
-import { retainLocalChatMessages } from '@/utils/chatHistoryAvailability';
+} from '../types/chat.ts';
+import { mergeChannelLastMessage } from '../utils/chatChannelProjection.ts';
+import { retainLocalChatMessages } from '../utils/chatHistoryAvailability.ts';
 
 export type ChatConnectionState = 'disconnected' | 'connecting' | 'connected' | 'reconnecting';
 
@@ -51,6 +51,7 @@ interface ChatStore {
   prependChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   appendChannelMessages: (channelId: EntityIdValue, messages: ChannelMessageVo[]) => void;
   addMessage: (message: ChannelMessageVo) => void;
+  markSendFailed: (message: ChannelMessageVo, error: string) => boolean;
   removeMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
   recallMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => void;
   setReactionStates: (states: ChatMessageReactionStateVo[]) => void;
@@ -125,7 +126,10 @@ function findMessageIndex(messages: ChannelMessageVo[], target: ChannelMessageVo
   }
 
   if (targetClientRequestId) {
-    const requestIdIndex = messages.findIndex((item) => normalizeClientRequestId(item.voClientRequestId) === targetClientRequestId);
+    const requestIdIndex = messages.findIndex((item) => (
+      areEntityIdsEqual(item.voUserId, target.voUserId)
+      && normalizeClientRequestId(item.voClientRequestId) === targetClientRequestId
+    ));
     if (requestIdIndex >= 0) {
       return requestIdIndex;
     }
@@ -139,16 +143,11 @@ function findMessageIndex(messages: ChannelMessageVo[], target: ChannelMessageVo
 }
 
 function mergeMessageRecord(current: ChannelMessageVo, incoming: ChannelMessageVo): ChannelMessageVo {
-  const merged = normalizeMessage({
-    ...current,
-    ...incoming,
-  });
-
-  if (merged.voLocalStatus === 'sent') {
-    merged.voLocalError = null;
+  if (isPersistedEntityId(current.voId) && isTemporaryEntityId(incoming.voId)) {
+    return current;
   }
 
-  return merged;
+  return normalizeMessage({ ...current, ...incoming });
 }
 
 function mergeMessages(base: ChannelMessageVo[], incoming: ChannelMessageVo[]): ChannelMessageVo[] {
@@ -275,6 +274,26 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         [channelKey]: merged,
       },
     }));
+  },
+
+  markSendFailed: (message, error) => {
+    const channelKey = getChannelKey(message.voChannelId);
+    if (!channelKey) {
+      return false;
+    }
+
+    const messages = get().messageMap[channelKey] ?? [];
+    const pending = messages[findMessageIndex(messages, message)];
+    if (
+      pending?.voLocalStatus !== 'sending'
+      || !isTemporaryEntityId(pending.voId)
+      || pending.voClientRequestId !== normalizeClientRequestId(message.voClientRequestId)
+    ) {
+      return false;
+    }
+
+    get().addMessage({ ...pending, voLocalStatus: 'failed', voLocalError: error });
+    return true;
   },
 
   removeMessage: (channelId: EntityIdValue, messageId: EntityIdValue) => {
