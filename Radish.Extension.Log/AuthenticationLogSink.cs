@@ -12,6 +12,7 @@ public sealed class AuthenticationLogSink(ILogEventSink next) : ILogEventSink
     private static readonly MessageTemplate Template = new MessageTemplateParser().Parse("Authentication event {EventCode}.");
     private static readonly MessageTemplate FailureTemplate = new MessageTemplateParser().Parse("Authentication event {EventCode}; kind={failureKind}.");
     private static readonly MessageTemplate RejectionTemplate = new MessageTemplateParser().Parse("Authentication event {EventCode}; reason={authReason}.");
+    private static readonly MessageTemplate CorrelatedRejectionTemplate = new MessageTemplateParser().Parse("Authentication event {EventCode}, reason={authReason}, trace={traceId}.");
     private static readonly MessageTemplate ClientTemplate = new MessageTemplateParser().Parse("Authentication event {EventCode}; outcome={authClientOutcome}.");
     private static readonly MessageTemplate DurationTemplate = new MessageTemplateParser().Parse("Authentication event {EventCode}; duration={durationMs}.");
     private static readonly MessageTemplate RegistrationFailureTemplate = new MessageTemplateParser().Parse("Authentication event {EventCode}; stage={authStage}; kind={failureKind}.");
@@ -122,10 +123,16 @@ public sealed class AuthenticationLogSink(ILogEventSink next) : ILogEventSink
             new("Diagnostic", new ScalarValue(diagnostic))
         };
         var template = Template;
+        var traceId = logEvent.TraceId ?? Activity.Current?.TraceId;
         if (code == "auth.account.login_rejected")
         {
             CopyEnum(logEvent, properties, "authReason", ["invalid-return-url", "invalid-credentials"]);
             template = RejectionTemplate;
+            if (traceId.HasValue)
+            {
+                properties.Add(new LogEventProperty("traceId", new ScalarValue(traceId.Value.ToHexString())));
+                template = CorrelatedRejectionTemplate;
+            }
         }
         if (code == "auth.account.client_resolution_returned")
         {
@@ -152,7 +159,7 @@ public sealed class AuthenticationLogSink(ILogEventSink next) : ILogEventSink
         }
         // 不渲染原消息 / 异常，也不保留任意 scope；事件身份来自完整来源及 Id/Name。
         next.Emit(new LogEvent(logEvent.Timestamp, logEvent.Level, null, template, properties,
-            logEvent.TraceId ?? Activity.Current?.TraceId ?? default,
+            traceId ?? default,
             logEvent.SpanId ?? Activity.Current?.SpanId ?? default));
     }
 

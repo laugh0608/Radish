@@ -33,7 +33,6 @@ services:
     image: ${PROBE_API_IMAGE:?select the candidate API image}
     environment:
       Kestrel__Endpoints__Public__Url: http://+:5100
-      OpenIddict__Server__Issuer: ${RADISH_PUBLIC_URL}
       Serilog__Console__EnableSqlLog: "false"
     volumes: !override
       - app-data:/app/DataBases

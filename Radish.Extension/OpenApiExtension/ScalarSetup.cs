@@ -1,4 +1,5 @@
 using Asp.Versioning.ApiExplorer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,6 +19,7 @@ public static class ScalarSetup
     public static void AddScalarSetup(this IServiceCollection services)
     {
         if (services == null) throw new ArgumentNullException(nameof(services));
+        services.AddSingleton<OidcPublicEndpoints>();
 
         // 获取 API 版本描述提供者（需要在 AddApiVersioning 之后调用）
         var serviceProvider = services.BuildServiceProvider();
@@ -30,6 +32,19 @@ public static class ScalarSetup
 
             services.AddOpenApi(versionName, options =>
             {
+                options.AddOperationTransformer((operation, context, _) =>
+                {
+                    var metadata = context.Description.ActionDescriptor.EndpointMetadata;
+                    if (metadata.OfType<IAuthorizeData>().Any() && !metadata.OfType<IAllowAnonymous>().Any())
+                    {
+                        operation.Security ??= [];
+                        operation.Security.Add(new OpenApiSecurityRequirement
+                        {
+                            [new OpenApiSecuritySchemeReference("oauth2", context.Document)] = []
+                        });
+                    }
+                    return Task.CompletedTask;
+                });
                 options.AddDocumentTransformer((document, context, cancellationToken) =>
                 {
                     var version = description.ApiVersion.ToString(); // 例如：1.0, 2.0
@@ -55,24 +70,19 @@ public static class ScalarSetup
                         document.Info.Description = $"⚠️ **此版本已弃用**\n\n{document.Info.Description}";
                     }
 
-                    // 清空默认服务器列表，添加自定义服务器
+                    var endpoints = context.ApplicationServices.GetRequiredService<OidcPublicEndpoints>();
                     var servers = document.Servers ??= [];
                     servers.Clear();
                     servers.Add(new()
                     {
-                        Url = "https://localhost:5000",
-                        Description = "本地开发环境 (Gateway HTTPS)"
+                        Url = endpoints.BaseUri.AbsoluteUri.TrimEnd('/'),
+                        Description = "公开 Gateway"
                     });
-                    servers.Add(new()
+                    if (endpoints.BaseUri.IsLoopback)
                     {
-                        Url = "http://localhost:5001",
-                        Description = "本地开发环境 (Gateway HTTP)"
-                    });
-                    servers.Add(new()
-                    {
-                        Url = "http://localhost:5100",
-                        Description = "本地开发环境 (API 直连)"
-                    });
+                        servers.Add(new() { Url = "http://localhost:5001", Description = "本地开发环境 (Gateway HTTP)" });
+                        servers.Add(new() { Url = "http://localhost:5100", Description = "本地开发环境 (API 直连)" });
+                    }
 
                     // 添加 OAuth2 Security Scheme（用于 Scalar OIDC 登录）
                     var components = document.Components ??= new OpenApiComponents();
@@ -86,8 +96,8 @@ public static class ScalarSetup
                             AuthorizationCode = new OpenApiOAuthFlow
                             {
                                 // 通过 Gateway 代理的 Auth 端点
-                                AuthorizationUrl = new Uri("https://localhost:5000/connect/authorize"),
-                                TokenUrl = new Uri("https://localhost:5000/connect/token"),
+                                AuthorizationUrl = endpoints.Authorization,
+                                TokenUrl = endpoints.Token,
                                 Scopes = new Dictionary<string, string>
                                 {
                                     [UserScopes.OpenId] = "OpenID Connect 身份认证",
@@ -120,7 +130,7 @@ public static class ScalarSetup
             .OrderBy(v => v.ApiVersion)
             .ToList();
 
-        // 配置 Scalar UI
+        var endpoints = app.Services.GetRequiredService<OidcPublicEndpoints>();
         app.MapScalarApiReference(routePrefix, options =>
         {
             options.WithTitle("Radish API Documentation")
@@ -148,7 +158,8 @@ public static class ScalarSetup
                     flows.AuthorizationCode = new AuthorizationCodeFlow
                     {
                         ClientId = "radish-scalar",
-                        RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
+                        RedirectUri = endpoints.ScalarCallback.AbsoluteUri,
+                        Pkce = Pkce.Sha256
                     };
                 })
                 .AddDefaultScopes("oauth2", [UserScopes.OpenId, UserScopes.Profile, UserScopes.RadishApi]);

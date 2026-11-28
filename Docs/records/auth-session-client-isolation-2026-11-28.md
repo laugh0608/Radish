@@ -39,3 +39,11 @@ Auth 在执行登录重定向时把带查询串的目标写入了控制台和 `/
 后续复验须同时证明 Auth 两个日志出口均不再含登录参数，以及用户直接从 Scalar 页面授权后可在已登记的 Gateway 上完成回调、兑换和受保护读取。正式开关继续关闭。
 
 已清理本项目的 6 个容器、4 个卷、1 个网络和 5 个镜像标签，关闭临时浏览器并移除本轮证书、资料和工作目录。`127.0.0.1:35443` 已释放。
+
+## 修复后的定向回归
+
+Auth 将普通跳转、本地跳转和凭据错误后的 action 跳转写成固定事件。使用实际 MVC 执行器核对了直接查询串、编码的嵌套 ReturnUrl 和登录重试。三个响应仍为 `302`，并保留完整的预期 Location。旧日志写入、配置审计及候选诊断输出中的测试参数均为零命中。受控拒绝原因 `invalid-credentials` 与该请求的重定向可按追踪标识关联。[日志回归](../../Radish.Api.Tests/Auth/MvcRedirectLoggingTests.cs)
+
+API 的 OpenAPI 和 Scalar 页面与 Auth 登记共用 `OpenIddict:Server:Issuer`。内存 HTTP 管道检查了非默认端口、配置前缀及本地默认值下的页面回调、PKCE S256、授权与令牌地址，以及受保护操作的认证声明。SQLite 真实登记从旧地址切至非默认地址后，`radish-scalar` 仅保留新的回调，仍是 public 客户端，无 refresh grant。两套 Compose 的配置展开均确认 API 与 Auth 收到同一公开地址。[页面配置回归](../../Radish.Api.Tests/Auth/ScalarGatewayTests.cs) · [登记回归](../../Radish.Api.Tests/Auth/WebAuthClientRegistrationTest.cs)
+
+同一修复候选的 PC、移动浏览器页面登录及 Auth 控制台和应用文件复验待执行。正式开关保持关闭。

@@ -48,7 +48,8 @@ public class OpenIddictSeedHostedService : IHostedService
         var updatedCount = 0;
         var removedCount = 0;
 
-        var publicBaseUri = GetPublicBaseUri();
+        var endpoints = new OidcPublicEndpoints(_configuration);
+        var publicBaseUri = endpoints.BaseUri;
         var webClient = WebAuthClient.CreateRegistration(_configuration);
 
         // 初始化 radish-api Scope
@@ -78,9 +79,8 @@ public class OpenIddictSeedHostedService : IHostedService
             };
 
             // 通过 Gateway 访问（公开入口）
-            descriptor.RedirectUris.Add(BuildPublicUri(publicBaseUri, "oidc/callback"));
+            descriptor.RedirectUris.Add(new Uri(publicBaseUri, "oidc/callback"));
             descriptor.PostLogoutRedirectUris.Add(publicBaseUri);
-            descriptor.PostLogoutRedirectUris.Add(BuildPublicUri(publicBaseUri, string.Empty));
 
             // 直接访问前端开发服务器（开发环境）
             descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
@@ -122,7 +122,7 @@ public class OpenIddictSeedHostedService : IHostedService
 
             descriptor.RedirectUris.Clear();
             // 通过 Gateway 访问（公开入口）
-            descriptor.RedirectUris.Add(BuildPublicUri(publicBaseUri, "oidc/callback"));
+            descriptor.RedirectUris.Add(new Uri(publicBaseUri, "oidc/callback"));
             // 直接访问前端开发服务器（开发环境）
             descriptor.RedirectUris.Add(new Uri("http://localhost:3000/oidc/callback"));
             // Flutter 原生客户端（Android 起步）
@@ -133,7 +133,6 @@ public class OpenIddictSeedHostedService : IHostedService
             descriptor.PostLogoutRedirectUris.Clear();
             // 通过 Gateway 访问（公开入口）
             descriptor.PostLogoutRedirectUris.Add(publicBaseUri);
-            descriptor.PostLogoutRedirectUris.Add(BuildPublicUri(publicBaseUri, string.Empty));
             // 直接访问前端开发服务器（开发环境）
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3000/"));
@@ -161,7 +160,7 @@ public class OpenIddictSeedHostedService : IHostedService
                 ConsentType = OpenIddictConstants.ConsentTypes.Explicit // 需要用户显式授权
             };
 
-            descriptor.RedirectUris.Add(BuildPublicUri(publicBaseUri, "scalar/oauth2-callback"));
+            descriptor.RedirectUris.Add(endpoints.ScalarCallback);
 
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
@@ -185,7 +184,7 @@ public class OpenIddictSeedHostedService : IHostedService
             await _applicationManager.PopulateAsync(descriptor, existingScalar, cancellationToken);
 
             descriptor.RedirectUris.Clear();
-            descriptor.RedirectUris.Add(BuildPublicUri(publicBaseUri, "scalar/oauth2-callback"));
+            descriptor.RedirectUris.Add(endpoints.ScalarCallback);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Authorization);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.Token);
             descriptor.Permissions.Add(OpenIddictConstants.Permissions.Endpoints.EndSession);
@@ -212,9 +211,9 @@ public class OpenIddictSeedHostedService : IHostedService
             };
 
             // 通过 Gateway 访问（公开入口）
-            descriptor.RedirectUris.Add(BuildPublicUri(publicBaseUri, "console/callback"));
-            descriptor.PostLogoutRedirectUris.Add(BuildPublicUri(publicBaseUri, "console"));
-            descriptor.PostLogoutRedirectUris.Add(BuildPublicUri(publicBaseUri, "console/"));
+            descriptor.RedirectUris.Add(new Uri(publicBaseUri, "console/callback"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri(publicBaseUri, "console"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri(publicBaseUri, "console/"));
 
             // 直接访问 console 开发服务器（开发环境，端口 3100）
             descriptor.RedirectUris.Add(new Uri("http://localhost:3100/console/callback"));
@@ -237,14 +236,14 @@ public class OpenIddictSeedHostedService : IHostedService
 
             descriptor.RedirectUris.Clear();
             // 通过 Gateway 访问（公开入口）
-            descriptor.RedirectUris.Add(BuildPublicUri(publicBaseUri, "console/callback"));
+            descriptor.RedirectUris.Add(new Uri(publicBaseUri, "console/callback"));
             // 直接访问 console 开发服务器（开发环境，端口 3100）
             descriptor.RedirectUris.Add(new Uri("http://localhost:3100/console/callback"));
 
             descriptor.PostLogoutRedirectUris.Clear();
             // 通过 Gateway 访问（公开入口）
-            descriptor.PostLogoutRedirectUris.Add(BuildPublicUri(publicBaseUri, "console"));
-            descriptor.PostLogoutRedirectUris.Add(BuildPublicUri(publicBaseUri, "console/"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri(publicBaseUri, "console"));
+            descriptor.PostLogoutRedirectUris.Add(new Uri(publicBaseUri, "console/"));
             // 直接访问 console 开发服务器（开发环境，端口 3100）
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3100/console"));
             descriptor.PostLogoutRedirectUris.Add(new Uri("http://localhost:3100/console/"));
@@ -309,29 +308,6 @@ public class OpenIddictSeedHostedService : IHostedService
 
         await _applicationManager.UpdateAsync(existing, descriptor, cancellationToken);
         return (0, 1);
-    }
-
-    private Uri GetPublicBaseUri()
-    {
-        var issuer = _configuration.GetValue<string>("OpenIddict:Server:Issuer");
-        if (Uri.TryCreate(issuer, UriKind.Absolute, out var issuerUri))
-        {
-            return EnsureTrailingSlash(issuerUri);
-        }
-
-        return new Uri("https://localhost:5000/");
-    }
-
-    private static Uri BuildPublicUri(Uri baseUri, string relativePath)
-    {
-        var normalizedPath = relativePath.TrimStart('/');
-        return new Uri(EnsureTrailingSlash(baseUri), normalizedPath);
-    }
-
-    private static Uri EnsureTrailingSlash(Uri uri)
-    {
-        var uriText = uri.ToString();
-        return uriText.EndsWith("/", StringComparison.Ordinal) ? uri : new Uri($"{uriText}/");
     }
 
     private static void EnsureConsolePermissions(OpenIddictApplicationDescriptor descriptor)

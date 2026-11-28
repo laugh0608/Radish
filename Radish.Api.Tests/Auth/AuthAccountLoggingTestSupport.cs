@@ -100,7 +100,7 @@ internal sealed class AuthAccountFixture : IDisposable
         foreach (var entry in capture.Sink.Events.Where(e => e.Properties.TryGetValue("EventCode", out var code) &&
                      (code.ToString().Contains("auth.account.") || code.ToString().Contains("auth.idle_session."))))
             Assert.All(entry.Properties.Keys, key => Assert.Contains(key, new[]
-                { "EventCode", "SourceCategory", "SourceContext", "Diagnostic", "failureKind", "authStage", "authReason", "authClientOutcome", "durationMs" }));
+                { "EventCode", "SourceCategory", "SourceContext", "Diagnostic", "failureKind", "authStage", "authReason", "authClientOutcome", "durationMs", "traceId" }));
     }
 
     internal static void AssertCodes(HttpBoundaryCapture capture, params string[] expected)

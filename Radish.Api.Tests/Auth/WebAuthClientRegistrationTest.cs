@@ -32,13 +32,17 @@ public sealed class WebAuthClientRegistrationTest
         const string issuer = "https://radish.test:35443/";
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            ["OpenIddict:Server:Issuer"] = issuer
+            ["OpenIddict:Server:Issuer"] = "https://localhost:5000"
         }).Build();
         var seed = new OpenIddictSeedHostedService(apps, scopes, configuration, NullLogger<OpenIddictSeedHostedService>.Instance);
         await seed.StartAsync(cancellationToken);
         Assert.Null(await apps.FindByClientIdAsync(WebAuthClient.ClientId, cancellationToken));
+        var originalScalar = await apps.FindByClientIdAsync("radish-scalar", cancellationToken);
+        Assert.NotNull(originalScalar);
+        Assert.Equal("https://localhost:5000/scalar/oauth2-callback", Assert.Single(await apps.GetRedirectUrisAsync(originalScalar, cancellationToken)));
 
         const string secret = "test-only-confidential-client-secret";
+        configuration["OpenIddict:Server:Issuer"] = issuer;
         configuration["OpenIddict:WebSession:Enabled"] = "true";
         configuration["OpenIddict:WebSession:ClientSecret"] = secret;
         await seed.StartAsync(cancellationToken);
@@ -66,7 +70,8 @@ public sealed class WebAuthClientRegistrationTest
         foreach (var (clientId, callback) in new[]
                  {
                      ("radish-client", "radish://oidc/callback"),
-                     ("radish-console", issuer + "console/callback")
+                     ("radish-console", issuer + "console/callback"),
+                     ("radish-scalar", issuer + "scalar/oauth2-callback")
                  })
         {
             var application = await apps.FindByClientIdAsync(clientId, cancellationToken);
@@ -75,6 +80,11 @@ public sealed class WebAuthClientRegistrationTest
             await apps.PopulateAsync(descriptor, application, cancellationToken);
             Assert.Equal(OpenIddictConstants.ClientTypes.Public, descriptor.ClientType);
             Assert.Contains(new Uri(callback), descriptor.RedirectUris);
+            if (clientId == "radish-scalar")
+            {
+                Assert.Single(descriptor.RedirectUris);
+                Assert.DoesNotContain(OpenIddictConstants.Permissions.GrantTypes.RefreshToken, descriptor.Permissions);
+            }
             Assert.DoesNotContain(new Uri(issuer + "web/session/callback"), descriptor.RedirectUris);
             Assert.Empty(descriptor.Settings);
         }

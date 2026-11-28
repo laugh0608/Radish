@@ -6,11 +6,12 @@ using Serilog.Parsing;
 
 namespace Radish.Extension.Log;
 
-/// <summary>在上下文合并后重建四个精确路由框架来源。</summary>
+/// <summary>在日志分发前重建路由和 MVC 重定向事件，丢弃目标 URL 和原始 scope。</summary>
 public sealed class RoutingLogSink(ILogEventSink next) : ILogEventSink
 {
     private static readonly MessageTemplate Template = new MessageTemplateParser().Parse("Routing event {EventCode}.");
     private static readonly MessageTemplate FailureTemplate = new MessageTemplateParser().Parse("Routing event {EventCode}; kind={failureKind}.");
+    private static readonly MessageTemplate RedirectTemplate = new MessageTemplateParser().Parse("MVC event {EventCode}, trace={traceId}.");
 
     public void Emit(LogEvent logEvent)
     {
@@ -26,6 +27,10 @@ public sealed class RoutingLogSink(ILogEventSink next) : ILogEventSink
             "Microsoft.AspNetCore.Routing.EndpointMiddleware" => "routing.endpoint",
             "Microsoft.AspNetCore.Routing.Matching.DfaMatcher" => "routing.matcher",
             "Microsoft.AspNetCore.Routing.DefaultLinkGenerator" => "routing.link",
+            "Microsoft.AspNetCore.Mvc.Infrastructure.RedirectResultExecutor" => "mvc.redirect_result",
+            "Microsoft.AspNetCore.Mvc.Infrastructure.LocalRedirectResultExecutor" => "mvc.local_redirect_result",
+            // RedirectToActionResultExecutor 使用结果类型作为日志来源。
+            "Microsoft.AspNetCore.Mvc.RedirectToActionResult" => "mvc.redirect_to_action_result",
             _ => null
         };
         if (owner == null)
@@ -34,6 +39,7 @@ public sealed class RoutingLogSink(ILogEventSink next) : ILogEventSink
             return;
         }
 
+        var isMvcRedirect = owner.StartsWith("mvc.", StringComparison.Ordinal);
         var (id, name) = Identity(logEvent, category);
         var code = (owner, id, name) switch
         {
@@ -65,7 +71,7 @@ public sealed class RoutingLogSink(ILogEventSink next) : ILogEventSink
             ("routing.link", 104, "TemplateFailedExpansion") => "routing.link_expansion_failed",
             ("routing.link", 105, "LinkGenerationSucceeded") => "routing.link_generated",
             ("routing.link", 106, "LinkGenerationFailed") => "routing.link_generation_failed",
-            _ => owner + "_unknown"
+            _ => isMvcRedirect ? owner : owner + "_unknown"
         };
         var failureKind = logEvent.Exception == null ? null : RuntimeFailureSummary.Classify(logEvent.Exception);
 
@@ -77,9 +83,15 @@ public sealed class RoutingLogSink(ILogEventSink next) : ILogEventSink
             new("Diagnostic", new ScalarValue(logEvent.Level < LogEventLevel.Warning))
         };
         if (failureKind != null) properties.Add(new LogEventProperty("failureKind", new ScalarValue(failureKind)));
-        next.Emit(new LogEvent(logEvent.Timestamp, logEvent.Level, null,
-            failureKind == null ? Template : FailureTemplate, properties,
-            logEvent.TraceId ?? Activity.Current?.TraceId ?? default,
+        var traceId = logEvent.TraceId ?? Activity.Current?.TraceId;
+        var template = failureKind == null ? Template : FailureTemplate;
+        if (isMvcRedirect && traceId.HasValue && failureKind == null)
+        {
+            // 旧控制台和文件仅渲染消息。只从类型化的跟踪上下文取关联标识。
+            properties.Add(new LogEventProperty("traceId", new ScalarValue(traceId.Value.ToHexString())));
+            template = RedirectTemplate;
+        }
+        next.Emit(new LogEvent(logEvent.Timestamp, logEvent.Level, null, template, properties, traceId ?? default,
             logEvent.SpanId ?? Activity.Current?.SpanId ?? default));
     }
 

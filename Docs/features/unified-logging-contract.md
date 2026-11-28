@@ -592,6 +592,7 @@ Node 读取相同名称的 `RadishLogging__Enabled / Mode / MinimumLevel / Diagn
 
 ## 63. L2 路由框架
 
+- MVC 登录跳转按执行来源记录 `mvc.redirect_result`、`mvc.local_redirect_result` 或 `mvc.redirect_to_action_result`。控制台、应用文件、配置审计和候选输出共用重建后的事件，只保留类型化关联标识和安全摘要。登录拒绝诊断记录受控原因，有追踪标识时可与同一请求的重定向关联。目标 URL、嵌套 ReturnUrl、邮箱及原 scope 均在分发前丢弃。[重定向与拒绝回归](../../Radish.Api.Tests/Auth/MvcRedirectLoggingTests.cs)
 - `RoutingLogSink` 精确覆盖 `Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware`、`Microsoft.AspNetCore.Routing.EndpointMiddleware`、`Microsoft.AspNetCore.Routing.Matching.DfaMatcher`、`Microsoft.AspNetCore.Routing.DefaultLinkGenerator`。28 个已知事件和 4 个来源未知摘要，共 32 个编码；完整身份映射见[本批记录](../records/unified-logging-l2-routing-2026-10-11.md)。
 - 完整来源 + EventId + EventName 决定身份；仅 EndpointMiddleware 的 `0 / ExecutingEndpoint` 兼容桥接省略 Id 字段，显式 null / 错误类型 / 重复字段仍拒绝。未知身份仅进入来源摘要，不按模板猜测，不接管 DefaultLinkParser 或相邻类别。
 - 在上下文合并后重建旧链代码 / 配置 WriteTo / AuditTo 和候选输出。保留原等级、时间、类型化 trace/span、固定身份、Diagnostic 和受控 failureKind；舍弃路径、route values、生成 URI、端点 / constraint 对象、原异常及任意 scope。诊断门禁与未知严重事件可见性保持。

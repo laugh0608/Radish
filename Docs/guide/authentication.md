@@ -116,12 +116,12 @@ grant_type=refresh_token
 > 当前官方客户端（`radish-client / radish-console / radish-scalar`）的 Gateway 回调地址会跟随 `OpenIddict:Server:Issuer` 动态生成。
 > `radish-client` 继续承载旧 Web 登录路径、WebOS 与 Flutter 原生客户端。普通 Web 同源会话启用后使用独立机密客户端 `radish-web`，其回调为 `/web/session/callback`，由 Auth 完成 PKCE 授权码兑换。[客户端登记](../../Radish.Auth/OpenIddict/WebAuthClient.cs)
 > 本地默认会落到 `https://localhost:5000/...`，生产环境则必须把 `Issuer` 覆盖为真实外部 HTTPS 域名。
-> 下文中的 `BuildPublicBaseUri(...)` 表示“读取 `Issuer`、补齐尾部 `/`、并在缺失时回落到 `https://localhost:5000/`”的当前种子逻辑。
+> Auth 与 API 共用 `OidcPublicEndpoints` 解析 `OpenIddict:Server:Issuer`。Compose 将同一个 `RADISH_PUBLIC_URL` 注入两个宿主。
 
 ### 4.1 Scalar API 文档
 
 ```csharp
-var publicBaseUri = BuildPublicBaseUri(configuration["OpenIddict:Server:Issuer"]);
+var endpoints = new OidcPublicEndpoints(configuration);
 
 new OpenIddictApplicationDescriptor
 {
@@ -129,7 +129,7 @@ new OpenIddictApplicationDescriptor
     DisplayName = "Radish API Documentation",
     ConsentType = ConsentTypes.Explicit, // 显示授权确认页（用于测试）
     RedirectUris = {
-        new Uri(publicBaseUri, "scalar/oauth2-callback")
+        endpoints.ScalarCallback
     },
     Permissions =
     {
@@ -145,7 +145,7 @@ new OpenIddictApplicationDescriptor
 ```
 
 **使用方式**：
-1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
+1. 通过当前公开 Gateway 打开 `/scalar/v1`
 2. 点击右上角 **Authenticate** 按钮
 3. 选择 **oauth2** 认证方式，点击 **Authorize**
 4. 使用当前环境有效账号登录；仅当本地或受控测试环境显式开启开发默认用户种子时，才可使用开发演示账号 `admin / admin123456` 或 `test / test123456`
@@ -154,7 +154,7 @@ new OpenIddictApplicationDescriptor
 ### 4.2 官方公开客户端（旧 Web / Flutter 共享 `radish-client`）
 
 ```csharp
-var publicBaseUri = BuildPublicBaseUri(configuration["OpenIddict:Server:Issuer"]);
+var publicBaseUri = new OidcPublicEndpoints(configuration).BaseUri;
 
 new OpenIddictApplicationDescriptor
 {
@@ -168,7 +168,6 @@ new OpenIddictApplicationDescriptor
     },
     PostLogoutRedirectUris = {
         publicBaseUri,
-        new Uri(publicBaseUri, string.Empty),
         new Uri("http://localhost:3000"),
         new Uri("http://localhost:3000/"),
         new Uri("radish://oidc/logout-complete")
@@ -463,9 +462,11 @@ export const useApiClient = () => {
 - iOS 仅在显式 opt-in 且 Gateway 仍为 loopback host 时允许 App 内请求接受本地开发证书；系统 Safari 仍必须建立独立的本地 HTTPS 信任，不能用关闭 TLS 校验替代
 - 这条链路已进入 Flutter Native Android / iOS 平台基线，但不等于完整账户治理、完整通知中心、真机签名或分发门禁已经完成
 
+<a id="scalar-oauth"></a>
+
 ## 7. Scalar OAuth 配置
 
-Scalar API 文档已集成 OIDC 认证，配置位于 `Radish.Extension/OpenApiExtension/ScalarSetup.cs`：
+Scalar 的授权、兑换、回调及默认 API 服务器均取自 Auth 登记使用的公开 Gateway。[Scalar 配置](../../Radish.Extension/OpenApiExtension/ScalarSetup.cs)
 
 ### 7.1 OpenAPI Security Scheme
 
@@ -481,8 +482,8 @@ document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
     {
         AuthorizationCode = new OpenApiOAuthFlow
         {
-            AuthorizationUrl = new Uri("https://localhost:5000/connect/authorize"),
-            TokenUrl = new Uri("https://localhost:5000/connect/token"),
+            AuthorizationUrl = endpoints.Authorization,
+            TokenUrl = endpoints.Token,
             Scopes = new Dictionary<string, string>
             {
                 ["openid"] = "OpenID Connect 身份认证",
@@ -509,7 +510,8 @@ app.MapScalarApiReference(options =>
             flows.AuthorizationCode = new AuthorizationCodeFlow
             {
                 ClientId = "radish-scalar",
-                RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
+                RedirectUri = endpoints.ScalarCallback.AbsoluteUri,
+                Pkce = Pkce.Sha256
             };
         })
         .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
@@ -518,26 +520,7 @@ app.MapScalarApiReference(options =>
 
 ### 7.3 服务器配置
 
-Scalar 支持多个服务器选项，方便在不同环境下测试：
-
-```csharp
-document.Servers.Clear();
-document.Servers.Add(new()
-{
-    Url = "https://localhost:5000",
-    Description = "本地开发环境 (Gateway HTTPS)"
-});
-document.Servers.Add(new()
-{
-    Url = "http://localhost:5001",
-    Description = "本地开发环境 (Gateway HTTP)"
-});
-document.Servers.Add(new()
-{
-    Url = "http://localhost:5100",
-    Description = "本地开发环境 (API 直连)"
-});
-```
+Scalar 默认向当前公开 Gateway 发送 API 请求。公开地址为回环地址时，页面另提供本地 HTTP Gateway 和 API 直连选项。带授权要求且未允许匿名访问的操作会声明 `oauth2`，页面可在兑换后携带 Bearer Token 读取这些接口。
 
 ### 7.4 Auth Server Scopes 注册
 
@@ -1098,59 +1081,23 @@ OpenIddict 本地默认使用 SQLite，测试 / 生产使用 PostgreSQL；`AuthO
 
 ### 15.1 OIDC 认证配置
 
-Scalar API 文档已集成 OIDC 认证，支持在文档界面直接登录并测试 API。
-
-#### 配置位置
-
-`Radish.Extension/OpenApiExtension/ScalarSetup.cs`：
-
-```csharp
-// 添加 OAuth2 Security Scheme
-document.Components.SecuritySchemes["oauth2"] = new OpenApiSecurityScheme
-{
-    Type = SecuritySchemeType.OAuth2,
-    Flows = new OpenApiOAuthFlows
-    {
-        AuthorizationCode = new OpenApiOAuthFlow
-        {
-            AuthorizationUrl = new Uri("https://localhost:5000/connect/authorize"),
-            TokenUrl = new Uri("https://localhost:5000/connect/token"),
-            Scopes = new Dictionary<string, string>
-            {
-                ["openid"] = "OpenID Connect 身份认证",
-                ["profile"] = "用户基本信息",
-                ["radish-api"] = "Radish API 访问权限"
-            }
-        }
-    }
-};
-
-// 配置 Scalar UI
-options.AddPreferredSecuritySchemes("oauth2")
-    .AddOAuth2Flows("oauth2", flows => {
-        flows.AuthorizationCode = new AuthorizationCodeFlow {
-            ClientId = "radish-scalar",
-            RedirectUri = "https://localhost:5000/scalar/oauth2-callback"
-        };
-    })
-    .AddDefaultScopes("oauth2", ["openid", "profile", "radish-api"]);
-```
+页面、OpenAPI 文档及 Auth 登记使用同一个公开 Gateway。授权码使用 PKCE S256。[Scalar OAuth 配置](#scalar-oauth)
 
 ### 15.2 使用方式
 
-1. 访问 `https://localhost:5000/scalar`（通过 Gateway）
+1. 通过当前公开 Gateway 打开 `/scalar/v1`
 2. 点击右上角 **Authenticate** 按钮
 3. 选择 **oauth2** 认证方式
 4. 点击 **Authorize** 按钮
 5. 使用当前环境有效账号登录；仅当本地或受控测试环境显式开启开发默认用户种子时，才可使用开发演示账号 `admin / admin123456` 或 `test / test123456`
-6. 确认授权后，所有 API 请求将自动携带 Bearer Token
+6. 回到 Scalar 后，发送受保护账号接口 `GetUserByHttpContext` 请求，确认返回当前账号
 
 ### 15.3 客户端配置
 
 Scalar 使用的客户端配置（在 Auth 项目的 `OpenIddictSeedHostedService` 中初始化）：
 
 ```csharp
-var publicBaseUri = BuildPublicBaseUri(configuration["OpenIddict:Server:Issuer"]);
+var endpoints = new OidcPublicEndpoints(configuration);
 
 new OpenIddictApplicationDescriptor
 {
@@ -1158,7 +1105,7 @@ new OpenIddictApplicationDescriptor
     DisplayName = "Radish API Documentation",
     ConsentType = ConsentTypes.Explicit,
     RedirectUris = {
-        new Uri(publicBaseUri, "scalar/oauth2-callback")
+        endpoints.ScalarCallback
     },
     Permissions =
     {
