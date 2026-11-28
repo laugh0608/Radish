@@ -12,7 +12,7 @@
 | --- | --- | --- | --- | --- | --- |
 | Dashboard | ✅ 已接入 | 调度总览 | `console.dashboard.view` | ✅ 已补齐 | 最近订单受 `console.orders.view` 约束 |
 | Applications | ✅ 已接入 | 表格 CRUD | `console.applications.*` | ✅ 已补齐 | 列表/新增/编辑/删除/重置密钥已闭环 |
-| Users | ✅ 已接入 | 表格 CRUD + 详情 | `console.users.view` | ✅ 已补齐 | 用户详情、资产、经验、订单摘要和内容治理入口已接入 |
+| Users | ✅ 已接入 | 表格 CRUD + 详情 | `console.users.view` | ✅ 已补齐 | 用户详情、资产、经验、订单摘要和内容治理入口已接入，停用账号单独授权 |
 | Roles | ✅ 已接入 | 表格 CRUD + 权限配置 | `console.roles.*` | ✅ 已补齐 | 角色详情、编辑和权限配置链路已闭环 |
 | Products | ✅ 已接入 | 表格 CRUD | `console.products.*` | ✅ 已补齐 | 商品详情与相关订单排障回流已接入，`GetCategories` 辅助接口已纳入 |
 | Orders | ✅ 已接入 | 表格 CRUD + 详情弹层 | `console.orders.*` | ✅ 已补齐 | 查看、重试、管理员备注、商品来源返回和扣款流水定位已接入 |
@@ -72,17 +72,15 @@
 
 ### 当前边界
 
-当前只保留：
-
-- 列表访问
-- 用户详情入口（按 `console.users.view`）
+- 列表与详情按 `console.users.view` 访问。
+- 用户详情内的「停用账号」另需 `console.users.disable`。填写原因后停用同租户普通账号，页面显示普通 Web 会话的撤销进度。[账号停用契约](../features/auth-session-overnight-recovery-plan.md#web-account-disable-proposal)
 
 ### 已明确下线
 
 以下能力已从页面与权限常量中移除：
 
 - 创建用户
-- 更新状态
+- 通用状态编辑与重新启用
 - 重置密码
 - 强制下线
 - 删除用户

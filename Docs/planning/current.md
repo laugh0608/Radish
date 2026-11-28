@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **验收普通 Web 会话**。隔离升级与回退、旧页面回流、隔夜恢复、两层期限与三个 Hub 断开、双 Auth 接管、多标签回流、频道消息重试、专用密钥轮换及认证库备份恢复均已实测。账号停用后，两端各自在续期时才撤销。下一步请所有者确认 Console 用户详情的专用停用权限，以及由主库记录任务、认证库主动撤销该租户下目标账号全部普通 Web 会话的方案，再进入实现。正式开关保持关闭，实际掉线实例与入口仍待核实。[停用入口与撤销方案](../features/auth-session-overnight-recovery-plan.md#web-account-disable-proposal) · [账号停用验收](../records/auth-session-account-disabled-2026-11-28.md) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
+1. **验收普通 Web 会话**。隔离升级与回退、旧页面回流、隔夜恢复、两层期限与三个 Hub 断开、双 Auth 接管、多标签回流、频道消息重试、专用密钥轮换及认证库备份恢复均已实测。Console 专用停用命令已接入主库和认证库，先记录账号状态及撤销任务，再主动撤销该账号的普通 Web 会话与授权。下一步按矩阵核对独立客户端与浏览器凭据隔离的既有证据，补齐缺项。正式开关保持关闭，实际掉线实例与入口仍待核实。[停用入口与撤销契约](../features/auth-session-overnight-recovery-plan.md#web-account-disable-proposal) · [账号停用验收](../records/auth-session-account-disabled-2026-11-28.md#console-停用入口与主动撤销) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
 2. **客户端恢复后按原顺位推进**。P8-C Windows、P8-D Linux、P8-E 成组验收完成后接续客户端连接。各平台须取得目标工具链、认证 / 安全存储、窗口 / 输入与重启证据，签名、真机与分发按平台单列。客户端连接按[已确认规划](../frontend/client-server-connection-plan.md)完成同包实例选择、隔离与恢复。
 3. **按范围验收后转入维护为主**。日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审。批次集成与正式发行 / 生产部署分开，商店分发和外部设备条件继续按各平台门禁。
 

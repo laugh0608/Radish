@@ -14,6 +14,7 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
     private static readonly JsonSerializerOptions ReliableTaskJsonOptions =
         new(JsonSerializerDefaults.Web);
 
+    private readonly IAccountDisableService? _accountDisableService;
     private readonly ICoinRewardService _coinRewardService;
     private readonly ICoinService _coinService;
     private readonly IExperienceService _experienceService;
@@ -43,8 +44,10 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
         INotificationInboxRepository? notificationInboxRepository = null,
         INotificationPushService? notificationPushService = null,
         IUserInteractionRealtimeNotifier? userInteractionRealtimeNotifier = null,
-        IContentRewardAuditProjectionRepository? contentRewardAuditProjectionRepository = null)
+        IContentRewardAuditProjectionRepository? contentRewardAuditProjectionRepository = null,
+        IAccountDisableService? accountDisableService = null)
     {
+        _accountDisableService = accountDisableService;
         _coinRewardService = coinRewardService;
         _coinService = coinService;
         _experienceService = experienceService;
@@ -72,6 +75,14 @@ public sealed class ReliableTaskProcessor : IReliableTaskProcessor
 
         switch (message.TaskType)
         {
+            case ReliableTaskTypes.AccountDisabled:
+                if (message.SourceDatabase != ReliableOutboxSources.Main || message.TenantId < 0 ||
+                    message.AggregateType != nameof(User) || !long.TryParse(message.AggregateId, out var userId) || userId <= 0 ||
+                    message.IdempotencyKey != FormattableString.Invariant($"account-disable:{userId}"))
+                    throw new PermanentReliableTaskException("账号停用任务主体无效");
+                await (_accountDisableService ?? throw new InvalidOperationException("缺少账号停用服务"))
+                    .RevokeWebSessionsAsync(message.TenantId, userId, cancellationToken);
+                break;
             case ReliableTaskTypes.PostPublished:
                 await ProcessPostPublishedAsync(Deserialize<PostPublishedTaskPayload>(message));
                 break;

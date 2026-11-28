@@ -272,6 +272,18 @@ public class UserController : ControllerBase
             "info.user.get_by_id_success");
     }
 
+    /// <summary>停用本租户的账号，并撤销其普通 Web 会话。</summary>
+    [HttpPut("{id:long}")]
+    [Authorize(Policy = AuthorizationPolicies.Client)]
+    [RequireConsolePermission(ConsolePermissions.UsersView)]
+    [RequireConsolePermission(ConsolePermissions.UsersDisable)]
+    public async Task<MessageModel<AccountDisableVo>> DisableAccount(long id, [FromBody] DisableAccountDto dto,
+        [FromServices] IAccountDisableService accounts)
+    {
+        var result = await accounts.DisableAsync(Current.TenantId, id, Current.UserId, dto.Reason);
+        return MessageModel<AccountDisableVo>.Success("账号已停用", result);
+    }
+
     /// <summary>获取指定用户的角色与派生权限快照。</summary>
     [HttpGet("{id:long}")]
     [Authorize(Policy = AuthorizationPolicies.Client)]

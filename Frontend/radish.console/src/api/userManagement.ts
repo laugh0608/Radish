@@ -1,6 +1,6 @@
-import { apiGet } from '@radish/http';
+import { apiGet, apiPut } from '@radish/http';
 import type { ParsedApiResponse } from '@radish/http';
-import type { UserListItem } from '../types/user';
+import type { UserListItem, WebSessionRevocation } from '../types/user';
 
 type ApiRecord = Record<string, unknown>;
 
@@ -63,6 +63,12 @@ function toParsedResponse<T>(response: ParsedApiResponse<unknown>, data?: T): Pa
   };
 }
 
+function parseRevocation(value: unknown): WebSessionRevocation | undefined {
+  if (value == null) return undefined;
+  if (value === 'Completed' || value === 'Pending' || value === 'NeedsAttention') return value;
+  throw new Error('Unknown account revocation status');
+}
+
 function mapUserListItem(raw: ApiRecord): UserListItem {
   return {
     uuid: toIdString(raw.uuid ?? raw.Uuid),
@@ -75,6 +81,7 @@ function mapUserListItem(raw: ApiRecord): UserListItem {
     voAvatarUrl: toOptionalString(raw.voAvatarUrl ?? raw.VoAvatarUrl),
     voAvatarThumbnailUrl: toOptionalString(raw.voAvatarThumbnailUrl ?? raw.VoAvatarThumbnailUrl),
     voIsEnable: toBoolean(raw.voIsEnable ?? raw.VoIsEnable),
+    voWebSessionRevocation: parseRevocation(raw.voWebSessionRevocation ?? raw.VoWebSessionRevocation),
     voCreateTime: toStringValue(raw.voCreateTime ?? raw.VoCreateTime),
     voUpdateTime: toOptionalString(raw.voUpdateTime ?? raw.VoUpdateTime),
     voIsDeleted: toBoolean(raw.voIsDeleted ?? raw.VoIsDeleted),
@@ -124,6 +131,12 @@ export interface ConsoleUserAuthorization {
  * 用户管理 API
  */
 export const userManagementApi = {
+  async disableAccount(id: string, reason: string) {
+    return apiPut<{ voWebSessionRevocation: WebSessionRevocation }>(
+      `/api/v1/User/DisableAccount/${encodeURIComponent(id)}`, { reason }, { withAuth: true },
+    );
+  },
+
   /**
    * 获取用户列表
    */

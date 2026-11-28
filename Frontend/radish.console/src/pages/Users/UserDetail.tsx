@@ -53,6 +53,7 @@ import type { Order, ShopEntitlementOperation, UserBenefit } from '@/api/types';
 import type { UserListItem } from '@/types/user';
 import '../adminFeature.css';
 import './UserDetail.css';
+import { DisableAccountAction } from './DisableAccountAction';
 
 interface UserDetailData {
   uuid: string;
@@ -60,6 +61,8 @@ interface UserDetailData {
   displayHandle: string;
   email: string;
   isEnabled: boolean;
+  tenantId: string;
+  revocation?: UserListItem['voWebSessionRevocation'];
   createTime: string;
   updateTime?: string;
   roleNames: string[];
@@ -140,6 +143,8 @@ export const UserDetail = () => {
       displayHandle: resolveVisibleUserHandle(item, displayName) || '-',
       email: item.voUserEmail || '-',
       isEnabled: item.voIsEnable,
+      tenantId: item.voTenantId,
+      revocation: item.voWebSessionRevocation,
       createTime: item.voCreateTime,
       updateTime: item.voUpdateTime,
       roleNames: item.voRoleNames,
@@ -791,6 +796,10 @@ export const UserDetail = () => {
           </Tag>
         </div>
       </section>
+
+      {canViewUsers && user.uuid === userId && (
+        <DisableAccountAction key={user.uuid} user={user} ready={profileReadState === 'ready'} reload={loadUserDetail} />
+      )}
 
       <section className="admin-feature-metrics" aria-label={t('users.detail.metricsLabel')}>
         <div className="admin-feature-metric">

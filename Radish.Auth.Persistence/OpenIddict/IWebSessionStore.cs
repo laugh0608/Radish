@@ -4,7 +4,8 @@ public interface IWebSessionStore
 {
     Task AddLoginAsync(WebAuthLogin login, DateTime now, CancellationToken cancellationToken);
     Task<WebAuthLogin?> FindLoginAsync(string stateDigest, string browserDigest, DateTime now, CancellationToken cancellationToken);
-    Task<bool> AttachAuthenticatedSessionAsync(WebAuthLogin login, WebAuthSession session, DateTime now, CancellationToken cancellationToken);
+    Task<bool> AttachAuthenticatedSessionAsync(WebAuthLogin login, WebAuthSession session, DateTime now,
+        Func<Task<bool>> isAccountEnabled, CancellationToken cancellationToken);
     Task<bool> ConsumeLoginAsync(WebAuthLogin login, DateTime now, CancellationToken cancellationToken);
 
     Task<WebAuthSession?> FindByCookieAsync(string digest, CancellationToken cancellationToken);

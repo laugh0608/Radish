@@ -13,6 +13,8 @@ export interface UserInfo {
   voAvatarThumbnailUrl?: string;
 }
 
+export type WebSessionRevocation = 'Completed' | 'Pending' | 'NeedsAttention';
+
 /**
  * 用户列表项类型（与后端UserVo对应）
  */
@@ -27,6 +29,7 @@ export interface UserListItem {
   voAvatarUrl?: string;
   voAvatarThumbnailUrl?: string;
   voIsEnable: boolean;
+  voWebSessionRevocation?: WebSessionRevocation;
   voCreateTime: string;
   voUpdateTime?: string;
   voIsDeleted: boolean;

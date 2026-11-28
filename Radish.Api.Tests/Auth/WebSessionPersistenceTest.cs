@@ -324,7 +324,10 @@ public sealed partial class WebSessionPersistenceTest
             Store = new(_db);
             Repository = new(_db);
             Sessions = new(Repository, Clock);
-            Login = new(Store, Repository, Backchannel.Object, Protection, _configuration, Clock);
+            var users = new Mock<Radish.IService.IUserService>();
+            users.Setup(s => s.QueryExistsAsync(It.IsAny<System.Linq.Expressions.Expression<Func<Radish.Model.User, bool>>>()))
+                .ReturnsAsync(true);
+            Login = new(Store, Repository, Backchannel.Object, Protection, _configuration, Clock, users.Object);
             Authorizations.Setup(manager => manager.FindByIdAsync("auth-web", It.IsAny<CancellationToken>())).ReturnsAsync(Authorization);
             Authorizations.Setup(manager => manager.TryRevokeAsync(Authorization, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         }

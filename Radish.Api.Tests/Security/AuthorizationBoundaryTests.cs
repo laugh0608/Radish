@@ -13,6 +13,18 @@ namespace Radish.Api.Tests.Security;
 public class AuthorizationBoundaryTests
 {
     [Fact]
+    public void DisableAccount_RequiresBothUserViewAndExplicitDisablePermissions()
+    {
+        var method = typeof(UserController).GetMethod(nameof(UserController.DisableAccount))!;
+        var permissions = method.CustomAttributes.Where(attr => attr.AttributeType == typeof(RequireConsolePermissionAttribute))
+            .Select(attr => (System.Collections.Generic.IEnumerable<CustomAttributeTypedArgument>)attr.ConstructorArguments.Single().Value!)
+            .Select(keys => (string)keys.Single().Value!).OrderBy(key => key).ToArray();
+        permissions.ShouldBe(new[] { ConsolePermissions.UsersDisable, ConsolePermissions.UsersView });
+        ConsolePermissions.GetPermissionsByApiUrl("/api/v1/User/DisableAccount/42")
+            .ShouldBe(new[] { ConsolePermissions.UsersDisable });
+    }
+
+    [Fact]
     public void ConsoleProtectedActions_ShouldRequireAuthenticationAndNotAllowAnonymous()
     {
         var protectedActions = typeof(UserController).Assembly

@@ -7,7 +7,7 @@ using SqlSugar;
 namespace Radish.Repository;
 
 /// <summary>用户仓储</summary>
-public class UserRepository : BaseRepository<User>, IUserRepository
+public partial class UserRepository : BaseRepository<User>, IUserRepository
 {
     public UserRepository(IUnitOfWorkManage unitOfWorkManage) : base(unitOfWorkManage)
     {

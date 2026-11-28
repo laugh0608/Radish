@@ -24,9 +24,15 @@ public sealed class WebSessionStore(AuthOpenIddictDbContext db) : IWebSessionSto
     }
 
     public async Task<bool> AttachAuthenticatedSessionAsync(
-        WebAuthLogin login, WebAuthSession session, DateTime now, CancellationToken cancellationToken)
+        WebAuthLogin login, WebAuthSession session, DateTime now, Func<Task<bool>> isAccountEnabled,
+        CancellationToken cancellationToken)
     {
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        await using var transaction = await WebAccountSessionRevocation.BeginAccountWriteAsync(db,
+            session.TenantId, session.Subject, cancellationToken);
+        if (!await isAccountEnabled())
+        {
+            return false;
+        }
         var updated = await Login(login.StateDigest, login.BrowserDigest, now).Where(item => item.SessionId == null)
             .ExecuteUpdateAsync(setters => setters.SetProperty(item => item.SessionId, session.Id), cancellationToken);
         if (updated != 1)

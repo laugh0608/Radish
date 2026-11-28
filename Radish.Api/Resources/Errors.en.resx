@@ -801,4 +801,13 @@
   <data name="error.leaderboard.user_rank_unavailable" xml:space="preserve">
     <value>This leaderboard type does not support personal user ranking.</value>
   </data>
+  <data name="error.user.disable_forbidden" xml:space="preserve">
+    <value>This account cannot be disabled.</value>
+  </data>
+  <data name="error.user.disable_conflict" xml:space="preserve">
+    <value>The account state changed. Reload its details.</value>
+  </data>
+  <data name="error.user.disable_invalid" xml:space="preserve">
+    <value>Check the target account and provide a valid reason.</value>
+  </data>
 </root>

@@ -394,6 +394,8 @@ return await RuntimeProcess.RunAsync("api", async () =>
             waitForCertificate: true);
     }
 
+    builder.Services.AddScoped<Radish.Auth.OpenIddict.WebAccountSessionRevocation>();
+    builder.Services.AddScoped<IAccountDisableService, Radish.Api.Services.AccountDisableService>();
     builder.Services.AddScoped<IHangfireDashboardSessionService, HangfireDashboardSessionService>();
     var dataProtectionKeysPath = builder.Configuration["DataProtection:KeysPath"];
     if (!string.IsNullOrWhiteSpace(dataProtectionKeysPath))

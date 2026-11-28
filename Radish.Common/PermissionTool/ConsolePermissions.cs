@@ -19,6 +19,7 @@ public static class ConsolePermissions
     public const string OrdersRetry = "console.orders.retry";
     public const string OrdersRemark = "console.orders.remark";
     public const string UsersView = "console.users.view";
+    public const string UsersDisable = "console.users.disable";
     public const string ChannelDiscoverabilityView = "console.channel-discoverability.view";
     public const string ChannelDiscoverabilityManage = "console.channel-discoverability.manage";
     public const string BenefitsView = "console.benefits.view";
@@ -109,6 +110,7 @@ public static class ConsolePermissions
             ["/api/v1/Category/Restore/.+"] = new[] { CategoriesRestore },
             ["/api/v1/Category/ToggleStatus/.+"] = new[] { CategoriesToggle },
             ["/api/v1/Category/UpdateSort/.+"] = new[] { CategoriesSort },
+            ["/api/v1/User/DisableAccount/\\d+"] = new[] { UsersDisable },
             ["/api/v1/User/GetUserList"] = new[] { UsersView },
             ["/api/v1/User/GetUserById/\\d+"] = new[] { UsersView },
             ["/api/v1/ChannelDiscoverability/GetPage"] = new[] { ChannelDiscoverabilityView },
@@ -235,6 +237,7 @@ public static class ConsolePermissions
         OrdersRetry,
         OrdersRemark,
         UsersView,
+        UsersDisable,
         ChannelDiscoverabilityView,
         ChannelDiscoverabilityManage,
         BenefitsView,

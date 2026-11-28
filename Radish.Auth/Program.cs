@@ -243,6 +243,7 @@ return await RuntimeProcess.RunAsync("auth", async () =>
         builder.Configuration);
     builder.Services.AddScoped<IWebAuthSessionRepository, WebAuthSessionRepository>();
     builder.Services.AddScoped<IWebAuthSessionService, WebAuthSessionService>();
+    builder.Services.AddScoped<WebAccountIssuanceTransaction>();
     builder.Services.AddScoped<IWebSessionStore, WebSessionStore>();
     builder.Services.AddScoped<IWebSessionLoginService, WebSessionLoginService>();
     builder.Services.AddScoped<IWebSessionAccessService, WebSessionAccessService>();
@@ -359,6 +360,13 @@ return await RuntimeProcess.RunAsync("auth", async () =>
             options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
                 handler.SetOrder(OpenIddictServerHandlers.AttachAuthorization.Descriptor.Order - 500)
                     .UseScopedHandler<RequireWebAuthSessionAuthorizationHandler>());
+
+            options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
+                handler.SetOrder(OpenIddictServerHandlers.AttachAuthorization.Descriptor.Order - 250)
+                    .UseScopedHandler<WebAccountIssuanceTransaction.Begin>());
+            options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
+                handler.SetOrder(OpenIddictServerHandlers.AttachSignInParameters.Descriptor.Order + 500)
+                    .UseScopedHandler<WebAccountIssuanceTransaction.Commit>());
 
             options.AddEventHandler<OpenIddictServerEvents.ProcessSignInContext>(handler =>
                 handler.SetOrder(OpenIddictServerHandlers.PrepareRefreshTokenPrincipal.Descriptor.Order + 500)

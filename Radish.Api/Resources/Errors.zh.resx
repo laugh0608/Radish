@@ -801,4 +801,13 @@
   <data name="error.leaderboard.user_rank_unavailable" xml:space="preserve">
     <value>该排行榜类型不支持用户个人排名。</value>
   </data>
+  <data name="error.user.disable_forbidden" xml:space="preserve">
+    <value>无法停用此账号。</value>
+  </data>
+  <data name="error.user.disable_conflict" xml:space="preserve">
+    <value>目标账号状态已变化，请刷新详情。</value>
+  </data>
+  <data name="error.user.disable_invalid" xml:space="preserve">
+    <value>请核对目标账号并填写有效的停用原因。</value>
+  </data>
 </root>

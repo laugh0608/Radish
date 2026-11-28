@@ -4,6 +4,7 @@ namespace Radish.Model;
 
 public static class ReliableTaskTypes
 {
+    public const string AccountDisabled = "AccountDisabled";
     public const string PostPublished = "ForumPostPublishedRewards";
     public const string PostLiked = "ForumPostLikedEffects";
     public const string CommentPublished = "ForumCommentPublishedEffects";
@@ -18,6 +19,8 @@ public static class ReliableTaskTypes
     public const string UserBlockRelationshipChanged = "UserBlockRelationshipChanged";
     public const string ContentRewardAuditProjection = "ContentRewardAuditProjectionRequested";
 }
+
+public sealed record AccountDisableAudit(long OperatorId, string Reason);
 
 public sealed record PostPublishedTaskPayload(long PostId, long AuthorId);
 

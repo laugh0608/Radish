@@ -97,6 +97,7 @@ internal static partial class UserMapper
     [MapProperty(nameof(User.Id), nameof(UserVo.Uuid))]
     [MapProperty(nameof(User.PublicId), nameof(UserVo.VoPublicId))]
     [MapProperty(nameof(User.PublicIndex), nameof(UserVo.VoPublicIndex))]
+    [MapperIgnoreTarget(nameof(UserVo.VoWebSessionRevocation))]
     [MapperIgnoreTarget(nameof(UserVo.VoDisplayName))]
     [MapperIgnoreTarget(nameof(UserVo.VoDisplayHandle))]
     [MapProperty(nameof(User.UserName), nameof(UserVo.VoUserName))]

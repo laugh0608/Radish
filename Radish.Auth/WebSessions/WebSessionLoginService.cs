@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Security.Cryptography;
+using Radish.IService;
 using System.Text;
 using Microsoft.AspNetCore.WebUtilities;
 using OpenIddict.Abstractions;
@@ -8,7 +10,8 @@ using Radish.Common.HttpContextTool;
 namespace Radish.Auth.WebSessions;
 
 public sealed class WebSessionLoginService(IWebSessionStore store, IWebAuthSessionRepository sessions,
-    IWebTokenBackchannel tokens, WebSessionProtection protection, IConfiguration configuration, TimeProvider clock)
+    IWebTokenBackchannel tokens, WebSessionProtection protection, IConfiguration configuration, TimeProvider clock,
+    IUserService users)
     : IWebSessionLoginService
 {
     private static readonly TimeSpan LoginLifetime = TimeSpan.FromMinutes(10);
@@ -65,7 +68,13 @@ public sealed class WebSessionLoginService(IWebSessionStore store, IWebAuthSessi
             CreatedAtUtc = now,
             LastActiveAtUtc = now
         };
-        return await store.AttachAuthenticatedSessionAsync(login, session, now, cancellationToken);
+        if (!long.TryParse(subject, NumberStyles.None, CultureInfo.InvariantCulture, out var userId) ||
+            !long.TryParse(tenant, NumberStyles.None, CultureInfo.InvariantCulture, out var tenantId))
+            return false;
+
+        return await store.AttachAuthenticatedSessionAsync(login, session, now,
+            () => users.QueryExistsAsync(user => user.Id == userId && user.TenantId == tenantId &&
+                user.IsEnable && !user.IsDeleted), cancellationToken);
     }
 
     public async Task<bool> IsPendingAsync(string? state, string? browser, CancellationToken cancellationToken)

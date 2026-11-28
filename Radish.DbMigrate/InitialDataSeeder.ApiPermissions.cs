@@ -124,6 +124,15 @@ internal static partial class InitialDataSeeder
             },
             new
             {
+                ApiModuleId = 50180L,
+                ApiModuleName = "Disable user account",
+                LinkUrl = "/api/v1/User/DisableAccount/\\d+",
+                ControllerName = "User",
+                ActionName = "DisableAccount",
+                Roles = new[] { 10000L, 10001L }
+            },
+            new
+            {
                 ApiModuleId = 50021L,
                 ApiModuleName = "Get user by id",
                 LinkUrl = "/api/v1/User/GetUserById/\\d+",

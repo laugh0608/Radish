@@ -141,6 +141,8 @@ public class UserService : BaseService<User, UserVo>, IUserService
         }
 
         var userVo = UserMapper.ToUserVo(user);
+        if (!user.IsEnable && await _userRepository.FindDisableTaskAsync(user.TenantId, user.Id) is { } task)
+            userVo.VoWebSessionRevocation = AccountDisableVo.FromTaskStatus(task.Status);
         await FillRoleNamesAsync([userVo]);
         return userVo;
     }

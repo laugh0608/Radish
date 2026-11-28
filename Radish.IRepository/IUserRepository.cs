@@ -15,6 +15,9 @@ public sealed record ConsoleUserPageResult(IReadOnlyList<User> Items, int Total)
 public interface IUserRepository
 {
     Task<ConsoleUserPageResult> QueryConsolePageAsync(ConsoleUserPageQuery query);
+    Task<ReliableOutboxMessage?> FindDisableTaskAsync(long tenantId, long userId);
+    Task<(ReliableOutboxMessage Task, bool Created)> DisableAccountAsync(long tenantId, long userId, long operatorId,
+        string reason, DateTime now);
 
     Task<IReadOnlyDictionary<long, IReadOnlyList<string>>> GetRoleNamesByUserIdsAsync(
         IReadOnlyCollection<long> userIds);
