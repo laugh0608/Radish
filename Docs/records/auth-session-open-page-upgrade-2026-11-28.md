@@ -43,4 +43,25 @@
 
 普通 Web 首次成功取得 Cookie 会话短令牌后清理旧的令牌、用户缓存与活动时间，并在该来源的 localStorage 写入迁移标记。此后新打开的 `/desktop` 文档和返回该入口的 `/oidc/callback` 将自己的旧协议令牌、到期与刷新时间、用户缓存和活动时间写到 `radish:webos:` 前缀下。同一文档沿用已选定的位置，迁移前发出的旧刷新不会写入新位置。普通 Web 使用服务端 Cookie 和内存短令牌。回退期间普通 Web 的旧登录仍可在再次迁移时清理。[存储选择](../../Frontend/radish.client/src/services/legacyAuthStorage.ts) · [令牌服务](../../Frontend/radish.client/src/services/tokenService.ts)
 
-定向回归在旧实现上先观察到历史入口的新凭据消失。修复后，测试在共用 localStorage、每份文档重新加载客户端模块的条件下，验证首次清理、历史登录回调、两轮交替重开、回退后再迁移、旧文档迟到写回及退出、部分清理中断后的重试。会话响应由测试替身提供。Client 的 586 项测试（含 4 项新回归）和共享 HTTP 的 85 项测试通过，Client 构建、类型检查及变更文件 Lint 通过。真实 Gateway 上的 PC、移动浏览器交替刷新及受保护账号读取待本轮隔离启动授权后执行。[定向回归](../../Frontend/radish.client/tests/webSessionLegacyStorage.test.ts)
+定向回归在旧实现上先观察到历史入口的新凭据消失。修复后，测试在共用 localStorage、每份文档重新加载客户端模块的条件下，验证首次清理、历史登录回调、两轮交替重开、回退后再迁移、旧文档迟到写回及退出、部分清理中断后的重试。会话响应由测试替身提供。Client 的 586 项测试（含 4 项新回归）和共享 HTTP 的 85 项测试通过，Client 构建、类型检查及变更文件 Lint 通过。真实 Gateway 上的 PC、移动浏览器结果见下节。[定向回归](../../Frontend/radish.client/tests/webSessionLegacyStorage.test.ts)
+
+## 两入口交替刷新的浏览器复验
+
+11 月 28 日，修复候选 `a296e6f5` 在 `https://web-session.test:35443` 通过共享资料复验。五个 ARM64 候选镜像由本机缓存离线构建，一次性 PostgreSQL 16 的 `dbmigrate apply`、`verify` 均成功。Chromium 153.0.8010.12 分别使用 PC（1920 × 1080）和移动触屏视口（390 × 844，DPR 3），每个视口内两标签共用一份资料。
+
+两份资料先从正式版 `v26.8.1-release` 前端、关闭新会话的 Auth 登录 `/me`，以受保护接口建立普通测试账号与租户基准。切换候选前端并仅在隔离 Auth 开启新会话后，两端各在原标签刷新，使用 `radish-web` 重新登录并经 `/web/session/callback` 返回原账号。两端旧 access / refresh 存储项均已清除，迁移标记存在。
+
+为给两个入口建立不同身份，测试在每份资料中仅清除 Auth 的单点登录 Cookie，并核对普通 Web 会话 Cookie 原值仍在。另开 `/desktop?app=chat&channelId=92900`，通过页面发起 `radish-client` 登录，在表单输入隔离管理员账号，经 `/oidc/callback` 返回历史入口。随后各按 `/me → /desktop → /me → /desktop` 刷新。
+
+| 入口及预期账号 | PC 第 1 / 2 轮 | 移动第 1 / 2 轮 |
+| --- | --- | --- |
+| 普通 Web `/me`，原普通测试账号 | `200 / 200`，账号及租户均匹配 | `200 / 200`，账号及租户均匹配 |
+| WebOS `/desktop`，独立登录的管理员账号 | `200 / 200`，账号及租户均匹配 | `200 / 200`，账号及租户均匹配 |
+
+八次均以页面携带 Bearer 发出的 `GET /api/v1/User/GetUserByHttpContext` 的真实响应判定。六次由页面自动读取。两端第 2 轮的历史页均复用了用户缓存，在当前文档调用登录回调使用的 `hydrateAuthUser`，传入 `useCache: false` 取得当轮响应。[账号读取实现](../../Frontend/radish.client/src/services/authBootstrap.ts) · [登录回调](../../Frontend/radish.client/src/auth/OidcCallbackPage.tsx)
+
+交替刷新期间，登录表单、发起登录、授权和回调请求均为零，历史页对 `/web/session/*` 的请求为零。旧共享 access / refresh 键持续为空，历史入口的专用两项均存在。认证库中的普通 Web 会话由 0 增至 2，两条都属于原普通测试账号且仍有效，管理员账号的普通 Web 会话为 0。
+
+预检中处理了宿主代理关闭连接、回调跳转使响应体提前释放，以及历史页命中用户缓存的取证差异。正式样本使用全新的项目卷、浏览器资料、回环直连和本轮证书指纹，按两端分时采集。正式开关保持关闭。
+
+验收后关闭浏览器并执行项目级 Compose 清理。6 个常驻容器、4 个卷、项目网络及 5 个候选镜像标签均已移除，已确认项目资源计数为零、端口 `127.0.0.1:35443` 释放。临时证书、浏览器资料及本轮工作目录均已清除。
