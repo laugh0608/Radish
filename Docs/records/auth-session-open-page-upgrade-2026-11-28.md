@@ -26,3 +26,15 @@
 候选镜像使用本机缓存构建。一次性 PostgreSQL 的 `dbmigrate apply / verify`、后端与前端构建，以及 15 项 Web 会话与认证恢复定向测试均通过。
 
 结束后关闭两份浏览器上下文，项目容器、卷、网络分别由 6、4、1 降至零。已清理五个候选镜像标签、一次性证书和临时目录，确认 `127.0.0.1:35443` 已释放，原正式 Frontend 镜像仍在本机缓存。
+
+## 同一浏览器资料下的历史入口
+
+11 月 28 日在 `dev@d953e601` 加查普通 Web 与 `/desktop` 共用同源存储的切换场景。进程内核对使用实际的前端令牌服务、页面路径选择和 Cookie 会话状态机。每次打开新文档均重新载入模块，各文档共用一份内存模拟的 localStorage，会话接口返回合成的成功响应。[前端令牌服务](../../Frontend/radish.client/src/services/tokenService.ts) · [入口选择](../../Frontend/radish.client/src/services/browserWebSession.ts)
+
+| 步骤 | 历史入口读取到的 access / refresh |
+| --- | --- |
+| 旧凭据存在，普通 Web 首次成功取得 Cookie 会话的短令牌 | 两项均已清除，符合首次迁移预期 |
+| 历史入口重新写入登录结果，同一普通 Web 文档再次取得短令牌 | 两项均存在 |
+| 重新打开普通 Web 文档，再次从原 Cookie 会话取得短令牌 | 两项被再次清除 |
+
+清理标记 `removedLegacyWebCredentials` 只存在于当前文档的 `TokenService` 实例中。新文档再次执行清理时，会删除历史入口登录后刚写入的同名键。独立资料中的 WebOS 登录及旧页升级已分别通过。此样本只确认共享存储上的重复清理，两入口交替刷新后的页面与受保护账号读取仍待修复复验。

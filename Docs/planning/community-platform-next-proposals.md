@@ -1,6 +1,6 @@
 # 社区功能与平台治理六项提案
 
-2026-11-21 · 初始盘点依据为 `dev@7232ef65` 的源码和既有记录。第 2 项已完成默认期限隔离对照与普通 Web 三段实现，实际环境验收待授权。其余五项为提案，客户端平台建设及客户端连接继续暂停。[当前进行中](./current.md) · [能力专题地图](./topics.md)
+2026-11-21 · 初始盘点依据为 `dev@7232ef65` 的源码和既有记录。第 2 项已完成默认期限隔离对照、普通 Web 实现及分场景候选联验。11 月 28 日核对发现普通 Web 与历史入口共用浏览器资料时的重复清理问题。其余五项为提案，客户端平台建设及客户端连接继续暂停。[当前进行中](./current.md) · [能力专题地图](./topics.md)
 
 ## 推进顺位
 
@@ -37,15 +37,15 @@
 
 已完成配置核对及正式镜像 7 分钟和 27 分钟的关页重开对照。修复边界与验收矩阵见[隔夜会话排查与验收方案](../features/auth-session-overnight-recovery-plan.md)。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
 
-**已知事实。** 提交的 [Auth 配置](../../Radish.Auth/appsettings.json) 显式设置 access token **5 分钟**、refresh token **25 分钟**、不活跃窗口 **7 天**。仅当配置键缺失时，[宿主代码](../../Radish.Auth/Program.cs) 才使用 60 分钟和 30 天的回退值。认证站点 Cookie 另有两小时滑动期限。隔离环境中的 27 分钟组在触及不活跃窗口前即因 refresh token 到期退出。实际掉线实例的生效配置和入口尚未核实。[Token 不活跃规则](../guide/auth-idle-session.md)
+**已知事实。** Auth 默认签发 5 分钟 access token 和 25 分钟 refresh token，不活跃窗口为 7 天。期限配置缺失时，宿主使用 60 分钟和 30 天的回退值。认证站点 Cookie 另有两小时滑动期限。隔离环境中的 27 分钟组因 refresh token 到期退出。原始反馈的实例、入口和时间已无法追溯。[Auth 配置](../../Radish.Auth/appsettings.json) · [宿主配置](../../Radish.Auth/Program.cs) · [Token 不活跃规则](../guide/auth-idle-session.md)
 
 | 切片 | 设计与验收 |
 | --- | --- |
 | 定位掉线 | 区分社区 Web 与 Console。在授权的隔离环境核对客户端 ID、有效期、是否发放 refresh token、关页后的存储与冷启动、浏览器后台、并发刷新、返回码和 Cookie 路径。只记录配置值、时间和错误分类，证据避开 token 原文。用受控时钟或缩短的隔离配置复现隔夜行为。 |
 | 恢复普通 Web 会话 | Auth 以 `radish-web` 执行 7 天不活跃窗口、30 天绝对上限和最多 5 分钟的 access token。浏览器通过同源 Cookie 恢复，旧普通 Web 会话在开启后通过一次重新认证迁移。Flutter 和 Console 沿用原策略。 |
-| 停用与故障边界 | Auth 用服务端记录计算截止，前台真实输入可更新活动，后台刷新和 Hub 重连不延期。轮换、撤销与暂时故障恢复已通过定向测试，停用、多实例并发、恢复和回退仍须依专题矩阵在隔离环境验收。 |
+| 停用与故障边界 | Auth 用服务端记录计算截止，前台真实输入可更新活动，后台刷新和 Hub 重连不延期。停用主动撤销、多实例并发、短暂故障恢复与回退已在隔离候选验收。 |
 
-下一批先取得隔离 HTTPS Gateway、PostgreSQL 和真实浏览器的运行证据，再核对开启与回退条件。实际掉线入口及目标实例生效配置仍待核实。[修复验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
+下一批处理同一浏览器资料下普通 Web 重开后清除 `/desktop` 新凭据的问题。正式开关保持关闭。[共享存储核对](../records/auth-session-open-page-upgrade-2026-11-28.md#同一浏览器资料下的历史入口) · [修复验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
 
 <a id="farm"></a>
 

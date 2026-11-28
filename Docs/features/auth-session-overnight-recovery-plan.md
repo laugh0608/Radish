@@ -9,7 +9,7 @@
 | `dev` 源码、现有 Debug / Release 构建输出、正式标签 `v26.8.1-release` | Access token 5 分钟，refresh token 25 分钟，授权码 5 分钟。启用 7 天不活跃判断，判断时钟偏移及客户端活动未来容差各 60 秒。 |
 | OrbStack 本机缓存正式 Auth 镜像 `linux/arm64`，摘要 `sha256:c3c9e922c02a7f3dc5e2d350755cb38dd6ee1a1d2bff75674f708aa5c3ea137b` | 只读检查镜像内 `/app/appsettings.json`、共享配置、镜像环境及本地覆盖文件存在性，得到相同值。镜像摘要与 11 月 21 日联验使用的正式基线一致。 |
 | `DataBases/Radish.OpenIddict.db` 中的历史签发记录 | 只读聚合 `radish-client` 和 `radish-console` 各自最近的 20 条 access、20 条 refresh、20 条授权码记录。每个样本的创建至过期差值分别为 300、1500、300 秒。样本最新日期分别为 2026-09-05 和 2026-08-15。`radish-client` 与 Flutter 共享登记，历史聚合未按回调来源区分。两个客户端及 `radish-scalar` 的应用登记均无单独的令牌期限覆盖。 |
-| 当前运行实例与用户报告 | 本机检测时无运行中的 Radish Auth，也无常用服务端口或隔离 Gateway 端口监听。用户遇到掉线的实例、社区 Web / Console 入口和失败响应待确认。目标实例可能有自己的部署覆盖。 |
+| 原始掉线反馈 | 11 月 28 日确认已无法回忆当时的实例、入口和时间，原事件的生效配置、失败响应与原因无法追溯。下文的 7 分钟和 27 分钟结果来自正式镜像的隔离对照。 |
 
 Auth 从共享文件、内容根目录的 `appsettings.json`、可选 `appsettings.Local.json`、环境变量依次加载，后加载的同名键优先。此次检查的本机覆盖和仓库 Compose 模板均无上述期限覆盖。`AccessTokenLifetime` 与 `RefreshTokenLifetime` 单位为分钟，60 分钟与 30 天是配置键缺失时的代码回退值。核对目标实例时只取其版本或镜像摘要、相同键的覆盖结果、应用期限设置及一次签发的时长和刷新结果。[Auth 启动配置](../../Radish.Auth/Program.cs) · [Auth 默认配置](../../Radish.Auth/appsettings.json) · [联验记录](../records/unified-logging-exit-console-2026-11-21.md)
 
@@ -180,14 +180,12 @@ Console 用户详情 `/users/:userId` 提供单账号「停用账号」操作。
 
 ## 修复验收
 
-| 场景 | 通过标准 |
-| --- | --- |
-| 隔夜恢复 | 社区 Web 在 PC 与 mobile 视图分别执行真实关页隔夜重开，间隔超过旧 25 分钟，以 12–24 小时为代表区间。access token 已过期，重开成功恢复同一账号，并通过一个受保护接口确认身份。另覆盖前台恢复和首个受保护请求触发刷新。 |
-| 两层时限 | 用可控服务端时钟验证 7 天和 30 天截止前、到点与越界。覆盖临界活动与刷新竞争、活跃后的旧 refresh token、短 JWT 和 Web Hub 在截止时断开。定时刷新、心跳、自动恢复和客户端时间均不能延期，旧 Auth SSO Cookie 不能静默创建下一段 Web 会话。 |
-| 故障与轮换 | 临时断网或 `5xx` 恢复后可继续有效会话。多标签、同标签和多 Auth 实例并发收敛。验证轮换结果已落库后响应丢失、持久化失败、进程重启和登出竞争，以及受保护写操作安全重试。 |
-| 撤销与迁移 | 主动退出、账号停用或撤销后拒绝继续刷新。已有 access token 和连接受原截止约束。旧 Web 会话重登一次，公开页仍可读，受保护页登录后正确回流。覆盖旧缓存页面、回退、密钥轮换和备份恢复。 |
-| 隔离与凭据 | 旧 Flutter 的 `radish-client` 无法换取新 Cookie 或进入 Web 专属期限。Console、Scalar、WebOS 历史登录路径及旧原生回调维持各自契约。验证 Cookie 属性、跨站请求、回调重放、客户端机密和长期凭据从浏览器存储及日志中缺失。 |
+| 场景 | 通过标准 | 截至 11 月 28 日的证据 |
+| --- | --- | --- |
+| 隔夜恢复 | 社区 Web 在 PC 与 mobile 视图分别关页 12–24 小时。重开后受保护接口确认同一账号。另覆盖前台恢复和首个受保护请求触发刷新。 | 两端关页 22 小时 34 分 49 秒，重开后身份接口均为 `200`，账号与租户匹配。[隔夜样本](../records/auth-session-candidate-2026-11-25.md#隔夜样本) · [前台恢复回归](../../Frontend/radish.client/tests/authBootstrapRecovery.test.ts) · [受保护请求回归](../../Frontend/radish.http/tests/webSessionTransport.test.ts) |
+| 两层时限 | 验证 7 天和 30 天截止前、到点与越界，覆盖临界活动与刷新竞争、活跃后的旧 refresh token、短 JWT 和 Web Hub。定时刷新、心跳、自动恢复和客户端时间不能延期，旧 Auth SSO Cookie 不能静默创建新会话。 | 可控时钟覆盖六个边界点。两端浏览器分别经过两类截止，三类 Hub 断线，重新输入凭据后返回原频道。[服务端时钟](../records/auth-session-candidate-2026-11-25.md#11-月-26-日服务端时钟边界验证) · [浏览器与 Hub](../records/auth-session-candidate-2026-11-25.md#11-月-26-日浏览器与-hub-截止联验) |
+| 故障与轮换 | 临时断网或 `5xx` 后恢复有效会话。同标签、多标签、多 Auth 实例并发收敛。覆盖响应丢失、写回失败、进程重启、登出竞争和受保护写操作的安全重试。 | 丢包后两端自行恢复。双 Auth 竞争时消息页均从 `503` 重试到 `200`，每条会话只轮换一次。频道消息手动重试只写入、广播一次。[丢包恢复](../records/auth-session-candidate-2026-11-25.md#11-月-26-日前端会话恢复修复复验) · [并发与写回中断](../records/auth-session-concurrency-2026-11-27.md) · [写请求复验](../records/auth-session-protected-write-2026-11-27.md#candidate-retest) |
+| 撤销与迁移 | 退出、停用或撤销后拒绝续期，已有 JWT 和连接受原截止约束。旧会话重登一次，公开页可读，受保护页正确回流。覆盖旧缓存页、回退、密钥轮换和备份恢复。 | 两端已验旧页升级、回退和退出。Console 停用后在用户重开页面前已撤销其会话与授权。同一资料内普通 Web 重开会再次清除历史入口新凭据，此切换场景待修复。[旧页与共享存储](../records/auth-session-open-page-upgrade-2026-11-28.md) · [停用撤销](../records/auth-session-account-disabled-2026-11-28.md#console-停用入口与主动撤销) · [回退](../records/auth-session-candidate-2026-11-25.md#11-月-26-日隔离回退演练) · [轮换](../records/auth-session-key-rotation-2026-11-28.md) · [恢复备份](../records/auth-session-backup-restore-2026-11-28.md) |
+| 隔离与凭据 | Flutter 的旧客户端不能换取新 Cookie 或进入 Web 专属期限。Console、Scalar、WebOS 历史登录与旧原生回调保持各自协议。验证 Cookie 属性、跨站请求与回调重放，确认普通 Web 的客户端机密和长期凭据未进入浏览器存储及日志。 | 独立资料的客户端协议、Cookie、存储和回调已核对。PC 与移动端均在非默认 Gateway 从 Scalar 按钮读到原账号，Auth 控制台及文件各有 0/16 个参数样本命中。[凭据隔离与页面复验](../records/auth-session-client-isolation-2026-11-28.md) |
 
-11 月 28 日「隔离与凭据」候选验收通过。首轮已核对普通 Web 两端 Cookie、浏览器存储及各客户端回调。修复候选 `d8d14891` 上，PC 和移动端均从 Scalar 授权按钮完成登录、兑换与受保护读取，普通 Web 会话新增为零。Auth 两个日志出口均未命中四次登录的参数样本，受控登录拒绝可按追踪标识定位。[隔离验收记录](../records/auth-session-client-isolation-2026-11-28.md#scalar-gateway-retest)
-
-默认期限对照已完成。普通 Web 前端与 Hub 接入本轮通过 92 个前端与共享 HTTP 用例、121 个后端定向用例。本轮实际环境结果按场景登记于[候选隔离联验](../records/auth-session-candidate-2026-11-25.md)。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)
+11 月 28 日在 `dev@d953e601` 重跑 Client 582 项、共享 HTTP 85 项、后端会话及 Scalar 与日志定向 91 项，全部通过。下一步复验同一浏览器资料内反复切换两入口时的凭据归属。正式开关保持关闭。[共享存储核对](../records/auth-session-open-page-upgrade-2026-11-28.md#同一浏览器资料下的历史入口)
