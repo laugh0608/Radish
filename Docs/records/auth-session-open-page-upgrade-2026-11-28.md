@@ -38,3 +38,9 @@
 | 重新打开普通 Web 文档，再次从原 Cookie 会话取得短令牌 | 两项被再次清除 |
 
 清理标记 `removedLegacyWebCredentials` 只存在于当前文档的 `TokenService` 实例中。新文档再次执行清理时，会删除历史入口登录后刚写入的同名键。独立资料中的 WebOS 登录及旧页升级已分别通过。此样本只确认共享存储上的重复清理，两入口交替刷新后的页面与受保护账号读取仍待修复复验。
+
+## 共享存储修复与回归
+
+普通 Web 首次成功取得 Cookie 会话短令牌后清理旧的令牌、用户缓存与活动时间，并在该来源的 localStorage 写入迁移标记。此后新打开的 `/desktop` 文档和返回该入口的 `/oidc/callback` 将自己的旧协议令牌、到期与刷新时间、用户缓存和活动时间写到 `radish:webos:` 前缀下。同一文档沿用已选定的位置，迁移前发出的旧刷新不会写入新位置。普通 Web 使用服务端 Cookie 和内存短令牌。回退期间普通 Web 的旧登录仍可在再次迁移时清理。[存储选择](../../Frontend/radish.client/src/services/legacyAuthStorage.ts) · [令牌服务](../../Frontend/radish.client/src/services/tokenService.ts)
+
+定向回归在旧实现上先观察到历史入口的新凭据消失。修复后，测试在共用 localStorage、每份文档重新加载客户端模块的条件下，验证首次清理、历史登录回调、两轮交替重开、回退后再迁移、旧文档迟到写回及退出、部分清理中断后的重试。会话响应由测试替身提供。Client 的 586 项测试（含 4 项新回归）和共享 HTTP 的 85 项测试通过，Client 构建、类型检查及变更文件 Lint 通过。真实 Gateway 上的 PC、移动浏览器交替刷新及受保护账号读取待本轮隔离启动授权后执行。[定向回归](../../Frontend/radish.client/tests/webSessionLegacyStorage.test.ts)

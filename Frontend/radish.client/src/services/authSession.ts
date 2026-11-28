@@ -1,3 +1,5 @@
+import { getLegacyAuthStorage } from './legacyAuthStorage.ts';
+
 export const AUTH_TOKEN_EXPIRED_EVENT = 'auth:token-expired';
 export const IDLE_SESSION_LAST_ACTIVE_STORAGE_KEY = 'radish_client_session_last_active_at';
 export const IDLE_SESSION_REFRESH_PARAMETER = 'radish_last_active_at';
@@ -215,5 +217,5 @@ function getDefaultAuthSessionStorage(): AuthSessionStorage | null {
     return null;
   }
 
-  return window.localStorage;
+  return getLegacyAuthStorage();
 }

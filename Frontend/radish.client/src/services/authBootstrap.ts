@@ -2,6 +2,7 @@ import { apiFetch, configureApiClient, configureTokenRefresh, TokenRefreshErrorT
 import { parseApiResponse, type ApiResponse } from '@radish/http';
 import { getAuthBaseUrl } from '@/config/env';
 import { tokenService } from '@/services/tokenService';
+import { getLegacyAuthStorage } from './legacyAuthStorage';
 import { browserWebSession } from './browserWebSession';
 import { chatHub } from '@/services/chatHub';
 import { commentHub } from '@/services/commentHub';
@@ -115,7 +116,7 @@ function matchesTokenIdentity(user: CurrentUser, token?: string | null): boolean
 }
 
 function consumeCachedCurrentUser(token: string): CurrentUser | null {
-  const cachedUserInfo = window.localStorage.getItem(CURRENT_USER_CACHE_KEY);
+  const cachedUserInfo = getLegacyAuthStorage().getItem(CURRENT_USER_CACHE_KEY);
   if (!cachedUserInfo) {
     return null;
   }
@@ -140,14 +141,14 @@ function consumeCachedCurrentUser(token: string): CurrentUser | null {
     log.error('AuthBootstrap', '缓存用户信息解析失败:', error);
     return null;
   } finally {
-    window.localStorage.removeItem(CURRENT_USER_CACHE_KEY);
+    getLegacyAuthStorage().removeItem(CURRENT_USER_CACHE_KEY);
   }
 }
 
 function cacheCurrentUser(token: string, user: CurrentUser) {
   const scope = tokenService.getCurrentUserCacheScope(token);
   if (!scope) {
-    window.localStorage.removeItem(CURRENT_USER_CACHE_KEY);
+    getLegacyAuthStorage().removeItem(CURRENT_USER_CACHE_KEY);
     return;
   }
 
@@ -158,7 +159,7 @@ function cacheCurrentUser(token: string, user: CurrentUser) {
     user,
   };
 
-  window.localStorage.setItem(CURRENT_USER_CACHE_KEY, JSON.stringify(cacheEntry));
+  getLegacyAuthStorage().setItem(CURRENT_USER_CACHE_KEY, JSON.stringify(cacheEntry));
 }
 
 function resolveUserRoles(user: CurrentUser, token?: string | null): string[] {

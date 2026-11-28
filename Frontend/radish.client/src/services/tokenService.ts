@@ -5,6 +5,7 @@
 import { log } from '@/utils/logger';
 import { getAuthBaseUrl } from '@/config/env';
 import { browserWebSession, canUseCookieSession, isSameOriginUrl, listenForWebSessionSignOut } from './browserWebSession';
+import { getLegacyAuthStorage, separateWebOsAuthStorage } from './legacyAuthStorage';
 import type { WebSessionMode } from './webSession';
 import {
   classifyTokenRefreshFailure,
@@ -83,7 +84,7 @@ class TokenService {
   getAccessToken(): string | null {
     if (this.sessionMode !== 'legacy') return browserWebSession.getAccessToken();
     this.migrateLegacyTokenStorage();
-    return localStorage.getItem(this.TOKEN_KEY);
+    return getLegacyAuthStorage().getItem(this.TOKEN_KEY);
   }
 
   get sessionMode(): WebSessionMode {
@@ -119,7 +120,6 @@ class TokenService {
     if (this.sessionMode !== 'cookie') return null;
     const token = await browserWebSession.getToken(options);
     if (token && !this.removedLegacyWebCredentials) {
-      this.removedLegacyWebCredentials = true;
       this.removeLegacyWebCredentials();
     }
     return this.sessionMode === 'cookie' ? token : null;
@@ -136,23 +136,25 @@ class TokenService {
       for (const key of [this.TOKEN_KEY, this.REFRESH_TOKEN_KEY, this.TOKEN_EXPIRES_KEY, this.TOKEN_REFRESH_AT_KEY, this.CURRENT_USER_CACHE_KEY]) {
         localStorage.removeItem(key);
       }
-      clearAuthSessionActivity();
+      clearAuthSessionActivity(localStorage);
+      separateWebOsAuthStorage();
+      this.removedLegacyWebCredentials = true;
     } catch {
       // Restricted storage does not prevent a cookie session from being used.
     }
   }
 
   getRefreshToken(): string | null {
-    return this.sessionMode === 'legacy' ? localStorage.getItem(this.REFRESH_TOKEN_KEY) : null;
+    return this.sessionMode === 'legacy' ? getLegacyAuthStorage().getItem(this.REFRESH_TOKEN_KEY) : null;
   }
 
   getTokenExpiresAt(): number | null {
-    const expiresAt = localStorage.getItem(this.TOKEN_EXPIRES_KEY);
+    const expiresAt = getLegacyAuthStorage().getItem(this.TOKEN_EXPIRES_KEY);
     return expiresAt ? parseInt(expiresAt, 10) : null;
   }
 
   getTokenRefreshAt(): number | null {
-    const refreshAt = localStorage.getItem(this.TOKEN_REFRESH_AT_KEY);
+    const refreshAt = getLegacyAuthStorage().getItem(this.TOKEN_REFRESH_AT_KEY);
     return refreshAt ? parseInt(refreshAt, 10) : null;
   }
 
@@ -199,18 +201,19 @@ class TokenService {
   }
 
   setTokenInfo(tokenInfo: TokenInfo): void {
-    localStorage.setItem(this.TOKEN_KEY, tokenInfo.access_token);
+    const storage = getLegacyAuthStorage();
+    storage.setItem(this.TOKEN_KEY, tokenInfo.access_token);
 
     if (tokenInfo.refresh_token) {
-      localStorage.setItem(this.REFRESH_TOKEN_KEY, tokenInfo.refresh_token);
+      storage.setItem(this.REFRESH_TOKEN_KEY, tokenInfo.refresh_token);
     }
 
     // 计算过期时间与刷新时间（短 Token 使用动态提前量）
     const refreshBufferSeconds = this.getRefreshBufferSeconds(tokenInfo.expires_in);
     const expiresAt = Date.now() + tokenInfo.expires_in * 1000;
     const refreshAt = Date.now() + Math.max(tokenInfo.expires_in - refreshBufferSeconds, 0) * 1000;
-    localStorage.setItem(this.TOKEN_EXPIRES_KEY, expiresAt.toString());
-    localStorage.setItem(this.TOKEN_REFRESH_AT_KEY, refreshAt.toString());
+    storage.setItem(this.TOKEN_EXPIRES_KEY, expiresAt.toString());
+    storage.setItem(this.TOKEN_REFRESH_AT_KEY, refreshAt.toString());
 
     log.debug('TokenService', 'Token 信息已更新', {
       expires_in: tokenInfo.expires_in,
@@ -239,12 +242,13 @@ class TokenService {
       return;
     }
 
-    localStorage.removeItem(this.TOKEN_KEY);
-    localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-    localStorage.removeItem(this.TOKEN_EXPIRES_KEY);
-    localStorage.removeItem(this.TOKEN_REFRESH_AT_KEY);
-    localStorage.removeItem(this.CURRENT_USER_CACHE_KEY);
-    clearAuthSessionActivity();
+    const storage = getLegacyAuthStorage();
+    storage.removeItem(this.TOKEN_KEY);
+    storage.removeItem(this.REFRESH_TOKEN_KEY);
+    storage.removeItem(this.TOKEN_EXPIRES_KEY);
+    storage.removeItem(this.TOKEN_REFRESH_AT_KEY);
+    storage.removeItem(this.CURRENT_USER_CACHE_KEY);
+    clearAuthSessionActivity(storage);
     this.refreshPromise = null;
     this.stopAutoRefresh(); // 清除 Token 时停止自动刷新
     log.debug('TokenService', 'Token 信息已清除');
@@ -635,6 +639,7 @@ class TokenService {
     }
 
     this.migratedLegacyStorage = true;
+    if (getLegacyAuthStorage() !== window.localStorage) return;
 
     this.migrateLegacyKey(this.LEGACY_TOKEN_KEY, this.TOKEN_KEY);
     this.migrateLegacyKey(this.LEGACY_REFRESH_TOKEN_KEY, this.REFRESH_TOKEN_KEY);

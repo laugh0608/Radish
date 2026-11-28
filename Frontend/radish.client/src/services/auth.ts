@@ -16,7 +16,7 @@ import {
   prepareOidcRedirectUri,
   preparePostLogoutRedirectUri,
 } from '@/platform/tauriBridge';
-import { normalizeAuthReturnPath, rememberAuthReturnPath } from './authReturnPath';
+import { buildCurrentDesktopReturnPath, normalizeAuthReturnPath, rememberAuthReturnPath } from './authReturnPath';
 import { browserWebSession } from './browserWebSession';
 import { log } from '@/utils/logger';
 
@@ -81,7 +81,8 @@ export function redirectToLogin(options: RedirectToLoginOptions = {}): void {
         'ui-culture': currentLanguage,
       },
     });
-    rememberAuthReturnPath(options.returnPath);
+    const fromDesktop = /^\/desktop\/?$/i.test(window.location.pathname);
+    rememberAuthReturnPath(options.returnPath ?? (fromDesktop ? buildCurrentDesktopReturnPath() : null));
 
     if (isTauriRuntime()) {
       await openExternalUrl(authorizeUrl);

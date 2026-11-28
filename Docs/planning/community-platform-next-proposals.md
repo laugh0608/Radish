@@ -45,7 +45,7 @@
 | 恢复普通 Web 会话 | Auth 以 `radish-web` 执行 7 天不活跃窗口、30 天绝对上限和最多 5 分钟的 access token。浏览器通过同源 Cookie 恢复，旧普通 Web 会话在开启后通过一次重新认证迁移。Flutter 和 Console 沿用原策略。 |
 | 停用与故障边界 | Auth 用服务端记录计算截止，前台真实输入可更新活动，后台刷新和 Hub 重连不延期。停用主动撤销、多实例并发、短暂故障恢复与回退已在隔离候选验收。 |
 
-下一批处理同一浏览器资料下普通 Web 重开后清除 `/desktop` 新凭据的问题。正式开关保持关闭。[共享存储核对](../records/auth-session-open-page-upgrade-2026-11-28.md#同一浏览器资料下的历史入口) · [修复验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
+普通 Web 重开后清除 `/desktop` 新凭据的问题已通过进程内修复回归，下一批在同一浏览器资料内复验两入口的受保护读取。正式开关保持关闭。[共享存储核对](../records/auth-session-open-page-upgrade-2026-11-28.md#同一浏览器资料下的历史入口) · [修复验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
 
 <a id="farm"></a>
 

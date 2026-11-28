@@ -633,15 +633,19 @@ export function rememberAuthReturnPath(returnPath: string | null | undefined, st
   return true;
 }
 
+export function getRememberedAuthReturnPath(storage = getSessionStorage()): string | null {
+  return normalizeAuthReturnPath(storage?.getItem(AUTH_RETURN_PATH_STORAGE_KEY));
+}
+
 export function consumeAuthReturnPath(storage = getSessionStorage(), fallbackPath = '/'): string {
   if (!storage) {
     return fallbackPath;
   }
 
-  const storedPath = storage.getItem(AUTH_RETURN_PATH_STORAGE_KEY);
+  const storedPath = getRememberedAuthReturnPath(storage);
   storage.removeItem(AUTH_RETURN_PATH_STORAGE_KEY);
 
-  return normalizeAuthReturnPath(storedPath) ?? fallbackPath;
+  return storedPath ?? fallbackPath;
 }
 
 export function buildCurrentDesktopReturnPath(
