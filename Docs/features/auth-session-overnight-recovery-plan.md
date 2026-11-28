@@ -160,6 +160,24 @@ Web 专用密钥和保护证书轮换已在候选 `ff501159` 隔离验证。保�
 
 账号停用后的续期拒绝已在隔离候选 `44480a4c` 验证。PC 与移动端使用同一账号的两条会话，各自在首次实际续期时收到 `401`，清空该会话凭据并撤销对应授权。保持启用的对照账号正常续期。业务库停用账号时，尚未续期的会话仍保留，停用时主动撤销全部普通 Web 会话的入口待补齐。[账号停用验收](../records/auth-session-account-disabled-2026-11-28.md)
 
+<a id="web-account-disable-proposal"></a>
+
+## 账号停用入口与主动撤销（待确认）
+
+建议在 Console 用户详情 `/users/:userId` 增加单账号「停用账号」操作。现行 Users 约定已下线通用状态更新与强制下线，查看用户、内容治理均有各自的权限。本提案只开放停用这一项写操作。它修改共享账号的 `User.IsEnable`，所有通过 Auth 共用登录表单重新输入凭据的客户端都会受到影响；主动撤销的既有会话限定为普通 Web 的 `radish-web`。重新启用属于独立的业务决定。[Console 用户模块](../guide/console-modules.md) · [权限覆盖矩阵](../guide/console-permission-coverage-matrix.md) · [Auth 登录](../../Radish.Auth/Controllers/AccountController.cs)
+
+**入口与权限。** 拟新增 `PUT /api/v1/User/DisableAccount/{id}` 与独立权限 `console.users.disable`。详情页由具备查看和停用权限的操作者填写原因，核对目标后提交。服务端从当前身份取操作者与租户，对同租户内未删除的目标执行授权，再核对目标的实际角色。禁止停用自己、系统账号或管理员。查看权限和内容治理权限单独均不能调用该命令。登记权限映射、资源种子并通过 `@radish/http` 接入，已有普通角色按显式授权获得新能力。[Console 权限治理](../guide/console-permission-governance.md)
+
+**主库提交与反馈。** 账号服务在同一主库事务内写入停用状态、审计信息（操作者、目标、租户、原因、时间）和一条可重试的撤销任务。事务提交后立即尝试撤销，只有认证库提交且结果可确认后，详情才显示「账号已停用，Web 会话已撤销」。认证库暂不可用或进程中断时，已提交的账号保持停用，页面可重新读取「账号已停用，Web 会话待撤销」。复用 Main Outbox 的重试与人工重放。重试耗尽时显示「账号已停用，Web 会话撤销需处理」，重复提交返回同一次停用的进度。对历史上已经停用且没有任务的账号，首次执行时补建任务。[主库同事务写入先例](../../Radish.Repository/UserBlockRepository.cs) · [可靠任务执行](../../Radish.Api/Services/ReliableOutboxJobs.cs)
+
+**认证库撤销。** 建议由 API 复用已经注册的 OpenIddict Core 与认证库连接，调用 `Radish.Auth.Persistence` 提供的窄写入能力。按租户和主体选取全部普通 Web 会话，覆盖待激活、已激活和已撤销但授权待回收的记录。在一个认证库事务内撤销会话、清空凭据与租约、递增会话版本，并按会话绑定的授权 ID 核对 `radish-web` 客户端，撤销授权及其仍有效的 refresh token。重复处理得到相同结果。已交付给浏览器的 JWT 和已有 Hub 连接沿用原截止，最长剩余 5 分钟。[API 的认证库注册](../../Radish.Api/Program.cs) · [认证库会话模型](../../Radish.Auth.Persistence/OpenIddict/AuthOpenIddictDbContext.cs) · [现有会话写入条件](../../Radish.Auth.Persistence/OpenIddict/WebSessionStore.cs)
+
+**并发与验收条件。** 登录挂接与整账号撤销须按同一租户、账号在认证库内串行判定，挂接前复核主库启用状态。已有登录回调或续期的迟到写回须受会话撤销状态、版本或租约约束。SQLite 和 PostgreSQL 均需验证下列结果。
+
+- PC 和移动浏览器登录同一账号后关页。从 Console 停用，在两端重开之前查库即能确认两条会话、授权及有效 refresh token 均已撤销。两端重开须进入登录表单，另一启用账号能正常续期，其他客户端的原授权不受本次撤销影响。
+- 查看者、仅有内容治理权限者、跨租户目标、自身及受保护账号均不能触发写入。重复提交和并发提交只产生一次停用审计和同一项撤销工作。
+- 主库事务失败则账号和任务均未变更。认证库失败、进程在两库提交之间重启、撤销成功后回执丢失，均能读到真实进度并重试完成。与停用并发的登录、激活或续期都不能在操作完成后留下可用的旧会话。
+
 ## 修复验收
 
 | 场景 | 通过标准 |
