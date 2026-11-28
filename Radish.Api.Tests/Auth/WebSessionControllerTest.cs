@@ -64,8 +64,16 @@ public sealed class WebSessionControllerTest
         var fixture = new Fixture();
         fixture.CarrySession(origin, validProof ? WebSessionSecrets.Proof(fixture.Cookie) : WebSessionSecrets.NewSecret());
 
-        var result = Assert.IsType<StatusCodeResult>(await fixture.Controller.Token(CancellationToken.None));
-        Assert.Equal(StatusCodes.Status403Forbidden, result.StatusCode);
+        var ct = TestContext.Current.CancellationToken;
+        var results = new[]
+        {
+            await fixture.Controller.Token(ct),
+            await fixture.Controller.Activity(ct),
+            await fixture.Controller.Logout(ct)
+        };
+        Assert.All(results, result =>
+            Assert.Equal(StatusCodes.Status403Forbidden, Assert.IsType<StatusCodeResult>(result).StatusCode));
+        Assert.False(fixture.Controller.Response.Headers.ContainsKey("Set-Cookie"));
         fixture.Access.VerifyNoOtherCalls();
     }
 

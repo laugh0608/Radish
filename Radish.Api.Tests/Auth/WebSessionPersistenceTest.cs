@@ -90,8 +90,14 @@ public sealed partial class WebSessionPersistenceTest
         Assert.NotNull(saved.ProtectedTokens);
         Assert.DoesNotContain(InitialRefresh, saved.ProtectedTokens, StringComparison.Ordinal);
         Assert.Equal(InitialRefresh, fixture.Protection.ReadTokens<WebSessionTokens>(id.Value, saved.ProtectedTokens).RefreshToken);
-        Assert.Equal(WebTokenBackchannelStatus.Rejected,
-            (await fixture.Login.CompleteAsync(state, start.BrowserSecret, "auth-code", cancellation)).Status);
+        var controller = fixture.CreateController(result.Cookie);
+        controller.Request.Headers.Cookie = $"{start.CookieName}={start.BrowserSecret}";
+        Assert.IsType<BadRequestResult>(await controller.Callback(state, "auth-code", cancellation));
+        Assert.False(controller.Response.Headers.ContainsKey("Set-Cookie"));
+        var afterDuplicate = await fixture.Repository.FindAsync(id.Value, cancellation);
+        Assert.NotNull(afterDuplicate);
+        Assert.Equal(saved.Version, afterDuplicate.Version);
+        Assert.Equal(saved.CookieDigest, afterDuplicate.CookieDigest);
         fixture.Backchannel.Verify(client => client.ExchangeAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<WebAuthSession>(), It.IsAny<CancellationToken>()), Times.Once);
     }

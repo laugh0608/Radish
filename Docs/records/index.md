@@ -5,6 +5,7 @@
 本页是 `Docs/records/` 的统一入口，收纳批次级回归记录、人工验收清单、发布 / 回滚记录、checklist / template 与 spike / 评估观察记录。如果你要找的是“当前系统怎么工作”，请先回到 [Guide 手册索引](/guide/)。
 ## 一、通用模板与总索引
 
+- [2026-11-28 普通 Web 与独立客户端的凭据隔离验收](./auth-session-client-isolation-2026-11-28.md) · 浏览器存储、各客户端回调、Scalar 入口与 Auth 日志
 - [2026-11-28 普通 Web 账号停用后的续期与会话撤销](./auth-session-account-disabled-2026-11-28.md) · 覆盖逐会话续期拒绝、Console 停用时主动撤销两端和跨库重试
 - [2026-11-28 普通 Web 已打开旧页面的升级验收](./auth-session-open-page-upgrade-2026-11-28.md) · 两端保留旧页面执行业务读取，刷新后各登录一次并返回原页
 - [2026-11-28 普通 Web 认证库备份恢复](./auth-session-backup-restore-2026-11-28.md) · 离线撤销回档会话，PC 与移动端须重新登录并回到原页面

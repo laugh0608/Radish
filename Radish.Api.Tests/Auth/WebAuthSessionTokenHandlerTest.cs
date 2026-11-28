@@ -23,15 +23,22 @@ public sealed class WebAuthSessionTokenHandlerTest
     private static readonly Guid RefreshLease = Guid.NewGuid();
 
     [Theory]
-    [InlineData("radish-client")]
-    [InlineData("radish-console")]
-    public async Task LegacyClients_ShouldNeverEnterWebSessionValidationOrIssuance(string clientId)
+    [InlineData("radish-client", OpenIddictConstants.GrantTypes.AuthorizationCode)]
+    [InlineData("radish-client", OpenIddictConstants.GrantTypes.RefreshToken)]
+    [InlineData("radish-console", OpenIddictConstants.GrantTypes.AuthorizationCode)]
+    [InlineData("radish-console", OpenIddictConstants.GrantTypes.RefreshToken)]
+    [InlineData("radish-scalar", OpenIddictConstants.GrantTypes.AuthorizationCode)]
+    public async Task LegacyClients_ShouldNeverEnterWebSessionValidationOrIssuance(string clientId, string grantType)
     {
         var sessions = new Mock<IWebAuthSessionService>(MockBehavior.Strict);
         var handler = new WebAuthSessionTokenHandler(CreateConfiguration(), sessions.Object, Mock.Of<IUserService>());
-        var transaction = CreateTransaction(clientId, OpenIddictConstants.GrantTypes.RefreshToken);
+        var transaction = CreateTransaction(clientId, grantType);
         var principal = BoundPrincipal();
-        var validate = new OpenIddictServerEvents.ValidateTokenRequestContext(transaction) { RefreshTokenPrincipal = principal };
+        var validate = new OpenIddictServerEvents.ValidateTokenRequestContext(transaction);
+        if (grantType == OpenIddictConstants.GrantTypes.AuthorizationCode)
+            validate.AuthorizationCodePrincipal = principal;
+        else
+            validate.RefreshTokenPrincipal = principal;
         var signIn = new OpenIddictServerEvents.ProcessSignInContext(transaction)
         {
             Principal = principal,
