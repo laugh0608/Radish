@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **验收普通 Web 会话**。隔离升级与回退、旧页面回流、隔夜恢复、两层期限与三个 Hub 断开、双 Auth 接管、多标签回流、频道消息重试、专用密钥轮换及认证库备份恢复均已实测。Console 专用停用命令已接入主库和认证库，先记录账号状态及撤销任务，再主动撤销该账号的普通 Web 会话与授权。Auth 登录重定向日志已改为安全摘要，Scalar 已使用 Auth 登记的公开 Gateway 基址。下一步在同一非默认地址候选核对 Auth 两个日志出口，并从 Scalar 页面授权至受保护读取。正式开关保持关闭，实际掉线实例与入口仍待核实。[凭据隔离验收](../records/auth-session-client-isolation-2026-11-28.md) · [停用入口与撤销契约](../features/auth-session-overnight-recovery-plan.md#web-account-disable-proposal) · [账号停用验收](../records/auth-session-account-disabled-2026-11-28.md#console-停用入口与主动撤销) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
+1. **验收普通 Web 会话**。隔离升级与回退、旧页面回流、隔夜恢复、两层期限与三个 Hub 断开、双 Auth 接管、多标签回流、频道消息重试、专用密钥轮换及认证库备份恢复均已实测。Console 专用停用命令已接入主库和认证库，先记录账号状态及撤销任务，再主动撤销该账号的普通 Web 会话与授权。「隔离与凭据」候选验收已通过。PC、移动端都从 Scalar 页面完成授权和受保护读取，Auth 控制台与应用文件均未命中本轮登录参数样本。正式开关保持关闭，实际掉线实例与入口仍待核实。[凭据隔离验收](../records/auth-session-client-isolation-2026-11-28.md) · [停用入口与撤销契约](../features/auth-session-overnight-recovery-plan.md#web-account-disable-proposal) · [账号停用验收](../records/auth-session-account-disabled-2026-11-28.md#console-停用入口与主动撤销) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
 2. **客户端恢复后按原顺位推进**。P8-C Windows、P8-D Linux、P8-E 成组验收完成后接续客户端连接。各平台须取得目标工具链、认证 / 安全存储、窗口 / 输入与重启证据，签名、真机与分发按平台单列。客户端连接按[已确认规划](../frontend/client-server-connection-plan.md)完成同包实例选择、隔离与恢复。
 3. **按范围验收后转入维护为主**。日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审。批次集成与正式发行 / 生产部署分开，商店分发和外部设备条件继续按各平台门禁。
 

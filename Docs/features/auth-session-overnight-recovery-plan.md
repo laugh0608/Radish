@@ -188,6 +188,6 @@ Console 用户详情 `/users/:userId` 提供单账号「停用账号」操作。
 | 撤销与迁移 | 主动退出、账号停用或撤销后拒绝继续刷新。已有 access token 和连接受原截止约束。旧 Web 会话重登一次，公开页仍可读，受保护页登录后正确回流。覆盖旧缓存页面、回退、密钥轮换和备份恢复。 |
 | 隔离与凭据 | 旧 Flutter 的 `radish-client` 无法换取新 Cookie 或进入 Web 专属期限。Console、Scalar、WebOS 历史登录路径及旧原生回调维持各自契约。验证 Cookie 属性、跨站请求、回调重放、客户端机密和长期凭据从浏览器存储及日志中缺失。 |
 
-11 月 28 日隔离候选的普通 Web 通过两端 Cookie 和存储检查。该候选暴露的 Scalar 固定开发端口与 Auth 重定向日志问题均已修复并补定向回归。「隔离与凭据」仍待同一修复候选的页面授权和两个日志出口复验。各客户端的协议与浏览器观测见[隔离验收记录](../records/auth-session-client-isolation-2026-11-28.md)。
+11 月 28 日「隔离与凭据」候选验收通过。首轮已核对普通 Web 两端 Cookie、浏览器存储及各客户端回调。修复候选 `d8d14891` 上，PC 和移动端均从 Scalar 授权按钮完成登录、兑换与受保护读取，普通 Web 会话新增为零。Auth 两个日志出口均未命中四次登录的参数样本，受控登录拒绝可按追踪标识定位。[隔离验收记录](../records/auth-session-client-isolation-2026-11-28.md#scalar-gateway-retest)
 
 默认期限对照已完成。普通 Web 前端与 Hub 接入本轮通过 92 个前端与共享 HTTP 用例、121 个后端定向用例。本轮实际环境结果按场景登记于[候选隔离联验](../records/auth-session-candidate-2026-11-25.md)。[隔离复现记录](../records/auth-session-overnight-default-lifetime-2026-11-21.md)

@@ -1,6 +1,8 @@
 # 普通 Web 与独立客户端的凭据隔离验收
 
-2026-11-28 从 `dev` 提交 `8daa7264` 构建五个本地候选镜像。OrbStack 项目使用一次性 PostgreSQL 16 和 Redis 7，`dbmigrate apply / verify` 均成功。Chromium 153 的独立资料仅经本机 Gateway 访问候选。PC、移动 Web 及独立客户端的凭据隔离取得实测证据，Scalar 页面登录和 Auth 重定向日志仍需修复。[验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
+2026-11-28 首轮隔离候选 `8daa7264` 发现 Scalar 页面地址和 Auth 登录重定向日志两项问题。同日修复候选 `d8d14891` 已在同一非默认 Gateway 完成两端页面登录与双出口复验，「隔离与凭据」候选验收通过。[本次复验](#scalar-gateway-retest) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
+
+首轮从 `dev` 构建五个本地候选镜像。OrbStack 项目使用一次性 PostgreSQL 16 和 Redis 7，`dbmigrate apply / verify` 均成功。Chromium 153 的独立资料仅经本机 Gateway 访问候选。
 
 ## 普通 Web 与浏览器存储
 
@@ -36,7 +38,7 @@ Auth 在执行登录重定向时把带查询串的目标写入了控制台和 `/
 
 34 项后端定向测试、16 项 Web 与共享 HTTP 测试、20 项 Flutter 认证与会话测试全部通过。首次浏览器预检受宿主代理影响，随后在测试资料所在的进程设置了仅作用于本机候选的代理例外。登录限流返回 `429` 后，等原 15 分钟窗口自然恢复再取样。
 
-后续复验须同时证明 Auth 两个日志出口均不再含登录参数，以及用户直接从 Scalar 页面授权后可在已登记的 Gateway 上完成回调、兑换和受保护读取。正式开关继续关闭。
+首轮复验要求在 Auth 两个日志出口比对当次登录参数，并从 Scalar 页面授权后在已登记的 Gateway 上完成回调、兑换和受保护读取。
 
 已清理本项目的 6 个容器、4 个卷、1 个网络和 5 个镜像标签，关闭临时浏览器并移除本轮证书、资料和工作目录。`127.0.0.1:35443` 已释放。
 
@@ -46,4 +48,30 @@ Auth 将普通跳转、本地跳转和凭据错误后的 action 跳转写成固�
 
 API 的 OpenAPI 和 Scalar 页面与 Auth 登记共用 `OpenIddict:Server:Issuer`。内存 HTTP 管道检查了非默认端口、配置前缀及本地默认值下的页面回调、PKCE S256、授权与令牌地址，以及受保护操作的认证声明。SQLite 真实登记从旧地址切至非默认地址后，`radish-scalar` 仅保留新的回调，仍是 public 客户端，无 refresh grant。两套 Compose 的配置展开均确认 API 与 Auth 收到同一公开地址。[页面配置回归](../../Radish.Api.Tests/Auth/ScalarGatewayTests.cs) · [登记回归](../../Radish.Api.Tests/Auth/WebAuthClientRegistrationTest.cs)
 
-同一修复候选的 PC、移动浏览器页面登录及 Auth 控制台和应用文件复验待执行。正式开关保持关闭。
+修复提交的 100 项后端定向用例及 73 项日志契约检查通过，Client 与 Console 构建通过。
+
+<a id="scalar-gateway-retest"></a>
+
+## 修复候选的页面与日志复验
+
+本地 `dev@d8d14891` 的五个 ARM64 镜像使用同一 OrbStack 项目、一次性 PostgreSQL 16 和 Redis 7。`DbMigrate apply`、`verify` 均成功。唯一宿主入口为 `127.0.0.1:35443`，认证库中 public 客户端 `radish-scalar` 仅登记 `https://web-session.test:35443/scalar/oauth2-callback`。普通 Web 开关仅在候选启用，Auth 对 `AccountController` 单独启用 Debug 以观察拒绝原因。
+
+Chromium 153 分别使用 PC（1920 × 1080）与移动触屏（390 × 844，DPR 3）独立资料。两端均打开 `/scalar/v1`，点击 **Authorize**，在弹窗登录并同意授权，再从 Scalar 请求面板发送 `GET /api/v1/User/GetUserByHttpContext`。授权、回调、兑换与读取均经过上述 Gateway。
+
+| 观测 | PC | 移动 |
+| --- | --- | --- |
+| 客户端、PKCE 与回调 | `radish-scalar`，S256，回调 `200`，state 匹配 | 同左 |
+| 页面兑换 | `POST /connect/token` 返回 `200`，有 access token，无 refresh token | 同左 |
+| 页面发送受保护请求 | 携带 Bearer，返回 `200`，账号和租户均匹配 | 同左 |
+| 普通 Web 隔离 | 状态 `401`，无 Web 会话 Cookie，库中会话数 0 → 0 | 同左 |
+
+另用两份新资料从普通 Web 的 `/me` 登录，两端都实际经过带编码 ReturnUrl 的登录跳转。PC 故意输错一次密码，返回登录页后改正；两端都经 `/web/session/callback` 的 `302` 回到个人页，受保护读取返回 `200`。认证库最终有 2 条 Web 会话，剩余登录事务为 0。
+
+| Auth 出口 | 实际样本命中数 | 可用于诊断的事件 |
+| --- | --- | --- |
+| 容器标准日志 | 0 / 16 | 普通跳转 4、本地跳转 6、按 action 跳转 1。1 次 `invalid-credentials` 与重试跳转的追踪标识相同 |
+| `/app/Logs` 下的应用日志文件（1 个） | 0 / 16 | 同样的三类事件计数和拒绝关联 |
+
+样本为 4 个 state、2 个 nonce、4 个 PKCE challenge、4 个回调授权码和 2 枚 Scalar access token，只在内存中精确比对。两出口中，直接及一、二层百分号编码的查询参数赋值（`state`、`nonce`、`code_challenge`、`ReturnUrl`）也均为零命中。
+
+首次浏览器预检遇到宿主代理关闭连接。为独立 Chromium 进程配置回环直连并限定临时 Gateway 证书后完成上述链路。验收后已关闭浏览器，移除项目的 6 个常驻容器、4 个卷、网络、5 个镜像标签，以及临时证书、资料与工作目录。已核对项目资源为零、端口释放。正式开关保持关闭。
