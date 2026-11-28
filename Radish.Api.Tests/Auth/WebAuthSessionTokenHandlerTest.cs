@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Security.Claims;
 using System.Threading;
@@ -111,6 +112,7 @@ public sealed class WebAuthSessionTokenHandlerTest
 
     [Theory]
     [InlineData(OpenIddictConstants.GrantTypes.AuthorizationCode, false, true)]
+    [InlineData(OpenIddictConstants.GrantTypes.AuthorizationCode, false, false)]
     [InlineData(OpenIddictConstants.GrantTypes.RefreshToken, true, true)]
     [InlineData(OpenIddictConstants.GrantTypes.RefreshToken, true, false)]
     public async Task WebIssuance_ShouldEnforceAccountStatusAndExactExpiry(string grantType, bool isRefresh, bool accountEnabled)
@@ -118,8 +120,15 @@ public sealed class WebAuthSessionTokenHandlerTest
         var principal = BoundPrincipal();
         var binding = new WebAuthSessionBinding(Guid.Parse(principal.GetClaim(WebAuthClient.SessionIdClaim)!), "10001", "0", "auth-1");
         var expiry = new DateTimeOffset(2026, 11, 22, 12, 0, 0, TimeSpan.Zero);
+        User[] accounts =
+        [
+            new() { Id = 10001, TenantId = 0, IsEnable = accountEnabled },
+            new() { Id = 10002, TenantId = 0, IsEnable = true },
+            new() { Id = 10001, TenantId = 1, IsEnable = true }
+        ];
         var users = new Mock<IUserService>();
-        users.Setup(service => service.QueryExistsAsync(It.IsAny<Expression<Func<User, bool>>>())).ReturnsAsync(accountEnabled);
+        users.Setup(service => service.QueryExistsAsync(It.IsAny<Expression<Func<User, bool>>>()))
+            .ReturnsAsync((Expression<Func<User, bool>> predicate) => accounts.Any(predicate.Compile()));
         var sessions = new Mock<IWebAuthSessionService>(MockBehavior.Strict);
         sessions.Setup(service => service.EvaluateGrantAsync(binding, isRefresh, It.IsAny<CancellationToken>(), isRefresh ? RefreshLease : null))
             .ReturnsAsync(new WebAuthSessionGrant(WebAuthSessionGrantStatus.Allowed, expiry, expiry.AddDays(10)));
@@ -134,6 +143,7 @@ public sealed class WebAuthSessionTokenHandlerTest
         await handler.HandleAsync(context);
 
         Assert.Equal(!accountEnabled, context.IsRejected);
+        Assert.Equal(accountEnabled ? null : OpenIddictConstants.Errors.InvalidGrant, context.Error);
         Assert.Equal(accountEnabled ? expiry : null, context.AccessTokenPrincipal.GetExpirationDate());
         Assert.Equal(accountEnabled ? expiry.AddDays(10) : null, context.RefreshTokenPrincipal.GetExpirationDate());
         sessions.Verify(service => service.EvaluateGrantAsync(binding, isRefresh, It.IsAny<CancellationToken>(), isRefresh ? RefreshLease : null),
