@@ -143,6 +143,8 @@
 - 提及搜索：`User/SearchForMention` 只面向登录态用户，搜索范围限定为 `DisplayName`、`PublicIndex`、完整 `DisplayName#PublicIndex` 或 `PublicId`；不得把 `LoginName`、`Email` 或内部 `Id` 做普通用户公开搜索字段
 - 我的浏览历史 / 最近访问
 
+Console 用户详情另提供 `PUT /api/v1/User/DisableAccount/{id}`。操作者须同时具备 `console.users.view` 与 `console.users.disable`，对同租户内可停用的账号提交 `reason`（必填，最多 500 字符）。主库提交后，`voWebSessionRevocation` 表示普通 Web 会话撤销进度，取值为 `Completed`、`Pending` 或 `NeedsAttention`。重新打开详情可从 `GetUserById` 读取最新进度。[停用命令](../../Radish.Api/Controllers/UserController.cs) · [范围与验收](../features/auth-session-overnight-recovery-plan.md#web-account-disable-proposal)
+
 ### 文档与 Wiki
 
 - `Radish.Api.Wiki.http`

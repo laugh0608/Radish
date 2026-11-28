@@ -41,7 +41,9 @@ Radish.Api/
 
 ## 普通 Web 会话候选
 
-`OpenIddict:WebSession:Enabled` 缺省为 `false`。隔离验收获准后，由 Auth 接收 `OpenIddict__WebSession__Enabled`、`OpenIddict__WebSession__ClientSecret`、`OpenIddict__WebSession__KeysPath`、`OpenIddict__WebSession__KeyCertificate__Path` 和 `OpenIddict__WebSession__KeyCertificate__Password`，并使用 HTTPS `OpenIddict__Server__Issuer`。Web 会话密钥环使用独立的持久卷，由带 RSA 私钥的证书保护。证书轮换时保留所需的旧解密材料。现有 Compose 模板尚未接入这组设置，候选用临时覆盖文件和独立卷验证。[部署与验收边界](../features/auth-session-overnight-recovery-plan.md#同源会话和凭据首版)
+`OpenIddict:WebSession:Enabled` 缺省为 `false`。基础 Compose 将同一 `RADISH_PUBLIC_URL` 作为 `OpenIddict__Server__Issuer` 注入 Auth 和 API，供客户端登记、Scalar 授权与令牌地址以及页面回调使用。基础模板保持普通 Web 会话关闭。[基础 Compose](../../Deploy/docker-compose.yaml) · [公开地址解析](../../Radish.Common/HttpContextTool/OidcPublicEndpoints.cs)
+
+隔离验收使用仓库的 Compose 覆盖文件，`PROBE_WEB_SESSION_ENABLED` 缺省为 `false`。候选启用时，Auth 经公开 HTTPS Gateway 回连令牌端点，用 `OpenIddict__WebSession__ClientSecret` 验证 `radish-web` 客户端身份。Web 密钥环存放在 `OpenIddict__WebSession__KeysPath` 指定的独立持久卷，保护证书的路径和密码分别由 `OpenIddict__WebSession__KeyCertificate__Path` 和 `OpenIddict__WebSession__KeyCertificate__Password` 提供。证书轮换时保留仍在使用的旧密钥文件，在 `OpenIddict:WebSession:PreviousKeyCertificates` 数组中配置旧证书的 `Path` 和 `Password`，使现存会话可读。认证库回档时，先在入口关闭期间撤销回档的普通 Web 会话、对应授权和有效 refresh token，再开放续期。[候选覆盖文件](../../Scripts/auth-session/compose.candidate.yaml) · [密钥轮换](../records/auth-session-key-rotation-2026-11-28.md) · [回档恢复](../records/auth-session-backup-restore-2026-11-28.md)
 
 ## 配置加载优先级
 

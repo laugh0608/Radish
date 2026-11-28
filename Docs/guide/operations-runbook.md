@@ -100,9 +100,9 @@ npm run type-check --workspace=@radish/http
 
 优先排查：
 
-1. `OpenIddict:Server:Issuer` 是否与实际公开入口一致
-2. Gateway 是否正确转发 `/Account/*` 与 `/connect/*`
-3. 当前客户端回调地址是否仍在官方客户端配置中
+1. 核对 Auth 与 API 的 `OpenIddict:Server:Issuer` 是否同为浏览器可访问的 Gateway 基址。Scalar 应从页面点击 **Authorize**，核对回调、令牌兑换及受保护账号读取。
+2. 核对 Gateway 对 `/Account/*`、`/connect/*` 和普通 Web 的 `/web/session/*` 转发，并比对当前客户端登记的回调。
+3. 排查登录表单被拒时，若 `AccountController` 的 Debug 事件已启用，可在 Auth 控制台或应用日志中用同一追踪标识关联拒绝原因和 MVC 重定向事件。目标 URL 与嵌套 `ReturnUrl` 已从事件中移除。[页面与日志复验](../records/auth-session-client-isolation-2026-11-28.md#scalar-gateway-retest)
 
 ### 前端共享包改完没生效
 

@@ -169,7 +169,7 @@ const handleLogout = () => {
 };
 ```
 
-旧 Web 模式按以下流程退出。
+旧 Web 模式按以下流程退出。已迁移资料中的 WebOS 使用下文所述的专用键前缀。
 
 1. 清除本地存储:
    - `radish_client_access_token`
@@ -340,7 +340,7 @@ tokenService.clearTokens();
 ```
 
 **注意事项**:
-- localStorage 在同源下全局共享，不同前端应用必须使用命名空间键隔离
+- 普通 Web 首次成功取得 Cookie 会话短令牌时清理旧共享键并写入迁移标记。此后新打开的 `/desktop` 和返回该入口的 `/oidc/callback` 将令牌、有效期、活动时间及用户缓存写在 `radish:webos:` 前缀下。回调按当前标签保存的合法站内返回路径选键，同一文档沿用已选位置。[存储选择](../../Frontend/radish.client/src/services/legacyAuthStorage.ts)
 - 不要在 URL 参数中传递 Token
 - 不要在 console.log 中输出 Token
 - `cached_user_info` 只用于登录态 bootstrap 阶段的短暂用户资料复用，缓存内容必须与当前 access token 的 `userId + tenantId + token 会话` 绑定，并在消费后立即清除；不能把它当作跨账号、跨租户的长期资料缓存
@@ -397,27 +397,13 @@ configureApiClient({
 
 ### 4. 多标签页同步
 
-使用 `storage` 事件监听其他标签页的登出操作：
-
-```typescript
-import { hasAccessToken } from '@/services/auth';
-
-// 监听 storage 事件
-window.addEventListener('storage', (event) => {
-  if (event.key === 'radish_client_access_token') {
-    if (!event.newValue && hasAccessToken()) {
-      // 其他标签页已登出，刷新当前页面
-      window.location.reload();
-    }
-  }
-});
-```
+普通 Web 在支持 `BroadcastChannel` 的浏览器中通过 `radish-web-session` 广播 `signed-out`。其他普通 Web 标签收到后清理内存凭据。不支持广播时，页面在下次向 Auth 查询或取令牌时确认会话状态。历史入口按自己的旧协议处理退出。[广播与入口选择](../../Frontend/radish.client/src/services/browserWebSession.ts) · [同一资料两入口复验](../records/auth-session-open-page-upgrade-2026-11-28.md#两入口交替刷新的浏览器复验)
 
 ## OIDC 回调处理
 
 ### 回调路由
 
-Web 侧 OIDC 回调由 `Frontend/radish.client/src/auth/OidcCallbackPage.tsx` 独立承载，不再依赖早期 `App.tsx` 或 `?demo` 页面。
+`radish-client` 的旧 Web 与 WebOS 回调由 `OidcCallbackPage.tsx` 处理。普通 Web 的 `radish-web` 回调在 Auth 的 `/web/session/callback` 完成。
 
 当前实现要点：
 

@@ -11,7 +11,7 @@
 - **阶段**：`Phase 4：长期维护与功能完成`
 - **当前子阶段**：`F4 既有功能持续完成`
 - **工程第一顺位**：`已规划功能完成主线`；2026-11-04 项目所有者明确要求优先补齐功能缺口，再转入以长期运营 / 维护为主的节奏，依赖来源补证等后置。
-- **客户端开发暂停（2026-11-21）**。Flutter Native 平台建设与客户端连接保留原方案和顺位。非客户端六项提案中已选定第 2 项。[社区功能与平台治理六项提案](./community-platform-next-proposals.md)
+- **客户端开发暂停（2026-11-21）**。Flutter Native 平台建设与客户端连接保留原方案和顺位。已选定的普通 Web 会话专题完成隔离候选验收，正式开关保持关闭。[社区功能与平台治理六项提案](./community-platform-next-proposals.md)
 - **规划复核日期**为 2026-11-10，所有者确认日志、Native、客户端连接的收口顺序。该次规划以 `8d6cc63a` 集成的成果为基线。[规划复核记录](../records/planning-closeout-2026-11-10.md)
 - **日志出口评审（2026-11-21）**。OrbStack 隔离候选通过登记来源、诊断及数据保全评审。继续接受普通运行日志首次同步前的崩溃窗口，满卷未观测尾段数量保持未知。实际部署预检与慢 SQL 安全指纹单列。[出口评审](../records/unified-logging-exit-review-2026-11-21.md) · [最终联验](../records/unified-logging-exit-console-2026-11-21.md)
 - **源码候选版本**：`26.8.2`；尚未创建该候选的 test tag、GitHub Release、发布镜像或部署。
@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **普通 Web 会话候选已完成共享资料复验**。PC 和移动触屏浏览器各用一份资料，以不同账号登录普通 Web 与历史入口。两个入口交替刷新各两轮，八次受保护读取均返回原账号与租户，登录跳转为零。正式开关保持关闭。原始掉线反馈的实例和入口无法追溯。[浏览器复验](../records/auth-session-open-page-upgrade-2026-11-28.md#两入口交替刷新的浏览器复验) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
+1. **建议下次先做软删除查询基线**。从论坛帖子分页和通知收件箱各选一条真实查询，记录 SqlSugar 生成的 SQL、参数和排序。在 SQLite 与隔离 PostgreSQL 上用同一组合成数据对照低、高软删比例，记录查询计划、扫描与排序开销及 P95。第一份交付是两条查询的双库对照表，据此决定是否值得调整索引。需要启动隔离 PostgreSQL 时单独申请授权。[软删除查询提案](./community-platform-next-proposals.md#soft-delete) · [帖子分页](../../Radish.Repository/PostRepository.cs) · [通知收件箱](../../Radish.Repository/NotificationRepository.cs)
 2. **客户端恢复后按原顺位推进**。P8-C Windows、P8-D Linux、P8-E 成组验收完成后接续客户端连接。各平台须取得目标工具链、认证 / 安全存储、窗口 / 输入与重启证据，签名、真机与分发按平台单列。客户端连接按[已确认规划](../frontend/client-server-connection-plan.md)完成同包实例选择、隔离与恢复。
 3. **按范围验收后转入维护为主**。日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审。批次集成与正式发行 / 生产部署分开，商店分发和外部设备条件继续按各平台门禁。
 
@@ -56,7 +56,7 @@
 
 ## 最近结论
 
-最新日终回顾覆盖 11 月 21 日的日志出口、Windows 只读盘点与暂停、默认令牌期限复现及普通 Web 会话三段实现。[2026-11-21 日终记录](../records/day-end-doc-review-2026-11-21.md)
+11 月 28 日复核了普通 Web 会话的停用撤销、凭据隔离和旧页迁移。最后一轮在 PC 和移动触屏浏览器中分别交替刷新普通 Web 与 WebOS，八次受保护读取均匹配各自账号与租户。正式开关保持关闭，原始掉线反馈的实例与入口无法追溯。[日终提交回顾](../records/day-end-doc-review-2026-11-28.md) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
 
 ## 当前平台边界
 
