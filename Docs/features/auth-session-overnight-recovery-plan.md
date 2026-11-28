@@ -152,6 +152,8 @@ Auth 在 OpenIddict 准备令牌前按当前会话主体设定期限，普通 AP
 
 受保护业务写入已用普通 Web 频道消息复验。PC 和移动端收到 `401` 后均只恢复凭据，由用户手动重试。候选 `b26f1e75` 在 Hub 回执先到、HTTP 成功响应丢失时保留已确认状态，页面没有误报失败或显示「重试」。回执延迟时可以手动重试，服务端按原 `clientRequestId` 返回同一条消息。六组样本均只写入并广播一次。[频道消息修复复验](../records/auth-session-protected-write-2026-11-27.md#candidate-retest)
 
+Web 专用密钥和保护证书轮换已在候选 `ff501159` 隔离验证。保留旧密钥文件并将旧证书列入 `PreviousKeyCertificates` 后，两端在原短令牌自然到期后均从原会话恢复原账号。续期结果使用新密钥写回，再次重开可直接复用。[密钥轮换与两端恢复](../records/auth-session-key-rotation-2026-11-28.md)
+
 ## 修复验收
 
 | 场景 | 通过标准 |
