@@ -31,7 +31,7 @@
 
 ## 接下来的事项
 
-1. **验收普通 Web 会话**。隔离升级与回退、隔夜恢复、两层期限与三个 Hub 断开、双 Auth 接管、多标签回流及频道消息重试均已实测。Web 专用密钥轮换后，PC 和移动视口均在短令牌到期后恢复原账号，并复用新密钥保护的续期结果。下一项为隔离备份恢复，验证恢复旧备份后先撤销回档会话，再开放续期，已退出的会话须重新登录。正式开关保持关闭，实际掉线实例与入口仍待核实。[密钥轮换验收](../records/auth-session-key-rotation-2026-11-28.md) · [频道消息复验](../records/auth-session-protected-write-2026-11-27.md#candidate-retest) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
+1. **验收普通 Web 会话**。隔离升级与回退、隔夜恢复、两层期限与三个 Hub 断开、双 Auth 接管、多标签回流、频道消息重试及专用密钥轮换均已实测。隔离恢复认证库后，先撤销回档会话再开放续期，已退出的 PC 和移动浏览器均须重新登录。下一项按验收矩阵验证升级期间已打开的旧页面，核对刷新后只需登录一次并返回原受保护页面。正式开关保持关闭，实际掉线实例与入口仍待核实。[备份恢复验收](../records/auth-session-backup-restore-2026-11-28.md) · [旧会话迁移与回退](../features/auth-session-overnight-recovery-plan.md#旧会话迁移与回退) · [验收矩阵](../features/auth-session-overnight-recovery-plan.md#修复验收)
 2. **客户端恢复后按原顺位推进**。P8-C Windows、P8-D Linux、P8-E 成组验收完成后接续客户端连接。各平台须取得目标工具链、认证 / 安全存储、窗口 / 输入与重启证据，签名、真机与分发按平台单列。客户端连接按[已确认规划](../frontend/client-server-connection-plan.md)完成同包实例选择、隔离与恢复。
 3. **按范围验收后转入维护为主**。日志完整候选、已确认 Native 平台范围和客户端连接分别验收后，再作阶段评审。批次集成与正式发行 / 生产部署分开，商店分发和外部设备条件继续按各平台门禁。
 
